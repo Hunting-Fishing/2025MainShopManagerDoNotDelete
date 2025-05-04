@@ -1,360 +1,345 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import React, { useState, useEffect } from 'react';
+import { Button } from "@/components/ui/button";
+import { Plus, Search, Filter, Download, Upload } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from '@/components/ui/button';
-import { Plus, PenLine, Trash2, Import, Download, Filter, Search, SortDesc } from 'lucide-react';
+import { AffiliateTool, AffiliateProduct } from '@/types/affiliate';
+import ProductsList from '@/components/developer/shopping/ProductsList';
 import { useProductsManager } from '@/hooks/affiliate/useProductsManager';
-import { AffiliateTool } from '@/types/affiliate';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import ProductsList from './ProductsList';
-import ProductForm from './ProductForm';
-import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
-import { 
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import TagSelector from './TagSelector';
+import ProductForm from '@/components/developer/shopping/ProductForm';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import TagSelector from '@/components/developer/shopping/TagSelector';
+import { handleApiError } from '@/utils/errorHandling';
+import { toast } from "@/hooks/use-toast";
 
-const ProductsManagement = () => {
-  const { products, loading, error, addProduct, updateProduct, deleteProduct, exportProducts, importProducts } = useProductsManager();
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+export default function ProductsManagement() {
+  const { products, loading, error, createProduct, updateProduct, deleteProduct } = useProductsManager({ 
+    categoryType: 'tool', 
+    categoryName: 'all' 
+  });
+  
+  const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<AffiliateTool | null>(null);
-  
-  // Search and filtering state
+  const [isEditMode, setIsEditMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [categoryFilter, setCategoryFilter] = useState<string>('');
-  const [manufacturerFilter, setManufacturerFilter] = useState<string>('');
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
+  const [showFilters, setShowFilters] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  
-  // Extract unique categories and manufacturers for filter dropdowns
-  const categories = useMemo(() => {
-    const uniqueCategories = [...new Set(products.map(product => product.category))];
-    return uniqueCategories.sort();
-  }, [products]);
-  
-  const manufacturers = useMemo(() => {
-    const uniqueManufacturers = [...new Set(products.map(product => product.manufacturer))];
-    return uniqueManufacturers.sort();
-  }, [products]);
-  
-  // Extract all tags from products
-  const allTags = useMemo(() => {
-    const tags = new Set<string>();
-    products.forEach(product => {
-      // Assuming tags might be stored in description or some other field
-      // This is just an example; adjust based on your actual data structure
-      const productDescription = product.description || '';
-      const matches = productDescription.match(/#(\w+)/g);
-      if (matches) {
-        matches.forEach(tag => tags.add(tag.slice(1)));
-      }
-    });
-    return Array.from(tags);
-  }, [products]);
-  
-  // Maximum price for slider
-  const maxPrice = useMemo(() => {
-    const prices = products.map(p => p.price || 0);
-    return Math.max(...prices, 1000);
-  }, [products]);
-  
-  // Filter products based on search query and filters
-  const filteredProducts = useMemo(() => {
-    return products.filter(product => {
-      // Search query filter
-      const matchesSearch = 
-        searchQuery === '' || 
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        product.description.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      // Category filter
-      const matchesCategory = categoryFilter === '' || product.category === categoryFilter;
-      
-      // Manufacturer filter
-      const matchesManufacturer = manufacturerFilter === '' || product.manufacturer === manufacturerFilter;
-      
-      // Price range filter
-      const productPrice = product.price || 0;
-      const matchesPrice = productPrice >= priceRange[0] && productPrice <= priceRange[1];
-      
-      // Tag filter
-      let matchesTags = true;
-      if (selectedTags.length > 0) {
-        const productDescription = product.description || '';
-        matchesTags = selectedTags.some(tag => productDescription.includes(`#${tag}`));
-      }
-      
-      return matchesSearch && matchesCategory && matchesManufacturer && matchesPrice && matchesTags;
-    });
-  }, [products, searchQuery, categoryFilter, manufacturerFilter, priceRange, selectedTags]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedManufacturers, setSelectedManufacturers] = useState<string[]>([]);
+  const [priceRange, setPriceRange] = useState<{min: string, max: string}>({ min: '', max: '' });
 
-  const handleAddProduct = (productData: AffiliateTool) => {
-    addProduct(productData);
-    setIsAddDialogOpen(false);
+  // Extract unique categories and manufacturers
+  const categories = [...new Set(products.map(product => product.category))];
+  const manufacturers = [...new Set(products.map(product => product.manufacturer))];
+  
+  // Handle adding a new product
+  const handleAddProduct = () => {
+    setCurrentProduct(null);
+    setIsEditMode(false);
+    setIsProductDialogOpen(true);
   };
-
-  const handleEditProduct = (productData: AffiliateTool) => {
-    if (currentProduct) {
-      updateProduct(currentProduct.id, productData);
-      setIsEditDialogOpen(false);
-      setCurrentProduct(null);
+  
+  // Handle editing a product
+  const handleEditProduct = (product: AffiliateTool) => {
+    setCurrentProduct(product);
+    setIsEditMode(true);
+    setIsProductDialogOpen(true);
+  };
+  
+  // Handle product deletion
+  const handleDeleteProduct = async (product: AffiliateTool) => {
+    if (window.confirm(`Are you sure you want to delete ${product.name}?`)) {
+      try {
+        await deleteProduct(product.id);
+        toast({
+          title: "Product deleted",
+          description: `${product.name} has been deleted successfully.`,
+          variant: "success",
+        });
+      } catch (error) {
+        handleApiError(error, "Failed to delete product");
+      }
+    }
+  };
+  
+  // Handle form submission for new or updated products
+  const handleSubmitProduct = async (productData: Partial<AffiliateTool>) => {
+    try {
+      if (isEditMode && currentProduct) {
+        await updateProduct({
+          ...currentProduct,
+          ...productData
+        });
+      } else {
+        await createProduct(productData);
+      }
+      
+      setIsProductDialogOpen(false);
+    } catch (error) {
+      handleApiError(error, "Failed to save product");
     }
   };
 
-  const handleDeleteProduct = () => {
-    if (currentProduct) {
-      deleteProduct(currentProduct.id);
-      setIsDeleteDialogOpen(false);
-      setCurrentProduct(null);
+  // Export products feature
+  const handleExportProducts = () => {
+    try {
+      const exportData = products.map(product => ({
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        salePrice: product.salePrice,
+        category: product.category,
+        manufacturer: product.manufacturer,
+        affiliateLink: product.affiliateLink,
+        imageUrl: product.imageUrl,
+        featured: product.featured,
+        bestSeller: product.bestSeller,
+      }));
+
+      const jsonString = JSON.stringify(exportData, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'products-export.json';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast({
+        title: "Export successful",
+        description: `${exportData.length} products exported successfully.`,
+        variant: "success",
+      });
+    } catch (error) {
+      handleApiError(error, "Failed to export products");
     }
   };
-
-  const openEditDialog = (product: AffiliateTool) => {
-    setCurrentProduct(product);
-    setIsEditDialogOpen(true);
+  
+  // Import products feature
+  const handleImportProducts = () => {
+    // This would typically open a file dialog and parse the JSON
+    toast({
+      title: "Import feature",
+      description: "Product import functionality will be implemented soon.",
+      variant: "info",
+    });
   };
 
-  const openDeleteDialog = (product: AffiliateTool) => {
-    setCurrentProduct(product);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const handleExport = () => {
-    exportProducts(filteredProducts);
-  };
+  // Filter products based on search and filters
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          product.manufacturer.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesCategories = selectedCategories.length === 0 || 
+                              selectedCategories.includes(product.category);
+    
+    const matchesManufacturers = selectedManufacturers.length === 0 || 
+                                selectedManufacturers.includes(product.manufacturer);
+    
+    const matchesTags = selectedTags.length === 0 || 
+                        (product.tags && selectedTags.every(tag => product.tags?.includes(tag)));
+    
+    const matchesPriceRange = (priceRange.min === '' || (product.price && product.price >= parseFloat(priceRange.min))) &&
+                             (priceRange.max === '' || (product.price && product.price <= parseFloat(priceRange.max)));
+    
+    return matchesSearch && matchesCategories && matchesManufacturers && matchesTags && matchesPriceRange;
+  });
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="flex flex-col">
-          <h3 className="text-2xl font-medium">Products Management</h3>
-          <p className="text-muted-foreground mt-1">Add, edit, and manage affiliate products</p>
+      <div className="flex flex-col md:flex-row justify-between gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+          <Input
+            placeholder="Search products by name, description, or manufacturer..."
+            className="pl-10"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => importProducts()}>
-            <Import className="h-4 w-4 mr-2" />
-            Import
+        <div className="flex flex-wrap gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex items-center gap-1"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <Filter className="h-4 w-4" /> Filters
+            {(selectedCategories.length > 0 || selectedManufacturers.length > 0 || selectedTags.length > 0) && (
+              <Badge variant="info" className="ml-1 text-xs">
+                {selectedCategories.length + selectedManufacturers.length + selectedTags.length}
+              </Badge>
+            )}
           </Button>
-          <Button variant="outline" size="sm" onClick={handleExport}>
-            <Download className="h-4 w-4 mr-2" />
-            Export
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex items-center gap-1"
+            onClick={handleExportProducts}
+          >
+            <Download className="h-4 w-4" /> Export
           </Button>
-          <Button onClick={() => setIsAddDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Product
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex items-center gap-1"
+            onClick={handleImportProducts}
+          >
+            <Upload className="h-4 w-4" /> Import
+          </Button>
+          <Button 
+            variant="default" 
+            size="sm" 
+            className="flex items-center gap-1"
+            onClick={handleAddProduct}
+          >
+            <Plus className="h-4 w-4" /> Add Product
           </Button>
         </div>
       </div>
-
-      <Card className="border-gray-200 shadow-sm">
-        <CardContent className="pt-6">
-          <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
-            {/* Search field */}
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />
-              <Input
-                className="pl-10"
-                placeholder="Search products by name, description..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            
-            {/* Filter popover */}
-            <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                  <Filter className="h-4 w-4" />
-                  Filters
-                  {(categoryFilter || manufacturerFilter || selectedTags.length > 0 || priceRange[0] > 0 || priceRange[1] < maxPrice) && (
-                    <Badge className="ml-2 h-5 w-5 rounded-full p-0 flex items-center justify-center">
-                      {(categoryFilter ? 1 : 0) + 
-                       (manufacturerFilter ? 1 : 0) + 
-                       (selectedTags.length > 0 ? 1 : 0) +
-                       ((priceRange[0] > 0 || priceRange[1] < maxPrice) ? 1 : 0)}
-                    </Badge>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80 p-4">
-                <div className="space-y-4">
-                  <h4 className="font-medium">Filter Products</h4>
-                  <Separator />
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="category-filter">Filter by Category</Label>
-                    <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                      <SelectTrigger id="category-filter">
-                        <SelectValue placeholder="All Categories" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">All Categories</SelectItem>
-                        {categories.map((category) => (
-                          <SelectItem key={category} value={category}>{category}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="manufacturer-filter">Filter by Manufacturer</Label>
-                    <Select value={manufacturerFilter} onValueChange={setManufacturerFilter}>
-                      <SelectTrigger id="manufacturer-filter">
-                        <SelectValue placeholder="All Manufacturers" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">All Manufacturers</SelectItem>
-                        {manufacturers.map((manufacturer) => (
-                          <SelectItem key={manufacturer} value={manufacturer}>{manufacturer}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="price-filter">Price Range</Label>
-                    <div className="pt-6 px-2">
-                      <Slider
-                        id="price-filter"
-                        min={0}
-                        max={maxPrice}
-                        step={10}
-                        value={[priceRange[0], priceRange[1]]}
-                        onValueChange={(value) => setPriceRange([value[0], value[1]])}
-                      />
-                    </div>
-                    <div className="flex justify-between text-sm text-muted-foreground mt-2">
-                      <div>${priceRange[0]}</div>
-                      <div>${priceRange[1]}</div>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="tags-filter">Filter by Tags</Label>
-                    <TagSelector 
-                      selectedTags={selectedTags}
-                      onChange={setSelectedTags}
-                      suggestedTags={allTags}
-                      placeholder="Select tags..."
-                    />
-                  </div>
-                  
-                  <div className="flex justify-end gap-2 pt-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
+      
+      {showFilters && (
+        <Card className="bg-slate-50 border border-slate-200">
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Categories filter */}
+              <div>
+                <Label className="mb-2 block">Categories</Label>
+                <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
+                  {categories.map(category => (
+                    <Badge 
+                      key={category} 
+                      variant={selectedCategories.includes(category) ? "default" : "outline"}
+                      className="cursor-pointer"
                       onClick={() => {
-                        setCategoryFilter('');
-                        setManufacturerFilter('');
-                        setPriceRange([0, maxPrice]);
-                        setSelectedTags([]);
+                        if (selectedCategories.includes(category)) {
+                          setSelectedCategories(selectedCategories.filter(c => c !== category));
+                        } else {
+                          setSelectedCategories([...selectedCategories, category]);
+                        }
                       }}
                     >
-                      Reset
-                    </Button>
-                    <Button 
-                      size="sm"
-                      onClick={() => setIsFilterOpen(false)}
-                    >
-                      Apply
-                    </Button>
-                  </div>
+                      {category}
+                    </Badge>
+                  ))}
                 </div>
-              </PopoverContent>
-            </Popover>
-            
-            <Button variant="outline" size="icon">
-              <SortDesc className="h-4 w-4" />
-            </Button>
-          </div>
-          
-          {/* Products list */}
+              </div>
+              
+              {/* Manufacturers filter */}
+              <div>
+                <Label className="mb-2 block">Manufacturers</Label>
+                <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
+                  {manufacturers.map(manufacturer => (
+                    <Badge 
+                      key={manufacturer} 
+                      variant={selectedManufacturers.includes(manufacturer) ? "default" : "outline"}
+                      className="cursor-pointer"
+                      onClick={() => {
+                        if (selectedManufacturers.includes(manufacturer)) {
+                          setSelectedManufacturers(selectedManufacturers.filter(m => m !== manufacturer));
+                        } else {
+                          setSelectedManufacturers([...selectedManufacturers, manufacturer]);
+                        }
+                      }}
+                    >
+                      {manufacturer}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Tags filter */}
+              <div>
+                <Label className="mb-2 block">Tags</Label>
+                <TagSelector
+                  selectedTags={selectedTags}
+                  onChange={setSelectedTags}
+                  suggestedTags={[]}
+                  placeholder="Filter by tags..."
+                />
+              </div>
+              
+              {/* Price range filter */}
+              <div>
+                <Label className="mb-2 block">Price Range</Label>
+                <div className="flex gap-2 items-center">
+                  <Input 
+                    type="number" 
+                    placeholder="Min" 
+                    value={priceRange.min} 
+                    onChange={(e) => setPriceRange({...priceRange, min: e.target.value})}
+                    className="w-24"
+                  />
+                  <span>to</span>
+                  <Input 
+                    type="number" 
+                    placeholder="Max" 
+                    value={priceRange.max} 
+                    onChange={(e) => setPriceRange({...priceRange, max: e.target.value})}
+                    className="w-24"
+                  />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
+      <Tabs defaultValue="all">
+        <TabsList className="border bg-white mb-4">
+          <TabsTrigger value="all">All Products ({products.length})</TabsTrigger>
+          <TabsTrigger value="featured">Featured ({products.filter(p => p.featured).length})</TabsTrigger>
+          <TabsTrigger value="bestsellers">Best Sellers ({products.filter(p => p.bestSeller).length})</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="all">
           <ProductsList 
             products={filteredProducts}
-            onEdit={openEditDialog}
-            onDelete={openDeleteDialog}
             loading={loading}
+            onEdit={handleEditProduct}
+            onDelete={handleDeleteProduct}
           />
-          
-          {/* Stats summary */}
-          <div className="mt-4 flex gap-3">
-            <Badge variant="outline">
-              Total: {products.length} products
-            </Badge>
-            <Badge variant="outline">
-              Filtered: {filteredProducts.length} products
-            </Badge>
-            {searchQuery && (
-              <Badge variant="outline" className="gap-1">
-                Search: <span className="font-medium">"{searchQuery}"</span>
-              </Badge>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Add Product Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto">
+        </TabsContent>
+        
+        <TabsContent value="featured">
+          <ProductsList 
+            products={filteredProducts.filter(p => p.featured)}
+            loading={loading}
+            onEdit={handleEditProduct}
+            onDelete={handleDeleteProduct}
+          />
+        </TabsContent>
+        
+        <TabsContent value="bestsellers">
+          <ProductsList 
+            products={filteredProducts.filter(p => p.bestSeller)}
+            loading={loading}
+            onEdit={handleEditProduct}
+            onDelete={handleDeleteProduct}
+          />
+        </TabsContent>
+      </Tabs>
+      
+      <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Add New Product</DialogTitle>
-            <DialogDescription>
-              Fill out the form below to add a new affiliate product to your shop.
-            </DialogDescription>
+            <DialogTitle>{isEditMode ? 'Edit Product' : 'Add New Product'}</DialogTitle>
           </DialogHeader>
-          <ProductForm onSubmit={handleAddProduct} />
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Product Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Product</DialogTitle>
-            <DialogDescription>
-              Make changes to the product information.
-            </DialogDescription>
-          </DialogHeader>
-          {currentProduct && <ProductForm product={currentProduct} onSubmit={handleEditProduct} />}
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Product</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this product? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            {currentProduct && (
-              <div className="border rounded p-3">
-                <h4 className="font-medium">{currentProduct.name}</h4>
-                <p className="text-sm text-muted-foreground mt-1">{currentProduct.manufacturer}</p>
-              </div>
-            )}
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
-              <Button variant="destructive" onClick={handleDeleteProduct}>Delete</Button>
-            </DialogFooter>
-          </div>
+          <ProductForm 
+            product={currentProduct || undefined}
+            onSubmit={handleSubmitProduct}
+          />
         </DialogContent>
       </Dialog>
     </div>
   );
-};
-
-export default ProductsManagement;
+}
