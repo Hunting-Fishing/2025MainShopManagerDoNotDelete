@@ -1,6 +1,6 @@
 
 import React from "react";
-import { formatTimeInHoursAndMinutes } from "@/data/workOrdersData";
+import { formatTimeInHoursAndMinutes } from "@/utils/dateUtils";
 
 interface TimeTrackingSummaryProps {
   totalBillableTime: number;

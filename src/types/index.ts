@@ -22,13 +22,17 @@ export * from './form';
 export * from './payment';
 
 // Handle WorkOrder exports with explicit re-exports
-export {
+export type { 
   WorkOrderStatusType,
   WorkOrderPriorityType,
   WorkOrderTemplate,
   TimeEntry,
   DbTimeEntry,
   WorkOrderInventoryItem,
+  WorkOrder
+} from './workOrder';
+
+export { 
   statusMap,
   priorityMap
 } from './workOrder';

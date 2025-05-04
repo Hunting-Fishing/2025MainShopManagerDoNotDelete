@@ -1,16 +1,18 @@
 
 /**
- * This file centralizes common work order utility functions 
- * that were previously scattered across the codebase.
+ * Work order utilities for the application
  */
-
 import { WorkOrder } from "@/types/workOrder";
+export { formatDate, formatTime, formatTimeInHoursAndMinutes } from "./dateUtils";
+
+// Import priorityMap from utils/workOrders
+export { priorityMap, statusMap } from "./workOrders";
 
 /**
  * Normalizes a work order object to ensure consistent property access
  * regardless of different casing conventions (camelCase vs snake_case)
  */
-export const normalizeWorkOrderObject = (workOrder: Partial<WorkOrder>): WorkOrder => {
+export const normalizeWorkOrder = (workOrder: Partial<WorkOrder>): WorkOrder => {
   if (!workOrder) return {} as WorkOrder;
   
   return {

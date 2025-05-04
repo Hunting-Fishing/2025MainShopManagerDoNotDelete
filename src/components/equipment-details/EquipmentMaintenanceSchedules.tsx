@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { MaintenanceSchedule } from "@/types/equipment";
 import { scheduleMaintenanceWorkOrder, calculateNextMaintenanceDate } from "@/utils/maintenanceScheduler";
-import { formatDate } from "@/utils/workOrderUtils";
+import { formatDate } from "@/utils/dateUtils";
 import { CalendarClock, Plus, AlertTriangle, Clock, Bell, BellOff } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { maintenanceFrequencyMap } from "@/data/equipmentData";

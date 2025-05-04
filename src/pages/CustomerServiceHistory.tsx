@@ -1,7 +1,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { fetchWorkOrders, WorkOrder } from "@/data/workOrdersData";
 import { ChevronLeft, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +9,9 @@ import { toast } from "@/hooks/use-toast";
 import { SendSmsButton } from "@/components/calls/SendSmsButton";
 import { VoiceCallButton } from "@/components/calls/VoiceCallButton";
 import { CallHistory } from "@/components/calls/CallHistory";
+import { supabase } from "@/lib/supabase";
+import { WorkOrder } from "@/types/workOrder";
+import { mapDatabaseToAppModel } from "@/utils/workOrders/mappers";
 
 export default function CustomerServiceHistory() {
   const { customer } = useParams<{ customer: string }>();
@@ -26,22 +28,30 @@ export default function CustomerServiceHistory() {
           return;
         }
 
-        // Fetch work orders
-        const allWorkOrders = await fetchWorkOrders();
+        // Fetch work orders from Supabase
+        const { data: workOrderData, error } = await supabase
+          .from('work_orders')
+          .select(`
+            *,
+            work_order_time_entries(*)
+          `)
+          .ilike('customer', `%${customer}%`);
+
+        if (error) {
+          throw error;
+        }
         
-        // Filter work orders for this customer
-        const filteredOrders = allWorkOrders.filter(
-          (order) => order.customer.toLowerCase() === customer.toLowerCase()
-        );
+        // Map database models to application models
+        const orders = workOrderData.map(order => mapDatabaseToAppModel(order));
         
-        if (filteredOrders.length === 0) {
+        if (orders.length === 0) {
           toast({
             title: "No service history",
             description: "No service history found for this customer.",
           });
         }
         
-        setCustomerWorkOrders(filteredOrders);
+        setCustomerWorkOrders(orders);
       } catch (error) {
         console.error("Error fetching customer service history:", error);
         toast({

@@ -1,8 +1,8 @@
 
 import { jsPDF } from "jspdf";
 import 'jspdf-autotable';
-import { WorkOrder } from "@/data/workOrdersData";
-import { formatTimeInHoursAndMinutes } from "@/data/workOrdersData";
+import { WorkOrder } from "@/types/workOrder";
+import { formatTimeInHoursAndMinutes } from "@/utils/dateUtils";
 import { configurePdf, addFooter } from "./pdfConfig";
 
 /**

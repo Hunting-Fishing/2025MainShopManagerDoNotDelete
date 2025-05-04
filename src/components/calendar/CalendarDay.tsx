@@ -2,7 +2,7 @@
 import { format, isPast, isToday, startOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { CalendarEvent } from "@/types/calendar";
-import { priorityMap } from "@/data/workOrdersData";
+import { priorityMap } from "@/utils/workOrderUtils";
 import { ShiftChatIndicator } from "./ShiftChatIndicator";
 import { ChatRoom } from "@/types/chat";
 import { useNavigate } from "react-router-dom";

@@ -2,7 +2,7 @@
 import { format, isSameDay, isPast, set } from "date-fns";
 import { CalendarEvent } from "@/types/calendar";
 import { cn } from "@/lib/utils";
-import { priorityMap } from "@/data/workOrdersData";
+import { priorityMap } from "@/utils/workOrderUtils";
 import { ChatRoom } from "@/types/chat";
 
 interface CalendarDayViewProps {

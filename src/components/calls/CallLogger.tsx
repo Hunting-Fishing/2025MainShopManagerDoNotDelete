@@ -5,7 +5,7 @@ import { CallHistory } from '@/components/calls/CallHistory';
 import { Phone, MessageSquare } from 'lucide-react';
 import { SendSmsButton } from '@/components/calls/SendSmsButton';
 import { VoiceCallButton } from '@/components/calls/VoiceCallButton';
-import { WorkOrder } from '@/data/workOrdersData';
+import { WorkOrder } from '@/types/workOrder';
 
 interface CallLoggerProps {
   workOrder: WorkOrder;
