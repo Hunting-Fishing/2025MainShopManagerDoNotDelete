@@ -1,252 +1,169 @@
 
-import React, { useState } from 'react';
-import { ServiceMainCategory } from "@/types/serviceHierarchy";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { formatCurrency } from "@/lib/utils";
-import { Download, Search } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
+import React, { useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ServiceMainCategory } from '@/types/serviceHierarchy';
+import { formatCurrency } from '@/lib/utils';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface ServicesPriceReportProps {
   categories: ServiceMainCategory[];
 }
 
-interface ServiceRecord {
-  id: string;
-  categoryName: string;
-  subcategoryName: string;
-  serviceName: string;
-  time: number | null;
-  price: number | null;
-}
-
 const ServicesPriceReport: React.FC<ServicesPriceReportProps> = ({ categories }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortConfig, setSortConfig] = useState<{ key: keyof ServiceRecord; direction: 'asc' | 'desc' }>({
-    key: 'categoryName',
-    direction: 'asc'
-  });
-  
-  // Generate flat list of all services
-  const services: ServiceRecord[] = [];
-  
-  categories.forEach(cat => {
-    cat.subcategories.forEach(sub => {
-      sub.jobs.forEach(job => {
-        services.push({
-          id: job.id,
-          categoryName: cat.name,
-          subcategoryName: sub.name,
-          serviceName: job.name,
-          time: job.estimatedTime || null,
-          price: job.price || null
+  const priceData = useMemo(() => {
+    // Get average price per category
+    return categories.map(category => {
+      let totalPrice = 0;
+      let totalJobs = 0;
+      
+      category.subcategories.forEach(sub => {
+        sub.jobs.forEach(job => {
+          if (job.price) {
+            totalPrice += job.price;
+            totalJobs++;
+          }
+        });
+      });
+      
+      const avgPrice = totalJobs > 0 ? totalPrice / totalJobs : 0;
+      
+      return {
+        name: category.name,
+        averagePrice: parseFloat(avgPrice.toFixed(2)),
+        totalServices: totalJobs
+      };
+    }).sort((a, b) => b.averagePrice - a.averagePrice);
+  }, [categories]);
+
+  // Find services with highest and lowest prices
+  const { highestPriceService, lowestPriceService, servicesWithNoPrice } = useMemo(() => {
+    let highest = { name: '', price: 0, category: '', subcategory: '' };
+    let lowest = { name: '', price: Number.MAX_VALUE, category: '', subcategory: '' };
+    let noPrice = 0;
+    
+    categories.forEach(category => {
+      category.subcategories.forEach(subcategory => {
+        subcategory.jobs.forEach(job => {
+          if (!job.price) {
+            noPrice++;
+            return;
+          }
+          
+          if (job.price > highest.price) {
+            highest = {
+              name: job.name,
+              price: job.price,
+              category: category.name,
+              subcategory: subcategory.name
+            };
+          }
+          
+          if (job.price < lowest.price) {
+            lowest = {
+              name: job.name,
+              price: job.price,
+              category: category.name,
+              subcategory: subcategory.name
+            };
+          }
         });
       });
     });
-  });
-
-  // Handle sorting
-  const requestSort = (key: keyof ServiceRecord) => {
-    let direction: 'asc' | 'desc' = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
+    
+    // If no services with prices were found
+    if (lowest.price === Number.MAX_VALUE) {
+      lowest = { name: 'None', price: 0, category: '', subcategory: '' };
     }
-    setSortConfig({ key, direction });
-  };
-
-  const formatTime = (minutes: number | null) => {
-    if (minutes === null) return '-';
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
-  };
-
-  // Filter services
-  const filteredServices = services.filter(service => {
-    if (!searchTerm) return true;
     
-    const searchRegex = new RegExp(searchTerm, 'i');
-    
-    return searchRegex.test(service.categoryName) || 
-           searchRegex.test(service.subcategoryName) || 
-           searchRegex.test(service.serviceName);
-  });
+    return {
+      highestPriceService: highest,
+      lowestPriceService: lowest,
+      servicesWithNoPrice: noPrice
+    };
+  }, [categories]);
 
-  // Sort services
-  const sortedServices = [...filteredServices].sort((a, b) => {
-    if (a[sortConfig.key] === null && b[sortConfig.key] !== null) return sortConfig.direction === 'asc' ? 1 : -1;
-    if (a[sortConfig.key] !== null && b[sortConfig.key] === null) return sortConfig.direction === 'asc' ? -1 : 1;
-    if (a[sortConfig.key] === null && b[sortConfig.key] === null) return 0;
-
-    if (typeof a[sortConfig.key] === 'string' && typeof b[sortConfig.key] === 'string') {
-      return sortConfig.direction === 'asc'
-        ? (a[sortConfig.key] as string).localeCompare(b[sortConfig.key] as string)
-        : (b[sortConfig.key] as string).localeCompare(a[sortConfig.key] as string);
-    }
-
-    if (typeof a[sortConfig.key] === 'number' && typeof b[sortConfig.key] === 'number') {
-      return sortConfig.direction === 'asc'
-        ? (a[sortConfig.key] as number) - (b[sortConfig.key] as number)
-        : (b[sortConfig.key] as number) - (a[sortConfig.key] as number);
-    }
-
-    return 0;
-  });
-
-  // Export to CSV
-  const handleExport = () => {
-    // Create CSV header
-    const csvHeader = ['Category', 'Subcategory', 'Service', 'Time (min)', 'Price'].join(',');
-    
-    // Create CSV rows
-    const csvRows = sortedServices.map(service => {
-      return [
-        `"${service.categoryName}"`,
-        `"${service.subcategoryName}"`,
-        `"${service.serviceName}"`,
-        service.time || '',
-        service.price || ''
-      ].join(',');
-    });
-    
-    // Combine header and rows
-    const csvContent = [csvHeader, ...csvRows].join('\n');
-    
-    // Create a blob and download
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `services_price_report_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    toast({
-      title: "Export successful",
-      description: "Services price report exported to CSV.",
-    });
-  };
-
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row justify-between gap-4">
-        <div className="relative w-full sm:w-auto sm:min-w-[300px]">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="Search services..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <Button 
-          variant="outline" 
-          onClick={handleExport} 
-          className="flex items-center gap-2 ml-auto"
-        >
-          <Download className="h-4 w-4" /> Export CSV
-        </Button>
-      </div>
-
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle>Services Price List</CardTitle>
+  if (categories.length === 0) {
+    return (
+      <Card className="h-full">
+        <CardHeader>
+          <CardTitle>Price Analysis</CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
-          <ScrollArea className="h-[500px]">
-            <Table>
-              <TableHeader className="sticky top-0 bg-card z-10">
-                <TableRow>
-                  <TableHead 
-                    className="cursor-pointer hover:text-primary w-[200px]" 
-                    onClick={() => requestSort('categoryName')}
-                  >
-                    Category {sortConfig.key === 'categoryName' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                  </TableHead>
-                  <TableHead 
-                    className="cursor-pointer hover:text-primary w-[200px]" 
-                    onClick={() => requestSort('subcategoryName')}
-                  >
-                    Subcategory {sortConfig.key === 'subcategoryName' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                  </TableHead>
-                  <TableHead 
-                    className="cursor-pointer hover:text-primary" 
-                    onClick={() => requestSort('serviceName')}
-                  >
-                    Service {sortConfig.key === 'serviceName' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                  </TableHead>
-                  <TableHead 
-                    className="cursor-pointer hover:text-primary text-right w-[120px]" 
-                    onClick={() => requestSort('time')}
-                  >
-                    Time {sortConfig.key === 'time' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                  </TableHead>
-                  <TableHead 
-                    className="cursor-pointer hover:text-primary text-right w-[120px]" 
-                    onClick={() => requestSort('price')}
-                  >
-                    Price {sortConfig.key === 'price' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sortedServices.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center h-32">
-                      <p className="text-muted-foreground">No services found</p>
-                      {searchTerm && (
-                        <p className="text-sm text-muted-foreground mt-2">Try adjusting your search</p>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  sortedServices.map((service) => (
-                    <TableRow key={service.id} className="group">
-                      <TableCell className="font-medium">{service.categoryName}</TableCell>
-                      <TableCell>{service.subcategoryName}</TableCell>
-                      <TableCell>{service.serviceName}</TableCell>
-                      <TableCell className="text-right">
-                        {formatTime(service.time)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {service.price !== null ? formatCurrency(service.price) : '-'}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </ScrollArea>
+        <CardContent className="flex items-center justify-center h-64">
+          <p className="text-gray-500">No service data available for price analysis</p>
         </CardContent>
       </Card>
+    );
+  }
 
-      <div className="bg-muted/30 rounded-lg p-4 border">
-        <h3 className="text-sm font-medium mb-2">Report Summary</h3>
-        <div className="grid grid-cols-3 gap-4">
-          <div>
-            <div className="text-xs text-muted-foreground">Total Services</div>
-            <div className="text-lg font-semibold">{services.length}</div>
+  return (
+    <Card className="h-full">
+      <CardHeader>
+        <CardTitle>Service Price Analysis</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 gap-4 mb-6">
+          <div className="bg-amber-50 p-4 rounded-lg border border-amber-100">
+            <p className="text-sm text-amber-700 mb-1">Highest Priced Service</p>
+            <p className="text-xl font-bold">{highestPriceService.name}</p>
+            <p className="text-lg font-semibold text-amber-600">{formatCurrency(highestPriceService.price)}</p>
+            <p className="text-xs text-gray-500 mt-1">
+              {highestPriceService.category} &gt; {highestPriceService.subcategory}
+            </p>
           </div>
-          <div>
-            <div className="text-xs text-muted-foreground">Services with Pricing</div>
-            <div className="text-lg font-semibold">
-              {services.filter(s => s.price !== null && s.price > 0).length}
+          
+          <div className="bg-teal-50 p-4 rounded-lg border border-teal-100">
+            <p className="text-sm text-teal-700 mb-1">Lowest Priced Service</p>
+            <p className="text-xl font-bold">{lowestPriceService.name}</p>
+            <p className="text-lg font-semibold text-teal-600">{formatCurrency(lowestPriceService.price)}</p>
+            {lowestPriceService.category && (
+              <p className="text-xs text-gray-500 mt-1">
+                {lowestPriceService.category} &gt; {lowestPriceService.subcategory}
+              </p>
+            )}
+          </div>
+          
+          {servicesWithNoPrice > 0 && (
+            <div className="bg-red-50 p-4 rounded-lg border border-red-100">
+              <p className="text-sm text-red-700 mb-1">Services Missing Pricing</p>
+              <p className="text-xl font-bold">{servicesWithNoPrice}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                These services have no price set and may need attention
+              </p>
             </div>
-          </div>
-          <div>
-            <div className="text-xs text-muted-foreground">Services with Time</div>
-            <div className="text-lg font-semibold">
-              {services.filter(s => s.time !== null && s.time > 0).length}
-            </div>
-          </div>
+          )}
         </div>
-      </div>
-    </div>
+
+        {priceData.length > 0 && (
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={priceData}
+                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="name"
+                  tick={{ fontSize: 12 }}
+                  tickFormatter={(value) => value.length > 10 ? `${value.substring(0, 10)}...` : value}
+                />
+                <YAxis 
+                  tickFormatter={(value) => `$${value}`}
+                />
+                <Tooltip 
+                  formatter={(value: any) => [`$${value}`, 'Average Price']}
+                  labelFormatter={(label) => `Category: ${label}`}
+                />
+                <Bar 
+                  dataKey="averagePrice" 
+                  fill="#8884d8" 
+                  name="Average Price"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
