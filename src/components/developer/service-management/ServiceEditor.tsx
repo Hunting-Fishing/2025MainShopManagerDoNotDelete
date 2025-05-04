@@ -31,15 +31,13 @@ const subcategorySchema = z.object({
 const jobSchema = z.object({
   name: z.string().min(1, 'Service name is required'),
   description: z.string().optional(),
-  price: z.preprocess(
-    (val) => (val === '' ? undefined : Number(val)),
-    z.number().min(0, 'Price must be a positive number').optional()
-  ),
-  estimatedTime: z.preprocess(
-    (val) => (val === '' ? undefined : Number(val)),
-    z.number().min(0, 'Time must be a positive number').optional()
-  ),
+  price: z.coerce.number().min(0, 'Price must be a positive number').optional(),
+  estimatedTime: z.coerce.number().min(0, 'Time must be a positive number').optional(),
 });
+
+type FormSchema = z.infer<typeof categorySchema> | 
+                  z.infer<typeof subcategorySchema> |
+                  z.infer<typeof jobSchema>;
 
 const ServiceEditor: React.FC<ServiceEditorProps> = ({
   selectedCategory,
@@ -48,9 +46,9 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
   onSave,
   onCancel,
 }) => {
-  let schema;
-  let defaultValues = {};
   let title = '';
+  let schema;
+  let defaultValues: any = {};
 
   if (selectedJob) {
     schema = jobSchema;
@@ -77,12 +75,12 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
     title = selectedCategory ? 'Edit Category' : 'Add Category';
   }
 
-  const form = useForm({
+  const form = useForm<FormSchema>({
     resolver: zodResolver(schema),
     defaultValues,
   });
 
-  const handleSubmit = (data: any) => {
+  const handleSubmit = (data: FormSchema) => {
     onSave(data);
     form.reset();
   };
@@ -128,17 +126,17 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                 <FormField
                   control={form.control}
                   name="price"
-                  render={({ field }) => (
+                  render={({ field: { onChange, ...restField } }) => (
                     <FormItem>
                       <FormLabel>Price</FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 
                           min="0" 
-                          step="0.01" 
+                          step="0.01"
                           placeholder="Enter price" 
-                          {...field} 
-                          onChange={(e) => field.onChange(e.target.value === '' ? '' : Number(e.target.value))}
+                          onChange={(e) => onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
+                          {...restField}
                         />
                       </FormControl>
                       <FormMessage />
@@ -149,16 +147,16 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                 <FormField
                   control={form.control}
                   name="estimatedTime"
-                  render={({ field }) => (
+                  render={({ field: { onChange, ...restField } }) => (
                     <FormItem>
                       <FormLabel>Estimated Time (minutes)</FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 
                           min="0" 
-                          placeholder="Enter time in minutes" 
-                          {...field} 
-                          onChange={(e) => field.onChange(e.target.value === '' ? '' : Number(e.target.value))}
+                          placeholder="Enter time in minutes"
+                          onChange={(e) => onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} 
+                          {...restField}
                         />
                       </FormControl>
                       <FormMessage />

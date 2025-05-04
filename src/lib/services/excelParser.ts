@@ -168,3 +168,9 @@ export const exportToExcel = (categories: ServiceMainCategory[], filename: strin
   // Generate Excel file and trigger download
   XLSX.writeFile(wb, `${filename}.xlsx`);
 };
+
+// Add the required parseExcelFile function for backward compatibility
+export const parseExcelFile = parseExcelData;
+
+// Add the writeExcelFile function for the ServiceHierarchyManager
+export const writeExcelFile = exportToExcel;
