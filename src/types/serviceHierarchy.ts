@@ -11,19 +11,19 @@ export interface ServiceSubcategory {
   id: string;
   name: string;
   description?: string;
-  jobs: ServiceJob[];
+  jobs?: ServiceJob[];
 }
 
 export interface ServiceMainCategory {
   id: string;
   name: string;
   description?: string;
-  subcategories: ServiceSubcategory[];
-  position?: number; // Added position field
+  position: number;
+  subcategories?: ServiceSubcategory[];
 }
 
-export interface ServiceHierarchyState {
-  categories: ServiceMainCategory[];
-  isLoading: boolean;
-  error: string | null;
+export interface CategoryColorStyle {
+  bg: string;
+  text: string;
+  border: string;
 }
