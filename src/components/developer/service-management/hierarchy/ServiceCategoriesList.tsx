@@ -1,151 +1,142 @@
 
-import React, { useState } from 'react';
-import { ServiceMainCategory, CategoryColorStyle } from '@/types/serviceHierarchy';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
-import { ChevronRight, SortAsc } from 'lucide-react';
-import { formatNumber } from '@/lib/formatters';
+import React from "react";
+import { ServiceMainCategory, CategoryColorStyle } from "@/types/serviceHierarchy";
+import { ChevronRight, Wrench } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ServiceCategoriesListProps {
   categories: ServiceMainCategory[];
-  selectedCategoryId: string | undefined;
-  onSelectCategory: (category: ServiceMainCategory) => void;
+  selectedCategoryId: string | null;
+  selectedSubcategoryId: string | null;
+  selectedJobId: string | null; 
+  onCategorySelect: (id: string) => void;
+  onSubcategorySelect: (id: string) => void;
+  onJobSelect: (id: string) => void;
   isLoading?: boolean;
+  categoryStyles?: Record<string, CategoryColorStyle>;
 }
 
-// Color palette for category tags - using the colorful UI guidelines
-const categoryColors: Record<number, CategoryColorStyle> = {
-  0: { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-300' },
-  1: { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-300' },
-  2: { bg: 'bg-purple-100', text: 'text-purple-800', border: 'border-purple-300' },
-  3: { bg: 'bg-amber-100', text: 'text-amber-800', border: 'border-amber-300' },
-  4: { bg: 'bg-rose-100', text: 'text-rose-800', border: 'border-rose-300' },
-  5: { bg: 'bg-cyan-100', text: 'text-cyan-800', border: 'border-cyan-300' },
-  6: { bg: 'bg-indigo-100', text: 'text-indigo-800', border: 'border-indigo-300' },
-  7: { bg: 'bg-emerald-100', text: 'text-emerald-800', border: 'border-emerald-300' },
-};
-
-export const ServiceCategoriesList: React.FC<ServiceCategoriesListProps> = ({
+export function ServiceCategoriesList({
   categories,
   selectedCategoryId,
-  onSelectCategory,
+  selectedSubcategoryId,
+  selectedJobId,
+  onCategorySelect,
+  onSubcategorySelect,
+  onJobSelect,
   isLoading = false,
-}) => {
-  const [isCompact, setIsCompact] = useState(false);
-  const [sortOrder, setSortOrder] = useState<'name' | 'position'>('position');
-
-  const toggleCompactView = () => {
-    setIsCompact(prev => !prev);
+  categoryStyles = {},
+}: ServiceCategoriesListProps) {
+  // Default style if none matches
+  const defaultStyle = {
+    bg: "bg-slate-50",
+    text: "text-slate-800",
+    border: "border-slate-200",
   };
 
-  const toggleSortOrder = () => {
-    setSortOrder(prev => prev === 'name' ? 'position' : 'name');
-  };
-  
-  const getSortedCategories = () => {
-    if (!categories || categories.length === 0) return [];
+  // Get style for a category
+  const getCategoryStyle = (categoryName: string) => {
+    const lowerCaseName = categoryName.toLowerCase();
     
-    return [...categories].sort((a, b) => {
-      if (sortOrder === 'name') {
-        return a.name.localeCompare(b.name);
-      } else {
-        return (a.position || 0) - (b.position || 0);
+    for (const key in categoryStyles) {
+      if (lowerCaseName.includes(key)) {
+        return categoryStyles[key];
       }
-    });
+    }
+    
+    return categoryStyles["custom"] || defaultStyle;
   };
 
-  const getCategoryColorStyle = (index: number): CategoryColorStyle => {
-    const colorIndex = index % Object.keys(categoryColors).length;
-    return categoryColors[colorIndex];
-  };
-
-  const sortedCategories = getSortedCategories();
-
+  // Loading state
   if (isLoading) {
-    return (
-      <div className="space-y-3">
-        {Array(5).fill(null).map((_, i) => (
-          <div key={i} className="space-y-2">
-            <Skeleton className="h-6 w-3/4" />
-            <Skeleton className="h-4 w-1/2" />
-          </div>
-        ))}
-      </div>
-    );
+    return <div className="animate-pulse space-y-2">
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="h-10 bg-slate-100 rounded"></div>
+      ))}
+    </div>;
+  }
+
+  // No categories
+  if (categories.length === 0) {
+    return <div className="text-center p-4 text-slate-500">
+      No service categories found
+    </div>;
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex justify-between items-center mb-3">
-        <div className="flex space-x-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggleSortOrder}
-            className="text-xs flex items-center"
-          >
-            <SortAsc className="h-3 w-3 mr-1" />
-            Sort by: {sortOrder === 'name' ? 'Name' : 'Position'}
-          </Button>
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={toggleCompactView}
-          className="text-xs"
-        >
-          {isCompact ? 'Expand' : 'Compact'}
-        </Button>
-      </div>
-
-      {sortedCategories.length === 0 ? (
-        <div className="text-center p-4 border border-dashed rounded-md">
-          <p className="text-sm text-muted-foreground">No service categories available</p>
-        </div>
-      ) : (
-        <div className="space-y-3 overflow-y-auto flex-grow pr-1">
-          {sortedCategories.map((category, index) => {
-            const colorStyle = getCategoryColorStyle(index);
-            return (
-              <div
-                key={category.id}
-                className={`rounded-xl border cursor-pointer transition-colors shadow-sm ${
-                  category.id === selectedCategoryId 
-                    ? 'bg-blue-50 border-blue-200 shadow-md' 
-                    : 'hover:bg-slate-50 border-slate-200 hover:border-slate-300'
-                }`}
-                onClick={() => onSelectCategory(category)}
-              >
-                <div className={`p-3 ${isCompact ? 'py-2' : ''}`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex-grow">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-medium text-sm">{category.name}</h3>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${colorStyle.bg} ${colorStyle.text} ${colorStyle.border}`}>
-                          Position: {formatNumber(category.position || 0)}
-                        </span>
+    <div className="space-y-1">
+      {categories.map((category) => {
+        const isSelected = selectedCategoryId === category.id;
+        const style = getCategoryStyle(category.name);
+        
+        return (
+          <div key={category.id} className="space-y-1">
+            <div
+              className={cn(
+                "flex justify-between items-center p-2 rounded-md cursor-pointer",
+                isSelected ? style.bg : "hover:bg-slate-50"
+              )}
+              onClick={() => onCategorySelect(category.id)}
+            >
+              <div className={cn("font-medium", isSelected ? style.text : "")}>
+                {category.name}
+              </div>
+              {isSelected ? (
+                <ChevronRight className="h-4 w-4 text-slate-400" />
+              ) : null}
+            </div>
+            
+            {/* Display subcategories if this category is selected */}
+            {isSelected && category.subcategories && category.subcategories.length > 0 && (
+              <div className="ml-4 border-l border-slate-200 pl-2 space-y-1">
+                {category.subcategories.map((subcategory) => {
+                  const isSubcategorySelected = selectedSubcategoryId === subcategory.id;
+                  
+                  return (
+                    <div key={subcategory.id} className="space-y-1">
+                      <div
+                        className={cn(
+                          "flex justify-between items-center p-1.5 rounded-md cursor-pointer",
+                          isSubcategorySelected ? "bg-slate-100" : "hover:bg-slate-50"
+                        )}
+                        onClick={() => onSubcategorySelect(subcategory.id)}
+                      >
+                        <div className={cn("text-sm", isSubcategorySelected ? "font-medium" : "")}>
+                          {subcategory.name}
+                        </div>
+                        {isSubcategorySelected ? (
+                          <ChevronRight className="h-3 w-3 text-slate-400" />
+                        ) : null}
                       </div>
                       
-                      {!isCompact && category.description && (
-                        <p className="text-xs text-muted-foreground mt-1">{category.description}</p>
-                      )}
-                      
-                      {!isCompact && (
-                        <div className="flex items-center mt-2 gap-2">
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${colorStyle.bg} ${colorStyle.text} ${colorStyle.border}`}>
-                            {category.subcategories?.length || 0} subcategories
-                          </span>
+                      {/* Display jobs if this subcategory is selected */}
+                      {isSubcategorySelected && subcategory.jobs && subcategory.jobs.length > 0 && (
+                        <div className="ml-3 border-l border-slate-200 pl-2 space-y-0.5">
+                          {subcategory.jobs.map((job) => (
+                            <div
+                              key={job.id}
+                              className={cn(
+                                "flex items-center gap-1 p-1 text-xs rounded cursor-pointer",
+                                selectedJobId === job.id
+                                  ? "bg-slate-200 font-medium"
+                                  : "hover:bg-slate-50"
+                              )}
+                              onClick={() => onJobSelect(job.id)}
+                            >
+                              <Wrench className="h-3 w-3 text-slate-400" />
+                              {job.name}
+                            </div>
+                          ))}
                         </div>
                       )}
                     </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                </div>
+                  );
+                })}
               </div>
-            );
-          })}
-        </div>
-      )}
+            )}
+          </div>
+        );
+      })}
     </div>
   );
-};
+}
