@@ -1,312 +1,306 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import { AffiliateTool } from "@/types/affiliate";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AffiliateTool } from '@/types/affiliate';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
 import TagSelector from './TagSelector';
 import ImageUploader from './ImageUploader';
 
+// Define common tags for products
+const commonTags = [
+  "Professional", "DIY", "Cordless", "Electric", "Hand Tool", 
+  "Air Tool", "Battery-Powered", "Heavy Duty", "Lightweight", 
+  "Workshop", "Garage", "Industrial", "Home Use", "New", "Best Seller"
+];
+
 interface ProductFormProps {
-  product?: AffiliateTool;
+  product?: Partial<AffiliateTool>;
   onSubmit: (product: Partial<AffiliateTool>) => Promise<void>;
+  categories: { id: string; name: string }[];
+  manufacturers: { id: string; name: string }[];
+  isSubmitting?: boolean;
 }
 
-export default function ProductForm({ product, onSubmit }: ProductFormProps) {
-  const [formData, setFormData] = useState<Partial<AffiliateTool>>(product || {
+const ProductForm: React.FC<ProductFormProps> = ({ 
+  product, onSubmit, categories, manufacturers, isSubmitting = false 
+}) => {
+  const [formData, setFormData] = useState<Partial<AffiliateTool>>({
     name: '',
     description: '',
-    price: 0,
+    price: undefined,
     salePrice: undefined,
     category: '',
     subcategory: '',
     manufacturer: '',
-    rating: undefined,
-    reviewCount: undefined,
     featured: false,
     bestSeller: false,
     affiliateLink: '',
-    imageUrl: '',
-    slug: '',
-    seller: '',
-    tags: []
+    tags: [], // Initialize tags array
+    ...product
   });
-
+  
+  const [activeTab, setActiveTab] = useState('basic');
+  const [imageUrl, setImageUrl] = useState<string>(product?.imageUrl || '');
   const [selectedTags, setSelectedTags] = useState<string[]>(product?.tags || []);
-  const [isLoading, setIsLoading] = useState(false);
+  
+  useEffect(() => {
+    if (product) {
+      setFormData(prev => ({
+        ...prev,
+        ...product,
+      }));
+      setImageUrl(product.imageUrl || '');
+      setSelectedTags(product.tags || []);
+    }
+  }, [product]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    const { name, value, type } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'number' ? parseFloat(value) : value,
+    }));
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    setFormData({ ...formData, [name]: value });
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
-  const handleSwitchChange = (name: string, checked: boolean) => {
-    setFormData({ ...formData, [name]: checked });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    try {
-      // Include tags in the submission
-      const productWithTags = { 
-        ...formData,
-        tags: selectedTags,
-        // Generate a slug if it's a new product and no slug provided
-        slug: formData.slug || formData.name?.toLowerCase().replace(/\s+/g, '-')
-      };
-      
-      await onSubmit(productWithTags);
-    } catch (error) {
-      console.error("Error submitting product form:", error);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: checked,
+    }));
   };
 
   const handleImageUpload = (url: string) => {
-    setFormData({ ...formData, imageUrl: url });
+    setImageUrl(url);
+    setFormData(prev => ({
+      ...prev,
+      imageUrl: url,
+    }));
   };
 
-  const suggestedTags = [
-    "automotive", "tools", "equipment", "outdoor", "power tools", 
-    "hand tools", "accessories", "safety", "mechanic", "garage", 
-    "professional", "DIY", "sale", "new arrival", "limited edition"
-  ];
+  const handleTagsChange = (tags: string[]) => {
+    setSelectedTags(tags);
+    setFormData(prev => ({
+      ...prev,
+      tags: tags,
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit({
+      ...formData,
+      imageUrl,
+      tags: selectedTags,
+    });
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <Tabs defaultValue="basic">
-        <TabsList className="mb-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="basic">Basic Info</TabsTrigger>
-          <TabsTrigger value="details">Details & Pricing</TabsTrigger>
-          <TabsTrigger value="media">Media & Classification</TabsTrigger>
+          <TabsTrigger value="details">Details</TabsTrigger>
+          <TabsTrigger value="media">Media & Tags</TabsTrigger>
         </TabsList>
-        
-        <TabsContent value="basic" className="space-y-4">
-          <div className="grid gap-4">
-            <div>
-              <Label htmlFor="name">Product Name *</Label>
-              <Input
-                id="name"
-                name="name"
-                value={formData.name || ''}
-                onChange={handleChange}
-                placeholder="Product Name"
-                required
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="description">Description *</Label>
-              <Textarea
-                id="description"
-                name="description"
-                value={formData.description || ''}
-                onChange={handleChange}
-                placeholder="Product Description"
-                className="h-32"
-                required
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        <div className="mt-4">
+          <TabsContent value="basic" className="space-y-4">
+            <div className="grid gap-4">
               <div>
-                <Label htmlFor="manufacturer">Manufacturer *</Label>
-                <Input
-                  id="manufacturer"
-                  name="manufacturer"
-                  value={formData.manufacturer || ''}
+                <Label htmlFor="name">Product Name</Label>
+                <Input 
+                  id="name"
+                  name="name"
+                  value={formData.name || ''}
                   onChange={handleChange}
-                  placeholder="Manufacturer"
+                  placeholder="Product Name"
                   required
                 />
               </div>
               
               <div>
-                <Label htmlFor="category">Category *</Label>
-                <Input
-                  id="category"
-                  name="category"
-                  value={formData.category || ''}
+                <Label htmlFor="description">Product Description</Label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  value={formData.description || ''}
                   onChange={handleChange}
-                  placeholder="Category"
+                  placeholder="Describe the product..."
+                  rows={4}
                   required
                 />
               </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="price">Price ($)</Label>
+                  <Input
+                    id="price"
+                    name="price"
+                    type="number"
+                    step="0.01"
+                    value={formData.price || ''}
+                    onChange={handleChange}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="salePrice">Sale Price ($)</Label>
+                  <Input
+                    id="salePrice"
+                    name="salePrice"
+                    type="number"
+                    step="0.01"
+                    value={formData.salePrice || ''}
+                    onChange={handleChange}
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
             </div>
-            
-            <div>
-              <Label htmlFor="subcategory">Subcategory</Label>
-              <Input
-                id="subcategory"
-                name="subcategory"
-                value={formData.subcategory || ''}
-                onChange={handleChange}
-                placeholder="Subcategory (optional)"
-              />
-            </div>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="details" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="price">Price ($) *</Label>
-              <Input
-                id="price"
-                name="price"
-                type="number"
-                step="0.01"
-                value={formData.price || ''}
-                onChange={handleChange}
-                placeholder="Price"
-                required
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="salePrice">Sale Price ($)</Label>
-              <Input
-                id="salePrice"
-                name="salePrice"
-                type="number"
-                step="0.01"
-                value={formData.salePrice || ''}
-                onChange={handleChange}
-                placeholder="Sale Price (if applicable)"
-              />
-            </div>
-          </div>
+          </TabsContent>
           
-          <div>
-            <Label htmlFor="affiliateLink">Affiliate Link *</Label>
-            <Input
-              id="affiliateLink"
-              name="affiliateLink"
-              value={formData.affiliateLink || ''}
-              onChange={handleChange}
-              placeholder="https://example.com/product"
-              required
-            />
-          </div>
-          
-          <div>
-            <Label htmlFor="seller">Seller</Label>
-            <Input
-              id="seller"
-              name="seller"
-              value={formData.seller || ''}
-              onChange={handleChange}
-              placeholder="Seller/Store Name"
-            />
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="rating">Rating (0-5)</Label>
-              <Input
-                id="rating"
-                name="rating"
-                type="number"
-                min="0"
-                max="5"
-                step="0.1"
-                value={formData.rating ?? ''}
-                onChange={handleChange}
-                placeholder="Product Rating"
-              />
+          <TabsContent value="details" className="space-y-4">
+            <div className="grid gap-4">
+              <div>
+                <Label htmlFor="category">Category</Label>
+                <Select 
+                  name="category"
+                  value={formData.category || ''} 
+                  onValueChange={(value) => handleSelectChange('category', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="subcategory">Subcategory (Optional)</Label>
+                <Input
+                  id="subcategory"
+                  name="subcategory"
+                  value={formData.subcategory || ''}
+                  onChange={handleChange}
+                  placeholder="Subcategory"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="manufacturer">Manufacturer</Label>
+                <Select 
+                  name="manufacturer"
+                  value={formData.manufacturer || ''} 
+                  onValueChange={(value) => handleSelectChange('manufacturer', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Manufacturer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {manufacturers.map((manufacturer) => (
+                      <SelectItem key={manufacturer.id} value={manufacturer.id}>
+                        {manufacturer.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="affiliateLink">Affiliate Link</Label>
+                <Input
+                  id="affiliateLink"
+                  name="affiliateLink"
+                  value={formData.affiliateLink || ''}
+                  onChange={handleChange}
+                  placeholder="https://"
+                  required
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="featured"
+                    name="featured"
+                    checked={!!formData.featured}
+                    onChange={handleCheckboxChange}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  <Label htmlFor="featured">Featured Product</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="bestSeller"
+                    name="bestSeller"
+                    checked={!!formData.bestSeller}
+                    onChange={handleCheckboxChange}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  <Label htmlFor="bestSeller">Best Seller</Label>
+                </div>
+              </div>
             </div>
-            
-            <div>
-              <Label htmlFor="reviewCount">Review Count</Label>
-              <Input
-                id="reviewCount"
-                name="reviewCount"
-                type="number"
-                value={formData.reviewCount ?? ''}
-                onChange={handleChange}
-                placeholder="Number of Reviews"
-              />
-            </div>
-          </div>
+          </TabsContent>
           
-          <div>
-            <Label htmlFor="slug">Slug (URL-friendly name)</Label>
-            <Input
-              id="slug"
-              name="slug"
-              value={formData.slug || ''}
-              onChange={handleChange}
-              placeholder="product-name-slug"
-            />
-            <p className="text-xs text-slate-500 mt-1">
-              Leave blank to auto-generate from product name
-            </p>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="media" className="space-y-4">
-          <div>
-            <Label>Product Image</Label>
-            <div className="mt-2">
-              <ImageUploader 
-                initialImageUrl={formData.imageUrl} 
-                onImageUploaded={handleImageUpload}
-                maxWidth={800}
-              />
+          <TabsContent value="media" className="space-y-4">
+            <div className="grid gap-6">
+              <div>
+                <Label htmlFor="image">Product Image</Label>
+                <ImageUploader
+                  currentImageUrl={imageUrl}
+                  onImageUploaded={handleImageUpload}
+                  className="mt-2"
+                />
+              </div>
+              
+              <div>
+                <TagSelector
+                  selectedTags={selectedTags}
+                  onChange={handleTagsChange}
+                  label="Product Tags"
+                  placeholder="Add product tags..."
+                  suggestedTags={commonTags}
+                  className="mt-2"
+                />
+              </div>
             </div>
-          </div>
-          
-          <div>
-            <Label htmlFor="tags">Product Tags</Label>
-            <TagSelector
-              selectedTags={selectedTags}
-              onChange={setSelectedTags}
-              placeholder="Add product tags..."
-              suggestedTags={suggestedTags}
-            />
-          </div>
-          
-          <div className="space-y-4 pt-4">
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="featured"
-                checked={formData.featured || false}
-                onCheckedChange={(checked) => handleSwitchChange('featured', checked)}
-              />
-              <Label htmlFor="featured">Featured Product</Label>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="bestSeller"
-                checked={formData.bestSeller || false}
-                onCheckedChange={(checked) => handleSwitchChange('bestSeller', checked)}
-              />
-              <Label htmlFor="bestSeller">Best Seller</Label>
-            </div>
-          </div>
-        </TabsContent>
+          </TabsContent>
+        </div>
       </Tabs>
       
-      <div className="flex justify-end gap-2">
-        <Button
-          type="submit"
-          disabled={isLoading}
-        >
-          {isLoading ? 'Saving...' : (product ? 'Update Product' : 'Add Product')}
+      <div className="flex justify-end space-x-2">
+        <Button type="button" variant="outline">
+          Cancel
+        </Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Saving...' : product?.id ? 'Update Product' : 'Add Product'}
         </Button>
       </div>
     </form>
   );
-}
+};
+
+export default ProductForm;

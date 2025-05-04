@@ -47,6 +47,7 @@ export interface AffiliateTool {
   bestSeller?: boolean;
   affiliateLink: string;
   seller?: string;
+  tags?: string[]; // Added tags property
 }
 
 export interface ToolSubmission {
