@@ -4,12 +4,35 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { Tag } from 'lucide-react';
 
+// Define a stronger interface for category color styles
 interface CategoryColorStyle {
   bg: string;
   text: string;
   border: string;
+  icon?: React.ReactNode;
+  pattern?: string; // For background patterns
 }
+
+// Predefined color styles array with diverse, non-duplicating colors
+const DEFAULT_COLOR_STYLES: CategoryColorStyle[] = [
+  { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-300' },
+  { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-300' },
+  { bg: 'bg-purple-100', text: 'text-purple-800', border: 'border-purple-300' },
+  { bg: 'bg-amber-100', text: 'text-amber-800', border: 'border-amber-300' },
+  { bg: 'bg-pink-100', text: 'text-pink-800', border: 'border-pink-300' },
+  { bg: 'bg-teal-100', text: 'text-teal-800', border: 'border-teal-300' },
+  { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-300' },
+  { bg: 'bg-indigo-100', text: 'text-indigo-800', border: 'border-indigo-300' },
+  { bg: 'bg-orange-100', text: 'text-orange-800', border: 'border-orange-300' },
+  { bg: 'bg-cyan-100', text: 'text-cyan-800', border: 'border-cyan-300' },
+  { bg: 'bg-rose-100', text: 'text-rose-800', border: 'border-rose-300' },
+  { bg: 'bg-lime-100', text: 'text-lime-800', border: 'border-lime-300' },
+  { bg: 'bg-emerald-100', text: 'text-emerald-800', border: 'border-emerald-300' },
+  { bg: 'bg-sky-100', text: 'text-sky-800', border: 'border-sky-300' },
+  { bg: 'bg-fuchsia-100', text: 'text-fuchsia-800', border: 'border-fuchsia-300' },
+];
 
 interface ServiceHierarchyBrowserProps {
   categories: ServiceMainCategory[];
@@ -32,7 +55,7 @@ export const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = (
   selectedJobId,
   onSelectItem,
   categoryColorMap = {},
-  categoryColors = []
+  categoryColors = DEFAULT_COLOR_STYLES
 }) => {
   if (loading) {
     return (
@@ -62,15 +85,23 @@ export const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = (
   // Helper function to get color styles for a category
   const getCategoryColorStyle = (categoryId: string): CategoryColorStyle => {
     if (!categoryColorMap || !categoryColors || categoryColors.length === 0) {
-      return {
-        bg: 'bg-blue-100',
-        text: 'text-blue-800',
-        border: 'border-blue-300'
-      };
+      return DEFAULT_COLOR_STYLES[0];
     }
     
     const colorIndex = parseInt(categoryColorMap[categoryId] || '0');
     return categoryColors[colorIndex % categoryColors.length] || categoryColors[0];
+  };
+
+  // Function to generate a unique visual marker for each item
+  const getCategoryMarker = (categoryId: string, itemType: string) => {
+    const colorIndex = parseInt(categoryColorMap[categoryId] || '0') % categoryColors.length;
+    
+    // Add a visual marker based on type
+    if (itemType === 'category') {
+      return <Tag className="w-4 h-4 mr-1" />;
+    }
+    
+    return null;
   };
 
   return (
@@ -83,7 +114,7 @@ export const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = (
           </div>
           <ScrollArea className="h-[450px] rounded-b-xl">
             <div className="p-2">
-              {categories.map(category => {
+              {categories.map((category, index) => {
                 const colorStyle = getCategoryColorStyle(category.id);
                 
                 return (
@@ -97,7 +128,10 @@ export const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = (
                     onClick={() => onSelectItem('category', category.id)}
                   >
                     <div className="flex justify-between items-center">
-                      <span>{category.name}</span>
+                      <span className="flex items-center">
+                        {getCategoryMarker(category.id, 'category')}
+                        {category.name}
+                      </span>
                       <Badge 
                         className={`${colorStyle.bg} ${colorStyle.text} border ${colorStyle.border} text-xs`}
                       >
@@ -138,7 +172,10 @@ export const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = (
                           onClick={() => onSelectItem('subcategory', subcategory.id)}
                         >
                           <div className="flex justify-between items-center">
-                            <span>{subcategory.name}</span>
+                            <span className="flex items-center">
+                              <span className={`w-2 h-2 rounded-full ${colorStyle.bg} border ${colorStyle.border} mr-2`}></span>
+                              {subcategory.name}
+                            </span>
                             <Badge 
                               className={`${colorStyle.bg} ${colorStyle.text} border ${colorStyle.border} text-xs`}
                             >
@@ -192,8 +229,11 @@ export const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = (
                           }`}
                           onClick={() => onSelectItem('job', job.id)}
                         >
-                          <div className="font-medium">{job.name}</div>
-                          <div className="text-xs text-gray-500 flex justify-between mt-1">
+                          <div className="font-medium flex items-center gap-2">
+                            <span className={`w-1.5 h-1.5 rounded-full ${colorStyle.bg} border ${colorStyle.border}`}></span>
+                            {job.name}
+                          </div>
+                          <div className="text-xs text-gray-500 flex justify-between mt-1 pl-3">
                             <span>${job.price?.toFixed(2) || '0.00'}</span>
                             <span>{job.estimatedTime || 0} min</span>
                           </div>

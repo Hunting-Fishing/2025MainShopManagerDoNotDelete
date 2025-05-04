@@ -7,6 +7,32 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Tag } from 'lucide-react';
+
+interface CategoryColorStyle {
+  bg: string;
+  text: string;
+  border: string;
+}
+
+// Expanded color palette with distinct colors
+const DEFAULT_COLOR_STYLES: CategoryColorStyle[] = [
+  { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-300' },
+  { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-300' },
+  { bg: 'bg-purple-100', text: 'text-purple-800', border: 'border-purple-300' },
+  { bg: 'bg-amber-100', text: 'text-amber-800', border: 'border-amber-300' },
+  { bg: 'bg-pink-100', text: 'text-pink-800', border: 'border-pink-300' },
+  { bg: 'bg-teal-100', text: 'text-teal-800', border: 'border-teal-300' },
+  { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-300' },
+  { bg: 'bg-indigo-100', text: 'text-indigo-800', border: 'border-indigo-300' },
+  { bg: 'bg-orange-100', text: 'text-orange-800', border: 'border-orange-300' },
+  { bg: 'bg-cyan-100', text: 'text-cyan-800', border: 'border-cyan-300' },
+  { bg: 'bg-rose-100', text: 'text-rose-800', border: 'border-rose-300' },
+  { bg: 'bg-lime-100', text: 'text-lime-800', border: 'border-lime-300' },
+  { bg: 'bg-emerald-100', text: 'text-emerald-800', border: 'border-emerald-300' },
+  { bg: 'bg-sky-100', text: 'text-sky-800', border: 'border-sky-300' },
+  { bg: 'bg-fuchsia-100', text: 'text-fuchsia-800', border: 'border-fuchsia-300' },
+];
 
 interface ServiceEditorProps {
   category: ServiceMainCategory | undefined;
@@ -17,7 +43,7 @@ interface ServiceEditorProps {
     subcategory: ServiceSubcategory | null,
     job: ServiceJob | null
   ) => void;
-  categoryColors?: Array<{ bg: string; text: string; border: string }>;
+  categoryColors?: Array<CategoryColorStyle>;
   colorIndex?: number;
   onColorChange?: (index: number) => void;
 }
@@ -27,7 +53,7 @@ export const ServiceEditor: React.FC<ServiceEditorProps> = ({
   subcategory,
   job,
   onSave,
-  categoryColors = [],
+  categoryColors = DEFAULT_COLOR_STYLES,
   colorIndex = 0,
   onColorChange
 }) => {
@@ -172,23 +198,34 @@ export const ServiceEditor: React.FC<ServiceEditorProps> = ({
                 <div 
                   key={index} 
                   className={`
-                    w-8 h-8 rounded-full cursor-pointer 
+                    w-8 h-8 rounded-full cursor-pointer flex items-center justify-center
                     ${color.bg} ${color.border}
                     ${selectedColorIndex === index ? 'ring-2 ring-offset-2 ring-blue-500' : ''}
                   `}
                   onClick={() => setSelectedColorIndex(index)}
-                ></div>
+                >
+                  {selectedColorIndex === index && (
+                    <span className="w-2 h-2 rounded-full bg-white"></span>
+                  )}
+                </div>
               ))}
             </div>
-            <div className="mt-2">
-              <Badge className={`
-                ${categoryColors[selectedColorIndex].bg} 
-                ${categoryColors[selectedColorIndex].text} 
-                ${categoryColors[selectedColorIndex].border}
-              `}>
-                {editedName || 'Category Name'}
-              </Badge>
-              <span className="text-gray-500 text-xs ml-2">This is how the category will appear</span>
+            <div className="mt-4 bg-white p-3 border rounded-md shadow-sm">
+              <p className="text-xs text-gray-500 mb-2">Preview:</p>
+              <div className="flex items-center gap-2 mb-2">
+                <Tag className="h-4 w-4" />
+                <Badge className={`
+                  ${categoryColors[selectedColorIndex].bg} 
+                  ${categoryColors[selectedColorIndex].text} 
+                  ${categoryColors[selectedColorIndex].border}
+                `}>
+                  {editedName || 'Category Name'}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full ${categoryColors[selectedColorIndex].bg} border ${categoryColors[selectedColorIndex].border}`}></span>
+                <span className="text-sm">Example subcategory</span>
+              </div>
             </div>
           </div>
         )}
