@@ -1,5 +1,5 @@
 
-import { WorkOrder } from "@/data/workOrdersData";
+import { WorkOrder } from "@/types/workOrder";
 import { WorkOrderInventoryItem, TimeEntry } from "@/types/workOrder";
 
 // Maps our application WorkOrder type to Supabase database format

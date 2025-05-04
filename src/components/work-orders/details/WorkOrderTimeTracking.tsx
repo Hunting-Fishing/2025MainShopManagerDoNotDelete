@@ -2,9 +2,9 @@
 import React from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Clock, AlertTriangle } from "lucide-react";
-import { WorkOrder } from "@/data/workOrdersData";
+import { WorkOrder } from "@/types/workOrder";
 import { TimeEntry } from "@/types/workOrder";
-import { formatTimeInHoursAndMinutes } from "@/data/workOrdersData";
+import { formatTimeInHoursAndMinutes } from "@/utils/dateUtils";
 
 interface WorkOrderTimeTrackingProps {
   workOrder: WorkOrder;

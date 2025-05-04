@@ -3,14 +3,18 @@
  * Work order utilities for the application
  */
 import { WorkOrder } from "@/types/workOrder";
+
+// Re-export date formatting functions from dateUtils
 export { formatDate, formatTime, formatTimeInHoursAndMinutes } from "./dateUtils";
 
-// Import priorityMap from utils/workOrders
+// Re-export status and priority maps
 export { priorityMap, statusMap } from "./workOrders";
 
 /**
  * Normalizes a work order object to ensure consistent property access
  * regardless of different casing conventions (camelCase vs snake_case)
+ * 
+ * This function is also exported as normalizeWorkOrderObject for backward compatibility
  */
 export const normalizeWorkOrder = (workOrder: Partial<WorkOrder>): WorkOrder => {
   if (!workOrder) return {} as WorkOrder;
@@ -46,3 +50,15 @@ export const normalizeWorkOrder = (workOrder: Partial<WorkOrder>): WorkOrder => 
     lastUpdatedAt: workOrder.lastUpdatedAt || workOrder.updatedAt || workOrder.updated_at,
   } as WorkOrder;
 };
+
+// Add alias for normalizeWorkOrder to support existing code
+export const normalizeWorkOrderObject = normalizeWorkOrder;
+
+// Export commonly used WorkOrder types
+export type { WorkOrderStatusType, WorkOrderPriorityType } from "@/types/workOrder";
+
+// Export WorkOrderTypes namespace for backward compatibility
+export namespace WorkOrderTypes {
+  export type StatusType = "pending" | "in-progress" | "completed" | "cancelled";
+  export type PriorityType = "low" | "medium" | "high";
+}

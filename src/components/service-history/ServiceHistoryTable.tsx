@@ -2,8 +2,8 @@
 import { Link } from "react-router-dom";
 import { CalendarIcon, Clock, Wrench } from "lucide-react";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { formatDate } from "@/utils/workOrderUtils";
-import { WorkOrder } from "@/data/workOrdersData";
+import { formatDate } from "@/utils/dateUtils";
+import { WorkOrder } from "@/types/workOrder";
 
 interface ServiceHistoryTableProps {
   workOrders: WorkOrder[];

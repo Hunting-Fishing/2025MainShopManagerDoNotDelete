@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { FileText, History } from "lucide-react";
 import { ServiceHistoryTable } from "@/components/service-history/ServiceHistoryTable";
-import { WorkOrder } from "@/data/workOrdersData";
+import { WorkOrder } from "@/types/workOrder";
 
 interface EquipmentServiceHistoryProps {
   equipmentId: string;

@@ -21,7 +21,7 @@ export * from './email';
 export * from './form';
 export * from './payment';
 
-// Handle WorkOrder exports with explicit re-exports
+// Handle WorkOrder exports with explicit re-exports using 'export type'
 export type { 
   WorkOrderStatusType,
   WorkOrderPriorityType,

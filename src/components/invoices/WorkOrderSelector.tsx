@@ -3,7 +3,7 @@ import { WorkOrder } from "@/types/workOrder";
 import { useWorkOrderTimeEntries } from "@/hooks/invoice/useWorkOrderTimeEntries";
 import { createInvoiceUpdater } from "@/types/invoice";
 import { useState } from "react";
-import { normalizeWorkOrderObject } from "@/utils/workOrderUtils";
+import { normalizeWorkOrder } from "@/utils/workOrderUtils";
 
 interface WorkOrderSelectorProps {
   invoice: any;
@@ -23,7 +23,7 @@ export function useWorkOrderSelector({
   // Custom handler to select work order and include time entries
   const handleSelectWorkOrderWithTime = (workOrder: WorkOrder) => {
     // Normalize work order to ensure consistent property access
-    const normalizedWorkOrder = normalizeWorkOrderObject(workOrder);
+    const normalizedWorkOrder = normalizeWorkOrder(workOrder);
     
     // Update the selected work order
     setSelectedWorkOrder(normalizedWorkOrder);
