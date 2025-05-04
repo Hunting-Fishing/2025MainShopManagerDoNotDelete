@@ -6,7 +6,7 @@ import ServiceCategoryDetails from './hierarchy/ServiceCategoryDetails';
 import ServiceEditor from './ServiceEditor';
 import ServiceSearchBar from './hierarchy/ServiceSearchBar';
 import { useServiceHierarchy } from './hooks/useServiceHierarchy';
-import { CategoryColorStyle } from './ServiceEditor';
+import { DEFAULT_COLOR_STYLES } from './ServiceEditor';
 import { toast } from 'sonner';
 
 export default function ServiceHierarchyManager() {
@@ -107,7 +107,7 @@ export default function ServiceHierarchyManager() {
                 if (subcategory) handleSaveSubcategory(subcategory);
                 if (job) handleSaveJob(job);
               }}
-              categoryColors={categoryColors}
+              categoryColors={DEFAULT_COLOR_STYLES}
               colorIndex={selectedColorIndex}
               onColorChange={handleColorChange}
             />
@@ -118,5 +118,5 @@ export default function ServiceHierarchyManager() {
   );
 }
 
-// Export named component for better imports
+// Add named export for better imports
 export { default as ServiceHierarchyManager } from './ServiceHierarchyManager';

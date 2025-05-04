@@ -3,7 +3,7 @@ import React from 'react';
 import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
 import { formatTime } from '@/lib/services/serviceUtils';
 import { Badge } from '@/components/ui/badge';
-import { CategoryColorStyle } from '../ServiceEditor';
+import type { CategoryColorStyle } from '../ServiceEditor';
 import { DEFAULT_COLOR_STYLES } from '../ServiceEditor';
 
 interface ServiceCategoryDetailsProps {

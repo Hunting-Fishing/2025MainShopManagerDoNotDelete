@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +16,7 @@ export interface CategoryColorStyle {
 }
 
 // Expanded color palette with distinct colors
-const DEFAULT_COLOR_STYLES: CategoryColorStyle[] = [
+export const DEFAULT_COLOR_STYLES: CategoryColorStyle[] = [
   { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-300' },
   { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-300' },
   { bg: 'bg-purple-100', text: 'text-purple-800', border: 'border-purple-300' },
@@ -239,5 +240,5 @@ export const ServiceEditor: React.FC<ServiceEditorProps> = ({
 
 export default ServiceEditor;
 
-// Export CategoryColorStyle to make it accessible to other components
-export { CategoryColorStyle, DEFAULT_COLOR_STYLES };
+// Fix the export to use 'export type' for the type
+// Remove the duplicated export that was causing the conflict
