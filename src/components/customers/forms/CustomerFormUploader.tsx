@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +7,7 @@ import { FileUploader } from '@/components/shared/FileUploader';
 import { uploadCustomerForm } from '@/services/customerFormService';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { TagInput } from '@/components/customers/form/tag/TagInput';
+import { TagInput } from '@/components/customers/documents/TagInput';
 
 interface CustomerFormUploaderProps {
   customerId: string;

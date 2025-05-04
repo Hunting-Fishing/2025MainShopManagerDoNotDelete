@@ -36,7 +36,8 @@ export async function uploadCustomerForm({ file, customerId, title, description,
         file_name: file.name,
         file_type: file.type,
         file_size: file.size,
-        tags: tags
+        tags: tags,
+        status: 'pending' as const // Explicitly type as 'pending'
       })
       .select('*')
       .single();
@@ -58,7 +59,7 @@ export async function uploadCustomerForm({ file, customerId, title, description,
       fileType: formData.file_type,
       fileSize: formData.file_size,
       uploadDate: formData.upload_date,
-      status: formData.status,
+      status: formData.status as 'pending' | 'approved' | 'rejected',
       reviewedBy: formData.reviewed_by,
       reviewedAt: formData.reviewed_at,
       reviewNotes: formData.review_notes,
@@ -101,7 +102,7 @@ export async function getCustomerForms(customerId: string): Promise<CustomerProv
         fileType: form.file_type,
         fileSize: form.file_size,
         uploadDate: form.upload_date,
-        status: form.status,
+        status: form.status as 'pending' | 'approved' | 'rejected',
         reviewedBy: form.reviewed_by,
         reviewedAt: form.reviewed_at,
         reviewNotes: form.review_notes,
@@ -130,7 +131,7 @@ export async function getAllCustomerForms(): Promise<CustomerProvidedForm[]> {
   }
 
   // Transform data to match CustomerProvidedForm interface
-  return data.map(form => ({
+  const forms = data.map(form => ({
     id: form.id,
     title: form.title,
     description: form.description,
@@ -141,12 +142,14 @@ export async function getAllCustomerForms(): Promise<CustomerProvidedForm[]> {
     fileType: form.file_type,
     fileSize: form.file_size,
     uploadDate: form.upload_date,
-    status: form.status,
+    status: form.status as 'pending' | 'approved' | 'rejected',
     reviewedBy: form.reviewed_by,
     reviewedAt: form.reviewed_at,
     reviewNotes: form.review_notes,
     tags: form.tags || []
   }));
+
+  return forms;
 }
 
 // Update form status (approve/reject)
@@ -213,7 +216,7 @@ export async function getFormComments(formId: string): Promise<CustomerFormComme
     .from('customer_form_comments')
     .select(`
       *,
-      profiles(first_name, last_name)
+      profiles:user_id(first_name, last_name)
     `)
     .eq('form_id', formId)
     .order('created_at', { ascending: true });
@@ -223,13 +226,23 @@ export async function getFormComments(formId: string): Promise<CustomerFormComme
     return [];
   }
 
-  return data.map(comment => ({
-    id: comment.id,
-    formId: comment.form_id,
-    userId: comment.user_id,
-    userName: comment.profiles ? `${comment.profiles.first_name} ${comment.profiles.last_name}` : undefined,
-    comment: comment.comment,
-    createdAt: comment.created_at,
-    updatedAt: comment.updated_at
-  }));
+  return data.map(comment => {
+    // Check if profiles exists and has the expected properties
+    const userName = comment.profiles && 
+      typeof comment.profiles === 'object' && 
+      'first_name' in comment.profiles && 
+      'last_name' in comment.profiles
+      ? `${comment.profiles.first_name} ${comment.profiles.last_name}` 
+      : undefined;
+
+    return {
+      id: comment.id,
+      formId: comment.form_id,
+      userId: comment.user_id,
+      userName: userName,
+      comment: comment.comment,
+      createdAt: comment.created_at,
+      updatedAt: comment.updated_at
+    };
+  });
 }
