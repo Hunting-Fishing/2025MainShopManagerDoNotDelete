@@ -39,7 +39,7 @@ export function ServiceCategoriesList({
     const lowerCaseName = categoryName.toLowerCase();
     
     for (const key in categoryStyles) {
-      if (lowerCaseName.includes(key)) {
+      if (key === categoryName || (lowerCaseName.includes(key.toLowerCase()))) {
         return categoryStyles[key];
       }
     }
