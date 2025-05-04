@@ -235,13 +235,15 @@ export async function getFormComments(formId: string): Promise<CustomerFormComme
       const profiles = comment.profiles;
       
       // Use a type guard to ensure profiles is an object
-      // This helps TypeScript understand that profiles is not null when we access its properties
       if (typeof profiles === 'object' && profiles !== null) {
         // Now TypeScript knows profiles is a non-null object
         
-        // Safely extract firstName and lastName using optional chaining
-        const firstName = profiles && 'first_name' in profiles ? profiles.first_name : undefined;
-        const lastName = profiles && 'last_name' in profiles ? profiles.last_name : undefined;
+        // Type assertion to help TypeScript understand the structure
+        const typedProfiles = profiles as { first_name?: string, last_name?: string };
+        
+        // Safely extract firstName and lastName
+        const firstName = typedProfiles.first_name;
+        const lastName = typedProfiles.last_name;
         
         // Only set the userName if both first_name and last_name exist and are non-empty
         if (firstName && lastName) {
