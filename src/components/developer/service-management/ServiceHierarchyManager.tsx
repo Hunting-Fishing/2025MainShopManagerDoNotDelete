@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from '@/hooks/use-toast';
@@ -8,8 +8,9 @@ import {
   ServiceSubcategory, 
   ServiceJob 
 } from '@/types/serviceHierarchy';
-import { parseExcelData } from '@/lib/services/excelParser';
+import { parseExcelData, exportToExcel } from '@/lib/services/excelParser';
 import { createEmptyCategory } from '@/lib/services/serviceUtils';
+import { fetchServiceCategories, saveServiceCategory, bulkImportServiceCategories } from '@/lib/services/serviceApi';
 
 import { ServiceHierarchyBrowser } from './ServiceHierarchyBrowser';
 import { ServiceEditor } from './ServiceEditor';
@@ -20,7 +21,8 @@ import {
   BarChart3, 
   FileSpreadsheet, 
   List, 
-  PlusCircle 
+  PlusCircle,
+  Download 
 } from 'lucide-react';
 import ServicesPriceReport from './ServicesPriceReport';
 import ServiceBulkImport from './ServiceBulkImport';
@@ -33,13 +35,44 @@ const ServiceHierarchyManager: React.FC = () => {
   const [activeTab, setActiveTab] = useState('browser');
   const [isLoading, setIsLoading] = useState(false);
   
+  // Load data on component mount
+  useEffect(() => {
+    loadServiceData();
+  }, []);
+
+  const loadServiceData = async () => {
+    try {
+      setIsLoading(true);
+      const data = await fetchServiceCategories();
+      setCategories(data);
+      if (data.length > 0) {
+        setSelectedCategory(data[0]);
+        if (data[0].subcategories.length > 0) {
+          setSelectedSubcategory(data[0].subcategories[0]);
+          if (data[0].subcategories[0].jobs.length > 0) {
+            setSelectedJob(data[0].subcategories[0].jobs[0]);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load service data:", error);
+      toast({
+        title: "Failed to load services",
+        description: "Could not load service data. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   // Function to add a new category
   const handleAddCategory = () => {
     const newCategory = createEmptyCategory(categories.length);
     setCategories([...categories, newCategory]);
     setSelectedCategory(newCategory);
-    setSelectedSubcategory(null);
-    setSelectedJob(null);
+    setSelectedSubcategory(newCategory.subcategories[0]);
+    setSelectedJob(newCategory.subcategories[0].jobs[0]);
     toast({
       title: "Category Added",
       description: "New category has been created successfully."
@@ -50,57 +83,40 @@ const ServiceHierarchyManager: React.FC = () => {
   const handleFileUpload = async (file: File) => {
     setIsLoading(true);
     try {
-      // Read the file
-      const reader = new FileReader();
+      // Parse the Excel file
+      const parsedCategories = await parseExcelData(file);
       
-      reader.onload = async (e) => {
+      if (parsedCategories.length > 0) {
+        // Update local state
+        setCategories([...categories, ...parsedCategories]);
+        
+        // Save to database
         try {
-          // Parse the data from the Excel file
-          const data = JSON.parse(e.target?.result as string);
-          const parsedCategories = parseExcelData(data);
-          
-          if (parsedCategories.length > 0) {
-            setCategories([...categories, ...parsedCategories]);
-            toast({
-              title: "Import Successful",
-              description: `Imported ${parsedCategories.length} categories with services.`
-            });
-          } else {
-            toast({
-              title: "Import Warning",
-              description: "No valid service data found in the file.",
-              variant: "destructive"
-            });
-          }
+          await bulkImportServiceCategories(parsedCategories);
         } catch (error) {
-          console.error("Error parsing data:", error);
-          toast({
-            title: "Import Failed",
-            description: "Failed to parse the Excel data. Please check the file format.",
-            variant: "destructive"
-          });
-        } finally {
-          setIsLoading(false);
+          console.error("Error saving to database:", error);
+          // Continue with local state update even if db save fails
         }
-      };
-      
-      reader.onerror = () => {
+        
         toast({
-          title: "Import Failed",
-          description: "Failed to read the file. Please try again.",
+          title: "Import Successful",
+          description: `Imported ${parsedCategories.length} categories with services.`
+        });
+      } else {
+        toast({
+          title: "Import Warning",
+          description: "No valid service data found in the file.",
           variant: "destructive"
         });
-        setIsLoading(false);
-      };
-      
-      reader.readAsText(file);
+      }
     } catch (error) {
-      console.error("Error uploading file:", error);
+      console.error("Error parsing data:", error);
       toast({
         title: "Import Failed",
-        description: "An error occurred during import. Please try again.",
+        description: "Failed to parse the Excel data. Please check the file format.",
         variant: "destructive"
       });
+    } finally {
       setIsLoading(false);
     }
   };
@@ -111,6 +127,14 @@ const ServiceHierarchyManager: React.FC = () => {
       cat.id === updatedCategory.id ? updatedCategory : cat
     ));
     setSelectedCategory(updatedCategory);
+    
+    // Save to database
+    try {
+      saveServiceCategory(updatedCategory);
+    } catch (error) {
+      console.error("Error saving category:", error);
+    }
+    
     toast({
       title: "Category Updated",
       description: "Category has been updated successfully."
@@ -141,6 +165,33 @@ const ServiceHierarchyManager: React.FC = () => {
     setSelectedCategory(parentCategory);
     setSelectedSubcategory(parentSubcategory);
     setSelectedJob(job);
+  };
+
+  // Handle export to Excel
+  const handleExportToExcel = () => {
+    if (categories.length === 0) {
+      toast({
+        title: "Export Failed",
+        description: "No service data to export.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      exportToExcel(categories, "service-catalog");
+      toast({
+        title: "Export Successful",
+        description: "Service catalog exported to Excel."
+      });
+    } catch (error) {
+      console.error("Export error:", error);
+      toast({
+        title: "Export Failed",
+        description: "Failed to export data to Excel.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -179,6 +230,14 @@ const ServiceHierarchyManager: React.FC = () => {
                 Add Category
               </Button>
               <ServiceBulkImport onFileUpload={handleFileUpload} isLoading={isLoading} />
+              <Button 
+                onClick={handleExportToExcel}
+                variant="outline"
+                className="ml-2"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Export to Excel
+              </Button>
             </div>
           </div>
 
