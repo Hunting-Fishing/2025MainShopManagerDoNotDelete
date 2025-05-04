@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -124,7 +123,7 @@ export default function ShoppingControls() {
           <TabsList className="bg-white dark:bg-slate-800 rounded-full p-1 border shadow-sm">
             <TabsTrigger value="products" className="rounded-full text-sm px-4 py-2">
               Products
-              <Badge variant="outline" className="ml-2 bg-blue-100 text-blue-800 border-blue-300">
+              <Badge variant="info" className="ml-2">
                 Shop
               </Badge>
             </TabsTrigger>
@@ -133,7 +132,7 @@ export default function ShoppingControls() {
             </TabsTrigger>
             <TabsTrigger value="submissions" className="rounded-full text-sm px-4 py-2">
               User Submissions
-              <Badge variant="outline" className="ml-2 bg-amber-100 text-amber-800 border-amber-300">
+              <Badge variant="warning" className="ml-2">
                 New
               </Badge>
             </TabsTrigger>

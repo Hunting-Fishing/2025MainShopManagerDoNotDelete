@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from '@/components/ui/button';
-import { Plus, PenLine, Trash2, Import, FileDownload, Filter, Search, SortDesc } from 'lucide-react';
+import { Plus, PenLine, Trash2, Import, Download, Filter, Search, SortDesc } from 'lucide-react';
 import { useProductsManager } from '@/hooks/affiliate/useProductsManager';
 import { AffiliateTool } from '@/types/affiliate';
 import ProductsList from './ProductsList';
@@ -159,7 +159,7 @@ const ProductsManagement: React.FC<ProductsManagementProps> = ({ categoryName, c
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="outline" size="icon" onClick={handleExport}>
-                  <FileDownload className="h-4 w-4" />
+                  <Download className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>

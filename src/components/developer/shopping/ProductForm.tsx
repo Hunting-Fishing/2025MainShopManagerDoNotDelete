@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -79,8 +78,7 @@ export default function ProductForm({
     // Basic validation
     if (!formData.name || !formData.category || !formData.manufacturer || !formData.affiliateLink) {
       toast("Missing required fields", {
-        description: "Please fill out all required fields",
-        variant: "destructive"
+        description: "Please fill out all required fields"
       });
       return;
     }
@@ -88,14 +86,12 @@ export default function ProductForm({
     try {
       await onSubmit(formData);
       toast("Success", {
-        description: `Product ${product ? 'updated' : 'created'} successfully.`,
-        variant: "success"
+        description: `Product ${product ? 'updated' : 'created'} successfully.`
       });
     } catch (error) {
       console.error("Error submitting product:", error);
       toast("Error", {
-        description: "Failed to save product. Please try again.",
-        variant: "destructive"
+        description: "Failed to save product. Please try again."
       });
     }
   };
