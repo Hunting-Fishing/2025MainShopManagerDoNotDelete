@@ -1,392 +1,510 @@
-
-import React, { useState, useEffect, useCallback } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Plus, FilePlus, Trash2 } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useToast } from "@/components/ui/use-toast";
-import { 
-  ServiceMainCategory, 
-  ServiceSubcategory,
-  ServiceJob,
-  CategoryColorStyle
-} from "@/types/serviceHierarchy";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PlusCircle, Upload, FilePlus, Trash2, Search } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from "@/types/serviceHierarchy";
+import { ServiceSearchBar } from "./hierarchy/ServiceSearchBar";
 import { ServiceCategoriesList } from "./hierarchy/ServiceCategoriesList";
 import { ServiceEditor } from "./ServiceEditor";
 import ServiceBulkImport from "./ServiceBulkImport";
 import { fetchServiceCategories, saveServiceCategory, deleteServiceCategory } from "@/lib/services/serviceApi";
 import { v4 as uuidv4 } from 'uuid';
-import { DEFAULT_COLOR_STYLES } from './ServiceEditor';
 
-interface ServiceHierarchyState {
-  categories: ServiceMainCategory[];
-  selectedCategory: ServiceMainCategory | null;
-  selectedSubcategory: ServiceSubcategory | null;
-  selectedJob: ServiceJob | null;
-  isLoading: boolean;
-  isImportModalOpen: boolean;
-  categoryColorStyles: Record<string, CategoryColorStyle>;
-}
-
-const ServiceHierarchyManager: React.FC = () => {
-  const [state, setState] = useState<ServiceHierarchyState>({
-    categories: [],
-    selectedCategory: null,
-    selectedSubcategory: null,
-    selectedJob: null,
-    isLoading: true,
-    isImportModalOpen: false,
-    categoryColorStyles: {}
-  });
+export const ServiceHierarchyManager = () => {
   const { toast } = useToast();
+  const [categories, setCategories] = useState<ServiceMainCategory[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string | null>(null);
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [showBulkImportDialog, setShowBulkImportDialog] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<string>("categories");
 
-  const loadCategories = useCallback(async () => {
-    setState(prev => ({ ...prev, isLoading: true }));
-    try {
-      const data = await fetchServiceCategories();
-      setState(prev => ({ 
-        ...prev, 
-        categories: data,
-        isLoading: false,
-      }));
-    } catch (error) {
-      console.error("Failed to load service categories:", error);
-      toast({
-        title: "Error loading service categories",
-        description: "Could not load service categories. Please try again later.",
-        variant: "destructive",
-      });
-      setState(prev => ({ ...prev, isLoading: false }));
-    }
-  }, [toast]);
+  // Category styles for visual differentiation
+  const categoryStyles = {
+    "engine": { bg: "bg-red-50", text: "text-red-800", border: "border-red-200" },
+    "electrical": { bg: "bg-purple-50", text: "text-purple-800", border: "border-purple-200" },
+    "transmission": { bg: "bg-amber-50", text: "text-amber-800", border: "border-amber-200" },
+    "brakes": { bg: "bg-blue-50", text: "text-blue-800", border: "border-blue-200" },
+    "body": { bg: "bg-orange-50", text: "text-orange-800", border: "border-orange-200" },
+    "interior": { bg: "bg-cyan-50", text: "text-cyan-800", border: "border-cyan-200" },
+    "suspension": { bg: "bg-green-50", text: "text-green-800", border: "border-green-200" },
+    "custom": { bg: "bg-slate-50", text: "text-slate-800", border: "border-slate-200" }
+  };
 
+  // Fetch categories on component mount
   useEffect(() => {
     loadCategories();
-  }, [loadCategories]);
+  }, []);
 
-  const handleCategorySelect = (categoryId: string) => {
-    const category = state.categories.find(c => c.id === categoryId) || null;
-    setState(prev => ({ 
-      ...prev, 
-      selectedCategory: category,
-      selectedSubcategory: null,
-      selectedJob: null
-    }));
+  // Load categories from API
+  const loadCategories = async () => {
+    setIsLoading(true);
+    try {
+      const data = await fetchServiceCategories();
+      setCategories(data);
+      
+      // If we have categories, select the first one by default
+      if (data.length > 0 && !selectedCategoryId) {
+        setSelectedCategoryId(data[0].id);
+      }
+    } catch (error) {
+      console.error("Error loading service categories:", error);
+      toast({
+        title: "Error",
+        description: "Could not load service categories",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleSubcategorySelect = (subcategoryId: string) => {
-    if (!state.selectedCategory) return;
+  // Filter categories based on search query
+  const filteredCategories = useMemo(() => {
+    if (!searchQuery) return categories;
     
-    const subcategory = state.selectedCategory.subcategories?.find(sc => sc.id === subcategoryId) || null;
-    setState(prev => ({ 
-      ...prev, 
-      selectedSubcategory: subcategory,
-      selectedJob: null
-    }));
-  };
+    return categories.map(category => {
+      // Check if category name matches
+      const categoryMatches = category.name.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      // Filter subcategories
+      const filteredSubcategories = category.subcategories?.filter(subcategory => {
+        // Check if subcategory name matches
+        const subcategoryMatches = subcategory.name.toLowerCase().includes(searchQuery.toLowerCase());
+        
+        // Filter jobs
+        const filteredJobs = subcategory.jobs?.filter(job => 
+          job.name.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        
+        // Return subcategory if it matches or has matching jobs
+        return subcategoryMatches || (filteredJobs && filteredJobs.length > 0);
+      });
+      
+      // If category matches or has matching subcategories, return modified category
+      if (categoryMatches || (filteredSubcategories && filteredSubcategories.length > 0)) {
+        return {
+          ...category,
+          subcategories: filteredSubcategories
+        };
+      }
+      
+      // Otherwise return null (will be filtered out)
+      return null;
+    }).filter(Boolean) as ServiceMainCategory[];
+  }, [categories, searchQuery]);
 
-  const handleJobSelect = (jobId: string) => {
-    if (!state.selectedCategory || !state.selectedSubcategory) return;
-    
-    const job = state.selectedSubcategory.jobs?.find(j => j.id === jobId) || null;
-    setState(prev => ({ 
-      ...prev, 
-      selectedJob: job
-    }));
-  };
+  // Find selected entities
+  const selectedCategory = useMemo(() => 
+    categories.find(c => c.id === selectedCategoryId),
+    [categories, selectedCategoryId]
+  );
 
-  const handleAddCategory = () => {
-    const maxPosition = Math.max(0, ...state.categories.map(c => c.position || 0));
+  const selectedSubcategory = useMemo(() => {
+    if (!selectedCategory || !selectedSubcategoryId) return null;
+    return selectedCategory.subcategories?.find(s => s.id === selectedSubcategoryId) || null;
+  }, [selectedCategory, selectedSubcategoryId]);
+
+  const selectedJob = useMemo(() => {
+    if (!selectedSubcategory || !selectedJobId) return null;
+    return selectedSubcategory.jobs?.find(j => j.id === selectedJobId) || null;
+  }, [selectedSubcategory, selectedJobId]);
+
+  // Create a new category
+  const handleCreateCategory = async () => {
     const newCategory: ServiceMainCategory = {
       id: uuidv4(),
-      name: 'New Category',
-      description: '',
-      position: maxPosition + 1,
-      subcategories: [{
-        id: uuidv4(),
-        name: 'New Subcategory',
-        jobs: [{
-          id: uuidv4(),
-          name: 'New Service',
-          price: 0,
-          estimatedTime: 30
-        }]
-      }]
+      name: "New Category",
+      description: "",
+      position: categories.length,
+      subcategories: []
     };
     
-    setState(prev => ({ 
-      ...prev, 
-      categories: [...prev.categories, newCategory],
-      selectedCategory: newCategory,
-      selectedSubcategory: newCategory.subcategories?.[0] || null,
-      selectedJob: newCategory.subcategories?.[0]?.jobs?.[0] || null
-    }));
+    try {
+      const savedCategory = await saveServiceCategory(newCategory);
+      setCategories([...categories, savedCategory]);
+      setSelectedCategoryId(savedCategory.id);
+      setSelectedSubcategoryId(null);
+      setSelectedJobId(null);
+      setActiveTab("editor");
+      
+      toast({
+        title: "Success",
+        description: "New category created",
+      });
+    } catch (error) {
+      console.error("Error creating category:", error);
+      toast({
+        title: "Error",
+        description: "Could not create new category",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleAddSubcategory = () => {
-    if (!state.selectedCategory) return;
+  // Create a new subcategory
+  const handleCreateSubcategory = () => {
+    if (!selectedCategory) {
+      toast({
+        title: "Warning",
+        description: "Please select a category first",
+        variant: "warning",
+      });
+      return;
+    }
     
     const newSubcategory: ServiceSubcategory = {
       id: uuidv4(),
-      name: 'New Subcategory',
-      jobs: [{
-        id: uuidv4(),
-        name: 'New Service',
-        price: 0,
-        estimatedTime: 30
-      }]
-    };
-    
-    const updatedCategory = { 
-      ...state.selectedCategory,
-      subcategories: [...(state.selectedCategory.subcategories || []), newSubcategory] 
-    };
-    
-    setState(prev => ({
-      ...prev,
-      categories: prev.categories.map(c => 
-        c.id === updatedCategory.id ? updatedCategory : c
-      ),
-      selectedCategory: updatedCategory,
-      selectedSubcategory: newSubcategory,
-      selectedJob: newSubcategory.jobs?.[0] || null
-    }));
-  };
-
-  const handleAddJob = () => {
-    if (!state.selectedCategory || !state.selectedSubcategory) return;
-    
-    const newJob: ServiceJob = {
-      id: uuidv4(),
-      name: 'New Service',
-      price: 0,
-      estimatedTime: 30
-    };
-    
-    const updatedSubcategory = {
-      ...state.selectedSubcategory,
-      jobs: [...(state.selectedSubcategory.jobs || []), newJob]
+      name: "New Subcategory",
+      description: "",
+      jobs: []
     };
     
     const updatedCategory = {
-      ...state.selectedCategory,
-      subcategories: (state.selectedCategory.subcategories || []).map(sc => 
-        sc.id === updatedSubcategory.id ? updatedSubcategory : sc
-      )
+      ...selectedCategory,
+      subcategories: [...(selectedCategory.subcategories || []), newSubcategory]
     };
     
-    setState(prev => ({
-      ...prev,
-      categories: prev.categories.map(c => 
-        c.id === updatedCategory.id ? updatedCategory : c
-      ),
-      selectedCategory: updatedCategory,
-      selectedSubcategory: updatedSubcategory,
-      selectedJob: newJob
-    }));
+    handleSaveCategory(updatedCategory);
+    setSelectedSubcategoryId(newSubcategory.id);
+    setSelectedJobId(null);
+    setActiveTab("editor");
   };
 
-  const handleSaveItem = async (
-    category: ServiceMainCategory | null,
-    subcategory: ServiceSubcategory | null,
-    job: ServiceJob | null
-  ) => {
-    if (!state.selectedCategory) return;
+  // Create a new job
+  const handleCreateJob = () => {
+    if (!selectedCategory || !selectedSubcategory) {
+      toast({
+        title: "Warning",
+        description: "Please select a subcategory first",
+        variant: "warning",
+      });
+      return;
+    }
     
-    try {
-      let updatedCategory = { ...state.selectedCategory };
-      
-      if (category) {
-        updatedCategory = { ...updatedCategory, ...category };
-      } else if (subcategory && state.selectedSubcategory) {
-        updatedCategory = {
-          ...updatedCategory,
-          subcategories: (updatedCategory.subcategories || []).map(sc => 
-            sc.id === state.selectedSubcategory?.id ? subcategory : sc
-          )
-        };
-      } else if (job && state.selectedSubcategory) {
-        const updatedSubcategory = {
-          ...state.selectedSubcategory,
-          jobs: (state.selectedSubcategory.jobs || []).map(j => 
-            j.id === job.id ? job : j
-          )
-        };
-        
-        updatedCategory = {
-          ...updatedCategory,
-          subcategories: (updatedCategory.subcategories || []).map(sc => 
-            sc.id === updatedSubcategory.id ? updatedSubcategory : sc
-          )
+    const newJob: ServiceJob = {
+      id: uuidv4(),
+      name: "New Job",
+      description: "",
+      estimatedTime: 60,
+      price: 0
+    };
+    
+    const updatedSubcategories = selectedCategory.subcategories?.map(sub => {
+      if (sub.id === selectedSubcategoryId) {
+        return {
+          ...sub,
+          jobs: [...(sub.jobs || []), newJob]
         };
       }
+      return sub;
+    });
+    
+    const updatedCategory = {
+      ...selectedCategory,
+      subcategories: updatedSubcategories
+    };
+    
+    handleSaveCategory(updatedCategory);
+    setSelectedJobId(newJob.id);
+    setActiveTab("editor");
+  };
+
+  // Save updated category
+  const handleSaveCategory = async (updatedCategory: ServiceMainCategory) => {
+    try {
+      const saved = await saveServiceCategory(updatedCategory);
       
-      const savedCategory = await saveServiceCategory(updatedCategory);
-      
-      setState(prev => ({
-        ...prev,
-        categories: prev.categories.map(c => c.id === savedCategory.id ? savedCategory : c),
-        selectedCategory: savedCategory,
-        selectedSubcategory: subcategory || prev.selectedSubcategory,
-        selectedJob: job || prev.selectedJob
-      }));
+      setCategories(prevCategories => {
+        return prevCategories.map(category => 
+          category.id === saved.id ? saved : category
+        );
+      });
       
       toast({
         title: "Success",
-        description: "Service item updated successfully",
+        description: "Changes saved successfully",
       });
     } catch (error) {
-      console.error("Failed to save service item:", error);
+      console.error("Error saving category:", error);
       toast({
         title: "Error",
-        description: "Failed to save service item. Please try again.",
+        description: "Could not save changes",
         variant: "destructive",
       });
     }
   };
 
-  const handleDeleteCategory = async (categoryId: string) => {
-    try {
-      await deleteServiceCategory(categoryId);
+  // Delete selected item (category, subcategory, or job)
+  const handleDeleteSelected = async () => {
+    if (selectedJobId && selectedSubcategoryId && selectedCategoryId) {
+      // Delete job
+      const updatedSubcategory = {
+        ...selectedSubcategory!,
+        jobs: selectedSubcategory!.jobs?.filter(job => job.id !== selectedJobId)
+      };
       
-      setState(prev => ({
-        ...prev,
-        categories: prev.categories.filter(c => c.id !== categoryId),
-        selectedCategory: null,
-        selectedSubcategory: null,
-        selectedJob: null
-      }));
+      const updatedCategory = {
+        ...selectedCategory!,
+        subcategories: selectedCategory!.subcategories?.map(sub => 
+          sub.id === selectedSubcategoryId ? updatedSubcategory : sub
+        )
+      };
       
+      await handleSaveCategory(updatedCategory);
+      setSelectedJobId(null);
       toast({
         title: "Success",
-        description: "Category deleted successfully",
+        description: "Job deleted successfully"
       });
-    } catch (error) {
-      console.error("Failed to delete category:", error);
+    }
+    else if (selectedSubcategoryId && selectedCategoryId) {
+      // Delete subcategory
+      const updatedCategory = {
+        ...selectedCategory!,
+        subcategories: selectedCategory!.subcategories?.filter(sub => sub.id !== selectedSubcategoryId)
+      };
+      
+      await handleSaveCategory(updatedCategory);
+      setSelectedSubcategoryId(null);
+      setSelectedJobId(null);
       toast({
-        title: "Error",
-        description: "Failed to delete category. Please try again.",
-        variant: "destructive",
+        title: "Success",
+        description: "Subcategory deleted successfully"
       });
+    }
+    else if (selectedCategoryId) {
+      // Delete category
+      try {
+        await deleteServiceCategory(selectedCategoryId);
+        setCategories(categories.filter(c => c.id !== selectedCategoryId));
+        setSelectedCategoryId(categories.length > 1 ? categories[0].id : null);
+        setSelectedSubcategoryId(null);
+        setSelectedJobId(null);
+        toast({
+          title: "Success",
+          description: "Category deleted successfully"
+        });
+      } catch (error) {
+        console.error("Error deleting category:", error);
+        toast({
+          title: "Error",
+          description: "Could not delete category",
+          variant: "destructive",
+        });
+      }
     }
   };
 
-  const handleColorChange = (index: number) => {
-    if (!state.selectedCategory) return;
-    
-    const categoryId = state.selectedCategory.id;
-    setState(prev => ({
-      ...prev,
-      categoryColorStyles: {
-        ...prev.categoryColorStyles,
-        [categoryId]: DEFAULT_COLOR_STYLES[index]
-      }
-    }));
-  };
-
+  // Handle bulk import completion
   const handleImportComplete = () => {
-    setState(prev => ({ ...prev, isImportModalOpen: false }));
     loadCategories();
+    setShowBulkImportDialog(false);
     toast({
-      title: "Import Successful",
-      description: "Service categories imported successfully",
+      title: "Success",
+      description: "Service data imported successfully"
     });
   };
 
-  // Get the color style for the current category
-  const selectedCategoryColorIndex = state.selectedCategory 
-    ? DEFAULT_COLOR_STYLES.findIndex(style => 
-        JSON.stringify(style) === JSON.stringify(state.categoryColorStyles[state.selectedCategory.id])
-      )
-    : 0;
-
-  // Use the default color (index 0) if no match is found
-  const colorIndex = selectedCategoryColorIndex >= 0 ? selectedCategoryColorIndex : 0;
-
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <Card className="lg:col-span-1">
-        <CardContent className="p-4">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-medium text-lg">Service Categories</h3>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setState(prev => ({ ...prev, isImportModalOpen: true }))}>
-                <FilePlus className="h-4 w-4 mr-1" />
-                Import
-              </Button>
-              <Button variant="default" size="sm" onClick={handleAddCategory}>
-                <Plus className="h-4 w-4 mr-1" />
-                Add
-              </Button>
-            </div>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Left panel - Categories list */}
+      <Card className="md:col-span-1 overflow-hidden">
+        <CardHeader className="bg-slate-50 border-b">
+          <div className="flex justify-between items-center mb-2">
+            <CardTitle className="text-lg">Service Hierarchy</CardTitle>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowBulkImportDialog(true)}
+              className="text-xs h-8"
+            >
+              <Upload className="h-3.5 w-3.5 mr-1" />
+              Import
+            </Button>
+          </div>
+          <ServiceSearchBar 
+            onSearch={(query) => setSearchQuery(query)}
+            query={searchQuery}
+            onQueryChange={setSearchQuery}
+            placeholder="Search services..."
+          />
+        </CardHeader>
+        <CardContent className="pt-4">
+          <div className="flex gap-2 mb-4">
+            <Button onClick={handleCreateCategory} size="sm" className="flex-1 bg-green-600 hover:bg-green-700">
+              <PlusCircle className="h-4 w-4 mr-1" />
+              Category
+            </Button>
+            <Button 
+              onClick={handleCreateSubcategory} 
+              size="sm" 
+              className="flex-1"
+              disabled={!selectedCategoryId}
+            >
+              <PlusCircle className="h-4 w-4 mr-1" />
+              Subcategory
+            </Button>
+            <Button 
+              onClick={handleCreateJob} 
+              size="sm" 
+              className="flex-1"
+              disabled={!selectedSubcategoryId}
+            >
+              <PlusCircle className="h-4 w-4 mr-1" />
+              Job
+            </Button>
           </div>
 
           <ServiceCategoriesList
-            categories={state.categories}
-            selectedCategoryId={state.selectedCategory?.id || null}
-            selectedSubcategoryId={state.selectedSubcategory?.id || null}
-            selectedJobId={state.selectedJob?.id || null}
-            onCategorySelect={handleCategorySelect}
-            onSubcategorySelect={handleSubcategorySelect}
-            onJobSelect={handleJobSelect}
-            isLoading={state.isLoading}
-            categoryStyles={state.categoryColorStyles}
+            categories={filteredCategories}
+            selectedCategoryId={selectedCategoryId}
+            selectedSubcategoryId={selectedSubcategoryId}
+            selectedJobId={selectedJobId}
+            onCategorySelect={setSelectedCategoryId}
+            onSubcategorySelect={(id) => {
+              setSelectedSubcategoryId(id);
+              setSelectedJobId(null);
+            }}
+            onJobSelect={setSelectedJobId}
+            isLoading={isLoading}
+            categoryStyles={categoryStyles}
           />
         </CardContent>
       </Card>
 
-      <Card className="lg:col-span-2">
-        <CardContent className="p-4">
-          {state.selectedCategory ? (
-            <div className="flex flex-col space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="font-medium text-lg">Edit Service</h3>
-                <div className="space-x-2">
-                  {state.selectedSubcategory && (
-                    <Button variant="outline" size="sm" onClick={handleAddJob}>
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add Service
-                    </Button>
-                  )}
-                  {state.selectedCategory && (
-                    <Button variant="outline" size="sm" onClick={handleAddSubcategory}>
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add Subcategory
-                    </Button>
-                  )}
+      {/* Right panel - Editor */}
+      <Card className="md:col-span-2">
+        <CardHeader className="bg-slate-50 border-b pb-3">
+          <div className="flex justify-between items-center">
+            <Tabs 
+              value={activeTab} 
+              onValueChange={setActiveTab}
+              className="w-full"
+            >
+              <TabsList>
+                <TabsTrigger value="categories">Categories</TabsTrigger>
+                <TabsTrigger value="editor">Editor</TabsTrigger>
+                <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            
+            {(selectedCategoryId || selectedSubcategoryId || selectedJobId) && (
+              <Button 
+                variant="destructive" 
+                size="sm" 
+                onClick={handleDeleteSelected}
+                className="ml-4"
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Delete
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <TabsContent value="categories" className="mt-0">
+            {selectedCategory && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Categories Overview</h3>
+                <p className="text-sm text-slate-500">
+                  Manage your service categories, subcategories, and jobs. Select an item from the left panel to edit its details.
+                </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                  {categories.map(category => (
+                    <Card key={category.id} className="overflow-hidden border hover:shadow-md transition-shadow cursor-pointer"
+                      onClick={() => {
+                        setSelectedCategoryId(category.id);
+                        setActiveTab("editor");
+                      }}>
+                      <CardHeader className={`py-3 px-4 ${getCategoryHeaderClass(category.name)}`}>
+                        <CardTitle className="text-base">{category.name}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-4">
+                        <div className="text-sm text-slate-500">
+                          {category.subcategories?.length || 0} subcategories
+                        </div>
+                        <div className="text-xs text-slate-400 mt-1">
+                          {countJobs(category)} jobs
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
               </div>
-
-              <ServiceEditor
-                category={state.selectedCategory}
-                subcategory={state.selectedSubcategory}
-                job={state.selectedJob}
-                onSave={handleSaveItem}
-                onDelete={handleDeleteCategory}
-                categoryColors={DEFAULT_COLOR_STYLES}
-                colorIndex={colorIndex}
-                onColorChange={handleColorChange}
-              />
+            )}
+            
+            {!selectedCategory && !isLoading && (
+              <div className="text-center p-8 border border-dashed rounded-lg">
+                <div className="mb-2 text-lg font-medium">No Category Selected</div>
+                <p className="text-slate-500 mb-4">Select a category from the list or create a new one</p>
+                <Button onClick={handleCreateCategory}>
+                  <FilePlus className="h-4 w-4 mr-2" />
+                  Create New Category
+                </Button>
+              </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="editor" className="mt-0">
+            <ServiceEditor 
+              selectedCategory={selectedCategory}
+              selectedSubcategory={selectedSubcategory}
+              selectedJob={selectedJob}
+              onSave={handleSaveCategory}
+            />
+          </TabsContent>
+          
+          <TabsContent value="analytics" className="mt-0">
+            <div className="text-center p-8 border border-dashed rounded-lg">
+              <div className="mb-2 text-lg font-medium">Service Analytics</div>
+              <p className="text-slate-500 mb-4">This feature is coming soon. Analytics will show usage data for your services.</p>
             </div>
-          ) : (
-            <Alert>
-              <AlertDescription>
-                Select a category from the list to edit or create a new one.
-              </AlertDescription>
-            </Alert>
-          )}
+          </TabsContent>
         </CardContent>
       </Card>
 
-      {/* Import Modal */}
-      <ServiceBulkImport
-        open={state.isImportModalOpen}
-        onOpenChange={(open) => setState(prev => ({ ...prev, isImportModalOpen: open }))}
+      {/* Bulk Import Dialog */}
+      <ServiceBulkImport 
+        open={showBulkImportDialog} 
+        onOpenChange={setShowBulkImportDialog}
         onImportComplete={handleImportComplete}
       />
     </div>
   );
+  
+  // Helper functions
+  
+  // Get the appropriate header class for a category card based on its name
+  function getCategoryHeaderClass(categoryName: string): string {
+    const lowerName = categoryName.toLowerCase();
+    
+    if (lowerName.includes('engine')) return 'bg-red-50';
+    if (lowerName.includes('brake')) return 'bg-blue-50';
+    if (lowerName.includes('electric')) return 'bg-purple-50';
+    if (lowerName.includes('transmission')) return 'bg-amber-50';
+    if (lowerName.includes('suspension')) return 'bg-green-50';
+    if (lowerName.includes('tire')) return 'bg-teal-50';
+    if (lowerName.includes('body')) return 'bg-orange-50';
+    if (lowerName.includes('interior')) return 'bg-cyan-50';
+    
+    return 'bg-slate-50';
+  }
+  
+  // Count the total number of jobs in a category
+  function countJobs(category: ServiceMainCategory): number {
+    let count = 0;
+    category.subcategories?.forEach(sub => {
+      count += sub.jobs?.length || 0;
+    });
+    return count;
+  }
 };
 
 export default ServiceHierarchyManager;

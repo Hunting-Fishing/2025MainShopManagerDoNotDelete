@@ -1,7 +1,8 @@
 
 import React, { useState, Dispatch, SetStateAction } from 'react';
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, X } from "lucide-react";
 
 interface ServiceSearchBarProps {
   onSearch: (query: string) => void;
@@ -12,7 +13,7 @@ interface ServiceSearchBarProps {
 
 export const ServiceSearchBar: React.FC<ServiceSearchBarProps> = ({ 
   onSearch, 
-  query, 
+  query = '', 
   onQueryChange,
   placeholder = "Search categories, services..." 
 }) => {
@@ -30,16 +31,38 @@ export const ServiceSearchBar: React.FC<ServiceSearchBarProps> = ({
     onSearch(newQuery);
   };
 
+  const clearSearch = () => {
+    if (onQueryChange) {
+      onQueryChange('');
+    } else {
+      setInternalQuery('');
+    }
+    onSearch('');
+  };
+
+  const currentQuery = query !== undefined ? query : internalQuery;
+
   return (
-    <div className="relative max-w-sm">
+    <div className="relative">
       <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
       <Input
         type="search"
         placeholder={placeholder}
-        className="pl-8"
-        value={query !== undefined ? query : internalQuery}
+        className="pl-8 pr-8"
+        value={currentQuery}
         onChange={handleInputChange}
       />
+      {currentQuery && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute right-0 top-0 h-9 w-9 p-0"
+          onClick={clearSearch}
+        >
+          <X className="h-4 w-4" />
+          <span className="sr-only">Clear search</span>
+        </Button>
+      )}
     </div>
   );
 };
