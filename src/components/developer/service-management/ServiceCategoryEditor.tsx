@@ -1,14 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Label } from "@/components/ui/label";
-import { AlertCircle, Plus, X, Trash2, ChevronDown, ChevronUp, Edit, Pencil } from "lucide-react";
 import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from "@/types/serviceHierarchy";
-import { createEmptyCategory, createEmptySubcategory, createEmptyJob } from '@/lib/services/serviceUtils';
+import { Plus, Trash2, GripVertical, Save, X, ArrowLeft } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
+import { cn } from "@/lib/utils";
+import { toast } from '@/hooks/use-toast';
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { formatCurrency } from "@/lib/utils";
 
 interface ServiceCategoryEditorProps {
   category: ServiceMainCategory | null;
@@ -17,460 +20,374 @@ interface ServiceCategoryEditorProps {
 }
 
 const ServiceCategoryEditor: React.FC<ServiceCategoryEditorProps> = ({ 
-  category,
-  onSave,
-  onCancel
+  category, 
+  onSave, 
+  onCancel 
 }) => {
-  const [workingCategory, setWorkingCategory] = useState<ServiceMainCategory | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [editingSubcategoryId, setEditingSubcategoryId] = useState<string | null>(null);
+  const [editedCategory, setEditedCategory] = useState<ServiceMainCategory | null>(null);
 
-  // Create a deep copy of the category when it changes
+  // Initialize form with category data
   useEffect(() => {
     if (category) {
-      setWorkingCategory(JSON.parse(JSON.stringify(category)));
+      setEditedCategory({...category});
     } else {
-      setWorkingCategory(null);
+      setEditedCategory(null);
     }
-    setError(null);
-    setEditingSubcategoryId(null);
   }, [category]);
 
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!workingCategory) return;
-    setWorkingCategory({ ...workingCategory, name: e.target.value });
-  };
-
-  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    if (!workingCategory) return;
-    setWorkingCategory({ ...workingCategory, description: e.target.value });
-  };
-
-  const handleSubcategoryNameChange = (subcategoryId: string, newName: string) => {
-    if (!workingCategory) return;
-    
-    const updatedSubcategories = workingCategory.subcategories.map(subcategory => 
-      subcategory.id === subcategoryId ? { ...subcategory, name: newName } : subcategory
+  if (!editedCategory) {
+    return (
+      <div className="flex items-center justify-center min-h-[300px] bg-muted/30 rounded-lg">
+        <p className="text-muted-foreground">Select a category to edit or create a new one</p>
+      </div>
     );
-    
-    setWorkingCategory({
-      ...workingCategory,
-      subcategories: updatedSubcategories
-    });
-  };
-
-  const handleSubcategoryDescriptionChange = (subcategoryId: string, newDescription: string) => {
-    if (!workingCategory) return;
-    
-    const updatedSubcategories = workingCategory.subcategories.map(subcategory => 
-      subcategory.id === subcategoryId ? { ...subcategory, description: newDescription } : subcategory
-    );
-    
-    setWorkingCategory({
-      ...workingCategory,
-      subcategories: updatedSubcategories
-    });
-  };
-
-  const handleAddSubcategory = () => {
-    if (!workingCategory) return;
-    
-    const newSubcategory = createEmptySubcategory();
-    setWorkingCategory({
-      ...workingCategory,
-      subcategories: [...workingCategory.subcategories, newSubcategory]
-    });
-    
-    // Start editing the new subcategory
-    setEditingSubcategoryId(newSubcategory.id);
-  };
-
-  const handleRemoveSubcategory = (subcategoryId: string) => {
-    if (!workingCategory) return;
-    
-    const updatedSubcategories = workingCategory.subcategories.filter(
-      subcategory => subcategory.id !== subcategoryId
-    );
-    
-    setWorkingCategory({
-      ...workingCategory,
-      subcategories: updatedSubcategories
-    });
-    
-    if (editingSubcategoryId === subcategoryId) {
-      setEditingSubcategoryId(null);
-    }
-  };
-
-  const handleToggleEditSubcategory = (subcategoryId: string) => {
-    setEditingSubcategoryId(editingSubcategoryId === subcategoryId ? null : subcategoryId);
-  };
-
-  const handleJobNameChange = (subcategoryId: string, jobId: string, newName: string) => {
-    if (!workingCategory) return;
-    
-    const updatedSubcategories = workingCategory.subcategories.map(subcategory => {
-      if (subcategory.id === subcategoryId) {
-        const updatedJobs = subcategory.jobs.map(job => 
-          job.id === jobId ? { ...job, name: newName } : job
-        );
-        return { ...subcategory, jobs: updatedJobs };
-      }
-      return subcategory;
-    });
-    
-    setWorkingCategory({
-      ...workingCategory,
-      subcategories: updatedSubcategories
-    });
-  };
-
-  const handleJobDescriptionChange = (subcategoryId: string, jobId: string, newDescription: string) => {
-    if (!workingCategory) return;
-    
-    const updatedSubcategories = workingCategory.subcategories.map(subcategory => {
-      if (subcategory.id === subcategoryId) {
-        const updatedJobs = subcategory.jobs.map(job => 
-          job.id === jobId ? { ...job, description: newDescription } : job
-        );
-        return { ...subcategory, jobs: updatedJobs };
-      }
-      return subcategory;
-    });
-    
-    setWorkingCategory({
-      ...workingCategory,
-      subcategories: updatedSubcategories
-    });
-  };
-
-  const handleJobEstimatedTimeChange = (subcategoryId: string, jobId: string, newTime: string) => {
-    if (!workingCategory) return;
-    
-    const updatedSubcategories = workingCategory.subcategories.map(subcategory => {
-      if (subcategory.id === subcategoryId) {
-        const updatedJobs = subcategory.jobs.map(job => 
-          job.id === jobId ? { ...job, estimatedTime: Number(newTime) } : job
-        );
-        return { ...subcategory, jobs: updatedJobs };
-      }
-      return subcategory;
-    });
-    
-    setWorkingCategory({
-      ...workingCategory,
-      subcategories: updatedSubcategories
-    });
-  };
-
-  const handleJobPriceChange = (subcategoryId: string, jobId: string, newPrice: string) => {
-    if (!workingCategory) return;
-    
-    const updatedSubcategories = workingCategory.subcategories.map(subcategory => {
-      if (subcategory.id === subcategoryId) {
-        const updatedJobs = subcategory.jobs.map(job => 
-          job.id === jobId ? { ...job, price: Number(newPrice) } : job
-        );
-        return { ...subcategory, jobs: updatedJobs };
-      }
-      return subcategory;
-    });
-    
-    setWorkingCategory({
-      ...workingCategory,
-      subcategories: updatedSubcategories
-    });
-  };
-
-  const handleAddJob = (subcategoryId: string) => {
-    if (!workingCategory) return;
-    
-    const updatedSubcategories = workingCategory.subcategories.map(subcategory => {
-      if (subcategory.id === subcategoryId) {
-        const newJob = createEmptyJob();
-        return { ...subcategory, jobs: [...subcategory.jobs, newJob] };
-      }
-      return subcategory;
-    });
-    
-    setWorkingCategory({
-      ...workingCategory,
-      subcategories: updatedSubcategories
-    });
-  };
-
-  const handleRemoveJob = (subcategoryId: string, jobId: string) => {
-    if (!workingCategory) return;
-    
-    const updatedSubcategories = workingCategory.subcategories.map(subcategory => {
-      if (subcategory.id === subcategoryId) {
-        const updatedJobs = subcategory.jobs.filter(job => job.id !== jobId);
-        return { ...subcategory, jobs: updatedJobs };
-      }
-      return subcategory;
-    });
-    
-    setWorkingCategory({
-      ...workingCategory,
-      subcategories: updatedSubcategories
-    });
-  };
-
-  const handleSubmit = () => {
-    if (!workingCategory) return;
-    
-    // Basic validation
-    if (!workingCategory.name.trim()) {
-      setError("Category name is required");
-      return;
-    }
-    
-    // Check for duplicate subcategory names
-    const subcategoryNames = workingCategory.subcategories.map(s => s.name.trim().toLowerCase());
-    if (new Set(subcategoryNames).size !== subcategoryNames.length) {
-      setError("Duplicate subcategory names are not allowed");
-      return;
-    }
-    
-    // Check that all jobs have names
-    let hasEmptyJobName = false;
-    workingCategory.subcategories.forEach(subcategory => {
-      subcategory.jobs.forEach(job => {
-        if (!job.name.trim()) {
-          hasEmptyJobName = true;
-        }
-      });
-    });
-    
-    if (hasEmptyJobName) {
-      setError("All services must have names");
-      return;
-    }
-    
-    onSave(workingCategory);
-  };
-
-  if (!workingCategory) {
-    return <div>No category selected</div>;
   }
 
+  const handleCategoryChange = (field: keyof ServiceMainCategory, value: string) => {
+    setEditedCategory(prev => 
+      prev ? {...prev, [field]: value} : null
+    );
+  };
+
+  const handleSubcategoryChange = (index: number, field: keyof ServiceSubcategory, value: string) => {
+    if (!editedCategory) return;
+
+    const updatedSubcategories = [...editedCategory.subcategories];
+    updatedSubcategories[index] = {
+      ...updatedSubcategories[index],
+      [field]: value
+    };
+
+    setEditedCategory({
+      ...editedCategory,
+      subcategories: updatedSubcategories
+    });
+  };
+
+  const handleJobChange = (subIndex: number, jobIndex: number, field: keyof ServiceJob, value: any) => {
+    if (!editedCategory) return;
+
+    const updatedSubcategories = [...editedCategory.subcategories];
+    const jobs = [...updatedSubcategories[subIndex].jobs];
+    
+    jobs[jobIndex] = {
+      ...jobs[jobIndex],
+      [field]: field === 'price' || field === 'estimatedTime' ? Number(value) : value
+    };
+    
+    updatedSubcategories[subIndex] = {
+      ...updatedSubcategories[subIndex],
+      jobs
+    };
+
+    setEditedCategory({
+      ...editedCategory,
+      subcategories: updatedSubcategories
+    });
+  };
+
+  const addSubcategory = () => {
+    if (!editedCategory) return;
+    
+    const newSubcategory: ServiceSubcategory = {
+      id: uuidv4(),
+      name: "New Subcategory",
+      jobs: []
+    };
+    
+    setEditedCategory({
+      ...editedCategory,
+      subcategories: [...editedCategory.subcategories, newSubcategory]
+    });
+
+    toast({
+      title: "Subcategory added",
+      description: "New subcategory has been added to the category.",
+    });
+  };
+
+  const removeSubcategory = (index: number) => {
+    if (!editedCategory) return;
+    
+    const updatedSubcategories = [...editedCategory.subcategories];
+    updatedSubcategories.splice(index, 1);
+    
+    setEditedCategory({
+      ...editedCategory,
+      subcategories: updatedSubcategories
+    });
+
+    toast({
+      title: "Subcategory removed",
+      description: "Subcategory has been removed from the category.",
+    });
+  };
+
+  const addJob = (subIndex: number) => {
+    if (!editedCategory) return;
+    
+    const updatedSubcategories = [...editedCategory.subcategories];
+    const jobs = [...updatedSubcategories[subIndex].jobs];
+    
+    jobs.push({
+      id: uuidv4(),
+      name: "New Service Job",
+      estimatedTime: 30,
+      price: 0
+    });
+    
+    updatedSubcategories[subIndex] = {
+      ...updatedSubcategories[subIndex],
+      jobs
+    };
+    
+    setEditedCategory({
+      ...editedCategory,
+      subcategories: updatedSubcategories
+    });
+  };
+
+  const removeJob = (subIndex: number, jobIndex: number) => {
+    if (!editedCategory) return;
+    
+    const updatedSubcategories = [...editedCategory.subcategories];
+    const jobs = [...updatedSubcategories[subIndex].jobs];
+    
+    jobs.splice(jobIndex, 1);
+    
+    updatedSubcategories[subIndex] = {
+      ...updatedSubcategories[subIndex],
+      jobs
+    };
+    
+    setEditedCategory({
+      ...editedCategory,
+      subcategories: updatedSubcategories
+    });
+  };
+
+  const handleSave = () => {
+    if (editedCategory) {
+      onSave(editedCategory);
+    }
+  };
+
+  // Helper function to get time unit label
+  const getTimeLabel = (minutes: number) => {
+    if (minutes < 60) return `${minutes} min`;
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    return remainingMinutes > 0 
+      ? `${hours}h ${remainingMinutes}m`
+      : `${hours}h`;
+  };
+
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {category?.id ? "Edit Category" : "New Category"}
-          </CardTitle>
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 mb-6">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={onCancel}
+          className="gap-1 text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+        <h2 className="text-xl font-semibold grow">{category.id ? 'Edit' : 'Create'} Service Category</h2>
+      </div>
+
+      <Card className="border-l-4 border-l-esm-blue-500">
+        <CardHeader className="bg-gradient-to-r from-esm-blue-50 to-transparent">
+          <CardTitle>Category Information</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {error && (
-            <Alert variant="destructive" className="mb-6">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+        <CardContent className="space-y-4 pt-6">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Category Name</label>
+              <Input
+                value={editedCategory.name}
+                onChange={(e) => handleCategoryChange('name', e.target.value)}
+                placeholder="Category Name"
+                className="mb-4"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Position</label>
+              <Input
+                type="number"
+                value={editedCategory.position !== undefined ? editedCategory.position : ''}
+                onChange={(e) => handleCategoryChange('position', e.target.value)}
+                placeholder="Display Order"
+                className="mb-4"
+              />
+            </div>
+          </div>
           
-          <div className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="name">Category Name</Label>
-              <Input 
-                id="name"
-                value={workingCategory.name} 
-                onChange={handleNameChange} 
-                placeholder="Category name"
-              />
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea 
-                id="description"
-                value={workingCategory.description || ''} 
-                onChange={handleDescriptionChange} 
-                placeholder="Category description (optional)"
-                className="min-h-[100px]"
-              />
-            </div>
+          <div>
+            <label className="text-sm font-medium mb-2 block">Description</label>
+            <Textarea
+              value={editedCategory.description || ''}
+              onChange={(e) => handleCategoryChange('description', e.target.value)}
+              placeholder="Category description..."
+              className="mb-4"
+              rows={3}
+            />
           </div>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Subcategories</CardTitle>
-          <Button 
-            size="sm" 
-            variant="outline" 
-            onClick={handleAddSubcategory}
-            className="flex items-center gap-1"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Add Subcategory</span>
-          </Button>
+        <CardHeader className="bg-gradient-to-r from-purple-50 to-transparent">
+          <div className="flex justify-between items-center">
+            <CardTitle>Subcategories & Services</CardTitle>
+            <Button 
+              onClick={addSubcategory} 
+              variant="outline" 
+              size="sm"
+              className="flex items-center gap-1"
+            >
+              <Plus className="h-4 w-4" /> Add Subcategory
+            </Button>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {workingCategory.subcategories.length === 0 ? (
-            <div className="text-center p-6 border rounded-md bg-muted/20">
-              <p className="text-muted-foreground">No subcategories yet</p>
-              <p className="text-sm mt-2">Add subcategories to organize your services</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {workingCategory.subcategories.map((subcategory, index) => (
-                <Card key={subcategory.id} className="border-esm-blue-100">
-                  <CardHeader className="bg-esm-blue-50/30 flex flex-row items-center justify-between py-3">
-                    <div className="flex-1">
-                      {editingSubcategoryId === subcategory.id ? (
-                        <div className="flex flex-col gap-2">
-                          <Input 
+        <CardContent>
+          <ScrollArea className="h-[500px] pr-4">
+            <div className="space-y-6">
+              {editedCategory.subcategories.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-10 border border-dashed rounded-lg bg-muted/30">
+                  <p className="text-muted-foreground mb-2">No subcategories defined yet</p>
+                  <Button 
+                    onClick={addSubcategory} 
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-1"
+                  >
+                    <Plus className="h-4 w-4" /> Add Subcategory
+                  </Button>
+                </div>
+              )}
+
+              {editedCategory.subcategories.map((subcategory, index) => (
+                <Card key={subcategory.id} className={cn(
+                  "border-l-4 transition-all",
+                  subcategory.jobs.length > 0 ? "border-l-green-500" : "border-l-amber-400"
+                )}>
+                  <CardHeader className="pb-3 bg-gradient-to-r from-slate-50 to-transparent">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <GripVertical className="h-5 w-5 text-muted-foreground cursor-move opacity-50" />
+                        <div className="space-y-1">
+                          <Input
                             value={subcategory.name}
-                            onChange={(e) => handleSubcategoryNameChange(subcategory.id, e.target.value)}
-                            placeholder="Subcategory name"
-                            className="font-medium"
+                            onChange={(e) => handleSubcategoryChange(index, 'name', e.target.value)}
+                            placeholder="Subcategory Name"
+                            className="font-medium border-none bg-transparent p-0 h-auto text-base focus-visible:ring-transparent shadow-none"
                           />
-                          <Textarea
-                            value={subcategory.description || ''}
-                            onChange={(e) => handleSubcategoryDescriptionChange(subcategory.id, e.target.value)}
-                            placeholder="Description (optional)"
-                            className="text-sm"
-                            rows={2}
-                          />
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs bg-muted">
+                              {subcategory.jobs.length} services
+                            </Badge>
+                          </div>
                         </div>
-                      ) : (
-                        <>
-                          <h3 className="text-md font-medium">{subcategory.name}</h3>
-                          {subcategory.description && (
-                            <p className="text-sm text-muted-foreground mt-1">{subcategory.description}</p>
-                          )}
-                        </>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
+                      </div>
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="h-8 w-8 p-0"
-                        onClick={() => handleToggleEditSubcategory(subcategory.id)}
-                      >
-                        {editingSubcategoryId === subcategory.id ? (
-                          <ChevronUp className="h-4 w-4" />
-                        ) : (
-                          <Pencil className="h-4 w-4" />
-                        )}
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
-                        onClick={() => handleRemoveSubcategory(subcategory.id)}
+                        onClick={() => removeSubcategory(index)}
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </CardHeader>
-                  <CardContent className="py-4">
-                    <div className="flex justify-between items-center mb-4">
-                      <h4 className="text-sm font-medium">Services</h4>
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        onClick={() => handleAddJob(subcategory.id)}
-                        className="flex items-center gap-1 text-xs h-7"
-                      >
-                        <Plus className="h-3 w-3" />
-                        <span>Add Service</span>
-                      </Button>
-                    </div>
-                    
-                    {subcategory.jobs.length === 0 ? (
-                      <div className="text-sm text-muted-foreground italic border border-dashed p-3 rounded-md text-center">
-                        No services added yet
+                  <CardContent className="pt-0">
+                    <div className="space-y-2 mb-4">
+                      <div className="grid grid-cols-12 gap-2 px-2 py-1 bg-muted rounded text-xs font-medium">
+                        <div className="col-span-5">Service Name</div>
+                        <div className="col-span-3">Est. Time</div>
+                        <div className="col-span-3">Price</div>
+                        <div className="col-span-1"></div>
                       </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {subcategory.jobs.map((job) => (
-                          <div 
-                            key={job.id} 
-                            className="bg-muted/20 p-3 rounded-md border relative"
-                          >
+                      
+                      {subcategory.jobs.map((job, jobIndex) => (
+                        <div key={job.id} className="grid grid-cols-12 gap-2 items-center p-2 bg-card border rounded-md">
+                          <div className="col-span-5">
+                            <Input
+                              value={job.name}
+                              onChange={(e) => handleJobChange(index, jobIndex, 'name', e.target.value)}
+                              placeholder="Job name"
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                          <div className="col-span-3">
+                            <Input
+                              type="number"
+                              value={job.estimatedTime || ''}
+                              onChange={(e) => handleJobChange(index, jobIndex, 'estimatedTime', e.target.value)}
+                              placeholder="Minutes"
+                              className="h-8 text-sm"
+                            />
+                            {job.estimatedTime && (
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {getTimeLabel(job.estimatedTime)}
+                              </div>
+                            )}
+                          </div>
+                          <div className="col-span-3">
+                            <Input
+                              type="number"
+                              value={job.price || ''}
+                              onChange={(e) => handleJobChange(index, jobIndex, 'price', e.target.value)}
+                              placeholder="0.00"
+                              className="h-8 text-sm"
+                            />
+                            {job.price > 0 && (
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {formatCurrency(job.price)}
+                              </div>
+                            )}
+                          </div>
+                          <div className="col-span-1 flex justify-center">
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="absolute right-2 top-2 h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                              onClick={() => handleRemoveJob(subcategory.id, job.id)}
+                              onClick={() => removeJob(index, jobIndex)}
+                              className="h-8 w-8 p-0"
                             >
-                              <X className="h-3 w-3" />
+                              <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
-                            
-                            <div className="grid gap-3 pr-8">
-                              <div>
-                                <Label htmlFor={`job-name-${job.id}`} className="text-xs">Service Name</Label>
-                                <Input
-                                  id={`job-name-${job.id}`}
-                                  value={job.name}
-                                  onChange={(e) => handleJobNameChange(subcategory.id, job.id, e.target.value)}
-                                  placeholder="Service name"
-                                  className="mt-1"
-                                />
-                              </div>
-                              
-                              <div>
-                                <Label htmlFor={`job-description-${job.id}`} className="text-xs">Description</Label>
-                                <Textarea
-                                  id={`job-description-${job.id}`}
-                                  value={job.description || ''}
-                                  onChange={(e) => handleJobDescriptionChange(subcategory.id, job.id, e.target.value)}
-                                  placeholder="Description (optional)"
-                                  className="mt-1"
-                                  rows={2}
-                                />
-                              </div>
-                              
-                              <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                  <Label htmlFor={`job-time-${job.id}`} className="text-xs">Est. Time (minutes)</Label>
-                                  <Input
-                                    id={`job-time-${job.id}`}
-                                    type="number"
-                                    value={job.estimatedTime || ''}
-                                    onChange={(e) => handleJobEstimatedTimeChange(subcategory.id, job.id, e.target.value)}
-                                    placeholder="Estimated time"
-                                    className="mt-1"
-                                    min={0}
-                                  />
-                                </div>
-                                
-                                <div>
-                                  <Label htmlFor={`job-price-${job.id}`} className="text-xs">Price ($)</Label>
-                                  <Input
-                                    id={`job-price-${job.id}`}
-                                    type="number"
-                                    value={job.price || ''}
-                                    onChange={(e) => handleJobPriceChange(subcategory.id, job.id, e.target.value)}
-                                    placeholder="Price"
-                                    className="mt-1"
-                                    min={0}
-                                    step={0.01}
-                                  />
-                                </div>
-                              </div>
-                            </div>
                           </div>
-                        ))}
-                      </div>
-                    )}
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <Button
+                      onClick={() => addJob(index)}
+                      variant="outline"
+                      size="sm"
+                      className="w-full bg-muted/50 hover:bg-muted flex items-center justify-center gap-1"
+                    >
+                      <Plus className="h-4 w-4" /> Add Service
+                    </Button>
                   </CardContent>
                 </Card>
               ))}
             </div>
-          )}
+          </ScrollArea>
         </CardContent>
       </Card>
 
-      <CardFooter className="flex justify-end gap-4 px-0">
+      <div className="flex justify-end gap-2 mt-6">
         <Button variant="outline" onClick={onCancel}>Cancel</Button>
-        <Button onClick={handleSubmit}>Save Category</Button>
-      </CardFooter>
+        <Button 
+          onClick={handleSave} 
+          disabled={!editedCategory.name || !editedCategory.name.trim()}
+          className="gap-2 bg-esm-blue-600"
+        >
+          <Save className="h-4 w-4" /> Save Category
+        </Button>
+      </div>
     </div>
   );
 };
