@@ -773,6 +773,39 @@ export type Database = {
           },
         ]
       }
+      customer_activities: {
+        Row: {
+          action: string
+          customer_id: string
+          flag_reason: string | null
+          flagged: boolean | null
+          id: string
+          timestamp: string
+          user_id: string
+          user_name: string
+        }
+        Insert: {
+          action: string
+          customer_id: string
+          flag_reason?: string | null
+          flagged?: boolean | null
+          id?: string
+          timestamp?: string
+          user_id: string
+          user_name: string
+        }
+        Update: {
+          action?: string
+          customer_id?: string
+          flag_reason?: string | null
+          flagged?: boolean | null
+          id?: string
+          timestamp?: string
+          user_id?: string
+          user_name?: string
+        }
+        Relationships: []
+      }
       customer_addresses: {
         Row: {
           address_line1: string
