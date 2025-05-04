@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,7 @@ import { toast } from 'sonner';
 import ImageUploader from './ImageUploader';
 import { AffiliateTool } from '@/types/affiliate';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { InfoCircledIcon } from "@radix-ui/react-icons";
+import { InfoIcon } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ProductFormProps {
@@ -77,8 +78,7 @@ export default function ProductForm({
     
     // Basic validation
     if (!formData.name || !formData.category || !formData.manufacturer || !formData.affiliateLink) {
-      toast({
-        title: "Missing required fields",
+      toast("Missing required fields", {
         description: "Please fill out all required fields",
         variant: "destructive"
       });
@@ -87,15 +87,13 @@ export default function ProductForm({
     
     try {
       await onSubmit(formData);
-      toast({
-        title: "Success",
+      toast("Success", {
         description: `Product ${product ? 'updated' : 'created'} successfully.`,
         variant: "success"
       });
     } catch (error) {
       console.error("Error submitting product:", error);
-      toast({
-        title: "Error",
+      toast("Error", {
         description: "Failed to save product. Please try again.",
         variant: "destructive"
       });
