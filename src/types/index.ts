@@ -22,27 +22,21 @@ export * from './form';
 export * from './payment';
 
 // Handle WorkOrder exports with explicit re-exports
-import * as WorkOrderModule from './workOrder';
-export type {
+export {
   WorkOrderStatusType,
   WorkOrderPriorityType,
   WorkOrderTemplate,
   TimeEntry,
   DbTimeEntry,
-  WorkOrderInventoryItem
+  WorkOrderInventoryItem,
+  statusMap,
+  priorityMap
 } from './workOrder';
-export { statusMap, priorityMap } from './workOrder';
-// Re-export the WorkOrder interface explicitly to avoid conflict
-export { WorkOrderModule as WorkOrderTypes };
 
 // Handle Invoice exports with explicit re-exports
-import * as InvoiceModule from './invoice';
-// Re-export invoice types from the correct invoice.ts file
 export type {
   Invoice,
   InvoiceItem,
   InvoiceStatus,
   InvoiceTemplate
 } from './invoice';
-// Re-export the Invoice module explicitly to handle potential conflicts
-export { InvoiceModule as InvoiceTypes };
