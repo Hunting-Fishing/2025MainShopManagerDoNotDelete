@@ -994,6 +994,41 @@ export type Database = {
           },
         ]
       }
+      customer_form_comments: {
+        Row: {
+          comment: string
+          created_at: string
+          form_id: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comment: string
+          created_at?: string
+          form_id: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comment?: string
+          created_at?: string
+          form_id?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_form_comments_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "customer_provided_forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_interactions: {
         Row: {
           created_at: string
@@ -1135,6 +1170,68 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "customer_notes_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_provided_forms: {
+        Row: {
+          customer_id: string
+          description: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id: string
+          metadata: Json | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          tags: string[] | null
+          title: string
+          upload_date: string
+        }
+        Insert: {
+          customer_id: string
+          description?: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id?: string
+          metadata?: Json | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          tags?: string[] | null
+          title: string
+          upload_date?: string
+        }
+        Update: {
+          customer_id?: string
+          description?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          metadata?: Json | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          tags?: string[] | null
+          title?: string
+          upload_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_provided_forms_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"

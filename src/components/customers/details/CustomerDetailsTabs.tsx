@@ -1,23 +1,21 @@
 
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CustomerProfileTab } from "./CustomerProfileTab";
-import { CustomerVehiclesTab } from "./CustomerVehiclesTab";
-import { CustomerNotesTab } from "./CustomerNotesTab";
-import { CustomerWorkOrdersTab } from "./CustomerWorkOrdersTab";
-import { CustomerHistoryTab } from "./CustomerHistoryTab";
-import { CustomerCommunicationsTab } from "./CustomerCommunicationsTab";
-import { Customer } from "@/types/customer";
+import { Customer, CustomerNote } from "@/types/customer";
 import { WorkOrder } from "@/types/workOrder";
-import { CustomerNote } from "@/types/customer";
-import { CustomerPaymentTab } from "./CustomerPaymentTab";
-import { CreditCard } from "lucide-react";
+import { CustomerInteraction, CustomerCommunication } from "@/types/interaction";
+import { CustomerVehicleList } from "@/components/customers/vehicles/CustomerVehicleList";
+import { CustomerWorkOrdersList } from "@/components/customers/CustomerWorkOrdersList";
+import { CustomerInteractionsTab } from "@/components/customers/interactions/CustomerInteractionsTab";
+import { CustomerCommunicationsTab } from "@/components/customers/communications/CustomerCommunicationsTab";
+import { CustomerNotesTab } from "@/components/customers/notes/CustomerNotesTab";
+import { CustomerFormsTab } from "@/components/customers/forms/CustomerFormsTab";
 
 interface CustomerDetailsTabsProps {
   customer: Customer;
   customerWorkOrders: WorkOrder[];
-  customerInteractions: any[];
-  customerCommunications: any[];
+  customerInteractions: CustomerInteraction[];
+  customerCommunications: CustomerCommunication[];
   customerNotes: CustomerNote[];
   activeTab: string;
   setActiveTab: (tab: string) => void;
@@ -38,68 +36,54 @@ export function CustomerDetailsTabs({
   onCommunicationAdded,
   onNoteAdded
 }: CustomerDetailsTabsProps) {
-  const tabs = [
-    { id: "profile", label: "Profile" },
-    { id: "vehicles", label: "Vehicles" },
-    { id: "work-orders", label: "Work Orders" },
-    { id: "payments", label: "Payments" },
-    { id: "history", label: "Activity" },
-    { id: "communications", label: "Communications" },
-    { id: "notes", label: "Notes" }
-  ];
-
   return (
-    <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab}>
-      <TabsList className="grid grid-cols-3 md:grid-cols-7">
-        {tabs.map(tab => (
-          <TabsTrigger key={tab.id} value={tab.id}>
-            {tab.id === 'payments' && <CreditCard className="h-4 w-4 mr-2 md:hidden" />}
-            <span className={tab.id === 'payments' ? "hidden md:inline" : ""}>{tab.label}</span>
-          </TabsTrigger>
-        ))}
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <TabsList className="grid grid-cols-6 mb-6">
+        <TabsTrigger value="vehicles">Vehicles</TabsTrigger>
+        <TabsTrigger value="work-orders">Work Orders</TabsTrigger>
+        <TabsTrigger value="interactions">Interactions</TabsTrigger>
+        <TabsTrigger value="communications">Communications</TabsTrigger>
+        <TabsTrigger value="notes">Notes</TabsTrigger>
+        <TabsTrigger value="forms">Forms</TabsTrigger>
       </TabsList>
-      
-      <TabsContent value="profile" className="space-y-6 pt-4">
-        <CustomerProfileTab customer={customer} />
+
+      <TabsContent value="vehicles">
+        <CustomerVehicleList customerId={customer.id} />
       </TabsContent>
 
-      <TabsContent value="vehicles" className="space-y-4 pt-4">
-        <CustomerVehiclesTab customer={customer} />
-      </TabsContent>
-
-      <TabsContent value="work-orders" className="space-y-4 pt-4">
-        <CustomerWorkOrdersTab 
-          customer={customer} 
-          workOrders={customerWorkOrders} 
+      <TabsContent value="work-orders">
+        <CustomerWorkOrdersList
+          customerId={customer.id}
+          workOrders={customerWorkOrders}
         />
       </TabsContent>
-      
-      <TabsContent value="payments" className="pt-4">
-        <CustomerPaymentTab customer={customer} />
-      </TabsContent>
 
-      <TabsContent value="history" className="space-y-4 pt-4">
-        <CustomerHistoryTab
-          customer={customer}
+      <TabsContent value="interactions">
+        <CustomerInteractionsTab
+          customerId={customer.id}
           interactions={customerInteractions}
-          onAddInteraction={() => setAddInteractionOpen(true)}
+          setAddInteractionOpen={setAddInteractionOpen}
         />
       </TabsContent>
-      
-      <TabsContent value="communications" className="space-y-4 pt-4">
+
+      <TabsContent value="communications">
         <CustomerCommunicationsTab
           customer={customer}
           communications={customerCommunications}
           onCommunicationAdded={onCommunicationAdded}
         />
       </TabsContent>
-      
-      <TabsContent value="notes" className="space-y-4 pt-4">
-        <CustomerNotesTab 
-          customer={customer} 
-          notes={customerNotes} 
+
+      <TabsContent value="notes">
+        <CustomerNotesTab
+          customer={customer}
+          notes={customerNotes}
           onNoteAdded={onNoteAdded}
         />
+      </TabsContent>
+
+      <TabsContent value="forms">
+        <CustomerFormsTab customer={customer} />
       </TabsContent>
     </Tabs>
   );
