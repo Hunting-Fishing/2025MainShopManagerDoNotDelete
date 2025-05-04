@@ -18,6 +18,7 @@ interface ServiceEditorProps {
   onCancel: () => void;
 }
 
+// Define the schema for each form type
 const categorySchema = z.object({
   name: z.string().min(1, 'Category name is required'),
   description: z.string().optional(),
@@ -31,13 +32,15 @@ const subcategorySchema = z.object({
 const jobSchema = z.object({
   name: z.string().min(1, 'Service name is required'),
   description: z.string().optional(),
-  price: z.coerce.number().min(0, 'Price must be a positive number').optional(),
-  estimatedTime: z.coerce.number().min(0, 'Time must be a positive number').optional(),
+  price: z.number().min(0, 'Price must be a positive number').nullable().optional(),
+  estimatedTime: z.number().min(0, 'Time must be a positive number').nullable().optional(),
 });
 
-type FormSchema = z.infer<typeof categorySchema> | 
-                  z.infer<typeof subcategorySchema> |
-                  z.infer<typeof jobSchema>;
+// Create a union type for the form schema
+type FormSchema = 
+  z.infer<typeof categorySchema> | 
+  z.infer<typeof subcategorySchema> | 
+  z.infer<typeof jobSchema>;
 
 const ServiceEditor: React.FC<ServiceEditorProps> = ({
   selectedCategory,
@@ -55,8 +58,8 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
     defaultValues = {
       name: selectedJob.name,
       description: selectedJob.description || '',
-      price: selectedJob.price || '',
-      estimatedTime: selectedJob.estimatedTime || '',
+      price: selectedJob.price || null,
+      estimatedTime: selectedJob.estimatedTime || null,
     };
     title = 'Edit Service';
   } else if (selectedSubcategory) {
@@ -126,7 +129,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                 <FormField
                   control={form.control}
                   name="price"
-                  render={({ field: { onChange, ...restField } }) => (
+                  render={({ field: { onChange, value, ...restField } }) => (
                     <FormItem>
                       <FormLabel>Price</FormLabel>
                       <FormControl>
@@ -135,7 +138,11 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                           min="0" 
                           step="0.01"
                           placeholder="Enter price" 
-                          onChange={(e) => onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
+                          value={value === null || value === undefined ? '' : value}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            onChange(value === '' ? null : parseFloat(value));
+                          }}
                           {...restField}
                         />
                       </FormControl>
@@ -147,7 +154,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                 <FormField
                   control={form.control}
                   name="estimatedTime"
-                  render={({ field: { onChange, ...restField } }) => (
+                  render={({ field: { onChange, value, ...restField } }) => (
                     <FormItem>
                       <FormLabel>Estimated Time (minutes)</FormLabel>
                       <FormControl>
@@ -155,7 +162,11 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                           type="number" 
                           min="0" 
                           placeholder="Enter time in minutes"
-                          onChange={(e) => onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} 
+                          value={value === null || value === undefined ? '' : value}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            onChange(value === '' ? null : parseFloat(value));
+                          }}
                           {...restField}
                         />
                       </FormControl>
