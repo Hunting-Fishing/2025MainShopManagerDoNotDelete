@@ -99,7 +99,7 @@ export const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = (
                     <div className="flex justify-between items-center">
                       <span>{category.name}</span>
                       <Badge 
-                        className={`${colorStyle.bg} ${colorStyle.text} ${colorStyle.border} text-xs`}
+                        className={`${colorStyle.bg} ${colorStyle.text} border ${colorStyle.border} text-xs`}
                       >
                         {category.subcategories.length} subcategories
                       </Badge>
@@ -140,7 +140,7 @@ export const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = (
                           <div className="flex justify-between items-center">
                             <span>{subcategory.name}</span>
                             <Badge 
-                              className={`${colorStyle.bg} ${colorStyle.text} ${colorStyle.border} text-xs`}
+                              className={`${colorStyle.bg} ${colorStyle.text} border ${colorStyle.border} text-xs`}
                             >
                               {subcategory.jobs.length} services
                             </Badge>
