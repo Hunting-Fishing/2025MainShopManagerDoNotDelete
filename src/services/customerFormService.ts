@@ -230,19 +230,21 @@ export async function getFormComments(formId: string): Promise<CustomerFormComme
     // Safely handle the potentially null profiles property
     let userName: string | undefined = undefined;
     
+    // First check if profiles exists at all
     if (comment.profiles) {
-      // Ensure profiles exists and is not null before accessing its properties
+      // Create a non-null reference we can use
       const profiles = comment.profiles;
       
-      // Type guard to ensure profiles is a non-null object with the required properties
+      // Use a type guard to ensure profiles is an object with the required properties
+      // This helps TypeScript understand that profiles is not null when we access its properties
       if (profiles && 
-          typeof profiles === 'object' && 
-          'first_name' in profiles && 
-          'last_name' in profiles) {
-        // Further check that first_name and last_name are not null/undefined  
-        const firstName = profiles.first_name;
-        const lastName = profiles.last_name;
+          typeof profiles === 'object') {
         
+        // Check if properties exist in the object using optional chaining
+        const firstName = profiles?.first_name;
+        const lastName = profiles?.last_name;
+        
+        // Only set the userName if both first_name and last_name exist and are non-empty
         if (firstName && lastName) {
           userName = `${firstName} ${lastName}`;
         }
@@ -260,3 +262,4 @@ export async function getFormComments(formId: string): Promise<CustomerFormComme
     };
   });
 }
+
