@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -43,6 +42,7 @@ interface ServiceEditorProps {
     subcategory: ServiceSubcategory | null,
     job: ServiceJob | null
   ) => void;
+  onDelete?: (categoryId: string) => Promise<void>;
   categoryColors?: Array<CategoryColorStyle>;
   colorIndex?: number;
   onColorChange?: (index: number) => void;
@@ -53,6 +53,7 @@ export const ServiceEditor: React.FC<ServiceEditorProps> = ({
   subcategory,
   job,
   onSave,
+  onDelete,
   categoryColors = DEFAULT_COLOR_STYLES,
   colorIndex = 0,
   onColorChange
@@ -230,8 +231,19 @@ export const ServiceEditor: React.FC<ServiceEditorProps> = ({
           </div>
         )}
 
-        <div className="pt-4 flex justify-end">
-          <Button type="submit">Save Changes</Button>
+        <div className="pt-4 flex justify-between">
+          {category && onDelete && (
+            <Button 
+              type="button" 
+              variant="destructive" 
+              onClick={() => onDelete(category.id)}
+            >
+              Delete
+            </Button>
+          )}
+          <div className={onDelete ? "flex-1 flex justify-end" : ""}>
+            <Button type="submit">Save Changes</Button>
+          </div>
         </div>
       </form>
     </div>
