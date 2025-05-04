@@ -1,3 +1,4 @@
+
 import { RouteObject } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import Dashboard from '@/pages/Dashboard';
@@ -21,6 +22,7 @@ import ToolDetailPage from '@/pages/ToolDetailPage';
 import ManufacturerPage from '@/pages/ManufacturerPage';
 import ServiceManagement from '@/pages/developer/ServiceManagement';
 import Forms from '@/pages/Forms';
+import IntegrationsPage from '@/pages/developer/IntegrationsPage';
 
 // All routes must be declared here to be used by the RouterProvider
 export const routes: RouteObject[] = [
@@ -109,6 +111,10 @@ export const routes: RouteObject[] = [
       {
         path: 'developer/service-management',
         element: <ServiceManagement />,
+      },
+      {
+        path: 'developer/integrations',
+        element: <IntegrationsPage />,
       },
       // Shopping routes - maintain the same component as tools for now
       {

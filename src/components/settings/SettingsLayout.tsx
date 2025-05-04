@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResponsiveContainer } from "@/components/ui/responsive-container";
 import { 
   User, Building, Shield, Bell, Palette, 
   Database, Globe2, Gift, Package, Users, Mail,
-  Brush, MailPlus, Link, ShieldCheck
+  Brush, MailPlus, ShieldCheck
 } from "lucide-react";
 import { useTranslation } from 'react-i18next';
 import { useShopId } from "@/hooks/useShopId";
@@ -17,7 +16,6 @@ import { NotificationsTab } from "./NotificationsTab";
 import { BrandingTab } from "./BrandingTab";
 import { AppearanceTab } from "./AppearanceTab";
 import { EmailSettingsTab } from "./EmailSettingsTab";
-import { IntegrationsTab } from "./IntegrationsTab";
 import { SecurityAdvancedTab } from "./SecurityAdvancedTab";
 import { LoyaltyTab } from "./LoyaltyTab";
 import { InventorySettingsTab } from "./InventorySettingsTab";
@@ -142,4 +140,3 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({ defaultTab }) =>
     </ResponsiveContainer>
   );
 };
-

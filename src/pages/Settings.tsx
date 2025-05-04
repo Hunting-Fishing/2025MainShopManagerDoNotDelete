@@ -1,7 +1,6 @@
-
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Cog, User, Building, Shield, Bell, Palette, Database, Globe2, Gift, Package, Users, Mail, Brush, MailPlus, Link, ShieldCheck } from "lucide-react";
+import { Cog, User, Building, Shield, Bell, Palette, Database, Globe2, Gift, Package, Users, Mail, Brush, MailPlus, ShieldCheck } from "lucide-react";
 import { SettingsCard } from "@/components/settings/SettingsCard";
 import {
   Breadcrumb,
