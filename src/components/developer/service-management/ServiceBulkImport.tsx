@@ -1,115 +1,120 @@
 
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Upload, Loader2, AlertCircle } from 'lucide-react';
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
+import { AlertDialogFooter, AlertDialogCancel } from '@/components/ui/alert-dialog';
+import { Upload } from 'lucide-react';
+import { parseExcelData } from '@/lib/services/excelParser';
+import { ServiceMainCategory } from '@/types/serviceHierarchy';
+import { toast } from 'sonner';
+import { bulkImportServiceCategories } from '@/lib/services/serviceApi';
 
 interface ServiceBulkImportProps {
-  onFileUpload: (file: File) => Promise<void>;
-  isLoading: boolean;
+  onCancel: () => void;
+  onComplete: (categories: ServiceMainCategory[]) => void;
 }
 
-const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onFileUpload, isLoading }) => {
+const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onCancel, onComplete }) => {
+  const [file, setFile] = useState<File | null>(null);
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [progress, setProgress] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    setError(null);
-    if (files && files[0]) {
-      const file = files[0];
-      if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-        await onFileUpload(file);
-      } else {
-        setError("Please select an Excel file (.xlsx or .xls)");
-      }
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFile(e.target.files[0]);
+    }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImport = async () => {
+    if (!file) {
+      toast.error('Please select a file to import');
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      setProgress(10);
       
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  };
-
-  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = async (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    setIsDragging(false);
-    setError(null);
-
-    const files = event.dataTransfer.files;
-    if (files && files[0]) {
-      const file = files[0];
-      if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-        await onFileUpload(file);
-      } else {
-        setError("Please select an Excel file (.xlsx or .xls)");
-      }
-    }
-  };
-
-  const triggerFileInput = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
+      // Parse the Excel file
+      const categories = await parseExcelData(file);
+      setProgress(50);
+      
+      // Perform the bulk import
+      await bulkImportServiceCategories(categories, (importProgress) => {
+        setProgress(50 + importProgress * 50);
+      });
+      
+      setProgress(100);
+      
+      // Notify completion
+      onComplete(categories);
+    } catch (error) {
+      console.error('Import error:', error);
+      toast.error('Failed to import services: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      setIsProcessing(false);
     }
   };
 
   return (
-    <div className="space-y-2">
-      <div
-        className={`relative ${
-          isLoading ? 'opacity-70 pointer-events-none' : ''
-        }`}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          className="hidden"
-          accept=".xlsx,.xls"
-        />
-        
-        <Button 
-          onClick={triggerFileInput}
-          variant="outline"
-          disabled={isLoading}
-          className={`relative flex items-center ${
-            isDragging ? 'border-blue-500 bg-blue-50' : ''
-          }`}
-        >
-          {isLoading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Upload className="mr-2 h-4 w-4" />
-          )}
-          {isLoading ? 'Importing...' : 'Import Services'}
-        </Button>
-        
-        {isDragging && (
-          <div className="absolute inset-0 border-2 border-blue-500 bg-blue-50 bg-opacity-30 rounded flex items-center justify-center pointer-events-none">
-            <p className="text-blue-700 font-medium">Drop Excel file here</p>
+    <div className="py-2">
+      <div className="space-y-4">
+        <div className="flex items-center gap-4">
+          <div className="flex-1">
+            <Input
+              type="text"
+              value={file?.name || ''}
+              placeholder="No file selected"
+              readOnly
+              className="bg-gray-50"
+            />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+          </div>
+          <Button type="button" onClick={handleUploadClick} disabled={isProcessing}>
+            <Upload className="h-4 w-4 mr-2" />
+            Browse
+          </Button>
+        </div>
+
+        {isProcessing && (
+          <div className="space-y-2">
+            <div className="text-sm text-gray-500">
+              Importing services... {Math.round(progress)}%
+            </div>
+            <Progress value={progress} />
           </div>
         )}
+
+        <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-yellow-800">
+          <p className="font-medium">Important:</p>
+          <ul className="list-disc list-inside space-y-1 mt-1">
+            <li>File should be in Excel format (.xlsx or .xls)</li>
+            <li>Required columns: category, subcategory, service</li>
+            <li>Optional columns: price, time, description</li>
+            <li>Existing services with the same names may be updated</li>
+          </ul>
+        </div>
       </div>
-      
-      {error && (
-        <Alert variant="destructive" className="py-2">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+
+      <AlertDialogFooter className="mt-6">
+        <AlertDialogCancel onClick={onCancel} disabled={isProcessing}>
+          Cancel
+        </AlertDialogCancel>
+        <Button onClick={handleImport} disabled={!file || isProcessing}>
+          Import Services
+        </Button>
+      </AlertDialogFooter>
     </div>
   );
 };
