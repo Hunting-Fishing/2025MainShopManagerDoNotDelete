@@ -1,11 +1,12 @@
 
 import React, { useState } from 'react';
-import { ServiceMainCategory } from '@/types/serviceHierarchy';
+import { ServiceMainCategory, CategoryColorStyle } from '@/types/serviceHierarchy';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Plus, ChevronRight, SortAsc } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
+import { formatNumber } from '@/lib/formatters';
 
 interface ServiceCategoryListProps {
   categories: ServiceMainCategory[];
@@ -13,6 +14,18 @@ interface ServiceCategoryListProps {
   onAddCategory: () => void;
   isLoading?: boolean;
 }
+
+// Color palette for category tags
+const categoryColors: Record<number, CategoryColorStyle> = {
+  0: { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-300' },
+  1: { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-300' },
+  2: { bg: 'bg-purple-100', text: 'text-purple-800', border: 'border-purple-300' },
+  3: { bg: 'bg-amber-100', text: 'text-amber-800', border: 'border-amber-300' },
+  4: { bg: 'bg-rose-100', text: 'text-rose-800', border: 'border-rose-300' },
+  5: { bg: 'bg-cyan-100', text: 'text-cyan-800', border: 'border-cyan-300' },
+  6: { bg: 'bg-indigo-100', text: 'text-indigo-800', border: 'border-indigo-300' },
+  7: { bg: 'bg-emerald-100', text: 'text-emerald-800', border: 'border-emerald-300' },
+};
 
 export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
   categories,
@@ -43,19 +56,9 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
     });
   };
   
-  // Modify this function to add a new category with all required properties
-  const handleAddCategory = () => {
-    const newCategory: ServiceMainCategory = {
-      id: uuidv4(),
-      name: "New Category",
-      description: "",
-      position: categories.length > 0 
-        ? Math.max(...categories.map(c => c.position || 0)) + 1
-        : 0,
-      subcategories: []
-    };
-    
-    onAddCategory();
+  const getCategoryColorStyle = (index: number): CategoryColorStyle => {
+    const colorIndex = index % Object.keys(categoryColors).length;
+    return categoryColors[colorIndex];
   };
 
   const sortedCategories = getSortedCategories();
@@ -106,34 +109,46 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
           </Button>
         </div>
       ) : (
-        <div className="space-y-2">
-          {sortedCategories.map(category => (
-            <Card
-              key={category.id}
-              className="cursor-pointer hover:bg-slate-50 transition-colors"
-              onClick={() => onSelectCategory(category)}
-            >
-              <CardContent className={`p-3 ${isCompact ? 'py-2' : ''}`}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-medium text-sm">{category.name}</h3>
-                    {!isCompact && category.description && (
-                      <p className="text-xs text-muted-foreground mt-1">{category.description}</p>
-                    )}
-                    {!isCompact && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {category.subcategories?.length || 0} subcategories
-                      </p>
-                    )}
+        <div className="space-y-3">
+          {sortedCategories.map((category, index) => {
+            const colorStyle = getCategoryColorStyle(index);
+            return (
+              <Card
+                key={category.id}
+                className="cursor-pointer hover:bg-slate-50 transition-colors shadow-sm hover:shadow-md"
+                onClick={() => onSelectCategory(category)}
+              >
+                <CardContent className={`p-3 ${isCompact ? 'py-2' : ''}`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-medium text-sm">{category.name}</h3>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${colorStyle.bg} ${colorStyle.text} ${colorStyle.border}`}>
+                          Position: {formatNumber(category.position || 0)}
+                        </span>
+                      </div>
+                      
+                      {!isCompact && category.description && (
+                        <p className="text-xs text-muted-foreground mt-1">{category.description}</p>
+                      )}
+                      
+                      {!isCompact && (
+                        <div className="flex items-center mt-2">
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${colorStyle.bg} ${colorStyle.text} ${colorStyle.border}`}>
+                            {category.subcategories?.length || 0} subcategories
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
           <Button
             variant="outline"
-            className="w-full border-dashed"
+            className="w-full border-dashed rounded-xl py-3"
             size="sm"
             onClick={onAddCategory}
           >
