@@ -37,6 +37,13 @@ export {
   priorityMap
 } from './workOrder';
 
+// Add WorkOrderTypes namespace for backward compatibility
+export namespace WorkOrderTypes {
+  export type WorkOrder = import('./workOrder').WorkOrder;
+  export type StatusType = import('./workOrder').WorkOrderStatusType;
+  export type PriorityType = import('./workOrder').WorkOrderPriorityType;
+}
+
 // Handle Invoice exports with explicit re-exports
 export type {
   Invoice,
