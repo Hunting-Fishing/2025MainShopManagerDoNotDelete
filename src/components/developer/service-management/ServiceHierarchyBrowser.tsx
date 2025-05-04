@@ -5,6 +5,12 @@ import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/ser
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 
+interface CategoryColorStyle {
+  bg: string;
+  text: string;
+  border: string;
+}
+
 interface ServiceHierarchyBrowserProps {
   categories: ServiceMainCategory[];
   loading: boolean;
@@ -14,7 +20,7 @@ interface ServiceHierarchyBrowserProps {
   selectedJobId: string | null;
   onSelectItem: (type: 'category' | 'subcategory' | 'job', id: string | null) => void;
   categoryColorMap?: Record<string, string>;
-  categoryColors?: Array<{ bg: string; text: string; border: string }>;
+  categoryColors?: CategoryColorStyle[];
 }
 
 export const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = ({
@@ -54,8 +60,14 @@ export const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = (
   }
 
   // Helper function to get color styles for a category
-  const getCategoryColorStyle = (categoryId: string) => {
-    if (!categoryColorMap || !categoryColors) return {};
+  const getCategoryColorStyle = (categoryId: string): CategoryColorStyle => {
+    if (!categoryColorMap || !categoryColors || categoryColors.length === 0) {
+      return {
+        bg: 'bg-blue-100',
+        text: 'text-blue-800',
+        border: 'border-blue-300'
+      };
+    }
     
     const colorIndex = parseInt(categoryColorMap[categoryId] || '0');
     return categoryColors[colorIndex % categoryColors.length] || categoryColors[0];
