@@ -1,4 +1,3 @@
-
 import { RouteObject } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import Dashboard from '@/pages/Dashboard';
@@ -98,7 +97,7 @@ export const routes: RouteObject[] = [
         path: 'login',
         element: <Login />,
       },
-      // Developer portal routes
+      // Developer portal routes - Make sure these are correctly defined
       {
         path: 'developer',
         element: <DeveloperPortal />,

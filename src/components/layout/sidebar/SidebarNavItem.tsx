@@ -100,7 +100,11 @@ export function SidebarNavItem(props: SidebarNavItemProps | DirectNavItemProps) 
             )}
           </div>
         ) : (
-          <Link to={navItem.href} className="flex items-center gap-2.5 w-full">
+          <Link to={navItem.href} className="flex items-center gap-2.5 w-full" onClick={(e) => {
+            if (navItem.disabled) {
+              e.preventDefault();
+            }
+          }}>
             <span className="text-xl">{navItem.icon}</span>
             {!collapsed && <span>{navItem.title}</span>}
           </Link>
