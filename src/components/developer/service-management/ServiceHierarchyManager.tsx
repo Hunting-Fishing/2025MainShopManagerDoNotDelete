@@ -1,286 +1,311 @@
-
 import React, { useState, useEffect } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AlertDialog, AlertDialogContent, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Plus, Upload, Download, Loader2 } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from '@/components/ui/card';
+import { useToast } from '@/components/ui/use-toast';
+import { Plus, Upload, Trash2 } from 'lucide-react';
+import { ServiceCategoriesList } from './hierarchy/ServiceCategoriesList';
 import { ServiceSearchBar } from './hierarchy/ServiceSearchBar';
 import { ServiceCategoryDetails } from './hierarchy/ServiceCategoryDetails';
-import { ServiceBulkImport } from './ServiceBulkImport';
+import ServiceBulkImport from './ServiceBulkImport';
 import { fetchServiceCategories, saveServiceCategory, deleteServiceCategory } from '@/lib/services';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
-import { createEmptyCategory, sortCategoriesByPosition } from '@/lib/services/serviceUtils';
-
-// Default color styles for service categories
-export const DEFAULT_COLOR_STYLES = [
-  { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-300' },
-  { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-300' },
-  { bg: 'bg-purple-100', text: 'text-purple-800', border: 'border-purple-300' },
-  { bg: 'bg-amber-100', text: 'text-amber-800', border: 'border-amber-300' },
-  { bg: 'bg-rose-100', text: 'text-rose-800', border: 'border-rose-300' },
-  { bg: 'bg-teal-100', text: 'text-teal-800', border: 'border-teal-300' },
-  { bg: 'bg-indigo-100', text: 'text-indigo-800', border: 'border-indigo-300' },
-  { bg: 'bg-cyan-100', text: 'text-cyan-800', border: 'border-cyan-300' },
-];
 
 const ServiceHierarchyManager: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<string>('categories');
   const [categories, setCategories] = useState<ServiceMainCategory[]>([]);
-  const [filteredCategories, setFilteredCategories] = useState<ServiceMainCategory[]>([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<ServiceMainCategory | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [showImport, setShowImport] = useState<boolean>(false);
+  const [showBulkImport, setShowBulkImport] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [filteredCategories, setFilteredCategories] = useState<ServiceMainCategory[]>([]);
   const { toast } = useToast();
-
-  // Load service categories on component mount
+  
+  // Fetch categories on component mount
   useEffect(() => {
-    loadCategories();
-  }, []);
-
-  const loadCategories = async () => {
-    try {
-      setIsLoading(true);
-      const data = await fetchServiceCategories();
-      const sortedData = sortCategoriesByPosition(data);
-      setCategories(sortedData);
-      setFilteredCategories(sortedData);
-      
-      // Select first category if available and none selected
-      if (sortedData.length > 0 && !selectedCategoryId) {
-        setSelectedCategoryId(sortedData[0].id);
+    const loadCategories = async () => {
+      try {
+        setIsLoading(true);
+        const data = await fetchServiceCategories();
+        setCategories(data);
+        setFilteredCategories(data);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error fetching service categories:', error);
+        toast({
+          title: "Failed to load services",
+          description: "There was an error loading the service categories.",
+          variant: "destructive"
+        });
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error("Failed to load service categories:", error);
+    };
+    
+    loadCategories();
+  }, [toast]);
+  
+  // Handle category selection
+  const handleCategorySelect = (category: ServiceMainCategory) => {
+    setSelectedCategory(category);
+  };
+  
+  // Add new category
+  const handleAddCategory = async () => {
+    try {
+      // Create a new category with position at the end
+      const newPosition = categories.length > 0 
+        ? Math.max(...categories.map(c => c.position)) + 1 
+        : 0;
+      
+      const newCategory = {
+        id: crypto.randomUUID(),
+        name: "New Category",
+        description: "",
+        position: newPosition,
+        subcategories: []
+      };
+      
+      // Save to database
+      const savedCategory = await saveServiceCategory(newCategory);
+      
+      // Update state
+      setCategories(prev => [...prev, savedCategory]);
+      setFilteredCategories(prev => [...prev, savedCategory]);
+      setSelectedCategory(savedCategory);
+      
       toast({
-        title: "Error",
-        description: "Could not load service categories",
-        variant: "destructive",
+        title: "Category created",
+        description: "New service category has been created successfully.",
       });
-    } finally {
-      setIsLoading(false);
+    } catch (error) {
+      console.error('Error creating category:', error);
+      toast({
+        title: "Failed to create category",
+        description: "There was an error creating the new category.",
+        variant: "destructive"
+      });
     }
   };
-
+  
+  // Save category changes
+  const handleSaveCategory = async (updatedCategory: ServiceMainCategory) => {
+    try {
+      // Save to database
+      const savedCategory = await saveServiceCategory(updatedCategory);
+      
+      // Update categories state
+      setCategories(prev => 
+        prev.map(c => c.id === savedCategory.id ? savedCategory : c)
+      );
+      
+      // Update filtered categories
+      setFilteredCategories(prev => 
+        prev.map(c => c.id === savedCategory.id ? savedCategory : c)
+      );
+      
+      // Update selected category if it's the one being edited
+      if (selectedCategory?.id === savedCategory.id) {
+        setSelectedCategory(savedCategory);
+      }
+      
+      toast({
+        title: "Changes saved",
+        description: "Service category has been updated successfully.",
+      });
+    } catch (error) {
+      console.error('Error saving category:', error);
+      toast({
+        title: "Failed to save changes",
+        description: "There was an error updating the category.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  // Delete a category
+  const handleDeleteCategory = async (categoryId: string) => {
+    try {
+      // Delete from database
+      await deleteServiceCategory(categoryId);
+      
+      // Update state
+      setCategories(prev => prev.filter(c => c.id !== categoryId));
+      setFilteredCategories(prev => prev.filter(c => c.id !== categoryId));
+      
+      // Clear selection if the deleted category was selected
+      if (selectedCategory?.id === categoryId) {
+        setSelectedCategory(null);
+      }
+      
+      toast({
+        title: "Category deleted",
+        description: "Service category has been deleted successfully.",
+      });
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      toast({
+        title: "Failed to delete category",
+        description: "There was an error deleting the category.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  // Handle search
   const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    
     if (!query.trim()) {
       setFilteredCategories(categories);
       return;
     }
     
-    const lowerQuery = query.toLowerCase();
+    const lowercasedQuery = query.toLowerCase();
     
-    // Filter based on category name, subcategory name, or job names
     const filtered = categories.filter(category => {
-      // Match category name
-      if (category.name.toLowerCase().includes(lowerQuery)) {
+      // Search in category name or description
+      if (
+        category.name.toLowerCase().includes(lowercasedQuery) ||
+        (category.description && category.description.toLowerCase().includes(lowercasedQuery))
+      ) {
         return true;
       }
       
-      // Match subcategories
-      const matchingSubcategories = category.subcategories?.filter(sub => {
-        // Match subcategory name
-        if (sub.name.toLowerCase().includes(lowerQuery)) {
-          return true;
+      // Search in subcategories
+      if (category.subcategories) {
+        for (const subcategory of category.subcategories) {
+          if (
+            subcategory.name.toLowerCase().includes(lowercasedQuery) ||
+            (subcategory.description && subcategory.description.toLowerCase().includes(lowercasedQuery))
+          ) {
+            return true;
+          }
+          
+          // Search in jobs
+          if (subcategory.jobs) {
+            for (const job of subcategory.jobs) {
+              if (
+                job.name.toLowerCase().includes(lowercasedQuery) ||
+                (job.description && job.description.toLowerCase().includes(lowercasedQuery))
+              ) {
+                return true;
+              }
+            }
+          }
         }
-        
-        // Match jobs in subcategory
-        return sub.jobs?.some(job => job.name.toLowerCase().includes(lowerQuery));
-      });
+      }
       
-      return matchingSubcategories?.length > 0;
+      return false;
     });
     
     setFilteredCategories(filtered);
   };
-
-  const handleAddCategory = async () => {
-    try {
-      const newCategoryPosition = categories.length;
-      const newCategory = createEmptyCategory(newCategoryPosition);
+  
+  // Handle bulk import
+  const handleBulkImportComplete = (importedCategories: ServiceMainCategory[]) => {
+    setShowBulkImport(false);
+    
+    // Refresh the categories list
+    setCategories(prev => {
+      // Merge imported categories with existing ones
+      const merged = [...prev];
       
-      const savedCategory = await saveServiceCategory(newCategory);
-      setCategories([...categories, savedCategory]);
-      setFilteredCategories([...categories, savedCategory]);
-      setSelectedCategoryId(savedCategory.id);
-      
-      toast({
-        title: "Success",
-        description: "New service category created",
-      });
-    } catch (error) {
-      console.error("Failed to create service category:", error);
-      toast({
-        title: "Error",
-        description: "Could not create service category",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleSaveCategory = async (updatedCategory: ServiceMainCategory) => {
-    try {
-      const savedCategory = await saveServiceCategory(updatedCategory);
-      
-      // Update the categories list with the saved category
-      const updatedCategories = categories.map(cat => 
-        cat.id === savedCategory.id ? savedCategory : cat
-      );
-      
-      setCategories(updatedCategories);
-      setFilteredCategories(
-        filteredCategories.map(cat => cat.id === savedCategory.id ? savedCategory : cat)
-      );
-      
-      toast({
-        title: "Success",
-        description: "Service category updated successfully",
+      importedCategories.forEach(importedCategory => {
+        const existingIndex = merged.findIndex(c => c.id === importedCategory.id);
+        if (existingIndex >= 0) {
+          merged[existingIndex] = importedCategory;
+        } else {
+          merged.push(importedCategory);
+        }
       });
       
-      return true;
-    } catch (error) {
-      console.error("Failed to save service category:", error);
-      toast({
-        title: "Error",
-        description: "Could not save service category",
-        variant: "destructive",
-      });
-      return false;
-    }
-  };
-
-  const handleDeleteCategory = async (categoryId: string) => {
-    try {
-      await deleteServiceCategory(categoryId);
-      
-      // Remove the deleted category from state
-      const updatedCategories = categories.filter(cat => cat.id !== categoryId);
-      setCategories(updatedCategories);
-      setFilteredCategories(filteredCategories.filter(cat => cat.id !== categoryId));
-      
-      // If the currently selected category was deleted, select another
-      if (selectedCategoryId === categoryId) {
-        setSelectedCategoryId(updatedCategories.length > 0 ? updatedCategories[0].id : null);
+      return merged;
+    });
+    
+    // Update filtered categories
+    setFilteredCategories(prev => {
+      // If no search query, show all categories
+      if (!searchQuery) {
+        return [...categories];
       }
       
-      toast({
-        title: "Success",
-        description: "Service category deleted successfully",
-      });
-    } catch (error) {
-      console.error("Failed to delete service category:", error);
-      toast({
-        title: "Error",
-        description: "Could not delete service category",
-        variant: "destructive",
-      });
-    }
+      // Otherwise, reapply search filter
+      return prev;
+    });
+    
+    toast({
+      title: "Import successful",
+      description: `${importedCategories.length} service categories were imported successfully.`,
+    });
   };
 
-  const selectedCategory = filteredCategories.find(cat => cat.id === selectedCategoryId) || null;
-
   return (
-    <>
-      {showImport ? (
-        <ServiceBulkImport 
-          onClose={() => setShowImport(false)} 
-          onImportComplete={loadCategories}
-        />
-      ) : (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <ServiceSearchBar onSearch={handleSearch} />
-            <div className="flex items-center space-x-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setShowImport(true)}
-                className="flex items-center"
-              >
-                <Upload className="h-4 w-4 mr-1" />
-                Import
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="flex items-center"
-              >
-                <Download className="h-4 w-4 mr-1" />
-                Export
-              </Button>
-              <Button 
-                onClick={handleAddCategory} 
-                size="sm"
-                className="flex items-center"
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                Add Category
-              </Button>
-            </div>
-          </div>
-          
-          {isLoading ? (
-            <Card className="flex justify-center items-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="ml-2">Loading service categories...</p>
-            </Card>
-          ) : filteredCategories.length === 0 ? (
-            <Card>
-              <CardContent className="text-center p-10">
-                <p className="text-muted-foreground mb-4">
-                  No service categories found. Add your first service category to get started.
-                </p>
-                <Button onClick={handleAddCategory}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Category
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="flex gap-4 h-[calc(100vh-260px)] min-h-[500px]">
-              <div className="w-64 overflow-y-auto border rounded-md">
-                <div className="p-2">
-                  {filteredCategories.map((category, index) => (
-                    <div 
-                      key={category.id} 
-                      onClick={() => setSelectedCategoryId(category.id)}
-                      className={`p-2 mb-1 rounded-md cursor-pointer border ${
-                        selectedCategoryId === category.id 
-                          ? "bg-primary/10 border-primary"
-                          : "hover:bg-muted border-transparent"
-                      }`}
-                    >
-                      <div className="flex items-center">
-                        <div className={`w-3 h-3 rounded-full ${DEFAULT_COLOR_STYLES[index % DEFAULT_COLOR_STYLES.length].bg}`} />
-                        <span className="ml-2 truncate">{category.name}</span>
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1 pl-5">
-                        {category.subcategories?.length || 0} subcategories
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="flex-1 overflow-y-auto border rounded-md">
-                {selectedCategory ? (
-                  <ServiceCategoryDetails 
-                    category={selectedCategory} 
-                    onSave={handleSaveCategory}
-                    onDelete={handleDeleteCategory}
-                    colorStyle={DEFAULT_COLOR_STYLES[filteredCategories.findIndex(c => c.id === selectedCategoryId) % DEFAULT_COLOR_STYLES.length]}
-                  />
-                ) : (
-                  <div className="p-8 text-center text-muted-foreground">
-                    <p>Select a service category from the list to edit its details</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+    <div className="flex flex-col space-y-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
+        <ServiceSearchBar onSearch={handleSearch} />
+        <div className="flex space-x-2">
+          <Button 
+            size="sm" 
+            onClick={handleAddCategory}
+            className="bg-indigo-600 hover:bg-indigo-700"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            Add Category
+          </Button>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={() => setShowBulkImport(true)}
+          >
+            <Upload className="w-4 h-4 mr-1" />
+            Bulk Import
+          </Button>
         </div>
-      )}
-    </>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="md:col-span-1 h-[70vh] flex flex-col">
+          <CardContent className="p-3 flex-grow overflow-hidden">
+            <ServiceCategoriesList 
+              categories={filteredCategories}
+              selectedCategoryId={selectedCategory?.id}
+              onSelectCategory={handleCategorySelect}
+              isLoading={isLoading}
+            />
+          </CardContent>
+        </Card>
+        
+        <Card className="md:col-span-2 h-[70vh] overflow-auto">
+          <CardContent className="p-4">
+            {selectedCategory ? (
+              <ServiceCategoryDetails 
+                category={selectedCategory}
+                onSave={handleSaveCategory}
+                onDelete={handleDeleteCategory}
+              />
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center text-center p-6">
+                <Trash2 className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium mb-2">No Category Selected</h3>
+                <p className="text-muted-foreground mb-4">
+                  Select a category from the list or create a new one to get started.
+                </p>
+                <Button onClick={handleAddCategory}>Create New Category</Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+      
+      <AlertDialog open={showBulkImport} onOpenChange={setShowBulkImport}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogTitle>Bulk Import Services</AlertDialogTitle>
+          <ServiceBulkImport 
+            onCancel={() => setShowBulkImport(false)} 
+            onComplete={handleBulkImportComplete}
+          />
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 };
 
