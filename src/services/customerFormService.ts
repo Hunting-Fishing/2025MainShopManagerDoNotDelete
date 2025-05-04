@@ -230,11 +230,13 @@ export async function getFormComments(formId: string): Promise<CustomerFormComme
     // Safely handle the potentially null profiles property
     let userName: string | undefined = undefined;
     
-    if (comment.profiles !== null) {
-      if (typeof comment.profiles === 'object' && 
-          'first_name' in comment.profiles && 
-          'last_name' in comment.profiles) {
-        userName = `${comment.profiles.first_name} ${comment.profiles.last_name}`;
+    if (comment.profiles) {
+      const profiles = comment.profiles;
+      if (typeof profiles === 'object' && 
+          profiles !== null &&
+          'first_name' in profiles && 
+          'last_name' in profiles) {
+        userName = `${profiles.first_name} ${profiles.last_name}`;
       }
     }
 
