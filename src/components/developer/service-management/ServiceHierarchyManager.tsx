@@ -23,6 +23,7 @@ import {
   PlusCircle 
 } from 'lucide-react';
 import ServicesPriceReport from './ServicesPriceReport';
+import ServiceBulkImport from './ServiceBulkImport';
 
 const ServiceHierarchyManager: React.FC = () => {
   const [categories, setCategories] = useState<ServiceMainCategory[]>([]);
@@ -169,7 +170,7 @@ const ServiceHierarchyManager: React.FC = () => {
 
         <TabsContent value="browser" className="space-y-6">
           <div className="flex justify-between mb-4">
-            <div>
+            <div className="flex gap-2">
               <Button 
                 onClick={handleAddCategory} 
                 className="mr-2 bg-blue-600 hover:bg-blue-700"
@@ -177,6 +178,7 @@ const ServiceHierarchyManager: React.FC = () => {
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Add Category
               </Button>
+              <ServiceBulkImport onFileUpload={handleFileUpload} isLoading={isLoading} />
             </div>
           </div>
 
