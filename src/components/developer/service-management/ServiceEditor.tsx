@@ -238,3 +238,6 @@ export const ServiceEditor: React.FC<ServiceEditorProps> = ({
 };
 
 export default ServiceEditor;
+
+// Export CategoryColorStyle to make it accessible to other components
+export { CategoryColorStyle, DEFAULT_COLOR_STYLES };
