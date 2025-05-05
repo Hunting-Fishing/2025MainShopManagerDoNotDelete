@@ -14,11 +14,11 @@ import { Label } from "@/components/ui/label";
 import { BellPlus } from "lucide-react";
 import { useState } from "react";
 import { InventoryItemExtended } from "@/types/inventory";
-import { type AutoReorderSettings } from "@/hooks/inventory/useInventoryManager";
+import { AutoReorderSettings } from "@/hooks/inventory/useInventoryManager";
 
 interface AutoReorderDialogProps {
   item: InventoryItemExtended;
-  autoReorderSettings: Record<string, AutoReorderSettings>;
+  autoReorderSettings: AutoReorderSettings | Record<string, AutoReorderSettings>;
   onEnableAutoReorder: (itemId: string, threshold: number, quantity: number) => void;
 }
 
@@ -75,9 +75,14 @@ export function AutoReorderDialog({
         </div>
         <DialogFooter>
           <Button onClick={handleEnableAutoReorder}>
-            {autoReorderSettings[item.id]?.enabled 
-              ? "Update Auto-reorder" 
-              : "Enable Auto-reorder"}
+            {typeof autoReorderSettings === 'object' && 'enabled' in autoReorderSettings 
+              ? (autoReorderSettings as AutoReorderSettings).enabled 
+                ? "Update Auto-reorder" 
+                : "Enable Auto-reorder"
+              : typeof autoReorderSettings === 'object' && autoReorderSettings[item.id]?.enabled
+                ? "Update Auto-reorder"
+                : "Enable Auto-reorder"
+            }
           </Button>
         </DialogFooter>
       </DialogContent>

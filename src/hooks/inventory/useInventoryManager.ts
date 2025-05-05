@@ -4,18 +4,31 @@ import {
   getLowStockItems, 
   getOutOfStockItems 
 } from '@/services/inventoryService';
-import { InventoryItemExtended, AutoReorderSettings } from '@/types/inventory';
+import { InventoryItemExtended } from '@/types/inventory';
 import { toast } from '@/hooks/use-toast';
+import { useManualReorder } from './useManualReorder';
+import { useAutoReorder } from './useAutoReorder';
+
+// Export this type from the hook
+export interface AutoReorderSettings {
+  enabled: boolean;
+  threshold: number;
+  quantity: number;
+}
 
 export function useInventoryManager() {
   const [lowStockItems, setLowStockItems] = useState<InventoryItemExtended[]>([]);
   const [outOfStockItems, setOutOfStockItems] = useState<InventoryItemExtended[]>([]);
-  const [autoReorderSettings, setAutoReorderSettings] = useState<AutoReorderSettings>({
-    enabled: false,
-    threshold: 5,
-    quantity: 10
-  });
   const [loading, setLoading] = useState(false);
+  
+  // Use the sub-hooks for specific functionality
+  const { reorderItem } = useManualReorder();
+  const { 
+    autoReorderSettings, 
+    enableAutoReorder, 
+    disableAutoReorder, 
+    placeAutomaticOrder 
+  } = useAutoReorder();
 
   // Function to check inventory alerts
   const checkInventoryAlerts = useCallback(async () => {
@@ -58,6 +71,38 @@ export function useInventoryManager() {
     console.log('Reserving inventory for work order:', items);
     return true;
   }, []);
+  
+  // Function to check item availability for work orders
+  const checkItemAvailability = useCallback(async (itemId: string, quantity: number) => {
+    // Mock implementation - in a real app this would check against database
+    console.log(`Checking availability for item ${itemId}, quantity ${quantity}`);
+    
+    // For demo purposes, we'll assume all items with quantity <= 5 are low stock
+    const item = lowStockItems.find(item => item.id === itemId);
+    if (item && item.quantity < quantity) {
+      return {
+        available: false,
+        message: `Only ${item.quantity} units of ${item.name} available`,
+        availableQuantity: item.quantity
+      };
+    }
+    
+    // Check if item is out of stock
+    const outOfStockItem = outOfStockItems.find(item => item.id === itemId);
+    if (outOfStockItem) {
+      return {
+        available: false,
+        message: `${outOfStockItem.name} is out of stock`,
+        availableQuantity: 0
+      };
+    }
+    
+    // If not in our alerts lists, assume it's available
+    return {
+      available: true,
+      message: "Item is available"
+    };
+  }, [lowStockItems, outOfStockItems]);
 
   return {
     lowStockItems,
@@ -66,6 +111,11 @@ export function useInventoryManager() {
     loading,
     checkInventoryAlerts,
     consumeWorkOrderInventory,
-    reserveInventory
+    reserveInventory,
+    checkItemAvailability,
+    reorderItem,
+    enableAutoReorder,
+    disableAutoReorder,
+    placeAutomaticOrder
   };
 }

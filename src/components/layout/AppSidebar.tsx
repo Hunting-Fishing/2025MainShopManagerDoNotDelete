@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
@@ -8,24 +9,31 @@ import { useSidebar } from '@/hooks/use-sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { SidebarContent } from './sidebar/SidebarContent';
 import { Link } from 'react-router-dom';
-import { useShop } from '@/context/ShopContext';
-import { Logo } from './Logo';
 import { cn } from '@/lib/utils';
-import { ShoppingActiveBadge } from './ShoppingActiveBadge';
-import { SidebarFooter } from './SidebarFooter';
-import DeveloperIcon from '@/components/icons/DeveloperIcon';
+import { 
+  LayoutDashboard, 
+  Users, 
+  Wrench, 
+  Package, 
+  Calendar, 
+  BarChart,
+  Users2, 
+  ClipboardPenLine, 
+  Settings2, 
+  ShoppingCart 
+} from 'lucide-react';
 
 const navItems = [
-  { path: '/dashboard', name: 'Dashboard', icon: LayoutDashboardIcon },
-  { path: '/customers', name: 'Customers', icon: UsersIcon },
-  { path: '/work-orders', name: 'Work Orders', icon: WrenchIcon },
-  { path: '/inventory', name: 'Inventory', icon: PackageIcon },
-  { path: '/calendar', name: 'Calendar', icon: CalendarIcon },
-  { path: '/reports', name: 'Reports', icon: BarChartIcon },
-  { path: '/team', name: 'Team', icon: Users2Icon },
-  { path: '/forms', name: 'Forms', icon: ClipboardPenLineIcon },
-  { path: '/settings', name: 'Settings', icon: Settings2Icon },
-  { path: '/shopping', name: 'Shopping', icon: ShoppingCartIcon },
+  { path: '/dashboard', name: 'Dashboard', icon: LayoutDashboard },
+  { path: '/customers', name: 'Customers', icon: Users },
+  { path: '/work-orders', name: 'Work Orders', icon: Wrench },
+  { path: '/inventory', name: 'Inventory', icon: Package },
+  { path: '/calendar', name: 'Calendar', icon: Calendar },
+  { path: '/reports', name: 'Reports', icon: BarChart },
+  { path: '/team', name: 'Team', icon: Users2 },
+  { path: '/forms', name: 'Forms', icon: ClipboardPenLine },
+  { path: '/settings', name: 'Settings', icon: Settings2 },
+  { path: '/shopping', name: 'Shopping', icon: ShoppingCart },
 ];
 
 export function AppSidebar() {

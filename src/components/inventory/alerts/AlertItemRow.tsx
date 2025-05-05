@@ -2,13 +2,13 @@
 import { TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { InventoryItemExtended } from "@/types/inventory";
-import { type AutoReorderSettings } from "@/hooks/inventory/useInventoryManager";
+import { AutoReorderSettings } from "@/hooks/inventory/useInventoryManager";
 import { ReorderDialog } from "./ReorderDialog";
 import { AutoReorderDialog } from "./AutoReorderDialog";
 
 interface AlertItemRowProps {
   item: InventoryItemExtended;
-  autoReorderSettings: Record<string, AutoReorderSettings>;
+  autoReorderSettings: AutoReorderSettings | Record<string, AutoReorderSettings>;
   reorderItem: (itemId: string, quantity: number) => void;
   enableAutoReorder: (itemId: string, threshold: number, quantity: number) => void;
 }
