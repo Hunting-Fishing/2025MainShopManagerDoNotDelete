@@ -100,22 +100,20 @@ export const CommonServicesChecklist: React.FC<CommonServicesChecklistProps> = (
     }
 
     return (
-      <TooltipProvider>
-        <div className="flex gap-6 min-h-[500px] bg-muted/5 rounded-lg p-4">
-          <ServiceCategoryList
-            categories={categories}
-            selectedCategory={selectedMainCategory}
-            onCategorySelect={setSelectedMainCategory}
+      <div className="flex gap-6 min-h-[500px] bg-muted/5 rounded-lg p-4">
+        <ServiceCategoryList
+          categories={categories}
+          selectedCategory={selectedMainCategory}
+          onCategorySelect={setSelectedMainCategory}
+        />
+        {selectedCategory && (
+          <ServiceSubcategoryGrid
+            category={selectedCategory}
+            checkedServices={checkedServices}
+            onServiceCheck={handleCheckboxChange}
           />
-          {selectedCategory && (
-            <ServiceSubcategoryGrid
-              category={selectedCategory}
-              checkedServices={checkedServices}
-              onServiceCheck={handleCheckboxChange}
-            />
-          )}
-        </div>
-      </TooltipProvider>
+        )}
+      </div>
     );
   };
 
