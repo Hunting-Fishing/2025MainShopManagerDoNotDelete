@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { ServiceMainCategory } from "@/types/serviceHierarchy";
+import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from "@/types/serviceHierarchy";
 
 // Function to fetch all service categories
 export async function fetchServiceCategories(): Promise<ServiceMainCategory[]> {
@@ -263,6 +263,99 @@ export async function updateJobName(categoryId: string, subcategoryId: string, j
     }
   } catch (error) {
     console.error("Error updating job name:", error);
+    throw error;
+  }
+}
+
+// Function to add a new subcategory to a category
+export async function addSubcategoryToCategory(categoryId: string, subcategory: ServiceSubcategory): Promise<ServiceMainCategory> {
+  try {
+    // First, fetch the category
+    const { data: category, error: fetchError } = await supabase
+      .from('service_hierarchy')
+      .select('*')
+      .eq('id', categoryId)
+      .single();
+      
+    if (fetchError) {
+      throw new Error(`Error fetching category: ${fetchError.message}`);
+    }
+    
+    if (!category) {
+      throw new Error(`Category with ID ${categoryId} not found`);
+    }
+    
+    // Add the new subcategory to the category's subcategories array
+    category.subcategories.push(subcategory);
+    
+    // Save the updated category
+    const { data: updatedCategory, error: updateError } = await supabase
+      .from('service_hierarchy')
+      .update(category)
+      .eq('id', categoryId)
+      .select()
+      .single();
+      
+    if (updateError) {
+      throw new Error(`Error adding subcategory: ${updateError.message}`);
+    }
+    
+    return updatedCategory;
+  } catch (error) {
+    console.error("Error adding subcategory:", error);
+    throw error;
+  }
+}
+
+// Function to add a new service/job to a subcategory
+export async function addServiceToSubcategory(
+  categoryId: string, 
+  subcategoryId: string, 
+  service: ServiceJob
+): Promise<ServiceMainCategory> {
+  try {
+    // First, fetch the category
+    const { data: category, error: fetchError } = await supabase
+      .from('service_hierarchy')
+      .select('*')
+      .eq('id', categoryId)
+      .single();
+      
+    if (fetchError) {
+      throw new Error(`Error fetching category: ${fetchError.message}`);
+    }
+    
+    if (!category) {
+      throw new Error(`Category with ID ${categoryId} not found`);
+    }
+    
+    // Find the subcategory
+    const subcategoryIndex = category.subcategories.findIndex(
+      sub => sub.id === subcategoryId
+    );
+    
+    if (subcategoryIndex === -1) {
+      throw new Error(`Subcategory with ID ${subcategoryId} not found in category ${categoryId}`);
+    }
+    
+    // Add the new service to the subcategory's jobs array
+    category.subcategories[subcategoryIndex].jobs.push(service);
+    
+    // Save the updated category
+    const { data: updatedCategory, error: updateError } = await supabase
+      .from('service_hierarchy')
+      .update(category)
+      .eq('id', categoryId)
+      .select()
+      .single();
+      
+    if (updateError) {
+      throw new Error(`Error adding service: ${updateError.message}`);
+    }
+    
+    return updatedCategory;
+  } catch (error) {
+    console.error("Error adding service:", error);
     throw error;
   }
 }
