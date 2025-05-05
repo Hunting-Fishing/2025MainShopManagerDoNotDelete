@@ -5,28 +5,24 @@ import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface WorkOrderFormHeaderProps {
-  title?: string;
-  description?: string;
   isEditing?: boolean;
   isSubmitting?: boolean;
   error?: string | null;
 }
 
 export const WorkOrderFormHeader: React.FC<WorkOrderFormHeaderProps> = ({
-  title,
-  description,
   isEditing = false,
   isSubmitting = false,
   error = null,
 }) => {
   return (
-    <div className="p-6 border-b border-gray-200 bg-white dark:bg-slate-900 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start gap-4">
+    <div className="p-6 border-b border-gray-200 bg-white dark:bg-slate-900 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start gap-4 rounded-t-lg">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">
-          {title || (isEditing ? "Edit Work Order" : "Create Work Order")}
+          {isEditing ? "Edit Work Order" : "Create Work Order"}
         </h1>
         <p className="text-muted-foreground">
-          {description || (isEditing ? "Update the work order details" : "Enter the work order details")}
+          {isEditing ? "Update the work order details" : "Enter the work order details"}
         </p>
       </div>
       
