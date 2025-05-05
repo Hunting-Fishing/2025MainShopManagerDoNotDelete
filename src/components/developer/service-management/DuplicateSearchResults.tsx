@@ -8,30 +8,50 @@ import {
   ChevronRight,
   Copy,
   Clipboard,
-  X
+  X,
+  Trash2
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface DuplicateSearchResultsProps {
   duplicates: DuplicateItem[];
   recommendations: string[];
   onClose: () => void;
+  onRemoveDuplicate?: (itemId: string, type: 'category' | 'subcategory' | 'job') => Promise<void>;
 }
 
 export const DuplicateSearchResults: React.FC<DuplicateSearchResultsProps> = ({
   duplicates,
   recommendations,
   onClose,
+  onRemoveDuplicate
 }) => {
   const [expandedItems, setExpandedItems] = React.useState<Record<string, boolean>>({});
+  const [removingItems, setRemovingItems] = React.useState<Record<string, boolean>>({});
   
   const toggleExpand = (name: string) => {
     setExpandedItems(prev => ({
       ...prev,
       [name]: !prev[name],
     }));
+  };
+  
+  const handleRemoveDuplicate = async (itemId: string, type: 'category' | 'subcategory' | 'job', itemName: string) => {
+    if (!onRemoveDuplicate) return;
+    
+    try {
+      setRemovingItems(prev => ({ ...prev, [itemId]: true }));
+      await onRemoveDuplicate(itemId, type);
+      toast.success(`Successfully removed duplicate "${itemName}"`);
+    } catch (error) {
+      console.error("Error removing duplicate:", error);
+      toast.error(`Failed to remove duplicate "${itemName}"`);
+    } finally {
+      setRemovingItems(prev => ({ ...prev, [itemId]: false }));
+    }
   };
   
   const getBadgeColor = (type: 'category' | 'subcategory' | 'job') => {
@@ -118,8 +138,23 @@ export const DuplicateSearchResults: React.FC<DuplicateSearchResultsProps> = ({
                       <div className="p-3 border-t border-gray-200 bg-white">
                         <ul className="space-y-2">
                           {duplicate.occurrences.map((occurrence, occIdx) => (
-                            <li key={occIdx} className="text-sm pl-2 border-l-2 border-blue-200">
+                            <li key={occIdx} className="flex justify-between items-center text-sm pl-2 border-l-2 border-blue-200 py-1">
                               <span className="text-gray-500">{occurrence.path}</span>
+                              {onRemoveDuplicate && (
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                  disabled={removingItems[occurrence.itemId]}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemoveDuplicate(occurrence.itemId, duplicate.type, duplicate.name);
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-1" />
+                                  {removingItems[occurrence.itemId] ? "Removing..." : "Remove"}
+                                </Button>
+                              )}
                             </li>
                           ))}
                         </ul>
@@ -154,7 +189,7 @@ export const DuplicateSearchResults: React.FC<DuplicateSearchResultsProps> = ({
                   // Could export the data to CSV in the future
                   const jsonString = JSON.stringify(duplicates, null, 2);
                   navigator.clipboard.writeText(jsonString);
-                  alert("Duplicate data copied to clipboard");
+                  toast.success("Duplicate data copied to clipboard");
                 }}
               >
                 <Copy className="h-4 w-4 mr-2" />

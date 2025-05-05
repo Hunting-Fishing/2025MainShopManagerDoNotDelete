@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ServiceHierarchyBrowser } from './ServiceHierarchyBrowser';
 import { fetchServiceCategories } from '@/lib/services/serviceApi';
@@ -23,26 +24,27 @@ export const ServiceHierarchyManager: React.FC = () => {
   const [categoryColorMap, setCategoryColorMap] = useState<Record<string, string>>({});
   
   // Load service categories
+  const loadCategories = async () => {
+    setLoading(true);
+    try {
+      const data = await fetchServiceCategories();
+      setCategories(data);
+      setFilteredCategories(data);
+      
+      // Create color map for categories
+      const categoryIds = data.map(cat => cat.id);
+      setCategoryColorMap(assignCategoryColors(categoryIds));
+      
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load service categories');
+      toast.error('Failed to load service categories');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Initial load
   useEffect(() => {
-    const loadCategories = async () => {
-      setLoading(true);
-      try {
-        const data = await fetchServiceCategories();
-        setCategories(data);
-        setFilteredCategories(data);
-        
-        // Create color map for categories
-        const categoryIds = data.map(cat => cat.id);
-        setCategoryColorMap(assignCategoryColors(categoryIds));
-        
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load service categories');
-        toast.error('Failed to load service categories');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     loadCategories();
   }, []);
   
@@ -151,7 +153,11 @@ export const ServiceHierarchyManager: React.FC = () => {
           <Button size="sm" variant="outline">
             <Download className="h-4 w-4 mr-1" /> Export
           </Button>
-          <DuplicateSearchButton categories={categories} loading={loading} />
+          <DuplicateSearchButton 
+            categories={categories} 
+            loading={loading} 
+            onCategoriesUpdated={loadCategories}
+          />
           <Button size="sm" variant="ghost" onClick={() => {
             setLoading(true);
             fetchServiceCategories()

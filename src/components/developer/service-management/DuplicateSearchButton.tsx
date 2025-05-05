@@ -6,15 +6,18 @@ import { ServiceMainCategory } from '@/types/serviceHierarchy';
 import { findServiceDuplicates, generateDuplicateRecommendations, DuplicateItem } from '@/utils/search/duplicateSearch';
 import { DuplicateSearchResults } from './DuplicateSearchResults';
 import { toast } from 'sonner';
+import { removeDuplicateItem } from '@/lib/services/serviceApi';
 
 interface DuplicateSearchButtonProps {
   categories: ServiceMainCategory[];
   loading?: boolean;
+  onCategoriesUpdated?: () => void;
 }
 
 export const DuplicateSearchButton: React.FC<DuplicateSearchButtonProps> = ({
   categories,
-  loading = false
+  loading = false,
+  onCategoriesUpdated
 }) => {
   const [showResults, setShowResults] = useState(false);
   const [duplicates, setDuplicates] = useState<DuplicateItem[]>([]);
@@ -53,6 +56,43 @@ export const DuplicateSearchButton: React.FC<DuplicateSearchButtonProps> = ({
     setShowResults(false);
   };
   
+  const handleRemoveDuplicate = async (itemId: string, type: 'category' | 'subcategory' | 'job') => {
+    try {
+      await removeDuplicateItem(itemId, type);
+      
+      // Remove the item from duplicates array
+      setDuplicates(prevDuplicates => {
+        return prevDuplicates.map(duplicate => {
+          // Filter out the removed occurrence
+          const filteredOccurrences = duplicate.occurrences.filter(
+            occurrence => occurrence.itemId !== itemId
+          );
+          
+          // If no occurrences left, remove the duplicate item
+          if (filteredOccurrences.length < 2) {
+            return null;
+          }
+          
+          // Return updated duplicate with filtered occurrences
+          return {
+            ...duplicate,
+            occurrences: filteredOccurrences
+          };
+        }).filter(Boolean) as DuplicateItem[];
+      });
+      
+      // Trigger callback to refresh the categories if provided
+      if (onCategoriesUpdated) {
+        onCategoriesUpdated();
+      }
+      
+      return Promise.resolve();
+    } catch (error) {
+      console.error("Error removing duplicate item:", error);
+      return Promise.reject(error);
+    }
+  };
+  
   return (
     <>
       <Button
@@ -72,6 +112,7 @@ export const DuplicateSearchButton: React.FC<DuplicateSearchButtonProps> = ({
               duplicates={duplicates}
               recommendations={recommendations}
               onClose={closeResults}
+              onRemoveDuplicate={handleRemoveDuplicate}
             />
           </div>
         </div>
