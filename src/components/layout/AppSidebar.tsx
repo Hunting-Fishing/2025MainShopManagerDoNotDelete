@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
@@ -8,6 +7,26 @@ import {
 import { useSidebar } from '@/hooks/use-sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { SidebarContent } from './sidebar/SidebarContent';
+import { Link } from 'react-router-dom';
+import { useShop } from '@/context/ShopContext';
+import { Logo } from './Logo';
+import { cn } from '@/lib/utils';
+import { ShoppingActiveBadge } from './ShoppingActiveBadge';
+import { SidebarFooter } from './SidebarFooter';
+import DeveloperIcon from '@/components/icons/DeveloperIcon';
+
+const navItems = [
+  { path: '/dashboard', name: 'Dashboard', icon: LayoutDashboardIcon },
+  { path: '/customers', name: 'Customers', icon: UsersIcon },
+  { path: '/work-orders', name: 'Work Orders', icon: WrenchIcon },
+  { path: '/inventory', name: 'Inventory', icon: PackageIcon },
+  { path: '/calendar', name: 'Calendar', icon: CalendarIcon },
+  { path: '/reports', name: 'Reports', icon: BarChartIcon },
+  { path: '/team', name: 'Team', icon: Users2Icon },
+  { path: '/forms', name: 'Forms', icon: ClipboardPenLineIcon },
+  { path: '/settings', name: 'Settings', icon: Settings2Icon },
+  { path: '/shopping', name: 'Shopping', icon: ShoppingCartIcon },
+];
 
 export function AppSidebar() {
   const { isOpen, onOpen, onClose } = useSidebar();

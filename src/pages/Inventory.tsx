@@ -1,4 +1,5 @@
 
+import React from "react";
 import { InventoryHeader } from "@/components/inventory/InventoryHeader";
 import { InventoryFilters } from "@/components/inventory/InventoryFilters";
 import { InventoryTable } from "@/components/inventory/InventoryTable";

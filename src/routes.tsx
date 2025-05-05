@@ -37,6 +37,7 @@ import DataExportSettings from '@/pages/settings/DataExportSettings';
 import LanguageSettings from '@/pages/settings/LanguageSettings';
 import SecurityAdvancedSettings from '@/pages/settings/SecurityAdvancedSettings';
 import Index from '@/pages/Index';
+import Inventory from '@/pages/Inventory';
 
 // All routes must be declared here to be used by the RouterProvider
 export const routes: RouteObject[] = [
@@ -79,6 +80,10 @@ export const routes: RouteObject[] = [
       {
         path: 'work-orders/:id',
         element: <WorkOrderDetails />,
+      },
+      {
+        path: 'inventory',
+        element: <Inventory />,
       },
       {
         path: 'reports',
