@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { ServiceMainCategory } from "@/types/serviceHierarchy";
 
@@ -264,6 +263,30 @@ export async function updateJobName(categoryId: string, subcategoryId: string, j
     }
   } catch (error) {
     console.error("Error updating job name:", error);
+    throw error;
+  }
+}
+
+// Function to bulk import service categories
+export async function bulkImportServiceCategories(
+  categories: ServiceMainCategory[], 
+  progressCallback?: (progress: number) => void
+): Promise<void> {
+  try {
+    const totalCategories = categories.length;
+    
+    for (let i = 0; i < totalCategories; i++) {
+      // Save each category
+      await saveServiceCategory(categories[i]);
+      
+      // Report progress if callback provided
+      if (progressCallback) {
+        const progress = (i + 1) / totalCategories;
+        progressCallback(progress);
+      }
+    }
+  } catch (error) {
+    console.error("Error bulk importing service categories:", error);
     throw error;
   }
 }
