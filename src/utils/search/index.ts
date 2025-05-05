@@ -7,6 +7,7 @@ export * from './searchProviders';
 export * from './searchService';
 export * from './customerSearch';
 export * from './serviceSearch';
+export * from './duplicateSearch';
 
 // Generic search function that combines results from different search providers
 import { SearchResult } from "./types";

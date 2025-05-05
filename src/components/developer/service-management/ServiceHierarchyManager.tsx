@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ServiceHierarchyBrowser } from './ServiceHierarchyBrowser';
 import { fetchServiceCategories } from '@/lib/services/serviceApi';
@@ -9,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Plus, Download, Upload, RefreshCcw } from 'lucide-react';
 import { toast } from 'sonner';
+import { DuplicateSearchButton } from './DuplicateSearchButton';
 
 export const ServiceHierarchyManager: React.FC = () => {
   const [categories, setCategories] = useState<ServiceMainCategory[]>([]);
@@ -151,6 +151,7 @@ export const ServiceHierarchyManager: React.FC = () => {
           <Button size="sm" variant="outline">
             <Download className="h-4 w-4 mr-1" /> Export
           </Button>
+          <DuplicateSearchButton categories={categories} loading={loading} />
           <Button size="sm" variant="ghost" onClick={() => {
             setLoading(true);
             fetchServiceCategories()
