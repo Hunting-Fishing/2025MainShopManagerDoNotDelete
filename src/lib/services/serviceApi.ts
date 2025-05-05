@@ -16,7 +16,15 @@ export async function fetchServiceCategories(): Promise<ServiceMainCategory[]> {
       throw error;
     }
     
-    return data as ServiceMainCategory[];
+    // Parse the JSON subcategories field and cast to proper types
+    const typedData: ServiceMainCategory[] = data.map(item => ({
+      ...item,
+      subcategories: Array.isArray(item.subcategories) 
+        ? item.subcategories as ServiceSubcategory[]
+        : []
+    }));
+    
+    return typedData;
   } catch (error) {
     console.error('Failed to fetch service categories:', error);
     throw error;
@@ -49,10 +57,12 @@ export async function updateServiceItemName(
       
       // Find the category and update the nested item
       for (const category of categories) {
+        const subcategories = category.subcategories as ServiceSubcategory[];
+        
         if (type === 'subcategory') {
-          const subcategoryIndex = category.subcategories.findIndex((s: ServiceSubcategory) => s.id === itemId);
+          const subcategoryIndex = subcategories.findIndex((s) => s.id === itemId);
           if (subcategoryIndex >= 0) {
-            const updatedSubcategories = [...category.subcategories];
+            const updatedSubcategories = [...subcategories];
             updatedSubcategories[subcategoryIndex].name = newName;
             
             const { error } = await supabase
@@ -66,11 +76,12 @@ export async function updateServiceItemName(
         } else if (type === 'job') {
           let updated = false;
           
-          const updatedSubcategories = category.subcategories.map((subcategory: ServiceSubcategory) => {
-            const jobIndex = subcategory.jobs.findIndex((j: ServiceJob) => j.id === itemId);
+          const updatedSubcategories = subcategories.map((subcategory) => {
+            const jobs = subcategory.jobs || [];
+            const jobIndex = jobs.findIndex((j) => j.id === itemId);
             if (jobIndex >= 0) {
               updated = true;
-              const updatedJobs = [...subcategory.jobs];
+              const updatedJobs = [...jobs];
               updatedJobs[jobIndex].name = newName;
               return { ...subcategory, jobs: updatedJobs };
             }
@@ -122,12 +133,14 @@ export async function deleteServiceItem(
       
       // Find the category and remove the nested item
       for (const category of categories) {
+        const subcategories = category.subcategories as ServiceSubcategory[];
+        
         if (type === 'subcategory') {
-          const filteredSubcategories = category.subcategories.filter(
-            (s: ServiceSubcategory) => s.id !== itemId
+          const filteredSubcategories = subcategories.filter(
+            (s) => s.id !== itemId
           );
           
-          if (filteredSubcategories.length < category.subcategories.length) {
+          if (filteredSubcategories.length < subcategories.length) {
             const { error } = await supabase
               .from('service_hierarchy')
               .update({ subcategories: filteredSubcategories })
@@ -139,10 +152,11 @@ export async function deleteServiceItem(
         } else if (type === 'job') {
           let updated = false;
           
-          const updatedSubcategories = category.subcategories.map((subcategory: ServiceSubcategory) => {
-            const filteredJobs = subcategory.jobs.filter((j: ServiceJob) => j.id !== itemId);
+          const updatedSubcategories = subcategories.map((subcategory) => {
+            const jobs = subcategory.jobs || [];
+            const filteredJobs = jobs.filter((j) => j.id !== itemId);
             
-            if (filteredJobs.length < subcategory.jobs.length) {
+            if (filteredJobs.length < jobs.length) {
               updated = true;
               return { ...subcategory, jobs: filteredJobs };
             }
@@ -190,7 +204,8 @@ export async function addSubcategory(
     if (fetchError) throw fetchError;
     
     // Add the new subcategory
-    const updatedSubcategories = [...category.subcategories, newSubcategory];
+    const subcategories = category.subcategories as ServiceSubcategory[] || [];
+    const updatedSubcategories = [...subcategories, newSubcategory];
     
     const { error: updateError } = await supabase
       .from('service_hierarchy')
@@ -228,11 +243,12 @@ export async function addJob(
     if (fetchError) throw fetchError;
     
     // Find the subcategory and add the job
-    const updatedSubcategories = category.subcategories.map((subcategory: ServiceSubcategory) => {
+    const subcategories = category.subcategories as ServiceSubcategory[];
+    const updatedSubcategories = subcategories.map((subcategory) => {
       if (subcategory.id === subcategoryId) {
         return {
           ...subcategory,
-          jobs: [...subcategory.jobs, newJob]
+          jobs: [...(subcategory.jobs || []), newJob]
         };
       }
       return subcategory;
@@ -288,7 +304,15 @@ export async function bulkImportServiceCategories(
     
     progressCallback?.(100);
     
-    return insertedData as ServiceMainCategory[];
+    // Parse the JSON subcategories field and cast to proper types
+    const typedData: ServiceMainCategory[] = insertedData.map(item => ({
+      ...item,
+      subcategories: Array.isArray(item.subcategories) 
+        ? item.subcategories as ServiceSubcategory[]
+        : []
+    }));
+    
+    return typedData;
   } catch (error) {
     console.error('Error bulk importing service categories:', error);
     throw error;
