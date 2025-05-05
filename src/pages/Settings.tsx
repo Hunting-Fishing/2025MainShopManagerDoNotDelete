@@ -1,8 +1,7 @@
 
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
-import { Cog, User, Building, Shield, Bell, Palette, Database, Globe2, Gift, Package, Users, Mail, Brush, MailPlus, ShieldCheck, Link as LinkIcon } from "lucide-react";
+import { Cog, User, Building, Shield, Bell, Palette, Database, Globe2, Gift, Package, Users, Mail, Brush, MailPlus, Link, ShieldCheck } from "lucide-react";
 import { SettingsCard } from "@/components/settings/SettingsCard";
 import {
   Breadcrumb,
@@ -74,7 +73,13 @@ const Settings = () => {
       icon: MailPlus,
       path: "/settings/email"
     },
-    // Remove integrations from settings since it's moved to Developer Portal
+    {
+      id: "integrations",
+      title: "Integrations",
+      description: "Connect with third-party services",
+      icon: Link,
+      path: "/settings/integrations"
+    },
     {
       id: "loyalty",
       title: "Customer Loyalty",
