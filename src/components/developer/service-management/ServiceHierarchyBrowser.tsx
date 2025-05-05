@@ -1,44 +1,15 @@
 
 import React, { useState } from 'react';
-import { 
-  ServiceMainCategory, 
-  ServiceSubcategory, 
-  ServiceJob 
-} from '@/types/serviceHierarchy';
-import { 
-  updateServiceItemName, 
-  deleteServiceItem, 
-  addSubcategory, 
-  addJob 
-} from '@/lib/services/serviceApi';
-import { Card } from '@/components/ui/card';
+import { ServiceMainCategory } from '@/types/serviceHierarchy';
+import { cn } from '@/lib/utils';
+import { Edit, Trash2, ChevronDown, ChevronRight, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { 
-  ChevronRight, 
-  ChevronDown, 
-  Edit, 
-  Trash2, 
-  Plus, 
-  MoreHorizontal, 
-  AlertCircle 
-} from 'lucide-react';
-import { CategoryColorStyle } from './CategoryColorConfig';
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { updateCategoryName, updateSubcategoryName, updateJobName, addSubcategoryToCategory, addServiceToSubcategory } from '@/lib/services/serviceApi';
+import { createEmptySubcategory, createEmptyJob } from '@/lib/services/serviceUtils';
 
 interface ServiceHierarchyBrowserProps {
   categories: ServiceMainCategory[];
@@ -49,7 +20,7 @@ interface ServiceHierarchyBrowserProps {
   selectedJobId: string | null;
   onSelectItem: (type: 'category' | 'subcategory' | 'job', id: string | null) => void;
   categoryColorMap: Record<string, string>;
-  categoryColors: CategoryColorStyle[];
+  categoryColors: string[];
   onCategoriesUpdated: () => void;
 }
 
@@ -67,489 +38,447 @@ export const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = (
 }) => {
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const [expandedSubcategories, setExpandedSubcategories] = useState<Record<string, boolean>>({});
-  const [isRenaming, setIsRenaming] = useState(false);
-  const [currentRenameId, setCurrentRenameId] = useState<string | null>(null);
-  const [currentRenameType, setCurrentRenameType] = useState<'category' | 'subcategory' | 'job' | null>(null);
-  const [newName, setNewName] = useState('');
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [itemToDeleteId, setItemToDeleteId] = useState<string | null>(null);
-  const [itemToDeleteType, setItemToDeleteType] = useState<'category' | 'subcategory' | 'job' | null>(null);
-  const [isAddingSubcategory, setIsAddingSubcategory] = useState(false);
-  const [isAddingJob, setIsAddingJob] = useState(false);
-  const [newItemName, setNewItemName] = useState('');
-  const [selectedCategoryForAdd, setSelectedCategoryForAdd] = useState<string | null>(null);
-  const [selectedSubcategoryForAdd, setSelectedSubcategoryForAdd] = useState<string | null>(null);
   
+  // State for adding subcategory
+  const [isAddingSubcategory, setIsAddingSubcategory] = useState<boolean>(false);
+  const [newSubcategoryName, setNewSubcategoryName] = useState<string>('');
+  const [parentCategoryId, setParentCategoryId] = useState<string>('');
+
+  // State for adding service
+  const [isAddingService, setIsAddingService] = useState<boolean>(false);
+  const [newServiceName, setNewServiceName] = useState<string>('');
+  const [parentSubcategoryId, setParentSubcategoryId] = useState<string>('');
+
+  // State for editing items
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editingItemType, setEditingItemType] = useState<'category' | 'subcategory' | 'job' | null>(null);
+  const [editingItemValue, setEditingItemValue] = useState<string>('');
+
   const toggleCategory = (categoryId: string) => {
     setExpandedCategories(prev => ({
       ...prev,
       [categoryId]: !prev[categoryId]
     }));
   };
-  
+
   const toggleSubcategory = (subcategoryId: string) => {
     setExpandedSubcategories(prev => ({
       ...prev,
       [subcategoryId]: !prev[subcategoryId]
     }));
   };
-  
-  const handleRename = async () => {
-    if (!currentRenameId || !currentRenameType || !newName.trim()) {
+
+  const handleStartEdit = (type: 'category' | 'subcategory' | 'job', id: string, initialValue: string) => {
+    setIsEditing(true);
+    setEditingItemId(id);
+    setEditingItemType(type);
+    setEditingItemValue(initialValue);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditingItemId(null);
+    setEditingItemType(null);
+    setEditingItemValue('');
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingItemId || !editingItemType || !editingItemValue.trim()) {
       return;
     }
-    
+
     try {
-      await updateServiceItemName(currentRenameId, newName.trim(), currentRenameType);
-      
-      // Refresh the categories data after renaming
+      if (editingItemType === 'category') {
+        await updateCategoryName(editingItemId, editingItemValue);
+      } else if (editingItemType === 'subcategory' && selectedCategoryId) {
+        await updateSubcategoryName(selectedCategoryId, editingItemId, editingItemValue);
+      } else if (editingItemType === 'job' && selectedCategoryId && selectedSubcategoryId) {
+        await updateJobName(selectedCategoryId, selectedSubcategoryId, editingItemId, editingItemValue);
+      }
+
+      toast.success(`${editingItemType.charAt(0).toUpperCase() + editingItemType.slice(1)} updated successfully`);
       onCategoriesUpdated();
-      
-      toast.success(`${currentRenameType} renamed successfully`);
-      
-      // Close the dialog and reset state
-      setIsRenaming(false);
-      setCurrentRenameId(null);
-      setCurrentRenameType(null);
-      setNewName('');
     } catch (error) {
-      console.error('Error renaming item:', error);
-      toast.error('Failed to rename item');
+      toast.error(`Failed to update ${editingItemType}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      handleCancelEdit();
     }
   };
-  
-  const handleDelete = async () => {
-    if (!itemToDeleteId || !itemToDeleteType) {
-      return;
-    }
-    
-    try {
-      await deleteServiceItem(itemToDeleteId, itemToDeleteType);
-      
-      // Refresh the categories data after deleting
-      onCategoriesUpdated();
-      
-      toast.success(`${itemToDeleteType} deleted successfully`);
-      
-      // Close the dialog and reset state
-      setIsDeleting(false);
-      setItemToDeleteId(null);
-      setItemToDeleteType(null);
-    } catch (error) {
-      console.error('Error deleting item:', error);
-      toast.error('Failed to delete item');
-    }
-  };
-  
-  const openRenameDialog = (id: string, type: 'category' | 'subcategory' | 'job', currentName: string) => {
-    setCurrentRenameId(id);
-    setCurrentRenameType(type);
-    setNewName(currentName);
-    setIsRenaming(true);
-  };
-  
-  const openDeleteDialog = (id: string, type: 'category' | 'subcategory' | 'job') => {
-    setItemToDeleteId(id);
-    setItemToDeleteType(type);
-    setIsDeleting(true);
-  };
-  
-  const openAddSubcategoryDialog = (categoryId: string) => {
-    setSelectedCategoryForAdd(categoryId);
-    setNewItemName('');
+
+  const handleAddSubcategory = (categoryId: string) => {
+    setParentCategoryId(categoryId);
+    setNewSubcategoryName('');
     setIsAddingSubcategory(true);
-    // Ensure the category is expanded
-    setExpandedCategories(prev => ({
-      ...prev,
-      [categoryId]: true
-    }));
   };
-  
-  const openAddJobDialog = (categoryId: string, subcategoryId: string) => {
-    setSelectedCategoryForAdd(categoryId);
-    setSelectedSubcategoryForAdd(subcategoryId);
-    setNewItemName('');
-    setIsAddingJob(true);
-    // Ensure the category and subcategory are expanded
-    setExpandedCategories(prev => ({
-      ...prev,
-      [categoryId]: true
-    }));
-    setExpandedSubcategories(prev => ({
-      ...prev,
-      [subcategoryId]: true
-    }));
-  };
-  
-  const handleAddSubcategory = async () => {
-    if (!selectedCategoryForAdd) return;
-    
+
+  const handleSaveNewSubcategory = async () => {
+    if (!newSubcategoryName.trim() || !parentCategoryId) {
+      toast.error('Subcategory name is required');
+      return;
+    }
+
     try {
-      await addSubcategory(selectedCategoryForAdd, newItemName.trim() || undefined);
-      
-      // Refresh the categories data after adding
-      onCategoriesUpdated();
+      const newSubcategory = createEmptySubcategory(newSubcategoryName);
+      await addSubcategoryToCategory(parentCategoryId, newSubcategory);
       
       toast.success('Subcategory added successfully');
-      
-      // Close the dialog and reset state
-      setIsAddingSubcategory(false);
-      setSelectedCategoryForAdd(null);
-      setNewItemName('');
-    } catch (error) {
-      console.error('Error adding subcategory:', error);
-      toast.error('Failed to add subcategory');
-    }
-  };
-  
-  const handleAddJob = async () => {
-    if (!selectedCategoryForAdd || !selectedSubcategoryForAdd) return;
-    
-    try {
-      await addJob(selectedCategoryForAdd, selectedSubcategoryForAdd, newItemName.trim() || undefined);
-      
-      // Refresh the categories data after adding
       onCategoriesUpdated();
       
-      toast.success('Service added successfully');
+      // Auto-expand the parent category to show the new subcategory
+      setExpandedCategories(prev => ({
+        ...prev,
+        [parentCategoryId]: true
+      }));
       
-      // Close the dialog and reset state
-      setIsAddingJob(false);
-      setSelectedCategoryForAdd(null);
-      setSelectedSubcategoryForAdd(null);
-      setNewItemName('');
+      setIsAddingSubcategory(false);
     } catch (error) {
-      console.error('Error adding job:', error);
-      toast.error('Failed to add service');
+      toast.error(`Failed to add subcategory: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
+  const handleAddService = (categoryId: string, subcategoryId: string) => {
+    setParentCategoryId(categoryId);
+    setParentSubcategoryId(subcategoryId);
+    setNewServiceName('');
+    setIsAddingService(true);
+  };
+
+  const handleSaveNewService = async () => {
+    if (!newServiceName.trim() || !parentCategoryId || !parentSubcategoryId) {
+      toast.error('Service name is required');
+      return;
+    }
+
+    try {
+      const newService = createEmptyJob(newServiceName);
+      await addServiceToSubcategory(parentCategoryId, parentSubcategoryId, newService);
+      
+      toast.success('Service added successfully');
+      onCategoriesUpdated();
+      
+      // Auto-expand the parent category and subcategory to show the new service
+      setExpandedCategories(prev => ({
+        ...prev,
+        [parentCategoryId]: true
+      }));
+      
+      setExpandedSubcategories(prev => ({
+        ...prev,
+        [parentSubcategoryId]: true
+      }));
+      
+      setIsAddingService(false);
+    } catch (error) {
+      toast.error(`Failed to add service: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
   
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+      <div className="p-8 flex justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
       </div>
     );
   }
-  
+
   if (error) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-red-500 flex items-center">
-          <AlertCircle className="h-5 w-5 mr-2" />
-          {error}
-        </div>
+      <div className="p-8 text-center">
+        <p className="text-red-500 font-medium">Error loading service hierarchy: {error}</p>
+        <Button variant="outline" className="mt-4" onClick={onCategoriesUpdated}>
+          Try Again
+        </Button>
       </div>
     );
   }
-  
-  const getBorderColor = (categoryId: string) => {
-    const colorClass = categoryColorMap[categoryId];
-    return colorClass || 'border-gray-200';
-  };
-  
+
   return (
-    <div className="mt-4">
-      {categories.length === 0 ? (
-        <div className="flex justify-center items-center h-64 border border-dashed border-gray-300 rounded-lg">
-          <div className="text-gray-500 text-center">
-            <p className="mb-2">No services have been configured</p>
-            <Button variant="outline" className="mt-2" onClick={() => {}}>
-              <Plus className="h-4 w-4 mr-1" /> Add Category
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {categories.map((category) => (
-            <Card 
-              key={category.id} 
-              className={`border-l-4 ${getBorderColor(category.id)}`}
-            >
-              <div className="px-4 py-3 border-b flex justify-between items-center">
-                <div 
-                  className="flex-1 flex items-center cursor-pointer" 
-                  onClick={() => toggleCategory(category.id)}
-                >
-                  {expandedCategories[category.id] ? (
-                    <ChevronDown className="h-4 w-4 mr-2 text-gray-500" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4 mr-2 text-gray-500" />
-                  )}
-                  <div 
-                    className={`font-medium ${selectedCategoryId === category.id ? 'text-blue-600' : ''}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSelectItem('category', category.id);
-                    }}
+    <div className="border rounded-lg overflow-hidden bg-white">
+      <div className="overflow-y-auto max-h-[600px]">
+        <table className="w-full">
+          <thead className="sticky top-0 bg-gray-50 border-b z-10">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Name
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200 text-sm">
+            {categories.length === 0 ? (
+              <tr>
+                <td colSpan={2} className="px-6 py-4 text-center text-gray-500">
+                  No categories found
+                </td>
+              </tr>
+            ) : (
+              categories.map(category => (
+                <React.Fragment key={category.id}>
+                  <tr 
+                    className={cn(
+                      "hover:bg-gray-50 cursor-pointer", 
+                      selectedCategoryId === category.id && "bg-blue-50"
+                    )}
+                    onClick={() => onSelectItem('category', category.id)}
                   >
-                    {category.name}
-                  </div>
-                </div>
-                <div className="flex items-center">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => openAddSubcategoryDialog(category.id)}
-                    className="text-gray-500 hover:text-blue-600"
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add Subcategory
-                  </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => openRenameDialog(category.id, 'category', category.name)}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Rename
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => openDeleteDialog(category.id, 'category')}
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                    <td className="px-6 py-4 flex items-center">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleCategory(category.id);
+                        }}
+                        className="mr-2 focus:outline-none"
                       >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
-              
-              {expandedCategories[category.id] && (
-                <div className="p-2">
-                  {category.subcategories.length === 0 ? (
-                    <div className="text-sm text-gray-500 italic p-2">No subcategories yet</div>
-                  ) : (
-                    <div className="space-y-2">
-                      {category.subcategories.map((subcategory) => (
-                        <div key={subcategory.id} className="border rounded-md overflow-hidden">
-                          <div className="px-3 py-2 bg-gray-50 flex justify-between items-center">
-                            <div 
-                              className="flex-1 flex items-center cursor-pointer ml-4" 
-                              onClick={() => toggleSubcategory(subcategory.id)}
-                            >
-                              {expandedSubcategories[subcategory.id] ? (
-                                <ChevronDown className="h-4 w-4 mr-2 text-gray-500" />
-                              ) : (
-                                <ChevronRight className="h-4 w-4 mr-2 text-gray-500" />
-                              )}
-                              <div 
-                                className={`${selectedSubcategoryId === subcategory.id ? 'text-blue-600' : ''}`}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onSelectItem('subcategory', subcategory.id);
-                                }}
-                              >
-                                {subcategory.name}
-                              </div>
-                            </div>
-                            <div className="flex items-center">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => openAddJobDialog(category.id, subcategory.id)}
-                                className="text-gray-500 hover:text-blue-600"
-                              >
-                                <Plus className="h-4 w-4 mr-1" />
-                                Add Service
-                              </Button>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="sm">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => openRenameDialog(subcategory.id, 'subcategory', subcategory.name)}>
-                                    <Edit className="h-4 w-4 mr-2" />
-                                    Rename
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem 
-                                    onClick={() => openDeleteDialog(subcategory.id, 'subcategory')}
-                                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                  >
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Delete
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
-                          </div>
+                        {expandedCategories[category.id] ? (
+                          <ChevronDown className="h-4 w-4 text-gray-500" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 text-gray-500" />
+                        )}
+                      </button>
+                      
+                      <span 
+                        className={cn(
+                          "inline-block w-3 h-3 rounded-full mr-2",
+                          categoryColorMap[category.id] 
+                            ? `bg-${categoryColorMap[category.id]}-500` 
+                            : "bg-gray-400"
+                        )}
+                      ></span>
+                      
+                      <span 
+                        className="font-medium" 
+                        onDoubleClick={(e) => {
+                          e.stopPropagation();
+                          handleStartEdit('category', category.id, category.name);
+                        }}
+                      >
+                        {category.name}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end space-x-2">
+                        <Button 
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleStartEdit('category', category.id, category.name);
+                          }}
+                        >
+                          <Edit className="h-4 w-4 text-gray-500" />
+                          <span className="sr-only">Edit</span>
+                        </Button>
+                        
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 w-8 p-0 text-blue-600"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddSubcategory(category.id);
+                          }}
+                        >
+                          <PlusCircle className="h-4 w-4" />
+                          <span className="sr-only">Add Subcategory</span>
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                  
+                  {/* Subcategories */}
+                  {expandedCategories[category.id] && category.subcategories.map(subcategory => (
+                    <React.Fragment key={subcategory.id}>
+                      <tr 
+                        className={cn(
+                          "hover:bg-gray-50 cursor-pointer", 
+                          selectedSubcategoryId === subcategory.id && "bg-blue-50"
+                        )}
+                        onClick={() => onSelectItem('subcategory', subcategory.id)}
+                      >
+                        <td className="px-6 py-4 flex items-center pl-10">
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleSubcategory(subcategory.id);
+                            }}
+                            className="mr-2 focus:outline-none"
+                          >
+                            {expandedSubcategories[subcategory.id] ? (
+                              <ChevronDown className="h-4 w-4 text-gray-500" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4 text-gray-500" />
+                            )}
+                          </button>
                           
-                          {expandedSubcategories[subcategory.id] && (
-                            <div className="p-2">
-                              {subcategory.jobs.length === 0 ? (
-                                <div className="text-sm text-gray-500 italic p-2 ml-4">No services yet</div>
-                              ) : (
-                                <div className="space-y-1">
-                                  {subcategory.jobs.map((job) => (
-                                    <div 
-                                      key={job.id} 
-                                      className={`mx-2 px-3 py-2 rounded-md border border-transparent hover:border-gray-200 flex justify-between items-center cursor-pointer ${selectedJobId === job.id ? 'bg-blue-50 border-blue-200' : ''}`}
-                                      onClick={() => onSelectItem('job', job.id)}
-                                    >
-                                      <div className="flex-1 ml-6">
-                                        <div className="font-medium">{job.name}</div>
-                                        {job.estimatedTime && job.price && (
-                                          <div className="text-xs text-gray-500 mt-1">
-                                            <span>${job.price.toFixed(2)}</span>
-                                            <span className="mx-2">•</span>
-                                            <span>{job.estimatedTime} min</span>
-                                          </div>
-                                        )}
-                                      </div>
-                                      <div>
-                                        <DropdownMenu>
-                                          <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="sm">
-                                              <MoreHorizontal className="h-4 w-4" />
-                                            </Button>
-                                          </DropdownMenuTrigger>
-                                          <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onClick={() => openRenameDialog(job.id, 'job', job.name)}>
-                                              <Edit className="h-4 w-4 mr-2" />
-                                              Rename
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem 
-                                              onClick={() => openDeleteDialog(job.id, 'job')}
-                                              className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                            >
-                                              <Trash2 className="h-4 w-4 mr-2" />
-                                              Delete
-                                            </DropdownMenuItem>
-                                          </DropdownMenuContent>
-                                        </DropdownMenu>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
+                          <span 
+                            className="font-medium"
+                            onDoubleClick={(e) => {
+                              e.stopPropagation();
+                              handleStartEdit('subcategory', subcategory.id, subcategory.name);
+                            }}
+                          >
+                            {subcategory.name}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex justify-end space-x-2">
+                            <Button 
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleStartEdit('subcategory', subcategory.id, subcategory.name);
+                              }}
+                            >
+                              <Edit className="h-4 w-4 text-gray-500" />
+                              <span className="sr-only">Edit</span>
+                            </Button>
+                            
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-8 w-8 p-0 text-blue-600"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAddService(category.id, subcategory.id);
+                              }}
+                            >
+                              <PlusCircle className="h-4 w-4" />
+                              <span className="sr-only">Add Service</span>
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                      
+                      {/* Jobs/Services */}
+                      {expandedSubcategories[subcategory.id] && subcategory.jobs.map(job => (
+                        <tr 
+                          key={job.id}
+                          className={cn(
+                            "hover:bg-gray-50 cursor-pointer", 
+                            selectedJobId === job.id && "bg-blue-50"
                           )}
-                        </div>
+                          onClick={() => onSelectItem('job', job.id)}
+                        >
+                          <td className="px-6 py-4 flex items-center pl-16">
+                            <span 
+                              onDoubleClick={(e) => {
+                                e.stopPropagation();
+                                handleStartEdit('job', job.id, job.name);
+                              }}
+                            >
+                              {job.name}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <Button 
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleStartEdit('job', job.id, job.name);
+                              }}
+                            >
+                              <Edit className="h-4 w-4 text-gray-500" />
+                              <span className="sr-only">Edit</span>
+                            </Button>
+                          </td>
+                        </tr>
                       ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </Card>
-          ))}
-        </div>
-      )}
+                    </React.Fragment>
+                  ))}
+                </React.Fragment>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
       
-      {/* Rename Dialog */}
-      <Dialog open={isRenaming} onOpenChange={setIsRenaming}>
-        <DialogContent>
+      {/* Edit Dialog */}
+      <Dialog open={isEditing} onOpenChange={setIsEditing}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Rename {currentRenameType}</DialogTitle>
+            <DialogTitle>Edit {editingItemType}</DialogTitle>
           </DialogHeader>
           <div className="py-4">
+            <Label htmlFor="item-name" className="text-right mb-2 block">
+              Name
+            </Label>
             <Input
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              placeholder="Enter new name"
+              id="item-name"
+              value={editingItemValue}
+              onChange={(e) => setEditingItemValue(e.target.value)}
               className="w-full"
               autoFocus
             />
           </div>
           <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setIsRenaming(false)}
-            >
+            <Button variant="outline" onClick={handleCancelEdit}>
               Cancel
             </Button>
-            <Button onClick={handleRename}>
-              Save
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={isDeleting} onOpenChange={setIsDeleting}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete {itemToDeleteType}</DialogTitle>
-            <DialogDescription className="pt-2">
-              Are you sure you want to delete this {itemToDeleteType}? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setIsDeleting(false)}
-            >
-              Cancel
-            </Button>
-            <Button 
-              variant="destructive" 
-              onClick={handleDelete}
-            >
-              Delete
-            </Button>
+            <Button onClick={handleSaveEdit}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
       
       {/* Add Subcategory Dialog */}
       <Dialog open={isAddingSubcategory} onOpenChange={setIsAddingSubcategory}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Add Subcategory</DialogTitle>
           </DialogHeader>
           <div className="py-4">
+            <Label htmlFor="subcategory-name" className="text-right mb-2 block">
+              Subcategory Name
+            </Label>
             <Input
-              value={newItemName}
-              onChange={(e) => setNewItemName(e.target.value)}
-              placeholder="Enter subcategory name"
+              id="subcategory-name"
+              value={newSubcategoryName}
+              onChange={(e) => setNewSubcategoryName(e.target.value)}
               className="w-full"
               autoFocus
+              placeholder="Enter subcategory name"
             />
           </div>
           <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setIsAddingSubcategory(false)}
-            >
+            <Button variant="outline" onClick={() => setIsAddingSubcategory(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAddSubcategory}>
-              Add
-            </Button>
+            <Button onClick={handleSaveNewSubcategory}>Add Subcategory</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
       
-      {/* Add Job Dialog */}
-      <Dialog open={isAddingJob} onOpenChange={setIsAddingJob}>
-        <DialogContent>
+      {/* Add Service Dialog */}
+      <Dialog open={isAddingService} onOpenChange={setIsAddingService}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Add Service</DialogTitle>
           </DialogHeader>
           <div className="py-4">
+            <Label htmlFor="service-name" className="text-right mb-2 block">
+              Service Name
+            </Label>
             <Input
-              value={newItemName}
-              onChange={(e) => setNewItemName(e.target.value)}
-              placeholder="Enter service name"
+              id="service-name"
+              value={newServiceName}
+              onChange={(e) => setNewServiceName(e.target.value)}
               className="w-full"
               autoFocus
+              placeholder="Enter service name"
             />
           </div>
           <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setIsAddingJob(false)}
-            >
+            <Button variant="outline" onClick={() => setIsAddingService(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAddJob}>
-              Add
-            </Button>
+            <Button onClick={handleSaveNewService}>Add Service</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

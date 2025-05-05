@@ -1,467 +1,385 @@
-
 import { supabase } from '@/lib/supabase';
-import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
-import { v4 as uuidv4 } from 'uuid';
-import { PostgrestResponse } from '@supabase/supabase-js';
+import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from "@/types/serviceHierarchy";
 
-// Type for the raw Supabase data
-interface RawServiceCategory {
-  id: string;
-  name: string;
-  description?: string;
-  position?: number;
-  subcategories: any; // This will be parsed from JSON
-  created_at?: string;
-  updated_at?: string;
-}
-
-/**
- * Fetch all service categories with their subcategories and jobs
- */
+// Function to fetch all service categories
 export async function fetchServiceCategories(): Promise<ServiceMainCategory[]> {
-  try {
-    const { data, error }: PostgrestResponse<RawServiceCategory> = await supabase
-      .from('service_categories')
-      .select('*')
-      .order('position');
-
-    if (error) {
-      console.error('Error fetching service categories:', error);
-      throw new Error(error.message);
-    }
-
-    // Process the raw data to match our types
-    return data.map(category => ({
-      id: category.id,
-      name: category.name,
-      description: category.description,
-      position: category.position,
-      // Parse subcategories from JSON and cast to our expected type
-      subcategories: Array.isArray(category.subcategories) 
-        ? category.subcategories.map((sub: any) => ({
-            id: sub.id,
-            name: sub.name,
-            description: sub.description,
-            jobs: Array.isArray(sub.jobs) 
-              ? sub.jobs.map((job: any) => ({
-                  id: job.id,
-                  name: job.name,
-                  description: job.description,
-                  estimatedTime: job.estimatedTime,
-                  price: job.price
-                }))
-              : []
-          }))
-        : []
-    }));
-  } catch (error) {
-    console.error('Error in fetchServiceCategories:', error);
-    throw error;
+  const { data, error } = await supabase
+    .from('service_hierarchy')
+    .select('*')
+    .order('position');
+  
+  if (error) {
+    throw new Error(`Error fetching service categories: ${error.message}`);
   }
+  
+  return data || [];
 }
 
-/**
- * Update a service item's name
- */
-export async function updateServiceItemName(
-  type: 'category' | 'subcategory' | 'job',
-  itemId: string,
-  categoryId: string,
-  subcategoryId: string | null,
-  newName: string
-): Promise<void> {
-  try {
-    if (type === 'category') {
-      // Direct update for category name
-      const { error } = await supabase
-        .from('service_categories')
-        .update({ name: newName })
-        .eq('id', itemId);
-        
-      if (error) throw new Error(error.message);
-    } else {
-      // For subcategory or job, we need to update the nested JSON
-      const { data, error } = await supabase
-        .from('service_categories')
-        .select('subcategories')
-        .eq('id', categoryId)
-        .single();
-        
-      if (error) throw new Error(error.message);
-      
-      // Parse subcategories
-      const subcategories = data.subcategories as any[];
-      
-      if (type === 'subcategory') {
-        // Find and update subcategory
-        const subcategoryIndex = subcategories.findIndex(sub => sub.id === itemId);
-        if (subcategoryIndex >= 0) {
-          subcategories[subcategoryIndex].name = newName;
-        }
-      } else if (type === 'job' && subcategoryId) {
-        // Find subcategory
-        const subcategory = subcategories.find(sub => sub.id === subcategoryId);
-        if (subcategory) {
-          // Find and update job
-          const jobs = subcategory.jobs as any[];
-          const jobIndex = jobs.findIndex(job => job.id === itemId);
-          if (jobIndex >= 0) {
-            jobs[jobIndex].name = newName;
-          }
-        }
-      }
-      
-      // Update in database
-      const { error: updateError } = await supabase
-        .from('service_categories')
-        .update({ subcategories })
-        .eq('id', categoryId);
-        
-      if (updateError) throw new Error(updateError.message);
-    }
-  } catch (error) {
-    console.error('Error updating service item name:', error);
-    throw error;
+// Function to save a service category
+export async function saveServiceCategory(category: ServiceMainCategory): Promise<ServiceMainCategory> {
+  const { data, error } = await supabase
+    .from('service_hierarchy')
+    .upsert(category)
+    .select()
+    .single();
+  
+  if (error) {
+    throw new Error(`Error saving service category: ${error.message}`);
   }
+  
+  return data;
 }
 
-/**
- * Delete a service item
- */
-export async function deleteServiceItem(
-  type: 'category' | 'subcategory' | 'job',
-  itemId: string,
-  categoryId: string,
-  subcategoryId: string | null
+// Function to delete a service category
+export async function deleteServiceCategory(id: string): Promise<string> {
+  const { error } = await supabase
+    .from('service_hierarchy')
+    .delete()
+    .eq('id', id);
+  
+  if (error) {
+    throw new Error(`Error deleting service category: ${error.message}`);
+  }
+  
+  return id; // Return the ID of the deleted category
+}
+
+// Function to remove duplicate items from the service hierarchy
+export async function removeDuplicateItem(
+  itemId: string, 
+  type: 'category' | 'subcategory' | 'job'
 ): Promise<void> {
   try {
+    // First, fetch the categories
+    const { data: categories, error: fetchError } = await supabase
+      .from('service_hierarchy')
+      .select('*');
+      
+    if (fetchError) {
+      throw new Error(`Error fetching service categories: ${fetchError.message}`);
+    }
+    
+    if (!categories || categories.length === 0) {
+      throw new Error("No categories found");
+    }
+    
+    // Find the category that contains the item to remove
+    let updatedCategory: ServiceMainCategory | null = null;
+    
     if (type === 'category') {
-      // Delete the category directly
+      // For categories, simply delete the category
       const { error } = await supabase
-        .from('service_categories')
+        .from('service_hierarchy')
         .delete()
         .eq('id', itemId);
         
-      if (error) throw new Error(error.message);
-    } else {
-      // For subcategory or job, we need to update the nested JSON
-      const { data, error } = await supabase
-        .from('service_categories')
-        .select('subcategories')
-        .eq('id', categoryId)
-        .single();
-        
-      if (error) throw new Error(error.message);
-      
-      // Parse subcategories
-      let subcategories = data.subcategories as any[];
-      
+      if (error) throw new Error(`Error deleting category: ${error.message}`);
+      return;
+    }
+    
+    // For subcategories and jobs, we need to find and update the parent category
+    for (const category of categories) {
       if (type === 'subcategory') {
-        // Remove subcategory
-        subcategories = subcategories.filter(sub => sub.id !== itemId);
-      } else if (type === 'job' && subcategoryId) {
-        // Find subcategory
-        const subcategoryIndex = subcategories.findIndex(sub => sub.id === subcategoryId);
-        if (subcategoryIndex >= 0) {
-          // Remove job from jobs array
-          subcategories[subcategoryIndex].jobs = subcategories[subcategoryIndex].jobs.filter(
-            (job: any) => job.id !== itemId
-          );
-        }
-      }
-      
-      // Update in database
-      const { error: updateError } = await supabase
-        .from('service_categories')
-        .update({ subcategories })
-        .eq('id', categoryId);
+        // Find if this category contains the subcategory
+        const subcategoryIndex = category.subcategories.findIndex(
+          sub => sub.id === itemId
+        );
         
-      if (updateError) throw new Error(updateError.message);
-    }
-  } catch (error) {
-    console.error('Error deleting service item:', error);
-    throw error;
-  }
-}
-
-/**
- * Add a new subcategory to a category
- */
-export async function addSubcategory(
-  categoryId: string,
-  name: string,
-  description?: string
-): Promise<string> {
-  try {
-    const { data, error } = await supabase
-      .from('service_categories')
-      .select('subcategories')
-      .eq('id', categoryId)
-      .single();
-      
-    if (error) throw new Error(error.message);
-    
-    // Parse subcategories
-    const subcategories = data.subcategories as any[] || [];
-    
-    // Create new subcategory
-    const newSubcategory = {
-      id: uuidv4(),
-      name,
-      description: description || '',
-      jobs: []
-    };
-    
-    // Add to subcategories
-    subcategories.push(newSubcategory);
-    
-    // Update in database
-    const { error: updateError } = await supabase
-      .from('service_categories')
-      .update({ subcategories })
-      .eq('id', categoryId);
-      
-    if (updateError) throw new Error(updateError.message);
-    
-    return newSubcategory.id;
-  } catch (error) {
-    console.error('Error adding subcategory:', error);
-    throw error;
-  }
-}
-
-/**
- * Add a new job to a subcategory
- */
-export async function addJob(
-  categoryId: string,
-  subcategoryId: string,
-  name: string,
-  description?: string,
-  estimatedTime?: number,
-  price?: number
-): Promise<string> {
-  try {
-    const { data, error } = await supabase
-      .from('service_categories')
-      .select('subcategories')
-      .eq('id', categoryId)
-      .single();
-      
-    if (error) throw new Error(error.message);
-    
-    // Parse subcategories
-    const subcategories = data.subcategories as any[];
-    
-    // Find subcategory
-    const subcategoryIndex = subcategories.findIndex(sub => sub.id === subcategoryId);
-    if (subcategoryIndex === -1) {
-      throw new Error('Subcategory not found');
+        if (subcategoryIndex !== -1) {
+          // Make a deep copy of the category
+          const updatedCat = JSON.parse(JSON.stringify(category));
+          // Remove the subcategory
+          updatedCat.subcategories.splice(subcategoryIndex, 1);
+          updatedCategory = updatedCat;
+          break;
+        }
+      } else if (type === 'job') {
+        // Find which subcategory contains this job
+        for (let i = 0; i < category.subcategories.length; i++) {
+          const subcategory = category.subcategories[i];
+          const jobIndex = subcategory.jobs.findIndex(job => job.id === itemId);
+          
+          if (jobIndex !== -1) {
+            // Make a deep copy of the category
+            const updatedCat = JSON.parse(JSON.stringify(category));
+            // Remove the job
+            updatedCat.subcategories[i].jobs.splice(jobIndex, 1);
+            updatedCategory = updatedCat;
+            break;
+          }
+        }
+        
+        if (updatedCategory) break;
+      }
     }
     
-    // Create new job
-    const newJob = {
-      id: uuidv4(),
-      name,
-      description: description || '',
-      estimatedTime: estimatedTime || 0,
-      price: price || 0
-    };
-    
-    // Add to jobs
-    if (!subcategories[subcategoryIndex].jobs) {
-      subcategories[subcategoryIndex].jobs = [];
+    // If we found and modified a category, update it
+    if (updatedCategory) {
+      const { error: updateError } = await supabase
+        .from('service_hierarchy')
+        .update(updatedCategory)
+        .eq('id', updatedCategory.id);
+        
+      if (updateError) {
+        throw new Error(`Error updating service hierarchy: ${updateError.message}`);
+      }
+    } else {
+      throw new Error(`Item with ID ${itemId} not found in the service hierarchy`);
     }
-    subcategories[subcategoryIndex].jobs.push(newJob);
-    
-    // Update in database
-    const { error: updateError } = await supabase
-      .from('service_categories')
-      .update({ subcategories })
-      .eq('id', categoryId);
-      
-    if (updateError) throw new Error(updateError.message);
-    
-    return newJob.id;
   } catch (error) {
-    console.error('Error adding job:', error);
+    console.error("Error removing duplicate item:", error);
     throw error;
   }
 }
 
-/**
- * Add a new service category
- */
-export async function addServiceCategory(
-  name: string, 
-  description?: string
-): Promise<ServiceMainCategory> {
+// Function to update a category name
+export async function updateCategoryName(categoryId: string, newName: string): Promise<void> {
   try {
-    // Get current max position to place this one at the end
-    const { data: existingCategories, error: queryError } = await supabase
-      .from('service_categories')
-      .select('position')
-      .order('position', { ascending: false })
-      .limit(1);
-      
-    if (queryError) throw new Error(queryError.message);
-    
-    const position = existingCategories && existingCategories.length > 0 
-      ? (existingCategories[0].position || 0) + 1 
-      : 1;
-    
-    const newCategory: Partial<RawServiceCategory> = {
-      id: uuidv4(),
-      name,
-      description: description || '',
-      position,
-      subcategories: []
-    };
-    
-    const { error } = await supabase
-      .from('service_categories')
-      .insert(newCategory);
-      
-    if (error) throw new Error(error.message);
-    
-    return {
-      id: newCategory.id!,
-      name: newCategory.name!,
-      description: newCategory.description,
-      position: newCategory.position,
-      subcategories: []
-    };
-  } catch (error) {
-    console.error('Error adding service category:', error);
-    throw error;
-  }
-}
-
-/**
- * Bulk import service categories from structured data
- */
-export async function bulkImportServiceCategories(
-  categories: ServiceMainCategory[]
-): Promise<void> {
-  try {
-    // Convert categories to proper format for Supabase
-    const categoriesForInsert = categories.map(category => ({
-      id: category.id || uuidv4(),
-      name: category.name,
-      description: category.description || '',
-      position: category.position || 0, 
-      subcategories: category.subcategories
-    }));
-    
-    const { error } = await supabase
-      .from('service_categories')
-      .insert(categoriesForInsert);
-      
-    if (error) throw new Error(error.message);
-  } catch (error) {
-    console.error('Error bulk importing categories:', error);
-    throw error;
-  }
-}
-
-/**
- * Find duplicate service items
- */
-export async function findDuplicateServiceItems(): Promise<{
-  duplicateCategories: { id: string, name: string }[],
-  duplicateSubcategories: { id: string, name: string, categoryName: string }[],
-  duplicateJobs: { id: string, name: string, categoryName: string, subcategoryName: string }[]
-}> {
-  try {
-    const { data, error } = await supabase
-      .from('service_categories')
+    // First, fetch the category
+    const { data, error: fetchError } = await supabase
+      .from('service_hierarchy')
       .select('*')
-      .order('position');
+      .eq('id', categoryId)
+      .single();
       
-    if (error) throw new Error(error.message);
+    if (fetchError) {
+      throw new Error(`Error fetching category: ${fetchError.message}`);
+    }
     
-    // Process the raw data to find duplicates
-    const processedCategories = data.map(category => ({
-      id: category.id,
-      name: category.name,
-      // Parse subcategories from JSON
-      subcategories: Array.isArray(category.subcategories) 
-        ? category.subcategories.map((sub: any) => ({
-            id: sub.id,
-            name: sub.name,
-            categoryName: category.name,
-            jobs: Array.isArray(sub.jobs) 
-              ? sub.jobs.map((job: any) => ({
-                  id: job.id,
-                  name: job.name,
-                  subcategoryName: sub.name,
-                  categoryName: category.name
-                }))
-              : []
-          }))
-        : []
-    }));
+    if (!data) {
+      throw new Error(`Category with ID ${categoryId} not found`);
+    }
     
-    // Find duplicate categories
-    const categoryNames = processedCategories.map(c => c.name.toLowerCase());
-    const duplicateCategories = processedCategories.filter(
-      (cat, index) => categoryNames.indexOf(cat.name.toLowerCase()) !== index
+    // Update the name
+    data.name = newName;
+    
+    // Save the updated category
+    const { error: updateError } = await supabase
+      .from('service_hierarchy')
+      .update(data)
+      .eq('id', categoryId);
+      
+    if (updateError) {
+      throw new Error(`Error updating category name: ${updateError.message}`);
+    }
+  } catch (error) {
+    console.error("Error updating category name:", error);
+    throw error;
+  }
+}
+
+// Function to update a subcategory name
+export async function updateSubcategoryName(categoryId: string, subcategoryId: string, newName: string): Promise<void> {
+  try {
+    // First, fetch the category
+    const { data: category, error: fetchError } = await supabase
+      .from('service_hierarchy')
+      .select('*')
+      .eq('id', categoryId)
+      .single();
+      
+    if (fetchError) {
+      throw new Error(`Error fetching category: ${fetchError.message}`);
+    }
+    
+    if (!category) {
+      throw new Error(`Category with ID ${categoryId} not found`);
+    }
+    
+    // Find the subcategory to update
+    const subcategoryIndex = category.subcategories.findIndex(
+      sub => sub.id === subcategoryId
     );
     
-    // Find duplicate subcategories within each category
-    const duplicateSubcategories: { id: string; name: string; categoryName: string; }[] = [];
-    processedCategories.forEach(category => {
-      const subcatNames = category.subcategories.map(s => s.name.toLowerCase());
-      category.subcategories.forEach((subcat, index) => {
-        if (subcatNames.indexOf(subcat.name.toLowerCase()) !== index) {
-          duplicateSubcategories.push({
-            id: subcat.id,
-            name: subcat.name,
-            categoryName: category.name
-          });
-        }
-      });
-    });
+    if (subcategoryIndex === -1) {
+      throw new Error(`Subcategory with ID ${subcategoryId} not found in category ${categoryId}`);
+    }
     
-    // Find duplicate jobs within each subcategory
-    const duplicateJobs: { id: string; name: string; categoryName: string; subcategoryName: string; }[] = [];
-    processedCategories.forEach(category => {
-      category.subcategories.forEach(subcategory => {
-        const jobNames = subcategory.jobs.map(j => j.name.toLowerCase());
-        subcategory.jobs.forEach((job, index) => {
-          if (jobNames.indexOf(job.name.toLowerCase()) !== index) {
-            duplicateJobs.push({
-              id: job.id,
-              name: job.name,
-              categoryName: category.name,
-              subcategoryName: subcategory.name
-            });
-          }
-        });
-      });
-    });
+    // Update the name
+    category.subcategories[subcategoryIndex].name = newName;
     
-    return {
-      duplicateCategories,
-      duplicateSubcategories,
-      duplicateJobs
-    };
+    // Save the updated category
+    const { error: updateError } = await supabase
+      .from('service_hierarchy')
+      .update(category)
+      .eq('id', categoryId);
+      
+    if (updateError) {
+      throw new Error(`Error updating subcategory name: ${updateError.message}`);
+    }
   } catch (error) {
-    console.error('Error finding duplicates:', error);
+    console.error("Error updating subcategory name:", error);
     throw error;
   }
 }
 
-/**
- * Remove a duplicate service item
- */
-export async function removeDuplicateItem(
-  type: 'category' | 'subcategory' | 'job',
-  itemId: string,
-  categoryId?: string,
-  subcategoryId?: string
-): Promise<void> {
-  // Call the deleteServiceItem function since the operation is the same
-  return deleteServiceItem(type, itemId, categoryId || '', subcategoryId || null);
+// Function to update a job name
+export async function updateJobName(categoryId: string, subcategoryId: string, jobId: string, newName: string): Promise<void> {
+  try {
+    // First, fetch the category
+    const { data: category, error: fetchError } = await supabase
+      .from('service_hierarchy')
+      .select('*')
+      .eq('id', categoryId)
+      .single();
+      
+    if (fetchError) {
+      throw new Error(`Error fetching category: ${fetchError.message}`);
+    }
+    
+    if (!category) {
+      throw new Error(`Category with ID ${categoryId} not found`);
+    }
+    
+    // Find the subcategory
+    const subcategoryIndex = category.subcategories.findIndex(
+      sub => sub.id === subcategoryId
+    );
+    
+    if (subcategoryIndex === -1) {
+      throw new Error(`Subcategory with ID ${subcategoryId} not found in category ${categoryId}`);
+    }
+    
+    // Find the job to update
+    const jobIndex = category.subcategories[subcategoryIndex].jobs.findIndex(
+      job => job.id === jobId
+    );
+    
+    if (jobIndex === -1) {
+      throw new Error(`Job with ID ${jobId} not found in subcategory ${subcategoryId}`);
+    }
+    
+    // Update the name
+    category.subcategories[subcategoryIndex].jobs[jobIndex].name = newName;
+    
+    // Save the updated category
+    const { error: updateError } = await supabase
+      .from('service_hierarchy')
+      .update(category)
+      .eq('id', categoryId);
+      
+    if (updateError) {
+      throw new Error(`Error updating job name: ${updateError.message}`);
+    }
+  } catch (error) {
+    console.error("Error updating job name:", error);
+    throw error;
+  }
 }
 
+// Function to add a new subcategory to a category
+export async function addSubcategoryToCategory(categoryId: string, subcategory: ServiceSubcategory): Promise<ServiceMainCategory> {
+  try {
+    // First, fetch the category
+    const { data: category, error: fetchError } = await supabase
+      .from('service_hierarchy')
+      .select('*')
+      .eq('id', categoryId)
+      .single();
+      
+    if (fetchError) {
+      throw new Error(`Error fetching category: ${fetchError.message}`);
+    }
+    
+    if (!category) {
+      throw new Error(`Category with ID ${categoryId} not found`);
+    }
+    
+    // Add the new subcategory to the category's subcategories array
+    category.subcategories.push(subcategory);
+    
+    // Save the updated category
+    const { data: updatedCategory, error: updateError } = await supabase
+      .from('service_hierarchy')
+      .update(category)
+      .eq('id', categoryId)
+      .select()
+      .single();
+      
+    if (updateError) {
+      throw new Error(`Error adding subcategory: ${updateError.message}`);
+    }
+    
+    return updatedCategory;
+  } catch (error) {
+    console.error("Error adding subcategory:", error);
+    throw error;
+  }
+}
+
+// Function to add a new service/job to a subcategory
+export async function addServiceToSubcategory(
+  categoryId: string, 
+  subcategoryId: string, 
+  service: ServiceJob
+): Promise<ServiceMainCategory> {
+  try {
+    // First, fetch the category
+    const { data: category, error: fetchError } = await supabase
+      .from('service_hierarchy')
+      .select('*')
+      .eq('id', categoryId)
+      .single();
+      
+    if (fetchError) {
+      throw new Error(`Error fetching category: ${fetchError.message}`);
+    }
+    
+    if (!category) {
+      throw new Error(`Category with ID ${categoryId} not found`);
+    }
+    
+    // Find the subcategory
+    const subcategoryIndex = category.subcategories.findIndex(
+      sub => sub.id === subcategoryId
+    );
+    
+    if (subcategoryIndex === -1) {
+      throw new Error(`Subcategory with ID ${subcategoryId} not found in category ${categoryId}`);
+    }
+    
+    // Add the new service to the subcategory's jobs array
+    category.subcategories[subcategoryIndex].jobs.push(service);
+    
+    // Save the updated category
+    const { data: updatedCategory, error: updateError } = await supabase
+      .from('service_hierarchy')
+      .update(category)
+      .eq('id', categoryId)
+      .select()
+      .single();
+      
+    if (updateError) {
+      throw new Error(`Error adding service: ${updateError.message}`);
+    }
+    
+    return updatedCategory;
+  } catch (error) {
+    console.error("Error adding service:", error);
+    throw error;
+  }
+}
+
+// Function to bulk import service categories
+export async function bulkImportServiceCategories(
+  categories: ServiceMainCategory[], 
+  progressCallback?: (progress: number) => void
+): Promise<void> {
+  try {
+    const totalCategories = categories.length;
+    
+    for (let i = 0; i < totalCategories; i++) {
+      // Save each category
+      await saveServiceCategory(categories[i]);
+      
+      // Report progress if callback provided
+      if (progressCallback) {
+        const progress = (i + 1) / totalCategories;
+        progressCallback(progress);
+      }
+    }
+  } catch (error) {
+    console.error("Error bulk importing service categories:", error);
+    throw error;
+  }
+}
