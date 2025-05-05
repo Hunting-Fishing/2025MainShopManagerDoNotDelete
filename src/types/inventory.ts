@@ -28,6 +28,24 @@ export interface InventoryItemExtended {
   freightFee?: number;
   otherFee?: number;
   otherFeeDescription?: string;
+  
+  // New fields to match the provided UI
+  partNumber?: string;
+  manufacturer?: string;
+  cost?: number;
+  marginMarkup?: number;
+  retailPrice?: number;
+  wholesalePrice?: number;
+  specialTax?: number;
+  onOrder?: number;
+  onHold?: number;
+  minimumOrder?: number;
+  maximumOrder?: number;
+  totalQtySold?: number;
+  dateBought?: string;
+  dateLast?: string;
+  serialNumbers?: string;
+  itemCondition?: string; // New, Used, Rebuilt, OEM
 }
 
 export interface AutoReorderSettings {

@@ -18,11 +18,28 @@ export function useInventoryForm() {
     location: "",
     status: "In Stock",
     description: "",
+    
+    // Additional fees
     coreCharge: 0,
     environmentalFee: 0,
     freightFee: 0,
     otherFee: 0,
     otherFeeDescription: "",
+    
+    // New fields from the UI
+    partNumber: "",
+    manufacturer: "",
+    cost: 0,
+    marginMarkup: 0,
+    retailPrice: 0,
+    wholesalePrice: 0,
+    specialTax: 0,
+    onOrder: 0,
+    onHold: 0,
+    minimumOrder: 0,
+    maximumOrder: 0,
+    totalQtySold: 0,
+    itemCondition: "New",
   });
   
   const [categories, setCategories] = useState<string[]>([]);
@@ -52,8 +69,14 @@ export function useInventoryForm() {
     const { name, value } = e.target;
     
     // Handle numeric fields differently
-    if (name === "quantity" || name === "reorderPoint" || name === "unitPrice" || 
-        name === "coreCharge" || name === "environmentalFee" || name === "freightFee" || name === "otherFee") {
+    if (
+      name === "quantity" || name === "reorderPoint" || name === "unitPrice" || 
+      name === "coreCharge" || name === "environmentalFee" || name === "freightFee" || 
+      name === "otherFee" || name === "cost" || name === "marginMarkup" || 
+      name === "retailPrice" || name === "wholesalePrice" || name === "specialTax" || 
+      name === "onOrder" || name === "onHold" || name === "minimumOrder" || 
+      name === "maximumOrder" || name === "totalQtySold"
+    ) {
       const numValue = value === "" ? 0 : Number(value);
       
       // Update status if quantity or reorderPoint changes
@@ -93,6 +116,17 @@ export function useInventoryForm() {
     // Clear error for this field if it exists
     clearError(name);
   };
+  
+  // Handle radio button changes
+  const handleRadioChange = (name: string, value: string) => {
+    setFormData({
+      ...formData,
+      [name]: value
+    });
+    
+    // Clear error for this field if it exists
+    clearError(name);
+  };
 
   return {
     formData,
@@ -103,5 +137,6 @@ export function useInventoryForm() {
     validateForm,
     handleChange,
     handleSelectChange,
+    handleRadioChange,
   };
 }
