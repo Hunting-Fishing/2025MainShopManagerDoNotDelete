@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Settings, Store, Hammer, Users, Wrench, BarChart3, Shield } from "lucide-react";
+import { Settings, Store, Hammer, Users, Wrench, BarChart3, Shield, Link as LinkIcon } from "lucide-react";
 import { Container, Segment, Header as SemanticHeader, Grid } from "semantic-ui-react";
 
 export default function DeveloperPortal() {
@@ -21,6 +21,13 @@ export default function DeveloperPortal() {
       description: "Configure available services, subcategories, and jobs with pricing",
       icon: <Wrench className="h-6 w-6 text-purple-600" />,
       href: "/developer/service-management",
+    },
+    {
+      id: "integrations",
+      title: "Integrations",
+      description: "Manage third-party service integrations and API connections",
+      icon: <LinkIcon className="h-6 w-6 text-green-600" />,
+      href: "/settings/integrations",
     },
     {
       id: "user-management",

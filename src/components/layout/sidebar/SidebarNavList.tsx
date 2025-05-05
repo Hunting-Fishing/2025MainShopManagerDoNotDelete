@@ -144,6 +144,11 @@ const navigationItems: NavItem[] = [
         title: "Service Management",
         href: "/developer/service-management",
         icon: <Wrench className="h-4 w-4" />
+      },
+      {
+        title: "Integrations",
+        href: "/settings/integrations",
+        icon: <Link className="h-4 w-4" />
       }
     ]
   },

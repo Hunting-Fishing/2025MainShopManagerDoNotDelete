@@ -1,3 +1,4 @@
+
 import { RouteObject } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import Dashboard from '@/pages/Dashboard';
@@ -18,9 +19,9 @@ import DeveloperPortal from '@/pages/DeveloperPortal';
 import ShoppingControls from '@/pages/developer/ShoppingControls';
 import ToolCategoryPage from '@/pages/ToolCategoryPage';
 import ToolDetailPage from '@/pages/ToolDetailPage';
-import ManufacturerPage from '@/pages/ManufacturerPage';
 import ServiceManagement from '@/pages/developer/ServiceManagement';
 import Forms from '@/pages/Forms';
+import IntegrationSettings from '@/pages/settings/IntegrationSettings';
 
 // All routes must be declared here to be used by the RouterProvider
 export const routes: RouteObject[] = [
@@ -92,6 +93,10 @@ export const routes: RouteObject[] = [
       {
         path: 'settings',
         element: <Settings />,
+      },
+      {
+        path: 'settings/integrations',
+        element: <IntegrationSettings />,
       },
       {
         path: 'login',
