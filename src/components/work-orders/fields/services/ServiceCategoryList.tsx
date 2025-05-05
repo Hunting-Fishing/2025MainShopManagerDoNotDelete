@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { ServiceMainCategory } from "@/types/serviceHierarchy";
-import { Check, ChevronRight, ChevronDown } from "lucide-react";
+import { Check, ChevronRight, ChevronDown, Search } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 
 interface ServiceCategoryListProps {
   categories: ServiceMainCategory[] | ServiceCategory[];
@@ -20,6 +21,7 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
   onCategorySelect,
 }) => {
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Helper function to check if the category is a ServiceMainCategory
   const isServiceMainCategory = (category: any): category is ServiceMainCategory => {
@@ -72,12 +74,28 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
     }
   };
 
+  // Filter categories based on search term
+  const filteredCategories = categories.filter(category => 
+    category.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="w-[280px] border-r pr-1">
-      <h4 className="font-medium text-sm mb-3 px-2">Service Categories</h4>
+      <div className="px-2 mb-3">
+        <h4 className="font-medium text-sm mb-2">Service Categories</h4>
+        <div className="relative">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search categories..."
+            className="pl-8 h-9 text-sm"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+      </div>
       <ScrollArea className="h-[450px]">
         <div className="space-y-1 pr-2">
-          {categories.map((category) => {
+          {filteredCategories.map((category) => {
             // Get category name and job count based on the category type
             const categoryName = category.name;
             const isExpanded = expandedCategories[categoryName] || selectedCategory === categoryName;
@@ -112,7 +130,7 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
                     onClick={() => onCategorySelect(categoryName)}
                   >
                     <div className="flex items-center justify-between w-full text-left">
-                      <span className="truncate max-w-[180px] font-semibold">{categoryName}</span>
+                      <span className="truncate max-w-[140px] font-semibold">{categoryName}</span>
                       <div className="flex items-center space-x-1">
                         {subcategoriesCount > 0 && (
                           <Badge variant="outline" className="text-xs bg-muted">

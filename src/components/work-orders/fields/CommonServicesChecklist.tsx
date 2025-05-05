@@ -9,6 +9,7 @@ import { ServiceSubcategoryGrid } from "./services/ServiceSubcategoryGrid";
 import { ServiceMainCategory } from "@/types/serviceHierarchy";
 import { fetchServiceCategories } from "@/lib/serviceHierarchy";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 interface CommonServicesChecklistProps {
   onServiceChecked: (checkedServices: string[]) => void;
@@ -99,20 +100,22 @@ export const CommonServicesChecklist: React.FC<CommonServicesChecklistProps> = (
     }
 
     return (
-      <div className="flex gap-6 min-h-[500px] bg-muted/5 rounded-lg p-4">
-        <ServiceCategoryList
-          categories={categories}
-          selectedCategory={selectedMainCategory}
-          onCategorySelect={setSelectedMainCategory}
-        />
-        {selectedCategory && (
-          <ServiceSubcategoryGrid
-            category={selectedCategory}
-            checkedServices={checkedServices}
-            onServiceCheck={handleCheckboxChange}
+      <TooltipProvider>
+        <div className="flex gap-6 min-h-[500px] bg-muted/5 rounded-lg p-4">
+          <ServiceCategoryList
+            categories={categories}
+            selectedCategory={selectedMainCategory}
+            onCategorySelect={setSelectedMainCategory}
           />
-        )}
-      </div>
+          {selectedCategory && (
+            <ServiceSubcategoryGrid
+              category={selectedCategory}
+              checkedServices={checkedServices}
+              onServiceCheck={handleCheckboxChange}
+            />
+          )}
+        </div>
+      </TooltipProvider>
     );
   };
 
