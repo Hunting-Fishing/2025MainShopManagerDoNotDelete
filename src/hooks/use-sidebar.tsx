@@ -24,14 +24,17 @@ const SidebarContext = createContext<{ collapsed: boolean; toggleCollapsed: () =
 
 // Export SidebarProvider component
 export function SidebarProvider({ children }: { children: ReactNode }) {
-  const { isOpen, toggle } = useSidebar();
+  const [collapsed, setCollapsed] = React.useState(false);
+  const toggleCollapsed = React.useCallback(() => {
+    setCollapsed((prev) => !prev);
+  }, []);
   
   return (
-    <SidebarContext.Provider value={{ collapsed: !isOpen, toggleCollapsed: toggle }}>
+    <SidebarContext.Provider value={{ collapsed, toggleCollapsed }}>
       {children}
     </SidebarContext.Provider>
   );
 }
 
-// Export useSidebarContext hook for components that need the legacy interface
+// Export useSidebarContext hook for components that need the context
 export const useSidebarContext = () => useContext(SidebarContext);

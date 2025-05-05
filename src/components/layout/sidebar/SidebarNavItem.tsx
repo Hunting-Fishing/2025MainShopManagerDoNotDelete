@@ -102,7 +102,7 @@ export function SidebarNavItem(props: SidebarNavItemProps | DirectNavItemProps) 
               }}
             >
               <span className="text-xl">{navItem.icon}</span>
-              {!collapsed && <span>{navItem.title}</span>}
+              {!collapsed && <span className="text-white">{navItem.title}</span>}
             </Link>
             
             {/* Chevron icon that toggles submenu */}
@@ -127,7 +127,7 @@ export function SidebarNavItem(props: SidebarNavItemProps | DirectNavItemProps) 
             }}
           >
             <span className="text-xl">{navItem.icon}</span>
-            {!collapsed && <span>{navItem.title}</span>}
+            {!collapsed && <span className="text-white">{navItem.title}</span>}
           </Link>
         )}
       </div>
@@ -148,7 +148,7 @@ export function SidebarNavItem(props: SidebarNavItemProps | DirectNavItemProps) 
               {subItem.icon && (
                 <span className="text-sm">{subItem.icon}</span>
               )}
-              <span>{subItem.title}</span>
+              <span className="text-white">{subItem.title}</span>
             </Link>
           ))}
         </div>

@@ -11,7 +11,7 @@ export function SidebarContent() {
   
   return (
     <>
-      <div className={cn("px-3 py-4 transition-all", collapsed ? "flex justify-center" : "px-5")}>
+      <div className={cn("py-4 transition-all", collapsed ? "flex justify-center px-3" : "px-5")}>
         <SidebarLogo />
         {!collapsed && <Separator className="my-4 bg-white/20" />}
       </div>
