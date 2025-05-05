@@ -1,360 +1,305 @@
-
 import { useState, useCallback } from 'react';
 import { ServiceMainCategory, ServiceSubcategory, ServiceJob, CategoryColorStyle } from '@/types/serviceHierarchy';
-import { 
-  fetchServiceCategories, 
-  saveServiceCategory, 
-  saveServiceSubcategory, 
-  saveServiceJob, 
-  deleteServiceCategory,
-  deleteServiceSubcategory,
-  deleteServiceJob 
-} from '@/lib/services/serviceApi';
-import { useToast } from '@/hooks/use-toast';
-import { v4 as uuidv4 } from 'uuid';
+import { createEmptyCategory, createEmptySubcategory, createEmptyJob } from '@/lib/services/serviceUtils';
+import { fetchServiceCategories, saveServiceCategory, saveServiceSubcategory, saveServiceJob, deleteServiceCategory, deleteServiceSubcategory, deleteServiceJob } from '@/lib/services/serviceApi';
+import { toast } from 'sonner';
 
-// Default color styles for categories
-export const DEFAULT_COLOR_STYLES: Record<string, CategoryColorStyle> = {
-  "default": { bg: "bg-slate-50", text: "text-slate-800", border: "border-slate-200" },
-  "engine": { bg: "bg-red-50", text: "text-red-800", border: "border-red-200" },
-  "brake": { bg: "bg-blue-50", text: "text-blue-800", border: "border-blue-200" },
-  "transmission": { bg: "bg-amber-50", text: "text-amber-800", border: "border-amber-200" },
-  "electrical": { bg: "bg-purple-50", text: "text-purple-800", border: "border-purple-200" },
-  "suspension": { bg: "bg-green-50", text: "text-green-800", border: "border-green-200" },
-  "tire": { bg: "bg-teal-50", text: "text-teal-800", border: "border-teal-200" },
-  "body": { bg: "bg-orange-50", text: "text-orange-800", border: "border-orange-200" },
-  "custom": { bg: "bg-indigo-50", text: "text-indigo-800", border: "border-indigo-200" },
+// Define default color styles for categories
+const DEFAULT_COLOR_STYLES: Record<string, CategoryColorStyle> = {
+  default: {
+    bg: 'bg-blue-100',
+    text: 'text-blue-800',
+    border: 'border-blue-300'
+  },
+  red: {
+    bg: 'bg-red-100',
+    text: 'text-red-800',
+    border: 'border-red-300'
+  },
+  green: {
+    bg: 'bg-green-100',
+    text: 'text-green-800',
+    border: 'border-green-300'
+  },
+  yellow: {
+    bg: 'bg-yellow-100',
+    text: 'text-yellow-800',
+    border: 'border-yellow-300'
+  },
+  purple: {
+    bg: 'bg-purple-100',
+    text: 'text-purple-800',
+    border: 'border-purple-300'
+  },
+  gray: {
+    bg: 'bg-gray-100',
+    text: 'text-gray-800',
+    border: 'border-gray-300'
+  }
 };
 
-export const useServiceHierarchy = () => {
-  const { toast } = useToast();
+export function useServiceHierarchy() {
   const [categories, setCategories] = useState<ServiceMainCategory[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
-  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string | null>(null);
-  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<ServiceMainCategory | null>(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState<ServiceSubcategory | null>(null);
+  const [selectedJob, setSelectedJob] = useState<ServiceJob | null>(null);
 
-  // Fetch all service categories
+  // Load all service categories
   const loadCategories = useCallback(async () => {
-    setIsLoading(true);
+    setLoading(true);
     setError(null);
-    
     try {
       const data = await fetchServiceCategories();
       setCategories(data);
       
-      // If we have categories but no selection, select the first one
-      if (data.length > 0 && !selectedCategoryId) {
-        setSelectedCategoryId(data[0].id);
+      // If we have categories and nothing is selected, select the first one
+      if (data.length > 0 && !selectedCategory) {
+        setSelectedCategory(data[0]);
+        
+        if (data[0].subcategories && data[0].subcategories.length > 0) {
+          setSelectedSubcategory(data[0].subcategories[0]);
+          
+          if (data[0].subcategories[0].jobs && data[0].subcategories[0].jobs.length > 0) {
+            setSelectedJob(data[0].subcategories[0].jobs[0]);
+          }
+        }
       }
     } catch (err) {
-      console.error('Error loading service categories:', err);
       setError(err instanceof Error ? err.message : 'Failed to load service categories');
-      toast({
-        title: "Error",
-        description: "Failed to load service categories",
-        variant: "destructive"
-      });
+      toast.error('Failed to load service categories');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, [selectedCategoryId, toast]);
+  }, [selectedCategory]);
 
-  // Get the selected category
-  const selectedCategory = selectedCategoryId 
-    ? categories.find(c => c.id === selectedCategoryId)
-    : null;
-
-  // Get the selected subcategory
-  const selectedSubcategory = selectedCategory?.subcategories?.find(
-    s => s.id === selectedSubcategoryId
-  ) || null;
-
-  // Get the selected job
-  const selectedJob = selectedSubcategory?.jobs?.find(
-    j => j.id === selectedJobId
-  ) || null;
-
-  // Create a new category
-  const createCategory = useCallback(async (name: string, description?: string) => {
-    const newCategory: ServiceMainCategory = {
-      id: uuidv4(),
-      name: name,
-      description: description || '',
-      position: categories.length + 1,
-      subcategories: []
-    };
-    
+  // Add a new category
+  const addCategory = useCallback(async () => {
     try {
+      const newPosition = categories.length > 0 
+        ? Math.max(...categories.map(c => c.position)) + 1 
+        : 0;
+      
+      const newCategory = createEmptyCategory(newPosition);
       const savedCategory = await saveServiceCategory(newCategory);
+      
       setCategories(prev => [...prev, savedCategory]);
-      setSelectedCategoryId(savedCategory.id);
-      setSelectedSubcategoryId(null);
-      setSelectedJobId(null);
+      setSelectedCategory(savedCategory);
       
-      toast({
-        title: "Success",
-        description: "Category created successfully",
-      });
+      if (savedCategory.subcategories && savedCategory.subcategories.length > 0) {
+        setSelectedSubcategory(savedCategory.subcategories[0]);
+        
+        if (savedCategory.subcategories[0].jobs && savedCategory.subcategories[0].jobs.length > 0) {
+          setSelectedJob(savedCategory.subcategories[0].jobs[0]);
+        }
+      }
       
-      return savedCategory;
+      toast.success('Category added successfully');
     } catch (err) {
-      console.error('Error creating category:', err);
-      toast({
-        title: "Error",
-        description: "Failed to create category",
-        variant: "destructive"
-      });
-      throw err;
+      toast.error('Failed to add category');
+      setError(err instanceof Error ? err.message : 'Failed to add category');
     }
-  }, [categories, toast]);
+  }, [categories]);
 
   // Update a category
-  const updateCategory = useCallback(async (category: ServiceMainCategory) => {
+  const updateCategory = useCallback(async (updatedCategory: ServiceMainCategory) => {
     try {
-      const updatedCategory = await saveServiceCategory(category);
+      const savedCategory = await saveServiceCategory(updatedCategory);
       
       setCategories(prev => 
-        prev.map(c => c.id === updatedCategory.id ? updatedCategory : c)
+        prev.map(cat => cat.id === savedCategory.id ? savedCategory : cat)
       );
       
-      toast({
-        title: "Success",
-        description: "Category updated successfully",
-      });
-      
-      return updatedCategory;
+      setSelectedCategory(savedCategory);
+      toast.success('Category updated successfully');
     } catch (err) {
-      console.error('Error updating category:', err);
-      toast({
-        title: "Error",
-        description: "Failed to update category",
-        variant: "destructive"
-      });
-      throw err;
+      toast.error('Failed to update category');
+      setError(err instanceof Error ? err.message : 'Failed to update category');
     }
-  }, [toast]);
+  }, []);
 
   // Delete a category
   const deleteCategory = useCallback(async (categoryId: string) => {
     try {
       await deleteServiceCategory(categoryId);
       
-      setCategories(prev => prev.filter(c => c.id !== categoryId));
+      setCategories(prev => prev.filter(cat => cat.id !== categoryId));
       
-      if (selectedCategoryId === categoryId) {
-        setSelectedCategoryId(categories.length > 1 ? categories[0].id : null);
-        setSelectedSubcategoryId(null);
-        setSelectedJobId(null);
+      if (selectedCategory?.id === categoryId) {
+        setSelectedCategory(null);
+        setSelectedSubcategory(null);
+        setSelectedJob(null);
       }
       
-      toast({
-        title: "Success",
-        description: "Category deleted successfully",
-      });
-      
-      return categoryId;
+      toast.success('Category deleted successfully');
     } catch (err) {
-      console.error('Error deleting category:', err);
-      toast({
-        title: "Error",
-        description: "Failed to delete category",
-        variant: "destructive"
-      });
-      throw err;
+      toast.error('Failed to delete category');
+      setError(err instanceof Error ? err.message : 'Failed to delete category');
     }
-  }, [categories, selectedCategoryId, toast]);
+  }, [selectedCategory]);
 
-  // Create a new subcategory
-  const createSubcategory = useCallback(async (categoryId: string, name: string, description?: string) => {
-    if (!categoryId) {
-      toast({
-        title: "Error",
-        description: "No category selected",
-        variant: "destructive"
-      });
-      throw new Error("No category selected");
-    }
-    
-    const newSubcategory: ServiceSubcategory = {
-      id: uuidv4(),
-      name: name,
-      description: description || '',
-      jobs: []
-    };
+  // Add a subcategory to a category
+  const addSubcategory = useCallback(async (categoryId: string) => {
+    if (!selectedCategory) return;
     
     try {
+      const newSubcategory = createEmptySubcategory();
       const updatedCategory = await saveServiceSubcategory(categoryId, newSubcategory);
       
       setCategories(prev => 
-        prev.map(c => c.id === updatedCategory.id ? updatedCategory : c)
+        prev.map(cat => cat.id === updatedCategory.id ? updatedCategory : cat)
       );
       
-      setSelectedSubcategoryId(newSubcategory.id);
-      setSelectedJobId(null);
+      setSelectedCategory(updatedCategory);
       
-      toast({
-        title: "Success",
-        description: "Subcategory created successfully",
-      });
+      // Find the newly added subcategory
+      const addedSubcategory = updatedCategory.subcategories?.find(sub => sub.id === newSubcategory.id);
+      if (addedSubcategory) {
+        setSelectedSubcategory(addedSubcategory);
+        
+        if (addedSubcategory.jobs && addedSubcategory.jobs.length > 0) {
+          setSelectedJob(addedSubcategory.jobs[0]);
+        }
+      }
       
-      return newSubcategory;
+      toast.success('Subcategory added successfully');
     } catch (err) {
-      console.error('Error creating subcategory:', err);
-      toast({
-        title: "Error",
-        description: "Failed to create subcategory",
-        variant: "destructive"
-      });
-      throw err;
+      toast.error('Failed to add subcategory');
+      setError(err instanceof Error ? err.message : 'Failed to add subcategory');
     }
-  }, [toast]);
+  }, [selectedCategory]);
 
   // Update a subcategory
   const updateSubcategory = useCallback(async (
     categoryId: string, 
-    subcategory: ServiceSubcategory
+    updatedSubcategory: ServiceSubcategory
   ) => {
     try {
-      const updatedCategory = await saveServiceSubcategory(categoryId, subcategory);
+      const updatedCategory = await saveServiceSubcategory(categoryId, updatedSubcategory);
       
       setCategories(prev => 
-        prev.map(c => c.id === updatedCategory.id ? updatedCategory : c)
+        prev.map(cat => cat.id === updatedCategory.id ? updatedCategory : cat)
       );
       
-      toast({
-        title: "Success",
-        description: "Subcategory updated successfully",
-      });
+      setSelectedCategory(updatedCategory);
       
-      return subcategory;
+      // Find the updated subcategory in the response
+      const savedSubcategory = updatedCategory.subcategories?.find(
+        sub => sub.id === updatedSubcategory.id
+      );
+      
+      if (savedSubcategory) {
+        setSelectedSubcategory(savedSubcategory);
+      }
+      
+      toast.success('Subcategory updated successfully');
     } catch (err) {
-      console.error('Error updating subcategory:', err);
-      toast({
-        title: "Error",
-        description: "Failed to update subcategory",
-        variant: "destructive"
-      });
-      throw err;
+      toast.error('Failed to update subcategory');
+      setError(err instanceof Error ? err.message : 'Failed to update subcategory');
     }
-  }, [toast]);
+  }, []);
 
   // Delete a subcategory
-  const deleteSubcategory = useCallback(async (categoryId: string, subcategoryId: string) => {
+  const removeSubcategory = useCallback(async (
+    categoryId: string, 
+    subcategoryId: string
+  ) => {
     try {
       const updatedCategory = await deleteServiceSubcategory(categoryId, subcategoryId);
       
       setCategories(prev => 
-        prev.map(c => c.id === updatedCategory.id ? updatedCategory : c)
+        prev.map(cat => cat.id === updatedCategory.id ? updatedCategory : cat)
       );
       
-      if (selectedSubcategoryId === subcategoryId) {
-        setSelectedSubcategoryId(null);
-        setSelectedJobId(null);
+      setSelectedCategory(updatedCategory);
+      
+      if (selectedSubcategory?.id === subcategoryId) {
+        setSelectedSubcategory(null);
+        setSelectedJob(null);
       }
       
-      toast({
-        title: "Success",
-        description: "Subcategory deleted successfully",
-      });
-      
-      return subcategoryId;
+      toast.success('Subcategory deleted successfully');
     } catch (err) {
-      console.error('Error deleting subcategory:', err);
-      toast({
-        title: "Error",
-        description: "Failed to delete subcategory",
-        variant: "destructive"
-      });
-      throw err;
+      toast.error('Failed to delete subcategory');
+      setError(err instanceof Error ? err.message : 'Failed to delete subcategory');
     }
-  }, [selectedSubcategoryId, toast]);
+  }, [selectedSubcategory]);
 
-  // Create a new job
-  const createJob = useCallback(async (
+  // Add a job to a subcategory
+  const addJob = useCallback(async (
     categoryId: string, 
-    subcategoryId: string, 
-    name: string, 
-    description?: string,
-    price?: number,
-    estimatedTime?: number
+    subcategoryId: string
   ) => {
-    if (!categoryId || !subcategoryId) {
-      toast({
-        title: "Error",
-        description: "No category or subcategory selected",
-        variant: "destructive"
-      });
-      throw new Error("No category or subcategory selected");
-    }
-    
-    const newJob: ServiceJob = {
-      id: uuidv4(),
-      name: name,
-      description: description || '',
-      price: price,
-      estimatedTime: estimatedTime
-    };
-    
     try {
+      const newJob = createEmptyJob();
       const updatedCategory = await saveServiceJob(categoryId, subcategoryId, newJob);
       
       setCategories(prev => 
-        prev.map(c => c.id === updatedCategory.id ? updatedCategory : c)
+        prev.map(cat => cat.id === updatedCategory.id ? updatedCategory : cat)
       );
       
-      setSelectedJobId(newJob.id);
+      setSelectedCategory(updatedCategory);
       
-      toast({
-        title: "Success",
-        description: "Job created successfully",
-      });
+      // Find the subcategory and job in the response
+      const subcategory = updatedCategory.subcategories?.find(
+        sub => sub.id === subcategoryId
+      );
       
-      return newJob;
+      if (subcategory) {
+        setSelectedSubcategory(subcategory);
+        
+        const addedJob = subcategory.jobs?.find(job => job.id === newJob.id);
+        if (addedJob) {
+          setSelectedJob(addedJob);
+        }
+      }
+      
+      toast.success('Job added successfully');
     } catch (err) {
-      console.error('Error creating job:', err);
-      toast({
-        title: "Error",
-        description: "Failed to create job",
-        variant: "destructive"
-      });
-      throw err;
+      toast.error('Failed to add job');
+      setError(err instanceof Error ? err.message : 'Failed to add job');
     }
-  }, [toast]);
+  }, []);
 
   // Update a job
   const updateJob = useCallback(async (
     categoryId: string, 
     subcategoryId: string, 
-    job: ServiceJob
+    updatedJob: ServiceJob
   ) => {
     try {
-      const updatedCategory = await saveServiceJob(categoryId, subcategoryId, job);
+      const updatedCategory = await saveServiceJob(categoryId, subcategoryId, updatedJob);
       
       setCategories(prev => 
-        prev.map(c => c.id === updatedCategory.id ? updatedCategory : c)
+        prev.map(cat => cat.id === updatedCategory.id ? updatedCategory : cat)
       );
       
-      toast({
-        title: "Success",
-        description: "Job updated successfully",
-      });
+      setSelectedCategory(updatedCategory);
       
-      return job;
+      // Find the subcategory and job in the response
+      const subcategory = updatedCategory.subcategories?.find(
+        sub => sub.id === subcategoryId
+      );
+      
+      if (subcategory) {
+        setSelectedSubcategory(subcategory);
+        
+        const savedJob = subcategory.jobs?.find(job => job.id === updatedJob.id);
+        if (savedJob) {
+          setSelectedJob(savedJob);
+        }
+      }
+      
+      toast.success('Job updated successfully');
     } catch (err) {
-      console.error('Error updating job:', err);
-      toast({
-        title: "Error",
-        description: "Failed to update job",
-        variant: "destructive"
-      });
-      throw err;
+      toast.error('Failed to update job');
+      setError(err instanceof Error ? err.message : 'Failed to update job');
     }
-  }, [toast]);
+  }, []);
 
   // Delete a job
-  const deleteJob = useCallback(async (
+  const removeJob = useCallback(async (
     categoryId: string, 
     subcategoryId: string, 
     jobId: string
@@ -363,54 +308,58 @@ export const useServiceHierarchy = () => {
       const updatedCategory = await deleteServiceJob(categoryId, subcategoryId, jobId);
       
       setCategories(prev => 
-        prev.map(c => c.id === updatedCategory.id ? updatedCategory : c)
+        prev.map(cat => cat.id === updatedCategory.id ? updatedCategory : cat)
       );
       
-      if (selectedJobId === jobId) {
-        setSelectedJobId(null);
+      setSelectedCategory(updatedCategory);
+      
+      // Find the subcategory in the response
+      const subcategory = updatedCategory.subcategories?.find(
+        sub => sub.id === subcategoryId
+      );
+      
+      if (subcategory) {
+        setSelectedSubcategory(subcategory);
       }
       
-      toast({
-        title: "Success",
-        description: "Job deleted successfully",
-      });
+      if (selectedJob?.id === jobId) {
+        setSelectedJob(null);
+      }
       
-      return jobId;
+      toast.success('Job deleted successfully');
     } catch (err) {
-      console.error('Error deleting job:', err);
-      toast({
-        title: "Error",
-        description: "Failed to delete job",
-        variant: "destructive"
-      });
-      throw err;
+      toast.error('Failed to delete job');
+      setError(err instanceof Error ? err.message : 'Failed to delete job');
     }
-  }, [selectedJobId, toast]);
+  }, [selectedJob]);
+
+  // Get color style for a category
+  const getCategoryColorStyle = useCallback((categoryId: string): CategoryColorStyle => {
+    // In the future, we could store color preferences in the database
+    // For now, just return the default style
+    return DEFAULT_COLOR_STYLES.default;
+  }, []);
 
   return {
     categories,
-    isLoading,
+    loading,
     error,
-    selectedCategoryId,
-    setSelectedCategoryId,
-    selectedSubcategoryId,
-    setSelectedSubcategoryId,
-    selectedJobId,
-    setSelectedJobId,
     selectedCategory,
     selectedSubcategory,
     selectedJob,
+    setSelectedCategory,
+    setSelectedSubcategory,
+    setSelectedJob,
     loadCategories,
-    createCategory,
+    addCategory,
     updateCategory,
     deleteCategory,
-    createSubcategory,
+    addSubcategory,
     updateSubcategory,
-    deleteSubcategory,
-    createJob,
+    removeSubcategory,
+    addJob,
     updateJob,
-    deleteJob,
+    removeJob,
+    getCategoryColorStyle
   };
-};
-
-export default useServiceHierarchy;
+}
