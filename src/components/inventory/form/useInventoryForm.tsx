@@ -39,6 +39,9 @@ export function useInventoryForm() {
     minimumOrder: 0,
     maximumOrder: 0,
     totalQtySold: 0,
+    dateBought: "",
+    dateLast: "",
+    serialNumbers: "",
     itemCondition: "New",
   });
   
@@ -106,6 +109,18 @@ export function useInventoryForm() {
     clearError(name);
   };
   
+  // Add a separate handler for textarea fields
+  const handleTextAreaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value
+    });
+    
+    // Clear error for this field if it exists
+    clearError(name);
+  };
+  
   // Handle select change for dropdown fields
   const handleSelectChange = (name: string, value: string) => {
     setFormData({
@@ -136,6 +151,7 @@ export function useInventoryForm() {
     formErrors,
     validateForm,
     handleChange,
+    handleTextAreaChange,
     handleSelectChange,
     handleRadioChange,
   };

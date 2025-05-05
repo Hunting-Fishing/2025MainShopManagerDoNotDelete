@@ -1,68 +1,143 @@
 
 import React, { useState } from "react";
-import { InventoryItemExtended } from "@/types/inventory";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { InventoryFormField } from "./InventoryFormField";
 import { InventoryFormSelect } from "./InventoryFormSelect";
 import { InventoryFormStatus } from "./InventoryFormStatus";
 import { InventoryFormActions } from "./InventoryFormActions";
 import { useInventoryForm } from "./useInventoryForm";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
+import { InventoryItemExtended } from "@/types/inventory";
 import { Textarea } from "@/components/ui/textarea";
 
 interface InventoryFormProps {
+  initialData?: Omit<InventoryItemExtended, "id">;
   onSubmit: (data: Omit<InventoryItemExtended, "id">) => Promise<void>;
-  loading: boolean;
   onCancel: () => void;
+  loading: boolean;
+  submitLabel?: string;
 }
 
-export function InventoryForm({ onSubmit, loading, onCancel }: InventoryFormProps) {
+export function InventoryForm({
+  initialData,
+  onSubmit,
+  onCancel,
+  loading,
+  submitLabel = "Save",
+}: InventoryFormProps) {
   const {
     formData,
+    formErrors,
     categories,
     suppliers,
-    formErrors,
     validateForm,
     handleChange,
+    handleTextAreaChange,
     handleSelectChange,
     handleRadioChange,
   } = useInventoryForm();
+  
+  const [activeTab, setActiveTab] = useState("general");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
-    // Validate form
-    if (!validateForm(formData)) {
-      return;
+    // Validate the form data
+    if (validateForm(formData)) {
+      await onSubmit(formData);
     }
-
-    await onSubmit(formData);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow">
-      <Tabs defaultValue="parts">
-        <TabsList className="bg-blue-100 p-1 mb-4">
-          <TabsTrigger value="parts" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">Parts</TabsTrigger>
-          <TabsTrigger value="extendedDescription" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">Extended Description</TabsTrigger>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="w-full grid grid-cols-5 mb-6">
+          <TabsTrigger value="general" className="text-center">General</TabsTrigger>
+          <TabsTrigger value="pricing" className="text-center">Pricing</TabsTrigger>
+          <TabsTrigger value="inventory" className="text-center">Inventory</TabsTrigger>
+          <TabsTrigger value="supplier" className="text-center">Supplier</TabsTrigger>
+          <TabsTrigger value="additional" className="text-center">Additional</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="parts" className="space-y-6">
-          <div className="grid grid-cols-1 gap-6 bg-orange-100 p-4 rounded-md">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex space-x-4 items-center">
-                <span className="font-medium">Qty In Stock:</span>
-                <span className="bg-white px-4 py-1 border border-gray-300 rounded">{formData.quantity}</span>
+        {/* General Information Tab */}
+        <TabsContent value="general" className="space-y-6">
+          <Card className="p-6">
+            <h3 className="text-lg font-medium mb-4">General Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <InventoryFormField
+                label="Item Name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                error={formErrors.name}
+                required
+                placeholder="Enter item name"
+              />
+              
+              <InventoryFormField
+                label="SKU"
+                name="sku"
+                value={formData.sku}
+                onChange={handleChange}
+                error={formErrors.sku}
+                required
+                placeholder="Enter SKU"
+              />
+              
+              <InventoryFormField
+                label="Part Number"
+                name="partNumber"
+                value={formData.partNumber || ""}
+                onChange={handleChange}
+                placeholder="Enter part number"
+              />
+              
+              <InventoryFormSelect
+                id="category"
+                label="Category"
+                value={formData.category}
+                onValueChange={(value) => handleSelectChange("category", value)}
+                options={categories}
+                error={formErrors.category}
+                required
+              />
+              
+              <InventoryFormField
+                label="Manufacturer"
+                name="manufacturer"
+                value={formData.manufacturer || ""}
+                onChange={handleChange}
+                placeholder="Enter manufacturer"
+              />
+              
+              <InventoryFormField
+                label="Location"
+                name="location"
+                value={formData.location}
+                onChange={handleChange}
+                placeholder="Enter storage location"
+              />
+              
+              <div className="col-span-2">
+                <Label htmlFor="description" className="block mb-2">Description</Label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  value={formData.description || ""}
+                  onChange={handleTextAreaChange}
+                  placeholder="Enter item description"
+                  className="min-h-[100px] w-full"
+                />
               </div>
               
-              <div className="bg-orange-200 p-3 rounded-md border border-orange-300">
-                <span className="font-bold">CODE</span>
+              <div className="col-span-2">
+                <Label className="block mb-2">Item Condition</Label>
                 <RadioGroup 
                   value={formData.itemCondition || "New"} 
                   onValueChange={(value) => handleRadioChange("itemCondition", value)}
-                  className="mt-2 space-y-1"
+                  className="flex space-x-6"
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="New" id="condition-new" />
@@ -83,185 +158,254 @@ export function InventoryForm({ onSubmit, loading, onCancel }: InventoryFormProp
                 </RadioGroup>
               </div>
             </div>
-            
-            <div className="bg-orange-50 p-4 rounded-md border border-orange-200">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-4">
-                  <InventoryFormField
-                    label="Part #"
-                    name="partNumber"
-                    value={formData.partNumber || ""}
-                    onChange={handleChange}
-                    placeholder="Enter part number"
-                  />
-                  
-                  <InventoryFormField
-                    label="Description"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                    placeholder="Enter item description"
-                    error={formErrors.name}
-                  />
-                </div>
-                
-                <div className="space-y-4">
-                  <InventoryFormField
-                    label="Location"
-                    name="location"
-                    value={formData.location}
-                    onChange={handleChange}
-                    placeholder="Enter storage location"
-                  />
-                  
-                  <InventoryFormField
-                    label="Manufacturer"
-                    name="manufacturer"
-                    value={formData.manufacturer || ""}
-                    onChange={handleChange}
-                    placeholder="Enter manufacturer"
-                  />
-                </div>
-                
-                <InventoryFormSelect
-                  id="category"
-                  label="Category"
-                  value={formData.category}
-                  onValueChange={(value) => handleSelectChange("category", value)}
-                  options={categories}
-                  error={formErrors.category}
-                  required
-                />
-                
-                <InventoryFormSelect
-                  id="supplier"
-                  label="Vendor"
-                  value={formData.supplier}
-                  onValueChange={(value) => handleSelectChange("supplier", value)}
-                  options={suppliers}
-                  error={formErrors.supplier}
-                  required
+          </Card>
+        </TabsContent>
+        
+        {/* Pricing Tab */}
+        <TabsContent value="pricing" className="space-y-6">
+          <Card className="p-6">
+            <h3 className="text-lg font-medium mb-4">Pricing Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <InventoryFormField
+                label="Cost"
+                name="cost"
+                type="number"
+                value={formData.cost?.toString() || "0"}
+                onChange={handleChange}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+              />
+              
+              <InventoryFormField
+                label="Markup/Margin %"
+                name="marginMarkup"
+                type="number"
+                value={formData.marginMarkup?.toString() || "0"}
+                onChange={handleChange}
+                placeholder="0"
+                min="0"
+                step="1"
+              />
+              
+              <InventoryFormField
+                label="Unit Price"
+                name="unitPrice"
+                type="number"
+                value={formData.unitPrice.toString()}
+                onChange={handleChange}
+                error={formErrors.unitPrice}
+                required
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+              />
+              
+              <InventoryFormField
+                label="Retail Price"
+                name="retailPrice"
+                type="number"
+                value={formData.retailPrice?.toString() || "0"}
+                onChange={handleChange}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+              />
+              
+              <InventoryFormField
+                label="Wholesale Price"
+                name="wholesalePrice"
+                type="number"
+                value={formData.wholesalePrice?.toString() || "0"}
+                onChange={handleChange}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+              />
+              
+              <InventoryFormField
+                label="Special Tax %"
+                name="specialTax"
+                type="number"
+                value={formData.specialTax?.toString() || "0"}
+                onChange={handleChange}
+                placeholder="0"
+                min="0"
+                step="0.01"
+              />
+            </div>
+          </Card>
+          
+          {/* Additional Fees Card */}
+          <Card className="p-6">
+            <h3 className="text-lg font-medium mb-4">Additional Fees</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <InventoryFormField
+                label="Core Charge"
+                name="coreCharge"
+                type="number"
+                value={formData.coreCharge?.toString() || "0"}
+                onChange={handleChange}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+              />
+              
+              <InventoryFormField
+                label="Environmental Fee"
+                name="environmentalFee"
+                type="number"
+                value={formData.environmentalFee?.toString() || "0"}
+                onChange={handleChange}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+              />
+              
+              <InventoryFormField
+                label="Freight Fee"
+                name="freightFee"
+                type="number"
+                value={formData.freightFee?.toString() || "0"}
+                onChange={handleChange}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+              />
+              
+              <InventoryFormField
+                label="Other Fee"
+                name="otherFee"
+                type="number"
+                value={formData.otherFee?.toString() || "0"}
+                onChange={handleChange}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+              />
+              
+              <div className="col-span-2">
+                <Label htmlFor="otherFeeDescription" className="block mb-2">Other Fee Description</Label>
+                <Textarea
+                  id="otherFeeDescription"
+                  name="otherFeeDescription"
+                  value={formData.otherFeeDescription || ""}
+                  onChange={handleTextAreaChange}
+                  placeholder="Describe other fee"
+                  className="w-full"
                 />
               </div>
             </div>
-            
-            <div className="bg-orange-50 p-4 rounded-md border border-orange-200">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <InventoryFormField
-                  label="Cost"
-                  name="cost"
-                  type="number"
-                  value={formData.cost?.toString() || "0"}
-                  onChange={handleChange}
-                  min="0"
-                  step="0.01"
-                />
-                
-                <InventoryFormField
-                  label="Margin Markup"
-                  name="marginMarkup"
-                  type="number"
-                  value={formData.marginMarkup?.toString() || "0"}
-                  onChange={handleChange}
-                  min="0"
-                  step="0.01"
-                />
-                
-                <InventoryFormField
-                  label="Retail Price"
-                  name="retailPrice"
-                  type="number"
-                  value={formData.retailPrice?.toString() || "0"}
-                  onChange={handleChange}
-                  min="0"
-                  step="0.01"
-                />
-                
-                <InventoryFormField
-                  label="Wholesale Price"
-                  name="wholesalePrice"
-                  type="number"
-                  value={formData.wholesalePrice?.toString() || "0"}
-                  onChange={handleChange}
-                  min="0"
-                  step="0.01"
-                />
-                
-                <InventoryFormField
-                  label="Special Tax"
-                  name="specialTax"
-                  type="number"
-                  value={formData.specialTax?.toString() || "0"}
-                  onChange={handleChange}
-                  min="0"
-                  step="0.01"
-                />
-              </div>
+          </Card>
+        </TabsContent>
+        
+        {/* Inventory Tab */}
+        <TabsContent value="inventory" className="space-y-6">
+          <Card className="p-6">
+            <h3 className="text-lg font-medium mb-4">Inventory Management</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <InventoryFormField
+                label="Quantity in Stock"
+                name="quantity"
+                type="number"
+                value={formData.quantity.toString()}
+                onChange={handleChange}
+                error={formErrors.quantity}
+                required
+                placeholder="0"
+                min="0"
+                step="1"
+              />
+              
+              <InventoryFormField
+                label="On Order"
+                name="onOrder"
+                type="number"
+                value={formData.onOrder?.toString() || "0"}
+                onChange={handleChange}
+                placeholder="0"
+                min="0"
+                step="1"
+              />
+              
+              <InventoryFormField
+                label="On Hold"
+                name="onHold"
+                type="number"
+                value={formData.onHold?.toString() || "0"}
+                onChange={handleChange}
+                placeholder="0"
+                min="0"
+                step="1"
+              />
+              
+              <InventoryFormField
+                label="Reorder Point"
+                name="reorderPoint"
+                type="number"
+                value={formData.reorderPoint.toString()}
+                onChange={handleChange}
+                error={formErrors.reorderPoint}
+                required
+                placeholder="0"
+                min="0"
+                step="1"
+              />
+              
+              <InventoryFormField
+                label="Minimum Order"
+                name="minimumOrder"
+                type="number"
+                value={formData.minimumOrder?.toString() || "0"}
+                onChange={handleChange}
+                placeholder="0"
+                min="0"
+                step="1"
+              />
+              
+              <InventoryFormField
+                label="Maximum Order"
+                name="maximumOrder"
+                type="number"
+                value={formData.maximumOrder?.toString() || "0"}
+                onChange={handleChange}
+                placeholder="0"
+                min="0"
+                step="1"
+              />
+              
+              <InventoryFormStatus status={formData.status} />
+              
+              <InventoryFormField
+                label="Total Quantity Sold"
+                name="totalQtySold"
+                type="number"
+                value={formData.totalQtySold?.toString() || "0"}
+                onChange={handleChange}
+                placeholder="0"
+                min="0"
+                step="1"
+                disabled
+              />
             </div>
-            
-            <div className="bg-orange-50 p-4 rounded-md border border-orange-200">
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <InventoryFormField
-                  label="On Order"
-                  name="onOrder"
-                  type="number"
-                  value={formData.onOrder?.toString() || "0"}
-                  onChange={handleChange}
-                  min="0"
-                />
-                
-                <InventoryFormField
-                  label="Minimum Order"
-                  name="minimumOrder"
-                  type="number"
-                  value={formData.minimumOrder?.toString() || "0"}
-                  onChange={handleChange}
-                  min="0"
-                />
-                
-                <InventoryFormField
-                  label="Total Qty Sold"
-                  name="totalQtySold"
-                  type="number"
-                  value={formData.totalQtySold?.toString() || "0"}
-                  onChange={handleChange}
-                  min="0"
-                  readOnly
-                />
-                
-                <InventoryFormField
-                  label="Onhold"
-                  name="onHold"
-                  type="number"
-                  value={formData.onHold?.toString() || "0"}
-                  onChange={handleChange}
-                  min="0"
-                />
-                
-                <InventoryFormField
-                  label="Maximum Order"
-                  name="maximumOrder"
-                  type="number"
-                  value={formData.maximumOrder?.toString() || "0"}
-                  onChange={handleChange}
-                  min="0"
-                />
-                
-                <InventoryFormField
-                  label="Qty to ReOrder"
-                  name="reorderPoint"
-                  type="number"
-                  value={formData.reorderPoint.toString()}
-                  onChange={handleChange}
-                  required
-                  min="0"
-                  error={formErrors.reorderPoint}
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-orange-50 p-4 rounded-md border border-orange-200">
+          </Card>
+        </TabsContent>
+        
+        {/* Supplier Tab */}
+        <TabsContent value="supplier" className="space-y-6">
+          <Card className="p-6">
+            <h3 className="text-lg font-medium mb-4">Supplier Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <InventoryFormSelect
+                id="supplier"
+                label="Supplier"
+                value={formData.supplier}
+                onValueChange={(value) => handleSelectChange("supplier", value)}
+                options={suppliers}
+                error={formErrors.supplier}
+                required
+              />
+              
               <InventoryFormField
                 label="Date Bought"
                 name="dateBought"
@@ -271,102 +415,41 @@ export function InventoryForm({ onSubmit, loading, onCancel }: InventoryFormProp
               />
               
               <InventoryFormField
-                label="Date Last"
-                name="dateLast" 
+                label="Date Last Ordered"
+                name="dateLast"
                 type="date"
                 value={formData.dateLast || ""}
                 onChange={handleChange}
               />
-              
-              <InventoryFormField
-                label="Serial Numbers"
-                name="serialNumbers"
-                value={formData.serialNumbers || ""}
-                onChange={handleChange}
-              />
             </div>
-            
-            <Separator className="my-2" />
-            
-            <h3 className="text-lg font-medium">Additional Fees</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-orange-50 p-4 rounded-md border border-orange-200">
-              <InventoryFormField
-                label="Core Charge"
-                name="coreCharge"
-                type="number"
-                value={formData.coreCharge?.toString() || "0"}
-                onChange={handleChange}
-                min="0"
-                step="0.01"
-                description="Additional charge for returnable parts"
-              />
-              
-              <InventoryFormField
-                label="Environmental Fee"
-                name="environmentalFee"
-                type="number"
-                value={formData.environmentalFee?.toString() || "0"}
-                onChange={handleChange}
-                min="0"
-                step="0.01"
-                description="Fee for environmentally sensitive items"
-              />
-              
-              <InventoryFormField
-                label="Freight Fee"
-                name="freightFee"
-                type="number"
-                value={formData.freightFee?.toString() || "0"}
-                onChange={handleChange}
-                min="0"
-                step="0.01"
-                description="Additional shipping or freight costs"
-              />
-              
-              <div className="space-y-2">
-                <InventoryFormField
-                  label="Other Fee"
-                  name="otherFee"
-                  type="number"
-                  value={formData.otherFee?.toString() || "0"}
-                  onChange={handleChange}
-                  min="0"
-                  step="0.01"
-                />
-                
-                <InventoryFormField
-                  label="Other Fee Description"
-                  name="otherFeeDescription"
-                  value={formData.otherFeeDescription || ""}
-                  onChange={handleChange}
-                  placeholder="Describe other fee"
+          </Card>
+        </TabsContent>
+        
+        {/* Additional Information Tab */}
+        <TabsContent value="additional" className="space-y-6">
+          <Card className="p-6">
+            <h3 className="text-lg font-medium mb-4">Additional Information</h3>
+            <div className="grid grid-cols-1 gap-6">
+              <div>
+                <Label htmlFor="serialNumbers" className="block mb-2">Serial Numbers</Label>
+                <Textarea
+                  id="serialNumbers"
+                  name="serialNumbers"
+                  value={formData.serialNumbers || ""}
+                  onChange={handleTextAreaChange}
+                  placeholder="Enter serial numbers, one per line"
+                  className="min-h-[150px] w-full"
                 />
               </div>
             </div>
-            
-            <InventoryFormStatus status={formData.status} />
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="extendedDescription">
-          <div className="space-y-4 bg-orange-100 p-4 rounded-md">
-            <h3 className="text-lg font-medium">Extended Description</h3>
-            <Textarea 
-              placeholder="Enter extended description or notes about this item"
-              className="min-h-[200px]"
-              name="description"
-              value={formData.description || ""}
-              onChange={(e) => handleChange(e as React.ChangeEvent<HTMLInputElement>)}
-            />
-          </div>
+          </Card>
         </TabsContent>
       </Tabs>
       
-      <InventoryFormActions
+      <InventoryFormActions 
         loading={loading}
         onCancel={onCancel}
-        submitLabel="Save"
+        submitLabel={submitLabel}
       />
     </form>
   );
