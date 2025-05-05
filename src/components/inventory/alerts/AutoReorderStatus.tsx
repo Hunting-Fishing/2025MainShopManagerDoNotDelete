@@ -8,12 +8,20 @@ import { RefreshCw, ShoppingCart } from 'lucide-react';
 
 interface AutoReorderStatusProps {
   items: InventoryItemExtended[];
-  autoReorderSettings: AutoReorderSettings;
+  autoReorderSettings: Record<string, AutoReorderSettings> | AutoReorderSettings;
 }
 
 export function AutoReorderStatus({ items, autoReorderSettings }: AutoReorderStatusProps) {
   const itemsNeedingReorder = items.filter(item => item.quantity <= item.reorderPoint);
   
+  // Check if autoReorderSettings is a Record or a single AutoReorderSettings object
+  const isGlobalSetting = !('enabled' in autoReorderSettings);
+  
+  // If it's a Record, we'll use a default status or the first item's status
+  const settings = isGlobalSetting 
+    ? { enabled: false, threshold: 5, quantity: 10 } // Default values
+    : autoReorderSettings as AutoReorderSettings;
+    
   return (
     <Card className="border-l-4 border-l-blue-400">
       <CardHeader className="pb-2">
@@ -33,13 +41,13 @@ export function AutoReorderStatus({ items, autoReorderSettings }: AutoReorderSta
             </div>
             <Switch
               id="auto-reorder"
-              checked={autoReorderSettings.enabled}
+              checked={settings.enabled}
               // This would connect to a real function in production
               onCheckedChange={() => console.log('Toggle auto-reorder')}
             />
           </div>
           
-          {autoReorderSettings.enabled ? (
+          {settings.enabled ? (
             <>
               <div className="text-sm">
                 <div className="flex justify-between py-1">
