@@ -8,21 +8,25 @@ interface WorkOrderFormHeaderProps {
   isEditing?: boolean;
   isSubmitting?: boolean;
   error?: string | null;
+  title?: string;
+  description?: string;
 }
 
 export const WorkOrderFormHeader: React.FC<WorkOrderFormHeaderProps> = ({
   isEditing = false,
   isSubmitting = false,
   error = null,
+  title,
+  description,
 }) => {
   return (
     <div className="p-6 border-b border-gray-200 bg-white dark:bg-slate-900 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start gap-4 rounded-t-lg">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">
-          {isEditing ? "Edit Work Order" : "Create Work Order"}
+          {title || (isEditing ? "Edit Work Order" : "Create Work Order")}
         </h1>
         <p className="text-muted-foreground">
-          {isEditing ? "Update the work order details" : "Enter the work order details"}
+          {description || (isEditing ? "Update the work order details" : "Enter the work order details")}
         </p>
       </div>
       

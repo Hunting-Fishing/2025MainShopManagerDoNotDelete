@@ -59,6 +59,7 @@ export default function WorkOrderCreate() {
 
   // Load templates
   useEffect(() => {
+    const currentDate = new Date().toISOString();
     // Mock templates - in a real app, these would come from the database
     setWorkOrderTemplates([
       {
@@ -68,6 +69,9 @@ export default function WorkOrderCreate() {
         status: "pending",
         priority: "medium",
         notes: "Perform oil change, filter replacement, and basic inspection",
+        createdAt: currentDate,
+        usageCount: 3,
+        technician: "John Doe"
       },
       {
         id: "2",
@@ -76,6 +80,9 @@ export default function WorkOrderCreate() {
         status: "pending",
         priority: "high",
         notes: "Detailed diagnosis required before proceeding with repairs",
+        createdAt: currentDate,
+        usageCount: 1,
+        technician: "Jane Smith"
       },
       {
         id: "3",
@@ -84,6 +91,9 @@ export default function WorkOrderCreate() {
         status: "pending",
         priority: "low",
         notes: "Perform comprehensive diagnostic scan and inspection",
+        createdAt: currentDate,
+        usageCount: 5,
+        technician: "Bob Johnson"
       }
     ]);
   }, []);
