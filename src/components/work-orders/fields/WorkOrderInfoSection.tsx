@@ -9,7 +9,7 @@ import { fetchServiceCategories } from "@/lib/services/serviceApi";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Check, Loader2 } from "lucide-react";
+import { Check, Loader2, Wrench, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -26,6 +26,7 @@ export const WorkOrderInfoSection: React.FC<WorkOrderInfoSectionProps> = ({
   const [categories, setCategories] = useState<ServiceMainCategory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // When a service is selected from the Developer Portal, update the form values
   useEffect(() => {
@@ -79,6 +80,17 @@ export const WorkOrderInfoSection: React.FC<WorkOrderInfoSectionProps> = ({
     }
   };
 
+  // Filter categories based on search term
+  const filteredCategories = searchTerm.trim() === "" 
+    ? categories 
+    : categories.filter(category => 
+        category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        category.subcategories.some(sub => 
+          sub.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          sub.jobs.some(job => job.name.toLowerCase().includes(searchTerm.toLowerCase()))
+        )
+      );
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-slate-900">Work Order Details</h3>
@@ -89,7 +101,14 @@ export const WorkOrderInfoSection: React.FC<WorkOrderInfoSectionProps> = ({
           name="serviceCategory"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Service</FormLabel>
+              <FormLabel className="flex items-center">
+                Service
+                {selectedService && (
+                  <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 border-green-200">
+                    <Check className="h-3 w-3 mr-1" /> Selected
+                  </Badge>
+                )}
+              </FormLabel>
               <FormControl>
                 <div>
                   {/* This hidden input holds the actual form value */}
@@ -109,8 +128,8 @@ export const WorkOrderInfoSection: React.FC<WorkOrderInfoSectionProps> = ({
         {isLoading ? (
           <Card>
             <CardContent className="pt-6">
-              <div className="flex items-center justify-center text-muted-foreground gap-2 py-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
+              <div className="flex items-center justify-center text-muted-foreground gap-2 py-6">
+                <Loader2 className="h-5 w-5 animate-spin" />
                 <span>Loading service categories...</span>
               </div>
             </CardContent>
@@ -118,7 +137,7 @@ export const WorkOrderInfoSection: React.FC<WorkOrderInfoSectionProps> = ({
         ) : error ? (
           <Card className="border-red-200 bg-red-50 dark:bg-red-900/10">
             <CardContent className="pt-6">
-              <div className="text-center text-red-600 dark:text-red-400">
+              <div className="text-center text-red-600 dark:text-red-400 py-4">
                 <p>Failed to load service categories</p>
                 <Button 
                   variant="outline" 
@@ -131,49 +150,100 @@ export const WorkOrderInfoSection: React.FC<WorkOrderInfoSectionProps> = ({
             </CardContent>
           </Card>
         ) : categories.length > 0 ? (
-          <Card className="bg-muted/30">
-            <CardHeader>
-              <CardTitle className="text-base">Available Service Categories</CardTitle>
-              <CardDescription>Select a category to view details</CardDescription>
+          <Card className="border border-slate-200 overflow-hidden shadow-sm">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-slate-100 py-4">
+              <CardTitle className="text-base flex items-center justify-between">
+                <span>Available Service Categories</span>
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input 
+                    placeholder="Search services..." 
+                    className="pl-9 h-9 w-[200px] bg-white border-slate-200"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)} 
+                  />
+                </div>
+              </CardTitle>
+              <CardDescription>Select a category to browse available services</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {categories.map((category) => (
-                  <div 
-                    key={category.id} 
-                    className="flex flex-col p-3 border rounded-md bg-white hover:border-blue-200 hover:bg-blue-50 transition-all cursor-pointer"
-                    onClick={() => {
-                      const firstSubcat = category.subcategories[0];
-                      const firstJob = firstSubcat?.jobs[0];
-                      if (firstSubcat && firstJob) {
-                        handleServiceSelected({
-                          mainCategory: category.name,
-                          subcategory: firstSubcat.name,
-                          job: firstJob.name,
-                          estimatedTime: firstJob.estimatedTime
-                        });
-                      }
-                    }}
-                  >
-                    <div className="flex justify-between items-start">
-                      <h4 className="font-medium text-sm">{category.name}</h4>
-                      <Badge variant="outline" className="text-xs">
-                        {category.subcategories.length} subcategories
-                      </Badge>
+            <CardContent className="p-4 bg-white">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {filteredCategories.length > 0 ? (
+                  filteredCategories.map((category) => (
+                    <div 
+                      key={category.id} 
+                      className="flex flex-col p-3 border rounded-lg bg-white hover:border-blue-300 hover:bg-blue-50 transition-all cursor-pointer shadow-sm group"
+                      onClick={() => {
+                        const firstSubcat = category.subcategories[0];
+                        const firstJob = firstSubcat?.jobs[0];
+                        if (firstSubcat && firstJob) {
+                          handleServiceSelected({
+                            mainCategory: category.name,
+                            subcategory: firstSubcat.name,
+                            job: firstJob.name,
+                            estimatedTime: firstJob.estimatedTime
+                          });
+                        }
+                      }}
+                    >
+                      <div className="flex justify-between items-start mb-1">
+                        <h4 className="font-medium text-slate-800 group-hover:text-blue-700">{category.name}</h4>
+                        <Badge variant="outline" className="text-xs bg-slate-50 border-slate-200">
+                          {category.subcategories.length} subcategories
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                        {category.description || `Service category for ${category.name}`}
+                      </p>
+                      <div className="mt-2 pt-2 border-t border-dashed border-slate-100">
+                        <div className="flex flex-wrap gap-1 overflow-hidden max-h-10">
+                          {category.subcategories.slice(0, 3).map(subcategory => (
+                            <Badge 
+                              key={subcategory.id} 
+                              variant="secondary"
+                              className="text-[10px] bg-slate-100 text-slate-700 hover:bg-blue-100 hover:text-blue-700 transition-colors"
+                            >
+                              {subcategory.name}
+                            </Badge>
+                          ))}
+                          {category.subcategories.length > 3 && (
+                            <Badge variant="outline" className="text-[10px]">
+                              +{category.subcategories.length - 3} more
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="mt-2 text-xs justify-start text-blue-600 p-0 h-auto font-normal group-hover:text-blue-800 group-hover:underline"
+                      >
+                        Browse services
+                      </Button>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                      {category.description || `Service category for ${category.name}`}
-                    </p>
+                  ))
+                ) : (
+                  <div className="col-span-full text-center py-8 text-muted-foreground">
+                    <p>No matching service categories found.</p>
+                    <p className="text-sm mt-1">Try adjusting your search terms.</p>
+                    <Button
+                      variant="outline"
+                      className="mt-3"
+                      onClick={() => setSearchTerm("")}
+                    >
+                      Clear search
+                    </Button>
                   </div>
-                ))}
+                )}
               </div>
             </CardContent>
           </Card>
         ) : (
           <Card>
             <CardContent className="pt-6">
-              <div className="text-center text-muted-foreground">
-                <p>No service categories found.</p>
+              <div className="text-center text-muted-foreground py-8">
+                <Wrench className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+                <p className="font-medium">No service categories found.</p>
                 <p className="text-sm mt-1">Visit the Service Management page to create service categories.</p>
                 <Button 
                   variant="outline" 
