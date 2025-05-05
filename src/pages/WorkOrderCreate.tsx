@@ -53,7 +53,6 @@ export default function WorkOrderCreate() {
   // Handle template selection
   const handleSelectTemplate = (template: WorkOrderTemplate) => {
     setSelectedTemplate(template);
-    // In a real app, update the usage count in the database
     toast.success(`Template "${template.name}" selected`);
   };
 
@@ -117,7 +116,7 @@ export default function WorkOrderCreate() {
         )}
 
         {/* Work Order Form */}
-        <div className="bg-slate-50 dark:bg-slate-800/50 p-1 rounded-lg">
+        <div className="bg-white dark:bg-slate-800/50 rounded-lg shadow">
           <WorkOrderForm 
             technicians={technicians} 
             isLoadingTechnicians={isLoadingTechnicians}
