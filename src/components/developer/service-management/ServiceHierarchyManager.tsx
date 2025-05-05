@@ -193,6 +193,7 @@ export const ServiceHierarchyManager: React.FC = () => {
         onSelectItem={handleSelectItem}
         categoryColorMap={categoryColorMap}
         categoryColors={categoryColors}
+        onCategoriesUpdated={loadCategories}
       />
       
       {filteredCategories.length === 0 && !loading && (
