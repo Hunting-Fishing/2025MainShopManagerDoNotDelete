@@ -87,17 +87,18 @@ export const ServiceSubcategoryGrid: React.FC<ServiceSubcategoryGridProps> = ({
                   <div className="space-y-2 max-h-[250px] overflow-y-auto">
                     {isServiceMainCategory(category) ? (
                       jobs.map((job) => (
-                        <div key={job.id} className="flex items-center space-x-2">
+                        <div key={job.id} className="flex items-start space-x-2 py-1">
                           <Checkbox
                             id={`service-${job.id}`}
                             checked={checkedServices[job.name] || false}
                             onCheckedChange={(checked) =>
                               onServiceCheck(job.name, checked === true)
                             }
+                            className="mt-0.5"
                           />
                           <Label
                             htmlFor={`service-${job.id}`}
-                            className="text-sm cursor-pointer hover:text-foreground truncate max-w-[90%]"
+                            className="text-sm cursor-pointer hover:text-foreground leading-normal"
                           >
                             {job.name}
                           </Label>
@@ -106,17 +107,18 @@ export const ServiceSubcategoryGrid: React.FC<ServiceSubcategoryGridProps> = ({
                     ) : (
                       // Fallback for old format (if still needed)
                       (subcategory as any).services?.map((service: string, idx: number) => (
-                        <div key={`${service}-${idx}`} className="flex items-center space-x-2">
+                        <div key={`${service}-${idx}`} className="flex items-start space-x-2 py-1">
                           <Checkbox
                             id={`service-${service}-${idx}`}
                             checked={checkedServices[service] || false}
                             onCheckedChange={(checked) =>
                               onServiceCheck(service, checked === true)
                             }
+                            className="mt-0.5"
                           />
                           <Label
                             htmlFor={`service-${service}-${idx}`}
-                            className="text-sm cursor-pointer hover:text-foreground truncate max-w-[90%]"
+                            className="text-sm cursor-pointer hover:text-foreground leading-normal"
                           >
                             {service}
                           </Label>

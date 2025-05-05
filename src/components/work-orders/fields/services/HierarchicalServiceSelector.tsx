@@ -128,7 +128,7 @@ const HierarchicalServiceSelector: React.FC<HierarchicalServiceSelectorProps> = 
             )}
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-hidden">
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-hidden w-[95vw]">
           <DialogHeader>
             <DialogTitle>Select a Service</DialogTitle>
           </DialogHeader>
@@ -139,7 +139,7 @@ const HierarchicalServiceSelector: React.FC<HierarchicalServiceSelectorProps> = 
               <span className="text-muted-foreground">Loading services...</span>
             </div>
           ) : serviceCategories.length > 0 ? (
-            <div className="flex h-[500px]">
+            <div className="flex flex-col md:flex-row h-[500px] md:h-[550px] overflow-hidden">
               <ServiceCategoryList 
                 categories={serviceCategories}
                 selectedCategory={selectedCategory}
