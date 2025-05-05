@@ -1,49 +1,72 @@
 
 import { useState } from "react";
 import { InventoryItemExtended } from "@/types/inventory";
-import { toast } from "@/hooks/use-toast";
 
 export function useInventoryFormValidation() {
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-
-  const validateForm = (formData: Omit<InventoryItemExtended, "id">): boolean => {
-    const errors: Record<string, string> = {};
+  type FormErrors = {
+    [key in keyof Omit<InventoryItemExtended, "id" | "status" | "description">]?: string;
+  };
+  
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
+  
+  const validateForm = (data: Omit<InventoryItemExtended, "id">) => {
+    const errors: FormErrors = {};
+    let isValid = true;
     
-    if (!formData.name.trim()) errors.name = "Name is required";
-    if (!formData.sku.trim()) errors.sku = "SKU is required";
-    if (!formData.category.trim()) errors.category = "Category is required";
-    if (!formData.supplier.trim()) errors.supplier = "Supplier is required";
+    // Validate name
+    if (!data.name.trim()) {
+      errors.name = "Name is required";
+      isValid = false;
+    }
     
-    if (formData.unitPrice < 0) errors.unitPrice = "Price cannot be negative";
-    if (formData.quantity < 0) errors.quantity = "Quantity cannot be negative";
-    if (formData.reorderPoint < 0) errors.reorderPoint = "Reorder point cannot be negative";
+    // Validate SKU
+    if (!data.sku.trim()) {
+      errors.sku = "SKU is required";
+      isValid = false;
+    }
+    
+    // Validate category
+    if (!data.category) {
+      errors.category = "Category is required";
+      isValid = false;
+    }
+    
+    // Validate supplier
+    if (!data.supplier) {
+      errors.supplier = "Supplier is required";
+      isValid = false;
+    }
+    
+    // Validate quantity (must be a positive number)
+    if (data.quantity < 0) {
+      errors.quantity = "Quantity cannot be negative";
+      isValid = false;
+    }
+    
+    // Validate reorder point (must be a positive number)
+    if (data.reorderPoint < 0) {
+      errors.reorderPoint = "Reorder point cannot be negative";
+      isValid = false;
+    }
+    
+    // Validate unit price (must be a positive number)
+    if (data.unitPrice <= 0) {
+      errors.unitPrice = "Unit price must be greater than zero";
+      isValid = false;
+    }
     
     setFormErrors(errors);
-    
-    if (Object.keys(errors).length > 0) {
-      toast({
-        variant: "destructive",
-        title: "Validation Error",
-        description: "Please check the form for errors"
-      });
-      return false;
-    }
-    
-    return true;
+    return isValid;
   };
-
-  const clearError = (fieldName: string) => {
-    if (formErrors[fieldName]) {
+  
+  const clearError = (field: string) => {
+    if (formErrors[field as keyof FormErrors]) {
       setFormErrors({
         ...formErrors,
-        [fieldName]: ""
+        [field]: undefined
       });
     }
   };
-
-  return {
-    formErrors,
-    validateForm,
-    clearError
-  };
+  
+  return { formErrors, validateForm, clearError };
 }

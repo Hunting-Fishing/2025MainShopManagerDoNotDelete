@@ -7,6 +7,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { RequiredIndicator } from "@/components/ui/required-indicator";
 
 interface InventoryFormSelectProps {
   id: string;
@@ -16,7 +18,6 @@ interface InventoryFormSelectProps {
   options: string[];
   error?: string;
   required?: boolean;
-  description?: string;
 }
 
 export function InventoryFormSelect({
@@ -26,18 +27,18 @@ export function InventoryFormSelect({
   onValueChange,
   options,
   error,
-  required = false,
-  description,
+  required,
 }: InventoryFormSelectProps) {
   return (
-    <div className="flex flex-col space-y-2">
-      <label htmlFor={id} className="flex items-center text-sm font-medium">
+    <div className="space-y-2">
+      <Label htmlFor={id} className="flex items-center">
         {label}
-        {required && <span className="text-destructive ml-1">*</span>}
-      </label>
+        {required && <RequiredIndicator />}
+      </Label>
+      
       <Select value={value} onValueChange={onValueChange}>
-        <SelectTrigger id={id} className={error ? "border-destructive" : ""}>
-          <SelectValue placeholder={`Select a ${label.toLowerCase()}`} />
+        <SelectTrigger id={id} className={error ? "border-red-500" : ""}>
+          <SelectValue placeholder={`Select ${label.toLowerCase()}`} />
         </SelectTrigger>
         <SelectContent>
           {options.map((option) => (
@@ -47,11 +48,9 @@ export function InventoryFormSelect({
           ))}
         </SelectContent>
       </Select>
-      {description && (
-        <p className="text-xs text-gray-500">{description}</p>
-      )}
+      
       {error && (
-        <p className="text-xs font-medium text-destructive">{error}</p>
+        <p className="text-sm text-red-500">{error}</p>
       )}
     </div>
   );
