@@ -36,6 +36,7 @@ import EmailSchedulingSettings from '@/pages/settings/EmailSchedulingSettings';
 import DataExportSettings from '@/pages/settings/DataExportSettings';
 import LanguageSettings from '@/pages/settings/LanguageSettings';
 import SecurityAdvancedSettings from '@/pages/settings/SecurityAdvancedSettings';
+import Index from '@/pages/Index';
 
 // All routes must be declared here to be used by the RouterProvider
 export const routes: RouteObject[] = [
@@ -45,7 +46,7 @@ export const routes: RouteObject[] = [
     children: [
       {
         index: true,
-        element: <Dashboard />,
+        element: <Index />,
       },
       {
         path: 'dashboard',
