@@ -38,13 +38,14 @@ export const workOrderFormSchema = z.object({
   }),
   notes: z.string().optional(),
   inventoryItems: z.array(inventoryItemSchema).optional(),
-  // New vehicle fields
+  // Vehicle fields
   vehicleId: z.string().optional(),
   vehicleMake: z.string().optional(),
   vehicleModel: z.string().optional(),
   vehicleYear: z.string().optional(),
   odometer: z.string().optional(),
   licensePlate: z.string().optional(),
+  vin: z.string().optional(), // Added the vin field
 });
 
 export type WorkOrderFormSchemaValues = z.infer<typeof workOrderFormSchema>;

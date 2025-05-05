@@ -56,7 +56,7 @@ export function WorkOrderForm({
       vehicleYear: "",
       odometer: "",
       licensePlate: "",
-      vin: "",
+      vin: "", // Add the default value for VIN
     },
   });
   
