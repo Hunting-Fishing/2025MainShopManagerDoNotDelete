@@ -22,6 +22,20 @@ import ToolDetailPage from '@/pages/ToolDetailPage';
 import ServiceManagement from '@/pages/developer/ServiceManagement';
 import Forms from '@/pages/Forms';
 import IntegrationSettings from '@/pages/settings/IntegrationSettings';
+import AccountSettings from '@/pages/settings/AccountSettings';
+import CompanySettings from '@/pages/settings/CompanySettings';
+import SecuritySettings from '@/pages/settings/SecuritySettings';
+import NotificationSettings from '@/pages/settings/NotificationSettings';
+import BrandingSettings from '@/pages/settings/BrandingSettings';
+import AppearanceSettings from '@/pages/settings/AppearanceSettings';
+import EmailSettings from '@/pages/settings/EmailSettings';
+import LoyaltySettings from '@/pages/settings/LoyaltySettings';
+import InventorySettings from '@/pages/settings/InventorySettings';
+import TeamHistorySettings from '@/pages/settings/TeamHistorySettings';
+import EmailSchedulingSettings from '@/pages/settings/EmailSchedulingSettings';
+import DataExportSettings from '@/pages/settings/DataExportSettings';
+import LanguageSettings from '@/pages/settings/LanguageSettings';
+import SecurityAdvancedSettings from '@/pages/settings/SecurityAdvancedSettings';
 
 // All routes must be declared here to be used by the RouterProvider
 export const routes: RouteObject[] = [
@@ -99,19 +113,72 @@ export const routes: RouteObject[] = [
         path: 'shopping/:category/:productId',
         element: <ToolDetailPage />,
       },
+      // Settings routes
       {
         path: 'settings',
         element: <Settings />,
+      },
+      {
+        path: 'settings/account',
+        element: <AccountSettings />,
+      },
+      {
+        path: 'settings/company',
+        element: <CompanySettings />,
+      },
+      {
+        path: 'settings/security',
+        element: <SecuritySettings />,
+      },
+      {
+        path: 'settings/security-advanced',
+        element: <SecurityAdvancedSettings />,
+      },
+      {
+        path: 'settings/notifications',
+        element: <NotificationSettings />,
+      },
+      {
+        path: 'settings/branding',
+        element: <BrandingSettings />,
+      },
+      {
+        path: 'settings/appearance',
+        element: <AppearanceSettings />,
+      },
+      {
+        path: 'settings/email',
+        element: <EmailSettings />,
       },
       {
         path: 'settings/integrations',
         element: <IntegrationSettings />,
       },
       {
-        path: 'login',
-        element: <Login />,
+        path: 'settings/loyalty',
+        element: <LoyaltySettings />,
       },
-      // Developer portal routes - Make sure these are correctly defined
+      {
+        path: 'settings/inventory',
+        element: <InventorySettings />,
+      },
+      {
+        path: 'settings/team',
+        element: <TeamHistorySettings />,
+      },
+      {
+        path: 'settings/email-scheduling',
+        element: <EmailSchedulingSettings />,
+      },
+      {
+        path: 'settings/export',
+        element: <DataExportSettings />,
+      },
+      {
+        path: 'settings/language',
+        element: <LanguageSettings />,
+      },
+      // Developer portal routes
       {
         path: 'developer',
         element: <DeveloperPortal />,
