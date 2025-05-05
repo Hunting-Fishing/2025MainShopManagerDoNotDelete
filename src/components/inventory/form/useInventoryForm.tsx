@@ -18,6 +18,11 @@ export function useInventoryForm() {
     location: "",
     status: "In Stock",
     description: "",
+    coreCharge: 0,
+    environmentalFee: 0,
+    freightFee: 0,
+    otherFee: 0,
+    otherFeeDescription: "",
   });
   
   const [categories, setCategories] = useState<string[]>([]);
@@ -47,7 +52,8 @@ export function useInventoryForm() {
     const { name, value } = e.target;
     
     // Handle numeric fields differently
-    if (name === "quantity" || name === "reorderPoint" || name === "unitPrice") {
+    if (name === "quantity" || name === "reorderPoint" || name === "unitPrice" || 
+        name === "coreCharge" || name === "environmentalFee" || name === "freightFee" || name === "otherFee") {
       const numValue = value === "" ? 0 : Number(value);
       
       // Update status if quantity or reorderPoint changes

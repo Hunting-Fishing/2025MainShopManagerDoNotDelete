@@ -6,6 +6,7 @@ import { InventoryFormSelect } from "./InventoryFormSelect";
 import { InventoryFormStatus } from "./InventoryFormStatus";
 import { InventoryFormActions } from "./InventoryFormActions";
 import { useInventoryForm } from "./useInventoryForm";
+import { Separator } from "@/components/ui/separator";
 
 interface InventoryFormProps {
   onSubmit: (data: Omit<InventoryItemExtended, "id">) => Promise<void>;
@@ -125,10 +126,69 @@ export function InventoryForm({ onSubmit, loading, onCancel }: InventoryFormProp
       <InventoryFormField
         label="Description"
         name="description"
-        value={formData.description}
+        value={formData.description || ""}
         onChange={handleChange}
         placeholder="Enter item description"
       />
+      
+      <Separator className="my-4" />
+      
+      <h3 className="text-lg font-medium mb-4">Additional Fees</h3>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <InventoryFormField
+          label="Core Charge"
+          name="coreCharge"
+          type="number"
+          value={formData.coreCharge?.toString() || "0"}
+          onChange={handleChange}
+          min="0"
+          step="0.01"
+          description="Additional charge for returnable parts"
+        />
+        
+        <InventoryFormField
+          label="Environmental Fee"
+          name="environmentalFee"
+          type="number"
+          value={formData.environmentalFee?.toString() || "0"}
+          onChange={handleChange}
+          min="0"
+          step="0.01"
+          description="Fee for environmentally sensitive items"
+        />
+        
+        <InventoryFormField
+          label="Freight Fee"
+          name="freightFee"
+          type="number"
+          value={formData.freightFee?.toString() || "0"}
+          onChange={handleChange}
+          min="0"
+          step="0.01"
+          description="Additional shipping or freight costs"
+        />
+        
+        <div className="space-y-2">
+          <InventoryFormField
+            label="Other Fee"
+            name="otherFee"
+            type="number"
+            value={formData.otherFee?.toString() || "0"}
+            onChange={handleChange}
+            min="0"
+            step="0.01"
+          />
+          
+          <InventoryFormField
+            label="Other Fee Description"
+            name="otherFeeDescription"
+            value={formData.otherFeeDescription || ""}
+            onChange={handleChange}
+            placeholder="Describe other fee"
+          />
+        </div>
+      </div>
       
       <InventoryFormStatus status={formData.status} />
       

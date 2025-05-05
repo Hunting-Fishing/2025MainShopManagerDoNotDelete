@@ -23,6 +23,11 @@ export interface InventoryItemExtended {
   location: string;
   status: string;
   description?: string;
+  coreCharge?: number;
+  environmentalFee?: number;
+  freightFee?: number;
+  otherFee?: number;
+  otherFeeDescription?: string;
 }
 
 export interface AutoReorderSettings {

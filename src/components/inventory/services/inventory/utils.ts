@@ -1,4 +1,3 @@
-
 import { InventoryItemExtended } from "@/types/inventory";
 
 // Determine inventory status based on quantity and reorder point
