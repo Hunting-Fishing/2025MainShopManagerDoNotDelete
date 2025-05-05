@@ -78,7 +78,7 @@ const Settings = () => {
       id: "integrations",
       title: "Integrations",
       description: "Connect with third-party services",
-      icon: Link,
+      icon: LinkIcon,
       path: "/settings/integrations"
     },
     {
@@ -211,3 +211,4 @@ const Settings = () => {
 };
 
 export default Settings;
+
