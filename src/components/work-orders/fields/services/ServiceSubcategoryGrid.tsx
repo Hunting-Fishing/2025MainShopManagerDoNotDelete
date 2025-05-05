@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -7,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ServiceMainCategory } from "@/types/serviceHierarchy";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface ServiceSubcategoryGridProps {
   category: ServiceCategory | ServiceMainCategory;

@@ -64,6 +64,14 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
     }
   };
 
+  const getSubcategoriesCount = (category: ServiceMainCategory | ServiceCategory): number => {
+    if (isServiceMainCategory(category)) {
+      return category.subcategories.length;
+    } else {
+      return (category as ServiceCategory).subcategories?.length || 0;
+    }
+  };
+
   return (
     <div className="w-[280px] border-r pr-1">
       <h4 className="font-medium text-sm mb-3 px-2">Service Categories</h4>
@@ -74,6 +82,7 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
             const categoryName = category.name;
             const isExpanded = expandedCategories[categoryName] || selectedCategory === categoryName;
             const jobsCount = getJobsCount(category);
+            const subcategoriesCount = getSubcategoriesCount(category);
             
             // Generate a unique key based on available properties
             const key = isServiceMainCategory(category) ? (category as ServiceMainCategory).id : categoryName;
@@ -105,9 +114,9 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
                     <div className="flex items-center justify-between w-full text-left">
                       <span className="truncate max-w-[180px] font-semibold">{categoryName}</span>
                       <div className="flex items-center space-x-1">
-                        {jobsCount > 0 && (
+                        {subcategoriesCount > 0 && (
                           <Badge variant="outline" className="text-xs bg-muted">
-                            {jobsCount} {jobsCount === 1 ? 'service' : 'services'}
+                            {subcategoriesCount} {subcategoriesCount === 1 ? 'subcat' : 'subcats'}
                           </Badge>
                         )}
                         {selectedCategory === categoryName && (
