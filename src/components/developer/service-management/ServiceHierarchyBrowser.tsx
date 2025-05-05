@@ -1,18 +1,10 @@
 
 import React, { useState } from 'react';
-import { ServiceEditor } from './ServiceEditor';
 import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Pencil } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Spinner } from 'lucide-react';
 import { RenameItemDialog } from './RenameItemDialog';
-import { 
-  updateCategoryName, 
-  updateSubcategoryName, 
-  updateJobName, 
-  saveServiceCategory 
-} from '@/lib/services/serviceApi';
+import { updateCategoryName, updateSubcategoryName, updateJobName } from '@/lib/services/serviceApi';
+import { toast } from 'sonner';
 
 interface ServiceHierarchyBrowserProps {
   categories: ServiceMainCategory[];
@@ -22,9 +14,17 @@ interface ServiceHierarchyBrowserProps {
   selectedSubcategoryId: string | null;
   selectedJobId: string | null;
   onSelectItem: (type: 'category' | 'subcategory' | 'job', id: string | null) => void;
-  categoryColorMap?: Record<string, string>;
-  categoryColors?: Array<{ bg: string; text: string; border: string }>;
+  categoryColorMap: Record<string, string>;
+  categoryColors: string[];
 }
+
+type EditItem = {
+  type: 'category' | 'subcategory' | 'job';
+  id: string;
+  name: string;
+  categoryId?: string;
+  subcategoryId?: string;
+} | null;
 
 export const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = ({
   categories,
@@ -34,345 +34,198 @@ export const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = (
   selectedSubcategoryId,
   selectedJobId,
   onSelectItem,
-  categoryColorMap = {},
-  categoryColors = []
+  categoryColorMap,
+  categoryColors,
 }) => {
-  const [editingItem, setEditingItem] = useState<{
-    id: string;
-    type: 'category' | 'subcategory' | 'job';
-    name: string;
-    categoryId?: string;
-    subcategoryId?: string;
-  } | null>(null);
+  const [editItem, setEditItem] = useState<EditItem>(null);
+  const [renamingLoading, setRenamingLoading] = useState(false);
 
-  const [savingCategory, setSavingCategory] = useState<ServiceMainCategory | null>(null);
-  const [savingSubcategory, setSavingSubcategory] = useState<ServiceSubcategory | null>(null);
-  const [savingJob, setSavingJob] = useState<ServiceJob | null>(null);
-
-  const [updatingName, setUpdatingName] = useState(false);
-
-  // Find the selected category
-  const selectedCategory = categories.find(category => category.id === selectedCategoryId);
-  // Find the selected subcategory
-  const selectedSubcategory = selectedCategory?.subcategories?.find(
-    subcategory => subcategory.id === selectedSubcategoryId
-  );
-  // Find the selected service
-  const selectedJob = selectedSubcategory?.jobs?.find(
-    job => job.id === selectedJobId
-  );
-
-  // Calculate some statistics
-  const totalSubcategories = categories.reduce(
-    (total, category) => total + category.subcategories.length,
-    0
-  );
-  const totalJobs = categories.reduce(
-    (total, category) => 
-      total + category.subcategories.reduce(
-        (subTotal, subcategory) => subTotal + subcategory.jobs.length,
-        0
-      ),
-    0
-  );
-
-  const getCategoryColor = (categoryId: string) => {
-    const colorIndex = categoryColorMap[categoryId] ? parseInt(categoryColorMap[categoryId]) : 0;
-    return categoryColors[colorIndex] || { bg: 'bg-gray-100', text: 'text-gray-800', border: 'border-gray-200' };
-  };
-
-  const handleSaveItem = async (
-    category: ServiceMainCategory | null, 
-    subcategory: ServiceSubcategory | null, 
-    job: ServiceJob | null
-  ) => {
-    if (category) {
-      setSavingCategory(category);
-      try {
-        await saveServiceCategory(category);
-      } finally {
-        setSavingCategory(null);
-      }
-    } else if (subcategory && selectedCategory) {
-      setSavingSubcategory(subcategory);
-      try {
-        // Find index of subcategory to update
-        const subcategoryIndex = selectedCategory.subcategories.findIndex(
-          sub => sub.id === subcategory.id
-        );
-        if (subcategoryIndex !== -1) {
-          // Create a copy of the category
-          const updatedCategory = { ...selectedCategory };
-          // Update the subcategory
-          updatedCategory.subcategories[subcategoryIndex] = subcategory;
-          // Save the updated category
-          await saveServiceCategory(updatedCategory);
-        }
-      } finally {
-        setSavingSubcategory(null);
-      }
-    } else if (job && selectedCategory && selectedSubcategory) {
-      setSavingJob(job);
-      try {
-        // Find index of subcategory that contains the job
-        const subcategoryIndex = selectedCategory.subcategories.findIndex(
-          sub => sub.id === selectedSubcategory.id
-        );
-        if (subcategoryIndex !== -1) {
-          // Find index of job to update
-          const jobIndex = selectedCategory.subcategories[subcategoryIndex].jobs.findIndex(
-            j => j.id === job.id
-          );
-          if (jobIndex !== -1) {
-            // Create a copy of the category
-            const updatedCategory = { ...selectedCategory };
-            // Update the job
-            updatedCategory.subcategories[subcategoryIndex].jobs[jobIndex] = job;
-            // Save the updated category
-            await saveServiceCategory(updatedCategory);
-          }
-        }
-      } finally {
-        setSavingJob(null);
-      }
+  const handleSelectCategory = (categoryId: string) => {
+    if (categoryId === selectedCategoryId) {
+      onSelectItem('category', null);
+    } else {
+      onSelectItem('category', categoryId);
     }
   };
 
-  const handleSaveRenamedItem = async (newName: string) => {
-    if (!editingItem) return;
+  const handleSelectSubcategory = (subcategoryId: string) => {
+    if (subcategoryId === selectedSubcategoryId) {
+      onSelectItem('subcategory', null);
+    } else {
+      onSelectItem('subcategory', subcategoryId);
+    }
+  };
 
-    setUpdatingName(true);
+  const handleSelectJob = (jobId: string) => {
+    if (jobId === selectedJobId) {
+      onSelectItem('job', null);
+    } else {
+      onSelectItem('job', jobId);
+    }
+  };
+
+  const handleDoubleClickItem = (item: EditItem) => {
+    setEditItem(item);
+  };
+
+  const handleSaveItemName = async (newName: string) => {
+    if (!editItem) return;
+    
+    setRenamingLoading(true);
     try {
-      switch (editingItem.type) {
-        case 'category':
-          await updateCategoryName(editingItem.id, newName);
-          break;
-        case 'subcategory':
-          if (editingItem.categoryId) {
-            await updateSubcategoryName(editingItem.categoryId, editingItem.id, newName);
-          }
-          break;
-        case 'job':
-          if (editingItem.categoryId && editingItem.subcategoryId) {
-            await updateJobName(
-              editingItem.categoryId,
-              editingItem.subcategoryId,
-              editingItem.id,
-              newName
-            );
-          }
-          break;
+      if (editItem.type === 'category') {
+        await updateCategoryName(editItem.id, newName);
+      } else if (editItem.type === 'subcategory' && editItem.categoryId) {
+        await updateSubcategoryName(editItem.categoryId, editItem.id, newName);
+      } else if (editItem.type === 'job' && editItem.categoryId && editItem.subcategoryId) {
+        await updateJobName(editItem.categoryId, editItem.subcategoryId, editItem.id, newName);
       }
+      
+      // Refresh categories after successful update
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('refresh-service-categories'));
+      }
+    } catch (error) {
+      console.error('Failed to update item name:', error);
+      toast.error('Failed to update name');
+      throw error; // Let the dialog component handle the error
     } finally {
-      setUpdatingName(false);
-      setEditingItem(null);
+      setRenamingLoading(false);
+      setEditItem(null);
     }
   };
 
-  const renderRenameDialog = () => {
-    if (!editingItem) return null;
-
-    return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="w-full max-w-md">
-          <RenameItemDialog
-            currentName={editingItem.name}
-            itemType={editingItem.type}
-            onSave={handleSaveRenamedItem}
-            onCancel={() => setEditingItem(null)}
-            isLoading={updatingName}
-          />
-        </div>
-      </div>
-    );
+  const handleCancelEdit = () => {
+    setEditItem(null);
   };
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-5 shadow rounded-lg border border-gray-100 animate-pulse">
-          <div className="h-6 bg-gray-200 rounded mb-4 w-1/2"></div>
-          <div className="space-y-2">
-            <div className="h-10 bg-gray-200 rounded"></div>
-            <div className="h-10 bg-gray-200 rounded"></div>
-            <div className="h-10 bg-gray-200 rounded"></div>
-          </div>
-        </div>
-        <div className="md:col-span-2 bg-white p-5 shadow rounded-lg border border-gray-100 animate-pulse">
-          <div className="h-6 bg-gray-200 rounded mb-4"></div>
-          <div className="space-y-4">
-            <div className="h-10 bg-gray-200 rounded"></div>
-            <div className="h-20 bg-gray-200 rounded"></div>
-            <div className="h-10 bg-gray-200 rounded"></div>
-            <div className="h-10 bg-gray-200 rounded"></div>
-          </div>
-        </div>
+      <div className="flex justify-center items-center p-12">
+        <Spinner className="w-8 h-8 animate-spin text-blue-500" />
+        <span className="ml-2 text-lg">Loading service hierarchy...</span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 text-red-800 rounded-lg p-4">
-        <h3 className="text-lg font-medium">Error loading service hierarchy</h3>
+      <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-md">
+        <h3 className="text-lg font-medium mb-2">Error loading service hierarchy</h3>
         <p>{error}</p>
       </div>
     );
   }
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {/* Categories browser */}
-      <div className="bg-white p-5 shadow rounded-lg border border-gray-100">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="font-medium">Service Hierarchy</h2>
-          <div className="text-sm text-gray-500">
-            {categories.length} {categories.length === 1 ? 'category' : 'categories'}
-          </div>
-        </div>
-        
-        <div className="mb-6">
-          <h3 className="text-sm font-medium text-gray-500 mb-2">Categories</h3>
-          <ul className="space-y-2 max-h-[200px] overflow-y-auto">
-            {categories.map(category => {
-              const colorClasses = getCategoryColor(category.id);
-              
-              return (
-                <li 
-                  key={category.id}
-                  className={cn(
-                    "flex justify-between items-center p-2 rounded-md cursor-pointer border",
-                    selectedCategoryId === category.id
-                      ? "bg-blue-50 border-blue-200"
-                      : "hover:bg-gray-50 border-transparent"
-                  )}
-                  onClick={() => onSelectItem('category', category.id)}
-                >
-                  <div className="flex items-center">
-                    <Badge className={cn("mr-2", colorClasses.bg, colorClasses.text, colorClasses.border)}>
-                      {category.subcategories.length}
-                    </Badge>
-                    <span>{category.name}</span>
-                  </div>
-                  <button 
-                    className="p-1 rounded-full hover:bg-gray-200 text-gray-600"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setEditingItem({
-                        id: category.id,
-                        type: 'category',
-                        name: category.name
-                      });
-                    }}
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-        
-        {selectedCategory && (
-          <div className="mb-6">
-            <h3 className="text-sm font-medium text-gray-500 mb-2">Subcategories</h3>
-            <ul className="space-y-2 max-h-[200px] overflow-y-auto">
-              {selectedCategory.subcategories.map(subcategory => (
-                <li 
-                  key={subcategory.id}
-                  className={cn(
-                    "flex justify-between items-center p-2 rounded-md cursor-pointer border",
-                    selectedSubcategoryId === subcategory.id
-                      ? "bg-blue-50 border-blue-200"
-                      : "hover:bg-gray-50 border-transparent"
-                  )}
-                  onClick={() => onSelectItem('subcategory', subcategory.id)}
-                >
-                  <div className="flex items-center">
-                    <Badge variant="outline" className="mr-2">
-                      {subcategory.jobs.length}
-                    </Badge>
-                    <span>{subcategory.name}</span>
-                  </div>
-                  <button 
-                    className="p-1 rounded-full hover:bg-gray-200 text-gray-600"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setEditingItem({
-                        id: subcategory.id,
-                        type: 'subcategory',
-                        name: subcategory.name,
-                        categoryId: selectedCategory.id
-                      });
-                    }}
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        
-        {selectedSubcategory && (
-          <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-2">Services</h3>
-            <ul className="space-y-2 max-h-[200px] overflow-y-auto">
-              {selectedSubcategory.jobs.map(job => (
-                <li 
-                  key={job.id}
-                  className={cn(
-                    "flex justify-between items-center p-2 rounded-md cursor-pointer border",
-                    selectedJobId === job.id
-                      ? "bg-blue-50 border-blue-200"
-                      : "hover:bg-gray-50 border-transparent"
-                  )}
-                  onClick={() => onSelectItem('job', job.id)}
-                >
-                  <span>{job.name}</span>
-                  <button 
-                    className="p-1 rounded-full hover:bg-gray-200 text-gray-600"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setEditingItem({
-                        id: job.id,
-                        type: 'job',
-                        name: job.name,
-                        categoryId: selectedCategory.id,
-                        subcategoryId: selectedSubcategory.id
-                      });
-                    }}
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+  if (categories.length === 0) {
+    return (
+      <div className="bg-gray-50 border border-gray-200 p-6 rounded-md text-center">
+        <h3 className="text-lg font-medium text-gray-700 mb-2">No service categories found</h3>
+        <p className="text-gray-500">
+          Add your first service category to get started.
+        </p>
       </div>
-      
-      {/* Service editor */}
-      <div className="md:col-span-2">
-        <Card>
-          <CardHeader>
-            <h2 className="text-lg font-medium">Item Details</h2>
-          </CardHeader>
-          <CardContent>
-            <ServiceEditor
-              category={selectedCategory}
-              subcategory={selectedSubcategory}
-              job={selectedJob}
-              onSave={handleSaveItem}
-              categoryColors={categoryColors}
-              colorIndex={selectedCategory ? parseInt(categoryColorMap[selectedCategory.id] || "0") : 0}
-            />
-          </CardContent>
-        </Card>
-      </div>
+    );
+  }
 
-      {/* Rename dialog */}
-      {renderRenameDialog()}
+  return (
+    <div className="border border-gray-200 rounded-lg overflow-hidden">
+      {categories.map((category) => {
+        const isCategorySelected = category.id === selectedCategoryId;
+        const categoryColor = categoryColorMap[category.id] || categoryColors[0];
+        const borderColorClass = `border-l-4 border-${categoryColor}-500`;
+        
+        return (
+          <div key={category.id} className="border-b border-gray-200 last:border-b-0">
+            {/* Category Header */}
+            <div 
+              className={`flex justify-between items-center p-3 bg-gray-50 cursor-pointer hover:bg-gray-100 ${isCategorySelected ? 'bg-gray-100' : ''} ${borderColorClass}`}
+              onClick={() => handleSelectCategory(category.id)}
+              onDoubleClick={() => handleDoubleClickItem({
+                type: 'category',
+                id: category.id,
+                name: category.name
+              })}
+            >
+              <div className="font-medium">{category.name}</div>
+              <div className="text-sm text-gray-500">{category.subcategories.length} subcategories</div>
+            </div>
+            
+            {/* Subcategories */}
+            {isCategorySelected && (
+              <div className="pl-4">
+                {category.subcategories.map((subcategory) => {
+                  const isSubcategorySelected = subcategory.id === selectedSubcategoryId;
+                  
+                  return (
+                    <div key={subcategory.id} className="border-t border-gray-100 first:border-t-0">
+                      {/* Subcategory Header */}
+                      <div 
+                        className={`flex justify-between items-center p-2 cursor-pointer hover:bg-gray-50 ${isSubcategorySelected ? 'bg-gray-50' : ''}`}
+                        onClick={() => handleSelectSubcategory(subcategory.id)}
+                        onDoubleClick={() => handleDoubleClickItem({
+                          type: 'subcategory',
+                          id: subcategory.id,
+                          name: subcategory.name,
+                          categoryId: category.id
+                        })}
+                      >
+                        <div>{subcategory.name}</div>
+                        <div className="text-xs text-gray-500">{subcategory.jobs.length} services</div>
+                      </div>
+                      
+                      {/* Jobs */}
+                      {isSubcategorySelected && (
+                        <div className="pl-4 bg-white">
+                          {subcategory.jobs.map((job) => (
+                            <div 
+                              key={job.id}
+                              className={`p-2 border-t border-gray-100 cursor-pointer hover:bg-blue-50 ${job.id === selectedJobId ? 'bg-blue-50' : ''}`}
+                              onClick={() => handleSelectJob(job.id)}
+                              onDoubleClick={() => handleDoubleClickItem({
+                                type: 'job',
+                                id: job.id,
+                                name: job.name,
+                                categoryId: category.id,
+                                subcategoryId: subcategory.id
+                              })}
+                            >
+                              <div className="flex justify-between items-center">
+                                <span>{job.name}</span>
+                                {job.price && <span className="text-xs font-medium bg-green-100 text-green-800 px-2 py-0.5 rounded-full">${job.price}</span>}
+                              </div>
+                              {job.estimatedTime && (
+                                <div className="text-xs text-gray-500 mt-1">
+                                  Est. time: {job.estimatedTime} min
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+      
+      {/* Edit Dialog */}
+      {editItem && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-md">
+            <RenameItemDialog
+              currentName={editItem.name}
+              itemType={editItem.type}
+              onSave={handleSaveItemName}
+              onCancel={handleCancelEdit}
+              isLoading={renamingLoading}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
