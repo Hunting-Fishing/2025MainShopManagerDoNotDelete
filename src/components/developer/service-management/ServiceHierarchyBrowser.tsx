@@ -1,15 +1,15 @@
 
-import React, { useState } from 'react';
-import { ServiceMainCategory } from '@/types/serviceHierarchy';
-import { cn } from '@/lib/utils';
-import { Edit, Trash2, ChevronDown, ChevronRight, PlusCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
-import { updateCategoryName, updateSubcategoryName, updateJobName, addSubcategoryToCategory, addServiceToSubcategory } from '@/lib/services/serviceApi';
-import { createEmptySubcategory, createEmptyJob } from '@/lib/services/serviceUtils';
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+
+interface CategoryColorStyle {
+  bg: string;
+  text: string;
+  border: string;
+}
 
 interface ServiceHierarchyBrowserProps {
   categories: ServiceMainCategory[];
@@ -19,9 +19,8 @@ interface ServiceHierarchyBrowserProps {
   selectedSubcategoryId: string | null;
   selectedJobId: string | null;
   onSelectItem: (type: 'category' | 'subcategory' | 'job', id: string | null) => void;
-  categoryColorMap: Record<string, string>;
-  categoryColors: string[];
-  onCategoriesUpdated: () => void;
+  categoryColorMap?: Record<string, string>;
+  categoryColors?: CategoryColorStyle[];
 }
 
 export const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = ({
@@ -32,456 +31,189 @@ export const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = (
   selectedSubcategoryId,
   selectedJobId,
   onSelectItem,
-  categoryColorMap,
-  categoryColors,
-  onCategoriesUpdated
+  categoryColorMap = {},
+  categoryColors = []
 }) => {
-  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
-  const [expandedSubcategories, setExpandedSubcategories] = useState<Record<string, boolean>>({});
-  
-  // State for adding subcategory
-  const [isAddingSubcategory, setIsAddingSubcategory] = useState<boolean>(false);
-  const [newSubcategoryName, setNewSubcategoryName] = useState<string>('');
-  const [parentCategoryId, setParentCategoryId] = useState<string>('');
-
-  // State for adding service
-  const [isAddingService, setIsAddingService] = useState<boolean>(false);
-  const [newServiceName, setNewServiceName] = useState<string>('');
-  const [parentSubcategoryId, setParentSubcategoryId] = useState<string>('');
-
-  // State for editing items
-  const [isEditing, setIsEditing] = useState<boolean>(false);
-  const [editingItemId, setEditingItemId] = useState<string | null>(null);
-  const [editingItemType, setEditingItemType] = useState<'category' | 'subcategory' | 'job' | null>(null);
-  const [editingItemValue, setEditingItemValue] = useState<string>('');
-
-  const toggleCategory = (categoryId: string) => {
-    setExpandedCategories(prev => ({
-      ...prev,
-      [categoryId]: !prev[categoryId]
-    }));
-  };
-
-  const toggleSubcategory = (subcategoryId: string) => {
-    setExpandedSubcategories(prev => ({
-      ...prev,
-      [subcategoryId]: !prev[subcategoryId]
-    }));
-  };
-
-  const handleStartEdit = (type: 'category' | 'subcategory' | 'job', id: string, initialValue: string) => {
-    setIsEditing(true);
-    setEditingItemId(id);
-    setEditingItemType(type);
-    setEditingItemValue(initialValue);
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditing(false);
-    setEditingItemId(null);
-    setEditingItemType(null);
-    setEditingItemValue('');
-  };
-
-  const handleSaveEdit = async () => {
-    if (!editingItemId || !editingItemType || !editingItemValue.trim()) {
-      return;
-    }
-
-    try {
-      if (editingItemType === 'category') {
-        await updateCategoryName(editingItemId, editingItemValue);
-      } else if (editingItemType === 'subcategory' && selectedCategoryId) {
-        await updateSubcategoryName(selectedCategoryId, editingItemId, editingItemValue);
-      } else if (editingItemType === 'job' && selectedCategoryId && selectedSubcategoryId) {
-        await updateJobName(selectedCategoryId, selectedSubcategoryId, editingItemId, editingItemValue);
-      }
-
-      toast.success(`${editingItemType.charAt(0).toUpperCase() + editingItemType.slice(1)} updated successfully`);
-      onCategoriesUpdated();
-    } catch (error) {
-      toast.error(`Failed to update ${editingItemType}: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      handleCancelEdit();
-    }
-  };
-
-  const handleAddSubcategory = (categoryId: string) => {
-    setParentCategoryId(categoryId);
-    setNewSubcategoryName('');
-    setIsAddingSubcategory(true);
-  };
-
-  const handleSaveNewSubcategory = async () => {
-    if (!newSubcategoryName.trim() || !parentCategoryId) {
-      toast.error('Subcategory name is required');
-      return;
-    }
-
-    try {
-      const newSubcategory = createEmptySubcategory(newSubcategoryName);
-      await addSubcategoryToCategory(parentCategoryId, newSubcategory);
-      
-      toast.success('Subcategory added successfully');
-      onCategoriesUpdated();
-      
-      // Auto-expand the parent category to show the new subcategory
-      setExpandedCategories(prev => ({
-        ...prev,
-        [parentCategoryId]: true
-      }));
-      
-      setIsAddingSubcategory(false);
-    } catch (error) {
-      toast.error(`Failed to add subcategory: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  };
-
-  const handleAddService = (categoryId: string, subcategoryId: string) => {
-    setParentCategoryId(categoryId);
-    setParentSubcategoryId(subcategoryId);
-    setNewServiceName('');
-    setIsAddingService(true);
-  };
-
-  const handleSaveNewService = async () => {
-    if (!newServiceName.trim() || !parentCategoryId || !parentSubcategoryId) {
-      toast.error('Service name is required');
-      return;
-    }
-
-    try {
-      const newService = createEmptyJob(newServiceName);
-      await addServiceToSubcategory(parentCategoryId, parentSubcategoryId, newService);
-      
-      toast.success('Service added successfully');
-      onCategoriesUpdated();
-      
-      // Auto-expand the parent category and subcategory to show the new service
-      setExpandedCategories(prev => ({
-        ...prev,
-        [parentCategoryId]: true
-      }));
-      
-      setExpandedSubcategories(prev => ({
-        ...prev,
-        [parentSubcategoryId]: true
-      }));
-      
-      setIsAddingService(false);
-    } catch (error) {
-      toast.error(`Failed to add service: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  };
-  
   if (loading) {
     return (
-      <div className="p-8 flex justify-center">
-        <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
+      <div className="flex justify-center items-center h-60">
+        <div className="animate-pulse text-gray-500">Loading services...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-8 text-center">
-        <p className="text-red-500 font-medium">Error loading service hierarchy: {error}</p>
-        <Button variant="outline" className="mt-4" onClick={onCategoriesUpdated}>
-          Try Again
-        </Button>
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+        {error}
       </div>
     );
   }
 
+  if (categories.length === 0) {
+    return (
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center text-gray-500">
+        <p className="mb-2">No services configured yet.</p>
+        <p className="text-sm">Use the buttons above to create your service catalog.</p>
+      </div>
+    );
+  }
+
+  // Helper function to get color styles for a category
+  const getCategoryColorStyle = (categoryId: string): CategoryColorStyle => {
+    if (!categoryColorMap || !categoryColors || categoryColors.length === 0) {
+      return {
+        bg: 'bg-blue-100',
+        text: 'text-blue-800',
+        border: 'border-blue-300'
+      };
+    }
+    
+    const colorIndex = parseInt(categoryColorMap[categoryId] || '0');
+    return categoryColors[colorIndex % categoryColors.length] || categoryColors[0];
+  };
+
   return (
-    <div className="border rounded-lg overflow-hidden bg-white">
-      <div className="overflow-y-auto max-h-[600px]">
-        <table className="w-full">
-          <thead className="sticky top-0 bg-gray-50 border-b z-10">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Name
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 text-sm">
-            {categories.length === 0 ? (
-              <tr>
-                <td colSpan={2} className="px-6 py-4 text-center text-gray-500">
-                  No categories found
-                </td>
-              </tr>
-            ) : (
-              categories.map(category => (
-                <React.Fragment key={category.id}>
-                  <tr 
-                    className={cn(
-                      "hover:bg-gray-50 cursor-pointer", 
-                      selectedCategoryId === category.id && "bg-blue-50"
-                    )}
+    <div className="grid md:grid-cols-3 gap-4 h-[500px]">
+      {/* Categories Column */}
+      <Card className="border border-gray-200 rounded-xl shadow-sm">
+        <CardContent className="p-0">
+          <div className="border-b border-gray-200 px-4 py-3 font-medium text-sm bg-gray-50">
+            Categories
+          </div>
+          <ScrollArea className="h-[450px] rounded-b-xl">
+            <div className="p-2">
+              {categories.map(category => {
+                const colorStyle = getCategoryColorStyle(category.id);
+                
+                return (
+                  <div
+                    key={category.id}
+                    className={`px-3 py-2 rounded-lg cursor-pointer mb-1 ${
+                      selectedCategoryId === category.id
+                        ? `${colorStyle.bg} ${colorStyle.text} font-medium border ${colorStyle.border}`
+                        : 'hover:bg-gray-50'
+                    }`}
                     onClick={() => onSelectItem('category', category.id)}
                   >
-                    <td className="px-6 py-4 flex items-center">
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleCategory(category.id);
-                        }}
-                        className="mr-2 focus:outline-none"
+                    <div className="flex justify-between items-center">
+                      <span>{category.name}</span>
+                      <Badge 
+                        className={`${colorStyle.bg} ${colorStyle.text} border ${colorStyle.border} text-xs`}
                       >
-                        {expandedCategories[category.id] ? (
-                          <ChevronDown className="h-4 w-4 text-gray-500" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4 text-gray-500" />
-                        )}
-                      </button>
+                        {category.subcategories.length} subcategories
+                      </Badge>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </ScrollArea>
+        </CardContent>
+      </Card>
+
+      {/* Subcategories Column */}
+      <Card className="border border-gray-200 rounded-xl shadow-sm">
+        <CardContent className="p-0">
+          <div className="border-b border-gray-200 px-4 py-3 font-medium text-sm bg-gray-50">
+            Subcategories
+          </div>
+          <ScrollArea className="h-[450px] rounded-b-xl">
+            <div className="p-2">
+              {selectedCategoryId ? (
+                categories.find(cat => cat.id === selectedCategoryId)?.subcategories.length ? (
+                  categories
+                    .find(cat => cat.id === selectedCategoryId)
+                    ?.subcategories.map(subcategory => {
+                      const colorStyle = getCategoryColorStyle(selectedCategoryId);
                       
-                      <span 
-                        className={cn(
-                          "inline-block w-3 h-3 rounded-full mr-2",
-                          categoryColorMap[category.id] 
-                            ? `bg-${categoryColorMap[category.id]}-500` 
-                            : "bg-gray-400"
-                        )}
-                      ></span>
-                      
-                      <span 
-                        className="font-medium" 
-                        onDoubleClick={(e) => {
-                          e.stopPropagation();
-                          handleStartEdit('category', category.id, category.name);
-                        }}
-                      >
-                        {category.name}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end space-x-2">
-                        <Button 
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleStartEdit('category', category.id, category.name);
-                          }}
+                      return (
+                        <div
+                          key={subcategory.id}
+                          className={`px-3 py-2 rounded-lg cursor-pointer mb-1 ${
+                            selectedSubcategoryId === subcategory.id
+                              ? `${colorStyle.bg} ${colorStyle.text} font-medium border ${colorStyle.border}`
+                              : 'hover:bg-gray-50'
+                          }`}
+                          onClick={() => onSelectItem('subcategory', subcategory.id)}
                         >
-                          <Edit className="h-4 w-4 text-gray-500" />
-                          <span className="sr-only">Edit</span>
-                        </Button>
-                        
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-8 w-8 p-0 text-blue-600"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAddSubcategory(category.id);
-                          }}
-                        >
-                          <PlusCircle className="h-4 w-4" />
-                          <span className="sr-only">Add Subcategory</span>
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                  
-                  {/* Subcategories */}
-                  {expandedCategories[category.id] && category.subcategories.map(subcategory => (
-                    <React.Fragment key={subcategory.id}>
-                      <tr 
-                        className={cn(
-                          "hover:bg-gray-50 cursor-pointer", 
-                          selectedSubcategoryId === subcategory.id && "bg-blue-50"
-                        )}
-                        onClick={() => onSelectItem('subcategory', subcategory.id)}
-                      >
-                        <td className="px-6 py-4 flex items-center pl-10">
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleSubcategory(subcategory.id);
-                            }}
-                            className="mr-2 focus:outline-none"
-                          >
-                            {expandedSubcategories[subcategory.id] ? (
-                              <ChevronDown className="h-4 w-4 text-gray-500" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4 text-gray-500" />
-                            )}
-                          </button>
-                          
-                          <span 
-                            className="font-medium"
-                            onDoubleClick={(e) => {
-                              e.stopPropagation();
-                              handleStartEdit('subcategory', subcategory.id, subcategory.name);
-                            }}
-                          >
-                            {subcategory.name}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex justify-end space-x-2">
-                            <Button 
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleStartEdit('subcategory', subcategory.id, subcategory.name);
-                              }}
+                          <div className="flex justify-between items-center">
+                            <span>{subcategory.name}</span>
+                            <Badge 
+                              className={`${colorStyle.bg} ${colorStyle.text} border ${colorStyle.border} text-xs`}
                             >
-                              <Edit className="h-4 w-4 text-gray-500" />
-                              <span className="sr-only">Edit</span>
-                            </Button>
-                            
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-8 w-8 p-0 text-blue-600"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAddService(category.id, subcategory.id);
-                              }}
-                            >
-                              <PlusCircle className="h-4 w-4" />
-                              <span className="sr-only">Add Service</span>
-                            </Button>
+                              {subcategory.jobs.length} services
+                            </Badge>
                           </div>
-                        </td>
-                      </tr>
+                        </div>
+                      );
+                    })
+                ) : (
+                  <div className="p-4 text-center text-gray-500 text-sm">
+                    No subcategories yet
+                  </div>
+                )
+              ) : (
+                <div className="p-4 text-center text-gray-500 text-sm">
+                  Select a category first
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </CardContent>
+      </Card>
+
+      {/* Jobs/Services Column */}
+      <Card className="border border-gray-200 rounded-xl shadow-sm">
+        <CardContent className="p-0">
+          <div className="border-b border-gray-200 px-4 py-3 font-medium text-sm bg-gray-50">
+            Services
+          </div>
+          <ScrollArea className="h-[450px] rounded-b-xl">
+            <div className="p-2">
+              {selectedSubcategoryId ? (
+                categories
+                  .find(cat => cat.id === selectedCategoryId)
+                  ?.subcategories.find(sub => sub.id === selectedSubcategoryId)
+                  ?.jobs.length ? (
+                  categories
+                    .find(cat => cat.id === selectedCategoryId)
+                    ?.subcategories.find(sub => sub.id === selectedSubcategoryId)
+                    ?.jobs.map(job => {
+                      const colorStyle = getCategoryColorStyle(selectedCategoryId || '');
                       
-                      {/* Jobs/Services */}
-                      {expandedSubcategories[subcategory.id] && subcategory.jobs.map(job => (
-                        <tr 
+                      return (
+                        <div
                           key={job.id}
-                          className={cn(
-                            "hover:bg-gray-50 cursor-pointer", 
-                            selectedJobId === job.id && "bg-blue-50"
-                          )}
+                          className={`px-3 py-2 rounded-lg cursor-pointer mb-1 ${
+                            selectedJobId === job.id
+                              ? `${colorStyle.bg} ${colorStyle.text} font-medium border ${colorStyle.border}`
+                              : 'hover:bg-gray-50'
+                          }`}
                           onClick={() => onSelectItem('job', job.id)}
                         >
-                          <td className="px-6 py-4 flex items-center pl-16">
-                            <span 
-                              onDoubleClick={(e) => {
-                                e.stopPropagation();
-                                handleStartEdit('job', job.id, job.name);
-                              }}
-                            >
-                              {job.name}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <Button 
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleStartEdit('job', job.id, job.name);
-                              }}
-                            >
-                              <Edit className="h-4 w-4 text-gray-500" />
-                              <span className="sr-only">Edit</span>
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </React.Fragment>
-                  ))}
-                </React.Fragment>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-      
-      {/* Edit Dialog */}
-      <Dialog open={isEditing} onOpenChange={setIsEditing}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Edit {editingItemType}</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <Label htmlFor="item-name" className="text-right mb-2 block">
-              Name
-            </Label>
-            <Input
-              id="item-name"
-              value={editingItemValue}
-              onChange={(e) => setEditingItemValue(e.target.value)}
-              className="w-full"
-              autoFocus
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={handleCancelEdit}>
-              Cancel
-            </Button>
-            <Button onClick={handleSaveEdit}>Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Add Subcategory Dialog */}
-      <Dialog open={isAddingSubcategory} onOpenChange={setIsAddingSubcategory}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Add Subcategory</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <Label htmlFor="subcategory-name" className="text-right mb-2 block">
-              Subcategory Name
-            </Label>
-            <Input
-              id="subcategory-name"
-              value={newSubcategoryName}
-              onChange={(e) => setNewSubcategoryName(e.target.value)}
-              className="w-full"
-              autoFocus
-              placeholder="Enter subcategory name"
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddingSubcategory(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSaveNewSubcategory}>Add Subcategory</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Add Service Dialog */}
-      <Dialog open={isAddingService} onOpenChange={setIsAddingService}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Add Service</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <Label htmlFor="service-name" className="text-right mb-2 block">
-              Service Name
-            </Label>
-            <Input
-              id="service-name"
-              value={newServiceName}
-              onChange={(e) => setNewServiceName(e.target.value)}
-              className="w-full"
-              autoFocus
-              placeholder="Enter service name"
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddingService(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSaveNewService}>Add Service</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                          <div className="font-medium">{job.name}</div>
+                          <div className="text-xs text-gray-500 flex justify-between mt-1">
+                            <span>${job.price?.toFixed(2) || '0.00'}</span>
+                            <span>{job.estimatedTime || 0} min</span>
+                          </div>
+                        </div>
+                      );
+                    })
+                ) : (
+                  <div className="p-4 text-center text-gray-500 text-sm">
+                    No services yet
+                  </div>
+                )
+              ) : (
+                <div className="p-4 text-center text-gray-500 text-sm">
+                  Select a subcategory first
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </CardContent>
+      </Card>
     </div>
   );
 };

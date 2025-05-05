@@ -39,12 +39,12 @@ export const DuplicateSearchResults: React.FC<DuplicateSearchResultsProps> = ({
     }));
   };
   
-  const handleRemoveDuplicate = async (itemId: string, duplicateType: 'category' | 'subcategory' | 'job', itemName: string) => {
+  const handleRemoveDuplicate = async (itemId: string, type: 'category' | 'subcategory' | 'job', itemName: string) => {
     if (!onRemoveDuplicate) return;
     
     try {
       setRemovingItems(prev => ({ ...prev, [itemId]: true }));
-      await onRemoveDuplicate(itemId, duplicateType);
+      await onRemoveDuplicate(itemId, type);
       toast.success(`Successfully removed duplicate "${itemName}"`);
     } catch (error) {
       console.error("Error removing duplicate:", error);

@@ -1,74 +1,69 @@
 
 import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from "@/types/serviceHierarchy";
 
-export interface DuplicateOccurrence {
-  id: string;        // A unique identifier for this occurrence
-  path: string;      // Path in the hierarchy (e.g., "Category > Subcategory")
-  itemId: string;    // The actual item ID in the database
-}
-
+// Interface for duplicate items
 export interface DuplicateItem {
-  type: 'category' | 'subcategory' | 'job';
   name: string;
-  occurrences: DuplicateOccurrence[];
+  type: 'category' | 'subcategory' | 'job';
+  occurrences: {
+    id: string;
+    path: string; // Path showing where this item exists, e.g., "Category A > Subcategory B"
+    itemId: string;
+  }[];
 }
 
-export function findDuplicateItems(categories: ServiceMainCategory[]): DuplicateItem[] {
-  const duplicates: Record<string, DuplicateItem> = {};
+/**
+ * Finds duplicate service items across categories, subcategories, and jobs
+ */
+export const findServiceDuplicates = (categories: ServiceMainCategory[]): DuplicateItem[] => {
+  // Maps to track names
+  const nameMap: Record<string, {
+    type: 'category' | 'subcategory' | 'job';
+    occurrences: { id: string, path: string, itemId: string }[];
+  }> = {};
   
-  // Normalize text for comparison (lowercase, trim whitespace)
-  const normalizeText = (text: string): string => text.toLowerCase().trim();
-  
-  // Check for duplicate categories
+  // Process all categories, subcategories and jobs
   categories.forEach(category => {
-    const normalizedName = normalizeText(category.name);
-    
-    if (!duplicates[`category:${normalizedName}`]) {
-      duplicates[`category:${normalizedName}`] = {
-        type: 'category',
-        name: category.name,
-        occurrences: []
+    // Check category names
+    const categoryName = category.name.toLowerCase().trim();
+    if (!nameMap[categoryName]) {
+      nameMap[categoryName] = { 
+        type: 'category', 
+        occurrences: [] 
       };
     }
-    
-    duplicates[`category:${normalizedName}`].occurrences.push({
-      id: `cat-${category.id}`,
+    nameMap[categoryName].occurrences.push({
+      id: category.id,
       path: category.name,
       itemId: category.id
     });
     
-    // Check for duplicate subcategories across the entire hierarchy
+    // Check subcategory names
     category.subcategories.forEach(subcategory => {
-      const normalizedSubName = normalizeText(subcategory.name);
-      
-      if (!duplicates[`subcategory:${normalizedSubName}`]) {
-        duplicates[`subcategory:${normalizedSubName}`] = {
+      const subcategoryName = subcategory.name.toLowerCase().trim();
+      if (!nameMap[subcategoryName]) {
+        nameMap[subcategoryName] = {
           type: 'subcategory',
-          name: subcategory.name,
           occurrences: []
         };
       }
-      
-      duplicates[`subcategory:${normalizedSubName}`].occurrences.push({
-        id: `sub-${subcategory.id}`,
+      nameMap[subcategoryName].occurrences.push({
+        id: subcategory.id,
         path: `${category.name} > ${subcategory.name}`,
         itemId: subcategory.id
       });
       
-      // Check for duplicate jobs/services across the entire hierarchy
+      // Check job names
       subcategory.jobs.forEach(job => {
-        const normalizedJobName = normalizeText(job.name);
-        
-        if (!duplicates[`job:${normalizedJobName}`]) {
-          duplicates[`job:${normalizedJobName}`] = {
+        const jobName = job.name.toLowerCase().trim();
+        if (!nameMap[jobName]) {
+          nameMap[jobName] = {
             type: 'job',
-            name: job.name,
             occurrences: []
           };
         }
-        
-        duplicates[`job:${normalizedJobName}`].occurrences.push({
-          id: `job-${job.id}`,
+        nameMap[jobName].occurrences.push({
+          id: job.id,
           path: `${category.name} > ${subcategory.name} > ${job.name}`,
           itemId: job.id
         });
@@ -76,6 +71,51 @@ export function findDuplicateItems(categories: ServiceMainCategory[]): Duplicate
     });
   });
   
-  // Filter out non-duplicates (items with only one occurrence)
-  return Object.values(duplicates).filter(item => item.occurrences.length > 1);
-}
+  // Filter for duplicates only (more than 1 occurrence)
+  const duplicates: DuplicateItem[] = [];
+  
+  Object.entries(nameMap).forEach(([name, info]) => {
+    if (info.occurrences.length > 1) {
+      duplicates.push({
+        name: name,
+        type: info.type,
+        occurrences: info.occurrences
+      });
+    }
+  });
+  
+  return duplicates;
+};
+
+/**
+ * Generate recommendations for handling duplicates
+ */
+export const generateDuplicateRecommendations = (duplicates: DuplicateItem[]): string[] => {
+  const recommendations: string[] = [];
+  
+  if (duplicates.length > 0) {
+    recommendations.push("Consider consolidating duplicate items to maintain data consistency.");
+    recommendations.push("Use more specific naming for similar services in different categories.");
+    
+    // Add specific recommendations based on duplicate types
+    const categoryDuplicates = duplicates.filter(d => d.type === 'category').length;
+    const subcategoryDuplicates = duplicates.filter(d => d.type === 'subcategory').length;
+    const jobDuplicates = duplicates.filter(d => d.type === 'job').length;
+    
+    if (categoryDuplicates > 0) {
+      recommendations.push(`Merge or rename ${categoryDuplicates} duplicate categories to avoid confusion.`);
+    }
+    
+    if (subcategoryDuplicates > 0) {
+      recommendations.push(`Review ${subcategoryDuplicates} duplicate subcategories, which may indicate overlapping service areas.`);
+    }
+    
+    if (jobDuplicates > 0) {
+      recommendations.push(`Standardize naming for ${jobDuplicates} duplicate services to ensure consistent pricing and descriptions.`);
+    }
+  } else {
+    recommendations.push("No duplicates found. Your service hierarchy is well-organized.");
+  }
+  
+  return recommendations;
+};
