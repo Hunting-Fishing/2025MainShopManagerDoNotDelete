@@ -9,8 +9,9 @@ import { fetchServiceCategories } from "@/lib/services/serviceApi";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Check } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface WorkOrderInfoSectionProps {
   form: any;
@@ -24,6 +25,7 @@ export const WorkOrderInfoSection: React.FC<WorkOrderInfoSectionProps> = ({
   const { selectedService, clearSelectedService } = useServiceSelection();
   const [categories, setCategories] = useState<ServiceMainCategory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // When a service is selected from the Developer Portal, update the form values
   useEffect(() => {
@@ -38,15 +40,21 @@ export const WorkOrderInfoSection: React.FC<WorkOrderInfoSectionProps> = ({
     }
   }, [selectedService, form]);
 
-  // Load service categories from the Developer Portal
+  // Load service categories from the database
   useEffect(() => {
     const loadCategories = async () => {
       setIsLoading(true);
+      setError(null);
       try {
         const fetchedCategories = await fetchServiceCategories();
+        console.log("Loaded service categories:", fetchedCategories);
         setCategories(fetchedCategories);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error loading service categories:", error);
+        setError(error.message || "Failed to load service categories");
+        toast.error("Failed to load service categories", {
+          description: "Please try again or check your connection"
+        });
       } finally {
         setIsLoading(false);
       }
@@ -101,7 +109,25 @@ export const WorkOrderInfoSection: React.FC<WorkOrderInfoSectionProps> = ({
         {isLoading ? (
           <Card>
             <CardContent className="pt-6">
-              <div className="text-center text-muted-foreground">Loading service categories...</div>
+              <div className="flex items-center justify-center text-muted-foreground gap-2 py-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Loading service categories...</span>
+              </div>
+            </CardContent>
+          </Card>
+        ) : error ? (
+          <Card className="border-red-200 bg-red-50 dark:bg-red-900/10">
+            <CardContent className="pt-6">
+              <div className="text-center text-red-600 dark:text-red-400">
+                <p>Failed to load service categories</p>
+                <Button 
+                  variant="outline" 
+                  className="mt-4 border-red-300 text-red-600"
+                  onClick={() => window.location.reload()}
+                >
+                  Retry
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ) : categories.length > 0 ? (
@@ -136,7 +162,7 @@ export const WorkOrderInfoSection: React.FC<WorkOrderInfoSectionProps> = ({
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                      {category.description || `Imported from ${category.name} sheet`}
+                      {category.description || `Service category for ${category.name}`}
                     </p>
                   </div>
                 ))}

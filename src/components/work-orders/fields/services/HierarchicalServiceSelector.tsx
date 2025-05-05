@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ServiceCategoryList } from "./ServiceCategoryList";
 import { ServiceSubcategoryGrid } from "./ServiceSubcategoryGrid";
-import { PlusCircle, Check, Wrench } from 'lucide-react';
+import { PlusCircle, Check, Wrench, Loader2 } from 'lucide-react';
 import { useServiceSelection } from '@/hooks/useServiceSelection';
 import { fetchServiceCategories } from '@/lib/services/serviceApi';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { toast } from 'sonner';
 
 interface HierarchicalServiceSelectorProps {
   onServiceSelected: (service: {
@@ -39,7 +40,7 @@ const HierarchicalServiceSelector: React.FC<HierarchicalServiceSelectorProps> = 
       setIsLoading(true);
       try {
         const categories = await fetchServiceCategories();
-        console.log("Loaded categories:", categories);
+        console.log("Loaded categories for selector:", categories);
         setServiceCategories(categories);
         
         // Select the first category by default if available
@@ -48,13 +49,18 @@ const HierarchicalServiceSelector: React.FC<HierarchicalServiceSelectorProps> = 
         }
       } catch (error) {
         console.error('Error loading service categories:', error);
+        toast.error("Failed to load service categories", {
+          description: "Please try again or contact support"
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadCategories();
-  }, []);
+    if (isOpen) {
+      loadCategories();
+    }
+  }, [isOpen]);
 
   const handleCategorySelect = (categoryName: string) => {
     console.log("Selected category:", categoryName);
@@ -129,6 +135,7 @@ const HierarchicalServiceSelector: React.FC<HierarchicalServiceSelectorProps> = 
           
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-5 w-5 animate-spin mr-2" />
               <span className="text-muted-foreground">Loading services...</span>
             </div>
           ) : serviceCategories.length > 0 ? (

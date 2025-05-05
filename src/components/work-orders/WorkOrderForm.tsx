@@ -1,321 +1,113 @@
 
-import React, { useState, useEffect } from "react";
-import { Form } from "@/components/ui/form";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import React from "react";
 import { useWorkOrderForm } from "@/hooks/useWorkOrderForm";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
-import { TimeEntry, WorkOrderTemplate } from "@/types/workOrder";
-import { supabase } from '@/lib/supabase';
-import { Customer, adaptCustomerForUI } from "@/types/customer";
-import { toast } from "@/hooks/use-toast";
-import { useWorkOrderTemplates } from "@/hooks/useWorkOrderTemplates";
-
-// Import components
-import { CustomerInfoSection } from "@/components/work-orders/CustomerInfoSection";
-import { WorkOrderStatusSection } from "@/components/work-orders/WorkOrderStatusSection";
-import { AssignmentSection } from "@/components/work-orders/AssignmentSection";
-import { NotesSection } from "@/components/work-orders/NotesSection";
-import { WorkOrderInventorySection } from "@/components/work-orders/inventory/WorkOrderInventorySection";
-import { FormActions } from "@/components/work-orders/FormActions";
-import { TimeTrackingSection } from "@/components/work-orders/time-tracking/TimeTrackingSection";
-import { SaveAsTemplateDialog } from "./templates/SaveAsTemplateDialog";
-import { WorkOrderDescriptionField } from "./fields/WorkOrderDescriptionField";
-import { VehicleDetailsField } from "./fields/VehicleDetailsField";
-import { CommonServicesChecklist } from "./fields/CommonServicesChecklist";
-import { TechTips } from "./fields/TechTips";
-import { WorkOrderInfoSection } from "./WorkOrderInfoSection";
-
-// Service categories
-const SERVICE_CATEGORIES = [
-  "Diagnostic",
-  "Repair",
-  "Maintenance",
-  "Inspection",
-  "Tire Service",
-  "Body Work",
-  "Detailing",
-  "Other"
-];
+import { Button } from "@/components/ui/button";
+import { Form } from "@/components/ui/form";
+import { WorkOrderFormHeader } from "./WorkOrderFormHeader";
+import { WorkOrderInfoSection } from "./fields/WorkOrderInfoSection";
+import { CustomerInfo } from "./fields/CustomerInfo"; 
+import { VehicleInfo } from "./fields/VehicleInfo";
+import { NotesSection } from "./fields/NotesSection";
+import { ScheduleSection } from "./fields/ScheduleSection";
+import { WorkOrderTabs } from "./WorkOrderTabs";
+import { useParams, useSearchParams } from "react-router-dom";
+import { WorkOrderTemplate } from "@/types/workOrder";
+import { toast } from "sonner";
 
 interface WorkOrderFormProps {
-  technicians: Array<{id: string; name: string; jobTitle?: string}>;
-  isLoadingTechnicians?: boolean;
+  technicians: string[];
   initialTemplate?: WorkOrderTemplate | null;
+  isLoadingTechnicians?: boolean;
 }
 
-export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ 
+export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
   technicians,
   isLoadingTechnicians = false,
-  initialTemplate
+  initialTemplate = null,
 }) => {
-  const navigate = useNavigate();
+  const { workOrderId } = useParams();
   const [searchParams] = useSearchParams();
-  const { form, onSubmit, isSubmitting, error, setTimeEntries, setFormValues } = useWorkOrderForm();
-  const [timeEntries, setLocalTimeEntries] = useState<TimeEntry[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [loadingCustomers, setLoadingCustomers] = useState(true);
-  const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
-  const [isFleetCustomer, setIsFleetCustomer] = useState<boolean>(false);
-  const { createTemplate } = useWorkOrderTemplates();
+  const isEditing = !!workOrderId;
 
-  const customerId = searchParams.get('customerId');
-  const vehicleId = searchParams.get('vehicleId');
-  const customerName = searchParams.get('customerName');
-  const vehicleInfo = searchParams.get('vehicleInfo');
+  const { form, onSubmit, isSubmitting, error, setFormValues } = useWorkOrderForm();
 
-  useEffect(() => {
-    const fetchCustomers = async () => {
-      setLoadingCustomers(true);
-      try {
-        const { data, error } = await supabase
-          .from('customers')
-          .select('*')
-          .order('last_name', { ascending: true });
-        
-        if (error) {
-          console.error("Error fetching customers:", error);
-          throw error;
-        }
-        
-        if (data) {
-          console.log("Fetched customers:", data.length);
-          const adaptedCustomers = data.map(customer => adaptCustomerForUI(customer));
-          setCustomers(adaptedCustomers);
-
-          if (customerId) {
-            const selectedCustomer = adaptedCustomers.find(c => c.id === customerId);
-            if (selectedCustomer) {
-              setIsFleetCustomer(selectedCustomer.is_fleet === true || Boolean(selectedCustomer.fleet_company));
-            }
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching customers:", err);
-        toast({
-          title: "Error",
-          description: "Failed to load customers. Please try again.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoadingCustomers(false);
-      }
-    };
-
-    fetchCustomers();
-  }, [customerId]);
-
-  useEffect(() => {
+  // Apply template when it changes
+  React.useEffect(() => {
     if (initialTemplate) {
-      console.log("Applying template:", initialTemplate.name);
-      form.reset({
-        customer: initialTemplate.customer || "",
+      setFormValues({
         description: initialTemplate.description || "",
-        status: initialTemplate.status,
-        priority: initialTemplate.priority,
-        technician: initialTemplate.technician,
-        location: initialTemplate.location || "",
-        dueDate: new Date().toISOString().split('T')[0],
+        status: initialTemplate.status || "pending",
+        priority: initialTemplate.priority || "medium", 
+        technician: initialTemplate.technician || "",
         notes: initialTemplate.notes || "",
-        inventoryItems: initialTemplate.inventoryItems || [],
-      });
-
-      toast({
-        title: "Template Applied",
-        description: `${initialTemplate.name} template has been applied.`,
-        variant: "success",
-      });
-    }
-  }, [initialTemplate, form]);
-
-  useEffect(() => {
-    if (customerId) {
-      console.log("Pre-filling form with customerId:", customerId);
-      form.setValue('customer', customerId);
-      
-      if (vehicleInfo) {
-        form.setValue('description', `Service for ${vehicleInfo}`);
-        
-        if (vehicleId) {
-          setSelectedVehicleId(vehicleId);
-          form.setValue('vehicle_id', vehicleId);
-        }
-        
-        toast({
-          title: "Information Pre-filled",
-          description: `Work order created for ${customerName}'s ${vehicleInfo}`,
-        });
-      }
-    }
-  }, [customerId, customerName, vehicleId, vehicleInfo, form]);
-
-  const handleUpdateTimeEntries = (entries: TimeEntry[]) => {
-    console.log("Updating time entries:", entries.length);
-    setLocalTimeEntries(entries);
-    setTimeEntries(entries);
-  };
-
-  const handleSaveTemplate = async (template: WorkOrderTemplate) => {
-    console.log("Saving template:", template.name);
-    try {
-      const result = await createTemplate(template);
-      if (result.success) {
-        toast({
-          title: "Template Saved",
-          description: `Template "${template.name}" has been saved.`,
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: `Failed to save template: ${result.message}`,
-          variant: "destructive"
-        });
-      }
-    } catch (err) {
-      console.error("Error saving template:", err);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred while saving the template.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleServiceChecked = (services: string[]) => {
-    if (services.length > 0) {
-      let currentDescription = form.getValues("description") || "";
-      
-      if (!currentDescription.includes("Service Checklist:")) {
-        currentDescription += "\n\nService Checklist:\n";
-      } else {
-        currentDescription = currentDescription.replace(/\n\nService Checklist:[\s\S]*/, "");
-        currentDescription += "\n\nService Checklist:\n";
-      }
-      
-      services.forEach(service => {
-        currentDescription += `- ${service}\n`;
       });
       
-      form.setValue("description", currentDescription);
+      toast.success(`Applied template: ${initialTemplate.name}`, {
+        description: "Template fields have been applied to the form",
+      });
     }
-  };
+  }, [initialTemplate, setFormValues]);
 
-  const handleInsertTechTip = (tipContent: string) => {
-    const currentDescription = form.getValues("description") || "";
-    const updatedDescription = currentDescription 
-      ? `${currentDescription}\n\n${tipContent}`
-      : tipContent;
+  // Apply pre-filled info from URL params
+  React.useEffect(() => {
+    const customerId = searchParams.get('customerId');
+    const customerName = searchParams.get('customerName');
+    const vehicleId = searchParams.get('vehicleId');
+    const vehicleMake = searchParams.get('vehicleMake');
+    const vehicleModel = searchParams.get('vehicleModel');
+    const vehicleYear = searchParams.get('vehicleYear');
     
-    form.setValue("description", updatedDescription);
-  };
+    if (customerId && customerName) {
+      setFormValues({
+        customer_id: customerId,
+        customer: customerName,
+      });
+    }
+    
+    if (vehicleId) {
+      setFormValues({
+        vehicle_id: vehicleId,
+        vehicleMake: vehicleMake || '',
+        vehicleModel: vehicleModel || '',
+        vehicleYear: vehicleYear || '',
+      });
+    }
+  }, [searchParams, setFormValues]);
 
   return (
-    <div className="space-y-8">
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-      
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {/* Vehicle Details Card */}
-          {vehicleId && vehicleInfo && (
-            <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm">
-              <VehicleDetailsField 
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <WorkOrderFormHeader 
+          isEditing={isEditing} 
+          isSubmitting={isSubmitting} 
+          error={error}
+        />
+
+        <div className="p-6 space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-6">
+              <CustomerInfo form={form} />
+              <VehicleInfo form={form} />
+            </div>
+            
+            <div className="space-y-6">
+              <WorkOrderInfoSection 
                 form={form} 
-                isFleetCustomer={isFleetCustomer} 
+                serviceCategories={[]} // We're no longer using this prop since we're fetching data directly
+              />
+              <ScheduleSection 
+                form={form} 
+                technicians={technicians}
+                isLoading={isLoadingTechnicians} 
               />
             </div>
-          )}
-          
-          {/* Common Services Card */}
-          <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-gradient-to-r from-slate-50 to-white">
-            <CommonServicesChecklist onServiceChecked={handleServiceChecked} />
-          </div>
-          
-          {/* Customer & Status Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white p-6">
-              <CustomerInfoSection 
-                form={form as any} 
-                customers={customers} 
-                isLoading={loadingCustomers} 
-                selectedVehicleId={selectedVehicleId}
-                preSelectedCustomerId={customerId}
-              />
-            </div>
-            
-            <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white p-6">
-              <WorkOrderStatusSection form={form as any} />
-            </div>
-          </div>
-          
-          {/* Assignment & Info Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white p-6">
-              <AssignmentSection 
-                form={form as any} 
-                technicians={technicians} 
-                isLoading={isLoadingTechnicians}
-              />
-            </div>
-            
-            <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white p-6">
-              <WorkOrderInfoSection form={form} serviceCategories={SERVICE_CATEGORIES} />
-            </div>
           </div>
 
-          {/* Description & Tech Tips Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white p-6">
-              <WorkOrderDescriptionField form={form} />
-            </div>
-            <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white p-6">
-              <TechTips onInsert={handleInsertTechTip} />
-            </div>
-          </div>
-          
-          {/* Notes Section */}
-          <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white p-6">
-            <NotesSection form={form as any} />
-          </div>
+          <NotesSection form={form} />
 
-          {/* Inventory Section */}
-          <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white p-6">
-            <WorkOrderInventorySection form={form as any} />
-          </div>
-
-          {/* Form Actions */}
-          <div className="flex justify-between items-center border-t border-slate-200 pt-6">
-            <SaveAsTemplateDialog 
-              formValues={form.getValues()} 
-              onSave={handleSaveTemplate} 
-            />
-            <FormActions 
-              isSubmitting={isSubmitting} 
-              onCancel={() => navigate("/work-orders")} 
-            />
-          </div>
-        </form>
-      </Form>
-
-      {/* Time Tracking Section */}
-      <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white p-6 mt-8">
-        <div className="text-sm text-slate-500 mb-4">
-          Note: Additional time tracking can be added after the work order is created.
+          <WorkOrderTabs />
         </div>
-        
-        {timeEntries.length > 0 && (
-          <TimeTrackingSection 
-            workOrderId="new-work-order" 
-            timeEntries={timeEntries} 
-            onUpdateTimeEntries={handleUpdateTimeEntries} 
-          />
-        )}
-      </div>
-    </div>
+      </form>
+    </Form>
   );
 };
