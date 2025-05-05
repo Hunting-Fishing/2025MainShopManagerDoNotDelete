@@ -3558,6 +3558,56 @@ export type Database = {
           },
         ]
       }
+      inventory_orders: {
+        Row: {
+          created_at: string
+          expected_arrival: string
+          id: string
+          item_id: string | null
+          notes: string | null
+          order_date: string
+          quantity_ordered: number
+          quantity_received: number
+          status: string
+          supplier: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expected_arrival: string
+          id?: string
+          item_id?: string | null
+          notes?: string | null
+          order_date?: string
+          quantity_ordered: number
+          quantity_received?: number
+          status?: string
+          supplier: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expected_arrival?: string
+          id?: string
+          item_id?: string | null
+          notes?: string | null
+          order_date?: string
+          quantity_ordered?: number
+          quantity_received?: number
+          status?: string
+          supplier?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_orders_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_purchase_order_items: {
         Row: {
           created_at: string
@@ -8213,6 +8263,10 @@ export type Database = {
       process_referral_reward: {
         Args: { referral_id: string; points?: number }
         Returns: string
+      }
+      receive_inventory_order: {
+        Args: { order_id: string; quantity_to_receive: number }
+        Returns: undefined
       }
       record_team_history: {
         Args: {

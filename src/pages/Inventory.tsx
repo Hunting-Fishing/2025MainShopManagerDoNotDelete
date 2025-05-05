@@ -7,6 +7,7 @@ import { InventoryAlerts } from "@/components/inventory/InventoryAlerts";
 import { useInventoryFilters } from "@/hooks/useInventoryFilters";
 import { useInventoryManager } from "@/hooks/inventory/useInventoryManager";
 import { AutoReorderStatus } from "@/components/inventory/alerts/AutoReorderStatus";
+import { PendingOrdersCard } from "@/components/inventory/PendingOrdersCard";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 export default function Inventory() {
@@ -48,13 +49,17 @@ export default function Inventory() {
       <InventoryHeader />
       
       {/* Inventory Alerts Section */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <InventoryAlerts />
-        <AutoReorderStatus 
-          items={[...lowStockItems, ...outOfStockItems]} 
-          autoReorderSettings={autoReorderSettings} 
-        />
+      <div className="grid gap-6 md:grid-cols-3">
+        <div className="md:col-span-2">
+          <InventoryAlerts />
+        </div>
+        <PendingOrdersCard />
       </div>
+      
+      <AutoReorderStatus 
+        items={[...lowStockItems, ...outOfStockItems]} 
+        autoReorderSettings={autoReorderSettings} 
+      />
 
       {/* Filters and search */}
       <InventoryFilters 
