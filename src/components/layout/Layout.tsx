@@ -1,11 +1,11 @@
 
 import { ReactNode } from 'react';
-import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
 import { Header } from './Header';
 import { Outlet, useLocation } from 'react-router-dom';
 import { useTheme } from '@/context/ThemeContext';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { SidebarProvider } from '@/hooks/use-sidebar';
 
 interface LayoutProps {
   children?: ReactNode;

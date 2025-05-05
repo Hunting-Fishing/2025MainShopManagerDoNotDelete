@@ -1,17 +1,16 @@
 
-import { useSidebar as useComponentSidebar } from "@/components/ui/sidebar";
+import { create } from 'zustand';
 
-export const useSidebar = () => {
-  const { collapsed, toggleCollapsed } = useComponentSidebar();
-  
-  return {
-    isOpen: !collapsed,
-    onOpen: () => {
-      if (collapsed) toggleCollapsed();
-    },
-    onClose: () => {
-      if (!collapsed) toggleCollapsed();
-    },
-    toggle: toggleCollapsed
-  };
-};
+interface SidebarState {
+  isOpen: boolean;
+  onOpen: () => void;
+  onClose: () => void;
+  toggle: () => void;
+}
+
+export const useSidebar = create<SidebarState>((set) => ({
+  isOpen: false,
+  onOpen: () => set({ isOpen: true }),
+  onClose: () => set({ isOpen: false }),
+  toggle: () => set((state) => ({ isOpen: !state.isOpen })),
+}));

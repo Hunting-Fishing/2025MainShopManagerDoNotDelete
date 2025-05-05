@@ -7,7 +7,6 @@ import {
 } from "@/components/ui/sheet";
 import { useSidebar } from '@/hooks/use-sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Sidebar } from "@/components/ui/sidebar";
 import { SidebarContent } from './sidebar/SidebarContent';
 
 export function AppSidebar() {
@@ -31,9 +30,11 @@ export function AppSidebar() {
           </SheetContent>
         </Sheet>
       ) : (
-        <Sidebar>
+        <div 
+          className="h-screen fixed left-0 top-0 z-30 flex w-[280px] flex-col border-r bg-gradient-to-b from-indigo-700 to-purple-800 text-white transition-all"
+        >
           <SidebarContent />
-        </Sidebar>
+        </div>
       )}
     </>
   );

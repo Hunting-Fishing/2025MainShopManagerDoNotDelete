@@ -86,9 +86,18 @@ export const routes: RouteObject[] = [
         path: 'tools/:category/:toolId',
         element: <ToolDetailPage />,
       },
+      // Shopping routes - maintain the same component as tools for now
       {
-        path: 'manufacturers/:manufacturerSlug',
-        element: <ManufacturerPage />,
+        path: 'shopping',
+        element: <AffiliateTool />,
+      },
+      {
+        path: 'shopping/:category',
+        element: <ToolCategoryPage />,
+      },
+      {
+        path: 'shopping/:category/:productId',
+        element: <ToolDetailPage />,
       },
       {
         path: 'settings',
@@ -114,19 +123,6 @@ export const routes: RouteObject[] = [
       {
         path: 'developer/service-management',
         element: <ServiceManagement />,
-      },
-      // Shopping routes - maintain the same component as tools for now
-      {
-        path: 'shopping',
-        element: <AffiliateTool />,
-      },
-      {
-        path: 'shopping/:category',
-        element: <ToolCategoryPage />,
-      },
-      {
-        path: 'shopping/:category/:productId',
-        element: <ToolDetailPage />,
       },
       // Forms route
       {
