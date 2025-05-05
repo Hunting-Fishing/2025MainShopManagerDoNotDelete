@@ -1,139 +1,99 @@
 
-import { supabase } from "@/lib/supabase";
-import { InventoryOrder, CreateInventoryOrderDto, UpdateInventoryOrderDto, ReceiveInventoryOrderDto } from "@/types/inventory/orders";
+import { supabase } from '@/lib/supabase';
+import { InventoryOrder, CreateInventoryOrderDto, UpdateInventoryOrderDto, ReceiveInventoryOrderDto } from '@/types/inventory/orders';
 
-// Get all inventory orders
-export const getInventoryOrders = async (): Promise<InventoryOrder[]> => {
-  const { data, error } = await supabase
-    .from('inventory_orders')
-    .select(`
-      *,
-      inventory_items (id, name)
-    `)
-    .order('order_date', { ascending: false });
+// Fetch all inventory orders
+export async function getAllInventoryOrders(): Promise<InventoryOrder[]> {
+  try {
+    const { data, error } = await supabase
+      .from('inventory_orders')
+      .select(`
+        *,
+        inventory_items:item_id (name)
+      `)
+      .order('order_date', { ascending: false });
 
-  if (error) {
-    console.error("Error fetching inventory orders:", error);
+    if (error) throw error;
+
+    // Transform data to include item_name from the join
+    return data.map(order => ({
+      ...order,
+      item_name: order.inventory_items?.name,
+    }));
+  } catch (error) {
+    console.error('Error fetching inventory orders:', error);
     throw error;
   }
+}
 
-  // Format the data to include the item name
-  return data.map(order => ({
-    ...order,
-    item_name: order.inventory_items?.name
-  }));
-};
+// Create new inventory order
+export async function createInventoryOrder(orderData: CreateInventoryOrderDto): Promise<InventoryOrder> {
+  try {
+    const { data, error } = await supabase
+      .from('inventory_orders')
+      .insert(orderData)
+      .select()
+      .single();
 
-// Get inventory order by ID
-export const getInventoryOrderById = async (id: string): Promise<InventoryOrder> => {
-  const { data, error } = await supabase
-    .from('inventory_orders')
-    .select(`
-      *,
-      inventory_items (id, name)
-    `)
-    .eq('id', id)
-    .single();
-
-  if (error) {
-    console.error(`Error fetching inventory order ${id}:`, error);
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error creating inventory order:', error);
     throw error;
   }
+}
 
-  return {
-    ...data,
-    item_name: data.inventory_items?.name
-  };
-};
+// Receive inventory (partial or full)
+export async function receiveInventoryOrder(receiveData: ReceiveInventoryOrderDto): Promise<void> {
+  try {
+    const { data, error } = await supabase
+      .rpc('receive_inventory_order', {
+        order_id: receiveData.order_id,
+        quantity_to_receive: receiveData.quantity_to_receive
+      });
 
-// Create inventory order
-export const createInventoryOrder = async (order: CreateInventoryOrderDto): Promise<InventoryOrder> => {
-  const { data, error } = await supabase
-    .from('inventory_orders')
-    .insert(order)
-    .select()
-    .single();
-
-  if (error) {
-    console.error("Error creating inventory order:", error);
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error receiving inventory:', error);
     throw error;
   }
+}
 
-  return data;
-};
+// Cancel an inventory order
+export async function cancelInventoryOrder(orderId: string): Promise<InventoryOrder> {
+  try {
+    const { data, error } = await supabase
+      .from('inventory_orders')
+      .update({ status: 'cancelled' })
+      .eq('id', orderId)
+      .select()
+      .single();
 
-// Update inventory order
-export const updateInventoryOrder = async (id: string, updates: UpdateInventoryOrderDto): Promise<InventoryOrder> => {
-  const { data, error } = await supabase
-    .from('inventory_orders')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) {
-    console.error(`Error updating inventory order ${id}:`, error);
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error cancelling inventory order:', error);
     throw error;
   }
+}
 
-  return data;
-};
+// Update an inventory order
+export async function updateInventoryOrder(
+  orderId: string, 
+  updateData: UpdateInventoryOrderDto
+): Promise<InventoryOrder> {
+  try {
+    const { data, error } = await supabase
+      .from('inventory_orders')
+      .update(updateData)
+      .eq('id', orderId)
+      .select()
+      .single();
 
-// Receive inventory
-export const receiveInventoryOrder = async ({ order_id, quantity_to_receive }: ReceiveInventoryOrderDto): Promise<boolean> => {
-  const { data, error } = await supabase
-    .rpc('receive_inventory_order', {
-      order_id,
-      quantity_to_receive
-    });
-
-  if (error) {
-    console.error("Error receiving inventory:", error);
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error updating inventory order:', error);
     throw error;
   }
-
-  return true;
-};
-
-// Cancel inventory order
-export const cancelInventoryOrder = async (id: string): Promise<InventoryOrder> => {
-  const { data, error } = await supabase
-    .from('inventory_orders')
-    .update({ status: 'cancelled' })
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) {
-    console.error(`Error cancelling inventory order ${id}:`, error);
-    throw error;
-  }
-
-  return data;
-};
-
-// Get overdue orders (expected arrival date in the past and not fully received)
-export const getOverdueOrders = async (): Promise<InventoryOrder[]> => {
-  const today = new Date().toISOString().split('T')[0];
-  
-  const { data, error } = await supabase
-    .from('inventory_orders')
-    .select(`
-      *,
-      inventory_items (id, name)
-    `)
-    .lt('expected_arrival', today)
-    .neq('status', 'received')
-    .neq('status', 'cancelled')
-    .order('expected_arrival', { ascending: true });
-
-  if (error) {
-    console.error("Error fetching overdue orders:", error);
-    throw error;
-  }
-
-  return data.map(order => ({
-    ...order,
-    item_name: order.inventory_items?.name
-  }));
-};
+}

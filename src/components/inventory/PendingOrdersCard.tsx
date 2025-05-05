@@ -1,87 +1,81 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useInventoryOrders } from "@/hooks/inventory/useInventoryOrders";
+import { Badge } from "@/components/ui/badge";
+import { ShoppingCart, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { getAllInventoryOrders } from "@/services/inventory/orderService";
+import { InventoryOrder } from "@/types/inventory/orders";
 import { Link } from "react-router-dom";
-import { ShoppingCart, ArrowRight } from "lucide-react";
-import { format } from "date-fns";
 
 export function PendingOrdersCard() {
-  const { orders, loadOrders, loading } = useInventoryOrders();
-  
+  const [pendingOrders, setPendingOrders] = useState<InventoryOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
-    loadOrders();
-  }, [loadOrders]);
+    const fetchOrders = async () => {
+      try {
+        const orders = await getAllInventoryOrders();
+        // Filter only active orders (ordered or partially received)
+        const active = orders.filter(
+          order => order.status === 'ordered' || order.status === 'partially received'
+        );
+        setPendingOrders(active);
+      } catch (err) {
+        setError("Failed to load pending orders");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
+
+  // Get count of overdue orders
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
   
-  // Only show active orders (ordered or partially received)
-  const activeOrders = orders.filter(order => 
-    order.status === "ordered" || order.status === "partially received"
-  );
-  
-  if (loading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <ShoppingCart className="h-5 w-5 mr-2" />
-            Pending Orders
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-gray-500">Loading pending orders...</p>
-        </CardContent>
-      </Card>
-    );
-  }
-  
-  if (activeOrders.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <ShoppingCart className="h-5 w-5 mr-2" />
-            Pending Orders
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-gray-500">No pending orders found.</p>
-        </CardContent>
-      </Card>
-    );
-  }
-  
+  const overdueCount = pendingOrders.filter(order => {
+    const expectedDate = new Date(order.expected_arrival);
+    expectedDate.setHours(0, 0, 0, 0);
+    return expectedDate < today;
+  }).length;
+
   return (
-    <Card>
+    <Card className="bg-white shadow-sm hover:shadow-md transition-shadow duration-200">
       <CardHeader>
-        <CardTitle className="flex items-center">
-          <ShoppingCart className="h-5 w-5 mr-2" />
-          Pending Orders ({activeOrders.length})
+        <CardTitle className="text-lg flex items-center">
+          <ShoppingCart className="mr-2 h-5 w-5 text-blue-600" />
+          Pending Orders
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          <ul className="space-y-2">
-            {activeOrders.slice(0, 3).map(order => (
-              <li key={order.id} className="text-sm">
-                <span className="font-medium">{order.item_name}</span>
-                <div className="flex justify-between text-gray-500 text-xs">
-                  <span>Qty: {order.quantity_ordered}</span>
-                  <span>Expected: {format(new Date(order.expected_arrival), "MMM d")}</span>
+        {loading ? (
+          <p className="text-sm text-gray-500">Loading orders...</p>
+        ) : error ? (
+          <p className="text-sm text-red-500">{error}</p>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200 border border-blue-300">
+                {pendingOrders.length} Active Order{pendingOrders.length !== 1 ? 's' : ''}
+              </Badge>
+              
+              {overdueCount > 0 && (
+                <div className="flex items-center text-red-600 text-sm font-medium">
+                  <AlertCircle className="h-4 w-4 mr-1" />
+                  {overdueCount} Overdue
                 </div>
-              </li>
-            ))}
-            {activeOrders.length > 3 && (
-              <li className="text-sm text-gray-500">
-                + {activeOrders.length - 3} more pending orders
-              </li>
-            )}
-          </ul>
-          
-          <Link to="/inventory/orders" className="flex items-center text-sm text-blue-600 hover:text-blue-800">
-            View all orders
-            <ArrowRight className="h-3 w-3 ml-1" />
-          </Link>
-        </div>
+              )}
+            </div>
+            
+            <Button asChild className="w-full mt-2">
+              <Link to="/inventory/orders">Manage Orders</Link>
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

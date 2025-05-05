@@ -1,210 +1,161 @@
 
-import { useState, useCallback } from "react";
-import { InventoryOrder, CreateInventoryOrderDto, UpdateInventoryOrderDto, ReceiveInventoryOrderDto } from "@/types/inventory/orders";
+import { useState, useEffect } from 'react';
+import { toast } from '@/hooks/use-toast';
 import { 
-  getInventoryOrders, 
-  getInventoryOrderById,
-  createInventoryOrder,
-  updateInventoryOrder,
-  receiveInventoryOrder,
-  cancelInventoryOrder,
-  getOverdueOrders
-} from "@/services/inventory/orderService";
-import { toast } from "@/hooks/use-toast";
+  getAllInventoryOrders, 
+  createInventoryOrder, 
+  receiveInventoryOrder, 
+  cancelInventoryOrder 
+} from '@/services/inventory/orderService';
+import { 
+  InventoryOrder, 
+  CreateInventoryOrderDto, 
+  ReceiveInventoryOrderDto 
+} from '@/types/inventory/orders';
 
 export function useInventoryOrders() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [orders, setOrders] = useState<InventoryOrder[]>([]);
-  const [selectedOrder, setSelectedOrder] = useState<InventoryOrder | null>(null);
-  const [overdueOrders, setOverdueOrders] = useState<InventoryOrder[]>([]);
+  const [filteredOrders, setFilteredOrders] = useState<InventoryOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [supplierFilter, setSupplierFilter] = useState<string>('');
+  const [dateRangeFilter, setDateRangeFilter] = useState<{from?: Date, to?: Date}>({});
 
-  // Load all inventory orders
-  const loadOrders = useCallback(async () => {
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  useEffect(() => {
+    applyFilters();
+  }, [orders, statusFilter, supplierFilter, dateRangeFilter]);
+
+  const fetchOrders = async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getInventoryOrders();
+      const data = await getAllInventoryOrders();
       setOrders(data);
-      return data;
-    } catch (err) {
-      const errorMessage = "Failed to load inventory orders";
-      setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Load overdue orders
-  const loadOverdueOrders = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getOverdueOrders();
-      setOverdueOrders(data);
-      return data;
-    } catch (err) {
-      const errorMessage = "Failed to load overdue orders";
-      setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Load a specific inventory order
-  const loadOrder = useCallback(async (id: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getInventoryOrderById(id);
-      setSelectedOrder(data);
-      return data;
-    } catch (err) {
-      const errorMessage = `Failed to load order ${id}`;
-      setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Create a new inventory order
-  const addOrder = useCallback(async (order: CreateInventoryOrderDto) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await createInventoryOrder(order);
-      toast({
-        title: "Order Created",
-        description: "Inventory order has been created successfully",
-        variant: "default",
-      });
-      await loadOrders();
-      return result;
-    } catch (err) {
-      const errorMessage = "Failed to create inventory order";
-      setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, [loadOrders]);
-
-  // Update an existing inventory order
-  const updateOrder = useCallback(async (id: string, updates: UpdateInventoryOrderDto) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await updateInventoryOrder(id, updates);
-      toast({
-        title: "Order Updated",
-        description: "Inventory order has been updated successfully",
-        variant: "default",
-      });
-      await loadOrders();
-      return result;
-    } catch (err) {
-      const errorMessage = `Failed to update order ${id}`;
-      setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, [loadOrders]);
-
-  // Receive items for an order
-  const receiveItems = useCallback(async (params: ReceiveInventoryOrderDto) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await receiveInventoryOrder(params);
-      toast({
-        title: "Items Received",
-        description: "Inventory has been updated successfully",
-        variant: "default",
-      });
-      await loadOrders();
-      return result;
+      setFilteredOrders(data);
     } catch (err: any) {
-      const errorMessage = `Failed to receive items: ${err.message || "Unknown error"}`;
-      setError(errorMessage);
+      setError(err.message || 'Failed to fetch inventory orders');
       toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to fetch inventory orders',
+        variant: 'destructive',
       });
-      return false;
     } finally {
       setLoading(false);
     }
-  }, [loadOrders]);
+  };
 
-  // Cancel an inventory order
-  const cancelOrder = useCallback(async (id: string) => {
-    setLoading(true);
-    setError(null);
+  const createOrder = async (orderData: CreateInventoryOrderDto) => {
     try {
-      const result = await cancelInventoryOrder(id);
+      await createInventoryOrder(orderData);
       toast({
-        title: "Order Cancelled",
-        description: "Inventory order has been cancelled",
-        variant: "default",
+        title: 'Success',
+        description: 'Order created successfully',
+        variant: 'success',
       });
-      await loadOrders();
-      return result;
-    } catch (err) {
-      const errorMessage = `Failed to cancel order ${id}`;
-      setError(errorMessage);
+      await fetchOrders();
+    } catch (err: any) {
       toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
+        title: 'Error',
+        description: err.message || 'Failed to create order',
+        variant: 'destructive',
       });
-      return null;
-    } finally {
-      setLoading(false);
+      throw err;
     }
-  }, [loadOrders]);
+  };
+
+  const receiveOrder = async (receiveData: ReceiveInventoryOrderDto) => {
+    try {
+      await receiveInventoryOrder(receiveData);
+      toast({
+        title: 'Success',
+        description: 'Inventory received successfully',
+        variant: 'success',
+      });
+      await fetchOrders();
+    } catch (err: any) {
+      toast({
+        title: 'Error',
+        description: err.message || 'Failed to receive inventory',
+        variant: 'destructive',
+      });
+      throw err;
+    }
+  };
+
+  const cancelOrder = async (orderId: string) => {
+    try {
+      await cancelInventoryOrder(orderId);
+      toast({
+        title: 'Success',
+        description: 'Order cancelled successfully',
+        variant: 'success',
+      });
+      await fetchOrders();
+    } catch (err: any) {
+      toast({
+        title: 'Error',
+        description: err.message || 'Failed to cancel order',
+        variant: 'destructive',
+      });
+      throw err;
+    }
+  };
+
+  const applyFilters = () => {
+    let filtered = [...orders];
+
+    // Apply status filter
+    if (statusFilter.length > 0) {
+      filtered = filtered.filter(order => statusFilter.includes(order.status));
+    }
+
+    // Apply supplier filter
+    if (supplierFilter) {
+      filtered = filtered.filter(order => 
+        order.supplier.toLowerCase().includes(supplierFilter.toLowerCase())
+      );
+    }
+
+    // Apply date range filter
+    if (dateRangeFilter.from) {
+      const fromDate = new Date(dateRangeFilter.from);
+      fromDate.setHours(0, 0, 0, 0);
+      filtered = filtered.filter(order => {
+        const orderDate = new Date(order.order_date);
+        return orderDate >= fromDate;
+      });
+    }
+
+    if (dateRangeFilter.to) {
+      const toDate = new Date(dateRangeFilter.to);
+      toDate.setHours(23, 59, 59, 999);
+      filtered = filtered.filter(order => {
+        const orderDate = new Date(order.order_date);
+        return orderDate <= toDate;
+      });
+    }
+
+    setFilteredOrders(filtered);
+  };
 
   return {
+    orders: filteredOrders,
     loading,
     error,
-    orders,
-    selectedOrder,
-    overdueOrders,
-    loadOrders,
-    loadOrder,
-    addOrder,
-    updateOrder,
-    receiveItems,
+    statusFilter,
+    setStatusFilter,
+    supplierFilter,
+    setSupplierFilter,
+    dateRangeFilter,
+    setDateRangeFilter,
+    createOrder,
+    receiveOrder,
     cancelOrder,
-    loadOverdueOrders,
+    refreshOrders: fetchOrders
   };
 }

@@ -1,5 +1,5 @@
 
-import { InventoryOrder } from "@/types/inventory/orders";
+import { format } from "date-fns";
 import { 
   Table, 
   TableBody, 
@@ -8,129 +8,123 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { format } from "date-fns";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileEdit, Package, X } from "lucide-react";
-import { useReceiveDialog } from "./useReceiveDialog";
-import { useCancelDialog } from "./useCancelDialog";
-
-// Status badge colors
-const statusColors = {
-  "ordered": "bg-blue-100 text-blue-800",
-  "partially received": "bg-yellow-100 text-yellow-800",
-  "received": "bg-green-100 text-green-800",
-  "cancelled": "bg-red-100 text-red-800"
-};
+import { 
+  CheckCircle, 
+  Clock, 
+  XCircle, 
+  Package 
+} from "lucide-react";
+import { InventoryOrder } from "@/types/inventory/orders";
+import { Badge } from "@/components/ui/badge";
 
 interface InventoryOrdersTableProps {
   orders: InventoryOrder[];
+  onReceive: (order: InventoryOrder) => void;
+  onCancel: (order: InventoryOrder) => void;
 }
 
-export function InventoryOrdersTable({ orders }: InventoryOrdersTableProps) {
-  const { openReceiveDialog } = useReceiveDialog();
-  const { openCancelDialog } = useCancelDialog();
-  
-  // Check if an order is overdue but not received/cancelled
-  const isOverdue = (order: InventoryOrder) => {
-    const today = new Date();
-    const expectedDate = new Date(order.expected_arrival);
-    return (
-      expectedDate < today && 
-      order.status !== "received" && 
-      order.status !== "cancelled"
-    );
+export function InventoryOrdersTable({ 
+  orders, 
+  onReceive, 
+  onCancel 
+}: InventoryOrdersTableProps) {
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'ordered':
+        return <Badge variant="outline" className="bg-blue-100 text-blue-800 border border-blue-300">Ordered</Badge>;
+      case 'partially received':
+        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border border-yellow-300">Partially Received</Badge>;
+      case 'received':
+        return <Badge variant="outline" className="bg-green-100 text-green-800 border border-green-300">Received</Badge>;
+      case 'cancelled':
+        return <Badge variant="outline" className="bg-red-100 text-red-800 border border-red-300">Cancelled</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
   };
-  
+
+  const isOverdue = (expectedArrival: string) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const expectedDate = new Date(expectedArrival);
+    expectedDate.setHours(0, 0, 0, 0);
+    
+    return expectedDate < today;
+  };
+
   if (orders.length === 0) {
     return (
-      <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-        <Package className="mx-auto h-12 w-12 text-gray-400" />
-        <h3 className="mt-2 text-sm font-medium text-gray-900">No orders found</h3>
-        <p className="mt-1 text-sm text-gray-500">
-          No inventory orders match your current filter settings.
+      <div className="flex flex-col items-center justify-center p-8">
+        <Package className="h-16 w-16 text-gray-300 mb-4" />
+        <h3 className="text-lg font-medium">No orders found</h3>
+        <p className="text-sm text-gray-500">
+          No inventory orders match your current filters.
         </p>
       </div>
     );
   }
-  
+
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
+    <div className="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Item</TableHead>
-            <TableHead>Order Date</TableHead>
-            <TableHead>Expected Arrival</TableHead>
             <TableHead>Supplier</TableHead>
+            <TableHead>Ordered</TableHead>
+            <TableHead>Expected Arrival</TableHead>
             <TableHead>Quantity</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {orders.map((order) => (
-            <TableRow key={order.id} className={isOverdue(order) ? "bg-red-50" : ""}>
-              <TableCell className="font-medium">{order.item_name}</TableCell>
-              <TableCell>{format(new Date(order.order_date), "MMM d, yyyy")}</TableCell>
-              <TableCell className={isOverdue(order) ? "text-red-600 font-medium" : ""}>
-                {format(new Date(order.expected_arrival), "MMM d, yyyy")}
-                {isOverdue(order) && (
-                  <span className="ml-2 text-xs bg-red-100 text-red-800 py-0.5 px-2 rounded-full">
-                    Overdue
-                  </span>
-                )}
-              </TableCell>
-              <TableCell>{order.supplier}</TableCell>
-              <TableCell>
-                {order.quantity_received > 0 ? (
-                  <span>
-                    {order.quantity_received} / {order.quantity_ordered}
-                  </span>
-                ) : (
-                  order.quantity_ordered
-                )}
-              </TableCell>
-              <TableCell>
-                <Badge 
-                  className={`${statusColors[order.status as keyof typeof statusColors]} border-none`}
-                >
-                  {order.status}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-right space-x-2">
-                {(order.status === "ordered" || order.status === "partially received") && (
-                  <>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => openReceiveDialog(order)}
-                      className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
-                    >
-                      Receive
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => openCancelDialog(order.id)}
-                      className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </>
-                )}
-                {(order.status === "received" || order.status === "cancelled") && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    disabled
-                  >
-                    Complete
-                  </Button>
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
+          {orders.map((order) => {
+            const overdueOrder = isOverdue(order.expected_arrival) && 
+                               (order.status !== 'received' && order.status !== 'cancelled');
+            
+            return (
+              <TableRow key={order.id} className={overdueOrder ? "bg-red-50" : ""}>
+                <TableCell className="font-medium">{order.item_name}</TableCell>
+                <TableCell>{order.supplier}</TableCell>
+                <TableCell>{format(new Date(order.order_date), "PP")}</TableCell>
+                <TableCell className={overdueOrder ? "text-red-600 font-medium" : ""}>
+                  {format(new Date(order.expected_arrival), "PP")}
+                  {overdueOrder && <Clock className="inline-block ml-1 h-4 w-4" />}
+                </TableCell>
+                <TableCell>
+                  {order.quantity_received} / {order.quantity_ordered}
+                </TableCell>
+                <TableCell>{getStatusBadge(order.status)}</TableCell>
+                <TableCell className="text-right">
+                  {(order.status === 'ordered' || order.status === 'partially received') && (
+                    <>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 w-8 p-0 mr-2" 
+                        onClick={() => onReceive(order)}
+                      >
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <span className="sr-only">Receive</span>
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 w-8 p-0" 
+                        onClick={() => onCancel(order)}
+                      >
+                        <XCircle className="h-4 w-4 text-red-600" />
+                        <span className="sr-only">Cancel</span>
+                      </Button>
+                    </>
+                  )}
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>
