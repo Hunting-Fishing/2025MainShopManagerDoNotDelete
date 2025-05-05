@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { ServiceHierarchyBrowser } from './ServiceHierarchyBrowser';
-import { fetchServiceCategories } from '@/lib/services/serviceApi';
-import { ServiceMainCategory } from '@/types/serviceHierarchy';
+import { fetchServiceCategories, saveServiceCategory } from '@/lib/services/serviceApi';
+import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
 import { SearchAndFilterBar } from './SearchAndFilterBar';
 import { categoryColors, assignCategoryColors } from './CategoryColorConfig';
 import { Badge } from '@/components/ui/badge';
@@ -117,6 +116,71 @@ export const ServiceHierarchyManager: React.FC = () => {
       setSelectedJobId(id);
     }
   };
+
+  // Handle inline updates from double-click editing
+  const handleUpdateItem = async (type: 'category' | 'subcategory' | 'job', id: string, newName: string) => {
+    try {
+      // Create a deep copy of the categories for updating
+      const updatedCategories = JSON.parse(JSON.stringify(categories)) as ServiceMainCategory[];
+      
+      if (type === 'category') {
+        const categoryIndex = updatedCategories.findIndex(cat => cat.id === id);
+        if (categoryIndex !== -1) {
+          updatedCategories[categoryIndex].name = newName;
+          
+          // Save to database
+          await saveServiceCategory(updatedCategories[categoryIndex]);
+          toast.success(`Category "${newName}" updated successfully`);
+        }
+      } else if (type === 'subcategory') {
+        const categoryIndex = updatedCategories.findIndex(cat => 
+          cat.subcategories.some(sub => sub.id === id)
+        );
+        
+        if (categoryIndex !== -1) {
+          const subcategoryIndex = updatedCategories[categoryIndex].subcategories.findIndex(
+            sub => sub.id === id
+          );
+          
+          if (subcategoryIndex !== -1) {
+            updatedCategories[categoryIndex].subcategories[subcategoryIndex].name = newName;
+            
+            // Save to database
+            await saveServiceCategory(updatedCategories[categoryIndex]);
+            toast.success(`Subcategory "${newName}" updated successfully`);
+          }
+        }
+      } else if (type === 'job') {
+        for (const category of updatedCategories) {
+          for (const subcategory of category.subcategories) {
+            const jobIndex = subcategory.jobs.findIndex(job => job.id === id);
+            if (jobIndex !== -1) {
+              subcategory.jobs[jobIndex].name = newName;
+              
+              // Save parent category to database
+              await saveServiceCategory(category);
+              toast.success(`Service "${newName}" updated successfully`);
+              break;
+            }
+          }
+        }
+      }
+      
+      // Update local state
+      setCategories(updatedCategories);
+      
+      // Update filtered categories while preserving filters
+      if (searchQuery || activeFilters.length > 0) {
+        applyFiltersAndSearch(searchQuery, activeFilters);
+      } else {
+        setFilteredCategories(updatedCategories);
+      }
+      
+    } catch (error) {
+      console.error('Error updating item:', error);
+      toast.error(`Failed to update item: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
   
   // Get category names for filtering
   const categoryNames = categories.map(cat => cat.name);
@@ -193,6 +257,7 @@ export const ServiceHierarchyManager: React.FC = () => {
         onSelectItem={handleSelectItem}
         categoryColorMap={categoryColorMap}
         categoryColors={categoryColors}
+        onUpdateItem={handleUpdateItem}
       />
       
       {filteredCategories.length === 0 && !loading && (

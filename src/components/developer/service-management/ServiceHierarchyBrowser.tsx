@@ -1,9 +1,10 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 
 interface CategoryColorStyle {
   bg: string;
@@ -21,6 +22,7 @@ interface ServiceHierarchyBrowserProps {
   onSelectItem: (type: 'category' | 'subcategory' | 'job', id: string | null) => void;
   categoryColorMap?: Record<string, string>;
   categoryColors?: CategoryColorStyle[];
+  onUpdateItem?: (type: 'category' | 'subcategory' | 'job', id: string, name: string) => void;
 }
 
 export const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = ({
@@ -32,8 +34,42 @@ export const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = (
   selectedJobId,
   onSelectItem,
   categoryColorMap = {},
-  categoryColors = []
+  categoryColors = [],
+  onUpdateItem
 }) => {
+  // State for inline editing
+  const [editingType, setEditingType] = useState<'category' | 'subcategory' | 'job' | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState<string>('');
+
+  // Handle double click to start editing
+  const handleDoubleClick = (type: 'category' | 'subcategory' | 'job', id: string, name: string) => {
+    setEditingType(type);
+    setEditingId(id);
+    setEditingName(name);
+  };
+
+  // Handle edit save
+  const handleEditSave = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && editingId && editingType && onUpdateItem) {
+      onUpdateItem(editingType, editingId, editingName);
+      setEditingType(null);
+      setEditingId(null);
+    } else if (e.key === 'Escape') {
+      setEditingType(null);
+      setEditingId(null);
+    }
+  };
+
+  // Handle edit blur (save on blur)
+  const handleEditBlur = () => {
+    if (editingId && editingType && onUpdateItem) {
+      onUpdateItem(editingType, editingId, editingName);
+      setEditingType(null);
+      setEditingId(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-60">
@@ -85,6 +121,7 @@ export const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = (
             <div className="p-2">
               {categories.map(category => {
                 const colorStyle = getCategoryColorStyle(category.id);
+                const isEditing = editingType === 'category' && editingId === category.id;
                 
                 return (
                   <div
@@ -95,9 +132,22 @@ export const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = (
                         : 'hover:bg-gray-50'
                     }`}
                     onClick={() => onSelectItem('category', category.id)}
+                    onDoubleClick={() => handleDoubleClick('category', category.id, category.name)}
                   >
                     <div className="flex justify-between items-center">
-                      <span>{category.name}</span>
+                      {isEditing ? (
+                        <Input
+                          autoFocus
+                          value={editingName}
+                          onChange={(e) => setEditingName(e.target.value)}
+                          onKeyDown={handleEditSave}
+                          onBlur={handleEditBlur}
+                          className="py-0 h-6 text-sm"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      ) : (
+                        <span>{category.name}</span>
+                      )}
                       <Badge 
                         className={`${colorStyle.bg} ${colorStyle.text} border ${colorStyle.border} text-xs`}
                       >
@@ -126,6 +176,7 @@ export const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = (
                     .find(cat => cat.id === selectedCategoryId)
                     ?.subcategories.map(subcategory => {
                       const colorStyle = getCategoryColorStyle(selectedCategoryId);
+                      const isEditing = editingType === 'subcategory' && editingId === subcategory.id;
                       
                       return (
                         <div
@@ -136,9 +187,22 @@ export const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = (
                               : 'hover:bg-gray-50'
                           }`}
                           onClick={() => onSelectItem('subcategory', subcategory.id)}
+                          onDoubleClick={() => handleDoubleClick('subcategory', subcategory.id, subcategory.name)}
                         >
                           <div className="flex justify-between items-center">
-                            <span>{subcategory.name}</span>
+                            {isEditing ? (
+                              <Input
+                                autoFocus
+                                value={editingName}
+                                onChange={(e) => setEditingName(e.target.value)}
+                                onKeyDown={handleEditSave}
+                                onBlur={handleEditBlur}
+                                className="py-0 h-6 text-sm"
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            ) : (
+                              <span>{subcategory.name}</span>
+                            )}
                             <Badge 
                               className={`${colorStyle.bg} ${colorStyle.text} border ${colorStyle.border} text-xs`}
                             >
@@ -181,6 +245,7 @@ export const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = (
                     ?.subcategories.find(sub => sub.id === selectedSubcategoryId)
                     ?.jobs.map(job => {
                       const colorStyle = getCategoryColorStyle(selectedCategoryId || '');
+                      const isEditing = editingType === 'job' && editingId === job.id;
                       
                       return (
                         <div
@@ -191,8 +256,23 @@ export const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = (
                               : 'hover:bg-gray-50'
                           }`}
                           onClick={() => onSelectItem('job', job.id)}
+                          onDoubleClick={() => handleDoubleClick('job', job.id, job.name)}
                         >
-                          <div className="font-medium">{job.name}</div>
+                          <div className="font-medium">
+                            {isEditing ? (
+                              <Input
+                                autoFocus
+                                value={editingName}
+                                onChange={(e) => setEditingName(e.target.value)}
+                                onKeyDown={handleEditSave}
+                                onBlur={handleEditBlur}
+                                className="py-0 h-6 text-sm"
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            ) : (
+                              job.name
+                            )}
+                          </div>
                           <div className="text-xs text-gray-500 flex justify-between mt-1">
                             <span>${job.price?.toFixed(2) || '0.00'}</span>
                             <span>{job.estimatedTime || 0} min</span>
