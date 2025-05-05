@@ -7,9 +7,24 @@ import { WorkOrderTemplate } from "@/types/workOrder";
 import { useSearchParams } from "react-router-dom";
 import { ResponsiveContainer } from "@/components/ui/responsive-container";
 import { toast } from "@/hooks/use-toast";
-import { useTechnicians } from "@/hooks/useTechnicians";
 import { useWorkOrderTemplates } from "@/hooks/useWorkOrderTemplates";
 import { WorkOrderPageLayout } from "@/components/work-orders/WorkOrderPageLayout";
+
+// Define a minimal technician type
+type Technician = string;
+
+// Mock function to get technicians - this would normally come from a hook or API
+const useTechnicians = () => {
+  const [technicians, setTechnicians] = useState<Technician[]>([
+    "John Smith",
+    "Jane Doe",
+    "Mike Johnson",
+    "Sarah Williams"
+  ]);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  return { technicians, isLoading };
+};
 
 export default function WorkOrderCreate() {
   const { templates: workOrderTemplates, updateTemplateUsage } = useWorkOrderTemplates();
