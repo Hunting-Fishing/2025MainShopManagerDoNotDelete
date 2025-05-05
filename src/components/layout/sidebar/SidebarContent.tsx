@@ -3,11 +3,11 @@ import React from "react";
 import { Separator } from "@/components/ui/separator";
 import { SidebarLogo } from "./SidebarLogo";
 import { SidebarNavList } from "./SidebarNavList";
-import { useSidebar } from "@/components/ui/sidebar";
+import { useSidebarContext } from "@/hooks/use-sidebar";
 import { cn } from "@/lib/utils";
 
 export function SidebarContent() {
-  const { collapsed } = useSidebar();
+  const { collapsed } = useSidebarContext();
   
   return (
     <>

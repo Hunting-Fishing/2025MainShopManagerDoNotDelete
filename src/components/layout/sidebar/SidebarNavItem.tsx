@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { useSidebar } from "@/components/ui/sidebar";
+import { useSidebarContext } from "@/hooks/use-sidebar";
 
 export interface NavItem {
   title: string;
@@ -36,7 +36,7 @@ interface DirectNavItemProps {
 export function SidebarNavItem(props: SidebarNavItemProps | DirectNavItemProps) {
   const location = useLocation();
   const [isSubmenuOpen, setIsSubmenuOpen] = useState(false);
-  const { collapsed } = useSidebar();
+  const { collapsed } = useSidebarContext();
   
   // Handle both formats (backward compatibility)
   const navItem: NavItem = props.item || {
