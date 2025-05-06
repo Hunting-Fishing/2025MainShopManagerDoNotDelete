@@ -15,9 +15,9 @@ import {
   ShoppingCart,
   FileText,
   MessageSquare,
-  Tool,
   AlarmClock,
   LineChart,
+  Hammer,
   LucideIcon
 } from 'lucide-react';
 
@@ -26,7 +26,7 @@ const navItems = [
   { path: '/dashboard', name: 'Dashboard', icon: LayoutDashboard },
   { path: '/customers', name: 'Customers', icon: Users },
   { path: '/work-orders', name: 'Work Orders', icon: Wrench },
-  { path: '/equipment', name: 'Equipment', icon: Tool },
+  { path: '/equipment', name: 'Equipment', icon: Hammer },
   { path: '/inventory', name: 'Inventory', icon: Package },
   { path: '/invoices', name: 'Invoices', icon: FileText },
   { path: '/calendar', name: 'Calendar', icon: Calendar },
