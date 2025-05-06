@@ -42,6 +42,7 @@ import InventoryOrders from '@/pages/InventoryOrders';
 import InventoryStock from '@/pages/InventoryStock';
 import InventorySuppliers from '@/pages/InventorySuppliers';
 import InventoryCategories from '@/pages/InventoryCategories';
+import InventoryLocations from '@/pages/InventoryLocations';
 
 // All routes must be declared here to be used by the RouterProvider
 export const routes: RouteObject[] = [
@@ -108,6 +109,10 @@ export const routes: RouteObject[] = [
       {
         path: 'inventory/categories',
         element: <InventoryCategories />,
+      },
+      {
+        path: 'inventory/locations',
+        element: <InventoryLocations />,
       },
       {
         path: 'reports',
