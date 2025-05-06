@@ -25,12 +25,6 @@ jest.mock('../roles/useRoleActions', () => ({
   })),
 }));
 
-jest.mock('../roles/useRoleImportExport', () => ({
-  useRoleImportExport: jest.fn(() => ({
-    handleImportRoles: jest.fn(() => true),
-  })),
-}));
-
 describe('useRoleManagement', () => {
   const mockRoles: Role[] = [
     {
@@ -82,6 +76,5 @@ describe('useRoleManagement', () => {
     expect(result.current.handleDeleteRole).toBeDefined();
     expect(result.current.handleDuplicateRole).toBeDefined();
     expect(result.current.handleReorderRole).toBeDefined();
-    expect(result.current.handleImportRoles).toBeDefined();
   });
 });
