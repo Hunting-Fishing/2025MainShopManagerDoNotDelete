@@ -1,4 +1,3 @@
-
 export interface InventoryItem {
   id: string;
   name: string;
@@ -51,6 +50,12 @@ export interface InventoryItemExtended {
   categoryId?: string;
   locationId?: string;
   supplierId?: string;
+  
+  // Adding missing properties from error messages
+  subcategory?: string;
+  vehicleCompatibility?: string;
+  warrantyPeriod?: string;
+  notes?: string;
 }
 
 export interface AutoReorderSettings {

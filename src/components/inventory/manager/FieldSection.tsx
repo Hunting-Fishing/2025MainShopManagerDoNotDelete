@@ -4,12 +4,12 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
-import { FieldRequirement } from "./InventoryFieldManager";
+import { FieldDefinition } from "./InventoryFieldManager";
 
 interface FieldSectionProps {
   title: string;
   description: string;
-  fields: FieldRequirement[];
+  fields: FieldDefinition[];
   onToggle: (fieldId: string) => void;
 }
 

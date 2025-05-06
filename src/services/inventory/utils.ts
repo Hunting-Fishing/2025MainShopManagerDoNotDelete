@@ -49,6 +49,11 @@ export function mapDbItemToInventoryItem(dbItem: any): InventoryItemExtended {
     dateLast: dbItem.date_last || "",
     serialNumbers: dbItem.serial_numbers || "",
     itemCondition: dbItem.item_condition || "New",
+    subcategory: dbItem.subcategory || "",
+    vehicleCompatibility: dbItem.vehicle_compatibility || "",
+    warrantyPeriod: dbItem.warranty_period || "",
+    notes: dbItem.notes || "",
+    barcode: dbItem.barcode || "",
   };
 }
 
@@ -89,6 +94,11 @@ export function mapInventoryItemToDbFormat(item: Partial<InventoryItemExtended>)
   if (item.dateLast !== undefined) dbItem.date_last = item.dateLast;
   if (item.serialNumbers !== undefined) dbItem.serial_numbers = item.serialNumbers;
   if (item.itemCondition !== undefined) dbItem.item_condition = item.itemCondition;
+  if (item.subcategory !== undefined) dbItem.subcategory = item.subcategory;
+  if (item.vehicleCompatibility !== undefined) dbItem.vehicle_compatibility = item.vehicleCompatibility;
+  if (item.warrantyPeriod !== undefined) dbItem.warranty_period = item.warrantyPeriod;
+  if (item.notes !== undefined) dbItem.notes = item.notes;
+  if (item.barcode !== undefined) dbItem.barcode = item.barcode;
   
   return dbItem;
 }
