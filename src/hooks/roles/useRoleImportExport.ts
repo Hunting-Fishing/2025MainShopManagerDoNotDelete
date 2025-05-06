@@ -1,67 +1,52 @@
 
 import { Role } from "@/types/team";
-import { toast } from "@/hooks/use-toast";
-import { validateImportedRoles } from "@/utils/roleImportExport";
+import { saveAs } from "file-saver";
+import { toast } from "sonner";
 
-export function useRoleImportExport(roles: Role[], setRoles: React.Dispatch<React.SetStateAction<Role[]>>) {
-  const handleImportRoles = (importedRoles: Role[]) => {
-    const validation = validateImportedRoles(importedRoles);
-    
-    if (!validation.valid) {
-      toast({
-        title: "Import failed",
-        description: validation.message || "Invalid role data",
-        variant: "destructive",
-      });
-      return false;
+export function useRoleImportExport(roles: Role[], setRoles: (roles: Role[]) => void) {
+  const handleExportRoles = () => {
+    try {
+      const exportData = JSON.stringify(roles, null, 2);
+      const blob = new Blob([exportData], { type: "application/json" });
+      saveAs(blob, `role-definitions-${new Date().toISOString().slice(0, 10)}.json`);
+      toast.success("Roles exported successfully");
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error("Error exporting roles");
     }
-
-    const defaultRoleIds = roles.filter(role => role.isDefault).map(role => role.id);
-    const customImportedRoles = importedRoles.filter(role => !defaultRoleIds.includes(role.id));
-    
-    const existingRoleNames = new Set(roles.map(role => role.name.toLowerCase()));
-    const duplicates = customImportedRoles.filter(role => 
-      existingRoleNames.has(role.name.toLowerCase())
-    );
-    
-    // Get the highest current priority
-    const highestPriority = roles.length > 0 
-      ? Math.max(...roles.map(role => role.priority)) 
-      : 0;
-    
-    // Add priority to imported roles if they don't have it
-    let nextPriority = highestPriority + 1;
-    const processedRoles = customImportedRoles
-      .filter(role => !existingRoleNames.has(role.name.toLowerCase()))
-      .map(role => {
-        if (role.priority === undefined) {
-          const newRole = { ...role, priority: nextPriority };
-          nextPriority++;
-          return newRole;
-        }
-        return role;
-      });
-    
-    if (duplicates.length > 0) {
-      setRoles([...roles, ...processedRoles]);
-      
-      toast({
-        title: "Roles imported with warnings",
-        description: `Imported ${processedRoles.length} roles. ${duplicates.length} roles were skipped due to name conflicts.`,
-        variant: "warning",
-      });
-    } else {
-      setRoles([...roles, ...processedRoles]);
-      
-      toast({
-        title: "Roles imported successfully",
-        description: `Imported ${processedRoles.length} roles`,
-        variant: "success",
-      });
-    }
-    
-    return true;
   };
-
-  return { handleImportRoles };
+  
+  const handleImportRoles = (importedRoles: Role[]) => {
+    try {
+      // Validate imported roles have required properties
+      const validRoles = importedRoles.filter(role => {
+        return role.id && role.name && typeof role.permissions === 'object';
+      });
+      
+      if (validRoles.length === 0) {
+        toast.error("No valid roles found in import file");
+        return;
+      }
+      
+      // Merge with existing roles, avoiding duplicates by ID
+      const existingIds = new Set(roles.map(role => role.id));
+      const newRoles = validRoles.filter(role => !existingIds.has(role.id));
+      
+      if (newRoles.length === 0) {
+        toast.error("All imported roles already exist");
+        return;
+      }
+      
+      setRoles([...roles, ...newRoles]);
+      toast.success(`Imported ${newRoles.length} roles successfully`);
+    } catch (error) {
+      console.error("Import error:", error);
+      toast.error("Error importing roles");
+    }
+  };
+  
+  return {
+    handleExportRoles,
+    handleImportRoles
+  };
 }

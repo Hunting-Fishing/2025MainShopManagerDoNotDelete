@@ -9,13 +9,34 @@ import {
 } from "@/components/ui/card";
 import { PermissionModuleCard } from "./permissions/PermissionModuleCard";
 import { PermissionPresetButtons } from "./permissions/PermissionPresetButtons";
+import { PermissionSet } from "@/types/permissions";
+import { permissionPresets, defaultPermissions } from "@/data/permissionPresets";
 
 interface TeamPermissionsProps {
-  memberId: string;
+  memberId?: string;
+  memberRole?: string;
+  initialPermissions?: PermissionSet;
+  onChange?: (permissions: PermissionSet) => void;
 }
 
-export function TeamPermissions({ memberId }: TeamPermissionsProps) {
-  const [activePreset, setActivePreset] = useState<string | null>(null);
+export function TeamPermissions({ memberId, memberRole, initialPermissions, onChange }: TeamPermissionsProps) {
+  const [activePreset, setActivePreset] = useState<string | null>(memberRole || null);
+  const [permissions, setPermissions] = useState<PermissionSet>(
+    initialPermissions || 
+    (memberRole && permissionPresets[memberRole]) ? 
+      permissionPresets[memberRole as keyof typeof permissionPresets] : 
+      defaultPermissions
+  );
+  
+  const handlePresetChange = (preset: string | null) => {
+    setActivePreset(preset);
+    
+    if (preset && permissionPresets[preset as keyof typeof permissionPresets]) {
+      const newPermissions = permissionPresets[preset as keyof typeof permissionPresets];
+      setPermissions(newPermissions);
+      if (onChange) onChange(newPermissions);
+    }
+  };
   
   return (
     <div className="space-y-6">
@@ -29,7 +50,7 @@ export function TeamPermissions({ memberId }: TeamPermissionsProps) {
         <CardContent className="space-y-6">
           <PermissionPresetButtons 
             activePreset={activePreset}
-            onSelectPreset={setActivePreset}
+            onSelectPreset={handlePresetChange}
           />
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
