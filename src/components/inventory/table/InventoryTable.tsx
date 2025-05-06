@@ -51,7 +51,7 @@ export const InventoryTable = ({ items }: InventoryTableProps) => {
     { id: "notes", label: "Notes", visible: false },
   ];
 
-  const { columns, handleDragEnd } = useColumnDragDrop(initialColumns);
+  const { columns, setColumns, handleDragEnd } = useColumnDragDrop(initialColumns);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -75,7 +75,7 @@ export const InventoryTable = ({ items }: InventoryTableProps) => {
           onDragEnd={handleDragEnd}
           modifiers={[restrictToHorizontalAxis]}
         >
-          <TableHeader columns={columns} />
+          <TableHeader columns={columns} setColumns={setColumns} />
           <TableBody 
             items={items} 
             visibleColumns={visibleColumns} 
