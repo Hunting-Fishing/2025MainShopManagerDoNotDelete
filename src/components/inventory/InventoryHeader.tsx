@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
-import { PlusCircle, Package, ShoppingCart, Boxes, Truck, Tag, Home } from "lucide-react";
+import { PlusCircle, Package, ShoppingCart, Boxes, Truck, Tag, Home, Settings } from "lucide-react";
 
 export function InventoryHeader() {
   const location = useLocation();
@@ -75,6 +75,17 @@ export function InventoryHeader() {
           <Link to="/inventory/locations" className="flex items-center gap-1">
             <Home className="h-4 w-4" />
             Locations
+          </Link>
+        </Button>
+        
+        <Button 
+          asChild 
+          variant={currentPath === "/inventory/manager" ? "default" : "outline"}
+          className={`rounded-full text-sm px-4 ${currentPath === "/inventory/manager" ? "bg-blue-600 hover:bg-blue-700" : "border-blue-500 text-blue-600"}`}
+        >
+          <Link to="/inventory/manager" className="flex items-center gap-1">
+            <Settings className="h-4 w-4" />
+            Field Manager
           </Link>
         </Button>
         
