@@ -13,21 +13,31 @@ import {
   ClipboardPenLine,
   Settings2,
   ShoppingCart,
-  FileText
+  FileText,
+  MessageSquare,
+  Tool,
+  AlarmClock,
+  LineChart,
+  LucideIcon
 } from 'lucide-react';
 
+// Enhanced navItems array with all the items shown in the UI
 const navItems = [
   { path: '/dashboard', name: 'Dashboard', icon: LayoutDashboard },
   { path: '/customers', name: 'Customers', icon: Users },
   { path: '/work-orders', name: 'Work Orders', icon: Wrench },
+  { path: '/equipment', name: 'Equipment', icon: Tool },
   { path: '/inventory', name: 'Inventory', icon: Package },
   { path: '/invoices', name: 'Invoices', icon: FileText },
   { path: '/calendar', name: 'Calendar', icon: Calendar },
-  { path: '/reports', name: 'Reports', icon: BarChart },
-  { path: '/team', name: 'Team', icon: Users2 },
+  { path: '/maintenance', name: 'Maintenance', icon: AlarmClock },
+  { path: '/chat', name: 'Chat', icon: MessageSquare },
   { path: '/forms', name: 'Forms', icon: ClipboardPenLine },
-  { path: '/settings', name: 'Settings', icon: Settings2 },
   { path: '/shopping', name: 'Shopping', icon: ShoppingCart },
+  { path: '/reports', name: 'Reports', icon: LineChart },
+  { path: '/team', name: 'Team', icon: Users2 },
+  { path: '/marketing', name: 'Marketing', icon: BarChart },
+  { path: '/settings', name: 'Settings', icon: Settings2 },
 ];
 
 export function SidebarNavList() {

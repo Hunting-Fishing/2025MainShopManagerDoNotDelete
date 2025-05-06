@@ -49,6 +49,9 @@ import CreateInvoice from '@/pages/CreateInvoice';
 import TeamMemberCreate from '@/pages/TeamMemberCreate';
 import TeamMemberProfile from '@/pages/TeamMemberProfile';
 import TeamRoles from '@/pages/TeamRoles';
+import Calendar from '@/pages/Calendar';
+import Chat from '@/pages/Chat';
+import MaintenanceDashboard from '@/pages/MaintenanceDashboard';
 
 // All routes must be declared here to be used by the RouterProvider
 export const routes: RouteObject[] = [
@@ -91,6 +94,10 @@ export const routes: RouteObject[] = [
       {
         path: 'work-orders/:id',
         element: <WorkOrderDetails />,
+      },
+      {
+        path: 'equipment',
+        element: <MaintenanceDashboard />, // Using existing maintenance dashboard for equipment page
       },
       {
         path: 'inventory',
@@ -141,6 +148,22 @@ export const routes: RouteObject[] = [
         element: <CreateInvoice />,
       },
       {
+        path: 'calendar',
+        element: <Calendar />,
+      },
+      {
+        path: 'maintenance',
+        element: <MaintenanceDashboard />,
+      },
+      {
+        path: 'chat',
+        element: <Chat />,
+      },
+      {
+        path: 'chat/:roomId',
+        element: <Chat />,
+      },
+      {
         path: 'reports',
         element: <Reports />,
       },
@@ -159,6 +182,10 @@ export const routes: RouteObject[] = [
       {
         path: 'team/:id',
         element: <TeamMemberProfile />,
+      },
+      {
+        path: 'marketing',
+        element: <Reports />, // Using Reports page as a placeholder for now
       },
       {
         path: 'tools',

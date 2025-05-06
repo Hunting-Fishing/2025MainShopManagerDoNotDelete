@@ -8,33 +8,6 @@ import {
 import { useSidebar } from '@/hooks/use-sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { SidebarContent } from './sidebar/SidebarContent';
-import { Link } from 'react-router-dom';
-import { cn } from '@/lib/utils';
-import { 
-  LayoutDashboard, 
-  Users, 
-  Wrench, 
-  Package, 
-  Calendar, 
-  BarChart,
-  Users2, 
-  ClipboardPenLine, 
-  Settings2, 
-  ShoppingCart 
-} from 'lucide-react';
-
-const navItems = [
-  { path: '/dashboard', name: 'Dashboard', icon: LayoutDashboard },
-  { path: '/customers', name: 'Customers', icon: Users },
-  { path: '/work-orders', name: 'Work Orders', icon: Wrench },
-  { path: '/inventory', name: 'Inventory', icon: Package },
-  { path: '/calendar', name: 'Calendar', icon: Calendar },
-  { path: '/reports', name: 'Reports', icon: BarChart },
-  { path: '/team', name: 'Team', icon: Users2 },
-  { path: '/forms', name: 'Forms', icon: ClipboardPenLine },
-  { path: '/settings', name: 'Settings', icon: Settings2 },
-  { path: '/shopping', name: 'Shopping', icon: ShoppingCart },
-];
 
 export function AppSidebar() {
   const { isOpen, onOpen, onClose } = useSidebar();
