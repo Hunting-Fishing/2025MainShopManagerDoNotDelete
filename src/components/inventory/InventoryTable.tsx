@@ -19,7 +19,6 @@ import {
   useSensors,
   DragEndEvent 
 } from '@dnd-kit/core';
-import { restrictToHorizontalAxis } from '@dnd-kit/modifiers';
 import { 
   SortableContext, 
   horizontalListSortingStrategy, 
@@ -185,7 +184,6 @@ export const InventoryTable = ({ items }: InventoryTableProps) => {
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
-          modifiers={[restrictToHorizontalAxis]}
         >
           <SortableContext items={visibleColumns.map(col => col.id)} strategy={horizontalListSortingStrategy}>
             <TableHeader>
