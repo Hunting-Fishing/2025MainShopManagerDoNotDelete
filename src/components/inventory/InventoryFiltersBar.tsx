@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Search } from "lucide-react";
+import { Search, Filter, Download, Upload } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,9 +28,14 @@ interface InventoryFiltersBarProps {
   setStatusFilter: (value: string[]) => void;
   supplierFilter: string;
   setSupplierFilter: (value: string) => void;
+  locationFilter: string;
+  setLocationFilter: (value: string) => void;
   categories: string[];
   statuses: string[];
   suppliers: string[];
+  locations: string[];
+  handleExport: () => void;
+  handleImport: () => void;
 }
 
 export function InventoryFiltersBar({
@@ -42,9 +47,14 @@ export function InventoryFiltersBar({
   setStatusFilter,
   supplierFilter,
   setSupplierFilter,
+  locationFilter,
+  setLocationFilter,
   categories,
   statuses,
   suppliers,
+  locations,
+  handleExport,
+  handleImport
 }: InventoryFiltersBarProps) {
   const handleCategoryToggle = (category: string) => {
     if (categoryFilter.includes(category)) {
@@ -62,13 +72,21 @@ export function InventoryFiltersBar({
     }
   };
 
+  const handleClearAllFilters = () => {
+    setSearchQuery("");
+    setCategoryFilter([]);
+    setStatusFilter([]);
+    setSupplierFilter("all");
+    setLocationFilter("all");
+  };
+
   return (
     <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 space-y-4">
       <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
           <Input
-            placeholder="Search by name, SKU, or ID..."
+            placeholder="Search by name, SKU, or Part #..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-8"
@@ -77,7 +95,7 @@ export function InventoryFiltersBar({
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="w-full sm:w-auto">
+            <Button variant="outline" className="w-full sm:w-auto rounded-full">
               Category {categoryFilter.length > 0 && `(${categoryFilter.length})`}
             </Button>
           </DropdownMenuTrigger>
@@ -98,7 +116,7 @@ export function InventoryFiltersBar({
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="w-full sm:w-auto">
+            <Button variant="outline" className="w-full sm:w-auto rounded-full">
               Status {statusFilter.length > 0 && `(${statusFilter.length})`}
             </Button>
           </DropdownMenuTrigger>
@@ -121,7 +139,7 @@ export function InventoryFiltersBar({
           value={supplierFilter}
           onValueChange={setSupplierFilter}
         >
-          <SelectTrigger className="w-full sm:w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px] rounded-full">
             <SelectValue placeholder="All Suppliers" />
           </SelectTrigger>
           <SelectContent>
@@ -133,6 +151,55 @@ export function InventoryFiltersBar({
             ))}
           </SelectContent>
         </Select>
+        
+        <Select
+          value={locationFilter}
+          onValueChange={setLocationFilter}
+        >
+          <SelectTrigger className="w-full sm:w-[180px] rounded-full">
+            <SelectValue placeholder="All Locations" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Locations</SelectItem>
+            {locations.map((location) => (
+              <SelectItem key={location} value={location}>
+                {location}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <div className="flex justify-between">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={handleClearAllFilters}
+          className="text-sm text-gray-500"
+        >
+          Clear filters
+        </Button>
+        
+        <div className="flex space-x-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleExport}
+            className="flex items-center gap-1 rounded-full"
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleImport}
+            className="flex items-center gap-1 rounded-full"
+          >
+            <Upload className="h-4 w-4" />
+            Import CSV
+          </Button>
+        </div>
       </div>
     </div>
   );

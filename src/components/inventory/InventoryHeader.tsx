@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
-import { PlusCircle, Package, ShoppingCart, Boxes } from "lucide-react";
+import { PlusCircle, Package, ShoppingCart, Boxes, Truck, Tag, Home } from "lucide-react";
 
 export function InventoryHeader() {
   const location = useLocation();
@@ -15,6 +15,7 @@ export function InventoryHeader() {
         <Button 
           asChild 
           variant={currentPath === "/inventory" ? "default" : "outline"}
+          className="rounded-full text-sm px-4"
         >
           <Link to="/inventory" className="flex items-center gap-1">
             <Package className="h-4 w-4" />
@@ -25,24 +26,59 @@ export function InventoryHeader() {
         <Button 
           asChild 
           variant={currentPath === "/inventory/stock" ? "default" : "outline"}
+          className="rounded-full text-sm px-4"
         >
           <Link to="/inventory/stock" className="flex items-center gap-1">
             <Boxes className="h-4 w-4" />
-            Inventory Stock
+            Stock Items
           </Link>
         </Button>
 
         <Button 
           asChild 
           variant={currentPath === "/inventory/orders" ? "default" : "outline"}
+          className="rounded-full text-sm px-4"
         >
           <Link to="/inventory/orders" className="flex items-center gap-1">
             <ShoppingCart className="h-4 w-4" />
-            Items on Order
+            Purchase Orders
+          </Link>
+        </Button>
+
+        <Button 
+          asChild 
+          variant={currentPath === "/inventory/suppliers" ? "default" : "outline"}
+          className="rounded-full text-sm px-4"
+        >
+          <Link to="/inventory/suppliers" className="flex items-center gap-1">
+            <Truck className="h-4 w-4" />
+            Suppliers
           </Link>
         </Button>
         
-        <Button asChild className="ml-auto">
+        <Button 
+          asChild 
+          variant={currentPath === "/inventory/categories" ? "default" : "outline"}
+          className="rounded-full text-sm px-4"
+        >
+          <Link to="/inventory/categories" className="flex items-center gap-1">
+            <Tag className="h-4 w-4" />
+            Categories
+          </Link>
+        </Button>
+        
+        <Button 
+          asChild 
+          variant={currentPath === "/inventory/locations" ? "default" : "outline"}
+          className="rounded-full text-sm px-4"
+        >
+          <Link to="/inventory/locations" className="flex items-center gap-1">
+            <Home className="h-4 w-4" />
+            Locations
+          </Link>
+        </Button>
+        
+        <Button asChild className="ml-auto rounded-full text-white bg-blue-600 hover:bg-blue-700">
           <Link to="/inventory/add" className="flex items-center gap-1">
             <PlusCircle className="h-4 w-4" />
             Add Item

@@ -6,7 +6,7 @@ import { InventoryFiltersBar } from "@/components/inventory/InventoryFiltersBar"
 import { InventoryItemsTable } from "@/components/inventory/InventoryItemsTable";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, RefreshCw } from "lucide-react";
+import { PlusCircle, RefreshCw, BarChart4 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function InventoryStock() {
@@ -22,10 +22,15 @@ export default function InventoryStock() {
     setStatusFilter,
     supplierFilter,
     setSupplierFilter,
+    locationFilter,
+    setLocationFilter,
     filteredItems,
     categories,
     statuses,
     suppliers,
+    locations,
+    handleExport,
+    handleImport
   } = useInventoryFilters();
 
   const handleRefresh = () => {
@@ -51,27 +56,45 @@ export default function InventoryStock() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold tracking-tight">Inventory Stock</h1>
-        <div className="flex space-x-3">
-          <Button variant="outline" onClick={handleRefresh} className="flex items-center gap-1">
-            <RefreshCw className="h-4 w-4" />
-            Refresh
-          </Button>
-          <Button asChild className="flex items-center gap-1">
-            <Link to="/inventory/add">
-              <PlusCircle className="h-4 w-4" />
-              Add Item
-            </Link>
-          </Button>
-        </div>
-      </div>
-
+      <InventoryHeader />
+      
       <div className="grid grid-cols-1 gap-6">
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
           <div className="mb-6">
-            <h2 className="text-xl font-semibold mb-2">Inventory Summary</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Inventory Summary</h2>
+              <div className="flex space-x-3">
+                <Button 
+                  variant="outline" 
+                  onClick={handleRefresh} 
+                  className="flex items-center gap-1 rounded-full"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Refresh
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="flex items-center gap-1 rounded-full"
+                  asChild
+                >
+                  <Link to="/inventory/reports">
+                    <BarChart4 className="h-4 w-4" />
+                    Reports
+                  </Link>
+                </Button>
+                <Button 
+                  asChild 
+                  className="flex items-center gap-1 rounded-full text-white bg-blue-600 hover:bg-blue-700"
+                >
+                  <Link to="/inventory/add">
+                    <PlusCircle className="h-4 w-4" />
+                    Add Item
+                  </Link>
+                </Button>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
               <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
                 <div className="text-blue-600 text-sm font-medium">Total Items</div>
                 <div className="text-2xl font-bold mt-1">{inventoryItems.length}</div>
@@ -94,6 +117,12 @@ export default function InventoryStock() {
                   {inventoryItems.filter(item => item.status === "Out of Stock").length}
                 </div>
               </div>
+              <div className="bg-purple-50 border border-purple-100 rounded-lg p-4">
+                <div className="text-purple-600 text-sm font-medium">Total Value</div>
+                <div className="text-2xl font-bold mt-1">
+                  ${inventoryItems.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0).toFixed(2)}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -106,9 +135,14 @@ export default function InventoryStock() {
             setStatusFilter={setStatusFilter}
             supplierFilter={supplierFilter}
             setSupplierFilter={setSupplierFilter}
+            locationFilter={locationFilter}
+            setLocationFilter={setLocationFilter}
             categories={categories}
             statuses={statuses}
             suppliers={suppliers}
+            locations={locations}
+            handleExport={handleExport}
+            handleImport={handleImport}
           />
 
           {filteredItems.length > 0 ? (
