@@ -13,21 +13,30 @@ import {
   ClipboardPenLine,
   Settings2,
   ShoppingCart,
-  FileText
+  FileText,
+  Gauge,
+  MessageCircle,
+  Bell,
+  MegaphoneIcon
 } from 'lucide-react';
 
 const navItems = [
   { path: '/dashboard', name: 'Dashboard', icon: LayoutDashboard },
-  { path: '/customers', name: 'Customers', icon: Users },
   { path: '/work-orders', name: 'Work Orders', icon: Wrench },
-  { path: '/inventory', name: 'Inventory', icon: Package },
   { path: '/invoices', name: 'Invoices', icon: FileText },
+  { path: '/customers', name: 'Customers', icon: Users },
+  { path: '/equipment', name: 'Equipment', icon: Gauge },
+  { path: '/inventory', name: 'Inventory', icon: Package },
+  { path: '/forms', name: 'Forms', icon: ClipboardPenLine },
+  { path: '/maintenance', name: 'Maintenance', icon: Wrench },
   { path: '/calendar', name: 'Calendar', icon: Calendar },
+  { path: '/reminders', name: 'Reminders', icon: Bell },
+  { path: '/chat', name: 'Chat', icon: MessageCircle },
+  { path: '/shopping', name: 'Shopping', icon: ShoppingCart },
   { path: '/reports', name: 'Reports', icon: BarChart },
   { path: '/team', name: 'Team', icon: Users2 },
-  { path: '/forms', name: 'Forms', icon: ClipboardPenLine },
+  { path: '/marketing', name: 'Marketing', icon: MegaphoneIcon },
   { path: '/settings', name: 'Settings', icon: Settings2 },
-  { path: '/shopping', name: 'Shopping', icon: ShoppingCart },
 ];
 
 export function SidebarNavList() {
