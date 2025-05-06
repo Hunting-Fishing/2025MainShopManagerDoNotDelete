@@ -1,15 +1,18 @@
 
-import React from "react";
-import { SettingsPageLayout } from "@/components/settings/SettingsPageLayout";
-import { InventoryFieldManager } from "./InventoryFieldManager";
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 export function InventoryManagerContainer() {
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    // Redirect to the inventory settings page
+    navigate("/settings/inventory?tab=columns");
+  }, [navigate]);
+  
   return (
-    <SettingsPageLayout
-      title="Inventory Field Manager"
-      description="Configure which inventory fields are mandatory or optional for your organization"
-    >
-      <InventoryFieldManager />
-    </SettingsPageLayout>
+    <div className="flex items-center justify-center p-8">
+      <p>Redirecting to inventory settings...</p>
+    </div>
   );
 }

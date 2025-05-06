@@ -92,18 +92,35 @@ export const InventoryTableColumnsManager = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-4">
         <div className="space-x-2">
-          <Button variant="outline" size="sm" onClick={handleSelectAll}>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleSelectAll}
+            className="text-blue-600 border-blue-500 hover:bg-blue-50"
+          >
             Show All
           </Button>
-          <Button variant="outline" size="sm" onClick={handleDeselectAll}>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleDeselectAll}
+            className="text-red-600 border-red-500 hover:bg-red-50"
+          >
             Hide All
           </Button>
         </div>
         <div className="space-x-2">
-          <Button variant="outline" onClick={resetToDefault}>
+          <Button 
+            variant="outline" 
+            onClick={resetToDefault}
+            className="border-gray-300"
+          >
             Reset to Default
           </Button>
-          <Button onClick={saveColumnSettings}>
+          <Button 
+            onClick={saveColumnSettings}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
             Save Settings
           </Button>
         </div>
@@ -111,11 +128,12 @@ export const InventoryTableColumnsManager = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {columns.map((column) => (
-          <div key={column.id} className="flex items-center space-x-2">
+          <div key={column.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-50">
             <Checkbox
               id={`column-${column.id}`}
               checked={column.visible}
               onCheckedChange={() => handleColumnToggle(column.id)}
+              className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
             />
             <label
               htmlFor={`column-${column.id}`}

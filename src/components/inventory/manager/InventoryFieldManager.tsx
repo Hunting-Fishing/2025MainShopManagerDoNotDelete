@@ -1,8 +1,5 @@
 
 import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
 import { FieldSection } from "./FieldSection";
 import { toast } from "sonner";
 import { Column, ColumnId } from "@/components/inventory/table/SortableColumnHeader";
@@ -38,11 +35,29 @@ export function InventoryFieldManager() {
 
   // Load table column settings to sync with field manager
   useEffect(() => {
-    const savedColumns = localStorage.getItem("inventoryTableColumns");
-    if (savedColumns) {
-      const columns = JSON.parse(savedColumns);
+    const loadVisibleColumns = () => {
+      const savedColumns = localStorage.getItem("inventoryTableColumns");
+      if (savedColumns) {
+        const columns = JSON.parse(savedColumns);
+        setVisibleColumns(columns.filter((col: Column) => col.visible));
+      }
+    };
+    
+    loadVisibleColumns();
+    
+    // Listen for column changes from the columns manager
+    const handleColumnsUpdated = (event: CustomEvent) => {
+      const columns = event.detail;
       setVisibleColumns(columns.filter((col: Column) => col.visible));
-    }
+    };
+    
+    window.addEventListener('inventoryColumnsUpdated', handleColumnsUpdated as EventListener);
+    window.addEventListener('storage', loadVisibleColumns);
+    
+    return () => {
+      window.removeEventListener('inventoryColumnsUpdated', handleColumnsUpdated as EventListener);
+      window.removeEventListener('storage', loadVisibleColumns);
+    };
   }, []);
 
   // Filter fields based on column visibility
@@ -97,20 +112,6 @@ export function InventoryFieldManager() {
     if (savedPricingFields) setPricingFields(JSON.parse(savedPricingFields));
   }, []);
 
-  // Update fields when column visibility changes
-  useEffect(() => {
-    const handleStorageChange = () => {
-      const savedColumns = localStorage.getItem("inventoryTableColumns");
-      if (savedColumns) {
-        const columns = JSON.parse(savedColumns);
-        setVisibleColumns(columns.filter((col: Column) => col.visible));
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
-
   // Filter fields based on column visibility
   const visibleBasicFields = filterFieldsByVisibility(basicFields);
   const visibleStockFields = filterFieldsByVisibility(stockFields);
@@ -118,57 +119,28 @@ export function InventoryFieldManager() {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Inventory Field Settings</CardTitle>
-          <CardDescription>
-            Configure which fields are required for your inventory items
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="mb-4">
-            Customize which fields are required, optional, or hidden when creating and editing inventory items.
-            Only fields that are visible in the inventory table are shown here.
-          </p>
-          <div className="flex flex-col space-y-8 mt-4">
-            <FieldSection 
-              title="Basic Information" 
-              description="Core details about your inventory items"
-              fields={visibleBasicFields}
-              onToggle={(fieldId) => handleToggleField(fieldId, "basic")}
-            />
-            
-            <FieldSection 
-              title="Stock Information" 
-              description="Quantity and storage details"
-              fields={visibleStockFields}
-              onToggle={(fieldId) => handleToggleField(fieldId, "stock")}
-            />
-            
-            <FieldSection 
-              title="Pricing" 
-              description="Cost and selling price information"
-              fields={visiblePricingFields}
-              onToggle={(fieldId) => handleToggleField(fieldId, "pricing")}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Table Display Settings</CardTitle>
-          <CardDescription>
-            Configure how the inventory table displays data
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col space-y-4">
-          <p>Manage which columns are visible in the inventory table and their order.</p>
-          <Button asChild>
-            <Link to="/settings/inventory?tab=columns">Manage Table Columns</Link>
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col space-y-8">
+        <FieldSection 
+          title="Basic Information" 
+          description="Core details about your inventory items"
+          fields={visibleBasicFields}
+          onToggle={(fieldId) => handleToggleField(fieldId, "basic")}
+        />
+        
+        <FieldSection 
+          title="Stock Information" 
+          description="Quantity and storage details"
+          fields={visibleStockFields}
+          onToggle={(fieldId) => handleToggleField(fieldId, "stock")}
+        />
+        
+        <FieldSection 
+          title="Pricing" 
+          description="Cost and selling price information"
+          fields={visiblePricingFields}
+          onToggle={(fieldId) => handleToggleField(fieldId, "pricing")}
+        />
+      </div>
     </div>
   );
 }

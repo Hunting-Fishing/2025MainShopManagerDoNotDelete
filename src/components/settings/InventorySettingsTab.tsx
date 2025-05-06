@@ -5,12 +5,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { InventoryTableColumnsManager } from "./inventory/InventoryTableColumnsManager";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { InventoryFieldManager } from "@/components/inventory/manager/InventoryFieldManager";
 
 export const InventorySettingsTab = () => {
+  const [searchParams] = useSearchParams();
+  const defaultTab = searchParams.get("tab") || "columns";
+
   return (
-    <Tabs defaultValue="columns" className="w-full">
+    <Tabs defaultValue={defaultTab} className="w-full">
       <TabsList className="mb-4">
         <TabsTrigger value="columns">Table Columns</TabsTrigger>
+        <TabsTrigger value="fields">Required Fields</TabsTrigger>
         <TabsTrigger value="categories">Categories</TabsTrigger>
         <TabsTrigger value="suppliers">Suppliers</TabsTrigger>
       </TabsList>
@@ -32,6 +38,27 @@ export const InventorySettingsTab = () => {
               </AlertDescription>
             </Alert>
             <InventoryTableColumnsManager />
+          </CardContent>
+        </Card>
+      </TabsContent>
+      
+      <TabsContent value="fields" className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Required Inventory Fields</CardTitle>
+            <CardDescription>
+              Configure which fields are required when creating and editing inventory items
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Alert variant="info" className="mb-4">
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                Only fields that are visible in the inventory table can be configured here.
+                To show more fields, first make them visible in the Table Columns tab.
+              </AlertDescription>
+            </Alert>
+            <InventoryFieldManager />
           </CardContent>
         </Card>
       </TabsContent>
