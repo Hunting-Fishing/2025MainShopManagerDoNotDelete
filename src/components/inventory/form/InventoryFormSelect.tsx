@@ -8,7 +8,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { RequiredIndicator } from "@/components/ui/required-indicator";
 
 interface InventoryFormSelectProps {
   id: string;
@@ -33,7 +32,6 @@ export function InventoryFormSelect({
     <div className="space-y-2">
       <Label htmlFor={id} className="flex items-center">
         {label}
-        {required && <RequiredIndicator />}
       </Label>
       
       <Select value={value} onValueChange={onValueChange}>

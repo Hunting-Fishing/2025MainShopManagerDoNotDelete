@@ -13,50 +13,10 @@ export function useInventoryFormValidation() {
     const errors: FormErrors = {};
     let isValid = true;
     
-    // Validate name
-    if (!data.name.trim()) {
-      errors.name = "Name is required";
-      isValid = false;
-    }
-    
-    // Validate SKU
-    if (!data.sku.trim()) {
-      errors.sku = "SKU is required";
-      isValid = false;
-    }
-    
-    // Validate category
-    if (!data.category) {
-      errors.category = "Category is required";
-      isValid = false;
-    }
-    
-    // Validate supplier
-    if (!data.supplier) {
-      errors.supplier = "Supplier is required";
-      isValid = false;
-    }
-    
-    // Validate quantity (must be a positive number)
-    if (data.quantity < 0) {
-      errors.quantity = "Quantity cannot be negative";
-      isValid = false;
-    }
-    
-    // Validate reorder point (must be a positive number)
-    if (data.reorderPoint < 0) {
-      errors.reorderPoint = "Reorder point cannot be negative";
-      isValid = false;
-    }
-    
-    // Validate unit price (must be a positive number)
-    if (data.unitPrice <= 0) {
-      errors.unitPrice = "Unit price must be greater than zero";
-      isValid = false;
-    }
+    // All fields are now optional - no validation required
     
     setFormErrors(errors);
-    return isValid;
+    return true; // Always return true since all fields are optional
   };
   
   const clearError = (field: string) => {

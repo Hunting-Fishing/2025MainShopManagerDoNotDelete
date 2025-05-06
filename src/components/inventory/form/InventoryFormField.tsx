@@ -2,7 +2,6 @@
 import React from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RequiredIndicator } from "@/components/ui/required-indicator";
 
 interface InventoryFormFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
@@ -24,7 +23,6 @@ export function InventoryFormField({
     <div className="space-y-2">
       <Label htmlFor={name} className="flex items-center">
         {label}
-        {required && <RequiredIndicator />}
       </Label>
       
       <Input 
