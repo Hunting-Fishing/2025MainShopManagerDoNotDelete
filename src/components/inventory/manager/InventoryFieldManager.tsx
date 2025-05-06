@@ -1,222 +1,216 @@
 
 import React, { useState, useEffect } from "react";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/components/ui/use-toast";
-import { Database, Save, RefreshCw } from "lucide-react";
-import { InventoryItemExtended } from "@/types/inventory";
-import { FieldSection } from "./FieldSection";
+import { FieldSection } from "@/components/inventory/manager/FieldSection";
+import { toast } from "@/hooks/use-toast";
 
-// Define the structure for field requirements
-export interface FieldRequirement {
+interface FieldDefinition {
   id: string;
-  name: string;
   label: string;
-  isRequired: boolean;
-  description?: string;
-  section: "basic" | "pricing" | "inventory" | "additional";
+  defaultVisible: boolean;
+  required: boolean;
+  section: string;
 }
 
 export function InventoryFieldManager() {
-  const [fieldRequirements, setFieldRequirements] = useState<FieldRequirement[]>([]);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
-
-  // Initialize field requirements from current inventory structure
-  useEffect(() => {
-    // In a real app, this would load from your database
-    const loadFieldRequirements = () => {
-      setIsLoading(true);
-      
-      // Create field requirements based on InventoryItemExtended
-      const requirements: FieldRequirement[] = [
-        // Basic Information Section
-        { id: "name", name: "name", label: "Item Name", isRequired: false, section: "basic", 
-          description: "The name of the inventory item" },
-        { id: "sku", name: "sku", label: "SKU", isRequired: false, section: "basic",
-          description: "Stock Keeping Unit - unique identifier" },
-        { id: "partNumber", name: "partNumber", label: "Part Number", isRequired: false, section: "basic" },
-        { id: "category", name: "category", label: "Category", isRequired: false, section: "basic" },
-        { id: "manufacturer", name: "manufacturer", label: "Manufacturer", isRequired: false, section: "basic" },
-        { id: "description", name: "description", label: "Description", isRequired: false, section: "basic" },
-        { id: "barcode", name: "barcode", label: "Barcode", isRequired: false, section: "basic" },
-        { id: "itemCondition", name: "itemCondition", label: "Item Condition", isRequired: false, section: "basic" },
-        
-        // Pricing Section
-        { id: "cost", name: "cost", label: "Cost", isRequired: false, section: "pricing" },
-        { id: "unitPrice", name: "unitPrice", label: "Unit Price", isRequired: false, section: "pricing" },
-        { id: "marginMarkup", name: "marginMarkup", label: "Margin/Markup", isRequired: false, section: "pricing" },
-        { id: "retailPrice", name: "retailPrice", label: "Retail Price", isRequired: false, section: "pricing" },
-        { id: "wholesalePrice", name: "wholesalePrice", label: "Wholesale Price", isRequired: false, section: "pricing" },
-        { id: "specialTax", name: "specialTax", label: "Special Tax", isRequired: false, section: "pricing" },
-        { id: "coreCharge", name: "coreCharge", label: "Core Charge", isRequired: false, section: "pricing" },
-        { id: "environmentalFee", name: "environmentalFee", label: "Environmental Fee", isRequired: false, section: "pricing" },
-        { id: "freightFee", name: "freightFee", label: "Freight Fee", isRequired: false, section: "pricing" },
-        { id: "otherFee", name: "otherFee", label: "Other Fee", isRequired: false, section: "pricing" },
-        { id: "otherFeeDescription", name: "otherFeeDescription", label: "Other Fee Description", isRequired: false, section: "pricing" },
-        
-        // Inventory Management Section
-        { id: "quantity", name: "quantity", label: "Quantity", isRequired: false, section: "inventory" },
-        { id: "reorderPoint", name: "reorderPoint", label: "Reorder Point", isRequired: false, section: "inventory" },
-        { id: "reorderQuantity", name: "reorderQuantity", label: "Reorder Quantity", isRequired: false, section: "inventory" },
-        { id: "location", name: "location", label: "Location", isRequired: false, section: "inventory" },
-        { id: "supplier", name: "supplier", label: "Supplier", isRequired: false, section: "inventory" },
-        { id: "onOrder", name: "onOrder", label: "On Order", isRequired: false, section: "inventory" },
-        { id: "onHold", name: "onHold", label: "On Hold", isRequired: false, section: "inventory" },
-        { id: "minimumOrder", name: "minimumOrder", label: "Minimum Order", isRequired: false, section: "inventory" },
-        { id: "maximumOrder", name: "maximumOrder", label: "Maximum Order", isRequired: false, section: "inventory" },
-        
-        // Additional Information Section
-        { id: "totalQtySold", name: "totalQtySold", label: "Total Quantity Sold", isRequired: false, section: "additional" },
-        { id: "dateBought", name: "dateBought", label: "Date Bought", isRequired: false, section: "additional" },
-        { id: "dateLast", name: "dateLast", label: "Last Sale Date", isRequired: false, section: "additional" },
-        { id: "serialNumbers", name: "serialNumbers", label: "Serial Numbers", isRequired: false, section: "additional" },
-      ];
-      
-      setFieldRequirements(requirements);
-      setIsLoading(false);
-    };
+  const [fields, setFields] = useState<FieldDefinition[]>([
+    // Basic Info
+    { id: "partNumber", label: "Part Number", defaultVisible: true, required: true, section: "basic" },
+    { id: "name", label: "Item Name", defaultVisible: true, required: true, section: "basic" },
+    { id: "sku", label: "SKU", defaultVisible: true, required: true, section: "basic" },
+    { id: "barcode", label: "Barcode", defaultVisible: true, required: false, section: "basic" },
+    { id: "description", label: "Description", defaultVisible: false, required: false, section: "basic" },
+    { id: "notes", label: "Notes", defaultVisible: false, required: false, section: "basic" },
     
-    loadFieldRequirements();
+    // Classification
+    { id: "category", label: "Category", defaultVisible: true, required: true, section: "classification" },
+    { id: "subcategory", label: "Subcategory", defaultVisible: false, required: false, section: "classification" },
+    { id: "manufacturer", label: "Brand / Manufacturer", defaultVisible: true, required: false, section: "classification" },
+    { id: "vehicleCompatibility", label: "Vehicle Compatibility", defaultVisible: false, required: false, section: "classification" },
+    
+    // Inventory
+    { id: "quantity", label: "Quantity In Stock", defaultVisible: true, required: true, section: "inventory" },
+    { id: "onHold", label: "Quantity Reserved", defaultVisible: true, required: false, section: "inventory" },
+    { id: "available", label: "Quantity Available", defaultVisible: true, required: false, section: "inventory" },
+    { id: "onOrder", label: "Quantity on Order", defaultVisible: true, required: false, section: "inventory" },
+    { id: "reorderPoint", label: "Reorder Level", defaultVisible: true, required: false, section: "inventory" },
+    { id: "reorderQuantity", label: "Reorder Quantity", defaultVisible: false, required: false, section: "inventory" },
+    { id: "minimumOrder", label: "Minimum Order", defaultVisible: false, required: false, section: "inventory" },
+    { id: "maximumOrder", label: "Maximum Order", defaultVisible: false, required: false, section: "inventory" },
+    { id: "location", label: "Location", defaultVisible: true, required: false, section: "inventory" },
+    
+    // Financial
+    { id: "cost", label: "Unit Cost", defaultVisible: true, required: false, section: "financial" },
+    { id: "unitPrice", label: "Unit Price", defaultVisible: true, required: true, section: "financial" },
+    { id: "markup", label: "Markup %", defaultVisible: true, required: false, section: "financial" },
+    { id: "retailPrice", label: "Retail Price", defaultVisible: false, required: false, section: "financial" },
+    { id: "wholesalePrice", label: "Wholesale Price", defaultVisible: false, required: false, section: "financial" },
+    { id: "coreCharge", label: "Core Charge", defaultVisible: false, required: false, section: "financial" },
+    { id: "environmentalFee", label: "Environmental Fee", defaultVisible: false, required: false, section: "financial" },
+    { id: "freightFee", label: "Freight Fee", defaultVisible: false, required: false, section: "financial" },
+    { id: "otherFee", label: "Other Fee", defaultVisible: false, required: false, section: "financial" },
+    { id: "specialTax", label: "Special Tax", defaultVisible: false, required: false, section: "financial" },
+    { id: "totalValue", label: "Total Value", defaultVisible: true, required: false, section: "financial" },
+    
+    // Additional
+    { id: "supplier", label: "Supplier", defaultVisible: true, required: true, section: "additional" },
+    { id: "dateBought", label: "Last Ordered Date", defaultVisible: true, required: false, section: "additional" },
+    { id: "dateLast", label: "Last Used On", defaultVisible: true, required: false, section: "additional" },
+    { id: "warrantyPeriod", label: "Warranty Period", defaultVisible: false, required: false, section: "additional" },
+    { id: "itemCondition", label: "Condition", defaultVisible: false, required: false, section: "additional" },
+    { id: "status", label: "Status", defaultVisible: true, required: true, section: "additional" },
+    { id: "serialNumbers", label: "Serial Numbers", defaultVisible: false, required: false, section: "additional" },
+  ]);
+
+  const [showHiddenFields, setShowHiddenFields] = useState(false);
+
+  // Set local storage on field changes
+  useEffect(() => {
+    localStorage.setItem('inventoryFieldSettings', JSON.stringify(fields));
+  }, [fields]);
+
+  // Load settings from local storage on component mount
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('inventoryFieldSettings');
+    if (savedSettings) {
+      try {
+        const parsedSettings = JSON.parse(savedSettings);
+        setFields(parsedSettings);
+      } catch (error) {
+        console.error("Error parsing saved inventory field settings:", error);
+      }
+    }
   }, []);
 
-  // Toggle a field's required status
-  const toggleRequiredField = (fieldId: string) => {
-    setFieldRequirements(prev => 
-      prev.map(field => 
-        field.id === fieldId 
-          ? { ...field, isRequired: !field.isRequired } 
-          : field
+  const handleVisibilityChange = (fieldId: string, isVisible: boolean) => {
+    setFields(
+      fields.map(field => 
+        field.id === fieldId ? { ...field, defaultVisible: isVisible } : field
       )
     );
   };
 
-  // Save the field configuration
-  const saveConfiguration = async () => {
-    setIsSaving(true);
-    
-    try {
-      // In a real app, you would save this to your database
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast({
-        title: "Settings saved",
-        description: "Field requirements have been updated successfully",
-        variant: "success",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "There was a problem saving your settings",
-        variant: "destructive",
-      });
-      console.error("Error saving field requirements:", error);
-    } finally {
-      setIsSaving(false);
-    }
+  const handleRequiredChange = (fieldId: string, isRequired: boolean) => {
+    setFields(
+      fields.map(field => 
+        field.id === fieldId ? { ...field, required: isRequired } : field
+      )
+    );
   };
 
-  // Reset to default settings
   const resetToDefaults = () => {
-    // Here you would reset to your organization's defaults
-    setFieldRequirements(prev => 
-      prev.map(field => ({ ...field, isRequired: false }))
-    );
-    
+    // Reset to the original state
+    localStorage.removeItem('inventoryFieldSettings');
+    window.location.reload();
+  };
+
+  const saveChanges = () => {
+    // In a real application, this would save to a database
+    // For now, we just show a toast and rely on local storage (set in the useEffect)
     toast({
-      title: "Reset complete",
-      description: "All fields have been set to optional",
+      title: "Settings saved",
+      description: "Your inventory field settings have been saved.",
     });
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
+  const getFieldsBySection = (section: string) => {
+    return fields.filter(field => 
+      field.section === section && (showHiddenFields || field.defaultVisible)
     );
-  }
-
-  // Group fields by section
-  const basicFields = fieldRequirements.filter(field => field.section === "basic");
-  const pricingFields = fieldRequirements.filter(field => field.section === "pricing");
-  const inventoryFields = fieldRequirements.filter(field => field.section === "inventory");
-  const additionalFields = fieldRequirements.filter(field => field.section === "additional");
+  };
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Database className="h-5 w-5" />
-            Field Requirements Configuration
-          </CardTitle>
+          <CardTitle>Inventory Field Manager</CardTitle>
           <CardDescription>
-            Configure which fields are mandatory when adding or editing inventory items
+            Configure which fields are visible and required when creating or editing inventory items.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <p className="text-sm text-muted-foreground mb-4">
-            Toggle switches to mark fields as required. Required fields must be filled in before an inventory item can be saved.
-          </p>
-          
-          <FieldSection 
-            title="Basic Information"
-            description="Essential information about the inventory item"
-            fields={basicFields}
-            onToggle={toggleRequiredField}
-          />
-          
-          <Separator className="my-6" />
-          
-          <FieldSection 
-            title="Pricing Information"
-            description="Cost and pricing details"
-            fields={pricingFields}
-            onToggle={toggleRequiredField}
-          />
-          
-          <Separator className="my-6" />
-          
-          <FieldSection 
-            title="Inventory Management"
-            description="Stock control and supplier information"
-            fields={inventoryFields}
-            onToggle={toggleRequiredField}
-          />
-          
-          <Separator className="my-6" />
-          
-          <FieldSection 
-            title="Additional Information"
-            description="Optional tracking and historical data"
-            fields={additionalFields}
-            onToggle={toggleRequiredField}
-          />
-          
-          <div className="flex justify-between mt-8">
-            <Button 
-              variant="outline"
-              onClick={resetToDefaults}
-              className="flex items-center gap-2"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Reset to Defaults
-            </Button>
-            
-            <Button 
-              onClick={saveConfiguration}
-              disabled={isSaving}
-              className="bg-esm-blue-600 hover:bg-esm-blue-700 flex items-center gap-2"
-            >
-              <Save className="h-4 w-4" />
-              {isSaving ? "Saving..." : "Save Configuration"}
-            </Button>
+        <CardContent>
+          <div className="flex items-center space-x-2 mb-6">
+            <Switch 
+              id="show-hidden" 
+              checked={showHiddenFields}
+              onCheckedChange={setShowHiddenFields}
+            />
+            <Label htmlFor="show-hidden">Show hidden fields</Label>
           </div>
+
+          <Tabs defaultValue="basic">
+            <TabsList className="grid grid-cols-5 mb-4">
+              <TabsTrigger value="basic">Basic Info</TabsTrigger>
+              <TabsTrigger value="classification">Classification</TabsTrigger>
+              <TabsTrigger value="inventory">Inventory</TabsTrigger>
+              <TabsTrigger value="financial">Financial</TabsTrigger>
+              <TabsTrigger value="additional">Additional</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="basic" className="p-4 border rounded-md">
+              <FieldSection 
+                title="Basic Information"
+                description="Configure basic item information fields"
+                fields={getFieldsBySection('basic')}
+                onVisibilityChange={handleVisibilityChange}
+                onRequiredChange={handleRequiredChange}
+              />
+            </TabsContent>
+            
+            <TabsContent value="classification" className="p-4 border rounded-md">
+              <FieldSection 
+                title="Classification"
+                description="Configure item classification fields"
+                fields={getFieldsBySection('classification')}
+                onVisibilityChange={handleVisibilityChange}
+                onRequiredChange={handleRequiredChange}
+              />
+            </TabsContent>
+            
+            <TabsContent value="inventory" className="p-4 border rounded-md">
+              <FieldSection 
+                title="Inventory Tracking"
+                description="Configure quantity and location fields"
+                fields={getFieldsBySection('inventory')}
+                onVisibilityChange={handleVisibilityChange}
+                onRequiredChange={handleRequiredChange}
+              />
+            </TabsContent>
+            
+            <TabsContent value="financial" className="p-4 border rounded-md">
+              <FieldSection 
+                title="Financial Information"
+                description="Configure pricing and cost fields"
+                fields={getFieldsBySection('financial')}
+                onVisibilityChange={handleVisibilityChange}
+                onRequiredChange={handleRequiredChange}
+              />
+            </TabsContent>
+            
+            <TabsContent value="additional" className="p-4 border rounded-md">
+              <FieldSection 
+                title="Additional Information"
+                description="Configure additional fields"
+                fields={getFieldsBySection('additional')}
+                onVisibilityChange={handleVisibilityChange}
+                onRequiredChange={handleRequiredChange}
+              />
+            </TabsContent>
+          </Tabs>
         </CardContent>
+        <CardFooter className="flex justify-between border-t p-4">
+          <Button variant="outline" onClick={resetToDefaults}>
+            Reset to Defaults
+          </Button>
+          <Button onClick={saveChanges}>
+            Save Changes
+          </Button>
+        </CardFooter>
       </Card>
     </div>
   );

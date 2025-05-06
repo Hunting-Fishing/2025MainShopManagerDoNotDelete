@@ -1,9 +1,11 @@
 
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { InventoryItemExtended } from "@/types/inventory";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, GripHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 // Status map for styling
 const statusMap = {
@@ -11,6 +13,16 @@ const statusMap = {
   "Low Stock": { color: "bg-yellow-100 text-yellow-800 border border-yellow-300" },
   "Out of Stock": { color: "bg-red-100 text-red-800 border border-red-300" },
 };
+
+// Column definition type
+interface ColumnDef {
+  id: string;
+  header: string;
+  accessor: (item: InventoryItemExtended) => React.ReactNode;
+  className?: string;
+  width?: string;
+  show: boolean;
+}
 
 interface InventoryTableProps {
   items: InventoryItemExtended[];
@@ -36,87 +48,255 @@ export function InventoryTable({ items }: InventoryTableProps) {
     return date.toLocaleDateString();
   };
 
+  // Define columns with their render functions
+  const allColumns: ColumnDef[] = [
+    {
+      id: "partNumber",
+      header: "Part #",
+      accessor: (item) => item.partNumber || item.id.substring(0, 8),
+      className: "font-medium text-slate-700",
+      width: "w-[80px]",
+      show: true
+    },
+    {
+      id: "name",
+      header: "Item Name",
+      accessor: (item) => item.name,
+      className: "font-medium",
+      show: true
+    },
+    {
+      id: "sku",
+      header: "SKU",
+      accessor: (item) => item.sku,
+      show: true
+    },
+    {
+      id: "barcode",
+      header: "Barcode",
+      accessor: (item) => item.barcode || "N/A",
+      show: true
+    },
+    {
+      id: "category",
+      header: "Category",
+      accessor: (item) => (
+        <span className="px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 border border-indigo-300">
+          {item.category}
+        </span>
+      ),
+      show: true
+    },
+    {
+      id: "subcategory",
+      header: "Subcategory",
+      accessor: (item) => item.subcategory || "N/A",
+      show: false
+    },
+    {
+      id: "manufacturer",
+      header: "Brand / Manufacturer",
+      accessor: (item) => item.manufacturer || "N/A",
+      show: true
+    },
+    {
+      id: "vehicleCompatibility",
+      header: "Vehicle Compatibility",
+      accessor: (item) => item.vehicleCompatibility || "N/A",
+      show: false
+    },
+    {
+      id: "location",
+      header: "Location",
+      accessor: (item) => item.location || "N/A",
+      show: true
+    },
+    {
+      id: "quantity",
+      header: "Qty In Stock",
+      accessor: (item) => item.quantity,
+      show: true
+    },
+    {
+      id: "onHold",
+      header: "Qty Reserved",
+      accessor: (item) => item.onHold || 0,
+      show: true
+    },
+    {
+      id: "available",
+      header: "Qty Available",
+      accessor: (item) => getQuantityAvailable(item),
+      show: true
+    },
+    {
+      id: "onOrder",
+      header: "Qty on Order",
+      accessor: (item) => item.onOrder || 0,
+      show: true
+    },
+    {
+      id: "reorderPoint",
+      header: "Reorder Level",
+      accessor: (item) => item.reorderPoint,
+      show: true
+    },
+    {
+      id: "cost",
+      header: "Unit Cost",
+      accessor: (item) => `$${item.cost?.toFixed(2) || "N/A"}`,
+      show: true
+    },
+    {
+      id: "unitPrice",
+      header: "Unit Price",
+      accessor: (item) => `$${item.unitPrice.toFixed(2)}`,
+      show: true
+    },
+    {
+      id: "markup",
+      header: "Markup %",
+      accessor: (item) => `${item.marginMarkup || calculateMarkup(item.cost, item.unitPrice).toFixed(2)}%`,
+      show: true
+    },
+    {
+      id: "totalValue",
+      header: "Total Value",
+      accessor: (item) => `$${(item.quantity * item.unitPrice).toFixed(2)}`,
+      show: true
+    },
+    {
+      id: "warrantyPeriod",
+      header: "Warranty Period",
+      accessor: (item) => item.warrantyPeriod || "N/A",
+      show: false
+    },
+    {
+      id: "status",
+      header: "Status",
+      accessor: (item) => (
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusMap[item.status as keyof typeof statusMap]?.color || "bg-gray-100 text-gray-800"}`}>
+          {item.status}
+        </span>
+      ),
+      show: true
+    },
+    {
+      id: "supplier",
+      header: "Supplier",
+      accessor: (item) => (
+        <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-300">
+          {item.supplier}
+        </span>
+      ),
+      show: true
+    },
+    {
+      id: "dateBought",
+      header: "Last Ordered",
+      accessor: (item) => formatDate(item.dateBought),
+      show: true
+    },
+    {
+      id: "dateLast",
+      header: "Last Used",
+      accessor: (item) => formatDate(item.dateLast),
+      show: true
+    },
+    {
+      id: "notes",
+      header: "Notes",
+      accessor: (item) => item.notes || "N/A",
+      show: false
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      accessor: (item) => (
+        <div className="text-right">
+          <Link to={`/inventory/${item.id}`} className="text-blue-600 hover:text-blue-800 mr-4">
+            View
+          </Link>
+          <Link to={`/inventory/${item.id}/edit`} className="text-blue-600 hover:text-blue-800">
+            Edit
+          </Link>
+        </div>
+      ),
+      className: "text-right",
+      show: true
+    }
+  ];
+
+  // State for column ordering
+  const [columns, setColumns] = useState<ColumnDef[]>([]);
+  
+  // Initialize columns from allColumns, filtered by 'show' property
+  useEffect(() => {
+    setColumns(allColumns.filter(col => col.show));
+  }, []);
+
+  // Handle column reordering
+  const handleDragEnd = (result: any) => {
+    if (!result.destination) return;
+    
+    const items = Array.from(columns);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+    
+    setColumns(items);
+  };
+
   return (
     <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm">
       <Table>
-        <TableHeader className="bg-slate-50">
-          <TableRow>
-            <TableHead className="w-[80px] font-medium">Part #</TableHead>
-            <TableHead className="font-medium">Item Name</TableHead>
-            <TableHead className="font-medium">SKU</TableHead>
-            <TableHead className="font-medium">Barcode</TableHead>
-            <TableHead className="font-medium">Category</TableHead>
-            <TableHead className="font-medium">Brand / Manufacturer</TableHead>
-            <TableHead className="font-medium">Location</TableHead>
-            <TableHead className="font-medium">Qty In Stock</TableHead>
-            <TableHead className="font-medium">Qty Reserved</TableHead>
-            <TableHead className="font-medium">Qty Available</TableHead>
-            <TableHead className="font-medium">Qty on Order</TableHead>
-            <TableHead className="font-medium">Reorder Level</TableHead>
-            <TableHead className="font-medium">Unit Cost</TableHead>
-            <TableHead className="font-medium">Unit Price</TableHead>
-            <TableHead className="font-medium">Markup %</TableHead>
-            <TableHead className="font-medium">Total Value</TableHead>
-            <TableHead className="font-medium">Status</TableHead>
-            <TableHead className="font-medium">Supplier</TableHead>
-            <TableHead className="font-medium">Last Ordered</TableHead>
-            <TableHead className="font-medium">Last Used</TableHead>
-            <TableHead className="font-medium text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <Droppable droppableId="columns" direction="horizontal">
+            {(provided) => (
+              <TableHeader 
+                className="bg-slate-50"
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+              >
+                <TableRow>
+                  {columns.map((column, index) => (
+                    <Draggable key={column.id} draggableId={column.id} index={index}>
+                      {(provided) => (
+                        <TableHead 
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          className={`font-medium ${column.width || ""} ${column.className || ""}`}
+                        >
+                          <div className="flex items-center">
+                            <span {...provided.dragHandleProps} className="mr-2 cursor-move">
+                              <GripHorizontal size={14} />
+                            </span>
+                            {column.header}
+                          </div>
+                        </TableHead>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </TableRow>
+              </TableHeader>
+            )}
+          </Droppable>
+        </DragDropContext>
+        
         <TableBody>
           {items.length > 0 ? (
             items.map((item) => (
               <TableRow key={item.id} className="hover:bg-slate-50">
-                <TableCell className="font-medium text-slate-700">
-                  {item.partNumber || item.id.substring(0, 8)}
-                </TableCell>
-                <TableCell className="font-medium">{item.name}</TableCell>
-                <TableCell>{item.sku}</TableCell>
-                <TableCell>{item.barcode || "N/A"}</TableCell>
-                <TableCell>
-                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 border border-indigo-300">
-                    {item.category}
-                  </span>
-                </TableCell>
-                <TableCell>{item.manufacturer || "N/A"}</TableCell>
-                <TableCell>{item.location || "N/A"}</TableCell>
-                <TableCell>{item.quantity}</TableCell>
-                <TableCell>{item.onHold || 0}</TableCell>
-                <TableCell>{getQuantityAvailable(item)}</TableCell>
-                <TableCell>{item.onOrder || 0}</TableCell>
-                <TableCell>{item.reorderPoint}</TableCell>
-                <TableCell>${item.cost?.toFixed(2) || "N/A"}</TableCell>
-                <TableCell>${item.unitPrice.toFixed(2)}</TableCell>
-                <TableCell>
-                  {item.marginMarkup || calculateMarkup(item.cost, item.unitPrice).toFixed(2)}%
-                </TableCell>
-                <TableCell>${(item.quantity * item.unitPrice).toFixed(2)}</TableCell>
-                <TableCell>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusMap[item.status as keyof typeof statusMap]?.color || "bg-gray-100 text-gray-800"}`}>
-                    {item.status}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-300">
-                    {item.supplier}
-                  </span>
-                </TableCell>
-                <TableCell>{formatDate(item.dateBought)}</TableCell>
-                <TableCell>{formatDate(item.dateLast)}</TableCell>
-                <TableCell className="text-right">
-                  <Link to={`/inventory/${item.id}`} className="text-blue-600 hover:text-blue-800 mr-4">
-                    View
-                  </Link>
-                  <Link to={`/inventory/${item.id}/edit`} className="text-blue-600 hover:text-blue-800">
-                    Edit
-                  </Link>
-                </TableCell>
+                {columns.map((column) => (
+                  <TableCell key={`${item.id}-${column.id}`} className={column.className || ""}>
+                    {column.accessor(item)}
+                  </TableCell>
+                ))}
               </TableRow>
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={21} className="h-[200px] text-center">
+              <TableCell colSpan={columns.length} className="h-[200px] text-center">
                 <div className="flex flex-col items-center justify-center p-8 space-y-4">
                   <div className="text-lg font-medium text-slate-700">No inventory items found</div>
                   <p className="text-slate-500 max-w-md text-center">
