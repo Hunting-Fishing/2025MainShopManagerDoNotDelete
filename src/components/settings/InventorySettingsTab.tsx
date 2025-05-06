@@ -1,24 +1,29 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { InventoryTableColumnsManager } from "./inventory/InventoryTableColumnsManager";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { InventoryFieldManager } from "@/components/inventory/manager/InventoryFieldManager";
 
 export const InventorySettingsTab = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const defaultTab = searchParams.get("tab") || "columns";
 
+  const handleTabChange = (value: string) => {
+    navigate(`/settings/inventory?tab=${value}`, { replace: true });
+  };
+
   return (
-    <Tabs defaultValue={defaultTab} className="w-full">
+    <Tabs defaultValue={defaultTab} className="w-full" onValueChange={handleTabChange}>
       <TabsList className="mb-4">
-        <TabsTrigger value="columns">Table Columns</TabsTrigger>
-        <TabsTrigger value="fields">Required Fields</TabsTrigger>
-        <TabsTrigger value="categories">Categories</TabsTrigger>
-        <TabsTrigger value="suppliers">Suppliers</TabsTrigger>
+        <TabsTrigger value="columns" className="px-4 py-2">Table Columns</TabsTrigger>
+        <TabsTrigger value="fields" className="px-4 py-2">Required Fields</TabsTrigger>
+        <TabsTrigger value="categories" className="px-4 py-2">Categories</TabsTrigger>
+        <TabsTrigger value="suppliers" className="px-4 py-2">Suppliers</TabsTrigger>
       </TabsList>
       
       <TabsContent value="columns" className="space-y-4">
@@ -56,6 +61,7 @@ export const InventorySettingsTab = () => {
               <AlertDescription>
                 Only fields that are visible in the inventory table can be configured here.
                 To show more fields, first make them visible in the Table Columns tab.
+                Be sure to click "Save Settings" to persist your changes.
               </AlertDescription>
             </Alert>
             <InventoryFieldManager />
