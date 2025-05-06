@@ -1,4 +1,3 @@
-
 import { RouteObject } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import Dashboard from '@/pages/Dashboard';
@@ -45,6 +44,8 @@ import InventorySuppliers from '@/pages/InventorySuppliers';
 import InventoryCategories from '@/pages/InventoryCategories';
 import InventoryLocations from '@/pages/InventoryLocations';
 import InventoryManager from '@/pages/InventoryManager';
+import Invoices from '@/pages/Invoices';
+import CreateInvoice from '@/pages/CreateInvoice';
 
 // All routes must be declared here to be used by the RouterProvider
 export const routes: RouteObject[] = [
@@ -119,6 +120,22 @@ export const routes: RouteObject[] = [
       {
         path: 'inventory/manager',
         element: <InventoryManager />,
+      },
+      {
+        path: 'invoices',
+        element: <Invoices />,
+      },
+      {
+        path: 'invoices/create',
+        element: <CreateInvoice />,
+      },
+      {
+        path: 'invoices/:id',
+        element: <Invoices />,
+      },
+      {
+        path: 'invoices/:id/edit',
+        element: <CreateInvoice />,
       },
       {
         path: 'reports',
