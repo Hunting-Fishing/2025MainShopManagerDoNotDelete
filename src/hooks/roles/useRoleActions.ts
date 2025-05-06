@@ -83,18 +83,38 @@ export function useRoleActions(initialRoles: Role[], setRoles: (roles: Role[]) =
     return true;
   };
   
-  const handleReorderRole = (roleId: string, newPriority: number) => {
-    const role = initialRoles.find(r => r.id === roleId);
-    if (!role) return;
+  const handleReorderRole = (roleId: string, direction: 'up' | 'down'): boolean => {
+    const roleIndex = initialRoles.findIndex(r => r.id === roleId);
+    if (roleIndex === -1) return false;
     
+    const role = initialRoles[roleIndex];
+    const sortedRoles = [...initialRoles].sort((a, b) => a.priority - b.priority);
+    const sortedIndex = sortedRoles.findIndex(r => r.id === roleId);
+    
+    // Can't move the first role up or last role down
+    if ((direction === 'up' && sortedIndex === 0) || 
+        (direction === 'down' && sortedIndex === sortedRoles.length - 1)) {
+      toast.error(`Cannot move role ${direction}`);
+      return false;
+    }
+    
+    // Find the adjacent role to swap with
+    const adjacentIndex = direction === 'up' ? sortedIndex - 1 : sortedIndex + 1;
+    const adjacentRole = sortedRoles[adjacentIndex];
+    
+    // Swap priorities
     const updatedRoles = initialRoles.map(r => {
-      if (r.id === roleId) {
-        return { ...r, priority: newPriority };
+      if (r.id === role.id) {
+        return { ...r, priority: adjacentRole.priority };
+      }
+      if (r.id === adjacentRole.id) {
+        return { ...r, priority: role.priority };
       }
       return r;
     });
     
-    setRoles(updatedRoles.sort((a, b) => a.priority - b.priority));
+    setRoles(updatedRoles);
+    return true;
   };
   
   return {

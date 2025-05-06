@@ -19,7 +19,6 @@ export function useRoleManagement(initialRoles: Role[]) {
     handleDuplicateRole,
     handleReorderRole 
   } = useRoleActions(roles, setRoles);
-  const { handleImportRoles } = useRoleImportExport(roles, setRoles);
 
   // Apply filters to roles
   const filteredRoles = filterRoles(roles);
@@ -35,7 +34,6 @@ export function useRoleManagement(initialRoles: Role[]) {
     handleEditRole,
     handleDeleteRole,
     handleDuplicateRole,
-    handleReorderRole,
-    handleImportRoles
+    handleReorderRole
   };
 }
