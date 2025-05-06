@@ -21,15 +21,15 @@ export const InventorySettingsTab = () => {
 
   return (
     <Tabs defaultValue={defaultTab} className="w-full" onValueChange={handleTabChange}>
-      <TabsList className="mb-4">
-        <TabsTrigger value="columns" className="px-4 py-2">Table Columns</TabsTrigger>
-        <TabsTrigger value="fields" className="px-4 py-2">Required Fields</TabsTrigger>
-        <TabsTrigger value="categories" className="px-4 py-2">Categories</TabsTrigger>
-        <TabsTrigger value="suppliers" className="px-4 py-2">Suppliers</TabsTrigger>
+      <TabsList className="mb-4 flex flex-wrap gap-2">
+        <TabsTrigger value="columns" className="px-4 py-2 rounded-full text-sm">Table Columns</TabsTrigger>
+        <TabsTrigger value="fields" className="px-4 py-2 rounded-full text-sm">Required Fields</TabsTrigger>
+        <TabsTrigger value="categories" className="px-4 py-2 rounded-full text-sm">Categories</TabsTrigger>
+        <TabsTrigger value="suppliers" className="px-4 py-2 rounded-full text-sm">Suppliers</TabsTrigger>
       </TabsList>
       
       <TabsContent value="columns" className="space-y-4">
-        <Card>
+        <Card className="shadow-md border-gray-100">
           <CardHeader>
             <CardTitle>Inventory Table Columns</CardTitle>
             <CardDescription>
@@ -50,7 +50,7 @@ export const InventorySettingsTab = () => {
       </TabsContent>
       
       <TabsContent value="fields" className="space-y-4">
-        <Card>
+        <Card className="shadow-md border-gray-100">
           <CardHeader>
             <CardTitle>Required Inventory Fields</CardTitle>
             <CardDescription>
@@ -72,7 +72,7 @@ export const InventorySettingsTab = () => {
       </TabsContent>
       
       <TabsContent value="categories" className="space-y-4">
-        <Card>
+        <Card className="shadow-md border-gray-100">
           <CardHeader>
             <CardTitle>Categories Management</CardTitle>
             <CardDescription>
@@ -86,7 +86,7 @@ export const InventorySettingsTab = () => {
       </TabsContent>
       
       <TabsContent value="suppliers" className="space-y-4">
-        <Card>
+        <Card className="shadow-md border-gray-100">
           <CardHeader>
             <CardTitle>Suppliers Management</CardTitle>
             <CardDescription>

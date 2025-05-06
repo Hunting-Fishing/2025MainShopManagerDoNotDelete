@@ -32,10 +32,10 @@ export function FieldSection({ title, description, fields, onToggle }: FieldSect
           {fields.map((field) => (
             <div 
               key={field.id} 
-              className={`flex items-center justify-between space-x-2 p-3 rounded-md transition-colors ${
+              className={`flex items-center justify-between space-x-2 p-4 rounded-xl transition-colors ${
                 field.isRequired 
-                  ? "bg-green-50 border border-green-100" 
-                  : "bg-gray-50 border border-gray-100"
+                  ? "bg-green-50 border border-green-200 shadow-sm" 
+                  : "bg-gray-50 border border-gray-200"
               }`}
             >
               <div className="flex items-center">
@@ -58,10 +58,10 @@ export function FieldSection({ title, description, fields, onToggle }: FieldSect
               </div>
               
               <div className="flex items-center gap-2">
-                <span className={`text-xs font-medium ${
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                   field.isRequired 
-                    ? "text-green-700" 
-                    : "text-gray-500"
+                    ? "bg-green-100 text-green-800 border border-green-300" 
+                    : "bg-gray-100 text-gray-800 border border-gray-300"
                 }`}>
                   {field.isRequired ? "Required" : "Optional"}
                 </span>

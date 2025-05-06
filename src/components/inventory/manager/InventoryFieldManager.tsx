@@ -3,8 +3,8 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { FieldSection } from "./FieldSection";
-import { Column } from "@/components/inventory/table/SortableColumnHeader";
 
+// Define the field types
 export interface FieldDefinition {
   id: string;
   label: string;
@@ -13,224 +13,126 @@ export interface FieldDefinition {
 }
 
 export function InventoryFieldManager() {
-  const [basicFields, setBasicFields] = useState<FieldDefinition[]>([]);
-  const [detailsFields, setDetailsFields] = useState<FieldDefinition[]>([]);
-  const [pricingFields, setPricingFields] = useState<FieldDefinition[]>([]);
-  const [locationFields, setLocationFields] = useState<FieldDefinition[]>([]);
-  const [hasChanges, setHasChanges] = useState<boolean>(false);
+  // Create state for basic, advanced, and financial fields
+  const [basicFields, setBasicFields] = useState<FieldDefinition[]>([
+    { id: "name", label: "Item Name", isRequired: true },
+    { id: "sku", label: "SKU", isRequired: true },
+    { id: "description", label: "Description", isRequired: false },
+    { id: "category", label: "Category", isRequired: true },
+    { id: "supplier", label: "Supplier", isRequired: false },
+  ]);
   
-  // Load settings from localStorage on mount
+  const [advancedFields, setAdvancedFields] = useState<FieldDefinition[]>([
+    { id: "location", label: "Storage Location", isRequired: false },
+    { id: "reorderPoint", label: "Reorder Point", isRequired: false },
+    { id: "partNumber", label: "Part Number", isRequired: false },
+    { id: "manufacturer", label: "Manufacturer", isRequired: false },
+    { id: "barcode", label: "Barcode", isRequired: false },
+  ]);
+  
+  const [financialFields, setFinancialFields] = useState<FieldDefinition[]>([
+    { id: "cost", label: "Cost Price", isRequired: false },
+    { id: "unitPrice", label: "Unit Price", isRequired: true },
+    { id: "marginMarkup", label: "Margin/Markup", isRequired: false },
+    { id: "retailPrice", label: "Retail Price", isRequired: false },
+    { id: "wholesalePrice", label: "Wholesale Price", isRequired: false },
+  ]);
+
+  // Load saved settings from localStorage on component mount
   useEffect(() => {
-    loadFieldSettings();
+    const savedSettings = localStorage.getItem("inventoryRequiredFields");
+    
+    if (savedSettings) {
+      try {
+        const parsed = JSON.parse(savedSettings);
+        
+        if (parsed.basicFields) setBasicFields(parsed.basicFields);
+        if (parsed.advancedFields) setAdvancedFields(parsed.advancedFields);
+        if (parsed.financialFields) setFinancialFields(parsed.financialFields);
+      } catch (error) {
+        console.error("Error parsing saved inventory settings:", error);
+      }
+    }
   }, []);
 
-  // Monitor changes
-  useEffect(() => {
-    const handleStorageChange = () => {
-      loadFieldSettings();
+  // Toggle a field's required status
+  const handleToggleField = (fieldId: string, fieldType: "basic" | "advanced" | "financial") => {
+    const updateFields = (fields: FieldDefinition[]) => {
+      return fields.map(field => {
+        if (field.id === fieldId) {
+          return { ...field, isRequired: !field.isRequired };
+        }
+        return field;
+      });
     };
 
-    window.addEventListener('inventoryColumnsUpdated', handleStorageChange);
-    
-    return () => {
-      window.removeEventListener('inventoryColumnsUpdated', handleStorageChange);
-    };
-  }, []);
-
-  const loadFieldSettings = () => {
-    // First get the visible columns from localStorage
-    const savedColumnsString = localStorage.getItem("inventoryTableColumns");
-    let visibleColumns: Column[] = [];
-    
-    if (savedColumnsString) {
-      const savedColumns = JSON.parse(savedColumnsString);
-      visibleColumns = savedColumns.filter((col: Column) => col.visible);
+    if (fieldType === "basic") {
+      setBasicFields(updateFields(basicFields));
+    } else if (fieldType === "advanced") {
+      setAdvancedFields(updateFields(advancedFields));
+    } else if (fieldType === "financial") {
+      setFinancialFields(updateFields(financialFields));
     }
-    
-    // Then get the required fields from localStorage
-    const requiredFieldsString = localStorage.getItem("inventoryRequiredFields");
-    const requiredFields = requiredFieldsString ? JSON.parse(requiredFieldsString) : {};
-    
-    // Map the visible columns to field definitions
-    const mapToFieldDefinitions = (columns: Column[], category: string): FieldDefinition[] => {
-      return columns
-        .filter(col => {
-          // Filter columns by category
-          if (category === 'basic') {
-            return ['name', 'sku', 'partNumber', 'barcode', 'manufacturer'].includes(col.id);
-          } else if (category === 'details') {
-            return ['description', 'category', 'subcategory', 'vehicleCompatibility', 'warrantyPeriod'].includes(col.id);
-          } else if (category === 'pricing') {
-            return ['cost', 'unitPrice', 'marginMarkup', 'totalValue'].includes(col.id);
-          } else if (category === 'location') {
-            return ['location', 'quantity', 'reorderPoint', 'quantityReserved', 'quantityAvailable', 'onOrder', 'supplier'].includes(col.id);
-          }
-          return false;
-        })
-        .map(col => ({
-          id: col.id,
-          label: col.label,
-          isRequired: requiredFields[col.id] || false,
-          description: getFieldDescription(col.id)
-        }));
-    };
-
-    // Set the fields by category
-    setBasicFields(mapToFieldDefinitions(visibleColumns, 'basic'));
-    setDetailsFields(mapToFieldDefinitions(visibleColumns, 'details'));
-    setPricingFields(mapToFieldDefinitions(visibleColumns, 'pricing'));
-    setLocationFields(mapToFieldDefinitions(visibleColumns, 'location'));
-    
-    // Reset the changes flag when loading
-    setHasChanges(false);
   };
 
-  const getFieldDescription = (fieldId: string): string => {
-    const descriptions: Record<string, string> = {
-      name: "The name displayed for this inventory item",
-      sku: "Stock Keeping Unit - unique identifier for the item",
-      partNumber: "Manufacturer's part number",
-      barcode: "Barcode or UPC for scanning",
-      manufacturer: "Brand or manufacturer of the item",
-      description: "Detailed description of the item",
-      category: "Primary category for grouping items",
-      subcategory: "More specific category classification",
-      vehicleCompatibility: "Compatible vehicle models",
-      warrantyPeriod: "Length of warranty coverage",
-      cost: "Wholesale cost of the item",
-      unitPrice: "Retail selling price",
-      marginMarkup: "Profit margin percentage",
-      totalValue: "Total value of inventory on hand",
-      location: "Where the item is stored",
-      quantity: "Total number of items in stock",
-      reorderPoint: "Stock level that triggers reordering",
-      quantityReserved: "Items allocated to work orders",
-      quantityAvailable: "Items available for use",
-      onOrder: "Quantity currently on order",
-      supplier: "Vendor providing the item"
-    };
-
-    return descriptions[fieldId] || "";
-  };
-
-  const handleToggleRequired = (fieldId: string, sectionType: string) => {
-    // Update the appropriate section state
-    let updatedFields: FieldDefinition[] = [];
-    
-    if (sectionType === 'basic') {
-      updatedFields = basicFields.map(field => 
-        field.id === fieldId ? { ...field, isRequired: !field.isRequired } : field
-      );
-      setBasicFields(updatedFields);
-    } else if (sectionType === 'details') {
-      updatedFields = detailsFields.map(field => 
-        field.id === fieldId ? { ...field, isRequired: !field.isRequired } : field
-      );
-      setDetailsFields(updatedFields);
-    } else if (sectionType === 'pricing') {
-      updatedFields = pricingFields.map(field => 
-        field.id === fieldId ? { ...field, isRequired: !field.isRequired } : field
-      );
-      setPricingFields(updatedFields);
-    } else if (sectionType === 'location') {
-      updatedFields = locationFields.map(field => 
-        field.id === fieldId ? { ...field, isRequired: !field.isRequired } : field
-      );
-      setLocationFields(updatedFields);
-    }
-
-    // Set changes flag
-    setHasChanges(true);
-  };
-
+  // Save settings to localStorage
   const saveSettings = () => {
-    // Combine all field requirements into one object
-    const requiredFields: Record<string, boolean> = {};
+    const settings = {
+      basicFields,
+      advancedFields,
+      financialFields,
+    };
     
-    [...basicFields, ...detailsFields, ...pricingFields, ...locationFields].forEach(field => {
-      requiredFields[field.id] = field.isRequired;
-    });
-    
-    // Save to localStorage
-    localStorage.setItem("inventoryRequiredFields", JSON.stringify(requiredFields));
-    
-    // Reset changes flag
-    setHasChanges(false);
-    
-    // Show success toast
+    localStorage.setItem("inventoryRequiredFields", JSON.stringify(settings));
     toast.success("Required fields settings saved successfully");
   };
 
-  const resetSettings = () => {
-    // Reload settings from localStorage
-    loadFieldSettings();
-    toast.info("Settings reset to last saved values");
+  // Reset to defaults
+  const resetToDefaults = () => {
+    setBasicFields(basicFields.map(field => ({ 
+      ...field, 
+      isRequired: ["name", "sku", "category"].includes(field.id) 
+    })));
+    setAdvancedFields(advancedFields.map(field => ({ ...field, isRequired: false })));
+    setFinancialFields(financialFields.map(field => ({ 
+      ...field, 
+      isRequired: field.id === "unitPrice" 
+    })));
+    
+    toast.info("Settings reset to defaults");
   };
 
   return (
-    <div className="space-y-6">
-      {/* Save/Reset Buttons */}
-      <div className="flex justify-end space-x-4 mb-6">
-        <Button 
-          variant="outline" 
-          onClick={resetSettings} 
-          disabled={!hasChanges}
-          className="border-gray-300"
-        >
-          Reset Changes
+    <div className="space-y-8">
+      <FieldSection
+        title="Basic Information"
+        description="Configure which basic inventory fields are required when creating or editing items"
+        fields={basicFields}
+        onToggle={(fieldId) => handleToggleField(fieldId, "basic")}
+      />
+      
+      <FieldSection
+        title="Advanced Details"
+        description="Configure which advanced inventory fields are required"
+        fields={advancedFields}
+        onToggle={(fieldId) => handleToggleField(fieldId, "advanced")}
+      />
+      
+      <FieldSection
+        title="Financial Information"
+        description="Configure which financial fields are required for inventory items"
+        fields={financialFields}
+        onToggle={(fieldId) => handleToggleField(fieldId, "financial")}
+      />
+      
+      <div className="flex justify-end space-x-4 pt-4 border-t">
+        <Button variant="outline" onClick={resetToDefaults}>
+          Reset to Defaults
         </Button>
-        <Button 
-          onClick={saveSettings} 
-          disabled={!hasChanges}
-          className={`${hasChanges ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-400"} text-white`}
-        >
+        <Button variant="default" onClick={saveSettings}>
           Save Settings
         </Button>
       </div>
-
-      {/* Basic Information Fields */}
-      <FieldSection
-        title="Basic Information"
-        description="Configure required fields for item identification"
-        fields={basicFields}
-        onToggle={(fieldId) => handleToggleRequired(fieldId, 'basic')}
-      />
-      
-      {/* Item Details Fields */}
-      <FieldSection
-        title="Item Details"
-        description="Configure required fields for item specifications"
-        fields={detailsFields}
-        onToggle={(fieldId) => handleToggleRequired(fieldId, 'details')}
-      />
-
-      {/* Pricing Fields */}
-      <FieldSection
-        title="Pricing Information"
-        description="Configure required fields for pricing details"
-        fields={pricingFields}
-        onToggle={(fieldId) => handleToggleRequired(fieldId, 'pricing')}
-      />
-
-      {/* Location & Quantity Fields */}
-      <FieldSection
-        title="Location & Quantity"
-        description="Configure required fields for stock management"
-        fields={locationFields}
-        onToggle={(fieldId) => handleToggleRequired(fieldId, 'location')}
-      />
-      
-      {/* Save Button at bottom */}
-      {hasChanges && (
-        <div className="pt-4 border-t mt-8">
-          <Button 
-            onClick={saveSettings} 
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            Save Required Fields Settings
-          </Button>
-        </div>
-      )}
     </div>
   );
 }
