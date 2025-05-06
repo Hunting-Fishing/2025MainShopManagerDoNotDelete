@@ -26,29 +26,47 @@ export const InventoryTableRow = ({
       case "sku":
         return item.sku;
       case "partNumber":
-        return item.partNumber;
+        return item.partNumber || "-";
+      case "barcode":
+        return item.barcode || "-";
       case "category":
         return item.category;
       case "subcategory":
-        return item.subcategory;
-      case "quantity":
-        return item.quantity;
-      case "location":
-        return item.location;
-      case "supplier":
-        return item.supplier;
-      case "unitPrice":
-        return `$${item.unitPrice.toFixed(2)}`;
-      case "cost":
-        return item.cost ? `$${item.cost.toFixed(2)}` : "-";
-      case "vehicleCompatibility":
-        return item.vehicleCompatibility || "-";
+        return item.subcategory || "-";
       case "manufacturer":
         return item.manufacturer || "-";
-      case "status":
-        return item.status;
+      case "vehicleCompatibility":
+        return item.vehicleCompatibility || "-";
+      case "location":
+        return item.location;
+      case "quantity":
+        return item.quantity;
+      case "quantityReserved":
+        return item.onHold || 0;
+      case "quantityAvailable":
+        return (item.quantity - (item.onHold || 0));
+      case "onOrder":
+        return item.onOrder || 0;
+      case "reorderPoint":
+        return item.reorderPoint;
+      case "cost":
+        return item.cost ? `$${item.cost.toFixed(2)}` : "-";
+      case "unitPrice":
+        return `$${item.unitPrice.toFixed(2)}`;
+      case "marginMarkup":
+        return item.marginMarkup ? `${item.marginMarkup.toFixed(2)}%` : "-";
+      case "totalValue":
+        return item.cost ? `$${(item.cost * item.quantity).toFixed(2)}` : "-";
       case "warrantyPeriod":
         return item.warrantyPeriod || "-";
+      case "status":
+        return item.status;
+      case "supplier":
+        return item.supplier;
+      case "dateBought":
+        return item.dateBought || "-";
+      case "dateLast":
+        return item.dateLast || "-";
       case "notes":
         return item.notes || "-";
       default:

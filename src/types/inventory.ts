@@ -50,12 +50,15 @@ export interface InventoryItemExtended {
   categoryId?: string;
   locationId?: string;
   supplierId?: string;
-  
-  // Adding missing properties from error messages
   subcategory?: string;
   vehicleCompatibility?: string;
   warrantyPeriod?: string;
   notes?: string;
+
+  // Additional fields
+  quantityReserved?: number;
+  quantityAvailable?: number;
+  totalValue?: number;
 }
 
 export interface AutoReorderSettings {
