@@ -7,6 +7,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { InventoryFieldManager } from "@/components/inventory/manager/InventoryFieldManager";
+import { CategoriesManager } from "./inventory/CategoriesManager";
+import { SuppliersManager } from "./inventory/SuppliersManager";
 
 export const InventorySettingsTab = () => {
   const [searchParams] = useSearchParams();
@@ -78,7 +80,7 @@ export const InventorySettingsTab = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {/* Categories Manager will go here */}
+            <CategoriesManager />
           </CardContent>
         </Card>
       </TabsContent>
@@ -92,7 +94,7 @@ export const InventorySettingsTab = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {/* Suppliers Manager will go here */}
+            <SuppliersManager />
           </CardContent>
         </Card>
       </TabsContent>
