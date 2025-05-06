@@ -22,7 +22,7 @@ export function InventoryTable({ items }: InventoryTableProps) {
       <Table>
         <TableHeader className="bg-slate-50">
           <TableRow>
-            <TableHead className="w-[80px] font-medium">ID</TableHead>
+            <TableHead className="w-[80px] font-medium">Part #</TableHead>
             <TableHead className="font-medium">Item Name</TableHead>
             <TableHead className="font-medium">SKU</TableHead>
             <TableHead className="font-medium">Category</TableHead>
