@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Table } from "@/components/ui/table";
 import { InventoryItemExtended } from "@/types/inventory";
 import { useNavigate } from "react-router-dom";
@@ -52,6 +52,19 @@ export const InventoryTable = ({ items }: InventoryTableProps) => {
   ];
 
   const { columns, setColumns, handleDragEnd } = useColumnDragDrop(initialColumns);
+  
+  // Load saved columns from localStorage
+  useEffect(() => {
+    const savedColumns = localStorage.getItem("inventoryTableColumns");
+    if (savedColumns) {
+      setColumns(JSON.parse(savedColumns));
+    }
+  }, [setColumns]);
+
+  // Save columns to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem("inventoryTableColumns", JSON.stringify(columns));
+  }, [columns]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
