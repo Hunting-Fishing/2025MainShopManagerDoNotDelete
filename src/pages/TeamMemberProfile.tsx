@@ -1,6 +1,6 @@
 
 import { useParams } from "react-router-dom";
-import { SeoHead } from "@/components/common/SeoHead";
+import { Helmet } from "react-helmet-async";
 import { ProfileHeader } from "@/components/team/profile/ProfileHeader";
 import { useTeamMemberProfile } from "@/hooks/useTeamMemberProfile";
 import { ProfileLoading } from "@/components/team/profile/ProfileLoading";
@@ -23,11 +23,11 @@ export default function TeamMemberProfile() {
   
   return (
     <div className="space-y-6">
-      <SeoHead
-        title={`${member.name} | Team Profile`}
-        description={`Profile page for ${member.name}, ${member.jobTitle || 'Team Member'} at Easy Shop Manager.`}
-        keywords="team member, profile, permissions, role management"
-      />
+      <Helmet>
+        <title>{`${member.name} | Team Profile`}</title>
+        <meta name="description" content={`Profile page for ${member.name}, ${member.jobTitle || 'Team Member'} at Easy Shop Manager.`} />
+        <meta name="keywords" content="team member, profile, permissions, role management" />
+      </Helmet>
       
       <ProfileHeader member={member} />
       
