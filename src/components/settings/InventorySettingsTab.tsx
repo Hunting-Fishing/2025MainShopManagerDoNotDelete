@@ -1,7 +1,10 @@
+
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { InventoryTableColumnsManager } from "./inventory/InventoryTableColumnsManager";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Info } from "lucide-react";
 
 export const InventorySettingsTab = () => {
   return (
@@ -21,6 +24,13 @@ export const InventorySettingsTab = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <Alert variant="info" className="mb-4">
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                Changes made here will immediately affect the column visibility in your inventory table.
+                Your settings are saved automatically when you click "Save Settings".
+              </AlertDescription>
+            </Alert>
             <InventoryTableColumnsManager />
           </CardContent>
         </Card>

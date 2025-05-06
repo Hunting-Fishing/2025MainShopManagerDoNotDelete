@@ -57,12 +57,14 @@ export const InventoryTableColumnsManager = () => {
     setColumns(prevColumns =>
       prevColumns.map(col => ({ ...col, visible: true }))
     );
+    toast.info("All columns are now visible");
   };
 
   const handleDeselectAll = () => {
     setColumns(prevColumns =>
       prevColumns.map(col => ({ ...col, visible: false }))
     );
+    toast.info("All columns are now hidden");
   };
 
   const saveColumnSettings = () => {

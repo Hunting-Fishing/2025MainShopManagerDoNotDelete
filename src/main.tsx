@@ -9,6 +9,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { NotificationsProvider } from '@/context/notifications';
+import { Toaster } from "sonner";
 
 // Create a client for React Query
 const queryClient = new QueryClient({
@@ -28,6 +29,7 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
           <LanguageProvider>
             <NotificationsProvider>
               <App />
+              <Toaster position="top-right" richColors closeButton />
             </NotificationsProvider>
           </LanguageProvider>
         </ThemeProvider>
