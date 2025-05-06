@@ -3,11 +3,17 @@ import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Toaster } from "@/components/ui/toaster";
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from './context/ThemeContext';
+import { NotificationsProvider } from './context/notifications';
 import routes from './routes';
 import './App.css';
 
 // Create a browser router with the routes
 const router = createBrowserRouter(routes);
+
+// Create a client for React Query
+const queryClient = new QueryClient();
 
 function App() {
   const [authToken, setAuthToken] = useState(null);
@@ -24,15 +30,19 @@ function App() {
   };
 
   return (
-    <>
-      <Helmet>
-        <title>Easy Shop Manager</title>
-      </Helmet>
+    <ThemeProvider>
+      <NotificationsProvider>
+        <QueryClientProvider client={queryClient}>
+          <Helmet>
+            <title>Easy Shop Manager</title>
+          </Helmet>
 
-      <RouterProvider router={router} />
-      
-      <Toaster />
-    </>
+          <RouterProvider router={router} />
+          
+          <Toaster />
+        </QueryClientProvider>
+      </NotificationsProvider>
+    </ThemeProvider>
   );
 }
 
