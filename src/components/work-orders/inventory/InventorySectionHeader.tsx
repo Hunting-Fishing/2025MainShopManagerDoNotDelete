@@ -7,7 +7,8 @@ import {
   Truck, 
   ClipboardList, 
   Plus,
-  ShoppingBag
+  ShoppingBag,
+  MoreVertical
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -34,6 +35,19 @@ export function InventorySectionHeader({
       <div className="flex items-center gap-2">
         <Package className="h-5 w-5 text-slate-500" />
         <span className="font-medium">Inventory Items ({totalItems})</span>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem>Export Items</DropdownMenuItem>
+            <DropdownMenuItem>Import Items</DropdownMenuItem>
+            <DropdownMenuItem>Manage Categories</DropdownMenuItem>
+            <DropdownMenuItem>Manage Suppliers</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       
       <DropdownMenu>
