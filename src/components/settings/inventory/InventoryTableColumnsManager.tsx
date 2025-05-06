@@ -69,12 +69,22 @@ export const InventoryTableColumnsManager = () => {
 
   const saveColumnSettings = () => {
     localStorage.setItem("inventoryTableColumns", JSON.stringify(columns));
+    
+    // Dispatch a custom event to notify other components of the change
+    const event = new CustomEvent('inventoryColumnsUpdated', { detail: columns });
+    window.dispatchEvent(event);
+    
     toast.success("Column settings saved successfully");
   };
 
   const resetToDefault = () => {
     setColumns(initialColumns);
     localStorage.removeItem("inventoryTableColumns");
+    
+    // Dispatch a custom event to notify other components of the change
+    const event = new CustomEvent('inventoryColumnsUpdated', { detail: initialColumns });
+    window.dispatchEvent(event);
+    
     toast.success("Column settings reset to default");
   };
 

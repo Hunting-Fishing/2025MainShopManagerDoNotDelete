@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { FieldSection } from "./FieldSection";
 import { toast } from "sonner";
+import { Column, ColumnId } from "@/components/inventory/table/SortableColumnHeader";
 
 export interface FieldDefinition {
   id: string;
@@ -32,6 +33,28 @@ export function InventoryFieldManager() {
     { id: "unitPrice", label: "Unit Price", isRequired: true, description: "Selling price per unit" },
     { id: "marginMarkup", label: "Markup/Margin", isRequired: false, description: "Profit percentage" }
   ]);
+
+  const [visibleColumns, setVisibleColumns] = useState<Column[]>([]);
+
+  // Load table column settings to sync with field manager
+  useEffect(() => {
+    const savedColumns = localStorage.getItem("inventoryTableColumns");
+    if (savedColumns) {
+      const columns = JSON.parse(savedColumns);
+      setVisibleColumns(columns.filter((col: Column) => col.visible));
+    }
+  }, []);
+
+  // Filter fields based on column visibility
+  const filterFieldsByVisibility = (fields: FieldDefinition[]) => {
+    if (visibleColumns.length === 0) return fields;
+    
+    return fields.filter(field => {
+      const columnId = field.id as ColumnId;
+      const column = visibleColumns.find(col => col.id === columnId);
+      return column?.visible !== false; // If column doesn't exist or is visible, show the field
+    });
+  };
 
   // Handler for toggling field requirement status
   const handleToggleField = (fieldId: string, section: "basic" | "stock" | "pricing") => {
@@ -74,6 +97,25 @@ export function InventoryFieldManager() {
     if (savedPricingFields) setPricingFields(JSON.parse(savedPricingFields));
   }, []);
 
+  // Update fields when column visibility changes
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedColumns = localStorage.getItem("inventoryTableColumns");
+      if (savedColumns) {
+        const columns = JSON.parse(savedColumns);
+        setVisibleColumns(columns.filter((col: Column) => col.visible));
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  // Filter fields based on column visibility
+  const visibleBasicFields = filterFieldsByVisibility(basicFields);
+  const visibleStockFields = filterFieldsByVisibility(stockFields);
+  const visiblePricingFields = filterFieldsByVisibility(pricingFields);
+
   return (
     <div className="space-y-6">
       <Card>
@@ -86,26 +128,27 @@ export function InventoryFieldManager() {
         <CardContent>
           <p className="mb-4">
             Customize which fields are required, optional, or hidden when creating and editing inventory items.
+            Only fields that are visible in the inventory table are shown here.
           </p>
           <div className="flex flex-col space-y-8 mt-4">
             <FieldSection 
               title="Basic Information" 
               description="Core details about your inventory items"
-              fields={basicFields}
+              fields={visibleBasicFields}
               onToggle={(fieldId) => handleToggleField(fieldId, "basic")}
             />
             
             <FieldSection 
               title="Stock Information" 
               description="Quantity and storage details"
-              fields={stockFields}
+              fields={visibleStockFields}
               onToggle={(fieldId) => handleToggleField(fieldId, "stock")}
             />
             
             <FieldSection 
               title="Pricing" 
               description="Cost and selling price information"
-              fields={pricingFields}
+              fields={visiblePricingFields}
               onToggle={(fieldId) => handleToggleField(fieldId, "pricing")}
             />
           </div>

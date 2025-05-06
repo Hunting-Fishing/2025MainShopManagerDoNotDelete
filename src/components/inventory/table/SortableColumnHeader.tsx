@@ -57,15 +57,23 @@ export const SortableColumnHeader = ({
   onHideColumn,
   onAddColumn 
 }: SortableColumnHeaderProps) => {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: column.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: column.id });
   
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    opacity: isDragging ? 0.6 : 1,
+    zIndex: isDragging ? 999 : 1,
   };
   
   return (
-    <TableHead ref={setNodeRef} style={style} {...attributes} {...listeners} className="select-none cursor-grab">
+    <TableHead 
+      ref={setNodeRef} 
+      style={style} 
+      {...attributes} 
+      {...listeners} 
+      className={`select-none cursor-grab ${isDragging ? 'bg-blue-50 shadow-md' : ''}`}
+    >
       <div className="flex flex-col items-center">
         <div className="flex items-center">
           <GripVertical className="w-4 h-4 text-gray-400 mr-1" />
