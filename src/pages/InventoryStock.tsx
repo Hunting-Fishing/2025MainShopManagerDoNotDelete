@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useInventoryFilters } from "@/hooks/useInventoryFilters";
 import { InventoryHeader } from "@/components/inventory/InventoryHeader";
@@ -145,15 +144,9 @@ export default function InventoryStock() {
             handleImport={handleImport}
           />
 
-          {filteredItems.length > 0 ? (
-            <div className="mt-4">
-              <InventoryItemsTable items={filteredItems} />
-            </div>
-          ) : (
-            <div className="flex justify-center items-center h-48 border rounded-lg bg-gray-50 mt-4">
-              <p className="text-gray-500">No inventory items found matching your criteria</p>
-            </div>
-          )}
+          <div className="mt-4">
+            <InventoryItemsTable items={filteredItems} />
+          </div>
         </div>
       </div>
     </div>
