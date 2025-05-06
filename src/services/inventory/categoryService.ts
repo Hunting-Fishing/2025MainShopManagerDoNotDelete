@@ -86,6 +86,47 @@ export async function createCategory(name: string) {
 }
 
 /**
+ * Add a new inventory category
+ * @param name Category name
+ * @returns Created category or null if error
+ */
+export async function addInventoryCategory(name: string) {
+  // This function is just an alias for createCategory for backward compatibility
+  return createCategory(name);
+}
+
+/**
+ * Delete an inventory category
+ * @param name Category name
+ * @returns True if successful, false otherwise
+ */
+export async function deleteInventoryCategory(name: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('inventory_categories')
+      .delete()
+      .eq('name', name);
+    
+    if (error) throw error;
+    
+    toast({
+      title: "Category deleted",
+      description: `Category "${name}" has been deleted`,
+    });
+    
+    return true;
+  } catch (error) {
+    console.error('Error deleting category:', error);
+    toast({
+      title: "Error",
+      description: "Could not delete category",
+      variant: "destructive",
+    });
+    return false;
+  }
+}
+
+/**
  * Initialize default categories if none exist
  * This function should not throw - silently fail if RLS prevents this
  */
