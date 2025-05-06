@@ -85,7 +85,7 @@ export function InventoryHeader() {
         >
           <Link to="/inventory/manager" className="flex items-center gap-1">
             <Settings className="h-4 w-4" />
-            Field Manager
+            Mandatory Selectable Fields
           </Link>
         </Button>
         
