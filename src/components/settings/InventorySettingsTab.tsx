@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
-import { ShoppingBasket, BarChart2, Truck } from "lucide-react";
+import { ShoppingBasket, BarChart2, Truck, Database } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export function InventorySettingsTab() {
   const [autoReorder, setAutoReorder] = useState(false);
@@ -41,6 +41,28 @@ export function InventorySettingsTab() {
 
   return (
     <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Database className="h-5 w-5" />
+            Inventory Field Manager
+          </CardTitle>
+          <CardDescription>
+            Configure which inventory fields are mandatory or optional
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">
+            Manage which fields are required when creating or editing inventory items.
+          </p>
+          <Link to="/inventory/manager">
+            <Button className="w-full bg-esm-blue-600 hover:bg-esm-blue-700">
+              Open Field Manager
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
+      
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
