@@ -1,7 +1,7 @@
 
 import { useNavigate } from "react-router-dom";
 import { InventoryForm } from "@/components/inventory/form/InventoryForm";
-import { InventoryAddHeader } from "@/components/inventory/form/InventoryAddHeader";
+import { InventoryHeader } from "@/components/inventory/InventoryHeader";
 import { useInventoryCrud } from "@/hooks/inventory/useInventoryCrud";
 import { InventoryItemExtended } from "@/types/inventory";
 import { toast } from "@/hooks/use-toast";
@@ -34,13 +34,15 @@ export default function InventoryAdd() {
   };
 
   return (
-    <div className="container mx-auto py-6">
-      <InventoryAddHeader onCancel={handleCancel} />
-      <InventoryForm 
-        onSubmit={handleSubmit}
-        loading={loading}
-        onCancel={handleCancel}
-      />
+    <div className="space-y-6">
+      <InventoryHeader />
+      <div className="container mx-auto">
+        <InventoryForm 
+          onSubmit={handleSubmit}
+          loading={loading}
+          onCancel={handleCancel}
+        />
+      </div>
     </div>
   );
 }

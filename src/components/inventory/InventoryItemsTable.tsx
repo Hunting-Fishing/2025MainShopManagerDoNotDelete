@@ -1,6 +1,7 @@
 
 import { InventoryItemExtended } from "@/types/inventory";
 import { InventoryTable } from "./InventoryTable";
+import { InventoryHeader } from "./InventoryHeader";
 
 interface InventoryItemsTableProps {
   items: InventoryItemExtended[];
@@ -8,8 +9,11 @@ interface InventoryItemsTableProps {
 
 export function InventoryItemsTable({ items }: InventoryItemsTableProps) {
   return (
-    <div className="w-full">
-      <InventoryTable items={items} />
+    <div className="space-y-6">
+      <InventoryHeader />
+      <div className="w-full">
+        <InventoryTable items={items} />
+      </div>
     </div>
   );
 }

@@ -15,7 +15,7 @@ export function InventoryHeader() {
         <Button 
           asChild 
           variant={currentPath === "/inventory" ? "default" : "outline"}
-          className="rounded-full text-sm px-4"
+          className={`rounded-full text-sm px-4 ${currentPath === "/inventory" ? "bg-blue-600 hover:bg-blue-700" : "border-blue-500 text-blue-600"}`}
         >
           <Link to="/inventory" className="flex items-center gap-1">
             <Package className="h-4 w-4" />
@@ -26,7 +26,7 @@ export function InventoryHeader() {
         <Button 
           asChild 
           variant={currentPath === "/inventory/stock" ? "default" : "outline"}
-          className="rounded-full text-sm px-4"
+          className={`rounded-full text-sm px-4 ${currentPath === "/inventory/stock" ? "bg-blue-600 hover:bg-blue-700" : "border-blue-500 text-blue-600"}`}
         >
           <Link to="/inventory/stock" className="flex items-center gap-1">
             <Boxes className="h-4 w-4" />
@@ -37,7 +37,7 @@ export function InventoryHeader() {
         <Button 
           asChild 
           variant={currentPath === "/inventory/orders" ? "default" : "outline"}
-          className="rounded-full text-sm px-4"
+          className={`rounded-full text-sm px-4 ${currentPath === "/inventory/orders" ? "bg-blue-600 hover:bg-blue-700" : "border-blue-500 text-blue-600"}`}
         >
           <Link to="/inventory/orders" className="flex items-center gap-1">
             <ShoppingCart className="h-4 w-4" />
@@ -48,7 +48,7 @@ export function InventoryHeader() {
         <Button 
           asChild 
           variant={currentPath === "/inventory/suppliers" ? "default" : "outline"}
-          className="rounded-full text-sm px-4"
+          className={`rounded-full text-sm px-4 ${currentPath === "/inventory/suppliers" ? "bg-blue-600 hover:bg-blue-700" : "border-blue-500 text-blue-600"}`}
         >
           <Link to="/inventory/suppliers" className="flex items-center gap-1">
             <Truck className="h-4 w-4" />
@@ -59,7 +59,7 @@ export function InventoryHeader() {
         <Button 
           asChild 
           variant={currentPath === "/inventory/categories" ? "default" : "outline"}
-          className="rounded-full text-sm px-4"
+          className={`rounded-full text-sm px-4 ${currentPath === "/inventory/categories" ? "bg-blue-600 hover:bg-blue-700" : "border-blue-500 text-blue-600"}`}
         >
           <Link to="/inventory/categories" className="flex items-center gap-1">
             <Tag className="h-4 w-4" />
@@ -70,7 +70,7 @@ export function InventoryHeader() {
         <Button 
           asChild 
           variant={currentPath === "/inventory/locations" ? "default" : "outline"}
-          className="rounded-full text-sm px-4"
+          className={`rounded-full text-sm px-4 ${currentPath === "/inventory/locations" ? "bg-blue-600 hover:bg-blue-700" : "border-blue-500 text-blue-600"}`}
         >
           <Link to="/inventory/locations" className="flex items-center gap-1">
             <Home className="h-4 w-4" />

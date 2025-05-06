@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useInventoryFilters } from "@/hooks/useInventoryFilters";
 import { InventoryHeader } from "@/components/inventory/InventoryHeader";

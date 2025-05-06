@@ -1,20 +1,13 @@
 
+import React from "react";
+import { InventoryHeader } from "@/components/inventory/InventoryHeader";
 import { InventoryOrdersPage } from "./InventoryOrdersPage";
-import { useCreateOrderDialog } from "./useCreateOrderDialog";
-import { useReceiveDialog } from "./useReceiveDialog";
-import { useCancelDialog } from "./useCancelDialog";
 
 export function InventoryOrdersContainer() {
-  const { CreateOrderDialog } = useCreateOrderDialog();
-  const { ReceiveDialog } = useReceiveDialog();
-  const { CancelDialog } = useCancelDialog();
-  
   return (
-    <>
+    <div className="space-y-6">
+      <InventoryHeader />
       <InventoryOrdersPage />
-      <CreateOrderDialog />
-      <ReceiveDialog />
-      <CancelDialog />
-    </>
+    </div>
   );
 }
