@@ -1,79 +1,155 @@
 
-import React, { useState } from 'react';
-import { Card } from "@/components/ui/card";
-import { ChatSidebar } from "@/components/chat/ChatSidebar";
-import { ChatRoom } from '@/types/chat';
-
-// Mock data for demonstration purposes
-const mockChatRooms: ChatRoom[] = [
-  {
-    id: '1',
-    name: 'Work Order #1234',
-    type: 'work_order',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    last_message: {
-      id: '101',
-      content: 'When will the car be ready?',
-      sender_id: 'user2',
-      created_at: new Date().toISOString()
-    },
-    unread_count: 2
-  },
-  {
-    id: '2',
-    name: 'John Smith',
-    type: 'direct',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    last_message: {
-      id: '102',
-      content: 'I\'ll check on that part for you',
-      sender_id: 'user1',
-      created_at: new Date().toISOString()
-    },
-    unread_count: 0
-  }
-];
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { NewChatDialog } from '@/components/chat/NewChatDialog';
+import { useChat } from '@/hooks/useChat';
+import { useAuthUser } from '@/hooks/useAuthUser';
+import { useChatRoomActions } from '@/hooks/useChatRoomActions';
+import { ChatLoading } from '@/components/chat/ChatLoading';
+import { ChatPageLayout } from '@/components/chat/ChatPageLayout';
+import { useChatNotifications } from '@/hooks/useChatNotifications';
+import { toast } from '@/hooks/use-toast';
 
 export default function Chat() {
-  const [selectedRoom, setSelectedRoom] = useState<ChatRoom | null>(null);
+  const { roomId } = useParams<{ roomId?: string }>();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { userId, userName, isLoading } = useAuthUser();
   
-  const handleSelectRoom = (room: ChatRoom) => {
-    setSelectedRoom(room);
-  };
-  
-  const handleNewChat = () => {
-    // Implementation for creating a new chat would go here
-    console.log("Create new chat");
-  };
-  
+  const {
+    chatRooms,
+    currentRoom,
+    messages,
+    loading: chatLoading,
+    error,
+    newMessageText,
+    setNewMessageText,
+    handleSendMessage,
+    handleSendVoiceMessage,
+    handleSendFileMessage,
+    handlePinRoom,
+    handleArchiveRoom,
+    flagMessage,
+    handleEditMessage,
+    isTyping,
+    typingUsers,
+    handleTyping,
+    threadMessages,
+    activeThreadId,
+    handleThreadOpen,
+    handleThreadClose,
+    selectRoom,
+    refreshRooms
+  } = useChat({
+    userId: userId || '',
+    userName: userName
+  });
+
+  const {
+    showNewChatDialog,
+    setShowNewChatDialog,
+    handleCreateChat,
+    openWorkOrderChat,
+    getShiftChat,
+    handleViewWorkOrderDetails
+  } = useChatRoomActions(userId, selectRoom, refreshRooms);
+
+  // Check for shift chat request from calendar page
+  useEffect(() => {
+    const state = location.state as any;
+    if (state?.createShiftChat) {
+      setShowNewChatDialog(true);
+      
+      // Reset location state to prevent reopening on navigation
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location, navigate, setShowNewChatDialog]);
+
+  // Use chat notifications hook
+  useChatNotifications({ userId: userId || '' });
+
+  // Load specified room if roomId is provided in URL
+  useEffect(() => {
+    if (!userId || !roomId) return;
+
+    // First check if it's a regular room in our loaded rooms
+    const findRoomInLoaded = () => {
+      if (chatRooms.length > 0) {
+        const room = chatRooms.find(r => r.id === roomId);
+        if (room) {
+          selectRoom(room);
+          return true;
+        }
+      }
+      return false;
+    };
+
+    if (findRoomInLoaded()) {
+      return; // Room found in loaded rooms
+    }
+
+    // If room wasn't found in loaded rooms and is a shift chat format, try to load it specifically
+    if (roomId.startsWith('shift-chat-')) {
+      toast({
+        title: "Loading shift chat",
+        description: "Please wait while we find the shift chat room."
+      });
+      
+      // Load the shift chat
+      getShiftChat(roomId)
+        .then(room => {
+          if (!room && !findRoomInLoaded()) {
+            // If still not found, navigate to main chat
+            navigate('/chat', { replace: true });
+          }
+        })
+        .catch(() => {
+          navigate('/chat', { replace: true });
+        });
+    } else {
+      // If not found and not a shift chat format, navigate to main chat
+      navigate('/chat', { replace: true });
+    }
+  }, [roomId, userId, chatRooms, selectRoom, navigate, getShiftChat]);
+
+  if (isLoading) {
+    return <ChatLoading />;
+  }
+
   return (
-    <div className="h-[calc(100vh-120px)] gap-4 flex">
-      <div className="w-1/3 h-full">
-        <ChatSidebar 
-          rooms={mockChatRooms}
-          selectedRoom={selectedRoom}
-          onSelectRoom={handleSelectRoom}
-          onNewChat={handleNewChat}
-        />
-      </div>
-      <div className="w-2/3 h-full">
-        <Card className="h-full">
-          {!selectedRoom ? (
-            <div className="flex items-center justify-center h-full text-slate-500">
-              Select a conversation or start a new chat
-            </div>
-          ) : (
-            <div className="p-4">
-              <h2 className="text-xl font-semibold mb-4">{selectedRoom.name}</h2>
-              <div className="border-t pt-4">
-                Chat messages will appear here.
-              </div>
-            </div>
-          )}
-        </Card>
-      </div>
-    </div>
+    <>
+      <ChatPageLayout
+        chatRooms={chatRooms}
+        currentRoom={currentRoom}
+        messages={messages}
+        userId={userId || ''}
+        userName={userName}
+        newMessageText={newMessageText}
+        setNewMessageText={setNewMessageText}
+        onSelectRoom={selectRoom}
+        onSendMessage={handleSendMessage}
+        onSendVoiceMessage={handleSendVoiceMessage}
+        onSendFileMessage={handleSendFileMessage}
+        onPinRoom={handlePinRoom}
+        onArchiveRoom={handleArchiveRoom}
+        onFlagMessage={flagMessage}
+        onEditMessage={handleEditMessage}
+        isTyping={isTyping}
+        typingUsers={typingUsers}
+        threadMessages={threadMessages}
+        activeThreadId={activeThreadId}
+        onOpenThread={handleThreadOpen}
+        onCloseThread={handleThreadClose}
+        onViewWorkOrderDetails={() => currentRoom?.work_order_id && handleViewWorkOrderDetails(currentRoom.work_order_id)}
+        navigateToRoom={(roomId) => navigate(`/chat/${roomId}`)}
+        onNewChat={() => setShowNewChatDialog(true)}
+      />
+      
+      <NewChatDialog
+        open={showNewChatDialog}
+        onClose={() => setShowNewChatDialog(false)}
+        onCreate={(name, type, participants, shiftMetadata) => handleCreateChat(type, participants, name, undefined, shiftMetadata)}
+      />
+    </>
   );
 }

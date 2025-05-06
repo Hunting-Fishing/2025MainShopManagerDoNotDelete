@@ -1,4 +1,3 @@
-
 import { RouteObject } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import Dashboard from '@/pages/Dashboard';
@@ -50,12 +49,6 @@ import CreateInvoice from '@/pages/CreateInvoice';
 import TeamMemberCreate from '@/pages/TeamMemberCreate';
 import TeamMemberProfile from '@/pages/TeamMemberProfile';
 import TeamRoles from '@/pages/TeamRoles';
-import Calendar from '@/pages/Calendar';
-import Maintenance from '@/pages/Maintenance';
-import Chat from '@/pages/Chat';
-import ServiceReminders from '@/pages/ServiceReminders';
-import Equipment from '@/pages/Equipment';
-import Marketing from '@/pages/Marketing';
 
 // All routes must be declared here to be used by the RouterProvider
 export const routes: RouteObject[] = [
@@ -148,26 +141,6 @@ export const routes: RouteObject[] = [
         element: <CreateInvoice />,
       },
       {
-        path: 'equipment',
-        element: <Equipment />,
-      },
-      {
-        path: 'maintenance',
-        element: <Maintenance />,
-      },
-      {
-        path: 'calendar',
-        element: <Calendar />,
-      },
-      {
-        path: 'reminders',
-        element: <ServiceReminders />,
-      },
-      {
-        path: 'chat',
-        element: <Chat />,
-      },
-      {
         path: 'reports',
         element: <Reports />,
       },
@@ -210,10 +183,6 @@ export const routes: RouteObject[] = [
       {
         path: 'shopping/:category/:productId',
         element: <ToolDetailPage />,
-      },
-      {
-        path: 'marketing',
-        element: <Marketing />,
       },
       {
         path: 'settings',
