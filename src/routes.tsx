@@ -8,6 +8,7 @@ import DeveloperPortal from './pages/DeveloperPortal';
 import ShoppingControls from './pages/developer/ShoppingControls';
 import ServiceManagement from './pages/developer/ServiceManagement';
 import AppearanceSettings from './pages/settings/AppearanceSettings';
+import ShoppingPage from './pages/ShoppingPage';
 
 const routes: RouteObject[] = [
   {
@@ -40,6 +41,10 @@ const routes: RouteObject[] = [
       {
         path: '/settings/appearance',
         element: <AppearanceSettings />
+      },
+      {
+        path: '/shopping',
+        element: <ShoppingPage />
       },
     ]
   }

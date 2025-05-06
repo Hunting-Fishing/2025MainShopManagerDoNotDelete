@@ -37,6 +37,7 @@ const navItems = [
   { path: '/reports', name: 'Reports', icon: LineChart },
   { path: '/team', name: 'Team', icon: Users2 },
   { path: '/marketing', name: 'Marketing', icon: BarChart },
+  { path: '/developer', name: 'Developer', icon: Settings2 },
   { path: '/settings', name: 'Settings', icon: Settings2 },
 ];
 
