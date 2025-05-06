@@ -14,7 +14,6 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const { resolvedTheme } = useTheme();
   const isMobile = useIsMobile();
-  const location = useLocation();
   
   const isDark = resolvedTheme === 'dark';
 
