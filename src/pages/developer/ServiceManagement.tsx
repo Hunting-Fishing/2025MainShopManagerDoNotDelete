@@ -4,16 +4,10 @@ import { ServiceHierarchyManager } from '@/components/developer/service-manageme
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
-import { Helmet } from 'react-helmet-async';
 
 export default function ServiceManagement() {
   return (
     <div className="container mx-auto px-4 py-6">
-      <Helmet>
-        <title>Service Management | Developer Portal</title>
-        <meta name="description" content="Configure available services, subcategories, and jobs with pricing" />
-      </Helmet>
-      
       <Breadcrumb className="mb-6">
         <BreadcrumbList>
           <BreadcrumbItem>

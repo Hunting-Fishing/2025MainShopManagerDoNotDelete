@@ -1,13 +1,16 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Info, RefreshCw } from "lucide-react";
+import ProductsManagement from '@/components/developer/shopping/ProductsManagement';
+import CategoriesManagement from '@/components/developer/shopping/CategoriesManagement';
+import SubmissionsManagement from '@/components/developer/shopping/SubmissionsManagement';
+import AnalyticsTab from '@/components/developer/shopping/AnalyticsTab';
+import initializeStorage from '@/utils/initializeStorage';
+import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { toast } from '@/components/ui/use-toast';
-import { Helmet } from 'react-helmet-async';
 
 export default function ShoppingControls() {
   const [activeTab, setActiveTab] = useState("products");
@@ -20,19 +23,16 @@ export default function ShoppingControls() {
     const setupStorage = async () => {
       try {
         setIsInitializing(true);
-        // Mock initialization for now
-        setTimeout(() => {
-          setIsStorageInitialized(true);
+        const initialized = await initializeStorage();
+        setIsStorageInitialized(initialized);
+        if (initialized) {
+          console.log("Storage initialized successfully");
           setLastUpdated(new Date());
-          setIsInitializing(false);
-        }, 1000);
+        }
       } catch (error) {
         console.error("Error initializing storage:", error);
-        toast({
-          variant: "destructive",
-          title: "Failed to initialize image storage",
-          description: "Image uploads may not work correctly."
-        });
+        toast.error("Failed to initialize image storage. Image uploads may not work correctly.");
+      } finally {
         setIsInitializing(false);
       }
     };
@@ -43,32 +43,22 @@ export default function ShoppingControls() {
   const handleRefresh = async () => {
     try {
       setIsInitializing(true);
-      // Mock refresh for now
-      setTimeout(() => {
-        setIsStorageInitialized(true);
+      const initialized = await initializeStorage();
+      setIsStorageInitialized(initialized);
+      if (initialized) {
+        toast.success("Storage refreshed successfully");
         setLastUpdated(new Date());
-        toast({
-          title: "Storage refreshed successfully"
-        });
-        setIsInitializing(false);
-      }, 1000);
+      }
     } catch (error) {
       console.error("Error refreshing storage:", error);
-      toast({
-        variant: "destructive",
-        title: "Failed to refresh storage"
-      });
+      toast.error("Failed to refresh storage");
+    } finally {
       setIsInitializing(false);
     }
   };
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <Helmet>
-        <title>Shopping Controls | Developer Portal</title>
-        <meta name="description" content="Manage affiliate products, categories, and user submissions" />
-      </Helmet>
-      
       <div className="mb-8">
         <Button variant="outline" size="sm" className="mb-4" asChild>
           <Link to="/developer">
@@ -133,7 +123,7 @@ export default function ShoppingControls() {
           <TabsList className="bg-white dark:bg-slate-800 rounded-full p-1 border shadow-sm">
             <TabsTrigger value="products" className="rounded-full text-sm px-4 py-2">
               Products
-              <Badge variant="outline" className="ml-2 bg-blue-100 text-blue-800 border-blue-200">
+              <Badge variant="info" className="ml-2">
                 Shop
               </Badge>
             </TabsTrigger>
@@ -142,7 +132,7 @@ export default function ShoppingControls() {
             </TabsTrigger>
             <TabsTrigger value="submissions" className="rounded-full text-sm px-4 py-2">
               User Submissions
-              <Badge variant="outline" className="ml-2 bg-amber-100 text-amber-800 border-amber-200">
+              <Badge variant="warning" className="ml-2">
                 New
               </Badge>
             </TabsTrigger>
@@ -166,19 +156,19 @@ export default function ShoppingControls() {
 
         <Card className="bg-white border-gray-100 shadow-md rounded-xl p-6">
           <TabsContent value="products" className="m-0">
-            <p>Product management interface will be implemented here.</p>
+            <ProductsManagement />
           </TabsContent>
 
           <TabsContent value="categories" className="m-0">
-            <p>Categories management interface will be implemented here.</p>
+            <CategoriesManagement />
           </TabsContent>
 
           <TabsContent value="submissions" className="m-0">
-            <p>User submissions management interface will be implemented here.</p>
+            <SubmissionsManagement />
           </TabsContent>
 
           <TabsContent value="analytics" className="m-0">
-            <p>Analytics dashboard will be implemented here.</p>
+            <AnalyticsTab />
           </TabsContent>
         </Card>
       </Tabs>

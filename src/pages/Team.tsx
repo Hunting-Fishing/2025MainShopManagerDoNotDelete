@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Helmet } from "react-helmet-async";
+import { SeoHead } from "@/components/common/SeoHead";
 import { TeamHeader } from "@/components/team/TeamHeader";
 import { TeamViewToggle } from "@/components/team/TeamViewToggle";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
@@ -78,11 +78,11 @@ export default function Team() {
 
   return (
     <div className="space-y-6">
-      <Helmet>
-        <title>Team Management | Easy Shop Manager</title>
-        <meta name="description" content="Manage your team members, assign roles and permissions, and track their performance." />
-        <meta name="keywords" content="team management, role assignment, technician management, staff management" />
-      </Helmet>
+      <SeoHead 
+        title="Team Management | Easy Shop Manager" 
+        description="Manage your team members, assign roles and permissions, and track their performance."
+        keywords="team management, role assignment, technician management, staff management"
+      />
       
       <TeamHeader />
       

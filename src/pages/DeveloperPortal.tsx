@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Settings, Store, Hammer, Users, Wrench, BarChart3, Shield, Link as LinkIcon } from "lucide-react";
-import { Helmet } from "react-helmet-async";
+import { Container, Segment, Header as SemanticHeader, Grid } from "semantic-ui-react";
 
 export default function DeveloperPortal() {
   const adminModules = [
@@ -67,16 +67,11 @@ export default function DeveloperPortal() {
   ];
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <Helmet>
-        <title>Developer Portal | Easy Shop Manager</title>
-        <meta name="description" content="Advanced controls and management tools for application administrators" />
-      </Helmet>
-      
-      <div className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-900 border-t-4 border-t-blue-500 p-6 rounded-xl shadow-sm">
+    <Container fluid className="px-4 py-8">
+      <Segment raised className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-900 border-t-4 border-t-blue-500">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
           <div>
-            <h1 className="text-3xl font-bold">Developer Portal</h1>
+            <SemanticHeader as="h1" className="text-3xl font-bold">Developer Portal</SemanticHeader>
             <p className="text-slate-600 dark:text-slate-300 mt-2">
               Advanced controls and management tools for application administrators
             </p>
@@ -87,28 +82,30 @@ export default function DeveloperPortal() {
             </Link>
           </Button>
         </div>
-      </div>
+      </Segment>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <Grid columns={3} stackable doubling>
         {adminModules.map((module) => (
-          <Card key={module.id} className="h-full transition-all hover:shadow-lg hover:border-blue-300 border-t-4 border-t-blue-500">
-            <CardHeader className="pb-2">
-              <div className="flex items-start justify-between mb-2">
-                <div className="p-2 bg-blue-100 dark:bg-slate-800 rounded-lg">
-                  {module.icon}
+          <Grid.Column key={module.id}>
+            <Card className="h-full transition-all hover:shadow-lg hover:border-blue-300 border-t-4 border-t-blue-500">
+              <CardHeader className="pb-2">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="p-2 bg-blue-100 dark:bg-slate-800 rounded-lg">
+                    {module.icon}
+                  </div>
                 </div>
-              </div>
-              <CardTitle>{module.title}</CardTitle>
-              <CardDescription>{module.description}</CardDescription>
-            </CardHeader>
-            <CardFooter>
-              <Button asChild className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white">
-                <Link to={module.href}>Access {module.title}</Link>
-              </Button>
-            </CardFooter>
-          </Card>
+                <CardTitle>{module.title}</CardTitle>
+                <CardDescription>{module.description}</CardDescription>
+              </CardHeader>
+              <CardFooter>
+                <Button asChild className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white">
+                  <Link to={module.href}>Access {module.title}</Link>
+                </Button>
+              </CardFooter>
+            </Card>
+          </Grid.Column>
         ))}
-      </div>
+      </Grid>
       
       <div className="mt-10 p-4 border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 rounded-xl">
         <div className="flex items-center gap-2">
@@ -119,6 +116,6 @@ export default function DeveloperPortal() {
           The Developer Portal is restricted to authorized personnel only. Actions performed here directly affect the application's functionality.
         </p>
       </div>
-    </div>
+    </Container>
   );
 }
