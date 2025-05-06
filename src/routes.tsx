@@ -46,6 +46,9 @@ import InventoryLocations from '@/pages/InventoryLocations';
 import InventoryManager from '@/pages/InventoryManager';
 import Invoices from '@/pages/Invoices';
 import CreateInvoice from '@/pages/CreateInvoice';
+import TeamMemberCreate from '@/pages/TeamMemberCreate';
+import TeamMemberProfile from '@/pages/TeamMemberProfile';
+import TeamRoles from '@/pages/TeamRoles';
 
 // All routes must be declared here to be used by the RouterProvider
 export const routes: RouteObject[] = [
@@ -145,7 +148,18 @@ export const routes: RouteObject[] = [
         path: 'team',
         element: <Team />,
       },
-      // Tool shop routes
+      {
+        path: 'team/create',
+        element: <TeamMemberCreate />,
+      },
+      {
+        path: 'team/roles',
+        element: <TeamRoles />,
+      },
+      {
+        path: 'team/:id',
+        element: <TeamMemberProfile />,
+      },
       {
         path: 'tools',
         element: <AffiliateTool />,
@@ -158,7 +172,6 @@ export const routes: RouteObject[] = [
         path: 'tools/:category/:toolId',
         element: <ToolDetailPage />,
       },
-      // Shopping routes - maintain the same component as tools for now
       {
         path: 'shopping',
         element: <AffiliateTool />,
@@ -171,7 +184,6 @@ export const routes: RouteObject[] = [
         path: 'shopping/:category/:productId',
         element: <ToolDetailPage />,
       },
-      // Settings routes
       {
         path: 'settings',
         element: <Settings />,
@@ -236,7 +248,6 @@ export const routes: RouteObject[] = [
         path: 'settings/language',
         element: <LanguageSettings />,
       },
-      // Developer portal routes
       {
         path: 'developer',
         element: <DeveloperPortal />,
@@ -249,7 +260,6 @@ export const routes: RouteObject[] = [
         path: 'developer/service-management',
         element: <ServiceManagement />,
       },
-      // Forms route
       {
         path: 'forms',
         element: <Forms />,

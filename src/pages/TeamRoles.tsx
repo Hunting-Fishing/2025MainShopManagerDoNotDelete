@@ -1,87 +1,44 @@
 
-import React from "react";
-import { Card } from "@/components/ui/card";
-import { ResponsiveContainer } from "@/components/ui/responsive-container";
+import { SeoHead } from "@/components/common/SeoHead";
 import { RolesPageHeader } from "@/components/team/roles/RolesPageHeader";
 import { RolesContent } from "@/components/team/roles/RolesContent";
-import { RoleDialogs } from "@/components/team/roles/RoleDialogs";
 import { useTeamRolesPage } from "@/hooks/useTeamRolesPage";
 
 export default function TeamRoles() {
   const {
+    roles,
     filteredRoles,
     searchQuery,
     setSearchQuery,
     typeFilter,
     setTypeFilter,
-    isAddDialogOpen,
-    setIsAddDialogOpen,
-    isEditDialogOpen,
-    setIsEditDialogOpen,
-    isDeleteDialogOpen,
-    setIsDeleteDialogOpen,
-    newRoleName,
-    setNewRoleName,
-    newRoleDescription,
-    setNewRoleDescription,
-    currentRole,
-    setCurrentRole,
-    rolePermissions,
-    setRolePermissions,
-    handleExportRoles,
-    onAddRole,
-    onEditRole,
-    onDeleteRole,
-    handleEditRoleClick,
-    handleDeleteRoleClick,
-    handleDuplicateRoleClick,
-    handleReorderRole,
-    handleImportRoles
+    handleAddRole,
+    handleEditRole,
+    handleDeleteRole,
+    handleDuplicateRole
   } = useTeamRolesPage();
-
+  
   return (
-    <ResponsiveContainer maxWidth="full" className="space-y-6">
-      <Card className="border-0 shadow-sm bg-white overflow-hidden">
-        <RolesPageHeader 
-          onAddRoleClick={() => setIsAddDialogOpen(true)}
-          onExportRoles={handleExportRoles}
-          onImportRoles={handleImportRoles}
-        />
-      </Card>
-
+    <div className="space-y-6">
+      <SeoHead
+        title="Role Management | Easy Shop Manager"
+        description="Manage team roles and permissions for your organization."
+        keywords="role management, permissions, access control"
+      />
+      
+      <RolesPageHeader onAddRole={handleAddRole} />
+      
       <RolesContent 
-        roles={filteredRoles}
+        roles={roles}
+        filteredRoles={filteredRoles}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         typeFilter={typeFilter}
         onTypeFilterChange={setTypeFilter}
-        onEditRole={handleEditRoleClick}
-        onDeleteRole={handleDeleteRoleClick}
-        onDuplicateRole={handleDuplicateRoleClick}
-        onReorderRole={handleReorderRole}
+        onEditRole={handleEditRole}
+        onDeleteRole={handleDeleteRole}
+        onDuplicateRole={handleDuplicateRole}
       />
-
-      <RoleDialogs 
-        addDialogOpen={isAddDialogOpen}
-        onAddDialogChange={setIsAddDialogOpen}
-        roleName={newRoleName}
-        onRoleNameChange={setNewRoleName}
-        roleDescription={newRoleDescription}
-        onRoleDescriptionChange={setNewRoleDescription}
-        onPermissionsChange={setRolePermissions}
-        onAddRole={onAddRole}
-        
-        editDialogOpen={isEditDialogOpen}
-        onEditDialogChange={setIsEditDialogOpen}
-        currentRole={currentRole}
-        onCurrentRoleChange={setCurrentRole}
-        rolePermissions={rolePermissions}
-        onEditRole={onEditRole}
-        
-        deleteDialogOpen={isDeleteDialogOpen}
-        onDeleteDialogChange={setIsDeleteDialogOpen}
-        onDeleteRole={onDeleteRole}
-      />
-    </ResponsiveContainer>
+    </div>
   );
 }
