@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useInventoryCrud } from "@/hooks/inventory/useInventoryCrud";
 import { InventoryItemExtended } from "@/types/inventory";
 import { getInventoryCategories } from "@/services/inventory/categoryService";
@@ -12,6 +11,7 @@ export function useInventoryFilters() {
   const [filteredItems, setFilteredItems] = useState<InventoryItemExtended[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dataFetchAttempted, setDataFetchAttempted] = useState(false);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -29,17 +29,26 @@ export function useInventoryFilters() {
   // Load inventory items
   useEffect(() => {
     async function fetchData() {
+      if (dataFetchAttempted) return; // Only try to fetch once to prevent infinite loops
+      
+      setDataFetchAttempted(true);
       setLoading(true);
+      
       try {
+        // First load the inventory items
         const items = await loadInventoryItems();
         setInventoryItems(items);
         setFilteredItems(items);
         
-        // Extract unique filter values
+        // Extract unique filter values from items
         const uniqueCategories = Array.from(new Set(items.map(item => item.category))).filter(Boolean) as string[];
         const uniqueStatuses = Array.from(new Set(items.map(item => item.status))).filter(Boolean) as string[];
         const uniqueSuppliers = Array.from(new Set(items.map(item => item.supplier))).filter(Boolean) as string[];
         const uniqueLocations = Array.from(new Set(items.map(item => item.location))).filter(Boolean) as string[];
+        
+        // Set these as fallbacks
+        setStatuses(uniqueStatuses);
+        setLocations(uniqueLocations);
         
         // Get additional categories and suppliers from database
         try {
@@ -55,10 +64,8 @@ export function useInventoryFilters() {
           setCategories(uniqueCategories);
           setSuppliers(uniqueSuppliers);
         }
-        
-        setStatuses(uniqueStatuses);
-        setLocations(uniqueLocations);
       } catch (err) {
+        console.error("Failed to load inventory items:", err);
         setError("Failed to load inventory items");
         toast({
           title: "Error",
@@ -71,7 +78,7 @@ export function useInventoryFilters() {
     }
 
     fetchData();
-  }, [loadInventoryItems]);
+  }, [loadInventoryItems, dataFetchAttempted]);
 
   // Apply filters
   useEffect(() => {
@@ -114,7 +121,7 @@ export function useInventoryFilters() {
   }, [inventoryItems, searchQuery, categoryFilter, statusFilter, supplierFilter, locationFilter]);
 
   // CSV export handler
-  const handleExport = () => {
+  const handleExport = useCallback(() => {
     try {
       // Create CSV content
       const headers = [
@@ -165,17 +172,17 @@ export function useInventoryFilters() {
         variant: "destructive",
       });
     }
-  };
+  }, [filteredItems]);
   
   // CSV import handler - just a stub for now
-  const handleImport = () => {
+  const handleImport = useCallback(() => {
     // This would open a dialog to select a file and then process it
     toast({
       title: "Import",
       description: "CSV import functionality will be added soon",
       variant: "default",
     });
-  };
+  }, []);
 
   return {
     inventoryItems,

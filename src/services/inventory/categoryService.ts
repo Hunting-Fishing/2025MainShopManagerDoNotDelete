@@ -1,82 +1,115 @@
 
-import { supabase } from "@/lib/supabase";
+import { supabase } from '@/lib/supabase';
+import { toast } from '@/hooks/use-toast';
 
-// Get inventory categories from the database
+/**
+ * Get all inventory categories from the database
+ * @returns Array of category names
+ */
 export async function getInventoryCategories(): Promise<string[]> {
   try {
-    // Try to get categories from the database
-    // Cast supabase to any to bypass TypeScript checking until Supabase types are updated
-    const { data, error } = await (supabase as any)
-      .from("inventory_categories")
-      .select("name")
-      .order("name");
-
+    // First try to get existing categories
+    const { data: categories, error } = await supabase
+      .from('inventory_categories')
+      .select('name')
+      .order('name');
+    
     if (error) throw error;
-
-    // If there are categories in the DB, return them
-    if (data && data.length > 0) {
-      return data.map(category => category.name);
+    
+    // Extract category names
+    const categoryNames = categories.map(cat => cat.name);
+    
+    // If no categories exist, try to initialize defaults (but don't error if this fails)
+    if (categoryNames.length === 0) {
+      try {
+        await initializeDefaultCategories();
+        // Try to fetch again after initializing
+        const { data: updatedCategories, error: refetchError } = await supabase
+          .from('inventory_categories')
+          .select('name')
+          .order('name');
+        
+        if (!refetchError && updatedCategories.length > 0) {
+          return updatedCategories.map(cat => cat.name);
+        }
+        
+        // If we still don't have categories, return default ones for UI
+        if (categoryNames.length === 0) {
+          // Return fallback categories for UI without DB persistence
+          return ['Electrical', 'Engine', 'Brakes', 'Suspension', 'Body', 'Interior', 'Fluids', 'Other'];
+        }
+      } catch (initError) {
+        console.error('Error initializing default categories:', initError);
+        // Return fallback categories if initialization fails
+        return ['Electrical', 'Engine', 'Brakes', 'Suspension', 'Body', 'Interior', 'Fluids', 'Other'];
+      }
     }
-
-    // If no categories in DB, use the default ones from constants
-    const { INVENTORY_CATEGORIES } = await import("@/constants/inventoryCategories");
     
-    // Initialize the database with default categories
-    await initializeDefaultCategories(INVENTORY_CATEGORIES);
-    
-    return [...INVENTORY_CATEGORIES];
+    return categoryNames;
   } catch (error) {
-    console.error("Error fetching inventory categories:", error);
-    // If there's an error, fall back to constants
-    const { INVENTORY_CATEGORIES } = await import("@/constants/inventoryCategories");
-    return [...INVENTORY_CATEGORIES];
+    console.error('Error fetching inventory categories:', error);
+    // Fallback categories if everything fails
+    return ['Electrical', 'Engine', 'Brakes', 'Suspension', 'Body', 'Interior', 'Fluids', 'Other'];
   }
 }
 
-// Add a new inventory category
-export async function addInventoryCategory(name: string): Promise<void> {
+/**
+ * Create a new category
+ * @param name Category name
+ * @returns Created category or null if error
+ */
+export async function createCategory(name: string) {
   try {
-    // Use the any type to bypass TypeScript checking until Supabase types are updated
-    const { error } = await (supabase as any)
-      .from("inventory_categories")
-      .insert({ name });
-
-    if (error) throw error;
-  } catch (error) {
-    console.error("Error adding inventory category:", error);
-    throw error;
-  }
-}
-
-// Delete an inventory category
-export async function deleteInventoryCategory(name: string): Promise<void> {
-  try {
-    // Use the any type to bypass TypeScript checking until Supabase types are updated
-    const { error } = await (supabase as any)
-      .from("inventory_categories")
-      .delete()
-      .eq("name", name);
-
-    if (error) throw error;
-  } catch (error) {
-    console.error("Error deleting category:", error);
-    throw error;
-  }
-}
-
-// Initialize the database with default categories if needed
-async function initializeDefaultCategories(categories: string[]): Promise<void> {
-  try {
-    // Prepare the data for batch insert
-    const categoryData = categories.map(name => ({ name }));
+    const { data, error } = await supabase
+      .from('inventory_categories')
+      .insert({ name })
+      .select()
+      .single();
     
-    // Use the any type to bypass TypeScript checking until Supabase types are updated
-    const { error } = await (supabase as any)
-      .from("inventory_categories")
-      .insert(categoryData);
-
     if (error) throw error;
+    
+    toast({
+      title: "Category created",
+      description: `Category "${name}" has been created`,
+    });
+    
+    return data;
   } catch (error) {
-    console.error("Error initializing default categories:", error);
+    console.error('Error creating category:', error);
+    toast({
+      title: "Error",
+      description: "Could not create category",
+      variant: "destructive",
+    });
+    return null;
+  }
+}
+
+/**
+ * Initialize default categories if none exist
+ * This function should not throw - silently fail if RLS prevents this
+ */
+async function initializeDefaultCategories() {
+  const defaultCategories = [
+    { name: 'Electrical' },
+    { name: 'Engine' },
+    { name: 'Brakes' },
+    { name: 'Suspension' },
+    { name: 'Body' },
+    { name: 'Interior' },
+    { name: 'Fluids' },
+    { name: 'Other' }
+  ];
+  
+  try {
+    const { error } = await supabase
+      .from('inventory_categories')
+      .insert(defaultCategories);
+    
+    if (error) {
+      console.error('Error initializing default categories:', error);
+    }
+  } catch (error) {
+    console.error('Exception initializing default categories:', error);
   }
 }
