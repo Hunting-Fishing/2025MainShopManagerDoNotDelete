@@ -1,10 +1,13 @@
 
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { RouterProvider } from 'react-router-dom'
+import { RouterProvider, createBrowserRouter } from 'react-router-dom'
 import { Toaster } from "sonner"
 import './index.css'
-import { router } from './routes'
+import { routes } from './routes'
+
+// Create a browser router with the routes
+const router = createBrowserRouter(routes);
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
