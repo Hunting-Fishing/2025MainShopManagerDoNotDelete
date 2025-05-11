@@ -9,6 +9,7 @@ import DeveloperPortal from "@/pages/DeveloperPortal";
 import ServiceManagement from "@/pages/developer/ServiceManagement";
 import ShoppingControls from "@/pages/developer/ShoppingControls";
 import Shopping from "@/pages/Shopping";
+import Inventory from "@/pages/Inventory";
 
 export const routes = [
   {
@@ -46,6 +47,10 @@ export const routes = [
       {
         path: "shopping",
         element: <Shopping />,
+      },
+      {
+        path: "inventory",
+        element: <Inventory />,
       },
       {
         path: "*",
