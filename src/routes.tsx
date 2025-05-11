@@ -11,6 +11,8 @@ import ShoppingControls from "@/pages/developer/ShoppingControls";
 import Shopping from "@/pages/Shopping";
 import Inventory from "@/pages/Inventory";
 import InventoryItemDetail from "@/pages/inventory/InventoryItemDetail";
+import WorkOrders from "@/pages/WorkOrders";
+import WorkOrderDetails from "@/pages/WorkOrderDetails";
 
 export const routes = [
   {
@@ -56,6 +58,18 @@ export const routes = [
       {
         path: "inventory/item/:id",
         element: <InventoryItemDetail />,
+      },
+      {
+        path: "work-orders",
+        element: <WorkOrders />,
+      },
+      {
+        path: "work-orders/:id",
+        element: <WorkOrderDetails />,
+      },
+      {
+        path: "work-orders/:id/edit",
+        element: <WorkOrderDetails edit={true} />,
       },
       {
         path: "*",
