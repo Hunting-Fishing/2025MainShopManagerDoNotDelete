@@ -10,6 +10,7 @@ interface WorkOrderPageLayoutProps {
   children: ReactNode;
   backLink?: string;
   backLinkText?: string;
+  actions?: ReactNode;
 }
 
 export function WorkOrderPageLayout({
@@ -17,32 +18,38 @@ export function WorkOrderPageLayout({
   description,
   children,
   backLink,
-  backLinkText = "Back"
+  backLinkText = "Back",
+  actions
 }: WorkOrderPageLayoutProps) {
   return (
     <div className="container mx-auto py-6 space-y-6">
       {/* Header */}
-      <div className="flex flex-col space-y-4">
-        {backLink && (
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+        <div className="flex flex-col space-y-4">
+          {backLink && (
+            <div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-sm text-muted-foreground"
+                asChild
+              >
+                <Link to={backLink}>
+                  <ChevronLeft className="mr-2 h-4 w-4" />
+                  {backLinkText}
+                </Link>
+              </Button>
+            </div>
+          )}
+          
           <div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-sm text-muted-foreground"
-              asChild
-            >
-              <Link to={backLink}>
-                <ChevronLeft className="mr-2 h-4 w-4" />
-                {backLinkText}
-              </Link>
-            </Button>
+            <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+            {description && <p className="text-muted-foreground">{description}</p>}
           </div>
-        )}
-        
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-          {description && <p className="text-muted-foreground">{description}</p>}
         </div>
+        
+        {/* Action buttons */}
+        {actions && <div className="flex items-center gap-2">{actions}</div>}
       </div>
       
       {/* Content */}
