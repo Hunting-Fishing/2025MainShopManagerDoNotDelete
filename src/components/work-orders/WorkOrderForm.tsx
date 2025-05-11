@@ -1,172 +1,208 @@
 
-import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { workOrderFormSchema, WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Form } from "@/components/ui/form";
-import { toast } from "sonner";
-import { CustomerInfo } from "@/components/work-orders/fields/CustomerInfo";
-import { VehicleInfo } from "@/components/work-orders/fields/VehicleInfo";
-import { ScheduleSection } from "@/components/work-orders/fields/ScheduleSection";
-import { PartsAndServicesTable } from "@/components/work-orders/fields/PartsAndServicesTable";
-import { WorkOrderFormHeader } from "@/components/work-orders/WorkOrderFormHeader";
-import { WorkOrderSummary } from "@/components/work-orders/fields/WorkOrderSummary";
-import { Separator } from "@/components/ui/separator";
-import { Card } from "@/components/ui/card";
-import { WorkOrderTemplate } from "@/types/workOrder";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { CalendarIcon } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { toast } from "@/hooks/use-toast";
 
 interface WorkOrderFormProps {
   technicians: string[];
   isLoadingTechnicians: boolean;
-  initialTemplate?: WorkOrderTemplate | null;
 }
 
-export function WorkOrderForm({
-  technicians,
-  isLoadingTechnicians,
-  initialTemplate,
-}: WorkOrderFormProps) {
+export function WorkOrderForm({ technicians, isLoadingTechnicians }: WorkOrderFormProps) {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [selectedItems, setSelectedItems] = useState<any[]>([]);
   
-  // Get pre-filled info if coming from a vehicle page
-  const customerId = searchParams.get('customerId');
-  const vehicleId = searchParams.get('vehicleId');
-  const customerName = searchParams.get('customerName');
+  // Form state
+  const [customer, setCustomer] = useState("");
+  const [description, setDescription] = useState("");
+  const [status, setStatus] = useState("pending");
+  const [priority, setPriority] = useState("medium");
+  const [technician, setTechnician] = useState("");
+  const [dueDate, setDueDate] = useState<Date | undefined>(new Date());
+  const [notes, setNotes] = useState("");
   
-  // Initialize the form with React Hook Form + zod validation
-  const form = useForm<WorkOrderFormSchemaValues>({
-    resolver: zodResolver(workOrderFormSchema),
-    defaultValues: {
-      customer: customerName || "",
-      description: "",
-      status: "pending",
-      priority: "medium",
-      technician: "",
-      location: "",
-      dueDate: new Date(),
-      notes: "",
-      vehicleMake: "",
-      vehicleModel: "",
-      vehicleYear: "",
-      odometer: "",
-      licensePlate: "",
-      vin: "", // Add the default value for VIN
-    },
-  });
-  
-  // Apply template if provided
-  useEffect(() => {
-    if (initialTemplate) {
-      form.setValue("description", initialTemplate.description || "");
-      form.setValue("status", initialTemplate.status);
-      form.setValue("priority", initialTemplate.priority);
-      form.setValue("notes", initialTemplate.notes || "");
-      form.setValue("technician", initialTemplate.technician || "");
-      
-      // Set any other template values if available
-      if (initialTemplate.location) form.setValue("location", initialTemplate.location);
-      
-      toast.success(`Template "${initialTemplate.name}" applied`);
-    }
-  }, [initialTemplate, form]);
-  
-  // Function to calculate the total amount from selected items
-  const calculateTotal = () => {
-    return selectedItems.reduce((acc, item) => {
-      return acc + (item.quantity * item.unitPrice);
-    }, 0);
-  };
-
-  const onSubmit = async (data: WorkOrderFormSchemaValues) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsSubmitting(true);
-    setFormError(null);
     
     try {
-      // Here we would normally send the data to the backend
-      console.log("Submitting work order data:", data);
-      console.log("Selected items:", selectedItems);
+      // In a real application, this would save the work order data to a database
+      console.log({
+        customer, 
+        description,
+        status,
+        priority,
+        technician,
+        dueDate,
+        notes
+      });
       
-      // Simulate a successful submission
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
       
-      toast.success("Work order created successfully");
+      toast({
+        title: "Success",
+        description: "Work order created successfully",
+      });
+      
       navigate("/work-orders");
     } catch (error) {
       console.error("Error creating work order:", error);
-      setFormError("There was a problem creating the work order. Please try again.");
-      toast.error("Failed to create work order");
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to create work order. Please try again.",
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
-
+  
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <WorkOrderFormHeader 
-          isSubmitting={isSubmitting} 
-          error={formError}
-          title="Work Order #1000" 
-          description="Create a new work order for your customer's vehicle"
-        />
-        
-        <div className="grid grid-cols-1 gap-6">
-          {/* Customer and Vehicle Info Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-6">
-              <Card className="border-l-4 border-l-blue-600">
-                <CustomerInfo form={form} />
-              </Card>
-              
-              <Card className="border-l-4 border-l-green-600">
-                <VehicleInfo form={form} />
-              </Card>
-            </div>
-            
-            <Card className="border-l-4 border-l-amber-600">
-              <ScheduleSection 
-                form={form} 
-                technicians={technicians}
-                isLoadingTechnicians={isLoadingTechnicians}
-              />
-            </Card>
+    <form onSubmit={handleSubmit} className="p-6 space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Customer Information */}
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="customer">Customer</Label>
+            <Input 
+              id="customer" 
+              value={customer} 
+              onChange={(e) => setCustomer(e.target.value)}
+              placeholder="Enter customer name"
+              required
+            />
           </div>
           
-          <Separator className="my-4" />
-          
-          {/* Parts and Services Section */}
-          <Card className="border-t-4 border-t-slate-700">
-            <PartsAndServicesTable 
-              items={selectedItems}
-              setItems={setSelectedItems}
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Input
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Enter work order description"
+              required
             />
-          </Card>
-          
-          {/* Work Order Summary Section */}
-          <Card className="border-t-4 border-t-purple-600">
-            <WorkOrderSummary 
-              form={form}
-              total={calculateTotal()}
-            />
-          </Card>
+          </div>
         </div>
         
-        <div className="flex justify-end">
-          <Button 
-            type="submit" 
-            disabled={isSubmitting}
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-          >
-            {isSubmitting ? "Creating Work Order..." : "Create Work Order"}
-          </Button>
+        {/* Status & Assignment */}
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="status">Status</Label>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="in-progress">In Progress</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div>
+            <Label htmlFor="priority">Priority</Label>
+            <Select value={priority} onValueChange={setPriority}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select priority" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div>
+            <Label htmlFor="technician">Assigned Technician</Label>
+            <Select value={technician} onValueChange={setTechnician} disabled={isLoadingTechnicians}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select technician" />
+              </SelectTrigger>
+              <SelectContent>
+                {technicians.map((tech) => (
+                  <SelectItem key={tech} value={tech}>
+                    {tech}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div>
+            <Label>Due Date</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !dueDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dueDate ? format(dueDate, "PPP") : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={dueDate}
+                  onSelect={setDueDate}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
-      </form>
-    </Form>
+      </div>
+      
+      {/* Notes */}
+      <div>
+        <Label htmlFor="notes">Notes</Label>
+        <Textarea
+          id="notes"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Enter additional notes or instructions"
+          className="min-h-[120px]"
+        />
+      </div>
+      
+      {/* Actions */}
+      <div className="flex justify-end">
+        <Button 
+          type="submit" 
+          disabled={isSubmitting}
+          className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+        >
+          {isSubmitting ? "Creating..." : "Create Work Order"}
+        </Button>
+      </div>
+    </form>
   );
 }

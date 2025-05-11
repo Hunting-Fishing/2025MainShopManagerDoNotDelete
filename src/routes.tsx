@@ -13,6 +13,7 @@ import Inventory from "@/pages/Inventory";
 import InventoryItemDetail from "@/pages/inventory/InventoryItemDetail";
 import WorkOrders from "@/pages/WorkOrders";
 import WorkOrderDetails from "@/pages/WorkOrderDetails";
+import WorkOrderCreate from "@/pages/WorkOrderCreate";
 
 export const routes = [
   {
@@ -62,6 +63,10 @@ export const routes = [
       {
         path: "work-orders",
         element: <WorkOrders />,
+      },
+      {
+        path: "work-orders/create",
+        element: <WorkOrderCreate />,
       },
       {
         path: "work-orders/:id",
