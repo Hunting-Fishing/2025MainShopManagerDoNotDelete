@@ -42,7 +42,8 @@ export function useTechnicians() {
         if (techList.length === 0 || !techList.some(t => t.id === '_unassigned')) {
           techList.unshift({
             id: '_unassigned',
-            name: 'Unassigned'
+            name: 'Unassigned',
+            jobTitle: undefined // Adding jobTitle property even though it's undefined
           });
         }
         
@@ -58,7 +59,7 @@ export function useTechnicians() {
         
         // Provide default technicians if the fetch fails
         setTechnicians([
-          { id: '_unassigned', name: 'Unassigned' },
+          { id: '_unassigned', name: 'Unassigned', jobTitle: undefined },
           { id: 'john-doe', name: 'John Doe', jobTitle: 'Senior Technician' },
           { id: 'jane-smith', name: 'Jane Smith', jobTitle: 'Technician' },
           { id: 'bob-johnson', name: 'Bob Johnson', jobTitle: 'Junior Technician' }
