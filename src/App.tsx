@@ -15,6 +15,9 @@ const queryClient = new QueryClient();
 // Create a browser router with the routes
 const router = createBrowserRouter(routes);
 
+// Create a new helmetContext to avoid conflicts
+const helmetContext = {};
+
 function App() {
   const [authToken, setAuthToken] = useState(null);
   
@@ -30,7 +33,7 @@ function App() {
   };
 
   return (
-    <HelmetProvider>
+    <HelmetProvider context={helmetContext}>
       <ThemeProvider>
         <NotificationsProvider>
           <QueryClientProvider client={queryClient}>
