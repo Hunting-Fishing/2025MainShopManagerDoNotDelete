@@ -15,6 +15,7 @@ import { WorkOrderStatusSection } from "@/components/work-orders/WorkOrderStatus
 import { WorkOrderInfoSection } from "@/components/work-orders/WorkOrderInfoSection";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { Form } from "@/components/ui/form";
 
 // Simple form schema for the work order
 const workOrderFormSchema = z.object({
@@ -107,20 +108,22 @@ export default function WorkOrderCreate() {
                 <TabsTrigger value="assignment" className="rounded-full">Assignment</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="details" className="space-y-4">
-                <WorkOrderInfoSection 
-                  form={form}
-                  serviceCategories={serviceCategories}
-                />
-              </TabsContent>
-              
-              <TabsContent value="status" className="space-y-4">
-                <WorkOrderStatusSection form={form} /> 
-              </TabsContent>
-              
-              <TabsContent value="assignment" className="space-y-4">
-                <p className="text-sm text-muted-foreground">Assign technician on the form below</p>
-              </TabsContent>
+              <Form {...form}>
+                <TabsContent value="details" className="space-y-4">
+                  <WorkOrderInfoSection 
+                    form={form}
+                    serviceCategories={serviceCategories}
+                  />
+                </TabsContent>
+                
+                <TabsContent value="status" className="space-y-4">
+                  <WorkOrderStatusSection form={form} /> 
+                </TabsContent>
+                
+                <TabsContent value="assignment" className="space-y-4">
+                  <p className="text-sm text-muted-foreground">Assign technician on the form below</p>
+                </TabsContent>
+              </Form>
             </Tabs>
           </div>
           
