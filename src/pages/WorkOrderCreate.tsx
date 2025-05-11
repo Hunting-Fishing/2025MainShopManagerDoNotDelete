@@ -1,6 +1,7 @@
 
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
 import { WorkOrderForm } from "@/components/work-orders/WorkOrderForm";
 import { WorkOrderPageLayout } from "@/components/work-orders/WorkOrderPageLayout";
 import { useTechnicians } from "@/hooks/useTechnicians";
@@ -9,10 +10,22 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CustomerSearch } from "@/components/work-orders/customer-select/CustomerSearch";
 import { Customer } from "@/types/customer";
-import { useCustomers } from "@/hooks/useCustomers";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WorkOrderStatusSection } from "@/components/work-orders/WorkOrderStatusSection";
 import { WorkOrderInfoSection } from "@/components/work-orders/WorkOrderInfoSection";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
+// Simple form schema for the work order
+const workOrderFormSchema = z.object({
+  serviceCategory: z.string().optional(),
+  estimatedHours: z.number().optional(),
+  status: z.string().optional(),
+  priority: z.string().optional(),
+  // Add other fields as needed
+});
+
+type WorkOrderFormValues = z.infer<typeof workOrderFormSchema>;
 
 export default function WorkOrderCreate() {
   const navigate = useNavigate();
@@ -20,6 +33,17 @@ export default function WorkOrderCreate() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+
+  // Initialize the form
+  const form = useForm<WorkOrderFormValues>({
+    resolver: zodResolver(workOrderFormSchema),
+    defaultValues: {
+      serviceCategory: "",
+      estimatedHours: 1,
+      status: "pending",
+      priority: "medium",
+    }
+  });
   
   // Define service categories for job selection
   const serviceCategories = [
@@ -85,13 +109,13 @@ export default function WorkOrderCreate() {
               
               <TabsContent value="details" className="space-y-4">
                 <WorkOrderInfoSection 
-                  form={{control: null, getValues: () => ({})}} // Will be replaced by actual form in the WorkOrderForm
+                  form={form}
                   serviceCategories={serviceCategories}
                 />
               </TabsContent>
               
               <TabsContent value="status" className="space-y-4">
-                <WorkOrderStatusSection form={{control: null}} /> 
+                <WorkOrderStatusSection form={form} /> 
               </TabsContent>
               
               <TabsContent value="assignment" className="space-y-4">

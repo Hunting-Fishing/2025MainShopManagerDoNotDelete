@@ -1,5 +1,7 @@
+
 import { WorkOrder, TimeEntry, DbTimeEntry, WorkOrderStatusType, WorkOrderPriorityType } from "@/types/workOrder";
 import { normalizeWorkOrder } from "./formatters";
+import { supabase } from "@/lib/supabase";
 
 // Map time entry from DB format to app format
 export const mapTimeEntryFromDb = (entry: any): TimeEntry => ({
@@ -129,3 +131,52 @@ export enum WorkOrderStatus {
   Completed = "completed",
   Cancelled = "cancelled"
 }
+
+// Get a list of unique technicians from the database
+export const getUniqueTechnicians = async (): Promise<string[]> => {
+  try {
+    const { data: workOrders, error } = await supabase
+      .from('work_orders')
+      .select('technician_id');
+      
+    if (error) {
+      console.error("Error fetching technicians:", error);
+      return [];
+    }
+    
+    // Get unique technician IDs
+    const technicianIds = [...new Set(workOrders
+      .map(order => order.technician_id)
+      .filter(Boolean))];
+    
+    if (technicianIds.length === 0) {
+      return ['Unassigned'];
+    }
+    
+    // Fetch profiles for each technician ID
+    const { data: profiles, error: profileError } = await supabase
+      .from('profiles')
+      .select('first_name, last_name')
+      .in('id', technicianIds);
+      
+    if (profileError) {
+      console.error("Error fetching technician profiles:", profileError);
+      return ['Unassigned'];
+    }
+    
+    // Convert profiles to technician names
+    const technicianNames = profiles.map(profile => 
+      `${profile.first_name || ''} ${profile.last_name || ''}`.trim()
+    ).filter(name => name.length > 0);
+    
+    // Always include "Unassigned" option
+    if (!technicianNames.includes('Unassigned')) {
+      technicianNames.unshift('Unassigned');
+    }
+    
+    return technicianNames;
+  } catch (error) {
+    console.error("Error in getUniqueTechnicians:", error);
+    return ['Unassigned'];
+  }
+};

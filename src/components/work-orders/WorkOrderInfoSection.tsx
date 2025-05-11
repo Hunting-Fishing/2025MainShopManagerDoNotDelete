@@ -3,9 +3,10 @@ import React from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { UseFormReturn } from "react-hook-form";
 
 interface WorkOrderInfoSectionProps {
-  form: any;
+  form: UseFormReturn<any>;
   serviceCategories: string[];
 }
 

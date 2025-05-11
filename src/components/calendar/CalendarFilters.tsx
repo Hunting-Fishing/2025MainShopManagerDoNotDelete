@@ -2,8 +2,7 @@
 import { Filter, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { getUniqueTechnicians } from "@/utils/workOrders";
-import { statusMap } from "@/utils/workOrders"; // Updated import path
+import { statusMap } from "@/utils/workOrders";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -19,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { getUniqueTechnicians } from "@/utils/workOrders/mappers";
 
 interface CalendarFiltersProps {
   technicianFilter: string;
