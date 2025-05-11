@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
 import { Toaster } from "@/components/ui/toaster";
-import { RouterProvider } from 'react-router-dom';
+import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 import { routes } from './routes';
 import { ThemeProvider } from './context/ThemeContext';
 import { NotificationsProvider } from './context/notifications';
@@ -11,6 +11,9 @@ import './App.css';
 
 // Create a client for React Query
 const queryClient = new QueryClient();
+
+// Create a browser router with the routes
+const router = createBrowserRouter(routes);
 
 function App() {
   const [authToken, setAuthToken] = useState(null);
@@ -35,7 +38,7 @@ function App() {
               <title>Easy Shop Manager</title>
             </Helmet>
 
-            <RouterProvider router={routes} />
+            <RouterProvider router={router} />
             
             <Toaster />
           </QueryClientProvider>
