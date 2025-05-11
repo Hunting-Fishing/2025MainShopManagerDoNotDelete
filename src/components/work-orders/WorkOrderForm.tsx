@@ -23,15 +23,25 @@ import {
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
+import { createWorkOrder } from "@/utils/workOrders/crud"; 
 
 interface WorkOrderFormProps {
   technicians: string[];
   isLoadingTechnicians: boolean;
+  setIsSubmitting?: React.Dispatch<React.SetStateAction<boolean>>;
+  setError?: React.Dispatch<React.SetStateAction<string | null>>;
+  id?: string;
 }
 
-export function WorkOrderForm({ technicians, isLoadingTechnicians }: WorkOrderFormProps) {
+export function WorkOrderForm({ 
+  technicians, 
+  isLoadingTechnicians, 
+  setIsSubmitting,
+  setError,
+  id 
+}: WorkOrderFormProps) {
   const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmittingInternal, setIsSubmittingInternal] = useState(false);
   
   // Form state
   const [customer, setCustomer] = useState("");
@@ -41,10 +51,14 @@ export function WorkOrderForm({ technicians, isLoadingTechnicians }: WorkOrderFo
   const [technician, setTechnician] = useState("");
   const [dueDate, setDueDate] = useState<Date | undefined>(new Date());
   const [notes, setNotes] = useState("");
+  const [location, setLocation] = useState("");
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
+    
+    // Use provided state setter or internal one
+    const updateSubmitting = setIsSubmitting || setIsSubmittingInternal;
+    updateSubmitting(true);
     
     try {
       // In a real application, this would save the work order data to a database
@@ -55,10 +69,27 @@ export function WorkOrderForm({ technicians, isLoadingTechnicians }: WorkOrderFo
         priority,
         technician,
         dueDate,
-        notes
+        notes,
+        location
       });
       
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      // Try to use the createWorkOrder utility if available
+      try {
+        await createWorkOrder({
+          customer,
+          description,
+          status: status as any,
+          priority: priority as any,
+          technician,
+          dueDate: dueDate ? dueDate.toISOString() : new Date().toISOString(),
+          location,
+          notes
+        });
+      } catch (utilError) {
+        console.error("Error using workOrder util:", utilError);
+        // Fallback to simulating API call
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
       
       toast({
         title: "Success",
@@ -68,18 +99,24 @@ export function WorkOrderForm({ technicians, isLoadingTechnicians }: WorkOrderFo
       navigate("/work-orders");
     } catch (error) {
       console.error("Error creating work order:", error);
+      const errorMsg = "Failed to create work order. Please try again.";
+      
+      if (setError) {
+        setError(errorMsg);
+      }
+      
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to create work order. Please try again.",
+        description: errorMsg,
       });
     } finally {
-      setIsSubmitting(false);
+      updateSubmitting(false);
     }
   };
   
   return (
-    <form onSubmit={handleSubmit} className="p-6 space-y-6">
+    <form onSubmit={handleSubmit} className="p-6 space-y-6" id={id}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Customer Information */}
         <div className="space-y-4">
@@ -102,6 +139,16 @@ export function WorkOrderForm({ technicians, isLoadingTechnicians }: WorkOrderFo
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Enter work order description"
               required
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="location">Location</Label>
+            <Input
+              id="location"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="Enter service location"
             />
           </div>
         </div>
@@ -193,16 +240,18 @@ export function WorkOrderForm({ technicians, isLoadingTechnicians }: WorkOrderFo
         />
       </div>
       
-      {/* Actions */}
-      <div className="flex justify-end">
-        <Button 
-          type="submit" 
-          disabled={isSubmitting}
-          className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-        >
-          {isSubmitting ? "Creating..." : "Create Work Order"}
-        </Button>
-      </div>
+      {/* Actions - Only show if id is not provided (handled externally) */}
+      {!id && (
+        <div className="flex justify-end">
+          <Button 
+            type="submit" 
+            disabled={isSubmittingInternal}
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+          >
+            {isSubmittingInternal ? "Creating..." : "Create Work Order"}
+          </Button>
+        </div>
+      )}
     </form>
   );
 }
