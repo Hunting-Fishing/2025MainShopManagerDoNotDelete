@@ -8,7 +8,15 @@ import {
   ClipboardList,
   Settings, 
   ShoppingCart, 
-  Code
+  Code,
+  FileText,
+  Calendar,
+  Bell,
+  Tool,
+  MessageSquare,
+  BarChart,
+  Wrench,
+  Clipboard
 } from "lucide-react";
 
 export function AppSidebar() {
@@ -23,11 +31,21 @@ export function AppSidebar() {
 
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={20} />, path: "/dashboard" },
-    { id: "team", label: "Team", icon: <Users size={20} />, path: "/team" },
-    { id: "inventory", label: "Inventory", icon: <Package size={20} />, path: "/inventory" },
     { id: "work-orders", label: "Work Orders", icon: <ClipboardList size={20} />, path: "/work-orders" },
+    { id: "invoices", label: "Invoices", icon: <FileText size={20} />, path: "/invoices" },
+    { id: "customers", label: "Customers", icon: <Users size={20} />, path: "/customers" },
+    { id: "equipment", label: "Equipment", icon: <Tool size={20} />, path: "/equipment" },
+    { id: "inventory", label: "Inventory", icon: <Package size={20} />, path: "/inventory" },
+    { id: "team", label: "Team", icon: <Users size={20} />, path: "/team" },
+    { id: "calendar", label: "Calendar", icon: <Calendar size={20} />, path: "/calendar" },
+    { id: "chat", label: "Chat", icon: <MessageSquare size={20} />, path: "/chat" },
     { id: "shopping", label: "Shopping", icon: <ShoppingCart size={20} />, path: "/shopping" },
+    { id: "reports", label: "Reports", icon: <BarChart size={20} />, path: "/reports" },
+    { id: "reminders", label: "Reminders", icon: <Bell size={20} />, path: "/reminders" },
+    { id: "forms", label: "Forms", icon: <Clipboard size={20} />, path: "/forms" },
+    { id: "maintenance", label: "Maintenance", icon: <Wrench size={20} />, path: "/maintenance" },
     { id: "developer", label: "Developer", icon: <Code size={20} />, path: "/developer" },
+    { id: "settings", label: "Settings", icon: <Settings size={20} />, path: "/settings" },
   ];
 
   return (
