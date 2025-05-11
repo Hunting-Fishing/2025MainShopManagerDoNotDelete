@@ -4,6 +4,7 @@ import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
+  FileText,
   Users,
   Wrench,
   Package,
@@ -13,26 +14,25 @@ import {
   ClipboardPenLine,
   Settings2,
   ShoppingCart,
-  FileText,
   MessageSquare,
   AlarmClock,
   LineChart,
   Hammer,
-  LucideIcon
 } from 'lucide-react';
 
 // Enhanced navItems array with all the items shown in the UI
 const navItems = [
   { path: '/dashboard', name: 'Dashboard', icon: LayoutDashboard },
-  { path: '/customers', name: 'Customers', icon: Users },
   { path: '/work-orders', name: 'Work Orders', icon: Wrench },
+  { path: '/invoices', name: 'Invoices', icon: FileText },
+  { path: '/customers', name: 'Customers', icon: Users },
   { path: '/equipment', name: 'Equipment', icon: Hammer },
   { path: '/inventory', name: 'Inventory', icon: Package },
-  { path: '/invoices', name: 'Invoices', icon: FileText },
-  { path: '/calendar', name: 'Calendar', icon: Calendar },
-  { path: '/maintenance', name: 'Maintenance', icon: AlarmClock },
-  { path: '/chat', name: 'Chat', icon: MessageSquare },
   { path: '/forms', name: 'Forms', icon: ClipboardPenLine },
+  { path: '/maintenance', name: 'Maintenance', icon: AlarmClock },
+  { path: '/calendar', name: 'Calendar', icon: Calendar },
+  { path: '/reminders', name: 'Reminders', icon: AlarmClock },
+  { path: '/chat', name: 'Chat', icon: MessageSquare },
   { path: '/shopping', name: 'Shopping', icon: ShoppingCart },
   { path: '/reports', name: 'Reports', icon: LineChart },
   { path: '/team', name: 'Team', icon: Users2 },
