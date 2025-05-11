@@ -1,206 +1,208 @@
 
-import React, { useState, ChangeEvent } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useSerialNumbers, SerialNumber } from "@/hooks/inventory/useSerialNumbers";
-import { Trash2, Plus, FileText } from "lucide-react";
+import React, { useState, ChangeEvent } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Trash2, Plus } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { useSerialNumbers, SerialNumber } from '@/hooks/inventory/useSerialNumbers';
+import { InventoryItemExtended } from '@/types/inventory';
+import { toast } from '@/hooks/use-toast';
 
-interface SerialNumberTrackerProps {
+// Update the props interface to include 'item'
+export interface SerialNumberTrackerProps {
   itemId: string;
 }
 
-export function SerialNumberTracker({ itemId }: SerialNumberTrackerProps) {
-  const { serialNumbers, loading, addSerialNumber, deleteSerialNumber, updateSerialStatus } = useSerialNumbers(itemId);
-  const [newSerialNumber, setNewSerialNumber] = useState("");
-  const [status, setStatus] = useState("in_stock");
-  const [notes, setNotes] = useState("");
-  const [showAddForm, setShowAddForm] = useState(false);
-
-  const handleAddSerialNumber = async () => {
-    if (!newSerialNumber.trim()) return;
+export const SerialNumberTracker: React.FC<SerialNumberTrackerProps> = ({ itemId }) => {
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [serialNumber, setSerialNumber] = useState('');
+  const [serialStatus, setSerialStatus] = useState('in_stock');
+  const [notes, setNotes] = useState('');
+  
+  const {
+    serialNumbers,
+    loading,
+    addSerialNumber,
+    deleteSerialNumber,
+    updateSerialStatus,
+    refreshSerialNumbers
+  } = useSerialNumbers(itemId);
+  
+  const handleAddSerial = async () => {
+    if (!serialNumber.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Serial number cannot be empty',
+        variant: 'destructive'
+      });
+      return;
+    }
     
-    await addSerialNumber(newSerialNumber, status, notes);
-    setNewSerialNumber("");
-    setStatus("in_stock");
-    setNotes("");
-    setShowAddForm(false);
+    await addSerialNumber(serialNumber, serialStatus, notes);
+    setSerialNumber('');
+    setNotes('');
+    setShowAddDialog(false);
   };
-
-  const handleDeleteSerialNumber = async (serialId: string) => {
-    await deleteSerialNumber(serialId);
+  
+  const handleDelete = async (serialId: string) => {
+    if (confirm('Are you sure you want to delete this serial number?')) {
+      await deleteSerialNumber(serialId);
+    }
   };
-
+  
   const handleStatusChange = async (serialId: string, newStatus: string) => {
     await updateSerialStatus(serialId, newStatus);
   };
 
-  const getStatusBadgeClass = (status: string) => {
-    switch(status) {
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
       case 'in_stock':
         return 'bg-green-100 text-green-800 border border-green-300';
       case 'sold':
         return 'bg-blue-100 text-blue-800 border border-blue-300';
+      case 'returned':
+        return 'bg-amber-100 text-amber-800 border border-amber-300';
       case 'defective':
         return 'bg-red-100 text-red-800 border border-red-300';
-      case 'reserved':
-        return 'bg-yellow-100 text-yellow-800 border border-yellow-300';
       default:
         return 'bg-gray-100 text-gray-800 border border-gray-300';
     }
   };
 
+  if (loading) {
+    return <div className="text-center py-4">Loading serial numbers...</div>;
+  }
+
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex justify-between items-center">
-            <CardTitle className="text-xl font-bold">Serial Number Tracking</CardTitle>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowAddForm(!showAddForm)}
-              className="flex items-center gap-1"
-            >
-              <Plus className="h-4 w-4" />
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-medium">Serial Numbers</h3>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => setShowAddDialog(true)}
+          className="flex items-center gap-1"
+        >
+          <Plus className="h-4 w-4" /> Add Serial Number
+        </Button>
+      </div>
+      
+      {serialNumbers && serialNumbers.length > 0 ? (
+        <div className="border rounded-md">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Serial Number</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Added Date</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {serialNumbers.map((serial) => (
+                <tr key={serial.id}>
+                  <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {serial.serialNumber}
+                  </td>
+                  <td className="px-4 py-2 whitespace-nowrap text-sm">
+                    <div className="flex items-center">
+                      <select
+                        value={serial.status}
+                        onChange={(e) => handleStatusChange(serial.id, e.target.value)}
+                        className="block px-2 py-1 text-sm border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      >
+                        <option value="in_stock">In Stock</option>
+                        <option value="sold">Sold</option>
+                        <option value="returned">Returned</option>
+                        <option value="defective">Defective</option>
+                      </select>
+                      <Badge className={`ml-2 ${getStatusBadgeColor(serial.status)}`}>
+                        {serial.status === 'in_stock' ? 'In Stock' : 
+                         serial.status === 'sold' ? 'Sold' : 
+                         serial.status === 'returned' ? 'Returned' : 
+                         serial.status === 'defective' ? 'Defective' : 
+                         serial.status}
+                      </Badge>
+                    </div>
+                  </td>
+                  <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                    {new Date(serial.addedDate).toLocaleDateString()}
+                  </td>
+                  <td className="px-4 py-2 text-sm text-gray-500 max-w-xs truncate">
+                    {serial.notes}
+                  </td>
+                  <td className="px-4 py-2 whitespace-nowrap text-right text-sm font-medium">
+                    <Button variant="ghost" size="sm" onClick={() => handleDelete(serial.id)}>
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="text-center py-8 border rounded-md bg-gray-50">
+          <p className="text-gray-500">No serial numbers registered for this item</p>
+        </div>
+      )}
+      
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Serial Number</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="serialNumber">Serial Number</Label>
+              <Input
+                id="serialNumber"
+                value={serialNumber}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setSerialNumber(e.target.value)}
+                placeholder="Enter serial number"
+                className="w-full"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <select
+                id="status"
+                value={serialStatus}
+                onChange={(e) => setSerialStatus(e.target.value)}
+                className="block w-full px-3 py-2 text-base border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="in_stock">In Stock</option>
+                <option value="sold">Sold</option>
+                <option value="returned">Returned</option>
+                <option value="defective">Defective</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes (Optional)</Label>
+              <textarea
+                id="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Add any notes about this serial number"
+                className="block w-full px-3 py-2 text-base border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddSerial}>
               Add Serial Number
             </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {showAddForm && (
-            <div className="bg-slate-50 p-4 rounded-md border mb-4">
-              <h3 className="text-sm font-medium mb-3">Add New Serial Number</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div>
-                  <Label htmlFor="serialNumber">Serial Number</Label>
-                  <Input
-                    id="serialNumber"
-                    value={newSerialNumber}
-                    onChange={(e) => setNewSerialNumber(e.target.value)}
-                    placeholder="Enter serial number"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="status">Status</Label>
-                  <Select value={status} onValueChange={setStatus}>
-                    <SelectTrigger id="status">
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="in_stock">In Stock</SelectItem>
-                      <SelectItem value="sold">Sold</SelectItem>
-                      <SelectItem value="defective">Defective</SelectItem>
-                      <SelectItem value="reserved">Reserved</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="notes">Notes</Label>
-                  <Textarea
-                    id="notes"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Optional notes"
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setShowAddForm(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleAddSerialNumber}>
-                  Save Serial Number
-                </Button>
-              </div>
-            </div>
-          )}
-
-          <div className="mt-4">
-            {loading ? (
-              <div className="text-center p-4">Loading serial numbers...</div>
-            ) : serialNumbers && serialNumbers.length > 0 ? (
-              <div className="border rounded-md overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Serial Number</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Added Date</TableHead>
-                      <TableHead>Notes</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {serialNumbers.map((serial) => (
-                      <TableRow key={serial.id}>
-                        <TableCell className="font-medium">{serial.serialNumber}</TableCell>
-                        <TableCell>
-                          <Select 
-                            value={serial.status} 
-                            onValueChange={(value) => handleStatusChange(serial.id, value)}
-                          >
-                            <SelectTrigger className="h-8 w-32">
-                              <SelectValue>
-                                <span className={`px-2 py-1 text-xs rounded-full ${getStatusBadgeClass(serial.status)}`}>
-                                  {serial.status === 'in_stock' ? 'In Stock' : 
-                                   serial.status === 'sold' ? 'Sold' :
-                                   serial.status === 'defective' ? 'Defective' :
-                                   serial.status === 'reserved' ? 'Reserved' : serial.status}
-                                </span>
-                              </SelectValue>
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="in_stock">In Stock</SelectItem>
-                              <SelectItem value="sold">Sold</SelectItem>
-                              <SelectItem value="defective">Defective</SelectItem>
-                              <SelectItem value="reserved">Reserved</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell>{new Date(serial.addedDate).toLocaleDateString()}</TableCell>
-                        <TableCell>
-                          {serial.notes ? (
-                            <div className="flex items-center">
-                              <FileText className="h-4 w-4 mr-2 text-slate-400" />
-                              <span className="truncate max-w-[200px]">{serial.notes}</span>
-                            </div>
-                          ) : (
-                            "—"
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDeleteSerialNumber(serial.id)}
-                            className="h-8 w-8 text-red-500 hover:text-red-700"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            ) : (
-              <div className="text-center p-4 bg-slate-50 border rounded-md">
-                No serial numbers tracked for this item yet
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
-}
+};
+

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -224,7 +223,7 @@ export default function InventoryItemDetail() {
           </TabsContent>
           
           <TabsContent value="serial-tracking">
-            <SerialNumberTracker item={item} />
+            <SerialNumberTracker itemId={item.id} />
           </TabsContent>
         </Tabs>
       </div>
