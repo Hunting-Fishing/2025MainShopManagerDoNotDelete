@@ -1,106 +1,143 @@
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Check, X, Plus, Trash2 } from 'lucide-react';
-import { InventoryItemExtended } from '@/types/inventory';
-import { useSerialNumbers } from '@/hooks/inventory/useSerialNumbers';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import React, { useState, ChangeEvent } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useSerialNumbers, SerialNumber } from "@/hooks/inventory/useSerialNumbers";
+import { Trash2, Plus, FileText } from "lucide-react";
 
 interface SerialNumberTrackerProps {
-  item: InventoryItemExtended;
+  itemId: string;
 }
 
-export function SerialNumberTracker({ item }: SerialNumberTrackerProps) {
-  const { 
-    serialNumbers, 
-    addSerialNumber, 
-    deleteSerialNumber, 
-    updateSerialStatus, 
-    loading 
-  } = useSerialNumbers(item.id);
-  
-  const [newSerial, setNewSerial] = useState('');
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [bulkSerials, setBulkSerials] = useState('');
-  const [notes, setNotes] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('in_stock');
+export function SerialNumberTracker({ itemId }: SerialNumberTrackerProps) {
+  const { serialNumbers, loading, addSerialNumber, deleteSerialNumber, updateSerialStatus } = useSerialNumbers(itemId);
+  const [newSerialNumber, setNewSerialNumber] = useState("");
+  const [status, setStatus] = useState("in_stock");
+  const [notes, setNotes] = useState("");
+  const [showAddForm, setShowAddForm] = useState(false);
 
-  const handleAddSerial = async () => {
-    if (!newSerial.trim()) return;
-    await addSerialNumber(newSerial, selectedStatus, notes);
-    setNewSerial('');
-    setNotes('');
+  const handleAddSerialNumber = async () => {
+    if (!newSerialNumber.trim()) return;
+    
+    await addSerialNumber(newSerialNumber, status, notes);
+    setNewSerialNumber("");
+    setStatus("in_stock");
+    setNotes("");
+    setShowAddForm(false);
   };
 
-  const handleBulkAdd = async () => {
-    if (!bulkSerials.trim()) return;
-    
-    // Split by newlines, commas, or spaces
-    const serials = bulkSerials.split(/[\n,\s]+/).filter(s => s.trim());
-    
-    // Add each serial number
-    for (const serial of serials) {
-      if (serial.trim()) {
-        await addSerialNumber(serial.trim(), selectedStatus, notes);
-      }
+  const handleDeleteSerialNumber = async (serialId: string) => {
+    await deleteSerialNumber(serialId);
+  };
+
+  const handleStatusChange = async (serialId: string, newStatus: string) => {
+    await updateSerialStatus(serialId, newStatus);
+  };
+
+  const getStatusBadgeClass = (status: string) => {
+    switch(status) {
+      case 'in_stock':
+        return 'bg-green-100 text-green-800 border border-green-300';
+      case 'sold':
+        return 'bg-blue-100 text-blue-800 border border-blue-300';
+      case 'defective':
+        return 'bg-red-100 text-red-800 border border-red-300';
+      case 'reserved':
+        return 'bg-yellow-100 text-yellow-800 border border-yellow-300';
+      default:
+        return 'bg-gray-100 text-gray-800 border border-gray-300';
     }
-    
-    setBulkSerials('');
-    setNotes('');
-    setIsAddDialogOpen(false);
   };
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-xl font-bold">Serial Number Tracking</CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-xl font-bold">Serial Number Tracking</CardTitle>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowAddForm(!showAddForm)}
+              className="flex items-center gap-1"
+            >
+              <Plus className="h-4 w-4" />
+              Add Serial Number
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="flex-1">
-              <Label htmlFor="newSerial">Add Serial Number</Label>
-              <div className="flex mt-1">
-                <Input
-                  id="newSerial"
-                  value={newSerial}
-                  onChange={(e) => setNewSerial(e.target.value)}
-                  placeholder="Enter serial number"
-                  className="rounded-r-none"
-                />
-                <Button 
-                  onClick={handleAddSerial} 
-                  disabled={loading || !newSerial.trim()}
-                  className="rounded-l-none"
-                >
-                  <Plus className="h-4 w-4 mr-1" /> Add
+          {showAddForm && (
+            <div className="bg-slate-50 p-4 rounded-md border mb-4">
+              <h3 className="text-sm font-medium mb-3">Add New Serial Number</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                  <Label htmlFor="serialNumber">Serial Number</Label>
+                  <Input
+                    id="serialNumber"
+                    value={newSerialNumber}
+                    onChange={(e) => setNewSerialNumber(e.target.value)}
+                    placeholder="Enter serial number"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="status">Status</Label>
+                  <Select value={status} onValueChange={setStatus}>
+                    <SelectTrigger id="status">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="in_stock">In Stock</SelectItem>
+                      <SelectItem value="sold">Sold</SelectItem>
+                      <SelectItem value="defective">Defective</SelectItem>
+                      <SelectItem value="reserved">Reserved</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="notes">Notes</Label>
+                  <Textarea
+                    id="notes"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Optional notes"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowAddForm(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleAddSerialNumber}>
+                  Save Serial Number
                 </Button>
               </div>
             </div>
-            <div className="md:self-end">
-              <Button variant="outline" onClick={() => setIsAddDialogOpen(true)}>
-                Bulk Add
-              </Button>
-            </div>
-          </div>
+          )}
 
-          <div className="mb-6">
-            <h3 className="text-lg font-medium mb-2">Serial Numbers ({serialNumbers?.length || 0})</h3>
-            {serialNumbers && serialNumbers.length > 0 ? (
+          <div className="mt-4">
+            {loading ? (
+              <div className="text-center p-4">Loading serial numbers...</div>
+            ) : serialNumbers && serialNumbers.length > 0 ? (
               <div className="border rounded-md overflow-hidden">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Serial Number</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Notes</TableHead>
                       <TableHead>Added Date</TableHead>
-                      <TableHead className="w-[100px]">Actions</TableHead>
+                      <TableHead>Notes</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -108,58 +145,47 @@ export function SerialNumberTracker({ item }: SerialNumberTrackerProps) {
                       <TableRow key={serial.id}>
                         <TableCell className="font-medium">{serial.serialNumber}</TableCell>
                         <TableCell>
-                          <Select
-                            defaultValue={serial.status}
-                            onValueChange={(value) => updateSerialStatus(serial.id, value)}
-                            disabled={loading}
+                          <Select 
+                            value={serial.status} 
+                            onValueChange={(value) => handleStatusChange(serial.id, value)}
                           >
-                            <SelectTrigger className="w-[130px]">
-                              <SelectValue />
+                            <SelectTrigger className="h-8 w-32">
+                              <SelectValue>
+                                <span className={`px-2 py-1 text-xs rounded-full ${getStatusBadgeClass(serial.status)}`}>
+                                  {serial.status === 'in_stock' ? 'In Stock' : 
+                                   serial.status === 'sold' ? 'Sold' :
+                                   serial.status === 'defective' ? 'Defective' :
+                                   serial.status === 'reserved' ? 'Reserved' : serial.status}
+                                </span>
+                              </SelectValue>
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="in_stock">
-                                <div className="flex items-center gap-2">
-                                  <span className="h-2 w-2 rounded-full bg-green-500"></span>
-                                  In Stock
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="sold">
-                                <div className="flex items-center gap-2">
-                                  <span className="h-2 w-2 rounded-full bg-blue-500"></span>
-                                  Sold
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="reserved">
-                                <div className="flex items-center gap-2">
-                                  <span className="h-2 w-2 rounded-full bg-yellow-500"></span>
-                                  Reserved
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="defective">
-                                <div className="flex items-center gap-2">
-                                  <span className="h-2 w-2 rounded-full bg-red-500"></span>
-                                  Defective
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="returned">
-                                <div className="flex items-center gap-2">
-                                  <span className="h-2 w-2 rounded-full bg-purple-500"></span>
-                                  Returned
-                                </div>
-                              </SelectItem>
+                              <SelectItem value="in_stock">In Stock</SelectItem>
+                              <SelectItem value="sold">Sold</SelectItem>
+                              <SelectItem value="defective">Defective</SelectItem>
+                              <SelectItem value="reserved">Reserved</SelectItem>
                             </SelectContent>
                           </Select>
                         </TableCell>
-                        <TableCell>{serial.notes || '-'}</TableCell>
                         <TableCell>{new Date(serial.addedDate).toLocaleDateString()}</TableCell>
                         <TableCell>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => deleteSerialNumber(serial.id)}
-                            disabled={loading}
+                          {serial.notes ? (
+                            <div className="flex items-center">
+                              <FileText className="h-4 w-4 mr-2 text-slate-400" />
+                              <span className="truncate max-w-[200px]">{serial.notes}</span>
+                            </div>
+                          ) : (
+                            "—"
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteSerialNumber(serial.id)}
+                            className="h-8 w-8 text-red-500 hover:text-red-700"
                           >
-                            <Trash2 className="h-4 w-4 text-red-500" />
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -169,106 +195,12 @@ export function SerialNumberTracker({ item }: SerialNumberTrackerProps) {
               </div>
             ) : (
               <div className="text-center p-4 bg-slate-50 border rounded-md">
-                No serial numbers tracked for this item
+                No serial numbers tracked for this item yet
               </div>
             )}
           </div>
-
-          <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-md">
-            <div className="flex items-start">
-              <div className="mr-3 mt-1">
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  width="16" 
-                  height="16" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  stroke="#9B5C13" 
-                  strokeWidth="2" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                >
-                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
-                  <path d="M12 9v4"></path>
-                  <path d="M12 17h.01"></path>
-                </svg>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-yellow-800">Serial Number Tracking</h4>
-                <p className="text-xs text-yellow-700 mt-1">
-                  Serial numbers help track individual units through your inventory system. Use this feature for warranty claims, recalls, and to match specific units to customers.
-                </p>
-              </div>
-            </div>
-          </div>
         </CardContent>
       </Card>
-
-      {/* Bulk Add Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Bulk Add Serial Numbers</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div>
-              <Label htmlFor="bulkSerials" className="text-right">
-                Serial Numbers
-              </Label>
-              <div className="mt-1">
-                <Input 
-                  id="bulkSerials" 
-                  value={bulkSerials} 
-                  onChange={(e) => setBulkSerials(e.target.value)} 
-                  placeholder="Enter serial numbers separated by commas, spaces, or new lines"
-                  className="h-20"
-                  as="textarea"
-                />
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="serialStatus" className="text-right">
-                Status
-              </Label>
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger id="serialStatus" className="w-full mt-1">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="in_stock">In Stock</SelectItem>
-                  <SelectItem value="reserved">Reserved</SelectItem>
-                  <SelectItem value="sold">Sold</SelectItem>
-                  <SelectItem value="defective">Defective</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="notes" className="text-right">
-                Notes (Optional)
-              </Label>
-              <div className="mt-1">
-                <Input
-                  id="notes"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Add notes for these serial numbers"
-                />
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleBulkAdd} 
-              disabled={loading || !bulkSerials.trim()}
-            >
-              Add Serial Numbers
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
