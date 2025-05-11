@@ -1,44 +1,46 @@
 
-import React, { useState } from "react";
-import { TableHead } from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { useSortable } from '@dnd-kit/sortable';
+import React from 'react';
+import { TableHead } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
+import { 
+  DndContext, 
+  DragOverlay, 
+  UniqueIdentifier, 
+  useDraggable, 
+  useDroppable 
+} from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Plus } from "lucide-react";
+import { Button } from '@/components/ui/button';
+import { GripVertical } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
-// Column type definition
 export type ColumnId = 
   | "name" 
   | "sku" 
   | "partNumber" 
-  | "barcode"
+  | "barcode" 
   | "category" 
   | "subcategory" 
-  | "manufacturer"
-  | "vehicleCompatibility"
+  | "manufacturer" 
+  | "vehicleCompatibility" 
   | "location" 
   | "quantity" 
-  | "quantityReserved"
-  | "quantityAvailable"
-  | "onOrder"
-  | "reorderPoint"
-  | "cost"
+  | "quantityReserved" 
+  | "quantityAvailable" 
+  | "onOrder" 
+  | "reorderPoint" 
+  | "cost" 
   | "unitPrice" 
-  | "marginMarkup"
-  | "totalValue"
-  | "warrantyPeriod"
-  | "status"
+  | "marginMarkup" 
+  | "totalValue" 
+  | "warrantyPeriod" 
+  | "status" 
   | "supplier" 
-  | "dateBought"
-  | "dateLast"
-  | "notes";
+  | "dateBought" 
+  | "dateLast" 
+  | "notes" 
+  | "coreCharge"
+  | "serialNumbers";
 
 export interface Column {
   id: ColumnId;
@@ -46,64 +48,153 @@ export interface Column {
   visible: boolean;
 }
 
-interface SortableColumnHeaderProps {
-  column: Column;
-  onHideColumn?: (columnId: ColumnId) => void;
-  onAddColumn?: () => void;
+export interface SortableColumnHeaderProps {
+  columns: Column[];
+  setColumns: React.Dispatch<React.SetStateAction<Column[]>>;
+  isDragging: boolean;
+  onDragStart: (event: any) => void;
+  onDragEnd: (event: any) => void;
+  onDragCancel: () => void;
+  activeId: UniqueIdentifier | null;
 }
 
-export const SortableColumnHeader = ({ 
-  column, 
-  onHideColumn,
-  onAddColumn 
-}: SortableColumnHeaderProps) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: column.id });
-  
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.6 : 1,
-    zIndex: isDragging ? 999 : 1,
+export function SortableColumnHeader({
+  columns,
+  setColumns,
+  isDragging,
+  onDragStart,
+  onDragEnd,
+  onDragCancel,
+  activeId,
+}: SortableColumnHeaderProps) {
+  const visibleColumns = columns.filter((col) => col.visible);
+
+  const toggleColumnVisibility = (columnId: ColumnId) => {
+    setColumns((prevColumns) =>
+      prevColumns.map((col) =>
+        col.id === columnId ? { ...col, visible: !col.visible } : col
+      )
+    );
   };
-  
+
   return (
-    <TableHead 
-      ref={setNodeRef} 
-      style={style} 
-      {...attributes} 
-      {...listeners} 
-      className={`select-none cursor-grab ${isDragging ? 'bg-blue-50 shadow-md' : ''}`}
-    >
-      <div className="flex flex-col items-center">
-        <div className="flex items-center">
-          <GripVertical className="w-4 h-4 text-gray-400 mr-1" />
-          <span>{column.label}</span>
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 mt-1">
-              <span className="text-xs text-gray-500">•••</span>
+    <>
+      {visibleColumns.map((column) => (
+        <DraggableColumnHeader
+          key={column.id}
+          id={column.id}
+          label={column.label}
+          onDragStart={onDragStart}
+        />
+      ))}
+      <TableHead className="w-[100px]">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <span className="sr-only">Open column menu</span>
+              <GripVertical className="h-4 w-4" />
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem>Sort Ascending</DropdownMenuItem>
-            <DropdownMenuItem>Sort Descending</DropdownMenuItem>
-            <DropdownMenuItem>Filter</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            {onHideColumn && (
-              <DropdownMenuItem onClick={() => onHideColumn(column.id)}>
-                Hide Column
-              </DropdownMenuItem>
-            )}
-            {onAddColumn && (
-              <DropdownMenuItem onClick={onAddColumn}>
-                <Plus className="w-4 h-4 mr-1" />
-                Add Column
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-[200px] p-0">
+            <div className="p-2">
+              <p className="font-medium text-sm">Toggle Columns</p>
+            </div>
+            <div className="max-h-[400px] overflow-auto">
+              {columns.map((column) => (
+                <div
+                  key={column.id}
+                  className="relative flex items-center py-2 px-3 cursor-pointer hover:bg-slate-100"
+                  onClick={() => toggleColumnVisibility(column.id)}
+                >
+                  <Checkbox
+                    id={`column-${column.id}`}
+                    checked={column.visible}
+                    onCheckedChange={() => toggleColumnVisibility(column.id)}
+                  />
+                  <label
+                    htmlFor={`column-${column.id}`}
+                    className="ml-2 text-sm font-normal cursor-pointer"
+                  >
+                    {column.label}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+      </TableHead>
+
+      {isDragging && (
+        <DragOverlay>
+          {activeId ? <DragLayerHeader id={activeId as string} /> : null}
+        </DragOverlay>
+      )}
+    </>
+  );
+}
+
+function DraggableColumnHeader({
+  id,
+  label,
+  onDragStart,
+}: {
+  id: ColumnId;
+  label: string;
+  onDragStart: (event: any) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({
+    id,
+  });
+
+  const style = {
+    transform: CSS.Translate.toString(transform),
+  };
+
+  return (
+    <TableHead
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      onPointerDown={(e) => {
+        listeners.onPointerDown(e);
+        onDragStart(e);
+      }}
+      className="select-none cursor-grab active:cursor-grabbing"
+    >
+      {label}
     </TableHead>
   );
-};
+}
+
+function DragLayerHeader({ id }: { id: string }) {
+  const columnLabel = id;
+  return (
+    <div className="px-4 py-2 bg-white border rounded shadow-md opacity-80">
+      {columnLabel}
+    </div>
+  );
+}
+
+interface DroppableColumnHeaderProps {
+  id: string;
+  children: React.ReactNode;
+}
+
+export function DroppableColumnHeader({
+  id,
+  children,
+}: DroppableColumnHeaderProps) {
+  const { isOver, setNodeRef } = useDroppable({
+    id,
+  });
+
+  return (
+    <TableHead
+      ref={setNodeRef}
+      className={isOver ? "bg-slate-100" : undefined}
+    >
+      {children}
+    </TableHead>
+  );
+}

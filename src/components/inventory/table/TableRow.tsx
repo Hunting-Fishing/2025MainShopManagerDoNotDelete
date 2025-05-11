@@ -69,6 +69,10 @@ export const InventoryTableRow = ({
         return item.dateLast || "-";
       case "notes":
         return item.notes || "-";
+      case "coreCharge":
+        return item.coreCharge ? `$${item.coreCharge.toFixed(2)}` : "-";
+      case "serialNumbers":
+        return item.serialNumbers ? "Yes" : "No";
       default:
         return "-";
     }
@@ -86,16 +90,28 @@ export const InventoryTableRow = ({
         </TableCell>
       ))}
       <TableCell>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate(`/inventory/item/${item.id}/edit`);
-          }}
-        >
-          Edit
-        </Button>
+        <div className="flex items-center space-x-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/inventory/item/${item.id}`);
+            }}
+          >
+            View
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/inventory/item/${item.id}/edit`);
+            }}
+          >
+            Edit
+          </Button>
+        </div>
       </TableCell>
     </UITableRow>
   );

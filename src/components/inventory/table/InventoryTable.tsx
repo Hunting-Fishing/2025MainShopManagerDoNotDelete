@@ -43,6 +43,8 @@ export const InventoryTable = ({ items }: InventoryTableProps) => {
     { id: "unitPrice", label: "Unit Price", visible: true },
     { id: "marginMarkup", label: "Markup % / Margin", visible: false },
     { id: "totalValue", label: "Total Value", visible: false },
+    { id: "coreCharge", label: "Core Charge", visible: false },
+    { id: "serialNumbers", label: "Serial #s", visible: false },
     { id: "warrantyPeriod", label: "Warranty Period", visible: true },
     { id: "status", label: "Status", visible: true },
     { id: "supplier", label: "Supplier", visible: true },

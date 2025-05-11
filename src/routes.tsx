@@ -10,6 +10,7 @@ import ServiceManagement from "@/pages/developer/ServiceManagement";
 import ShoppingControls from "@/pages/developer/ShoppingControls";
 import Shopping from "@/pages/Shopping";
 import Inventory from "@/pages/Inventory";
+import InventoryItemDetail from "@/pages/inventory/InventoryItemDetail";
 
 export const routes = [
   {
@@ -51,6 +52,10 @@ export const routes = [
       {
         path: "inventory",
         element: <Inventory />,
+      },
+      {
+        path: "inventory/item/:id",
+        element: <InventoryItemDetail />,
       },
       {
         path: "*",
