@@ -12,10 +12,9 @@ import {
   FileText,
   Calendar,
   Bell,
-  Tool,
+  Wrench, // Changed from Tool to Wrench for equipment
   MessageSquare,
   BarChart,
-  Wrench,
   Clipboard
 } from "lucide-react";
 
@@ -34,7 +33,7 @@ export function AppSidebar() {
     { id: "work-orders", label: "Work Orders", icon: <ClipboardList size={20} />, path: "/work-orders" },
     { id: "invoices", label: "Invoices", icon: <FileText size={20} />, path: "/invoices" },
     { id: "customers", label: "Customers", icon: <Users size={20} />, path: "/customers" },
-    { id: "equipment", label: "Equipment", icon: <Tool size={20} />, path: "/equipment" },
+    { id: "equipment", label: "Equipment", icon: <Wrench size={20} />, path: "/equipment" },
     { id: "inventory", label: "Inventory", icon: <Package size={20} />, path: "/inventory" },
     { id: "team", label: "Team", icon: <Users size={20} />, path: "/team" },
     { id: "calendar", label: "Calendar", icon: <Calendar size={20} />, path: "/calendar" },
