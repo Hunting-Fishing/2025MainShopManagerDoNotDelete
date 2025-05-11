@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import { createWorkOrder } from "@/utils/workOrders/crud"; 
+import { Customer } from "@/types/customer";
 
 interface WorkOrderFormProps {
   technicians: string[];
@@ -31,6 +32,7 @@ interface WorkOrderFormProps {
   setIsSubmitting?: React.Dispatch<React.SetStateAction<boolean>>;
   setError?: React.Dispatch<React.SetStateAction<string | null>>;
   id?: string;
+  selectedCustomer?: Customer | null;
 }
 
 export function WorkOrderForm({ 
@@ -38,13 +40,15 @@ export function WorkOrderForm({
   isLoadingTechnicians, 
   setIsSubmitting,
   setError,
-  id 
+  id,
+  selectedCustomer
 }: WorkOrderFormProps) {
   const navigate = useNavigate();
   const [isSubmittingInternal, setIsSubmittingInternal] = useState(false);
   
   // Form state
   const [customer, setCustomer] = useState("");
+  const [customerId, setCustomerId] = useState<string | undefined>(undefined);
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState("pending");
   const [priority, setPriority] = useState("medium");
@@ -52,6 +56,25 @@ export function WorkOrderForm({
   const [dueDate, setDueDate] = useState<Date | undefined>(new Date());
   const [notes, setNotes] = useState("");
   const [location, setLocation] = useState("");
+  
+  // Update form values when a customer is selected
+  useEffect(() => {
+    if (selectedCustomer) {
+      setCustomer(`${selectedCustomer.first_name} ${selectedCustomer.last_name}`);
+      setCustomerId(selectedCustomer.id);
+      
+      // If customer has an address, set the location
+      if (selectedCustomer.address) {
+        const addressParts = [];
+        if (selectedCustomer.address) addressParts.push(selectedCustomer.address);
+        if (selectedCustomer.city) addressParts.push(selectedCustomer.city);
+        if (selectedCustomer.state) addressParts.push(selectedCustomer.state);
+        if (selectedCustomer.postal_code) addressParts.push(selectedCustomer.postal_code);
+        
+        setLocation(addressParts.join(", "));
+      }
+    }
+  }, [selectedCustomer]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,6 +87,7 @@ export function WorkOrderForm({
       // In a real application, this would save the work order data to a database
       console.log({
         customer, 
+        customerId,
         description,
         status,
         priority,
@@ -77,6 +101,7 @@ export function WorkOrderForm({
       try {
         await createWorkOrder({
           customer,
+          customer_id: customerId,
           description,
           status: status as any,
           priority: priority as any,
@@ -118,40 +143,67 @@ export function WorkOrderForm({
   return (
     <form onSubmit={handleSubmit} className="p-6 space-y-6" id={id}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Customer Information */}
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="customer">Customer</Label>
-            <Input 
-              id="customer" 
-              value={customer} 
-              onChange={(e) => setCustomer(e.target.value)}
-              placeholder="Enter customer name"
-              required
-            />
+        {/* Customer Information - Hidden if selectedCustomer is used */}
+        {!selectedCustomer && (
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="customer">Customer</Label>
+              <Input 
+                id="customer" 
+                value={customer} 
+                onChange={(e) => setCustomer(e.target.value)}
+                placeholder="Enter customer name"
+                required
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Input
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Enter work order description"
+                required
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="location">Location</Label>
+              <Input
+                id="location"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="Enter service location"
+              />
+            </div>
           </div>
-          
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <Input
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter work order description"
-              required
-            />
+        )}
+        
+        {selectedCustomer && (
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Input
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Enter work order description"
+                required
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="location">Location</Label>
+              <Input
+                id="location"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="Enter service location"
+              />
+            </div>
           </div>
-          
-          <div>
-            <Label htmlFor="location">Location</Label>
-            <Input
-              id="location"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="Enter service location"
-            />
-          </div>
-        </div>
+        )}
         
         {/* Status & Assignment */}
         <div className="space-y-4">
