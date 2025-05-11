@@ -1,15 +1,15 @@
 
 import React from 'react';
-import { SeoHead } from '@/components/common/SeoHead';
+import { Helmet } from 'react-helmet-async';
 
 export default function Shopping() {
   return (
     <div className="space-y-6">
-      <SeoHead
-        title="Shopping | Easy Shop Manager"
-        description="Browse and purchase equipment, tools, and supplies for your shop."
-        keywords="shop equipment, tools, supplies, shop management, purchasing"
-      />
+      <Helmet>
+        <title>Shopping | Easy Shop Manager</title>
+        <meta name="description" content="Browse and purchase equipment, tools, and supplies for your shop." />
+        <meta name="keywords" content="shop equipment, tools, supplies, shop management, purchasing" />
+      </Helmet>
       
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold tracking-tight">Shopping</h1>
