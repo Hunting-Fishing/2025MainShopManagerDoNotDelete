@@ -8,7 +8,7 @@ import * as z from "zod";
 import { Customer } from "@/types/customer";
 import { Button } from "@/components/ui/button";
 import { createWorkOrder } from "@/utils/workOrders/crud";
-import { WorkOrderStatusType } from "@/types/workOrder";
+import { WorkOrderStatusType, WorkOrderPriorityType } from "@/types/workOrder";
 
 // Define the validation schema for work orders
 const workOrderSchema = z.object({
@@ -88,9 +88,9 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
         location: data.location,
         dueDate: data.dueDate,
         notes: data.notes,
-        // Fix: Cast the status as WorkOrderStatusType to match the expected type
+        // Fix: Cast both status and priority to their respective types
         status: data.status as WorkOrderStatusType,
-        priority: data.priority,
+        priority: data.priority as WorkOrderPriorityType,
       };
       
       // Save the work order
