@@ -1,123 +1,147 @@
-
-import React from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { WorkOrder } from "@/types/workOrder";
-import { deleteWorkOrder } from "@/utils/workOrders";
-import { useToast } from "@/hooks/use-toast";
-import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Pencil, Trash, ArrowLeft } from "lucide-react";
-import WorkOrderDetailsHeader from "@/components/work-orders/details/WorkOrderDetailsHeader";
-import { WorkOrderDetailsTabs } from "@/components/work-orders/details/WorkOrderDetailsTabs";
-import { WorkOrderChatButton } from "@/components/work-orders/WorkOrderChatButton";
-import { TimeEntry } from "@/types/workOrder";
+import { Card } from "@/components/ui/card";
+import { toast } from "sonner";
+import { deleteWorkOrder } from "@/utils/workOrders/crud";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface WorkOrderDetailsViewProps {
-  workOrder: WorkOrder;
+  id: string;
+  customer: string;
+  description: string;
+  status: string;
+  priority: string;
+  technician: string;
+  date: string;
+  dueDate: string;
+  location: string;
+  notes?: string;
+  vehicleMake?: string;
+  vehicleModel?: string;
+  vehicleYear?: string;
+  odometer?: string;
+  licensePlate?: string;
+  vin?: string;
 }
 
-export default function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsViewProps) {
+export function WorkOrderDetailsView({
+  id,
+  customer,
+  description,
+  status,
+  priority,
+  technician,
+  date,
+  dueDate,
+  location,
+  notes,
+  vehicleMake,
+  vehicleModel,
+  vehicleYear,
+  odometer,
+  licensePlate,
+  vin,
+}: WorkOrderDetailsViewProps) {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  
-  const handleDelete = async () => {
-    try {
-      await deleteWorkOrder(workOrder.id);
-      
-      toast({
-        title: "Work Order Deleted",
-        description: `Work order ${workOrder.id} has been deleted.`,
-        variant: "success",
-      });
-      
-      navigate("/work-orders");
-    } catch (error) {
-      console.error("Error deleting work order:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete work order.",
-        variant: "destructive",
-      });
-    }
-  };
+  const [open, setOpen] = useState(false);
 
-  const handleUpdateTimeEntries = async (updatedEntries: TimeEntry[]) => {
-    // Implementation to update time entries
-    console.log("Updated time entries:", updatedEntries);
+  const handleDelete = async () => {
+    const success = await deleteWorkOrder(id);
+    if (success) {
+      toast.success("Work order deleted successfully");
+      navigate("/work-orders");
+    } else {
+      toast.error("Failed to delete work order");
+    }
+    setOpen(false);
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header with basic info and actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => navigate("/work-orders")}
-          className="w-fit"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Work Orders
+    <div className="space-y-4">
+      <Card className="bg-white dark:bg-slate-800/50 rounded-lg shadow">
+        <div className="p-6 space-y-4">
+          <h2 className="text-2xl font-bold">{`Work Order #${id}`}</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <strong>Customer:</strong> {customer}
+            </div>
+            <div>
+              <strong>Status:</strong> {status}
+            </div>
+            <div>
+              <strong>Priority:</strong> {priority}
+            </div>
+            <div>
+              <strong>Technician:</strong> {technician}
+            </div>
+            <div>
+              <strong>Date:</strong> {date}
+            </div>
+            <div>
+              <strong>Due Date:</strong> {dueDate}
+            </div>
+            <div>
+              <strong>Location:</strong> {location}
+            </div>
+            {vehicleMake && vehicleModel && vehicleYear && (
+              <div>
+                <strong>Vehicle:</strong> {vehicleYear} {vehicleMake} {vehicleModel}
+              </div>
+            )}
+            {odometer && (
+              <div>
+                <strong>Odometer:</strong> {odometer}
+              </div>
+            )}
+            {licensePlate && (
+              <div>
+                <strong>License Plate:</strong> {licensePlate}
+              </div>
+            )}
+            {vin && (
+              <div>
+                <strong>VIN:</strong> {vin}
+              </div>
+            )}
+          </div>
+          <div>
+            <strong>Description:</strong> {description}
+          </div>
+          {notes && (
+            <div>
+              <strong>Notes:</strong> {notes}
+            </div>
+          )}
+        </div>
+      </Card>
+
+      <div className="flex justify-end space-x-2">
+        <Button variant="secondary" onClick={() => navigate(`/work-orders/${id}/edit`)}>
+          Edit
         </Button>
-        
-        <div className="flex space-x-2">
-          <WorkOrderChatButton 
-            workOrderId={workOrder.id} 
-            workOrderName={`${workOrder.id}: ${workOrder.description}`}
-          />
-          
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => navigate(`/work-orders/${workOrder.id}/edit`)}
-          >
-            <Pencil className="mr-2 h-4 w-4" />
-            Edit
-          </Button>
-          
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm">
-                <Trash className="mr-2 h-4 w-4" />
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button variant="destructive">Delete</Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Are you sure absolutely sure?</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <p>This action cannot be undone. This will permanently delete this work order from our servers.</p>
+            </div>
+            <DialogFooter>
+              <Button variant="secondary" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="destructive" onClick={handleDelete}>
                 Delete
               </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Work Order</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to delete this work order? This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDelete}>
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
-      
-      {/* Work Order Details Header */}
-      <WorkOrderDetailsHeader workOrder={workOrder} onDelete={handleDelete} />
-      
-      {/* Work Order Content Tabs */}
-      <WorkOrderDetailsTabs 
-        workOrder={workOrder} 
-        onUpdateTimeEntries={handleUpdateTimeEntries} 
-      />
     </div>
   );
 }

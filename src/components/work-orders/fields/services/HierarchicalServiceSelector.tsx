@@ -1,245 +1,269 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ServiceCategoryList } from "./ServiceCategoryList";
-import { ServiceSubcategoryGrid } from "./ServiceSubcategoryGrid";
-import { PlusCircle, Check, Wrench, Loader2, Filter } from 'lucide-react';
-import { useServiceSelection } from '@/hooks/useServiceSelection';
-import { fetchServiceCategories } from '@/lib/services/serviceApi';
-import { ServiceMainCategory } from '@/types/serviceHierarchy';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { toast } from 'sonner';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Check, ChevronRight, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from "@/types/serviceHierarchy";
+import { useQuery } from "@tanstack/react-query";
+import { fetchServiceCategories } from "@/lib/services/serviceApi";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 interface HierarchicalServiceSelectorProps {
-  onServiceSelected: (service: {
-    mainCategory: string;
-    subcategory: string;
-    job: string;
+  onServiceSelect: (service: {
+    categoryId: string;
+    categoryName: string;
+    subcategoryId: string;
+    subcategoryName: string;
+    jobId: string;
+    jobName: string;
     estimatedTime?: number;
+    price?: number;
   }) => void;
 }
 
-const HierarchicalServiceSelector: React.FC<HierarchicalServiceSelectorProps> = ({ onServiceSelected }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [serviceCategories, setServiceCategories] = useState<ServiceMainCategory[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [checkedServices, setCheckedServices] = useState<Record<string, boolean>>({});
-  const [searchQuery, setSearchQuery] = useState("");
-  const { selectedService, clearSelectedService } = useServiceSelection();
+export function HierarchicalServiceSelector({ onServiceSelect }: HierarchicalServiceSelectorProps) {
+  const [openCategory, setOpenCategory] = useState(false);
+  const [openSubcategory, setOpenSubcategory] = useState(false);
+  const [openJob, setOpenJob] = useState(false);
+
+  const [selectedCategory, setSelectedCategory] = useState<ServiceMainCategory | null>(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState<ServiceSubcategory | null>(null);
+  const [selectedJob, setSelectedJob] = useState<ServiceJob | null>(null);
+
+  // Fetch service categories from the developer portal
+  const { data: categories, isLoading, error } = useQuery({
+    queryKey: ['serviceHierarchy'],
+    queryFn: fetchServiceCategories,
+  });
 
   useEffect(() => {
-    // If there's a selected service from the management page, use it
-    if (selectedService) {
-      onServiceSelected(selectedService);
+    if (error) {
+      toast.error("Failed to load service data");
+      console.error("Error loading service hierarchy:", error);
     }
-  }, [selectedService, onServiceSelected]);
+  }, [error]);
 
+  // Reset selected subcategory when category changes
   useEffect(() => {
-    const loadCategories = async () => {
-      setIsLoading(true);
-      try {
-        const categories = await fetchServiceCategories();
-        console.log("Loaded categories for selector:", categories);
-        setServiceCategories(categories);
-        
-        // Select the first category by default if available
-        if (categories.length > 0 && !selectedCategory) {
-          setSelectedCategory(categories[0].name);
-        }
-      } catch (error) {
-        console.error('Error loading service categories:', error);
-        toast.error("Failed to load service categories", {
-          description: "Please try again or contact support"
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    setSelectedSubcategory(null);
+    setSelectedJob(null);
+  }, [selectedCategory]);
 
-    if (isOpen) {
-      loadCategories();
+  // Reset selected job when subcategory changes
+  useEffect(() => {
+    setSelectedJob(null);
+  }, [selectedSubcategory]);
+
+  // When a job is selected, call the onServiceSelect callback
+  useEffect(() => {
+    if (selectedCategory && selectedSubcategory && selectedJob) {
+      onServiceSelect({
+        categoryId: selectedCategory.id,
+        categoryName: selectedCategory.name,
+        subcategoryId: selectedSubcategory.id,
+        subcategoryName: selectedSubcategory.name,
+        jobId: selectedJob.id,
+        jobName: selectedJob.name,
+        estimatedTime: selectedJob.estimatedTime,
+        price: selectedJob.price
+      });
     }
-  }, [isOpen]);
-
-  const handleCategorySelect = (categoryName: string) => {
-    console.log("Selected category:", categoryName);
-    setSelectedCategory(categoryName);
-  };
-
-  const handleServiceCheck = (serviceName: string, checked: boolean) => {
-    console.log(`Service ${serviceName} checked: ${checked}`);
-    
-    setCheckedServices(prev => ({
-      ...prev,
-      [serviceName]: checked
-    }));
-
-    if (checked && selectedCategory) {
-      // Find the selected category and subcategory
-      const category = serviceCategories.find(cat => cat.name === selectedCategory);
-      if (category) {
-        // Find which subcategory this service belongs to
-        let foundSubcategory = null;
-        
-        for (const subcategory of category.subcategories) {
-          const matchingJob = subcategory.jobs.find(job => job.name === serviceName);
-          if (matchingJob) {
-            foundSubcategory = subcategory;
-            onServiceSelected({
-              mainCategory: category.name,
-              subcategory: subcategory.name,
-              job: serviceName,
-              estimatedTime: matchingJob.estimatedTime
-            });
-            setIsOpen(false);
-            break;
-          }
-        }
-      }
-    }
-  };
-
-  const getSelectedCategoryObject = () => {
-    if (!selectedCategory) return null;
-    return serviceCategories.find(cat => cat.name === selectedCategory) || null;
-  };
+  }, [selectedJob, selectedCategory, selectedSubcategory, onServiceSelect]);
 
   return (
-    <div>
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogTrigger asChild>
-          <Button 
-            variant="outline" 
-            className="w-full justify-start text-left font-normal"
-          >
-            {selectedService ? (
-              <div className="flex flex-col items-start text-left">
-                <span className="font-medium">{selectedService.job}</span>
-                <span className="text-xs text-muted-foreground">
-                  {selectedService.mainCategory} - {selectedService.subcategory}
-                </span>
-              </div>
-            ) : (
-              <>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                <span>Select Service</span>
-              </>
-            )}
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-hidden w-[95vw]">
-          <DialogHeader>
-            <DialogTitle>Service Hierarchy</DialogTitle>
-          </DialogHeader>
-          
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-5 w-5 animate-spin mr-2" />
-              <span className="text-muted-foreground">Loading services...</span>
-            </div>
-          ) : serviceCategories.length > 0 ? (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between gap-4">
-                <div className="relative flex-1">
-                  <Input
-                    placeholder="Search services, categories, or descriptions..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-3 pr-10"
-                  />
-                </div>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Filter className="h-4 w-4" />
-                  <span>Filter</span>
-                </Button>
-                <Badge variant="outline" className="bg-muted/70 text-xs">
-                  {serviceCategories.length} Categories
-                </Badge>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
-                      {serviceCategories.reduce((total, cat) => 
-                        total + cat.subcategories.reduce((subtotal, sub) => subtotal + sub.jobs.length, 0), 0)
-                      } Services
-                    </Badge>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Total number of services across all categories</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              
-              <Tabs defaultValue="categories" className="w-full">
-                <TabsList className="bg-white rounded-full p-1 border shadow-sm mb-4">
-                  <TabsTrigger value="categories" className="rounded-full text-sm px-4 py-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-                    Categories
-                  </TabsTrigger>
-                  <TabsTrigger value="services" className="rounded-full text-sm px-4 py-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-                    All Services
-                  </TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="categories" className="mt-0">
-                  <div className="flex flex-col md:flex-row h-[500px] md:h-[550px] overflow-hidden border rounded-lg">
-                    <ServiceCategoryList 
-                      categories={serviceCategories}
-                      selectedCategory={selectedCategory}
-                      onCategorySelect={handleCategorySelect}
-                    />
-                    
-                    {selectedCategory && getSelectedCategoryObject() && (
-                      <ServiceSubcategoryGrid 
-                        category={getSelectedCategoryObject()!}
-                        checkedServices={checkedServices}
-                        onServiceCheck={handleServiceCheck}
-                      />
-                    )}
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="services" className="mt-0">
-                  <div className="h-[500px] md:h-[550px] overflow-auto border rounded-lg p-4">
-                    <p className="text-sm text-muted-foreground text-center py-8">
-                      Coming soon: View all services in a single list
-                    </p>
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>No service categories found.</p>
-              <p className="text-sm mt-1">Visit the Service Management page to create service categories.</p>
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Category Selection */}
+        <div>
+          <label className="text-sm font-medium mb-1 block">Service Category</label>
+          <Popover open={openCategory} onOpenChange={setOpenCategory}>
+            <PopoverTrigger asChild>
               <Button 
-                variant="outline" 
-                className="mt-4"
-                onClick={() => window.location.href = '/developer/service-management'}
+                variant="outline"
+                role="combobox"
+                aria-expanded={openCategory}
+                className="w-full justify-start text-left font-normal"
               >
-                <Wrench className="mr-2 h-4 w-4" />
-                Go to Service Management
+                {selectedCategory ? (
+                  <span>{selectedCategory.name}</span>
+                ) : (
+                  <span className="text-muted-foreground">Select category...</span>
+                )}
+                <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
               </Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+            </PopoverTrigger>
+            <PopoverContent className="w-full p-0" align="start">
+              {isLoading ? (
+                <div className="p-4 space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                </div>
+              ) : (
+                <Command>
+                  <CommandInput placeholder="Search categories..." />
+                  <CommandList>
+                    <CommandEmpty>No categories found</CommandEmpty>
+                    <CommandGroup>
+                      {categories?.map(category => (
+                        <CommandItem
+                          key={category.id}
+                          value={category.name}
+                          onSelect={() => {
+                            setSelectedCategory(category);
+                            setOpenCategory(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selectedCategory?.id === category.id ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {category.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              )}
+            </PopoverContent>
+          </Popover>
+        </div>
 
-      {selectedService && (
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="mt-2 text-red-500 hover:text-red-700 w-full justify-start" 
-          onClick={clearSelectedService}
-        >
-          Clear selection
-        </Button>
+        {/* Subcategory Selection */}
+        <div>
+          <label className="text-sm font-medium mb-1 block">Subcategory</label>
+          <Popover open={openSubcategory} onOpenChange={setOpenSubcategory}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={openSubcategory}
+                className="w-full justify-start text-left font-normal"
+                disabled={!selectedCategory}
+              >
+                {selectedSubcategory ? (
+                  <span>{selectedSubcategory.name}</span>
+                ) : (
+                  <span className="text-muted-foreground">Select subcategory...</span>
+                )}
+                <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-full p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Search subcategories..." />
+                <CommandList>
+                  <CommandEmpty>No subcategories found</CommandEmpty>
+                  <CommandGroup>
+                    {selectedCategory?.subcategories.map(subcategory => (
+                      <CommandItem
+                        key={subcategory.id}
+                        value={subcategory.name}
+                        onSelect={() => {
+                          setSelectedSubcategory(subcategory);
+                          setOpenSubcategory(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            selectedSubcategory?.id === subcategory.id ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        {subcategory.name}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        {/* Job Selection */}
+        <div>
+          <label className="text-sm font-medium mb-1 block">Service/Job</label>
+          <Popover open={openJob} onOpenChange={setOpenJob}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={openJob}
+                className="w-full justify-start text-left font-normal"
+                disabled={!selectedSubcategory}
+              >
+                {selectedJob ? (
+                  <span>{selectedJob.name}</span>
+                ) : (
+                  <span className="text-muted-foreground">Select service/job...</span>
+                )}
+                <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-full p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Search services/jobs..." />
+                <CommandList>
+                  <CommandEmpty>No services/jobs found</CommandEmpty>
+                  <CommandGroup>
+                    {selectedSubcategory?.jobs.map(job => (
+                      <CommandItem
+                        key={job.id}
+                        value={job.name}
+                        onSelect={() => {
+                          setSelectedJob(job);
+                          setOpenJob(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            selectedJob?.id === job.id ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        <div className="flex flex-col">
+                          <span>{job.name}</span>
+                          {job.price && (
+                            <span className="text-xs text-muted-foreground">${job.price.toFixed(2)}</span>
+                          )}
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
+
+      {selectedJob && (
+        <div className="p-4 border rounded-md bg-slate-50 dark:bg-slate-900">
+          <h4 className="font-medium mb-2">{selectedJob.name}</h4>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            {selectedJob.description && (
+              <div>
+                <span className="text-muted-foreground">Description:</span> {selectedJob.description}
+              </div>
+            )}
+            {selectedJob.estimatedTime && (
+              <div>
+                <span className="text-muted-foreground">Estimated Time:</span> {selectedJob.estimatedTime} mins
+              </div>
+            )}
+            {selectedJob.price && (
+              <div>
+                <span className="text-muted-foreground">Price:</span> ${selectedJob.price.toFixed(2)}
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
-};
-
-export default HierarchicalServiceSelector;
+}

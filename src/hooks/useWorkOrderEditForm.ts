@@ -1,127 +1,75 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format, parse } from "date-fns";
-import { toast } from "@/hooks/use-toast";
+import { WorkOrderFormSchemaValues, workOrderFormSchema } from "@/schemas/workOrderSchema";
+import { toast } from "sonner";
 import { WorkOrder } from "@/types/workOrder";
-import { updateWorkOrder } from "@/utils/workOrders";
-import { WorkOrderInventoryItem, TimeEntry } from "@/types/workOrder";
-import { workOrderFormSchema, WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
-import { recordWorkOrderActivity } from "@/utils/workOrders/activity";
-import { handleFormError, isNetworkError, handleNetworkError } from "@/utils/errorHandling";
+import { updateWorkOrder } from "@/utils/workOrders/crud";
 
-// Mock current user - in a real app, this would come from auth context
-const currentUser = { id: "user-123", name: "Admin User" };
-
-export const useWorkOrderEditForm = (workOrder: WorkOrder) => {
+export function useWorkOrderEditForm(workOrder: WorkOrder) {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>(workOrder.timeEntries || []);
+  const [formError, setFormError] = useState<string | null>(null);
 
-  // Parse the date strings into Date objects
-  const dueDateAsDate = parse(workOrder.dueDate, "yyyy-MM-dd", new Date());
-
-  // Make sure workOrder.inventoryItems is properly typed or provide a default empty array
-  const inventoryItemsWithDefaults: WorkOrderInventoryItem[] = workOrder.inventoryItems || [];
-
-  // Initialize the form with existing work order data
   const form = useForm<WorkOrderFormSchemaValues>({
     resolver: zodResolver(workOrderFormSchema),
     defaultValues: {
-      customer: workOrder.customer,
-      description: workOrder.description,
-      status: workOrder.status as "pending" | "in-progress" | "completed" | "cancelled",
-      priority: workOrder.priority as "low" | "medium" | "high",
-      technician: workOrder.technician,
-      location: workOrder.location,
-      dueDate: dueDateAsDate,
-      notes: workOrder.notes || "",
-      inventoryItems: inventoryItemsWithDefaults,
+      customer: workOrder?.customer || "",
+      description: workOrder?.description || "",
+      status: workOrder?.status || "pending",
+      priority: workOrder?.priority || "medium",
+      technician: workOrder?.technician || "",
+      location: workOrder?.location || "",
+      dueDate: new Date(workOrder?.dueDate || new Date()).toISOString(),
+      notes: workOrder?.notes || "",
+      vehicleMake: workOrder?.vehicleMake || "",
+      vehicleModel: workOrder?.vehicleModel || "",
+      vehicleYear: workOrder?.vehicleYear || "",
+      odometer: workOrder?.odometer || "",
+      licensePlate: workOrder?.licensePlate || "",
+      vin: workOrder?.vin || "",
     },
   });
 
-  // Handle form submission
-  const onSubmit = async (values: WorkOrderFormSchemaValues) => {
+  const onSubmit = async (data: WorkOrderFormSchemaValues) => {
     setIsSubmitting(true);
-    setError(null);
-    
+    setFormError(null);
+
     try {
-      // Check for network connectivity
-      if (!navigator.onLine) {
-        setError("No internet connection. Please check your network and try again.");
-        throw new Error("Network offline");
-      }
-      
-      // Format the date back to YYYY-MM-DD string format
-      const formattedDueDate = format(values.dueDate, "yyyy-MM-dd");
-      
-      // Ensure inventoryItems is properly typed
-      const inventoryItems: WorkOrderInventoryItem[] = values.inventoryItems?.map(item => ({
-        id: item.id,
-        name: item.name,
-        sku: item.sku,
-        category: item.category,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice
-      })) || [];
-      
-      // Calculate total billable time
-      const totalBillableTime = timeEntries.reduce((total, entry) => {
-        return entry.billable ? total + entry.duration : total;
-      }, 0);
-      
-      // Create the updated work order object
-      const updatedWorkOrder: WorkOrder = {
-        ...workOrder,
-        customer: values.customer,
-        description: values.description,
-        status: values.status,
-        priority: values.priority,
-        technician: values.technician,
-        location: values.location,
-        dueDate: formattedDueDate,
-        notes: values.notes,
-        inventoryItems: inventoryItems,
-        timeEntries: timeEntries,
-        totalBillableTime: totalBillableTime,
-        lastUpdatedBy: currentUser.name,
-        lastUpdatedAt: new Date().toISOString(),
+      // Prepare the data for updating the work order
+      const updatedWorkOrderData: Partial<WorkOrder> = {
+        id: workOrder.id, // Ensure you have the ID of the work order
+        customer: data.customer,
+        description: data.description,
+        status: data.status,
+        priority: data.priority,
+        technician: data.technician,
+        location: data.location,
+        dueDate: data.dueDate,
+        notes: data.notes,
+        vehicleMake: data.vehicleMake,
+        vehicleModel: data.vehicleModel,
+        vehicleYear: data.vehicleYear,
+        odometer: data.odometer,
+        licensePlate: data.licensePlate,
+        vin: data.vin,
       };
-      
-      // Update the work order
-      await updateWorkOrder(updatedWorkOrder);
-      
-      // Record the activity
-      recordWorkOrderActivity(
-        "Updated", 
-        workOrder.id, 
-        currentUser.id, 
-        currentUser.name
-      );
-      
-      // Show success message
-      toast({
-        title: "Work Order Updated",
-        description: `Work order ${workOrder.id} has been updated successfully.`,
-        variant: "success",
-      });
-      
-      // Navigate back to the details view
-      navigate(`/work-orders/${workOrder.id}`);
+
+      // Call the updateWorkOrder function
+      const updatedWorkOrder = await updateWorkOrder(updatedWorkOrderData);
+
+      if (updatedWorkOrder) {
+        toast.success("Work order updated successfully");
+        navigate(`/work-orders/${workOrder.id}`); // Navigate to the updated work order
+      } else {
+        setFormError("Failed to update work order. Please try again.");
+        toast.error("Failed to update work order");
+      }
     } catch (error) {
       console.error("Error updating work order:", error);
-      
-      // Handle specific network errors
-      if (isNetworkError(error)) {
-        handleNetworkError();
-        setError("Network connectivity issue. Please check your internet connection.");
-      } else {
-        // Handle other form errors
-        const errorResult = handleFormError(error, "Work Order Update");
-        setError(errorResult.message);
-      }
+      setFormError("There was a problem updating the work order. Please try again.");
+      toast.error("Failed to update work order");
     } finally {
       setIsSubmitting(false);
     }
@@ -131,8 +79,6 @@ export const useWorkOrderEditForm = (workOrder: WorkOrder) => {
     form,
     onSubmit,
     isSubmitting,
-    error,
-    timeEntries,
-    setTimeEntries
+    formError,
   };
-};
+}

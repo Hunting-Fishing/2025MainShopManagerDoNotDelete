@@ -1,33 +1,50 @@
+import { WorkOrder } from "@/types/workOrder";
+import { supabase } from "@/lib/supabase";
+import { normalizeWorkOrder } from "@/utils/workOrders/crud";
 
-/**
- * COMPATIBILITY FILE for @/data/workOrdersData
- * 
- * This file exists only to provide backward compatibility with components
- * that still import from @/data/workOrdersData
- */
+// Function to fetch all work orders from the database
+export const fetchWorkOrders = async (): Promise<WorkOrder[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('work_orders')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-// Re-export types from the proper location
-export type { 
-  WorkOrder, 
-  WorkOrderStatusType, 
-  WorkOrderPriorityType, 
-  WorkOrderTemplate, 
-  TimeEntry 
-} from "@/types/workOrder";
+    if (error) {
+      console.error("Error fetching work orders:", error);
+      throw new Error(`Error fetching work orders: ${error.message}`);
+    }
 
-// Re-export all utility functions from proper locations
-export { 
-  formatDate, 
-  formatTime, 
-  formatTimeInHoursAndMinutes 
-} from "@/utils/dateUtils";
+    // Normalize the data before returning
+    return data.map(normalizeWorkOrder);
+  } catch (error: any) {
+    console.error("Unexpected error fetching work orders:", error);
+    throw new Error(`Unexpected error fetching work orders: ${error.message}`);
+  }
+};
 
-export { 
-  statusMap, 
-  priorityMap,
-  normalizeWorkOrder
-} from "@/utils/workOrders";
+// Function to fetch a single work order by ID from the database
+export const fetchWorkOrderById = async (id: string): Promise<WorkOrder | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('work_orders')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-// Export empty mock data for backward compatibility
-export const workOrders = [];
-export const workOrderTemplates = [];
+    if (error) {
+      // Check if the error is a "not found" error
+      if (error.message.includes('No rows found')) {
+        return null; // Return null for not found
+      }
+      console.error("Error fetching work order by ID:", error);
+      throw new Error(`Error fetching work order by ID: ${error.message}`);
+    }
+
+    // Normalize the data before returning
+    return normalizeWorkOrder(data);
+  } catch (error: any) {
+    console.error("Unexpected error fetching work order by ID:", error);
+    throw new Error(`Unexpected error fetching work order by ID: ${error.message}`);
+  }
+};

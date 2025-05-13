@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,6 +15,7 @@ import { WorkOrderSummary } from "@/components/work-orders/fields/WorkOrderSumma
 import { Separator } from "@/components/ui/separator";
 import { Card } from "@/components/ui/card";
 import { WorkOrderTemplate } from "@/types/workOrder";
+import { ServicesSection } from "@/components/work-orders/fields/ServicesSection";
 
 interface WorkOrderFormProps {
   technicians: string[];
@@ -33,6 +33,7 @@ export function WorkOrderForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [selectedItems, setSelectedItems] = useState<any[]>([]);
+  const [selectedServices, setSelectedServices] = useState<any[]>([]);
   
   // Get pre-filled info if coming from a vehicle page
   const customerId = searchParams.get('customerId');
@@ -78,9 +79,15 @@ export function WorkOrderForm({
   
   // Function to calculate the total amount from selected items
   const calculateTotal = () => {
-    return selectedItems.reduce((acc, item) => {
+    const itemsTotal = selectedItems.reduce((acc, item) => {
       return acc + (item.quantity * item.unitPrice);
     }, 0);
+    
+    const servicesTotal = selectedServices.reduce((acc, service) => {
+      return acc + ((service.price || 0) * service.quantity);
+    }, 0);
+    
+    return itemsTotal + servicesTotal;
   };
 
   const onSubmit = async (data: WorkOrderFormSchemaValues) => {
@@ -91,6 +98,7 @@ export function WorkOrderForm({
       // Here we would normally send the data to the backend
       console.log("Submitting work order data:", data);
       console.log("Selected items:", selectedItems);
+      console.log("Selected services:", selectedServices);
       
       // Simulate a successful submission
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -139,6 +147,9 @@ export function WorkOrderForm({
           </div>
           
           <Separator className="my-4" />
+          
+          {/* Services Section - New */}
+          <ServicesSection onServicesChange={setSelectedServices} />
           
           {/* Parts and Services Section */}
           <Card className="border-t-4 border-t-slate-700">
