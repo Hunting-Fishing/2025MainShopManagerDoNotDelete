@@ -8,6 +8,7 @@ import * as z from "zod";
 import { Customer } from "@/types/customer";
 import { Button } from "@/components/ui/button";
 import { createWorkOrder } from "@/utils/workOrders/crud";
+import { WorkOrderStatusType } from "@/types/workOrder";
 
 // Define the validation schema for work orders
 const workOrderSchema = z.object({
@@ -61,7 +62,10 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
   // Update form when customer selection changes
   useEffect(() => {
     if (selectedCustomer) {
-      form.setValue("customer", selectedCustomer.fullName || `${selectedCustomer.firstName} ${selectedCustomer.lastName}`);
+      // Fix: Use first_name and last_name instead of firstName and lastName
+      form.setValue("customer", selectedCustomer.first_name && selectedCustomer.last_name ? 
+        `${selectedCustomer.first_name} ${selectedCustomer.last_name}` : 
+        selectedCustomer.email || "Unknown Customer");
       
       // If customer has an address, use it as the location
       if (selectedCustomer.address) {
@@ -84,7 +88,8 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
         location: data.location,
         dueDate: data.dueDate,
         notes: data.notes,
-        status: data.status,
+        // Fix: Cast the status as WorkOrderStatusType to match the expected type
+        status: data.status as WorkOrderStatusType,
         priority: data.priority,
       };
       
