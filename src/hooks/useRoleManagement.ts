@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Role } from "@/types/team";
 import { useRoleFilter } from "./roles/useRoleFilter";
 import { useRoleActions } from "./roles/useRoleActions";
+import { useRoleImportExport } from "./roles/useRoleImportExport";
 
 export function useRoleManagement(initialRoles: Role[]) {
   // Sort the initial roles by priority
@@ -18,6 +19,7 @@ export function useRoleManagement(initialRoles: Role[]) {
     handleDuplicateRole,
     handleReorderRole 
   } = useRoleActions(roles, setRoles);
+  const { handleImportRoles } = useRoleImportExport(roles, setRoles);
 
   // Apply filters to roles
   const filteredRoles = filterRoles(roles);
@@ -33,6 +35,7 @@ export function useRoleManagement(initialRoles: Role[]) {
     handleEditRole,
     handleDeleteRole,
     handleDuplicateRole,
-    handleReorderRole
+    handleReorderRole,
+    handleImportRoles
   };
 }

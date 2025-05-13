@@ -1,10 +1,11 @@
 
 import React, { useState } from "react";
 import { TableHead, TableHeader as UITableHeader, TableRow } from "@/components/ui/table";
-import { SortableColumnHeader, Column, ColumnId } from "./SortableColumnHeader";
+import { Column, SortableColumnHeader, ColumnId } from "./SortableColumnHeader";
 import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
@@ -52,9 +53,7 @@ export const TableHeader = ({ columns, setColumns }: TableHeaderProps) => {
             {visibleColumns.map((column) => (
               <SortableColumnHeader 
                 key={column.id} 
-                id={column.id}
-                label={column.label}
-                visible={column.visible}
+                column={column} 
                 onHideColumn={handleHideColumn}
                 onAddColumn={availableColumns.length > 0 ? handleAddColumn : undefined}
               />

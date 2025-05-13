@@ -1,28 +1,24 @@
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { Role } from "@/types/team";
 
 export function useRoleFilter() {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
-  
+
+  // Filter roles based on search query and type filter
   const filterRoles = (roles: Role[]) => {
     return roles.filter(role => {
-      // Apply search query filter
-      const matchesSearch = 
-        role.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        role.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = role.name.toLowerCase().includes(searchQuery.toLowerCase());
       
-      // Apply type filter
-      const matchesType = 
-        typeFilter === "all" ||
-        (typeFilter === "default" && role.isDefault) ||
-        (typeFilter === "custom" && !role.isDefault);
+      if (typeFilter === "all") return matchesSearch;
+      if (typeFilter === "default") return matchesSearch && role.isDefault;
+      if (typeFilter === "custom") return matchesSearch && !role.isDefault;
       
-      return matchesSearch && matchesType;
+      return matchesSearch;
     });
   };
-  
+
   return {
     searchQuery,
     setSearchQuery,

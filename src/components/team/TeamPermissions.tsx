@@ -1,106 +1,132 @@
-
 import { useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
+import { PermissionSet, RolePreset } from "@/types/permissions";
+import { defaultPermissions, permissionPresets } from "@/data/permissionPresets";
 import { PermissionModuleCard } from "./permissions/PermissionModuleCard";
 import { PermissionPresetButtons } from "./permissions/PermissionPresetButtons";
-import { PermissionSet } from "@/types/permissions";
-import { permissionPresets, defaultPermissions } from "@/data/permissionPresets";
+import { ResponsiveGrid } from "@/components/ui/responsive-grid";
 
 interface TeamPermissionsProps {
-  memberId?: string;
-  memberRole?: string;
+  memberRole: string;
   initialPermissions?: PermissionSet;
   onChange?: (permissions: PermissionSet) => void;
 }
 
-export function TeamPermissions({ memberId, memberRole, initialPermissions, onChange }: TeamPermissionsProps) {
-  const [activePreset, setActivePreset] = useState<string | null>(memberRole || null);
-  const [permissions, setPermissions] = useState<PermissionSet>(
-    initialPermissions || 
-    (memberRole && permissionPresets[memberRole]) ? 
-      permissionPresets[memberRole as keyof typeof permissionPresets] : 
-      defaultPermissions
-  );
-  
-  const handlePresetChange = (preset: string | null) => {
-    setActivePreset(preset);
+export function TeamPermissions({ 
+  memberRole, 
+  initialPermissions, 
+  onChange 
+}: TeamPermissionsProps) {
+  // Get the appropriate permissions for the role, with fallbacks
+  const getInitialPermissions = (): PermissionSet => {
+    // If initialPermissions are provided, use those
+    if (initialPermissions) {
+      return initialPermissions;
+    }
     
-    if (preset && permissionPresets[preset as keyof typeof permissionPresets]) {
-      const newPermissions = permissionPresets[preset as keyof typeof permissionPresets];
-      setPermissions(newPermissions);
-      if (onChange) onChange(newPermissions);
+    // If memberRole is provided and exists in permissionPresets, use those
+    if (memberRole && permissionPresets[memberRole as keyof typeof permissionPresets]) {
+      return permissionPresets[memberRole as keyof typeof permissionPresets];
+    }
+    
+    // Otherwise use default permissions
+    return defaultPermissions;
+  };
+
+  // Initialize with safe permissions
+  const [permissions, setPermissions] = useState<PermissionSet>(getInitialPermissions());
+
+  // Handle toggling a permission
+  const handleTogglePermission = (module: string, action: string, value: boolean) => {
+    const updatedPermissions = {
+      ...permissions,
+      [module]: {
+        ...permissions[module as keyof typeof permissions],
+        [action]: value,
+      },
+    } as PermissionSet;
+    
+    setPermissions(updatedPermissions);
+    
+    if (onChange) {
+      onChange(updatedPermissions);
     }
   };
-  
+
+  // Apply a permission preset based on role
+  const applyPreset = (role: RolePreset) => {
+    if (role in permissionPresets) {
+      const preset = permissionPresets[role];
+      setPermissions(preset);
+      
+      if (onChange) {
+        onChange(preset);
+      }
+      
+      toast({
+        title: "Permissions updated",
+        description: `Applied ${role} permission preset`,
+        variant: "success",
+      });
+    }
+  };
+
+  // Save permissions (in a real app, this would save to backend)
+  const savePermissions = () => {
+    console.log("Saving permissions:", permissions);
+    
+    // Simulate API call delay
+    setTimeout(() => {
+      toast({
+        title: "Permissions saved successfully",
+        description: "User permissions have been updated successfully",
+        variant: "success",
+      });
+    }, 500);
+  };
+
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Role Permissions</CardTitle>
-          <CardDescription>
-            Configure what this team member can access and modify within the system
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <PermissionPresetButtons 
-            activePreset={activePreset}
-            onSelectPreset={handlePresetChange}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-semibold">Permissions & Access</h2>
+          <p className="text-sm text-slate-500">
+            Configure what this team member can access and modify in the system
+          </p>
+        </div>
+        
+        <PermissionPresetButtons onApplyPreset={applyPreset} />
+      </div>
+
+      <ResponsiveGrid 
+        cols={{ 
+          default: 1, 
+          md: 2, 
+          lg: 2, 
+          xl: 3 
+        }}
+        gap="md"
+        className="w-full"
+      >
+        {permissions && Object.entries(permissions).map(([module, actions]) => (
+          <PermissionModuleCard
+            key={module}
+            moduleName={module}
+            actions={actions}
+            onTogglePermission={handleTogglePermission}
           />
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <PermissionModuleCard 
-              title="Work Orders"
-              description="Access to view and manage work orders"
-              permissions={[
-                { label: "View work orders", id: "workOrders.view" },
-                { label: "Create work orders", id: "workOrders.create" },
-                { label: "Edit work orders", id: "workOrders.edit" },
-                { label: "Delete work orders", id: "workOrders.delete" },
-                { label: "Assign work orders", id: "workOrders.assign" },
-              ]}
-            />
-            
-            <PermissionModuleCard 
-              title="Customers"
-              description="Access to view and manage customer data"
-              permissions={[
-                { label: "View customers", id: "customers.view" },
-                { label: "Create customers", id: "customers.create" },
-                { label: "Edit customers", id: "customers.edit" },
-                { label: "Delete customers", id: "customers.delete" },
-              ]}
-            />
-            
-            <PermissionModuleCard 
-              title="Invoices"
-              description="Access to view and manage invoices"
-              permissions={[
-                { label: "View invoices", id: "invoices.view" },
-                { label: "Create invoices", id: "invoices.create" },
-                { label: "Edit invoices", id: "invoices.edit" },
-                { label: "Delete invoices", id: "invoices.delete" },
-              ]}
-            />
-            
-            <PermissionModuleCard 
-              title="Inventory"
-              description="Access to view and manage inventory"
-              permissions={[
-                { label: "View inventory", id: "inventory.view" },
-                { label: "Create inventory items", id: "inventory.create" },
-                { label: "Edit inventory items", id: "inventory.edit" },
-                { label: "Delete inventory items", id: "inventory.delete" },
-              ]}
-            />
-          </div>
-        </CardContent>
-      </Card>
+        ))}
+      </ResponsiveGrid>
+
+      <div className="flex justify-end">
+        <Button 
+          onClick={savePermissions}
+          className="bg-esm-blue-600 hover:bg-esm-blue-700"
+        >
+          Save Permissions
+        </Button>
+      </div>
     </div>
   );
 }

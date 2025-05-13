@@ -10,8 +10,7 @@ import WorkOrdersPagination from "@/components/work-orders/WorkOrdersPagination"
 import { WorkOrder } from "@/types/workOrder";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
-import { mapDatabaseToAppModel } from "@/utils/workOrders/mappers";
-import { getUniqueTechnicians } from "@/utils/workOrders/mappers";
+import { mapDatabaseToAppModel, getUniqueTechnicians } from "@/utils/workOrders";
 
 export default function WorkOrders() {
   const navigate = useNavigate();

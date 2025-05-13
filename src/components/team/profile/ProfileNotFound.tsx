@@ -1,26 +1,20 @@
 
-import { Button } from "@/components/ui/button";
+import React from "react";
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 
-interface ProfileNotFoundProps {
-  error?: string | null;
-}
-
-export function ProfileNotFound({ error }: ProfileNotFoundProps) {
+export function ProfileNotFound() {
   return (
-    <div className="flex flex-col items-center justify-center py-16">
-      <h2 className="text-2xl font-bold mb-2">Team Member Not Found</h2>
-      <p className="text-muted-foreground mb-6">{error || "The team member you're looking for doesn't exist."}</p>
-      
-      <div className="flex gap-4">
-        <Button asChild>
-          <Link to="/team">Return to Team List</Link>
-        </Button>
-        
-        <Button variant="outline" asChild>
-          <Link to="/team/create">Add New Team Member</Link>
-        </Button>
-      </div>
+    <div className="flex flex-col items-center justify-center h-96 gap-4">
+      <h2 className="text-2xl font-bold">Team Member Not Found</h2>
+      <p className="text-slate-500">The team member you're looking for doesn't exist or has been removed.</p>
+      <Button asChild>
+        <Link to="/team">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Team
+        </Link>
+      </Button>
     </div>
   );
 }

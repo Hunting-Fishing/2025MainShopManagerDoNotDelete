@@ -1,35 +1,22 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { InventoryTableColumnsManager } from "./inventory/InventoryTableColumnsManager";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
-import { useSearchParams, useNavigate } from "react-router-dom";
-import { InventoryFieldManager } from "@/components/inventory/manager/InventoryFieldManager";
-import { CategoriesManager } from "./inventory/CategoriesManager";
-import { SuppliersManager } from "./inventory/SuppliersManager";
 
 export const InventorySettingsTab = () => {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const defaultTab = searchParams.get("tab") || "columns";
-
-  const handleTabChange = (value: string) => {
-    navigate(`/settings/inventory?tab=${value}`, { replace: true });
-  };
-
   return (
-    <Tabs defaultValue={defaultTab} className="w-full" onValueChange={handleTabChange}>
-      <TabsList className="mb-4 flex flex-wrap gap-2">
-        <TabsTrigger value="columns" className="px-4 py-2 rounded-full text-sm">Table Columns</TabsTrigger>
-        <TabsTrigger value="fields" className="px-4 py-2 rounded-full text-sm">Required Fields</TabsTrigger>
-        <TabsTrigger value="categories" className="px-4 py-2 rounded-full text-sm">Categories</TabsTrigger>
-        <TabsTrigger value="suppliers" className="px-4 py-2 rounded-full text-sm">Suppliers</TabsTrigger>
+    <Tabs defaultValue="columns" className="w-full">
+      <TabsList className="mb-4">
+        <TabsTrigger value="columns">Table Columns</TabsTrigger>
+        <TabsTrigger value="categories">Categories</TabsTrigger>
+        <TabsTrigger value="suppliers">Suppliers</TabsTrigger>
       </TabsList>
       
       <TabsContent value="columns" className="space-y-4">
-        <Card className="shadow-md border-gray-100">
+        <Card>
           <CardHeader>
             <CardTitle>Inventory Table Columns</CardTitle>
             <CardDescription>
@@ -49,30 +36,8 @@ export const InventorySettingsTab = () => {
         </Card>
       </TabsContent>
       
-      <TabsContent value="fields" className="space-y-4">
-        <Card className="shadow-md border-gray-100">
-          <CardHeader>
-            <CardTitle>Required Inventory Fields</CardTitle>
-            <CardDescription>
-              Configure which fields are required when creating and editing inventory items
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Alert variant="info" className="mb-4">
-              <Info className="h-4 w-4" />
-              <AlertDescription>
-                Only fields that are visible in the inventory table can be configured here.
-                To show more fields, first make them visible in the Table Columns tab.
-                Be sure to click "Save Settings" to persist your changes.
-              </AlertDescription>
-            </Alert>
-            <InventoryFieldManager />
-          </CardContent>
-        </Card>
-      </TabsContent>
-      
       <TabsContent value="categories" className="space-y-4">
-        <Card className="shadow-md border-gray-100">
+        <Card>
           <CardHeader>
             <CardTitle>Categories Management</CardTitle>
             <CardDescription>
@@ -80,13 +45,13 @@ export const InventorySettingsTab = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <CategoriesManager />
+            {/* Categories Manager will go here */}
           </CardContent>
         </Card>
       </TabsContent>
       
       <TabsContent value="suppliers" className="space-y-4">
-        <Card className="shadow-md border-gray-100">
+        <Card>
           <CardHeader>
             <CardTitle>Suppliers Management</CardTitle>
             <CardDescription>
@@ -94,7 +59,7 @@ export const InventorySettingsTab = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <SuppliersManager />
+            {/* Suppliers Manager will go here */}
           </CardContent>
         </Card>
       </TabsContent>

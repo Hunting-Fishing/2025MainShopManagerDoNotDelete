@@ -3,7 +3,7 @@ import { renderHook, act } from '@testing-library/react-hooks';
 import { useRoleActions } from '../useRoleActions';
 import { Role } from '@/types/team';
 import { PermissionSet } from '@/types/permissions';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { defaultPermissions } from '@/data/permissionPresets';
 
 // Mock UUID generation for predictable IDs in tests

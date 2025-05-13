@@ -1,175 +1,129 @@
 
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
+import { WorkOrderForm } from "@/components/work-orders/WorkOrderForm";
+import { WorkOrderTemplateSelector } from "@/components/work-orders/templates/WorkOrderTemplateSelector";
+import { WorkOrderTemplate } from "@/types/workOrder";
+import { useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
 import { WorkOrderPageLayout } from "@/components/work-orders/WorkOrderPageLayout";
-import { Card, CardContent } from "@/components/ui/card";
-import { CustomerSearch } from "@/components/work-orders/customer-select/CustomerSearch";
-import { Customer } from "@/types/customer";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useWorkOrderForm } from "@/hooks/useWorkOrderForm";
-import { Form } from "@/components/ui/form";
-import { Button } from "@/components/ui/button";
-import { AssignmentSection } from "@/components/work-orders/AssignmentSection";
-import { CustomerInfoSection } from "@/components/work-orders/CustomerInfoSection";
-import { NotesField } from "@/components/work-orders/form-fields/NotesField";
-import { useNavigate } from "react-router-dom";
-import { useTechnicians } from "@/hooks/useTechnicians";
-import { ServiceMainCategory } from "@/types/serviceHierarchy";
-
-// Sample service categories for selection
-const serviceCategories: ServiceMainCategory[] = [
-  {
-    id: "maintenance",
-    name: "Maintenance",
-    description: "Regular maintenance services",
-    subcategories: [
-      {
-        id: "regular",
-        name: "Regular Services",
-        jobs: [
-          { id: "oil", name: "Oil Change" },
-          { id: "filter", name: "Filter Replacement" },
-          { id: "inspection", name: "General Inspection" }
-        ]
-      }
-    ]
-  },
-  {
-    id: "repair",
-    name: "Repair",
-    description: "Vehicle repair services",
-    subcategories: [
-      {
-        id: "engine",
-        name: "Engine Repairs",
-        jobs: [
-          { id: "tune", name: "Engine Tune-up" },
-          { id: "diagnostic", name: "Engine Diagnostic" }
-        ]
-      }
-    ]
-  }
-];
+import { getUniqueTechnicians } from "@/utils/workOrders/crud";
 
 export default function WorkOrderCreate() {
-  const navigate = useNavigate();
-  const { technicians, isLoading: isLoadingTechnicians } = useTechnicians();
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  // State for templates and technicians
+  const [workOrderTemplates, setWorkOrderTemplates] = useState<WorkOrderTemplate[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<WorkOrderTemplate | null>(null);
+  const [technicians, setTechnicians] = useState<string[]>([]);
+  const [isLoadingTechnicians, setIsLoadingTechnicians] = useState(true);
   
-  // Initialize the form with useWorkOrderForm hook
-  const { form, onSubmit, isSubmitting, error } = useWorkOrderForm();
-  
-  // Handle customer selection
-  const handleSelectCustomer = (customer: Customer | null) => {
-    setSelectedCustomer(customer);
+  // URL parameters
+  const [searchParams] = useSearchParams();
+
+  // Check if coming from vehicle details with pre-filled info
+  const hasPreFilledInfo = searchParams.has('customerId') && searchParams.has('vehicleId');
+  const vehicleInfo = searchParams.get('vehicleInfo');
+  const customerName = searchParams.get('customerName');
+
+  // Set a more descriptive title when coming from a vehicle page
+  const pageTitle = hasPreFilledInfo 
+    ? `Create Work Order for ${customerName || 'Customer'}`
+    : "Create Work Order";
     
-    if (customer) {
-      // Update form values with customer information
-      form.setValue("customer", `${customer.first_name} ${customer.last_name}`);
-      form.setValue("customer_id", customer.id);
-      
-      // If customer has an address, use it as the location
-      if (customer.address) {
-        form.setValue("location", customer.address);
+  const pageDescription = hasPreFilledInfo && vehicleInfo
+    ? `Creating a new work order for ${vehicleInfo}`
+    : "Create a new work order for your customer's vehicle";
+
+  // Load technicians from database
+  useEffect(() => {
+    const loadTechnicians = async () => {
+      setIsLoadingTechnicians(true);
+      try {
+        const technicianList = await getUniqueTechnicians();
+        setTechnicians(technicianList);
+      } catch (error) {
+        console.error("Error loading technicians:", error);
+        toast.error("Failed to load technicians");
+      } finally {
+        setIsLoadingTechnicians(false);
       }
-    }
+    };
+
+    loadTechnicians();
+  }, []);
+
+  // Handle template selection
+  const handleSelectTemplate = (template: WorkOrderTemplate) => {
+    setSelectedTemplate(template);
+    toast.success(`Template "${template.name}" selected`);
   };
-  
-  // Handle cancel button click
-  const handleCancel = () => {
-    navigate("/work-orders");
-  };
-  
+
+  // Load templates
+  useEffect(() => {
+    const currentDate = new Date().toISOString();
+    // Mock templates - in a real app, these would come from the database
+    setWorkOrderTemplates([
+      {
+        id: "1",
+        name: "Basic Service",
+        description: "Regular maintenance service",
+        status: "pending",
+        priority: "medium",
+        notes: "Perform oil change, filter replacement, and basic inspection",
+        createdAt: currentDate,
+        usageCount: 3,
+        technician: "John Doe"
+      },
+      {
+        id: "2",
+        name: "Major Repair",
+        description: "Complex repair work",
+        status: "pending",
+        priority: "high",
+        notes: "Detailed diagnosis required before proceeding with repairs",
+        createdAt: currentDate,
+        usageCount: 1,
+        technician: "Jane Smith"
+      },
+      {
+        id: "3",
+        name: "Diagnostic",
+        description: "Diagnostic service",
+        status: "pending",
+        priority: "low",
+        notes: "Perform comprehensive diagnostic scan and inspection",
+        createdAt: currentDate,
+        usageCount: 5,
+        technician: "Bob Johnson"
+      }
+    ]);
+  }, []);
+
   return (
     <WorkOrderPageLayout
-      title="Create Work Order"
-      description="Create a new work order for your customer"
+      title={pageTitle}
+      description={pageDescription}
       backLink="/work-orders"
       backLinkText="Back to Work Orders"
     >
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {/* Customer Selection Section */}
-          <Card className="shadow-md border border-gray-100 rounded-xl overflow-hidden">
-            <CardContent className="p-0">
-              <div className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Customer Information</h3>
-                <CustomerSearch 
-                  onSelectCustomer={handleSelectCustomer} 
-                  selectedCustomer={selectedCustomer} 
-                />
-              </div>
-            </CardContent>
-          </Card>
-          
-          {/* Work Order Details */}
-          <div className="bg-white dark:bg-slate-800/50 rounded-lg shadow">
-            <div className="p-6 border-b">
-              <h2 className="text-xl font-semibold">Work Order Details</h2>
-              <p className="text-sm text-muted-foreground mt-1">Fill in the details of the work order</p>
-            </div>
-            
-            <div className="p-6">
-              <Tabs defaultValue="details" className="w-full">
-                <TabsList className="grid grid-cols-3 mb-6">
-                  <TabsTrigger value="details" className="rounded-full">Details</TabsTrigger>
-                  <TabsTrigger value="assignment" className="rounded-full">Assignment</TabsTrigger>
-                  <TabsTrigger value="notes" className="rounded-full">Notes</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="details" className="space-y-4">
-                  <CustomerInfoSection 
-                    form={form} 
-                    customers={selectedCustomer ? [selectedCustomer] : []} 
-                    isLoading={false}
-                  />
-                </TabsContent>
-                
-                <TabsContent value="assignment" className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <AssignmentSection 
-                      form={form} 
-                      technicians={technicians.map(tech => ({ id: tech.id || '_unassigned', name: tech.name }))}
-                      isLoading={isLoadingTechnicians}
-                    />
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="notes" className="space-y-4">
-                  <div className="grid gap-6">
-                    <NotesField form={form} />
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </div>
-            
-            {/* Form Actions */}
-            <div className="p-6 border-t flex justify-end space-x-4">
-              <Button 
-                type="button"
-                variant="outline"
-                onClick={handleCancel}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button 
-                type="submit"
-                disabled={isSubmitting}
-                className="rounded-full px-6 bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                {isSubmitting ? "Creating..." : "Create Work Order"}
-              </Button>
-            </div>
+      <div className="space-y-6">
+        {/* Template selector */}
+        {!hasPreFilledInfo && (
+          <div className="flex justify-end mb-4">
+            <WorkOrderTemplateSelector
+              templates={workOrderTemplates}
+              onSelectTemplate={handleSelectTemplate}
+            />
           </div>
-          
-          {/* Error message display */}
-          {error && (
-            <div className="p-4 border border-red-300 bg-red-50 text-red-800 rounded-md">
-              {error}
-            </div>
-          )}
-        </form>
-      </Form>
+        )}
+
+        {/* Work Order Form */}
+        <div className="bg-white dark:bg-slate-800/50 rounded-lg shadow">
+          <WorkOrderForm 
+            technicians={technicians} 
+            isLoadingTechnicians={isLoadingTechnicians}
+            initialTemplate={selectedTemplate}
+          />
+        </div>
+      </div>
     </WorkOrderPageLayout>
   );
 }

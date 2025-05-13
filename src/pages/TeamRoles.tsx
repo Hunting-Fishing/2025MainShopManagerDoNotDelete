@@ -1,129 +1,87 @@
 
-import { useState } from "react";
-import { SeoHead } from "@/components/common/SeoHead";
+import React from "react";
+import { Card } from "@/components/ui/card";
+import { ResponsiveContainer } from "@/components/ui/responsive-container";
 import { RolesPageHeader } from "@/components/team/roles/RolesPageHeader";
 import { RolesContent } from "@/components/team/roles/RolesContent";
+import { RoleDialogs } from "@/components/team/roles/RoleDialogs";
 import { useTeamRolesPage } from "@/hooks/useTeamRolesPage";
-import { Role } from "@/types/team";
-import { PermissionSet } from "@/types/permissions";
-import { defaultPermissions } from "@/data/permissionPresets";
-import { AddRoleDialog } from "@/components/team/roles/AddRoleDialog";
-import { EditRoleDialog } from "@/components/team/roles/EditRoleDialog";
-import { DeleteRoleDialog } from "@/components/team/roles/DeleteRoleDialog";
 
 export default function TeamRoles() {
   const {
-    roles,
     filteredRoles,
     searchQuery,
     setSearchQuery,
     typeFilter,
     setTypeFilter,
-    handleAddRole: addRole,
-    handleEditRole: editRole,
-    handleDeleteRole: deleteRole,
-    handleDuplicateRole: duplicateRole
+    isAddDialogOpen,
+    setIsAddDialogOpen,
+    isEditDialogOpen,
+    setIsEditDialogOpen,
+    isDeleteDialogOpen,
+    setIsDeleteDialogOpen,
+    newRoleName,
+    setNewRoleName,
+    newRoleDescription,
+    setNewRoleDescription,
+    currentRole,
+    setCurrentRole,
+    rolePermissions,
+    setRolePermissions,
+    handleExportRoles,
+    onAddRole,
+    onEditRole,
+    onDeleteRole,
+    handleEditRoleClick,
+    handleDeleteRoleClick,
+    handleDuplicateRoleClick,
+    handleReorderRole,
+    handleImportRoles
   } = useTeamRolesPage();
-  
-  // Dialog states
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  
-  // Role form states
-  const [roleName, setRoleName] = useState("");
-  const [roleDescription, setRoleDescription] = useState("");
-  const [rolePermissions, setRolePermissions] = useState<PermissionSet>(defaultPermissions);
-  const [currentRole, setCurrentRole] = useState<Role | null>(null);
-  
-  const handleAddRoleClick = () => {
-    setRoleName("");
-    setRoleDescription("");
-    setRolePermissions(defaultPermissions);
-    setAddDialogOpen(true);
-  };
-  
-  const handleEditRole = (role: Role) => {
-    setCurrentRole(role);
-    setEditDialogOpen(true);
-  };
-  
-  const handleDeleteRole = (role: Role) => {
-    setCurrentRole(role);
-    setDeleteDialogOpen(true);
-  };
-  
-  const handlePermissionsChange = (permissions: PermissionSet) => {
-    setRolePermissions(permissions);
-  };
-  
-  const handleAddRoleSubmit = () => {
-    if (addRole(roleName, roleDescription, rolePermissions)) {
-      setAddDialogOpen(false);
-    }
-  };
-  
-  const handleEditRoleSubmit = () => {
-    if (currentRole && editRole(currentRole, rolePermissions)) {
-      setEditDialogOpen(false);
-    }
-  };
-  
-  const handleDeleteRoleSubmit = () => {
-    if (currentRole && deleteRole(currentRole)) {
-      setDeleteDialogOpen(false);
-    }
-  };
-  
+
   return (
-    <div className="space-y-6">
-      <SeoHead
-        title="Role Management | Easy Shop Manager"
-        description="Manage team roles and permissions for your organization."
-        keywords="role management, permissions, access control"
-      />
-      
-      <RolesPageHeader onAddRoleClick={handleAddRoleClick} />
-      
+    <ResponsiveContainer maxWidth="full" className="space-y-6">
+      <Card className="border-0 shadow-sm bg-white overflow-hidden">
+        <RolesPageHeader 
+          onAddRoleClick={() => setIsAddDialogOpen(true)}
+          onExportRoles={handleExportRoles}
+          onImportRoles={handleImportRoles}
+        />
+      </Card>
+
       <RolesContent 
-        roles={roles}
-        filteredRoles={filteredRoles}
+        roles={filteredRoles}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         typeFilter={typeFilter}
         onTypeFilterChange={setTypeFilter}
-        onEditRole={handleEditRole}
-        onDeleteRole={handleDeleteRole}
-        onDuplicateRole={duplicateRole}
+        onEditRole={handleEditRoleClick}
+        onDeleteRole={handleDeleteRoleClick}
+        onDuplicateRole={handleDuplicateRoleClick}
+        onReorderRole={handleReorderRole}
       />
-      
-      <AddRoleDialog
-        open={addDialogOpen}
-        onOpenChange={setAddDialogOpen}
-        roleName={roleName}
-        onRoleNameChange={setRoleName}
-        roleDescription={roleDescription}
-        onRoleDescriptionChange={setRoleDescription}
-        onPermissionsChange={handlePermissionsChange}
-        onAddRole={handleAddRoleSubmit}
-      />
-      
-      <EditRoleDialog
-        open={editDialogOpen}
-        onOpenChange={setEditDialogOpen}
+
+      <RoleDialogs 
+        addDialogOpen={isAddDialogOpen}
+        onAddDialogChange={setIsAddDialogOpen}
+        roleName={newRoleName}
+        onRoleNameChange={setNewRoleName}
+        roleDescription={newRoleDescription}
+        onRoleDescriptionChange={setNewRoleDescription}
+        onPermissionsChange={setRolePermissions}
+        onAddRole={onAddRole}
+        
+        editDialogOpen={isEditDialogOpen}
+        onEditDialogChange={setIsEditDialogOpen}
         currentRole={currentRole}
         onCurrentRoleChange={setCurrentRole}
         rolePermissions={rolePermissions}
-        onPermissionsChange={handlePermissionsChange}
-        onEditRole={handleEditRoleSubmit}
+        onEditRole={onEditRole}
+        
+        deleteDialogOpen={isDeleteDialogOpen}
+        onDeleteDialogChange={setIsDeleteDialogOpen}
+        onDeleteRole={onDeleteRole}
       />
-      
-      <DeleteRoleDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        currentRole={currentRole}
-        onDeleteRole={handleDeleteRoleSubmit}
-      />
-    </div>
+    </ResponsiveContainer>
   );
 }

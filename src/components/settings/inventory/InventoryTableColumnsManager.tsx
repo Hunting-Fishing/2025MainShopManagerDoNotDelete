@@ -69,22 +69,12 @@ export const InventoryTableColumnsManager = () => {
 
   const saveColumnSettings = () => {
     localStorage.setItem("inventoryTableColumns", JSON.stringify(columns));
-    
-    // Dispatch a custom event to notify other components of the change
-    const event = new CustomEvent('inventoryColumnsUpdated', { detail: columns });
-    window.dispatchEvent(event);
-    
     toast.success("Column settings saved successfully");
   };
 
   const resetToDefault = () => {
     setColumns(initialColumns);
     localStorage.removeItem("inventoryTableColumns");
-    
-    // Dispatch a custom event to notify other components of the change
-    const event = new CustomEvent('inventoryColumnsUpdated', { detail: initialColumns });
-    window.dispatchEvent(event);
-    
     toast.success("Column settings reset to default");
   };
 
@@ -92,35 +82,18 @@ export const InventoryTableColumnsManager = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-4">
         <div className="space-x-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleSelectAll}
-            className="text-blue-600 border-blue-500 hover:bg-blue-50"
-          >
+          <Button variant="outline" size="sm" onClick={handleSelectAll}>
             Show All
           </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleDeselectAll}
-            className="text-red-600 border-red-500 hover:bg-red-50"
-          >
+          <Button variant="outline" size="sm" onClick={handleDeselectAll}>
             Hide All
           </Button>
         </div>
         <div className="space-x-2">
-          <Button 
-            variant="outline" 
-            onClick={resetToDefault}
-            className="border-gray-300"
-          >
+          <Button variant="outline" onClick={resetToDefault}>
             Reset to Default
           </Button>
-          <Button 
-            onClick={saveColumnSettings}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-          >
+          <Button onClick={saveColumnSettings}>
             Save Settings
           </Button>
         </div>
@@ -128,12 +101,11 @@ export const InventoryTableColumnsManager = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {columns.map((column) => (
-          <div key={column.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-50">
+          <div key={column.id} className="flex items-center space-x-2">
             <Checkbox
               id={`column-${column.id}`}
               checked={column.visible}
               onCheckedChange={() => handleColumnToggle(column.id)}
-              className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
             />
             <label
               htmlFor={`column-${column.id}`}

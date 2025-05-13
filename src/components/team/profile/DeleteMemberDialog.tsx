@@ -1,71 +1,64 @@
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { TeamMember } from "@/types/team";
-import { toast } from "sonner";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Loader2 } from "lucide-react";
 
 interface DeleteMemberDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  member: TeamMember;
+  memberName: string;
+  memberId: string;
+  onDelete: (memberId: string) => void;
+  isDeleting?: boolean;
 }
 
-export function DeleteMemberDialog({ open, onOpenChange, member }: DeleteMemberDialogProps) {
-  const [isDeleting, setIsDeleting] = useState(false);
-  const navigate = useNavigate();
-  
-  const handleDelete = async () => {
-    setIsDeleting(true);
-    
-    try {
-      // In a real app, this would delete the member from your backend
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast.success(`Team member ${member.name} has been deleted`);
-      onOpenChange(false);
-      navigate("/team");
-    } catch (error) {
-      toast.error("Failed to delete team member");
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
+export function DeleteMemberDialog({ 
+  open, 
+  onOpenChange, 
+  memberName, 
+  memberId,
+  onDelete,
+  isDeleting = false
+}: DeleteMemberDialogProps) {
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Are you sure you want to delete this team member?</AlertDialogTitle>
-          <AlertDialogDescription>
-            This will permanently remove <strong>{member.name}</strong> from your organization.
-            Any work orders assigned to this team member will need to be reassigned.
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Are you sure?</DialogTitle>
+          <DialogDescription>
+            This will permanently remove {memberName} from your team. 
             This action cannot be undone.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={(e) => {
-              e.preventDefault();
-              handleDelete();
-            }}
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button 
+            variant="outline" 
+            onClick={() => onOpenChange(false)}
             disabled={isDeleting}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            {isDeleting ? "Deleting..." : "Delete"}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+            Cancel
+          </Button>
+          <Button 
+            variant="destructive" 
+            onClick={() => onDelete(memberId)}
+            disabled={isDeleting}
+          >
+            {isDeleting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Deleting...
+              </>
+            ) : "Delete Member"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

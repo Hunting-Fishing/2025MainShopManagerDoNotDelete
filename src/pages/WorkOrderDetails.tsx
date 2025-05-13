@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { WorkOrder } from "@/types/workOrder";
-import { findWorkOrderById, updateWorkOrder } from "@/utils/workOrders/crud";
+import { findWorkOrderById, updateWorkOrder } from "@/utils/workOrders";
 import WorkOrderDetailsView from "@/components/work-orders/WorkOrderDetailsView";
 import WorkOrderEditForm from "@/components/work-orders/WorkOrderEditForm";
 import { toast } from "@/hooks/use-toast";
@@ -57,8 +57,8 @@ export default function WorkOrderDetails({ edit = false }: WorkOrderDetailsProps
           return;
         }
 
-        // Now using the imported findWorkOrderById from crud.ts
-        const foundWorkOrder = await findWorkOrderById(id, {}); // Adding empty options object as second argument
+        // We're now using async findWorkOrderById that connects to Supabase
+        const foundWorkOrder = await findWorkOrderById(id);
         
         if (foundWorkOrder) {
           setWorkOrder(foundWorkOrder);

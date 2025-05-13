@@ -5,23 +5,19 @@ import { Button } from "@/components/ui/button";
 
 export function CreatePageHeader() {
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" asChild>
-          <Link to="/team" className="flex items-center gap-1 text-muted-foreground">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Team
-          </Link>
-        </Button>
-      </div>
-      
-      <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-        <div>
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <div className="flex items-center gap-2 mb-2">
+          <Button variant="ghost" size="icon" asChild className="h-8 w-8">
+            <Link to="/team">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
           <h1 className="text-2xl font-bold tracking-tight">Add Team Member</h1>
-          <p className="text-muted-foreground">
-            Create a new team member and assign their role and permissions
-          </p>
         </div>
+        <p className="text-slate-500">
+          Create a new team member and assign their role and permissions
+        </p>
       </div>
     </div>
   );

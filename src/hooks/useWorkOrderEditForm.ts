@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -9,6 +8,8 @@ import { WorkOrder } from "@/types/workOrder";
 import { updateWorkOrder } from "@/utils/workOrders";
 import { WorkOrderInventoryItem, TimeEntry } from "@/types/workOrder";
 import { workOrderFormSchema, WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
+import { recordWorkOrderActivity } from "@/utils/workOrders/activity";
+import { handleFormError, isNetworkError, handleNetworkError } from "@/utils/errorHandling";
 
 // Mock current user - in a real app, this would come from auth context
 const currentUser = { id: "user-123", name: "Admin User" };
@@ -97,8 +98,7 @@ export const useWorkOrderEditForm = (workOrder: WorkOrder) => {
         "Updated", 
         workOrder.id, 
         currentUser.id, 
-        currentUser.name,
-        {} // Adding empty options object as second argument
+        currentUser.name
       );
       
       // Show success message
@@ -112,22 +112,19 @@ export const useWorkOrderEditForm = (workOrder: WorkOrder) => {
       navigate(`/work-orders/${workOrder.id}`);
     } catch (error) {
       console.error("Error updating work order:", error);
-      setError("Error updating work order. Please try again.");
+      
+      // Handle specific network errors
+      if (isNetworkError(error)) {
+        handleNetworkError();
+        setError("Network connectivity issue. Please check your internet connection.");
+      } else {
+        // Handle other form errors
+        const errorResult = handleFormError(error, "Work Order Update");
+        setError(errorResult.message);
+      }
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  // Helper function to record work order activity
-  const recordWorkOrderActivity = (
-    action: string, 
-    workOrderId: string, 
-    userId: string, 
-    userName: string,
-    options: any = {}
-  ) => {
-    // Implementation would typically call a backend API to record the activity
-    console.log(`Recording activity: ${action} for work order ${workOrderId} by ${userName}`);
   };
 
   return {

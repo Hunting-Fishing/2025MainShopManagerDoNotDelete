@@ -1,10 +1,11 @@
 
 import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+import { Link } from "react-router-dom";
 import { FieldSection } from "./FieldSection";
+import { toast } from "sonner";
 
-// Define the field types
 export interface FieldDefinition {
   id: string;
   label: string;
@@ -13,126 +14,118 @@ export interface FieldDefinition {
 }
 
 export function InventoryFieldManager() {
-  // Create state for basic, advanced, and financial fields
   const [basicFields, setBasicFields] = useState<FieldDefinition[]>([
-    { id: "name", label: "Item Name", isRequired: true },
-    { id: "sku", label: "SKU", isRequired: true },
-    { id: "description", label: "Description", isRequired: false },
-    { id: "category", label: "Category", isRequired: true },
-    { id: "supplier", label: "Supplier", isRequired: false },
+    { id: "name", label: "Name", isRequired: true, description: "Item name or title" },
+    { id: "sku", label: "SKU", isRequired: true, description: "Stock keeping unit" },
+    { id: "partNumber", label: "Part Number", isRequired: false, description: "Manufacturer part number" },
+    { id: "category", label: "Category", isRequired: true, description: "Primary category" }
   ]);
   
-  const [advancedFields, setAdvancedFields] = useState<FieldDefinition[]>([
-    { id: "location", label: "Storage Location", isRequired: false },
-    { id: "reorderPoint", label: "Reorder Point", isRequired: false },
-    { id: "partNumber", label: "Part Number", isRequired: false },
-    { id: "manufacturer", label: "Manufacturer", isRequired: false },
-    { id: "barcode", label: "Barcode", isRequired: false },
+  const [stockFields, setStockFields] = useState<FieldDefinition[]>([
+    { id: "quantity", label: "Quantity", isRequired: true, description: "Current stock level" },
+    { id: "location", label: "Location", isRequired: false, description: "Storage location" },
+    { id: "reorderPoint", label: "Reorder Point", isRequired: false, description: "Minimum quantity before reordering" },
+    { id: "cost", label: "Cost", isRequired: true, description: "Unit cost price" }
   ]);
   
-  const [financialFields, setFinancialFields] = useState<FieldDefinition[]>([
-    { id: "cost", label: "Cost Price", isRequired: false },
-    { id: "unitPrice", label: "Unit Price", isRequired: true },
-    { id: "marginMarkup", label: "Margin/Markup", isRequired: false },
-    { id: "retailPrice", label: "Retail Price", isRequired: false },
-    { id: "wholesalePrice", label: "Wholesale Price", isRequired: false },
+  const [pricingFields, setPricingFields] = useState<FieldDefinition[]>([
+    { id: "unitPrice", label: "Unit Price", isRequired: true, description: "Selling price per unit" },
+    { id: "marginMarkup", label: "Markup/Margin", isRequired: false, description: "Profit percentage" }
   ]);
 
-  // Load saved settings from localStorage on component mount
-  useEffect(() => {
-    const savedSettings = localStorage.getItem("inventoryRequiredFields");
-    
-    if (savedSettings) {
-      try {
-        const parsed = JSON.parse(savedSettings);
-        
-        if (parsed.basicFields) setBasicFields(parsed.basicFields);
-        if (parsed.advancedFields) setAdvancedFields(parsed.advancedFields);
-        if (parsed.financialFields) setFinancialFields(parsed.financialFields);
-      } catch (error) {
-        console.error("Error parsing saved inventory settings:", error);
-      }
+  // Handler for toggling field requirement status
+  const handleToggleField = (fieldId: string, section: "basic" | "stock" | "pricing") => {
+    switch (section) {
+      case "basic":
+        setBasicFields(fields => fields.map(field => 
+          field.id === fieldId ? { ...field, isRequired: !field.isRequired } : field
+        ));
+        break;
+      case "stock":
+        setStockFields(fields => fields.map(field => 
+          field.id === fieldId ? { ...field, isRequired: !field.isRequired } : field
+        ));
+        break;
+      case "pricing":
+        setPricingFields(fields => fields.map(field => 
+          field.id === fieldId ? { ...field, isRequired: !field.isRequired } : field
+        ));
+        break;
     }
+    // Show toast notification
+    toast.success("Field settings updated");
+  };
+
+  // Save settings to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem("inventoryBasicFields", JSON.stringify(basicFields));
+    localStorage.setItem("inventoryStockFields", JSON.stringify(stockFields));
+    localStorage.setItem("inventoryPricingFields", JSON.stringify(pricingFields));
+  }, [basicFields, stockFields, pricingFields]);
+
+  // Load settings from localStorage on component mount
+  useEffect(() => {
+    const savedBasicFields = localStorage.getItem("inventoryBasicFields");
+    const savedStockFields = localStorage.getItem("inventoryStockFields");
+    const savedPricingFields = localStorage.getItem("inventoryPricingFields");
+    
+    if (savedBasicFields) setBasicFields(JSON.parse(savedBasicFields));
+    if (savedStockFields) setStockFields(JSON.parse(savedStockFields));
+    if (savedPricingFields) setPricingFields(JSON.parse(savedPricingFields));
   }, []);
 
-  // Toggle a field's required status
-  const handleToggleField = (fieldId: string, fieldType: "basic" | "advanced" | "financial") => {
-    const updateFields = (fields: FieldDefinition[]) => {
-      return fields.map(field => {
-        if (field.id === fieldId) {
-          return { ...field, isRequired: !field.isRequired };
-        }
-        return field;
-      });
-    };
-
-    if (fieldType === "basic") {
-      setBasicFields(updateFields(basicFields));
-    } else if (fieldType === "advanced") {
-      setAdvancedFields(updateFields(advancedFields));
-    } else if (fieldType === "financial") {
-      setFinancialFields(updateFields(financialFields));
-    }
-  };
-
-  // Save settings to localStorage
-  const saveSettings = () => {
-    const settings = {
-      basicFields,
-      advancedFields,
-      financialFields,
-    };
-    
-    localStorage.setItem("inventoryRequiredFields", JSON.stringify(settings));
-    toast.success("Required fields settings saved successfully");
-  };
-
-  // Reset to defaults
-  const resetToDefaults = () => {
-    setBasicFields(basicFields.map(field => ({ 
-      ...field, 
-      isRequired: ["name", "sku", "category"].includes(field.id) 
-    })));
-    setAdvancedFields(advancedFields.map(field => ({ ...field, isRequired: false })));
-    setFinancialFields(financialFields.map(field => ({ 
-      ...field, 
-      isRequired: field.id === "unitPrice" 
-    })));
-    
-    toast.info("Settings reset to defaults");
-  };
-
   return (
-    <div className="space-y-8">
-      <FieldSection
-        title="Basic Information"
-        description="Configure which basic inventory fields are required when creating or editing items"
-        fields={basicFields}
-        onToggle={(fieldId) => handleToggleField(fieldId, "basic")}
-      />
-      
-      <FieldSection
-        title="Advanced Details"
-        description="Configure which advanced inventory fields are required"
-        fields={advancedFields}
-        onToggle={(fieldId) => handleToggleField(fieldId, "advanced")}
-      />
-      
-      <FieldSection
-        title="Financial Information"
-        description="Configure which financial fields are required for inventory items"
-        fields={financialFields}
-        onToggle={(fieldId) => handleToggleField(fieldId, "financial")}
-      />
-      
-      <div className="flex justify-end space-x-4 pt-4 border-t">
-        <Button variant="outline" onClick={resetToDefaults}>
-          Reset to Defaults
-        </Button>
-        <Button variant="default" onClick={saveSettings}>
-          Save Settings
-        </Button>
-      </div>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Inventory Field Settings</CardTitle>
+          <CardDescription>
+            Configure which fields are required for your inventory items
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="mb-4">
+            Customize which fields are required, optional, or hidden when creating and editing inventory items.
+          </p>
+          <div className="flex flex-col space-y-8 mt-4">
+            <FieldSection 
+              title="Basic Information" 
+              description="Core details about your inventory items"
+              fields={basicFields}
+              onToggle={(fieldId) => handleToggleField(fieldId, "basic")}
+            />
+            
+            <FieldSection 
+              title="Stock Information" 
+              description="Quantity and storage details"
+              fields={stockFields}
+              onToggle={(fieldId) => handleToggleField(fieldId, "stock")}
+            />
+            
+            <FieldSection 
+              title="Pricing" 
+              description="Cost and selling price information"
+              fields={pricingFields}
+              onToggle={(fieldId) => handleToggleField(fieldId, "pricing")}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Table Display Settings</CardTitle>
+          <CardDescription>
+            Configure how the inventory table displays data
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col space-y-4">
+          <p>Manage which columns are visible in the inventory table and their order.</p>
+          <Button asChild>
+            <Link to="/settings/inventory?tab=columns">Manage Table Columns</Link>
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }

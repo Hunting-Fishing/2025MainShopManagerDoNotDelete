@@ -2,36 +2,41 @@
 import { Button } from "@/components/ui/button";
 import { RolePreset } from "@/types/permissions";
 
-interface PermissionPresetButtonsProps {
-  activePreset: string | null;
-  onSelectPreset: (preset: RolePreset | null) => void;
+interface PermissionPresetsProps {
+  onApplyPreset: (role: RolePreset) => void;
 }
 
-export function PermissionPresetButtons({ activePreset, onSelectPreset }: PermissionPresetButtonsProps) {
-  const presets: RolePreset[] = ["Owner", "Administrator", "Technician", "Customer Service"];
-  
+export function PermissionPresetButtons({ onApplyPreset }: PermissionPresetsProps) {
   return (
-    <div className="space-y-2">
-      <p className="text-sm font-medium">Apply permission template:</p>
-      <div className="flex flex-wrap gap-2">
-        {presets.map((preset) => (
-          <Button
-            key={preset}
-            variant={activePreset === preset ? "default" : "outline"}
-            size="sm"
-            onClick={() => onSelectPreset(preset)}
-          >
-            {preset}
-          </Button>
-        ))}
-        <Button
-          variant={activePreset === null ? "default" : "outline"}
-          size="sm"
-          onClick={() => onSelectPreset(null)}
-        >
-          Custom
-        </Button>
-      </div>
+    <div className="flex flex-wrap gap-2">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => onApplyPreset("Owner")}
+      >
+        Owner Preset
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => onApplyPreset("Administrator")}
+      >
+        Admin Preset
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => onApplyPreset("Technician")}
+      >
+        Technician Preset
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => onApplyPreset("Customer Service")}
+      >
+        CS Preset
+      </Button>
     </div>
   );
 }
