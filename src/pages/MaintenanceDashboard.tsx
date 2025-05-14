@@ -1,15 +1,17 @@
+
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { format, addDays, parseISO, isBefore } from "date-fns";
 import { fetchEquipment, getOverdueMaintenanceEquipment } from "@/data/equipmentData";
-import { MaintenanceHeader } from "@/components/maintenance/MaintenanceHeader";
-import { MaintenanceAlerts } from "@/components/maintenance/MaintenanceAlerts";
-import { UpcomingMaintenanceTable } from "@/components/maintenance/UpcomingMaintenanceTable";
-import { MaintenanceHistoryTable } from "@/components/maintenance/MaintenanceHistoryTable";
-import { MaintenanceScheduler } from "@/components/maintenance/MaintenanceScheduler";
-import { MaintenanceStats } from "@/components/maintenance/MaintenanceStats";
+import { Equipment } from "@/types/equipment";
 import { getUpcomingMaintenanceSchedules } from "@/utils/maintenanceScheduler";
-import { Equipment, MaintenanceRecord } from "@/types/equipment";
+import { 
+  MaintenanceHeader, 
+  MaintenanceAlerts, 
+  MaintenanceStats,
+  UpcomingMaintenanceTable,
+  MaintenanceHistoryTable,
+  MaintenanceScheduler 
+} from "@/components/maintenance";
 
 export default function MaintenanceDashboard() {
   const [timeframe, setTimeframe] = useState<"upcoming" | "all">("upcoming");
@@ -17,7 +19,7 @@ export default function MaintenanceDashboard() {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [overdueEquipment, setOverdueEquipment] = useState<Equipment[]>([]);
   const [upcomingMaintenance, setUpcomingMaintenance] = useState<any[]>([]);
-  const [allMaintenanceHistory, setAllMaintenanceHistory] = useState<Array<MaintenanceRecord & { equipmentName: string }>>([]);
+  const [allMaintenanceHistory, setAllMaintenanceHistory] = useState<Array<any>>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   
   // Load equipment data
@@ -35,7 +37,7 @@ export default function MaintenanceDashboard() {
         setUpcomingMaintenance(upcoming);
         
         // Collect all maintenance history from all equipment
-        const history: Array<MaintenanceRecord & { equipmentName: string }> = [];
+        const history: Array<any> = [];
         
         equipmentData.forEach(item => {
           if (item.maintenanceHistory && Array.isArray(item.maintenanceHistory)) {

@@ -1,6 +1,6 @@
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarClock, CheckCircle, AlertTriangle, Clock } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Calendar, Clock, AlertTriangle, CheckCircle } from "lucide-react";
 
 interface MaintenanceStatsProps {
   totalScheduled: number;
@@ -15,63 +15,65 @@ export function MaintenanceStats({
   upcomingCount,
   completedCount
 }: MaintenanceStatsProps) {
-  const completionRate = totalScheduled > 0 
-    ? Math.round(((totalScheduled - totalOverdue) / totalScheduled) * 100) 
-    : 100;
-
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-          <CardTitle className="text-sm font-medium">Scheduled Maintenance</CardTitle>
-          <CalendarClock className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{totalScheduled}</div>
-          <p className="text-xs text-muted-foreground">
-            Total maintenance tasks scheduled
-          </p>
-        </CardContent>
-      </Card>
-      
-      <Card className={totalOverdue > 0 ? "border-red-200" : ""}>
-        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-          <CardTitle className="text-sm font-medium">Overdue Maintenance</CardTitle>
-          <AlertTriangle className={`h-4 w-4 ${totalOverdue > 0 ? "text-red-500" : "text-muted-foreground"}`} />
-        </CardHeader>
-        <CardContent>
-          <div className={`text-2xl font-bold ${totalOverdue > 0 ? "text-red-600" : ""}`}>
-            {totalOverdue}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <Card className="bg-white">
+        <CardContent className="p-6">
+          <div className="flex items-center space-x-2">
+            <div className="p-2 bg-blue-100 rounded-full">
+              <Calendar className="h-5 w-5 text-blue-600" />
+            </div>
+            <div className="text-sm font-medium text-blue-600">Scheduled</div>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Maintenance tasks past due date
-          </p>
+          <div className="mt-3">
+            <div className="text-3xl font-bold">{totalScheduled}</div>
+            <div className="text-sm text-muted-foreground">Total maintenance tasks</div>
+          </div>
         </CardContent>
       </Card>
-      
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-          <CardTitle className="text-sm font-medium">Upcoming (30 days)</CardTitle>
-          <Clock className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{upcomingCount}</div>
-          <p className="text-xs text-muted-foreground">
-            Maintenance scheduled in next 30 days
-          </p>
+
+      <Card className="bg-white">
+        <CardContent className="p-6">
+          <div className="flex items-center space-x-2">
+            <div className="p-2 bg-red-100 rounded-full">
+              <AlertTriangle className="h-5 w-5 text-red-600" />
+            </div>
+            <div className="text-sm font-medium text-red-600">Overdue</div>
+          </div>
+          <div className="mt-3">
+            <div className="text-3xl font-bold text-red-600">{totalOverdue}</div>
+            <div className="text-sm text-muted-foreground">Needs immediate attention</div>
+          </div>
         </CardContent>
       </Card>
-      
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-          <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
-          <CheckCircle className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{completionRate}%</div>
-          <p className="text-xs text-muted-foreground">
-            {completedCount} completed in last 30 days
-          </p>
+
+      <Card className="bg-white">
+        <CardContent className="p-6">
+          <div className="flex items-center space-x-2">
+            <div className="p-2 bg-yellow-100 rounded-full">
+              <Clock className="h-5 w-5 text-yellow-600" />
+            </div>
+            <div className="text-sm font-medium text-yellow-600">Upcoming</div>
+          </div>
+          <div className="mt-3">
+            <div className="text-3xl font-bold">{upcomingCount}</div>
+            <div className="text-sm text-muted-foreground">Due within 30 days</div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-white">
+        <CardContent className="p-6">
+          <div className="flex items-center space-x-2">
+            <div className="p-2 bg-green-100 rounded-full">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+            </div>
+            <div className="text-sm font-medium text-green-600">Completed</div>
+          </div>
+          <div className="mt-3">
+            <div className="text-3xl font-bold">{completedCount}</div>
+            <div className="text-sm text-muted-foreground">Last 30 days</div>
+          </div>
         </CardContent>
       </Card>
     </div>
