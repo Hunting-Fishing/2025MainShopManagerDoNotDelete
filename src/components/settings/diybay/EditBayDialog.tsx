@@ -1,26 +1,26 @@
 
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Bay, RateSettings } from "@/services/diybay/diybayService";
-import { formatCurrency } from "@/lib/formatters";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Calculator, DollarSign, Settings, BarChart, Tag } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { InfoCircledIcon } from "@radix-ui/react-icons";
+import { Check, Save, X, AlertCircle } from "lucide-react";
 
 interface EditBayDialogProps {
   bay: Bay | null;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (bay: Bay) => void;
+  onSave: (bay: Bay) => Promise<boolean>;
   calculateRate: (type: 'daily' | 'weekly' | 'monthly', hourlyRate: number) => number;
   settings: RateSettings;
   isSaving: boolean;
 }
+
+type RateMode = 'default' | 'custom' | 'percentage';
 
 export const EditBayDialog: React.FC<EditBayDialogProps> = ({
   bay,
@@ -31,401 +31,376 @@ export const EditBayDialog: React.FC<EditBayDialogProps> = ({
   settings,
   isSaving,
 }) => {
+  const [activeTab, setActiveTab] = useState<string>("basic");
   const [editedBay, setEditedBay] = useState<Bay | null>(null);
-  const [activeTab, setActiveTab] = useState("basic");
-  const [manualRates, setManualRates] = useState(false);
-  const [rateMode, setRateMode] = useState<"default" | "custom" | "percentage">("default");
-  const [percentageAdjustment, setPercentageAdjustment] = useState(0);
-  const [discountType, setDiscountType] = useState<"increase" | "decrease">("increase");
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
+  const [manualRates, setManualRates] = useState<boolean>(false);
+  const [rateMode, setRateMode] = useState<Record<string, RateMode>>({
+    daily: 'default',
+    weekly: 'default',
+    monthly: 'default'
+  });
+  const [percentAdjustment, setPercentAdjustment] = useState<Record<string, number>>({
+    daily: 0,
+    weekly: 0,
+    monthly: 0
+  });
 
   useEffect(() => {
     if (bay) {
       setEditedBay({ ...bay });
-      // Determine if the bay is using manual rates
-      const calculatedDaily = calculateRate('daily', bay.hourly_rate || 0);
-      const calculatedWeekly = calculateRate('weekly', bay.hourly_rate || 0);
-      const calculatedMonthly = calculateRate('monthly', bay.hourly_rate || 0);
       
-      const isManual = 
-        bay.daily_rate !== calculatedDaily ||
-        bay.weekly_rate !== calculatedWeekly ||
-        bay.monthly_rate !== calculatedMonthly;
+      // Determine if manual rates are being used
+      const defaultDaily = calculateRate('daily', bay.hourly_rate);
+      const defaultWeekly = calculateRate('weekly', bay.hourly_rate);
+      const defaultMonthly = calculateRate('monthly', bay.hourly_rate);
       
-      setManualRates(isManual);
-      setRateMode(isManual ? "custom" : "default");
+      const hasCustomRates = 
+        bay.daily_rate !== defaultDaily || 
+        bay.weekly_rate !== defaultWeekly || 
+        bay.monthly_rate !== defaultMonthly;
+      
+      setManualRates(hasCustomRates);
+
+      // Determine rate modes based on current values
+      const modes: Record<string, RateMode> = {
+        daily: bay.daily_rate !== defaultDaily ? 'custom' : 'default',
+        weekly: bay.weekly_rate !== defaultWeekly ? 'custom' : 'default',
+        monthly: bay.monthly_rate !== defaultMonthly ? 'custom' : 'default'
+      };
+      setRateMode(modes);
+
+      // Calculate percentage adjustments if any
+      setPercentAdjustment({
+        daily: defaultDaily > 0 ? (((bay.daily_rate || 0) / defaultDaily) - 1) * 100 : 0,
+        weekly: defaultWeekly > 0 ? (((bay.weekly_rate || 0) / defaultWeekly) - 1) * 100 : 0,
+        monthly: defaultMonthly > 0 ? (((bay.monthly_rate || 0) / defaultMonthly) - 1) * 100 : 0
+      });
     }
   }, [bay, calculateRate]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (field: keyof Bay, value: string | number | boolean) => {
     if (!editedBay) return;
-
-    const { name, value } = e.target;
-    const numValue = name === 'bay_name' || name === 'bay_location' 
-      ? value 
-      : Number(value) || 0;
-
-    setEditedBay({ ...editedBay, [name]: numValue });
+    
+    const newEditedBay = { ...editedBay, [field]: value };
+    
+    // If hourly rate changes and not using manual rates, update all dependent rates
+    if (field === 'hourly_rate' && !manualRates) {
+      newEditedBay.daily_rate = calculateRate('daily', value as number);
+      newEditedBay.weekly_rate = calculateRate('weekly', value as number);
+      newEditedBay.monthly_rate = calculateRate('monthly', value as number);
+    }
+    
+    setEditedBay(newEditedBay);
   };
 
-  const handleSave = () => {
+  const handleRateModeChange = (type: 'daily' | 'weekly' | 'monthly', mode: RateMode) => {
     if (!editedBay) return;
-    onSave(editedBay);
-    onClose();
-  };
 
-  const handleRateToggleChange = (checked: boolean) => {
-    setManualRates(checked);
-    if (!checked && editedBay) {
-      // Reset to calculated rates
-      updateCalculatedRates(editedBay.hourly_rate || 0);
-      setRateMode("default");
-    } else {
-      setRateMode("custom");
+    const newModes = { ...rateMode, [type]: mode };
+    setRateMode(newModes);
+
+    // Update the rate based on the selected mode
+    if (mode === 'default') {
+      handleInputChange(`${type}_rate` as keyof Bay, calculateRate(type, editedBay.hourly_rate));
+    } else if (mode === 'percentage') {
+      const baseRate = calculateRate(type, editedBay.hourly_rate);
+      const adjustmentFactor = 1 + (percentAdjustment[type] / 100);
+      handleInputChange(`${type}_rate` as keyof Bay, baseRate * adjustmentFactor);
     }
   };
 
-  const updateCalculatedRates = (hourlyRate: number) => {
+  const handlePercentChange = (type: 'daily' | 'weekly' | 'monthly', percent: number) => {
     if (!editedBay) return;
-    
-    const daily = calculateRate('daily', hourlyRate);
-    const weekly = calculateRate('weekly', hourlyRate);
-    const monthly = calculateRate('monthly', hourlyRate);
 
-    setEditedBay({
-      ...editedBay,
-      hourly_rate: hourlyRate,
-      daily_rate: daily,
-      weekly_rate: weekly,
-      monthly_rate: monthly,
-    });
+    const newPercents = { ...percentAdjustment, [type]: percent };
+    setPercentAdjustment(newPercents);
+
+    // Update the rate based on the percentage
+    const baseRate = calculateRate(type, editedBay.hourly_rate);
+    const adjustmentFactor = 1 + (percent / 100);
+    handleInputChange(`${type}_rate` as keyof Bay, baseRate * adjustmentFactor);
   };
 
-  const applyPercentageAdjustment = () => {
+  const handleSave = async () => {
     if (!editedBay) return;
     
-    const multiplier = discountType === "increase" 
-      ? 1 + (percentageAdjustment / 100) 
-      : 1 - (percentageAdjustment / 100);
-    
-    const baseDaily = calculateRate('daily', editedBay.hourly_rate || 0);
-    const baseWeekly = calculateRate('weekly', editedBay.hourly_rate || 0);
-    const baseMonthly = calculateRate('monthly', editedBay.hourly_rate || 0);
-    
-    setEditedBay({
-      ...editedBay,
-      daily_rate: Number((baseDaily * multiplier).toFixed(2)),
-      weekly_rate: Number((baseWeekly * multiplier).toFixed(2)),
-      monthly_rate: Number((baseMonthly * multiplier).toFixed(2)),
-    });
-  };
-
-  const handleRateModeChange = (value: string) => {
-    setRateMode(value as "default" | "custom" | "percentage");
-    
-    if (value === "default" && editedBay) {
-      updateCalculatedRates(editedBay.hourly_rate || 0);
-      setManualRates(false);
-    } else if (value === "percentage") {
-      setManualRates(true);
-    } else {
-      setManualRates(true);
+    setSaveStatus("saving");
+    try {
+      const success = await onSave(editedBay);
+      if (success) {
+        setSaveStatus("success");
+        setTimeout(() => {
+          onClose();
+          setSaveStatus("idle");
+        }, 1500);
+      } else {
+        setSaveStatus("error");
+        setTimeout(() => setSaveStatus("idle"), 3000);
+      }
+    } catch (error) {
+      console.error("Error saving bay:", error);
+      setSaveStatus("error");
+      setTimeout(() => setSaveStatus("idle"), 3000);
     }
+  };
+
+  const handleManualRatesToggle = (enabled: boolean) => {
+    setManualRates(enabled);
+    
+    if (!enabled && editedBay) {
+      // Reset to default rates when disabling manual rates
+      const newBay = { ...editedBay };
+      newBay.daily_rate = calculateRate('daily', editedBay.hourly_rate);
+      newBay.weekly_rate = calculateRate('weekly', editedBay.hourly_rate);
+      newBay.monthly_rate = calculateRate('monthly', editedBay.hourly_rate);
+      setEditedBay(newBay);
+      
+      // Reset rate modes
+      setRateMode({
+        daily: 'default',
+        weekly: 'default',
+        monthly: 'default'
+      });
+    }
+  };
+
+  const renderRateOptions = (type: 'daily' | 'weekly' | 'monthly', label: string) => {
+    if (!editedBay) return null;
+    
+    const baseRate = calculateRate(type, editedBay.hourly_rate);
+    
+    return (
+      <div className="space-y-3 bg-gray-50 p-3 rounded-md border border-gray-100">
+        <h4 className="font-medium text-sm">{label} Rate Options</h4>
+        
+        <div className="space-y-2">
+          <div className="flex items-center space-x-2">
+            <input 
+              type="radio" 
+              id={`${type}-default`}
+              checked={rateMode[type] === 'default'}
+              onChange={() => handleRateModeChange(type, 'default')}
+              className="text-blue-600 focus:ring-blue-500"
+            />
+            <label htmlFor={`${type}-default`} className="text-sm">
+              Use default calculation: {formatCurrency(baseRate)}
+            </label>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <input 
+              type="radio" 
+              id={`${type}-custom`} 
+              checked={rateMode[type] === 'custom'}
+              onChange={() => handleRateModeChange(type, 'custom')}
+              className="text-blue-600 focus:ring-blue-500"
+            />
+            <label htmlFor={`${type}-custom`} className="text-sm">Custom rate</label>
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              value={editedBay[`${type}_rate`] || 0}
+              onChange={(e) => handleInputChange(`${type}_rate` as keyof Bay, parseFloat(e.target.value) || 0)}
+              disabled={rateMode[type] !== 'custom'}
+              className="ml-2 w-24 h-8"
+            />
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <input 
+              type="radio" 
+              id={`${type}-percentage`} 
+              checked={rateMode[type] === 'percentage'}
+              onChange={() => handleRateModeChange(type, 'percentage')}
+              className="text-blue-600 focus:ring-blue-500"
+            />
+            <label htmlFor={`${type}-percentage`} className="text-sm">Adjust by percentage</label>
+            <div className="flex">
+              <Input
+                type="number"
+                min="-50"
+                max="100"
+                value={percentAdjustment[type]}
+                onChange={(e) => handlePercentChange(type, parseFloat(e.target.value) || 0)}
+                disabled={rateMode[type] !== 'percentage'}
+                className="w-16 h-8 text-right"
+              />
+              <div className="flex items-center bg-gray-100 px-2 rounded-r-md border border-l-0 border-gray-300">
+                %
+              </div>
+            </div>
+            <span className="text-sm text-gray-500">
+              = {formatCurrency(editedBay[`${type}_rate`] || 0)}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2
+    }).format(value);
   };
 
   if (!editedBay) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">
-            Edit Bay: {bay?.bay_name}
-          </DialogTitle>
+          <DialogTitle>Edit Bay: {editedBay.bay_name}</DialogTitle>
         </DialogHeader>
-
+        
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-3 w-full mb-4">
-            <TabsTrigger value="basic" className="flex items-center gap-2">
-              <Tag className="h-4 w-4" />
-              Basic Info
-            </TabsTrigger>
-            <TabsTrigger value="rates" className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
-              Rates
-            </TabsTrigger>
-            <TabsTrigger value="advanced" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Advanced
-            </TabsTrigger>
+          <TabsList className="grid grid-cols-3 mb-6">
+            <TabsTrigger value="basic" className="text-center">Basic Info</TabsTrigger>
+            <TabsTrigger value="rates" className="text-center">Rate Options</TabsTrigger>
+            <TabsTrigger value="advanced" className="text-center">Advanced</TabsTrigger>
           </TabsList>
-
-          <TabsContent value="basic" className="space-y-4">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="bay_name">Bay Name</Label>
-                <Input
-                  id="bay_name"
-                  name="bay_name"
-                  value={editedBay.bay_name}
-                  onChange={handleInputChange}
-                  placeholder="Enter bay name"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="bay_location">Bay Location</Label>
-                <Input
-                  id="bay_location"
-                  name="bay_location"
-                  value={editedBay.bay_location || ""}
-                  onChange={handleInputChange}
-                  placeholder="Enter bay location"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="hourly_rate">Hourly Rate ($)</Label>
-                <Input
-                  id="hourly_rate"
-                  name="hourly_rate"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={editedBay.hourly_rate || 0}
-                  onChange={(e) => {
-                    handleInputChange(e);
-                    if (rateMode === "default") {
-                      updateCalculatedRates(Number(e.target.value) || 0);
-                    }
-                  }}
-                />
-              </div>
+          
+          <TabsContent value="basic" className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="bay_name">Bay Name</Label>
+              <Input
+                id="bay_name"
+                value={editedBay.bay_name}
+                onChange={(e) => handleInputChange('bay_name', e.target.value)}
+                placeholder="Enter bay name"
+              />
             </div>
-          </TabsContent>
-
-          <TabsContent value="rates" className="space-y-6">
-            <div className="flex items-center justify-between mb-4">
-              <Label htmlFor="manual-rates" className="font-medium">Rate Management</Label>
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-muted-foreground">Automatic</span>
-                <Switch 
-                  id="manual-rates" 
-                  checked={manualRates} 
-                  onCheckedChange={handleRateToggleChange} 
-                />
-                <span className="text-sm text-muted-foreground">Manual</span>
-              </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="bay_location">Bay Location (Optional)</Label>
+              <Input
+                id="bay_location"
+                value={editedBay.bay_location || ''}
+                onChange={(e) => handleInputChange('bay_location', e.target.value)}
+                placeholder="Enter bay location"
+              />
             </div>
-
-            {manualRates && (
-              <div className="bg-muted/50 p-4 rounded-lg space-y-4">
-                <RadioGroup 
-                  value={rateMode} 
-                  onValueChange={handleRateModeChange} 
-                  className="flex space-x-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="default" id="r-default" />
-                    <Label htmlFor="r-default">Use Default Rates</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="custom" id="r-custom" />
-                    <Label htmlFor="r-custom">Custom Rates</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="percentage" id="r-percentage" />
-                    <Label htmlFor="r-percentage">Percentage Adjustment</Label>
-                  </div>
-                </RadioGroup>
-
-                {rateMode === "percentage" && (
-                  <div className="bg-white p-4 rounded-lg space-y-4 border">
-                    <Label className="block mb-2">Adjust rates by percentage</Label>
-                    <div className="flex items-center gap-4">
-                      <ToggleGroup 
-                        type="single" 
-                        value={discountType} 
-                        onValueChange={(value) => value && setDiscountType(value as "increase" | "decrease")}
-                        className="justify-start"
-                      >
-                        <ToggleGroupItem value="increase" className="text-green-600">
-                          Increase
-                        </ToggleGroupItem>
-                        <ToggleGroupItem value="decrease" className="text-red-600">
-                          Decrease
-                        </ToggleGroupItem>
-                      </ToggleGroup>
-                      
-                      <div className="flex items-center gap-2 flex-1">
-                        <Input
-                          type="number"
-                          min="0"
-                          max="100"
-                          step="1"
-                          value={percentageAdjustment}
-                          onChange={(e) => setPercentageAdjustment(Number(e.target.value) || 0)}
-                          className="w-20"
-                        />
-                        <span>%</span>
-                      </div>
-                      
-                      <Button 
-                        onClick={applyPercentageAdjustment}
-                        size="sm"
-                      >
-                        Apply
-                      </Button>
-                    </div>
-                    
-                    <div className="bg-muted/30 p-2 rounded text-sm">
-                      <p>Base rates calculated from hourly rate: {formatCurrency(editedBay.hourly_rate || 0)}/hr</p>
-                      <p>Daily: {formatCurrency(calculateRate('daily', editedBay.hourly_rate || 0))}</p>
-                      <p>Weekly: {formatCurrency(calculateRate('weekly', editedBay.hourly_rate || 0))}</p>
-                      <p>Monthly: {formatCurrency(calculateRate('monthly', editedBay.hourly_rate || 0))}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="space-y-4 pt-4">
-              <div className="space-y-2">
-                <Label htmlFor="daily_rate">
-                  Daily Rate ({settings.daily_hours} hours)
-                </Label>
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">$</span>
-                  <Input
-                    id="daily_rate"
-                    name="daily_rate"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={editedBay.daily_rate || 0}
-                    onChange={handleInputChange}
-                    disabled={!manualRates || rateMode === "default"}
-                    className={manualRates && rateMode !== "default" ? "border-blue-300 focus:border-blue-500" : ""}
-                  />
-                </div>
-                {!manualRates && (
-                  <p className="text-xs text-muted-foreground">
-                    Calculated from hourly rate using bay settings
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="weekly_rate">
-                  Weekly Rate ({settings.daily_hours * 5} hours)
-                </Label>
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">$</span>
-                  <Input
-                    id="weekly_rate"
-                    name="weekly_rate"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={editedBay.weekly_rate || 0}
-                    onChange={handleInputChange}
-                    disabled={!manualRates || rateMode === "default"}
-                    className={manualRates && rateMode !== "default" ? "border-blue-300 focus:border-blue-500" : ""}
-                  />
-                </div>
-                {!manualRates && (
-                  <p className="text-xs text-muted-foreground">
-                    Calculated using {settings.weekly_multiplier}x multiplier
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="monthly_rate">
-                  Monthly Rate ({settings.daily_hours * 20} hours)
-                </Label>
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">$</span>
-                  <Input
-                    id="monthly_rate"
-                    name="monthly_rate"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={editedBay.monthly_rate || 0}
-                    onChange={handleInputChange}
-                    disabled={!manualRates || rateMode === "default"}
-                    className={manualRates && rateMode !== "default" ? "border-blue-300 focus:border-blue-500" : ""}
-                  />
-                </div>
-                {!manualRates && (
-                  <p className="text-xs text-muted-foreground">
-                    Calculated using {settings.monthly_multiplier}x multiplier
-                  </p>
-                )}
-              </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="hourly_rate">Hourly Rate ($)</Label>
+              <Input
+                id="hourly_rate"
+                type="number"
+                min="0"
+                step="0.01"
+                value={editedBay.hourly_rate}
+                onChange={(e) => handleInputChange('hourly_rate', parseFloat(e.target.value) || 0)}
+                placeholder="Enter hourly rate"
+              />
             </div>
           </TabsContent>
           
-          <TabsContent value="advanced" className="space-y-4">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium">Bay Status</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Enable or disable this bay
-                  </p>
-                </div>
-                <Switch
-                  id="is_active"
-                  checked={editedBay.is_active}
-                  onCheckedChange={(checked) => 
-                    setEditedBay({ ...editedBay, is_active: checked })
-                  }
+          <TabsContent value="rates" className="space-y-5 py-2">
+            <div className="flex items-center justify-between bg-blue-50 p-3 rounded-lg border border-blue-100 mb-4">
+              <div className="flex items-center gap-2">
+                <InfoCircledIcon className="h-5 w-5 text-blue-600" />
+                <span className="text-sm font-medium text-blue-800">
+                  Manual Rate Controls
+                </span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <span className="text-sm text-blue-700">Auto</span>
+                <Switch 
+                  checked={manualRates} 
+                  onCheckedChange={handleManualRatesToggle}
+                  className="data-[state=checked]:bg-blue-600"
                 />
+                <span className="text-sm text-blue-700">Manual</span>
               </div>
-              
-              <div className="border-t pt-4">
-                <h3 className="font-medium mb-2">Rate Calculation Preview</h3>
-                <div className="bg-muted/30 p-4 rounded-lg space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Hourly Rate:</span>
-                    <span className="font-medium">{formatCurrency(editedBay.hourly_rate || 0)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Daily Rate ({settings.daily_hours} hours):</span>
-                    <span className="font-medium">{formatCurrency(editedBay.daily_rate || 0)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Weekly Rate:</span>
-                    <span className="font-medium">{formatCurrency(editedBay.weekly_rate || 0)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Monthly Rate:</span>
-                    <span className="font-medium">{formatCurrency(editedBay.monthly_rate || 0)}</span>
-                  </div>
+            </div>
+            
+            <div className={`space-y-4 ${!manualRates ? 'opacity-50' : ''}`}>
+              {renderRateOptions('daily', 'Daily')}
+              {renderRateOptions('weekly', 'Weekly')}
+              {renderRateOptions('monthly', 'Monthly')}
+            </div>
+            
+            {!manualRates && (
+              <div className="text-sm text-gray-500 italic">
+                Enable manual rates to customize individual rate calculations.
+              </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="advanced" className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="is_active" className="flex items-center justify-between">
+                <span>Bay Status</span>
+                <div className="flex items-center space-x-2">
+                  <Switch 
+                    id="is_active" 
+                    checked={editedBay.is_active}
+                    onCheckedChange={(checked) => handleInputChange('is_active', checked)}
+                  />
+                  <span className={editedBay.is_active ? 'text-green-600' : 'text-red-600'}>
+                    {editedBay.is_active ? 'Active' : 'Inactive'}
+                  </span>
                 </div>
-              </div>
+              </Label>
+              <p className="text-sm text-gray-500 mt-1">
+                Inactive bays won't appear in rental options for customers
+              </p>
+            </div>
+            
+            <div className="bg-amber-50 border border-amber-200 rounded-md p-4 mt-6">
+              <h4 className="text-sm font-medium text-amber-800 flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                Advanced Settings
+              </h4>
+              <p className="text-sm text-amber-700 mt-2">
+                Additional settings like equipment availability, scheduling restrictions, or 
+                special pricing rules can be configured by your administrator.
+              </p>
             </div>
           </TabsContent>
         </Tabs>
-
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            disabled={isSaving}
-          >
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleSave}
-            disabled={isSaving}
-          >
-            {isSaving ? "Saving..." : "Save Changes"}
-          </Button>
+        
+        <DialogFooter className="flex items-center justify-between mt-6">
+          <div>
+            {saveStatus === "error" && (
+              <div className="flex items-center text-red-600 text-sm">
+                <X className="h-4 w-4 mr-1" /> Error saving changes
+              </div>
+            )}
+            {saveStatus === "success" && (
+              <div className="flex items-center text-green-600 text-sm">
+                <Check className="h-4 w-4 mr-1" /> Changes saved successfully
+              </div>
+            )}
+          </div>
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSave} 
+              disabled={isSaving || saveStatus === "saving" || saveStatus === "success"}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {saveStatus === "saving" ? (
+                <>
+                  <span className="animate-spin mr-2">⏳</span>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Save Changes
+                </>
+              )}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 };
-
