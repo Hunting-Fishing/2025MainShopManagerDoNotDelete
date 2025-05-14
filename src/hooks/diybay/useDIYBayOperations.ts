@@ -42,7 +42,6 @@ export function useDIYBayOperations(bays: Bay[], setBays: (bays: Bay[]) => void,
           weekly_rate: weeklyRate,
           monthly_rate: monthlyRate,
           is_active: true,
-          bay_number: bays.length + 1,
           bay_type: 'standard',
           shop_id: shopId
         })

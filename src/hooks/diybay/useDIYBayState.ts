@@ -24,12 +24,11 @@ export function useDIYBayState() {
     
     setIsLoading(true);
     try {
-      // Fetch bays data
+      // Fetch bays data - removing the order by bay_number which doesn't exist
       const { data: baysData, error: baysError } = await supabase
         .from('diy_bay_rates')
         .select('*')
-        .eq('shop_id', shopId)
-        .order('bay_number', { ascending: true });
+        .eq('shop_id', shopId);
         
       if (baysError) throw baysError;
       
