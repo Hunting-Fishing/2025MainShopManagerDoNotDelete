@@ -21,100 +21,106 @@ const Settings = () => {
     {
       id: "account",
       title: "Account Settings",
-      description: "Manage your profile, preferences, and branding",
+      description: "Manage your profile, preferences, and company information",
       icon: User,
-      path: "/settings/account"
-    },
-    {
-      id: "company",
-      title: "Company Information",
-      description: "Update your business details and address",
-      icon: Building,
-      path: "/settings/company"
+      path: "/settings/account",
+      color: "indigo"
     },
     {
       id: "security",
       title: "Security",
       description: "Password and authentication settings",
       icon: Shield,
-      path: "/settings/security"
+      path: "/settings/security",
+      color: "green"
     },
     {
       id: "security-advanced",
       title: "Advanced Security",
       description: "2FA and security protocols",
       icon: ShieldCheck,
-      path: "/settings/security-advanced"
+      path: "/settings/security-advanced",
+      color: "yellow"
     },
     {
       id: "notifications",
       title: "Notifications",
       description: "Configure email and system notifications",
       icon: Bell,
-      path: "/settings/notifications"
+      path: "/settings/notifications",
+      color: "red"
     },
     {
       id: "appearance",
       title: "Appearance",
       description: "Customize the look and feel of your account",
       icon: Brush,
-      path: "/settings/appearance"
+      path: "/settings/appearance",
+      color: "purple"
     },
     {
       id: "email",
       title: "Email Settings",
       description: "Configure email templates and signatures",
       icon: MailPlus,
-      path: "/settings/email"
+      path: "/settings/email",
+      color: "blue"
     },
     {
       id: "integrations",
       title: "Integrations",
       description: "Connect with third-party services",
       icon: LinkIcon,
-      path: "/settings/integrations"
+      path: "/settings/integrations",
+      color: "yellow"
     },
     {
       id: "loyalty",
       title: "Customer Loyalty",
       description: "Set up your loyalty program",
       icon: Gift,
-      path: "/settings/loyalty"
+      path: "/settings/loyalty",
+      color: "purple"
     },
     {
       id: "inventory",
       title: "Inventory Settings",
       description: "Configure inventory preferences",
       icon: Package,
-      path: "/settings/inventory"
+      path: "/settings/inventory",
+      color: "green"
     },
     {
       id: "team",
       title: "Team History",
       description: "View team member activity logs",
       icon: Users,
-      path: "/settings/team"
+      path: "/settings/team",
+      color: "red"
     },
     {
       id: "email-scheduling",
       title: "Email Scheduling",
       description: "Set up automated email campaigns",
       icon: Mail,
-      path: "/settings/email-scheduling"
+      path: "/settings/email-scheduling",
+      color: "blue"
     },
     {
       id: "export",
       title: "Data Export",
       description: "Export your shop data",
       icon: Database,
-      path: "/settings/export"
+      path: "/settings/export",
+      color: "indigo"
     },
     {
       id: "language",
       title: "Language",
       description: "Change your language settings",
       icon: Globe2,
-      path: "/settings/language"
+      path: "/settings/language",
+      color: "green"
     },
   ];
 
@@ -167,6 +173,7 @@ const Settings = () => {
               description={category.description}
               icon={category.icon}
               path={category.path}
+              color={category.color}
             />
           ))}
         </div>
@@ -183,8 +190,8 @@ const Settings = () => {
                   <div
                     className="flex items-center p-4 hover:bg-muted/10 cursor-pointer"
                   >
-                    <div className="bg-gray-100 p-2 rounded-full mr-4">
-                      <category.icon className="h-5 w-5 text-gray-600" />
+                    <div className={`bg-${category.color || 'gray'}-100 p-2 rounded-full mr-4`}>
+                      <category.icon className={`h-5 w-5 text-${category.color || 'gray'}-600`} />
                     </div>
                     <div>
                       <h3 className="font-medium">{category.title}</h3>
