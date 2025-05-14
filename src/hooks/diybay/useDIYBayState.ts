@@ -1,63 +1,115 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { useShopId } from '../useShopId';
-import { useToast } from '../use-toast';
-import { Bay, RateSettings, fetchBays, fetchRateSettings } from '@/services/diybay/diybayService';
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import { useShopId } from "@/hooks/useShopId";
+import { useToast } from "@/hooks/use-toast";
+import { Bay, RateSettings } from "@/services/diybay/diybayService";
 
-/**
- * Hook to manage the state of DIY bays and rate settings
- */
 export function useDIYBayState() {
   const [bays, setBays] = useState<Bay[]>([]);
   const [settings, setSettings] = useState<RateSettings>({
-    id: '',
     daily_hours: 8,
-    daily_discount_percent: 0,
-    weekly_multiplier: 5,
-    monthly_multiplier: 20
+    daily_discount_percent: 25,
+    weekly_multiplier: 20,
+    monthly_multiplier: 40,
+    hourly_base_rate: 65 // Default hourly base rate
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  
   const { shopId } = useShopId();
   const { toast } = useToast();
 
-  // Load bay data and settings
-  const loadData = useCallback(async () => {
+  const loadData = async () => {
     if (!shopId) return;
     
     setIsLoading(true);
     try {
-      const [baysData, settingsData] = await Promise.all([
-        fetchBays(shopId),
-        fetchRateSettings(shopId)
-      ]);
+      // Fetch bays data
+      const { data: baysData, error: baysError } = await supabase
+        .from('diy_bay_rates')
+        .select('*')
+        .eq('shop_id', shopId)
+        .order('bay_number', { ascending: true });
+        
+      if (baysError) throw baysError;
       
-      console.log("Loaded bays:", baysData);
-      console.log("Loaded settings:", settingsData);
+      // Fetch settings data
+      const { data: settingsData, error: settingsError } = await supabase
+        .from('diy_bay_rate_settings')
+        .select('*')
+        .eq('shop_id', shopId)
+        .single();
+        
+      if (settingsError && settingsError.code !== 'PGRST116') throw settingsError;
       
-      setBays(baysData || []);
+      // Update state with fetched data
+      if (baysData) setBays(baysData);
       if (settingsData) {
-        setSettings(settingsData);
+        setSettings({
+          id: settingsData.id,
+          daily_hours: settingsData.daily_hours,
+          daily_discount_percent: settingsData.daily_discount_percent,
+          weekly_multiplier: settingsData.weekly_multiplier,
+          monthly_multiplier: settingsData.monthly_multiplier,
+          hourly_base_rate: settingsData.hourly_base_rate || 65 // Use default if not set
+        });
+      } else {
+        // Create default settings if none exist
+        await createDefaultSettings();
       }
-    } catch (error) {
-      console.error('Error loading DIY bay data:', error);
+      
+    } catch (error: any) {
+      console.error("Error loading DIY bay data:", error);
       toast({
         title: "Error",
-        description: "Failed to load DIY bay data. Please try again.",
-        variant: "destructive",
+        description: "Failed to load DIY bay data: " + error.message,
+        variant: "destructive"
       });
     } finally {
       setIsLoading(false);
     }
-  }, [shopId, toast]);
+  };
+  
+  const createDefaultSettings = async () => {
+    if (!shopId) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('diy_bay_rate_settings')
+        .insert({
+          shop_id: shopId,
+          daily_hours: 8,
+          daily_discount_percent: 25,
+          weekly_multiplier: 20,
+          monthly_multiplier: 40,
+          hourly_base_rate: 65 // Default hourly base rate
+        })
+        .select('*')
+        .single();
+        
+      if (error) throw error;
+      
+      if (data) {
+        setSettings({
+          id: data.id,
+          daily_hours: data.daily_hours,
+          daily_discount_percent: data.daily_discount_percent,
+          weekly_multiplier: data.weekly_multiplier,
+          monthly_multiplier: data.monthly_multiplier,
+          hourly_base_rate: data.hourly_base_rate
+        });
+      }
+      
+    } catch (error) {
+      console.error("Error creating default settings:", error);
+    }
+  };
 
-  // Initial data load
   useEffect(() => {
     if (shopId) {
       loadData();
     }
-  }, [shopId, loadData]);
+  }, [shopId]);
 
   return {
     bays,
@@ -65,7 +117,6 @@ export function useDIYBayState() {
     settings,
     setSettings,
     isLoading,
-    setIsLoading,
     isSaving,
     setIsSaving,
     loadData
