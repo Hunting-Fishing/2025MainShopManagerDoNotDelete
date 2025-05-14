@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Cog, User, Building, Shield, Bell, Database, Globe2, Gift, Package, Users, Mail, Brush, MailPlus, Link as LinkIcon, ShieldCheck } from "lucide-react";
+import { Cog, User, Building, Shield, Bell, Database, Globe2, Gift, Package, Users, Mail, Brush, MailPlus, Link as LinkIcon, ShieldCheck, Briefcase, Percent } from "lucide-react";
 import { SettingsCard } from "@/components/settings/SettingsCard";
 import { Link } from "react-router-dom";
 import {
@@ -33,6 +33,22 @@ const Settings = () => {
       icon: Shield,
       path: "/settings/security",
       color: "green"
+    },
+    {
+      id: "labour-rates",
+      title: "Labour Rates",
+      description: "Configure hourly rates for different service types",
+      icon: Briefcase,
+      path: "/settings/labour",
+      color: "blue"
+    },
+    {
+      id: "inventory-markup",
+      title: "Inventory Markup",
+      description: "Configure markup percentages for parts based on cost ranges",
+      icon: Percent,
+      path: "/settings/markup",
+      color: "yellow"
     },
     {
       id: "security-advanced",
