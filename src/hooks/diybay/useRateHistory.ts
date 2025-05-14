@@ -13,7 +13,7 @@ export function useRateHistory() {
   const [rateHistory, setRateHistory] = useState<RateHistory[]>([]);
   const { toast } = useToast();
 
-  const loadRateHistory = async (bayId: string) => {
+  const loadRateHistory = async (bayId: string): Promise<RateHistory[]> => {
     try {
       const history = await fetchRateHistory(bayId);
       console.log("Loaded rate history:", history);

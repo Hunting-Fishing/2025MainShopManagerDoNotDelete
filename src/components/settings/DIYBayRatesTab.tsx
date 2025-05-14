@@ -60,19 +60,12 @@ export const DIYBayRatesTab: React.FC = () => {
     }
   }, [removeBay]);
 
-  const handleHistoryClickWithLoad = useCallback(
-    async (bay: Bay) => {
+  // Create a wrapper function that adapts the types
+  const handleHistoryClickWrapper = useCallback(
+    async (bay: Bay): Promise<void> => {
       await handleHistoryClick(bay, loadRateHistory);
     },
     [handleHistoryClick, loadRateHistory]
-  );
-
-  const handleAddBay = useCallback(
-    async (bayName: string) => {
-      console.log("Adding bay:", bayName);
-      return await addBay(bayName);
-    },
-    [addBay]
   );
 
   // This wrapper function ensures saveBay returns a Promise<boolean> like the original,
@@ -109,8 +102,8 @@ export const DIYBayRatesTab: React.FC = () => {
         onStatusChange={handleStatusChange}
         onEditClick={handleEditClick}
         onDeleteClick={handleDeleteClick}
-        onHistoryClick={handleHistoryClickWithLoad}
-        onAddBay={handleAddBay}
+        onHistoryClick={handleHistoryClickWrapper}
+        onAddBay={addBay}
         onRateChange={handleRateChange}
       />
 

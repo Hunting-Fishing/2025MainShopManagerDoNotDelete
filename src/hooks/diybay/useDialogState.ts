@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from "react";
-import { Bay } from "@/services/diybay/diybayService";
+import { Bay, RateHistory } from "@/services/diybay/diybayService";
 
 export const useDialogState = () => {
   const [editBay, setEditBay] = useState<Bay | null>(null);
@@ -14,7 +14,7 @@ export const useDialogState = () => {
   }, []);
 
   const handleHistoryClick = useCallback(
-    async (bay: Bay, loadRateHistoryFn: (bayId: string) => Promise<void>) => {
+    async (bay: Bay, loadRateHistoryFn: (bayId: string) => Promise<RateHistory[]>) => {
       setSelectedBay(bay);
       await loadRateHistoryFn(bay.id);
       setIsHistoryDialogOpen(true);
