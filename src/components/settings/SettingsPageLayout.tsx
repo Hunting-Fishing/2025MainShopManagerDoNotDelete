@@ -1,6 +1,6 @@
 
-import React from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { 
@@ -16,14 +16,27 @@ interface SettingsPageLayoutProps {
   title: string;
   description?: string;
   children: React.ReactNode;
+  defaultTab?: string;
 }
 
 export const SettingsPageLayout: React.FC<SettingsPageLayoutProps> = ({ 
   title, 
   description, 
-  children 
+  children,
+  defaultTab
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    // If there's a tab parameter in the URL, you can handle it here
+    const searchParams = new URLSearchParams(location.search);
+    const tabParam = searchParams.get('tab');
+    
+    // You could use this tab parameter to set the active tab in child components
+    // by passing it down as a prop if needed
+    console.log('Tab parameter:', tabParam);
+  }, [location.search]);
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">

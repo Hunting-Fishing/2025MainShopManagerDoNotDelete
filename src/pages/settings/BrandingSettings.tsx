@@ -1,16 +1,21 @@
 
-import React from "react";
-import { SettingsPageLayout } from "@/components/settings/SettingsPageLayout";
-import { BrandingTab } from "@/components/settings/BrandingTab";
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 
 export const BrandingSettings = () => {
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    // Redirect to the Account settings with branding tab selected
+    navigate("/settings/account?tab=branding");
+  }, [navigate]);
+
   return (
-    <SettingsPageLayout 
-      title="Branding"
-      description="Customize your shop's branding"
-    >
-      <BrandingTab />
-    </SettingsPageLayout>
+    <div className="flex justify-center items-center h-64">
+      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <span className="ml-2">Redirecting to account settings...</span>
+    </div>
   );
 };
 

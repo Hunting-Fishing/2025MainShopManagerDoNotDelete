@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Cog, User, Building, Shield, Bell, Palette, Database, Globe2, Gift, Package, Users, Mail, Brush, MailPlus, Link as LinkIcon, ShieldCheck } from "lucide-react";
+import { Cog, User, Building, Shield, Bell, Database, Globe2, Gift, Package, Users, Mail, Brush, MailPlus, Link as LinkIcon, ShieldCheck } from "lucide-react";
 import { SettingsCard } from "@/components/settings/SettingsCard";
 import { Link } from "react-router-dom";
 import {
@@ -21,7 +21,7 @@ const Settings = () => {
     {
       id: "account",
       title: "Account Settings",
-      description: "Manage your profile and preferences",
+      description: "Manage your profile, preferences, and branding",
       icon: User,
       path: "/settings/account"
     },
@@ -52,13 +52,6 @@ const Settings = () => {
       description: "Configure email and system notifications",
       icon: Bell,
       path: "/settings/notifications"
-    },
-    {
-      id: "branding",
-      title: "Branding",
-      description: "Customize your shop's branding",
-      icon: Palette,
-      path: "/settings/branding"
     },
     {
       id: "appearance",
@@ -211,4 +204,3 @@ const Settings = () => {
 };
 
 export default Settings;
-
