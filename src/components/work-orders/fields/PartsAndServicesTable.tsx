@@ -1,213 +1,217 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash, Search } from "lucide-react";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { useInventoryCrud } from "@/hooks/inventory/useInventoryCrud";
-import { InventoryItemExtended } from "@/types/inventory";
+import { Plus, Trash2 } from "lucide-react";
+import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export interface PartsAndServicesTableProps {
-  items: any[];
-  setItems: React.Dispatch<React.SetStateAction<any[]>>;
+interface Item {
+  id: string;
+  name: string;
+  quantity: number;
+  unitPrice: number;
 }
 
-export function PartsAndServicesTable({ items, setItems }: PartsAndServicesTableProps) {
-  const [showInventorySelector, setShowInventorySelector] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [inventoryItems, setInventoryItems] = useState<InventoryItemExtended[]>([]);
-  const [filteredItems, setFilteredItems] = useState<InventoryItemExtended[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  
-  const { loadInventoryItems } = useInventoryCrud();
-  
-  // Load inventory items
-  useEffect(() => {
-    const fetchInventory = async () => {
-      setIsLoading(true);
-      try {
-        const items = await loadInventoryItems();
-        setInventoryItems(items);
-        setFilteredItems(items);
-      } catch (error) {
-        console.error("Failed to load inventory items:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    if (showInventorySelector) {
-      fetchInventory();
-    }
-  }, [showInventorySelector, loadInventoryItems]);
-  
-  // Filter inventory items based on search term
-  useEffect(() => {
-    if (searchTerm.trim() === '') {
-      setFilteredItems(inventoryItems);
-    } else {
-      const lowercaseSearch = searchTerm.toLowerCase();
-      const filtered = inventoryItems.filter(item => 
-        item.name.toLowerCase().includes(lowercaseSearch) || 
-        item.sku.toLowerCase().includes(lowercaseSearch) ||
-        item.category.toLowerCase().includes(lowercaseSearch)
-      );
-      setFilteredItems(filtered);
-    }
-  }, [searchTerm, inventoryItems]);
-  
-  const handleAddPart = (item: InventoryItemExtended) => {
-    // Add inventory item to work order parts list
-    setItems([...items, {
-      id: item.id,
-      name: item.name,
-      category: item.category,
-      quantity: 1,
-      unitPrice: item.unitPrice,
-      sku: item.sku
-    }]);
-  };
-  
-  const handleRemoveItem = (index: number) => {
-    const newItems = [...items];
-    newItems.splice(index, 1);
-    setItems(newItems);
-  };
-  
-  return (
-    <Card>
-      <CardHeader className="bg-slate-50">
-        <CardTitle className="text-lg flex justify-between items-center">
-          <span>Parts</span>
-          <Button 
-            onClick={() => setShowInventorySelector(!showInventorySelector)} 
-            variant="outline" 
-            size="sm"
-            className="text-sm"
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            Add Part
-          </Button>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        {/* Fixed height inventory selector container to prevent layout shifts */}
-        <div className="min-h-[320px] relative">
-          {showInventorySelector && (
-            <div className="p-4 border-b">
-              <div className="mb-4">
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
-                  <Input
-                    type="text"
-                    placeholder="Search inventory parts..."
-                    className="pl-9"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-              </div>
-              
-              {isLoading ? (
-                <div className="text-center py-4">
-                  <p className="text-slate-500">Loading inventory parts...</p>
-                </div>
-              ) : filteredItems.length > 0 ? (
-                <div className="max-h-64 overflow-y-auto border rounded-md">
-                  <table className="w-full">
-                    <thead className="bg-slate-50 sticky top-0 z-10">
-                      <tr>
-                        <th className="text-left p-2 text-xs font-medium text-slate-500">Part Name</th>
-                        <th className="text-left p-2 text-xs font-medium text-slate-500">SKU</th>
-                        <th className="text-left p-2 text-xs font-medium text-slate-500">Price</th>
-                        <th className="text-left p-2 text-xs font-medium text-slate-500">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredItems.map((item) => (
-                        <tr key={item.id} className="border-t hover:bg-slate-50">
-                          <td className="p-2">{item.name}</td>
-                          <td className="p-2">{item.sku}</td>
-                          <td className="p-2">${item.unitPrice?.toFixed(2)}</td>
-                          <td className="p-2">
-                            <Button 
-                              onClick={() => handleAddPart(item)} 
-                              variant="ghost" 
-                              size="sm"
-                              className="h-8 px-2 py-0"
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="text-center py-4 border rounded-md">
-                  <p className="text-slate-500">No parts match your search criteria</p>
-                </div>
-              )}
-              
-              <div className="mt-4 flex justify-end">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setShowInventorySelector(false)}
-                >
-                  Done
-                </Button>
-              </div>
-            </div>
-          )}
+interface PartsAndServicesTableProps {
+  items: Item[];
+  setItems: (items: Item[]) => void;
+}
 
-          {/* Selected parts list with consistent height */}
-          <div className={`${!showInventorySelector && items.length === 0 ? 'min-h-[150px] flex items-center justify-center' : ''}`}>
-            {items.length > 0 ? (
-              <table className="w-full">
-                <thead className="bg-slate-50 border-b">
-                  <tr>
-                    <th className="text-left p-3 text-xs font-medium text-slate-500">Part</th>
-                    <th className="text-left p-3 text-xs font-medium text-slate-500">SKU</th>
-                    <th className="text-left p-3 text-xs font-medium text-slate-500">Price</th>
-                    <th className="text-left p-3 text-xs font-medium text-slate-500">Qty</th>
-                    <th className="text-left p-3 text-xs font-medium text-slate-500">Total</th>
-                    <th className="text-left p-3 text-xs font-medium text-slate-500">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((item, index) => (
-                    <tr key={index} className="border-b">
-                      <td className="p-3">{item.name}</td>
-                      <td className="p-3">{item.sku}</td>
-                      <td className="p-3">${parseFloat(item.unitPrice).toFixed(2)}</td>
-                      <td className="p-3">{item.quantity}</td>
-                      <td className="p-3">${(parseFloat(item.unitPrice) * item.quantity).toFixed(2)}</td>
-                      <td className="p-3">
-                        <Button 
-                          onClick={() => handleRemoveItem(index)} 
-                          variant="ghost" 
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                        >
-                          <Trash className="h-4 w-4" />
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              !showInventorySelector && (
-                <div className="p-6 text-center text-slate-500">
-                  No parts added yet. Click "Add Part" to begin.
-                </div>
-              )
-            )}
+export const PartsAndServicesTable = ({ 
+  items, 
+  setItems 
+}: PartsAndServicesTableProps) => {
+  const [partName, setPartName] = useState("");
+  const [quantity, setQuantity] = useState(1);
+  const [unitPrice, setUnitPrice] = useState(0);
+  
+  // Generate a unique ID for new parts
+  const generateId = () => `part-${Date.now()}`;
+  
+  // Handle form submission to add a new part
+  const handleAddPart = (e: React.FormEvent) => {
+    e.preventDefault(); // Prevent default form submission
+    e.stopPropagation(); // Stop event propagation
+    
+    if (partName && quantity > 0 && unitPrice >= 0) {
+      const newPart = {
+        id: generateId(),
+        name: partName,
+        quantity,
+        unitPrice
+      };
+      
+      setItems([...items, newPart]);
+      
+      // Reset form fields
+      setPartName("");
+      setQuantity(1);
+      setUnitPrice(0);
+    }
+  };
+  
+  // Handle removing a part
+  const handleRemovePart = (id: string) => {
+    setItems(items.filter(item => item.id !== id));
+  };
+  
+  // Update part quantity
+  const updateQuantity = (id: string, newQuantity: number) => {
+    if (newQuantity > 0) {
+      setItems(
+        items.map(item => 
+          item.id === id ? { ...item, quantity: newQuantity } : item
+        )
+      );
+    }
+  };
+
+  return (
+    <div className="min-h-[400px]"> {/* Add fixed minimum height to prevent layout shifts */}
+      <CardHeader>
+        <CardTitle>Parts & Materials</CardTitle>
+      </CardHeader>
+      
+      <CardContent>
+        {/* Add Part Form */}
+        <form onSubmit={handleAddPart} className="mb-6 grid grid-cols-12 gap-3 items-end">
+          <div className="col-span-5">
+            <label htmlFor="partName" className="block text-sm font-medium mb-1">
+              Part Name
+            </label>
+            <Input
+              id="partName"
+              value={partName}
+              onChange={(e) => setPartName(e.target.value)}
+              placeholder="Enter part name"
+              required
+            />
           </div>
+          
+          <div className="col-span-2">
+            <label htmlFor="quantity" className="block text-sm font-medium mb-1">
+              Quantity
+            </label>
+            <Input
+              id="quantity"
+              type="number"
+              min="1"
+              value={quantity}
+              onChange={(e) => setQuantity(Number(e.target.value))}
+              required
+            />
+          </div>
+          
+          <div className="col-span-3">
+            <label htmlFor="unitPrice" className="block text-sm font-medium mb-1">
+              Unit Price ($)
+            </label>
+            <Input
+              id="unitPrice"
+              type="number"
+              min="0"
+              step="0.01"
+              value={unitPrice}
+              onChange={(e) => setUnitPrice(Number(e.target.value))}
+              required
+            />
+          </div>
+          
+          <div className="col-span-2">
+            <Button 
+              type="submit" 
+              className="w-full"
+              onClick={(e) => {
+                e.preventDefault();
+                handleAddPart(e);
+              }}
+            >
+              <Plus className="h-4 w-4 mr-1" /> Add Part
+            </Button>
+          </div>
+        </form>
+        
+        {/* Parts Table */}
+        <div className="overflow-hidden rounded-md border">
+          <Table className="min-h-[200px]">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[40%]">Part Name</TableHead>
+                <TableHead className="text-center">Quantity</TableHead>
+                <TableHead className="text-right">Unit Price</TableHead>
+                <TableHead className="text-right">Total</TableHead>
+                <TableHead className="text-center">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            
+            <TableBody>
+              {items.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
+                    No parts added yet. Use the form above to add parts.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                items.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell>{item.name}</TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        >
+                          -
+                        </Button>
+                        <Input
+                          type="number"
+                          min="1"
+                          value={item.quantity}
+                          onChange={(e) => updateQuantity(item.id, Number(e.target.value))}
+                          className="h-7 w-16 mx-1 text-center"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        >
+                          +
+                        </Button>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">${item.unitPrice.toFixed(2)}</TableCell>
+                    <TableCell className="text-right">${(item.quantity * item.unitPrice).toFixed(2)}</TableCell>
+                    <TableCell className="text-center">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleRemovePart(item.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </div>
       </CardContent>
-    </Card>
+    </div>
   );
-}
+};
