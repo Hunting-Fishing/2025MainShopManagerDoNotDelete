@@ -12,7 +12,6 @@ export interface LabourRates {
   emergency_rate: number | string;
   warranty_rate: number | string;
   internal_rate: number | string;
-  diy_rate: number | string;
 }
 
 export function useLabourRates() {
@@ -21,8 +20,7 @@ export function useLabourRates() {
     diagnostic_rate: 145,
     emergency_rate: 175,
     warranty_rate: 95,
-    internal_rate: 85,
-    diy_rate: 65
+    internal_rate: 85
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -63,8 +61,7 @@ export function useLabourRates() {
             diagnostic_rate: data.diagnostic_rate,
             emergency_rate: data.emergency_rate,
             warranty_rate: data.warranty_rate,
-            internal_rate: data.internal_rate,
-            diy_rate: data.diy_rate
+            internal_rate: data.internal_rate
           });
         }
       } catch (error) {
@@ -82,8 +79,7 @@ export function useLabourRates() {
           diagnostic_rate: 145,
           emergency_rate: 175,
           warranty_rate: 95,
-          internal_rate: 85,
-          diy_rate: 65
+          internal_rate: 85
         };
 
         const { data, error } = await supabase
@@ -104,8 +100,7 @@ export function useLabourRates() {
             diagnostic_rate: data.diagnostic_rate,
             emergency_rate: data.emergency_rate,
             warranty_rate: data.warranty_rate,
-            internal_rate: data.internal_rate,
-            diy_rate: data.diy_rate
+            internal_rate: data.internal_rate
           });
         }
       } catch (error) {

@@ -124,26 +124,6 @@ export function LabourRatesTab() {
                   className="w-full border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all" 
                 />
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="diy_rate" className="text-sm font-medium flex items-center gap-2">
-                  <span className="inline-flex p-1.5 bg-indigo-100 text-indigo-700 rounded-full">
-                    <DollarSign className="h-4 w-4" />
-                  </span>
-                  DIY Bay Rental Rate ($/hour)
-                </Label>
-                <Input 
-                  id="diy_rate" 
-                  type="number" 
-                  value={rates.diy_rate} 
-                  onChange={(e) => handleInputChange('diy_rate', e.target.value)} 
-                  className="w-full border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all" 
-                  placeholder="Enter DIY bay rental rate per hour"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Base rate for DIY bay rentals (hourly). Day/Week/Month rates can be configured as multiples of this base rate.
-                </p>
-              </div>
             </div>
             
             <div className="flex justify-end mt-6">
@@ -173,3 +153,4 @@ export function LabourRatesTab() {
     </div>
   );
 }
+
