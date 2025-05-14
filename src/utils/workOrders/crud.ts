@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { normalizeWorkOrder } from './formatters';
 
 // Re-export the WorkOrder type to ensure it's available where needed
-export { WorkOrder } from "@/types/workOrder";
+export type { WorkOrder } from "@/types/workOrder";
 
 /**
  * Get all work orders

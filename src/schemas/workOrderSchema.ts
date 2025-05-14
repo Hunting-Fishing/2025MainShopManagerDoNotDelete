@@ -33,6 +33,7 @@ export const workOrderFormSchema = z.object({
   location: z.string().min(2, {
     message: "Location must be at least 2 characters.",
   }),
+  // Changed from string to Date
   dueDate: z.date({
     required_error: "Due date is required.",
   }),

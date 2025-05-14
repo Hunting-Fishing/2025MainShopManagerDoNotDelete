@@ -6,8 +6,8 @@ export * from './crud';
 export * from './activity';
 
 // Import and re-export formatters explicitly to avoid ambiguity
-import { formatDate, formatTime, formatTimeInHoursAndMinutes } from './formatters';
-export { formatDate, formatTime, formatTimeInHoursAndMinutes };
+import { formatDate, formatTime, formatTimeInHoursAndMinutes, normalizeWorkOrder } from './formatters';
+export { formatDate, formatTime, formatTimeInHoursAndMinutes, normalizeWorkOrder };
 
 // Define standard status and priority maps as the single source of truth
 export const statusMap = {

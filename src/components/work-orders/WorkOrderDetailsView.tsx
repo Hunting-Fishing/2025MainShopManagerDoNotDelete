@@ -1,6 +1,6 @@
 
-import React from "react";
-import { WorkOrder } from "@/types/workOrder";
+import React, { useState } from "react";
+import { WorkOrder, TimeEntry } from "@/types/workOrder";
 import { WorkOrderPageLayout } from "./WorkOrderPageLayout";
 import { WorkOrderDetailsHeader } from "./details/WorkOrderDetailsHeader";
 import { WorkOrderDetailsTabs } from "./details/WorkOrderDetailsTabs";
@@ -10,9 +10,16 @@ export interface WorkOrderDetailsViewProps {
 }
 
 export function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsViewProps) {
+  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>(workOrder?.timeEntries || []);
+
   if (!workOrder) {
     return null;
   }
+  
+  // Handler for updating time entries
+  const handleUpdateTimeEntries = (entries: TimeEntry[]) => {
+    setTimeEntries(entries);
+  };
 
   return (
     <WorkOrderPageLayout
@@ -23,7 +30,10 @@ export function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsViewProps) {
     >
       <div className="space-y-6">
         <WorkOrderDetailsHeader workOrder={workOrder} />
-        <WorkOrderDetailsTabs workOrder={workOrder} />
+        <WorkOrderDetailsTabs 
+          workOrder={workOrder} 
+          onUpdateTimeEntries={handleUpdateTimeEntries} 
+        />
       </div>
     </WorkOrderPageLayout>
   );

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { WorkOrder } from '@/data/workOrdersData';
+import { WorkOrder } from '@/types/workOrder';
 import { Button } from '@/components/ui/button';
 import { 
   ArrowLeft, 
@@ -19,7 +19,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
-import { formatDate } from '@/utils/workOrderUtils';
+import { formatDate } from '@/utils/workOrders';
 import { WorkOrderChatButton } from '../WorkOrderChatButton';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { SendSmsButton } from '@/components/calls/SendSmsButton';
@@ -27,10 +27,13 @@ import { VoiceCallButton } from '@/components/calls/VoiceCallButton';
 
 interface WorkOrderDetailsHeaderProps {
   workOrder: WorkOrder;
-  onDelete: () => void;
+  onDelete?: () => void;
 }
 
-function WorkOrderDetailsHeader({ workOrder, onDelete }: WorkOrderDetailsHeaderProps) {
+export const WorkOrderDetailsHeader: React.FC<WorkOrderDetailsHeaderProps> = ({ 
+  workOrder, 
+  onDelete = () => {} 
+}) => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   
@@ -129,6 +132,4 @@ function WorkOrderDetailsHeader({ workOrder, onDelete }: WorkOrderDetailsHeaderP
       </div>
     </div>
   );
-}
-
-export default WorkOrderDetailsHeader;
+};

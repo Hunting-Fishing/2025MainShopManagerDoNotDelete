@@ -5,13 +5,14 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { WorkOrderFormSchemaValues, workOrderFormSchema } from "@/schemas/workOrderSchema";
 import { toast } from "sonner";
-import { WorkOrder } from "@/types/workOrder";
+import { WorkOrder, TimeEntry } from "@/types/workOrder";
 import { updateWorkOrder } from "@/utils/workOrders/crud";
 
 export function useWorkOrderEditForm(workOrder: WorkOrder) {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>(workOrder?.timeEntries || []);
 
   const form = useForm<WorkOrderFormSchemaValues>({
     resolver: zodResolver(workOrderFormSchema),
@@ -22,8 +23,8 @@ export function useWorkOrderEditForm(workOrder: WorkOrder) {
       priority: workOrder?.priority || "medium",
       technician: workOrder?.technician || "",
       location: workOrder?.location || "",
-      // Handle date properly - store as string in form
-      dueDate: workOrder?.dueDate || new Date().toISOString().split('T')[0],
+      // Convert string date to Date object for form
+      dueDate: workOrder?.dueDate ? new Date(workOrder.dueDate) : new Date(),
       notes: workOrder?.notes || "",
       vehicleMake: workOrder?.vehicleMake || "",
       vehicleModel: workOrder?.vehicleModel || "",
@@ -48,7 +49,8 @@ export function useWorkOrderEditForm(workOrder: WorkOrder) {
         priority: data.priority as WorkOrder['priority'],
         technician: data.technician,
         location: data.location,
-        dueDate: data.dueDate, // Keep as string
+        // Convert Date to string
+        dueDate: data.dueDate.toISOString().split('T')[0],
         notes: data.notes,
         vehicleMake: data.vehicleMake,
         vehicleModel: data.vehicleModel,
@@ -82,5 +84,7 @@ export function useWorkOrderEditForm(workOrder: WorkOrder) {
     onSubmit,
     isSubmitting,
     formError,
+    timeEntries,
+    setTimeEntries,
   };
 }

@@ -1,9 +1,9 @@
 
 import React from 'react';
-import { WorkOrder } from '@/data/workOrdersData';
+import { WorkOrder } from '@/types/workOrder';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { formatDate } from '@/utils/workOrderUtils';
+import { formatDate } from '@/utils/workOrders';
 import { WorkOrderFeedbackButton } from '../feedback/WorkOrderFeedbackButton';
 
 interface WorkOrderInformationProps {

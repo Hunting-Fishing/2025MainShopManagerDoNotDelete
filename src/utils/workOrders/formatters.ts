@@ -117,3 +117,6 @@ export const normalizeWorkOrder = (workOrder: any): any => {
   
   return normalized;
 };
+
+// Export explicitly to make it available for re-export
+export { normalizeWorkOrder };

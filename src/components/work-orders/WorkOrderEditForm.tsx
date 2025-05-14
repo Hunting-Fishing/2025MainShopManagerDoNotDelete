@@ -1,11 +1,10 @@
 
-import React from "react";
-import { WorkOrder } from "@/types/workOrder";
+import React, { useState } from "react";
+import { WorkOrder, TimeEntry } from "@/types/workOrder";
 import { EditFormHeader } from "./edit/EditFormHeader";
 import { WorkOrderEditFormContent } from "./edit/WorkOrderEditFormContent";
 import { useWorkOrderEditForm } from "@/hooks/useWorkOrderEditForm";
 import { TimeTrackingSection } from "./time-tracking/TimeTrackingSection";
-import { TimeEntry } from "@/types/workOrder";
 import { useTechnicians } from "@/hooks/useTechnicians";
 
 interface WorkOrderEditFormProps {
@@ -13,7 +12,7 @@ interface WorkOrderEditFormProps {
 }
 
 export default function WorkOrderEditForm({ workOrder }: WorkOrderEditFormProps) {
-  const { form, onSubmit, isSubmitting, error, timeEntries, setTimeEntries } = useWorkOrderEditForm(workOrder);
+  const { form, onSubmit, isSubmitting, formError, timeEntries, setTimeEntries } = useWorkOrderEditForm(workOrder);
   const { technicians, isLoading: loadingTechnicians } = useTechnicians();
 
   // Handle updating time entries
@@ -33,7 +32,7 @@ export default function WorkOrderEditForm({ workOrder }: WorkOrderEditFormProps)
         form={form}
         onSubmit={onSubmit}
         isSubmitting={isSubmitting}
-        error={error}
+        error={formError}
       />
 
       {/* Time Tracking Section */}

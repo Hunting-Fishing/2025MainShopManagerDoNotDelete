@@ -9,8 +9,7 @@ import {
   History,
   Phone
 } from "lucide-react";
-import { WorkOrder } from "@/data/workOrdersData";
-import { TimeEntry } from "@/types/workOrder";
+import { WorkOrder, TimeEntry } from "@/types/workOrder";
 import { WorkOrderInventoryItems } from "@/components/work-orders/details/WorkOrderInventoryItems";
 import { WorkOrderNotes } from "@/components/work-orders/details/WorkOrderNotes";
 import { WorkOrderStatusTimeline } from "@/components/work-orders/details/WorkOrderStatusTimeline";
@@ -18,7 +17,7 @@ import { WorkOrderTimeTracking } from "@/components/work-orders/details/WorkOrde
 import { WorkOrderActivityHistory } from "@/components/work-orders/details/WorkOrderActivityHistory";
 import { CallLogger } from '@/components/calls/CallLogger';
 
-interface WorkOrderDetailsTabsProps {
+export interface WorkOrderDetailsTabsProps {
   workOrder: WorkOrder;
   onUpdateTimeEntries: (entries: TimeEntry[]) => void;
 }
