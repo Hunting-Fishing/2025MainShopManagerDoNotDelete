@@ -1,515 +1,496 @@
 
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Save, Plus, Trash, DollarSign, Info } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Slider } from "@/components/ui/slider";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Switch } from "@/components/ui/switch";
-import { formatCurrency } from "@/lib/utils";
-
-interface BayRate {
-  id: string;
-  name: string;
-  location: string;
-  hourlyRate: number;
-  dailyRate: number;
-  weeklyRate: number;
-  monthlyRate: number;
-}
-
-interface RateMultiplier {
-  daily: number;
-  weekly: number;
-  monthly: number;
-}
+import { Plus, Save, History, Settings as SettingsIcon, Trash2 } from "lucide-react";
+import { useDIYBayRates } from "@/hooks/useDIYBayRates";
+import { Bay } from "@/services/diybay/diybayService";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export function DIYBayRatesTab() {
-  const [bayRates, setBayRates] = useState<BayRate[]>([
-    { 
-      id: "bay-1", 
-      name: "Bay 1", 
-      location: "Main garage area, first bay on left when entering from south entrance. Has 2-post lift rated for 10,000 lbs.",
-      hourlyRate: 45, 
-      dailyRate: 280, 
-      weeklyRate: 1200, 
-      monthlyRate: 4000 
-    },
-    { 
-      id: "bay-2", 
-      name: "Bay 2", 
-      location: "Main garage area, second bay from left, has 4-post alignment rack with pneumatic jacks.",
-      hourlyRate: 55, 
-      dailyRate: 350, 
-      weeklyRate: 1500, 
-      monthlyRate: 5000 
-    },
-  ]);
+  const [activeTab, setActiveTab] = useState('rates');
+  const [editingBay, setEditingBay] = useState<Bay | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
 
-  // Shop hour settings
-  const [shopHoursPerDay, setShopHoursPerDay] = useState<number>(8);
-  const [daysPerWeek, setDaysPerWeek] = useState<number>(5);
-  const [daysPerMonth, setDaysPerMonth] = useState<number>(22);
-  
-  // Rate multipliers
-  const [useCustomRates, setUseCustomRates] = useState<boolean>(false);
-  const [rateMultipliers, setRateMultipliers] = useState<RateMultiplier>({
-    daily: 0.9, // 10% discount for daily rate
-    weekly: 0.8, // 20% discount for weekly rate
-    monthly: 0.7, // 30% discount for monthly rate
-  });
-
-  const [saving, setSaving] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
-  const { toast } = useToast();
-
-  // Update derived rates when hours change
-  useEffect(() => {
-    if (!useCustomRates) {
-      const updatedRates = bayRates.map(bay => ({
-        ...bay,
-        dailyRate: Math.round(bay.hourlyRate * shopHoursPerDay * rateMultipliers.daily),
-        weeklyRate: Math.round(bay.hourlyRate * shopHoursPerDay * daysPerWeek * rateMultipliers.weekly),
-        monthlyRate: Math.round(bay.hourlyRate * shopHoursPerDay * daysPerMonth * rateMultipliers.monthly)
-      }));
-      
-      setBayRates(updatedRates);
-    }
-  }, [shopHoursPerDay, daysPerWeek, daysPerMonth, useCustomRates, rateMultipliers]);
-
-  const handleSave = async () => {
-    setSaving(true);
-    
-    // Simulate API call
-    try {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      toast({
-        title: "Success",
-        description: "DIY bay rates have been updated successfully.",
-        variant: "default",
-      });
-      
-      setHasChanges(false);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update DIY bay rates. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
+  const {
+    bays,
+    settings,
+    isLoading,
+    isSaving,
+    rateHistory,
+    addBay,
+    saveBay,
+    removeBay,
+    loadRateHistory,
+    updateBayRateSettings,
+    calculateRate
+  } = useDIYBayRates();
 
   const handleAddBay = () => {
-    const newId = `bay-${bayRates.length + 1}`;
-    const baseHourlyRate = 50;
-    
-    const newBay: BayRate = {
-      id: newId,
-      name: `Bay ${bayRates.length + 1}`,
-      location: "",
-      hourlyRate: baseHourlyRate,
-      dailyRate: Math.round(baseHourlyRate * shopHoursPerDay * rateMultipliers.daily),
-      weeklyRate: Math.round(baseHourlyRate * shopHoursPerDay * daysPerWeek * rateMultipliers.weekly),
-      monthlyRate: Math.round(baseHourlyRate * shopHoursPerDay * daysPerMonth * rateMultipliers.monthly),
-    };
-    
-    setBayRates([...bayRates, newBay]);
-    setHasChanges(true);
+    addBay(`Bay ${bays.length + 1}`);
   };
 
-  const handleRemoveBay = (bayId: string) => {
-    setBayRates(bayRates.filter(bay => bay.id !== bayId));
-    setHasChanges(true);
-  };
-
-  const handleBayChange = (bayId: string, field: keyof BayRate, value: string | number) => {
-    const updatedRates = bayRates.map(bay => {
-      if (bay.id === bayId) {
-        const updatedBay = { ...bay, [field]: value };
-        
-        // If hourly rate changes and we're not using custom rates, recalculate other rates
-        if (field === 'hourlyRate' && !useCustomRates) {
-          const hourlyRate = Number(value);
-          return {
-            ...updatedBay,
-            dailyRate: Math.round(hourlyRate * shopHoursPerDay * rateMultipliers.daily),
-            weeklyRate: Math.round(hourlyRate * shopHoursPerDay * daysPerWeek * rateMultipliers.weekly),
-            monthlyRate: Math.round(hourlyRate * shopHoursPerDay * daysPerMonth * rateMultipliers.monthly),
-          };
-        }
-        return updatedBay;
+  const handleSaveBay = () => {
+    if (!editingBay) return;
+    saveBay(editingBay).then((success) => {
+      if (success) {
+        setEditingBay(null);
       }
-      return bay;
     });
+  };
+
+  const handleDeleteBay = () => {
+    if (!editingBay) return;
+    removeBay(editingBay.id, editingBay.bay_name).then((success) => {
+      if (success) {
+        setEditingBay(null);
+        setIsDeleteDialogOpen(false);
+      }
+    });
+  };
+
+  const handleSaveSettings = async () => {
+    await updateBayRateSettings(settings);
+  };
+
+  const handleShowHistory = (bay: Bay) => {
+    setEditingBay(bay);
+    loadRateHistory(bay.id);
+    setIsHistoryDialogOpen(true);
+  };
+
+  const handleHourlyRateChange = (rate: string) => {
+    if (!editingBay) return;
     
-    setBayRates(updatedRates);
-    setHasChanges(true);
-  };
-
-  const handleMultiplierChange = (type: keyof RateMultiplier, value: number[]) => {
-    const multiplierValue = value[0] / 100;
-    setRateMultipliers({
-      ...rateMultipliers,
-      [type]: multiplierValue
+    const hourlyRate = parseFloat(rate) || 0;
+    setEditingBay({
+      ...editingBay,
+      hourly_rate: hourlyRate,
+      daily_rate: calculateRate('daily', hourlyRate),
+      weekly_rate: calculateRate('weekly', hourlyRate),
+      monthly_rate: calculateRate('monthly', hourlyRate),
     });
-    setHasChanges(true);
   };
 
-  const handleCustomRatesToggle = (checked: boolean) => {
-    setUseCustomRates(checked);
-    setHasChanges(true);
-
-    // If turning off custom rates, recalculate all rates based on hourly rate
-    if (!checked) {
-      const updatedRates = bayRates.map(bay => ({
-        ...bay,
-        dailyRate: Math.round(bay.hourlyRate * shopHoursPerDay * rateMultipliers.daily),
-        weeklyRate: Math.round(bay.hourlyRate * shopHoursPerDay * daysPerWeek * rateMultipliers.weekly),
-        monthlyRate: Math.round(bay.hourlyRate * shopHoursPerDay * daysPerMonth * rateMultipliers.monthly)
-      }));
-      
-      setBayRates(updatedRates);
-    }
+  const formatCurrency = (amount: number | null) => {
+    if (amount === null) return '-';
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
   };
 
   return (
     <div className="space-y-6">
-      {/* Rate Calculation Settings */}
-      <Card className="border-gray-100 shadow-md rounded-xl overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-gray-100">
-          <CardTitle className="text-blue-700">DIY Bay Rate Settings</CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-medium">Custom Rates</h3>
-                <p className="text-sm text-gray-500">Enable to manually set daily, weekly and monthly rates</p>
-              </div>
-              <Switch
-                checked={useCustomRates}
-                onCheckedChange={handleCustomRatesToggle}
-              />
-            </div>
-            
-            {!useCustomRates && (
-              <div className="rounded-lg border p-4 space-y-4">
-                <h3 className="text-md font-semibold">Rate Calculation Settings</h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <Label htmlFor="hours-per-day">Shop Hours Per Day:</Label>
-                      <span className="text-sm font-medium">{shopHoursPerDay} hours</span>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="bg-gray-100 p-1 rounded-lg border border-gray-200">
+          <TabsTrigger 
+            value="rates"
+            className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm"
+          >
+            Bay Rates
+          </TabsTrigger>
+          <TabsTrigger 
+            value="settings"
+            className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm"
+          >
+            Calculation Settings
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="rates">
+          <Card className="border-gray-100 shadow-md rounded-xl">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-100 flex flex-row justify-between items-center">
+              <CardTitle className="text-blue-700">DIY Bay Rentals</CardTitle>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleAddBay}
+                disabled={isLoading || isSaving}
+                className="bg-white border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800 flex items-center gap-1"
+              >
+                <Plus className="w-4 h-4" /> Add Bay
+              </Button>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6">
+              {isLoading ? (
+                <div className="text-center py-6">Loading bay data...</div>
+              ) : bays.length === 0 ? (
+                <div className="text-center py-6 text-gray-500">
+                  No DIY bays defined. Click the "Add Bay" button to create one.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {bays.map((bay) => (
+                    <Card key={bay.id} className="border border-gray-200 shadow-sm">
+                      <CardContent className="p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                          <div className="space-y-4 md:col-span-1">
+                            <div>
+                              <Label htmlFor={`bay-name-${bay.id}`} className="text-sm font-medium mb-1 block">Bay Name</Label>
+                              <Input
+                                id={`bay-name-${bay.id}`}
+                                value={editingBay?.id === bay.id ? editingBay.bay_name : bay.bay_name}
+                                onChange={(e) => editingBay?.id === bay.id && setEditingBay({...editingBay, bay_name: e.target.value})}
+                                onClick={() => !editingBay && setEditingBay(bay)}
+                                className="border-gray-200 focus:border-blue-500"
+                              />
+                            </div>
+                            
+                            <div>
+                              <Label htmlFor={`bay-location-${bay.id}`} className="text-sm font-medium mb-1 block">Bay Location/Information</Label>
+                              <Textarea
+                                id={`bay-location-${bay.id}`}
+                                value={editingBay?.id === bay.id ? editingBay.bay_location || '' : bay.bay_location || ''}
+                                onChange={(e) => editingBay?.id === bay.id && setEditingBay({...editingBay, bay_location: e.target.value})}
+                                onClick={() => !editingBay && setEditingBay(bay)}
+                                className="min-h-[100px] resize-y border-gray-200 focus:border-blue-500"
+                                placeholder="Enter bay details such as location, special features, or other relevant information"
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-4 md:col-span-2">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                              <div>
+                                <Label htmlFor={`hourly-rate-${bay.id}`} className="text-sm font-medium mb-1 block">Hourly Rate ($)</Label>
+                                <div className="relative">
+                                  <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</div>
+                                  <Input
+                                    id={`hourly-rate-${bay.id}`}
+                                    type="number"
+                                    value={editingBay?.id === bay.id ? editingBay.hourly_rate : bay.hourly_rate}
+                                    onChange={(e) => editingBay?.id === bay.id && handleHourlyRateChange(e.target.value)}
+                                    onClick={() => !editingBay && setEditingBay(bay)}
+                                    className="pl-7 border-gray-200 focus:border-blue-500 text-right"
+                                  />
+                                </div>
+                              </div>
+                              
+                              <div>
+                                <Label htmlFor={`daily-rate-${bay.id}`} className="text-sm font-medium mb-1 block">Daily Rate</Label>
+                                <Input
+                                  id={`daily-rate-${bay.id}`}
+                                  value={formatCurrency(editingBay?.id === bay.id ? editingBay.daily_rate : bay.daily_rate)}
+                                  readOnly
+                                  className="bg-gray-50 border-gray-200 text-right cursor-not-allowed"
+                                />
+                              </div>
+                              
+                              <div>
+                                <Label htmlFor={`weekly-rate-${bay.id}`} className="text-sm font-medium mb-1 block">Weekly Rate</Label>
+                                <Input
+                                  id={`weekly-rate-${bay.id}`}
+                                  value={formatCurrency(editingBay?.id === bay.id ? editingBay.weekly_rate : bay.weekly_rate)}
+                                  readOnly
+                                  className="bg-gray-50 border-gray-200 text-right cursor-not-allowed"
+                                />
+                              </div>
+                              
+                              <div>
+                                <Label htmlFor={`monthly-rate-${bay.id}`} className="text-sm font-medium mb-1 block">Monthly Rate</Label>
+                                <Input
+                                  id={`monthly-rate-${bay.id}`}
+                                  value={formatCurrency(editingBay?.id === bay.id ? editingBay.monthly_rate : bay.monthly_rate)}
+                                  readOnly
+                                  className="bg-gray-50 border-gray-200 text-right cursor-not-allowed"
+                                />
+                              </div>
+                            </div>
+                            
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleShowHistory(bay)}
+                                className="text-gray-600 border-gray-300 hover:bg-gray-50"
+                              >
+                                <History className="w-4 h-4 mr-1" />
+                                History
+                              </Button>
+                              
+                              {editingBay?.id === bay.id ? (
+                                <>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => setIsDeleteDialogOpen(true)}
+                                    disabled={isSaving}
+                                    className="text-white border-red-600 hover:bg-red-700"
+                                  >
+                                    <Trash2 className="w-4 h-4 mr-1" />
+                                    Delete
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setEditingBay(null)}
+                                    disabled={isSaving}
+                                    className="border-gray-300 hover:bg-gray-50"
+                                  >
+                                    Cancel
+                                  </Button>
+                                  <Button
+                                    variant="default"
+                                    size="sm"
+                                    onClick={handleSaveBay}
+                                    disabled={isSaving}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                                  >
+                                    {isSaving ? 'Saving...' : (
+                                      <>
+                                        <Save className="w-4 h-4 mr-1" />
+                                        Save
+                                      </>
+                                    )}
+                                  </Button>
+                                </>
+                              ) : (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setEditingBay(bay)}
+                                  className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                                >
+                                  Edit
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="settings">
+          <Card className="border-gray-100 shadow-md rounded-xl">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-100">
+              <CardTitle className="text-blue-700">Rate Calculation Settings</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="daily-hours" className="text-sm font-medium mb-1 block">Hours in Day</Label>
+                    <div className="flex gap-2 items-center">
+                      <Input
+                        id="daily-hours"
+                        type="number"
+                        value={settings.daily_hours}
+                        onChange={(e) => updateBayRateSettings({...settings, daily_hours: parseInt(e.target.value) || 0})}
+                        className="border-gray-200 focus:border-blue-500"
+                      />
+                      <span className="text-sm text-gray-500">hours</span>
                     </div>
-                    <Slider 
-                      id="hours-per-day"
-                      min={1} 
-                      max={24} 
-                      step={1} 
-                      value={[shopHoursPerDay]}
-                      onValueChange={(value) => {
-                        setShopHoursPerDay(value[0]);
-                        setHasChanges(true);
-                      }}
-                      className="py-2"
-                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      The number of hours considered for a full day rental
+                    </p>
                   </div>
                   
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <Label htmlFor="days-per-week">Work Days Per Week:</Label>
-                      <span className="text-sm font-medium">{daysPerWeek} days</span>
+                  <div>
+                    <Label htmlFor="daily-discount" className="text-sm font-medium mb-1 block">Daily Discount</Label>
+                    <div className="flex gap-2 items-center">
+                      <Input
+                        id="daily-discount"
+                        type="number"
+                        value={settings.daily_discount_percent}
+                        onChange={(e) => updateBayRateSettings({...settings, daily_discount_percent: parseInt(e.target.value) || 0})}
+                        className="border-gray-200 focus:border-blue-500"
+                      />
+                      <span className="text-sm text-gray-500">%</span>
                     </div>
-                    <Slider 
-                      id="days-per-week"
-                      min={1} 
-                      max={7} 
-                      step={1} 
-                      value={[daysPerWeek]}
-                      onValueChange={(value) => {
-                        setDaysPerWeek(value[0]);
-                        setHasChanges(true);
-                      }}
-                      className="py-2"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <Label htmlFor="days-per-month">Work Days Per Month:</Label>
-                      <span className="text-sm font-medium">{daysPerMonth} days</span>
-                    </div>
-                    <Slider 
-                      id="days-per-month"
-                      min={10} 
-                      max={31} 
-                      step={1} 
-                      value={[daysPerMonth]}
-                      onValueChange={(value) => {
-                        setDaysPerMonth(value[0]);
-                        setHasChanges(true);
-                      }}
-                      className="py-2"
-                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Discount percentage applied to daily rate (compared to hourly)
+                    </p>
                   </div>
                 </div>
                 
-                <div className="pt-4 border-t">
-                  <h4 className="text-md font-semibold mb-4">Discounted Rate Multipliers</h4>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <Label htmlFor="daily-multiplier">
-                          Daily Rate Discount:
-                        </Label>
-                        <span className="text-sm font-medium">
-                          {Math.round((1 - rateMultipliers.daily) * 100)}% off ({rateMultipliers.daily.toFixed(2)}x)
-                        </span>
-                      </div>
-                      <Slider 
-                        id="daily-multiplier"
-                        min={50} 
-                        max={100} 
-                        step={1} 
-                        value={[Math.round(rateMultipliers.daily * 100)]}
-                        onValueChange={(value) => handleMultiplierChange('daily', value)}
-                        className="py-2"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <Label htmlFor="weekly-multiplier">
-                          Weekly Rate Discount:
-                        </Label>
-                        <span className="text-sm font-medium">
-                          {Math.round((1 - rateMultipliers.weekly) * 100)}% off ({rateMultipliers.weekly.toFixed(2)}x)
-                        </span>
-                      </div>
-                      <Slider 
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="weekly-multiplier" className="text-sm font-medium mb-1 block">Weekly Multiplier</Label>
+                    <div className="flex gap-2 items-center">
+                      <Input
                         id="weekly-multiplier"
-                        min={40} 
-                        max={95} 
-                        step={1} 
-                        value={[Math.round(rateMultipliers.weekly * 100)]}
-                        onValueChange={(value) => handleMultiplierChange('weekly', value)}
-                        className="py-2"
+                        type="number"
+                        step="0.1"
+                        value={settings.weekly_multiplier}
+                        onChange={(e) => updateBayRateSettings({...settings, weekly_multiplier: parseFloat(e.target.value) || 0})}
+                        className="border-gray-200 focus:border-blue-500"
                       />
+                      <span className="text-sm text-gray-500">× hourly rate</span>
                     </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <Label htmlFor="monthly-multiplier">
-                          Monthly Rate Discount:
-                        </Label>
-                        <span className="text-sm font-medium">
-                          {Math.round((1 - rateMultipliers.monthly) * 100)}% off ({rateMultipliers.monthly.toFixed(2)}x)
-                        </span>
-                      </div>
-                      <Slider 
+                    <p className="text-xs text-gray-500 mt-1">
+                      Weekly rate calculation (multiplier × hourly rate)
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="monthly-multiplier" className="text-sm font-medium mb-1 block">Monthly Multiplier</Label>
+                    <div className="flex gap-2 items-center">
+                      <Input
                         id="monthly-multiplier"
-                        min={30} 
-                        max={90} 
-                        step={1} 
-                        value={[Math.round(rateMultipliers.monthly * 100)]}
-                        onValueChange={(value) => handleMultiplierChange('monthly', value)}
-                        className="py-2"
+                        type="number"
+                        step="0.1"
+                        value={settings.monthly_multiplier}
+                        onChange={(e) => updateBayRateSettings({...settings, monthly_multiplier: parseFloat(e.target.value) || 0})}
+                        className="border-gray-200 focus:border-blue-500"
                       />
+                      <span className="text-sm text-gray-500">× hourly rate</span>
                     </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Monthly rate calculation (multiplier × hourly rate)
+                    </p>
                   </div>
                 </div>
-                
-                <div className="p-4 border rounded-lg bg-gray-50">
-                  <h4 className="font-medium mb-2">How Rates Are Calculated</h4>
-                  <ul className="text-sm space-y-2 text-gray-600">
-                    <li>• <strong>Daily Rate:</strong> Hourly Rate × {shopHoursPerDay} hours × {rateMultipliers.daily.toFixed(2)} ({Math.round((1 - rateMultipliers.daily) * 100)}% discount)</li>
-                    <li>• <strong>Weekly Rate:</strong> Hourly Rate × {shopHoursPerDay} hours × {daysPerWeek} days × {rateMultipliers.weekly.toFixed(2)} ({Math.round((1 - rateMultipliers.weekly) * 100)}% discount)</li>
-                    <li>• <strong>Monthly Rate:</strong> Hourly Rate × {shopHoursPerDay} hours × {daysPerMonth} days × {rateMultipliers.monthly.toFixed(2)} ({Math.round((1 - rateMultipliers.monthly) * 100)}% discount)</li>
-                  </ul>
+              </div>
+              
+              <div className="bg-blue-50 border border-blue-100 p-4 rounded-lg">
+                <h4 className="font-medium text-blue-800 mb-2 flex items-center">
+                  <SettingsIcon className="h-4 w-4 mr-2" /> 
+                  How Rates Are Calculated
+                </h4>
+                <div className="space-y-2 text-sm text-blue-700">
+                  <p><strong>Daily Rate:</strong> (Hourly Rate × Hours in Day) - Discount%</p>
+                  <p><strong>Weekly Rate:</strong> Hourly Rate × Weekly Multiplier</p>
+                  <p><strong>Monthly Rate:</strong> Hourly Rate × Monthly Multiplier</p>
                 </div>
               </div>
+              
+              <div className="flex justify-end">
+                <Button
+                  onClick={handleSaveSettings}
+                  disabled={isSaving}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {isSaving ? (
+                    <>
+                      <span className="animate-spin mr-2">⏳</span>
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      Save Settings
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to delete this bay?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete{" "}
+              <span className="font-semibold">{editingBay?.bay_name}</span> and all its rate history.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteBay}
+              disabled={isSaving}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              {isSaving ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Rate History Dialog */}
+      <Dialog open={isHistoryDialogOpen} onOpenChange={setIsHistoryDialogOpen}>
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <History className="w-5 h-5 mr-2 text-blue-600" />
+              Rate History for {editingBay?.bay_name}
+            </DialogTitle>
+            <DialogDescription>
+              View past rate changes for this bay.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="max-h-80 overflow-y-auto">
+            {rateHistory.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                No rate change history available.
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-right">Hourly</TableHead>
+                    <TableHead className="text-right">Daily</TableHead>
+                    <TableHead className="text-right">Weekly</TableHead>
+                    <TableHead className="text-right">Monthly</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rateHistory.map((record) => (
+                    <TableRow key={record.id}>
+                      <TableCell className="font-medium">
+                        {new Date(record.changed_at).toLocaleDateString()}
+                        <div className="text-xs text-gray-500">
+                          {new Date(record.changed_at).toLocaleTimeString()}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">${record.hourly_rate}</TableCell>
+                      <TableCell className="text-right">{record.daily_rate ? `$${record.daily_rate}` : '-'}</TableCell>
+                      <TableCell className="text-right">{record.weekly_rate ? `$${record.weekly_rate}` : '-'}</TableCell>
+                      <TableCell className="text-right">{record.monthly_rate ? `$${record.monthly_rate}` : '-'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
           </div>
-        </CardContent>
-      </Card>
-
-      <Card className="border-gray-100 shadow-md rounded-xl overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-100">
-          <CardTitle className="text-blue-700">DIY Bay Rates</CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="space-y-6">
-            {bayRates.map((bay, index) => (
-              <div 
-                key={bay.id} 
-                className="p-4 border rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow"
-              >
-                <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 pb-3 border-b">
-                  <div className="flex-1 mb-2 md:mb-0">
-                    <Label htmlFor={`name-${bay.id}`} className="text-sm font-medium mb-1 block">Bay Name</Label>
-                    <Input
-                      id={`name-${bay.id}`}
-                      value={bay.name}
-                      onChange={(e) => handleBayChange(bay.id, 'name', e.target.value)}
-                      className="max-w-xs"
-                    />
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleRemoveBay(bay.id)}
-                    className="text-red-600 hover:bg-red-50 hover:text-red-700"
-                    disabled={bayRates.length <= 1}
-                  >
-                    <Trash className="h-4 w-4 mr-1" />
-                    Remove Bay
-                  </Button>
-                </div>
-                
-                <div className="mb-4">
-                  <Label htmlFor={`location-${bay.id}`} className="text-sm font-medium mb-1 block">Bay Location & Details</Label>
-                  <Textarea
-                    id={`location-${bay.id}`}
-                    value={bay.location}
-                    onChange={(e) => handleBayChange(bay.id, 'location', e.target.value)}
-                    className="min-h-[80px] resize-y"
-                    placeholder="Enter bay location details and equipment information..."
-                    rows={3}
-                  />
-                </div>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor={`hourly-${bay.id}`} className="text-sm font-medium flex items-center gap-2">
-                      <span className="inline-flex p-1.5 bg-blue-100 text-blue-700 rounded-full">
-                        <DollarSign className="h-3 w-3" />
-                      </span>
-                      Hourly Rate
-                    </Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                      <Input
-                        id={`hourly-${bay.id}`}
-                        type="number"
-                        value={bay.hourlyRate}
-                        onChange={(e) => handleBayChange(bay.id, 'hourlyRate', Number(e.target.value))}
-                        className="pl-8"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor={`daily-${bay.id}`} className="text-sm font-medium flex items-center gap-2">
-                      <span className="inline-flex p-1.5 bg-green-100 text-green-700 rounded-full">
-                        <DollarSign className="h-3 w-3" />
-                      </span>
-                      Daily Rate
-                    </Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                      <Input
-                        id={`daily-${bay.id}`}
-                        type="number"
-                        value={bay.dailyRate}
-                        onChange={(e) => handleBayChange(bay.id, 'dailyRate', Number(e.target.value))}
-                        className="pl-8"
-                        disabled={!useCustomRates}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor={`weekly-${bay.id}`} className="text-sm font-medium flex items-center gap-2">
-                      <span className="inline-flex p-1.5 bg-purple-100 text-purple-700 rounded-full">
-                        <DollarSign className="h-3 w-3" />
-                      </span>
-                      Weekly Rate
-                    </Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                      <Input
-                        id={`weekly-${bay.id}`}
-                        type="number"
-                        value={bay.weeklyRate}
-                        onChange={(e) => handleBayChange(bay.id, 'weeklyRate', Number(e.target.value))}
-                        className="pl-8"
-                        disabled={!useCustomRates}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor={`monthly-${bay.id}`} className="text-sm font-medium flex items-center gap-2">
-                      <span className="inline-flex p-1.5 bg-yellow-100 text-yellow-700 rounded-full">
-                        <DollarSign className="h-3 w-3" />
-                      </span>
-                      Monthly Rate
-                    </Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                      <Input
-                        id={`monthly-${bay.id}`}
-                        type="number"
-                        value={bay.monthlyRate}
-                        onChange={(e) => handleBayChange(bay.id, 'monthlyRate', Number(e.target.value))}
-                        className="pl-8"
-                        disabled={!useCustomRates}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-            
-            <Button 
-              onClick={handleAddBay} 
-              variant="outline" 
-              className="w-full border-dashed border-blue-300 text-blue-600 hover:bg-blue-50"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Add New Bay
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsHistoryDialogOpen(false)}>
+              Close
             </Button>
-            
-            <div className="flex justify-end mt-6">
-              <Button 
-                onClick={handleSave} 
-                disabled={saving || !hasChanges}
-                className={`rounded-full px-6 ${hasChanges 
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                  : 'bg-gray-100 text-gray-400'}`}
-              >
-                {saving ? (
-                  <>
-                    <span className="animate-spin mr-2">⏳</span>
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="mr-2 h-4 w-4" />
-                    {hasChanges ? "Save Changes" : "No Changes"}
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

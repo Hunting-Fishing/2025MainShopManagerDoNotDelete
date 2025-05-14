@@ -1572,6 +1572,138 @@ export type Database = {
         }
         Relationships: []
       }
+      diy_bay_rate_history: {
+        Row: {
+          bay_id: string | null
+          changed_at: string | null
+          changed_by: string | null
+          daily_rate: number | null
+          hourly_rate: number
+          id: string
+          monthly_rate: number | null
+          weekly_rate: number | null
+        }
+        Insert: {
+          bay_id?: string | null
+          changed_at?: string | null
+          changed_by?: string | null
+          daily_rate?: number | null
+          hourly_rate: number
+          id?: string
+          monthly_rate?: number | null
+          weekly_rate?: number | null
+        }
+        Update: {
+          bay_id?: string | null
+          changed_at?: string | null
+          changed_by?: string | null
+          daily_rate?: number | null
+          hourly_rate?: number
+          id?: string
+          monthly_rate?: number | null
+          weekly_rate?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diy_bay_rate_history_bay_id_fkey"
+            columns: ["bay_id"]
+            isOneToOne: false
+            referencedRelation: "diy_bay_rates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diy_bay_rate_settings: {
+        Row: {
+          daily_discount_percent: number | null
+          daily_hours: number | null
+          id: string
+          monthly_multiplier: number | null
+          shop_id: string | null
+          updated_at: string | null
+          updated_by: string | null
+          weekly_multiplier: number | null
+        }
+        Insert: {
+          daily_discount_percent?: number | null
+          daily_hours?: number | null
+          id?: string
+          monthly_multiplier?: number | null
+          shop_id?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+          weekly_multiplier?: number | null
+        }
+        Update: {
+          daily_discount_percent?: number | null
+          daily_hours?: number | null
+          id?: string
+          monthly_multiplier?: number | null
+          shop_id?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+          weekly_multiplier?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diy_bay_rate_settings_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: true
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diy_bay_rates: {
+        Row: {
+          bay_location: string | null
+          bay_name: string
+          created_at: string | null
+          daily_rate: number | null
+          hourly_rate: number
+          id: string
+          is_active: boolean | null
+          monthly_rate: number | null
+          shop_id: string | null
+          updated_at: string | null
+          weekly_rate: number | null
+        }
+        Insert: {
+          bay_location?: string | null
+          bay_name: string
+          created_at?: string | null
+          daily_rate?: number | null
+          hourly_rate: number
+          id?: string
+          is_active?: boolean | null
+          monthly_rate?: number | null
+          shop_id?: string | null
+          updated_at?: string | null
+          weekly_rate?: number | null
+        }
+        Update: {
+          bay_location?: string | null
+          bay_name?: string
+          created_at?: string | null
+          daily_rate?: number | null
+          hourly_rate?: number
+          id?: string
+          is_active?: boolean | null
+          monthly_rate?: number | null
+          shop_id?: string | null
+          updated_at?: string | null
+          weekly_rate?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diy_bay_rates_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_categories: {
         Row: {
           created_at: string
