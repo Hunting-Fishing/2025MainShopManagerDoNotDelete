@@ -28,8 +28,8 @@ export interface RateHistory {
   weekly_rate: number | null;
   monthly_rate: number | null;
   changed_at: string;
-  user_email?: string;
   changed_by?: string;
+  user_email?: string;  // Make this optional since it might not exist in the raw data
 }
 
 /**
@@ -145,7 +145,7 @@ export async function fetchRateHistory(bayId: string): Promise<RateHistory[]> {
   // Transform the data to include user email if available
   return data.map(entry => ({
     ...entry,
-    user_email: entry.user_email || 'System' // Default to 'System' if no user email
+    user_email: entry.changed_by ? entry.changed_by : 'System' // Use changed_by or default to 'System'
   })) as RateHistory[];
 }
 
