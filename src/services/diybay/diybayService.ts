@@ -106,7 +106,10 @@ export async function updateBay(bay: Bay): Promise<void> {
     })
     .eq('id', bay.id);
   
-  if (error) throw error;
+  if (error) {
+    console.error("Error updating bay:", error);
+    throw error;
+  }
 }
 
 /**
@@ -128,16 +131,7 @@ export async function fetchRateHistory(bayId: string): Promise<RateHistory[]> {
   console.log("Fetching rate history for bay:", bayId);
   const { data, error } = await supabase
     .from('diy_bay_rate_history')
-    .select(`
-      id,
-      bay_id,
-      hourly_rate,
-      daily_rate,
-      weekly_rate,
-      monthly_rate,
-      changed_at,
-      changed_by
-    `)
+    .select('*')
     .eq('bay_id', bayId)
     .order('changed_at', { ascending: false });
   
@@ -150,16 +144,9 @@ export async function fetchRateHistory(bayId: string): Promise<RateHistory[]> {
   
   // Transform the data to include user email if available
   return data.map(entry => ({
-    id: entry.id,
-    bay_id: entry.bay_id,
-    hourly_rate: entry.hourly_rate,
-    daily_rate: entry.daily_rate,
-    weekly_rate: entry.weekly_rate,
-    monthly_rate: entry.monthly_rate,
-    changed_at: entry.changed_at,
-    changed_by: entry.changed_by,
-    user_email: 'Unknown user' // We'll fetch user emails separately if needed
-  }));
+    ...entry,
+    user_email: entry.user_email || 'System' // Default to 'System' if no user email
+  })) as RateHistory[];
 }
 
 /**
