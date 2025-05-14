@@ -124,11 +124,22 @@ export function useLabourRates() {
   }, [shopId, toast]);
 
   const handleInputChange = (field: keyof LabourRates, value: string) => {
-    const numericValue = parseFloat(value);
-    if (!isNaN(numericValue) || value === '') {
+    // Allow empty string as a valid input
+    if (value === '') {
       setRates(prev => ({
         ...prev,
-        [field]: value === '' ? 0 : numericValue
+        [field]: ''
+      }));
+      setHasChanges(true);
+      return;
+    }
+
+    // Only update if it's a valid number
+    const numericValue = parseFloat(value);
+    if (!isNaN(numericValue)) {
+      setRates(prev => ({
+        ...prev,
+        [field]: numericValue
       }));
       setHasChanges(true);
     }
@@ -140,16 +151,18 @@ export function useLabourRates() {
     setSaving(true);
     
     try {
+      // Convert any empty strings to 0 before saving to the database
+      const ratesToSave = Object.keys(rates).reduce((acc, key) => {
+        if (key !== 'id' && key !== 'shop_id') {
+          const field = key as keyof Omit<LabourRates, 'id' | 'shop_id'>;
+          acc[field] = rates[field] === '' ? 0 : rates[field];
+        }
+        return acc;
+      }, {} as Partial<LabourRates>);
+      
       const { error } = await supabase
         .from('labor_rates')
-        .update({
-          standard_rate: rates.standard_rate,
-          diagnostic_rate: rates.diagnostic_rate,
-          emergency_rate: rates.emergency_rate,
-          warranty_rate: rates.warranty_rate,
-          internal_rate: rates.internal_rate,
-          diy_rate: rates.diy_rate
-        })
+        .update(ratesToSave)
         .eq('shop_id', shopId);
       
       if (error) throw error;
