@@ -1,6 +1,6 @@
 
 import React from "react";
-import { InfoCircle } from "lucide-react";
+import { Info } from "lucide-react";
 
 export const DIYBayHeader: React.FC = () => {
   return (
@@ -10,7 +10,7 @@ export const DIYBayHeader: React.FC = () => {
         Configure rates for your DIY rental bays. Set the base rates and bay-specific pricing.
       </p>
       <div className="flex items-center gap-2 mt-2 p-3 bg-blue-50 text-blue-800 rounded-lg">
-        <InfoCircle className="h-5 w-5 flex-shrink-0" />
+        <Info className="h-5 w-5 flex-shrink-0" />
         <p className="text-sm">
           Changes to the base rate will affect all bays using the default pricing. Bay-specific rates can be customized individually.
         </p>
