@@ -32,6 +32,10 @@ export const createAddNotificationHandler = (
       title: notificationData.title,
       description: notificationData.message,
       variant: notificationData.type === 'error' ? 'destructive' : 'default',
+      // Set a reasonable duration for notifications (longer for important ones)
+      duration: notificationData.priority === 'high' ? 10000 : 
+               notificationData.type === 'error' ? 8000 : 
+               notificationData.duration || 6000
     });
   };
 };
@@ -111,6 +115,10 @@ export const createHandleNewNotificationHandler = (
           title: notification.title,
           description: notification.message,
           variant: notification.type === 'error' ? 'destructive' : 'default',
+          // Extended duration based on priority and type
+          duration: notification.priority === 'high' ? 10000 : 
+                   notification.type === 'error' ? 8000 : 
+                   notification.duration || 6000
         });
       }
     }

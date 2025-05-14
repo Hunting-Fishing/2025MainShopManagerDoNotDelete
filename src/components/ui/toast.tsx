@@ -48,11 +48,17 @@ const Toast = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Root> &
     VariantProps<typeof toastVariants>
 >(({ className, variant, ...props }, ref) => {
+  // Add a longer default duration
+  const finalProps = {
+    ...props,
+    duration: props.duration || 8000,  // Set default duration to 8 seconds if not specified
+  };
+
   return (
     <ToastPrimitives.Root
       ref={ref}
       className={cn(toastVariants({ variant }), className)}
-      {...props}
+      {...finalProps}
     />
   )
 })

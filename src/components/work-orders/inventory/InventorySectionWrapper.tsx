@@ -27,7 +27,9 @@ export const InventorySectionWrapper: React.FC<InventorySectionWrapperProps> = (
       toast({
         title: "Inventory Alerts",
         description: `${lowStockItems.length} items low on stock, ${outOfStockItems.length} items out of stock.`,
-        variant: "warning"
+        variant: "warning",
+        // Extended duration to ensure users have time to read the message
+        duration: 8000
       });
     }
   }, [checkInventoryAlerts, lowStockItems, outOfStockItems]);

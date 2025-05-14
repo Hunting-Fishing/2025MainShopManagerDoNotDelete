@@ -52,7 +52,9 @@ export function useInventoryAlerts() {
           title: "Low Stock Alert",
           message: `${item.name} is running low (${item.quantity} remaining)`,
           type: "warning",
-          link: "/inventory"
+          link: "/inventory",
+          // Adding duration property to make notifications stay visible longer
+          duration: 8000
         });
         
         // Check if auto-reorder is enabled and threshold is met
@@ -71,7 +73,9 @@ export function useInventoryAlerts() {
           title: "Out of Stock Alert",
           message: `${item.name} is out of stock and needs to be reordered`,
           type: "error",
-          link: "/inventory"
+          link: "/inventory",
+          // Adding duration property to make notifications stay visible longer
+          duration: 10000
         });
         
         // Auto-reorder if enabled
