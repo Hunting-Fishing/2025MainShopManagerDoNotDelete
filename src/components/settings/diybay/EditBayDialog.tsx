@@ -1,35 +1,21 @@
 
-import React, { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Check, X, Info, AlertCircle } from 'lucide-react';
-import { Bay } from '@/services/diybay/diybayService';
-import { BayDetails, RateMode } from '@/types/diybay';
-import { formatCurrency } from '@/utils/rateCalculations';
-import { useToast } from '@/hooks/use-toast';
+import React, { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Save, Edit } from "lucide-react";
+import { Bay, RateSettings } from "@/services/diybay/diybayService";
+import { formatCurrency } from "@/utils/rateCalculations";
 
 interface EditBayDialogProps {
   bay: Bay | null;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (bay: BayDetails) => Promise<void>;
-  calculateRate: (type: 'daily' | 'weekly' | 'monthly', hourlyRate: number) => number;
-  settings: {
-    id: string;
-    daily_hours: number;
-    daily_discount_percent: number;
-    weekly_multiplier: number;
-    monthly_multiplier: number;
-  };
+  onSave: (bay: Bay) => Promise<boolean>;
+  calculateRate: (type: "daily" | "weekly" | "monthly", hourlyRate: number) => number;
+  settings: RateSettings;
   isSaving: boolean;
 }
 
@@ -42,321 +28,287 @@ export const EditBayDialog: React.FC<EditBayDialogProps> = ({
   settings,
   isSaving,
 }) => {
-  const { toast } = useToast();
-  const [editedBay, setEditedBay] = useState<BayDetails | null>(null);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
-  const [rateModes, setRateModes] = useState({
-    daily: 'default' as RateMode['type'],
-    weekly: 'default' as RateMode['type'],
-    monthly: 'default' as RateMode['type'],
+  const [editedBay, setEditedBay] = useState<Bay | null>(null);
+  const [calculatedRates, setCalculatedRates] = useState({
+    daily: 0,
+    weekly: 0,
+    monthly: 0,
+  });
+  const [useCustomRates, setUseCustomRates] = useState({
+    daily: false,
+    weekly: false,
+    monthly: false,
   });
 
-  // Reset the form state when the dialog opens with a new bay
+  // Reset state when dialog opens with new bay
   useEffect(() => {
     if (bay) {
-      setEditedBay({
-        ...bay,
+      setEditedBay({ ...bay });
+      
+      // Calculate rates from hourly rate
+      const hourlyRate = bay.hourly_rate;
+      const daily = calculateRate("daily", hourlyRate);
+      const weekly = calculateRate("weekly", hourlyRate);
+      const monthly = calculateRate("monthly", hourlyRate);
+      
+      setCalculatedRates({
+        daily,
+        weekly,
+        monthly,
       });
       
-      // Determine rate modes based on bay rates
-      const hourlyRate = bay.hourly_rate || 0;
-      const calculatedDaily = calculateRate('daily', hourlyRate);
-      const calculatedWeekly = calculateRate('weekly', hourlyRate);
-      const calculatedMonthly = calculateRate('monthly', hourlyRate);
-      
-      setRateModes({
-        daily: bay.daily_rate !== calculatedDaily ? 'custom' : 'default',
-        weekly: bay.weekly_rate !== calculatedWeekly ? 'custom' : 'default',
-        monthly: bay.monthly_rate !== calculatedMonthly ? 'custom' : 'default',
+      // Check if bay has custom rates
+      setUseCustomRates({
+        daily: bay.daily_rate !== null && bay.daily_rate !== daily,
+        weekly: bay.weekly_rate !== null && bay.weekly_rate !== weekly,
+        monthly: bay.monthly_rate !== null && bay.monthly_rate !== monthly,
       });
-    } else {
-      setEditedBay(null);
     }
-    setSaveStatus('idle');
   }, [bay, calculateRate]);
+
+  const handleInputChange = (field: keyof Bay, value: string | number | boolean) => {
+    if (!editedBay) return;
+
+    let parsedValue = value;
+    if (typeof value === "string" && ["hourly_rate", "daily_rate", "weekly_rate", "monthly_rate"].includes(field)) {
+      // Allow empty string for rate fields
+      parsedValue = value === "" ? 0 : parseFloat(value);
+    }
+
+    const updatedBay = { ...editedBay, [field]: parsedValue };
+    setEditedBay(updatedBay);
+
+    // Recalculate rates when hourly rate changes
+    if (field === "hourly_rate") {
+      const hourlyRate = parsedValue as number;
+      setCalculatedRates({
+        daily: calculateRate("daily", hourlyRate),
+        weekly: calculateRate("weekly", hourlyRate),
+        monthly: calculateRate("monthly", hourlyRate),
+      });
+    }
+  };
+
+  const toggleCustomRate = (type: "daily" | "weekly" | "monthly") => {
+    if (!editedBay) return;
+
+    const newUseCustom = !useCustomRates[type];
+    setUseCustomRates({ ...useCustomRates, [type]: newUseCustom });
+
+    // Reset to calculated rate if turning off custom
+    if (!newUseCustom) {
+      const updatedBay = {
+        ...editedBay,
+        [`${type}_rate`]: calculatedRates[type],
+      };
+      setEditedBay(updatedBay);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!editedBay) return;
+    
+    // Apply calculated rates for non-custom fields
+    const finalBay = { ...editedBay };
+    if (!useCustomRates.daily) {
+      finalBay.daily_rate = calculatedRates.daily;
+    }
+    if (!useCustomRates.weekly) {
+      finalBay.weekly_rate = calculatedRates.weekly;
+    }
+    if (!useCustomRates.monthly) {
+      finalBay.monthly_rate = calculatedRates.monthly;
+    }
+    
+    const success = await onSave(finalBay);
+    if (success) {
+      onClose();
+    }
+  };
 
   if (!editedBay) return null;
 
-  const handleInputChange = (field: keyof Bay, value: string | number | boolean) => {
-    setEditedBay((prev) => {
-      if (!prev) return null;
-      return { ...prev, [field]: value };
-    });
-    
-    // Reset the save status when changes are made
-    setSaveStatus('idle');
-  };
-
-  const handleHourlyRateChange = (value: string) => {
-    // Allow empty string or valid number
-    const numericValue = value === '' ? '' : parseFloat(value);
-    
-    setEditedBay((prev) => {
-      if (!prev) return null;
-
-      // Update the hourly rate
-      const updatedBay = { ...prev, hourly_rate: numericValue === '' ? 0 : numericValue };
-
-      // Only update other rates if they're in 'default' mode
-      if (rateModes.daily === 'default' && numericValue !== '') {
-        updatedBay.daily_rate = calculateRate('daily', numericValue as number);
-      }
-      if (rateModes.weekly === 'default' && numericValue !== '') {
-        updatedBay.weekly_rate = calculateRate('weekly', numericValue as number);
-      }
-      if (rateModes.monthly === 'default' && numericValue !== '') {
-        updatedBay.monthly_rate = calculateRate('monthly', numericValue as number);
-      }
-
-      return updatedBay;
-    });
-    
-    setSaveStatus('idle');
-  };
-
-  const handleRateChange = (field: 'daily_rate' | 'weekly_rate' | 'monthly_rate', value: string) => {
-    const rateType = field.split('_')[0] as 'daily' | 'weekly' | 'monthly';
-    const numericValue = value === '' ? 0 : parseFloat(value);
-
-    // Update the rate mode when manually changing a rate
-    setRateModes(prev => ({
-      ...prev,
-      [rateType]: value === '' ? 'default' : 'custom'
-    }));
-
-    setEditedBay(prev => {
-      if (!prev) return null;
-      return { ...prev, [field]: numericValue };
-    });
-    
-    setSaveStatus('idle');
-  };
-
-  const resetRateToCalculated = (field: 'daily_rate' | 'weekly_rate' | 'monthly_rate') => {
-    if (!editedBay || editedBay.hourly_rate === null) return;
-    
-    const rateType = field.split('_')[0] as 'daily' | 'weekly' | 'monthly';
-    const calculatedValue = calculateRate(rateType, editedBay.hourly_rate);
-    
-    setRateModes(prev => ({
-      ...prev,
-      [rateType]: 'default'
-    }));
-    
-    setEditedBay(prev => {
-      if (!prev) return null;
-      return { ...prev, [field]: calculatedValue };
-    });
-    
-    setSaveStatus('idle');
-  };
-
-  const handleSave = async () => {
-    if (!editedBay) return;
-    
-    // Validate the bay data before saving
-    if (!editedBay.bay_name.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Bay name cannot be empty",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Ensure hourly rate is at least 0
-    const hourlyRate = editedBay.hourly_rate ?? 0;
-    if (hourlyRate < 0) {
-      toast({
-        title: "Validation Error",
-        description: "Hourly rate cannot be negative",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Save with validated hourly rate
-    const bayToSave = {
-      ...editedBay,
-      hourly_rate: hourlyRate,
-    };
-    
-    setSaveStatus('saving');
-    try {
-      await onSave(bayToSave);
-      setSaveStatus('success');
-      setTimeout(() => {
-        onClose();
-      }, 1000); // Close the dialog after a short delay
-    } catch (error) {
-      console.error("Error saving bay:", error);
-      setSaveStatus('error');
-    }
-  };
-
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Edit Bay Details</DialogTitle>
+          <DialogTitle className="text-xl">Edit Bay Details</DialogTitle>
         </DialogHeader>
         
-        <div className="grid gap-4 py-4">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="bay-name">Bay Name</Label>
-            <Input
-              id="bay-name"
-              value={editedBay.bay_name}
-              onChange={(e) => handleInputChange('bay_name', e.target.value)}
-              placeholder="Enter bay name"
-            />
+        <div className="space-y-4 py-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="bay-name">Bay Name</Label>
+              <Input
+                id="bay-name"
+                value={editedBay.bay_name || ""}
+                onChange={(e) => handleInputChange("bay_name", e.target.value)}
+                placeholder="e.g. Bay 1"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="bay-location">Location (Optional)</Label>
+              <Input
+                id="bay-location"
+                value={editedBay.bay_location || ""}
+                onChange={(e) => handleInputChange("bay_location", e.target.value)}
+                placeholder="e.g. Main Building"
+              />
+            </div>
           </div>
           
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="bay-location">Location (Optional)</Label>
-            <Input
-              id="bay-location"
-              value={editedBay.bay_location || ''}
-              onChange={(e) => handleInputChange('bay_location', e.target.value)}
-              placeholder="Enter bay location"
-            />
-          </div>
-          
-          <div className="flex flex-col gap-2">
+          <div className="space-y-2">
             <Label htmlFor="hourly-rate">Hourly Rate ($)</Label>
             <Input
               id="hourly-rate"
-              type="text"
-              value={editedBay.hourly_rate === 0 && rateModes.daily === 'default' ? '' : editedBay.hourly_rate}
-              onChange={(e) => handleHourlyRateChange(e.target.value)}
-              placeholder="Enter hourly rate"
-              className="pl-7"
+              type="number"
+              min="0"
+              step="0.01"
+              value={editedBay.hourly_rate || ""}
+              onChange={(e) => handleInputChange("hourly_rate", e.target.value)}
+              className="bg-white"
             />
-            <div className="text-sm text-muted-foreground">
-              Base rate per hour
-            </div>
+            <p className="text-sm text-muted-foreground">
+              Base hourly rate for this bay
+            </p>
           </div>
           
-          <div className="pt-2">
-            <Label className="mb-2 block">Additional Rate Options</Label>
+          <Separator className="my-4" />
+          
+          <h3 className="font-medium">Extended Rental Rates</h3>
+          
+          {/* Daily Rate */}
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <Label htmlFor="daily-rate" className="flex items-center">
+                Daily Rate
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="ml-2 h-6 w-6 p-0"
+                  onClick={() => toggleCustomRate("daily")}
+                >
+                  <Edit className="h-3.5 w-3.5" />
+                  <span className="sr-only">
+                    {useCustomRates.daily ? "Use calculated rate" : "Set custom rate"}
+                  </span>
+                </Button>
+              </Label>
+              <span className="text-sm text-muted-foreground">
+                Default: {formatCurrency(calculatedRates.daily)}
+              </span>
+            </div>
             
-            <div className="space-y-4 bg-muted/30 rounded-lg p-4 border border-muted">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Daily Rate</div>
-                  <div className="text-sm text-muted-foreground">
-                    {settings.daily_hours} hours with {settings.daily_discount_percent}% discount
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  {rateModes.daily === 'custom' && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => resetRateToCalculated('daily_rate')}
-                      title="Reset to calculated value"
-                    >
-                      <Info className="h-4 w-4" />
-                    </Button>
-                  )}
-                  <Input
-                    value={editedBay.daily_rate || 0}
-                    onChange={(e) => handleRateChange('daily_rate', e.target.value)}
-                    className="w-24"
-                  />
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Weekly Rate</div>
-                  <div className="text-sm text-muted-foreground">
-                    {settings.weekly_multiplier}x hourly rate
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  {rateModes.weekly === 'custom' && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => resetRateToCalculated('weekly_rate')}
-                      title="Reset to calculated value"
-                    >
-                      <Info className="h-4 w-4" />
-                    </Button>
-                  )}
-                  <Input
-                    value={editedBay.weekly_rate || 0}
-                    onChange={(e) => handleRateChange('weekly_rate', e.target.value)}
-                    className="w-24"
-                  />
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Monthly Rate</div>
-                  <div className="text-sm text-muted-foreground">
-                    {settings.monthly_multiplier}x hourly rate
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  {rateModes.monthly === 'custom' && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => resetRateToCalculated('monthly_rate')}
-                      title="Reset to calculated value"
-                    >
-                      <Info className="h-4 w-4" />
-                    </Button>
-                  )}
-                  <Input
-                    value={editedBay.monthly_rate || 0}
-                    onChange={(e) => handleRateChange('monthly_rate', e.target.value)}
-                    className="w-24"
-                  />
-                </div>
-              </div>
-            </div>
+            <Input
+              id="daily-rate"
+              type="number"
+              min="0"
+              step="0.01"
+              value={
+                useCustomRates.daily
+                  ? editedBay.daily_rate || ""
+                  : calculatedRates.daily || ""
+              }
+              onChange={(e) => handleInputChange("daily_rate", e.target.value)}
+              disabled={!useCustomRates.daily}
+              className={!useCustomRates.daily ? "bg-slate-50" : "bg-white"}
+            />
           </div>
           
-          <div className="flex items-center space-x-2 pt-2">
-            <Switch
-              id="active-status"
-              checked={editedBay.is_active}
-              onCheckedChange={(checked) => handleInputChange('is_active', checked)}
+          {/* Weekly Rate */}
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <Label htmlFor="weekly-rate" className="flex items-center">
+                Weekly Rate
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="ml-2 h-6 w-6 p-0"
+                  onClick={() => toggleCustomRate("weekly")}
+                >
+                  <Edit className="h-3.5 w-3.5" />
+                  <span className="sr-only">
+                    {useCustomRates.weekly ? "Use calculated rate" : "Set custom rate"}
+                  </span>
+                </Button>
+              </Label>
+              <span className="text-sm text-muted-foreground">
+                Default: {formatCurrency(calculatedRates.weekly)}
+              </span>
+            </div>
+            
+            <Input
+              id="weekly-rate"
+              type="number"
+              min="0"
+              step="0.01"
+              value={
+                useCustomRates.weekly
+                  ? editedBay.weekly_rate || ""
+                  : calculatedRates.weekly || ""
+              }
+              onChange={(e) => handleInputChange("weekly_rate", e.target.value)}
+              disabled={!useCustomRates.weekly}
+              className={!useCustomRates.weekly ? "bg-slate-50" : "bg-white"}
             />
-            <Label htmlFor="active-status">Active</Label>
+          </div>
+          
+          {/* Monthly Rate */}
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <Label htmlFor="monthly-rate" className="flex items-center">
+                Monthly Rate
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="ml-2 h-6 w-6 p-0"
+                  onClick={() => toggleCustomRate("monthly")}
+                >
+                  <Edit className="h-3.5 w-3.5" />
+                  <span className="sr-only">
+                    {useCustomRates.monthly ? "Use calculated rate" : "Set custom rate"}
+                  </span>
+                </Button>
+              </Label>
+              <span className="text-sm text-muted-foreground">
+                Default: {formatCurrency(calculatedRates.monthly)}
+              </span>
+            </div>
+            
+            <Input
+              id="monthly-rate"
+              type="number"
+              min="0"
+              step="0.01"
+              value={
+                useCustomRates.monthly
+                  ? editedBay.monthly_rate || ""
+                  : calculatedRates.monthly || ""
+              }
+              onChange={(e) => handleInputChange("monthly_rate", e.target.value)}
+              disabled={!useCustomRates.monthly}
+              className={!useCustomRates.monthly ? "bg-slate-50" : "bg-white"}
+            />
           </div>
         </div>
-
-        <DialogFooter className="flex items-center justify-between">
-          <div>
-            {saveStatus === 'success' && (
-              <span className="text-green-600 flex items-center text-sm">
-                <Check className="h-4 w-4 mr-1" /> Saved successfully
-              </span>
+        
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={onClose} disabled={isSaving}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit} disabled={isSaving}>
+            {isSaving ? "Saving..." : (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                Save Changes
+              </>
             )}
-            {saveStatus === 'error' && (
-              <span className="text-red-600 flex items-center text-sm">
-                <AlertCircle className="h-4 w-4 mr-1" /> Error saving
-              </span>
-            )}
-          </div>
-          <div className="flex space-x-2">
-            <Button variant="outline" onClick={onClose} disabled={isSaving || saveStatus === 'saving'}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSave} 
-              disabled={isSaving || saveStatus === 'saving'}
-              className={saveStatus === 'saving' ? 'opacity-80' : ''}
-            >
-              {saveStatus === 'saving' ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </div>
-        </DialogFooter>
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
