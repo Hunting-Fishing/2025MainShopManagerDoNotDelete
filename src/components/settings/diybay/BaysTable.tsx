@@ -11,6 +11,7 @@ import {
 import { Bay } from "@/services/diybay/diybayService";
 import { formatCurrency } from "@/lib/formatters";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 
 interface BaysTableProps {
   bays: Bay[];
@@ -75,9 +76,12 @@ export const BaysTable: React.FC<BaysTableProps> = ({
                       }
                       aria-label="Toggle bay status"
                     />
-                    <span className="text-sm">
+                    <Badge 
+                      variant={bay.is_active ? "success" : "danger"}
+                      className="text-xs font-medium"
+                    >
                       {bay.is_active ? "Active" : "Inactive"}
-                    </span>
+                    </Badge>
                   </div>
                 </TableCell>
                 <TableCell className="text-right">
