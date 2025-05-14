@@ -21,12 +21,18 @@ export function useRateSettings(
   const { shopId } = useShopId();
   const { toast } = useToast();
 
+  /**
+   * Updates rate settings and recalculates all bay rates
+   */
   const updateBayRateSettings = async (newSettings: RateSettings) => {
     if (!shopId) return false;
     
     setIsSaving(true);
     try {
-      // Save the settings
+      // Update local state immediately for better UX
+      setSettings(newSettings);
+      
+      // Save the settings to the database
       await saveRateSettings(
         {
           daily_hours: newSettings.daily_hours,
@@ -40,8 +46,6 @@ export function useRateSettings(
       
       // Update all bays with new calculated rates
       const updatedBays = await updateAllBayRates(bays, newSettings);
-      
-      setSettings(newSettings);
       setBays(updatedBays);
       
       toast({

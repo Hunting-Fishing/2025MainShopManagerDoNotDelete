@@ -38,8 +38,11 @@ export const DIYBayRatesTab: React.FC = () => {
   }, [saveBay]);
 
   const handleSettingsChange = useCallback((field: keyof typeof settings, value: number) => {
+    // Create a new settings object with the updated field
     const updatedSettings = { ...settings, [field]: value };
-  }, [settings]);
+    // Update the local state
+    updateBayRateSettings(updatedSettings);
+  }, [settings, updateBayRateSettings]);
 
   const handleSaveSettings = useCallback(async () => {
     await updateBayRateSettings(settings);

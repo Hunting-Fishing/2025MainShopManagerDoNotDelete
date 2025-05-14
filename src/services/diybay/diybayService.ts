@@ -27,7 +27,7 @@ export interface RateHistory {
   weekly_rate: number | null;
   monthly_rate: number | null;
   changed_at: string;
-  created_at?: string;  // Added missing property
+  created_at: string;  // Ensure this field is included
   changed_by?: string;
   user_email?: string;
 }
