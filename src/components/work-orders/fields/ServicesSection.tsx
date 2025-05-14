@@ -22,7 +22,8 @@ export function ServicesSection({ services, setServices }: ServicesSectionProps)
     if (customService.trim()) {
       const newService: ServiceItem = {
         name: customService.trim(),
-        services: []
+        services: [],
+        quantity: 1
       };
       setServices([...services, newService]);
       setCustomService('');
@@ -38,8 +39,13 @@ export function ServicesSection({ services, setServices }: ServicesSectionProps)
   };
   
   // Handle service selection from the hierarchical selector
-  const handleServiceSelect = (service: Omit<ServiceItem, "id" | "quantity">) => {
-    setServices([...services, service]);
+  const handleServiceSelect = (service: ServiceItem) => {
+    // Add quantity property to the service
+    const serviceWithQuantity = {
+      ...service,
+      quantity: 1
+    };
+    setServices([...services, serviceWithQuantity]);
     setIsAdding(false);
   };
   
@@ -119,7 +125,7 @@ export function ServicesSection({ services, setServices }: ServicesSectionProps)
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  {service.price && (
+                  {service.price !== undefined && (
                     <span className="text-blue-600 font-medium">${service.price}</span>
                   )}
                   <Button 

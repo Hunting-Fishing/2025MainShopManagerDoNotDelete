@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { serviceCategories } from '@/data/commonServices';
 import { ServiceCategoryList } from './ServiceCategoryList';
 import { ServiceSubcategoryGrid } from './ServiceSubcategoryGrid';
-import { ServiceItem } from '@/types/services';
+import { ServiceItem, ServiceCategory } from '@/types/services';
 
 export interface HierarchicalServiceSelectorProps {
   onSelectService: (service: ServiceItem) => void;
@@ -13,13 +13,17 @@ export function HierarchicalServiceSelector({ onSelectService }: HierarchicalSer
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   
+  // Get category names for the category list
+  const categoryNames = serviceCategories.map(cat => cat.name);
+  
   // Handle service selection
   const handleServiceSelect = (serviceName: string) => {
     if (selectedCategory && selectedSubcategory) {
       const newService: ServiceItem = {
         name: serviceName,
         services: [],
-        category: `${selectedCategory} > ${selectedSubcategory}`
+        category: `${selectedCategory} > ${selectedSubcategory}`,
+        price: 0  // Default price of 0
       };
       onSelectService(newService);
     }
@@ -30,7 +34,7 @@ export function HierarchicalServiceSelector({ onSelectService }: HierarchicalSer
       {/* Left column - Main Categories */}
       <div className="border rounded-md overflow-hidden">
         <ServiceCategoryList 
-          categories={serviceCategories.map(cat => cat.name)}
+          categories={categoryNames}
           selectedCategory={selectedCategory}
           onSelectCategory={setSelectedCategory}
         />

@@ -86,7 +86,10 @@ export function WorkOrderForm({
     }, 0);
     
     const servicesTotal = selectedServices.reduce((acc, service) => {
-      return acc + ((service.price || 0) * (service.quantity || 1));
+      // Make sure to handle potentially undefined values
+      const price = service.price || 0;
+      const quantity = service.quantity || 1;
+      return acc + (price * quantity);
     }, 0);
     
     return itemsTotal + servicesTotal;
@@ -150,7 +153,7 @@ export function WorkOrderForm({
           
           <Separator className="my-4" />
           
-          {/* Services Section - New */}
+          {/* Services Section */}
           <ServicesSection 
             services={selectedServices} 
             setServices={setSelectedServices} 
