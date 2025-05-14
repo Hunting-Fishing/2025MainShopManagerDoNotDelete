@@ -9,9 +9,10 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTheme } from "@/context/ThemeContext";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, User, Palette } from "lucide-react";
+import { Loader2, User, Palette, Building } from "lucide-react";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { BrandingTab } from "./BrandingTab";
+import { CompanyTabContainer } from "./company/CompanyTabContainer";
 
 export function AccountTab() {
   const { theme, setTheme, resolvedTheme } = useTheme();
@@ -40,6 +41,15 @@ export function AccountTab() {
       console.log("Form data updated from userProfile:", userProfile);
     }
   }, [userProfile]);
+
+  // Check URL parameters for tab selection
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab');
+    if (tabParam && ['profile', 'branding', 'company'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, []);
 
   const isDarkModeEnabled = resolvedTheme === 'dark';
 
@@ -89,6 +99,10 @@ export function AccountTab() {
           <TabsTrigger value="branding" className="flex items-center gap-2">
             <Palette className="h-4 w-4" />
             <span>Branding</span>
+          </TabsTrigger>
+          <TabsTrigger value="company" className="flex items-center gap-2">
+            <Building className="h-4 w-4" />
+            <span>Company</span>
           </TabsTrigger>
         </TabsList>
 
@@ -205,6 +219,10 @@ export function AccountTab() {
 
         <TabsContent value="branding" className="mt-4">
           <BrandingTab />
+        </TabsContent>
+
+        <TabsContent value="company" className="mt-4">
+          <CompanyTabContainer />
         </TabsContent>
       </Tabs>
     </div>

@@ -29,14 +29,13 @@ export const SettingsPageLayout: React.FC<SettingsPageLayoutProps> = ({
   const location = useLocation();
 
   useEffect(() => {
-    // If there's a tab parameter in the URL, you can handle it here
-    const searchParams = new URLSearchParams(location.search);
-    const tabParam = searchParams.get('tab');
-    
-    // You could use this tab parameter to set the active tab in child components
-    // by passing it down as a prop if needed
-    console.log('Tab parameter:', tabParam);
-  }, [location.search]);
+    // If there's a tab parameter in the URL, and we have a defaultTab, append it to the URL
+    if (defaultTab && !location.search.includes('tab=')) {
+      const searchParams = new URLSearchParams(location.search);
+      searchParams.set('tab', defaultTab);
+      navigate(`${location.pathname}?${searchParams.toString()}`, { replace: true });
+    }
+  }, [location, navigate, defaultTab]);
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">

@@ -1,17 +1,16 @@
 
-import React from "react";
-import { SettingsPageLayout } from "@/components/settings/SettingsPageLayout";
-import { CompanyTab } from "@/components/settings/CompanyTab";
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 export const CompanySettings = () => {
-  return (
-    <SettingsPageLayout 
-      title="Company Information"
-      description="Update your business details and address"
-    >
-      <CompanyTab />
-    </SettingsPageLayout>
-  );
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    // Redirect to account settings with company tab active
+    navigate("/settings/account?tab=company");
+  }, [navigate]);
+  
+  return null; // This component won't render anything as it just redirects
 };
 
 export default CompanySettings;
