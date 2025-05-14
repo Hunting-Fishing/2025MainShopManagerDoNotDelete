@@ -58,6 +58,7 @@ export const CommonServicesChecklist: React.FC<CommonServicesChecklistProps> = (
   };
 
   const checkedCount = Object.values(checkedServices).filter(Boolean).length;
+  // Find the selected category object
   const selectedCategory = categories.find(cat => cat.name === selectedMainCategory);
 
   const renderCategoriesContent = () => {
@@ -102,15 +103,16 @@ export const CommonServicesChecklist: React.FC<CommonServicesChecklistProps> = (
     return (
       <div className="flex gap-6 min-h-[500px] bg-muted/5 rounded-lg p-4">
         <ServiceCategoryList
-          categories={categories}
+          categories={categories.map(cat => cat.name)}
           selectedCategory={selectedMainCategory}
           onCategorySelect={setSelectedMainCategory}
         />
-        {selectedCategory && (
+        {selectedCategory && selectedMainCategory && (
           <ServiceSubcategoryGrid
-            category={selectedCategory}
-            checkedServices={checkedServices}
-            onServiceCheck={handleCheckboxChange}
+            category={selectedMainCategory}
+            subcategories={selectedCategory.subcategories.map(sub => sub.name)}
+            selectedSubcategory={null}
+            onSelectSubcategory={() => {}}
           />
         )}
       </div>

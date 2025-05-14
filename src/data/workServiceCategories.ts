@@ -1,30 +1,38 @@
 
 export const serviceCategories = [
-  { label: "Regular Service", value: "regular-service" },
-  { label: "Inspection", value: "inspection" },
-  { label: "Repair", value: "repair" },
-  { label: "Diagnosis", value: "diagnosis" },
-  { label: "Maintenance", value: "maintenance" },
-  { label: "Installation", value: "installation" }
+  { label: "Regular Service", value: "regular-service", serviceAreas: [] },
+  { label: "Inspection", value: "inspection", serviceAreas: [] },
+  { label: "Repair", value: "repair", serviceAreas: [] },
+  { label: "Diagnosis", value: "diagnosis", serviceAreas: [] },
+  { label: "Maintenance", value: "maintenance", serviceAreas: [] },
+  { label: "Installation", value: "installation", serviceAreas: [] }
 ];
 
 export const serviceAreas = [
-  { label: "Engine", value: "engine" },
-  { label: "Exhaust", value: "exhaust" },
-  { label: "Transmission", value: "transmission" },
-  { label: "Brakes", value: "brakes" },
-  { label: "Suspension", value: "suspension" },
-  { label: "Steering", value: "steering" },
-  { label: "Electrical", value: "electrical" },
-  { label: "Cooling System", value: "cooling" },
-  { label: "Air Conditioning", value: "ac" },
-  { label: "Interior", value: "interior" },
-  { label: "Exterior", value: "exterior" },
-  { label: "Wheels & Tires", value: "wheels-tires" },
-  { label: "Fluids & Lubricants", value: "fluids" },
-  { label: "Computer & Electronics", value: "electronics" },
-  { label: "Other", value: "other" }
+  { label: "Engine", value: "engine", services: ["Oil Change", "Spark Plugs", "Timing Belt"] },
+  { label: "Exhaust", value: "exhaust", services: ["Muffler Repair", "Exhaust Pipe", "Catalytic Converter"] },
+  { label: "Transmission", value: "transmission", services: ["Fluid Change", "Filter Replacement", "Clutch Service"] },
+  { label: "Brakes", value: "brakes", services: ["Brake Pad Replacement", "Rotor Resurface", "Caliper Service"] },
+  { label: "Suspension", value: "suspension", services: ["Shock Replacement", "Strut Service", "Alignment"] },
+  { label: "Steering", value: "steering", services: ["Power Steering Flush", "Rack and Pinion", "Tie Rod Ends"] },
+  { label: "Electrical", value: "electrical", services: ["Battery Service", "Alternator Replacement", "Wiring Repair"] },
+  { label: "Cooling System", value: "cooling", services: ["Radiator Flush", "Water Pump", "Thermostat"] },
+  { label: "Air Conditioning", value: "ac", services: ["A/C Recharge", "Compressor Service", "Evaporator Clean"] },
+  { label: "Interior", value: "interior", services: ["Dashboard Repair", "Seat Repair", "Carpet Cleaning"] },
+  { label: "Exterior", value: "exterior", services: ["Paint Touch Up", "Trim Repair", "Body Work"] },
+  { label: "Wheels & Tires", value: "wheels-tires", services: ["Tire Rotation", "Wheel Alignment", "Balancing"] },
+  { label: "Fluids & Lubricants", value: "fluids", services: ["Oil Change", "Coolant Flush", "Transmission Fluid"] },
+  { label: "Computer & Electronics", value: "electronics", services: ["Diagnostics", "ECU Reset", "Sensor Replacement"] },
+  { label: "Other", value: "other", services: ["General Maintenance", "Multi-Point Inspection", "Custom Service"] }
 ];
+
+// Update each service category to include its related service areas
+serviceCategories.forEach(category => {
+  category.serviceAreas = serviceAreas.map(area => ({
+    ...area,
+    services: area.services
+  }));
+});
 
 export const commonServices = [
   { label: "Oil Change", value: "oil-change", area: "fluids" },

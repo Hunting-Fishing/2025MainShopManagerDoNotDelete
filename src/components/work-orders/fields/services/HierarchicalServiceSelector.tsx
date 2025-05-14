@@ -1,9 +1,9 @@
 
 import React, { useState } from 'react';
-import { serviceCategories } from '@/data/commonServices';
+import { serviceCategories } from '@/data/workServiceCategories';
 import { ServiceCategoryList } from './ServiceCategoryList';
 import { ServiceSubcategoryGrid } from './ServiceSubcategoryGrid';
-import { ServiceItem, ServiceCategory } from '@/types/services';
+import { ServiceItem } from '@/types/services';
 
 export interface HierarchicalServiceSelectorProps {
   onSelectService: (service: ServiceItem) => void;
@@ -14,7 +14,7 @@ export function HierarchicalServiceSelector({ onSelectService }: HierarchicalSer
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   
   // Get category names for the category list
-  const categoryNames = serviceCategories.map(cat => cat.name);
+  const categoryNames = serviceCategories.map(cat => cat.label);
   
   // Handle service selection
   const handleServiceSelect = (serviceName: string) => {
@@ -23,7 +23,8 @@ export function HierarchicalServiceSelector({ onSelectService }: HierarchicalSer
         name: serviceName,
         services: [],
         category: `${selectedCategory} > ${selectedSubcategory}`,
-        price: 0  // Default price of 0
+        price: 0,  // Default price of 0
+        quantity: 1 // Default quantity of 1
       };
       onSelectService(newService);
     }
@@ -36,7 +37,7 @@ export function HierarchicalServiceSelector({ onSelectService }: HierarchicalSer
         <ServiceCategoryList 
           categories={categoryNames}
           selectedCategory={selectedCategory}
-          onSelectCategory={setSelectedCategory}
+          onCategorySelect={setSelectedCategory}
         />
       </div>
       
@@ -46,8 +47,8 @@ export function HierarchicalServiceSelector({ onSelectService }: HierarchicalSer
           <ServiceSubcategoryGrid
             category={selectedCategory}
             subcategories={serviceCategories
-              .find(cat => cat.name === selectedCategory)
-              ?.subcategories.map(sub => sub.name) || []}
+              .find(cat => cat.label === selectedCategory)
+              ?.serviceAreas?.map(sub => sub.label) || []}
             selectedSubcategory={selectedSubcategory}
             onSelectSubcategory={setSelectedSubcategory}
           />
@@ -65,9 +66,9 @@ export function HierarchicalServiceSelector({ onSelectService }: HierarchicalSer
             <h3 className="font-medium mb-2">Services</h3>
             <ul className="space-y-1">
               {serviceCategories
-                .find(cat => cat.name === selectedCategory)
-                ?.subcategories.find(sub => sub.name === selectedSubcategory)
-                ?.services.map((service, i) => (
+                .find(cat => cat.label === selectedCategory)
+                ?.serviceAreas?.find(sub => sub.label === selectedSubcategory)
+                ?.services?.map((service, i) => (
                   <li key={i}>
                     <button
                       className="w-full text-left px-2 py-1.5 hover:bg-blue-50 rounded-md text-sm transition"
