@@ -3,7 +3,8 @@ import { WorkOrder } from "@/types/workOrder";
 import { supabase } from "@/lib/supabase";
 import { normalizeWorkOrder } from "@/utils/workOrders/formatters";
 
-export { WorkOrder } from "@/types/workOrder";
+// Use 'export type' instead of just 'export' for types when isolatedModules is enabled
+export type { WorkOrder } from "@/types/workOrder";
 export { priorityMap } from "@/utils/workOrders";
 
 // Function to fetch all work orders from the database

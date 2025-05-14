@@ -1,184 +1,139 @@
 
-import React, { useState } from "react";
-import { HierarchicalServiceSelector } from "./services/HierarchicalServiceSelector";
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2 } from "lucide-react";
-
-interface ServiceItem {
-  id: string;
-  categoryId: string;
-  categoryName: string;
-  subcategoryId: string;
-  subcategoryName: string;
-  jobId: string;
-  jobName: string;
-  estimatedTime?: number;
-  price?: number;
-  quantity: number;
-}
+import { PlusCircle, Check, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { HierarchicalServiceSelector } from './services/HierarchicalServiceSelector';
+import { ServiceItem } from '@/types/services';
 
 interface ServicesSectionProps {
-  onServicesChange: (services: ServiceItem[]) => void;
+  services: ServiceItem[];
+  setServices: (services: ServiceItem[]) => void;
 }
 
-export function ServicesSection({ onServicesChange }: ServicesSectionProps) {
-  const [selectedServices, setSelectedServices] = useState<ServiceItem[]>([]);
-  const [showSelector, setShowSelector] = useState(false);
-
-  const handleServiceSelect = (service: Omit<ServiceItem, 'id' | 'quantity'>) => {
-    const newService = {
-      ...service,
-      id: `${service.jobId}-${Date.now()}`, // Create a unique ID
-      quantity: 1
-    };
-
-    const updatedServices = [...selectedServices, newService];
-    setSelectedServices(updatedServices);
-    onServicesChange(updatedServices);
-    setShowSelector(false);
+export function ServicesSection({ services, setServices }: ServicesSectionProps) {
+  const [isAdding, setIsAdding] = useState(false);
+  const [customService, setCustomService] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('General');
+  
+  // Add a new custom service
+  const handleAddCustomService = () => {
+    if (customService.trim()) {
+      const newService: ServiceItem = {
+        name: customService.trim(),
+        services: []
+      };
+      setServices([...services, newService]);
+      setCustomService('');
+      setIsAdding(false);
+    }
   };
-
-  const handleRemoveService = (id: string) => {
-    const updatedServices = selectedServices.filter(service => service.id !== id);
-    setSelectedServices(updatedServices);
-    onServicesChange(updatedServices);
+  
+  // Delete a service
+  const handleDeleteService = (index: number) => {
+    const updatedServices = [...services];
+    updatedServices.splice(index, 1);
+    setServices(updatedServices);
   };
-
-  const handleQuantityChange = (id: string, newQuantity: number) => {
-    if (newQuantity < 1) return;
-
-    const updatedServices = selectedServices.map(service => 
-      service.id === id ? { ...service, quantity: newQuantity } : service
-    );
-    
-    setSelectedServices(updatedServices);
-    onServicesChange(updatedServices);
+  
+  // Handle service selection from the hierarchical selector
+  const handleServiceSelect = (service: Omit<ServiceItem, "id" | "quantity">) => {
+    setServices([...services, service]);
+    setIsAdding(false);
   };
-
-  const calculateTotalPrice = () => {
-    return selectedServices.reduce((total, service) => {
-      const servicePrice = service.price || 0;
-      return total + (servicePrice * service.quantity);
-    }, 0);
-  };
-
-  const calculateTotalTime = () => {
-    return selectedServices.reduce((total, service) => {
-      const serviceTime = service.estimatedTime || 0;
-      return total + (serviceTime * service.quantity);
-    }, 0);
-  };
-
+  
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-xl">Services</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {selectedServices.length > 0 ? (
-          <>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Service</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead className="text-right">Price</TableHead>
-                  <TableHead className="text-right">Time</TableHead>
-                  <TableHead className="text-right">Qty</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                  <TableHead className="w-[50px]"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {selectedServices.map((service) => (
-                  <TableRow key={service.id}>
-                    <TableCell className="font-medium">{service.jobName}</TableCell>
-                    <TableCell>
-                      <span className="text-xs text-muted-foreground">
-                        {service.categoryName} &gt; {service.subcategoryName}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      ${service.price?.toFixed(2) || '0.00'}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {service.estimatedTime || 0} min
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="h-7 w-7 p-0 rounded-full"
-                          onClick={() => handleQuantityChange(service.id, service.quantity - 1)}
-                        >-</Button>
-                        <span className="mx-2 w-8 text-center">{service.quantity}</span>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="h-7 w-7 p-0 rounded-full"
-                          onClick={() => handleQuantityChange(service.id, service.quantity + 1)}
-                        >+</Button>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      ${((service.price || 0) * service.quantity).toFixed(2)}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 text-red-500"
-                        onClick={() => handleRemoveService(service.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                <TableRow className="border-t-2">
-                  <TableCell colSpan={3} className="font-bold text-right">
-                    Total:
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {calculateTotalTime()} min
-                  </TableCell>
-                  <TableCell></TableCell>
-                  <TableCell className="font-bold text-right">
-                    ${calculateTotalPrice().toFixed(2)}
-                  </TableCell>
-                  <TableCell></TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </>
-        ) : (
-          <div className="text-center py-8 text-muted-foreground">
-            No services added yet. Click the button below to add services.
-          </div>
+    <Card className="shadow-sm">
+      <CardHeader className="bg-blue-50/70 border-b px-4 py-3 flex flex-row justify-between items-center space-y-0">
+        <CardTitle className="text-lg font-medium">Services</CardTitle>
+        {!isAdding && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setIsAdding(true)}
+            className="h-8 rounded-full text-sm bg-white border-blue-200"
+          >
+            <PlusCircle className="mr-1 h-3.5 w-3.5" />
+            Add Service
+          </Button>
         )}
-
-        {showSelector ? (
-          <div className="mt-4 border rounded-md p-4 bg-slate-50 dark:bg-slate-800">
-            <h3 className="text-lg font-medium mb-4">Select Service</h3>
-            <HierarchicalServiceSelector onServiceSelect={handleServiceSelect} />
-            <div className="mt-4 flex justify-end">
-              <Button variant="outline" onClick={() => setShowSelector(false)}>Cancel</Button>
+      </CardHeader>
+      
+      <CardContent className="p-0">
+        {isAdding ? (
+          <div className="p-4 border-b">
+            <HierarchicalServiceSelector onSelectService={handleServiceSelect} />
+            
+            <div className="mt-4 pt-4 border-t">
+              <p className="text-sm font-medium mb-2">Or add a custom service:</p>
+              <div className="flex space-x-2">
+                <div className="flex-1">
+                  <Input
+                    placeholder="Enter custom service name"
+                    value={customService}
+                    onChange={(e) => setCustomService(e.target.value)}
+                    className="h-9"
+                  />
+                </div>
+                <Button 
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setIsAdding(false)}
+                  className="h-9 px-2"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+                <Button 
+                  size="sm"
+                  variant="default"
+                  onClick={handleAddCustomService}
+                  disabled={!customService.trim()}
+                  className="h-9"
+                >
+                  <Check className="h-4 w-4 mr-1" />
+                  Add
+                </Button>
+              </div>
             </div>
           </div>
-        ) : (
-          <div className="mt-4 flex justify-center">
+        ) : services.length === 0 ? (
+          <div className="p-8 text-center text-muted-foreground">
+            <p>No services have been added yet</p>
             <Button 
-              type="button" 
-              onClick={() => setShowSelector(true)}
-              className="bg-blue-600 hover:bg-blue-700"
+              variant="link" 
+              onClick={() => setIsAdding(true)}
+              className="mt-2"
             >
-              <Plus className="mr-2 h-4 w-4" />
-              Add Service
+              Add your first service
             </Button>
           </div>
+        ) : (
+          <ul className="divide-y">
+            {services.map((service, index) => (
+              <li key={index} className="px-4 py-3 flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium">{service.name}</h4>
+                  {service.category && (
+                    <p className="text-sm text-muted-foreground">{service.category}</p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {service.price && (
+                    <span className="text-blue-600 font-medium">${service.price}</span>
+                  )}
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 w-8 p-0" 
+                    onClick={() => handleDeleteService(index)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
       </CardContent>
     </Card>
