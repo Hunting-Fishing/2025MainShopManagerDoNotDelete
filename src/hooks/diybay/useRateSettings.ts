@@ -29,7 +29,7 @@ export function useRateSettings(
           monthly_multiplier: updatedSettings.monthly_multiplier,
           hourly_base_rate: updatedSettings.hourly_base_rate || null
         })
-        .eq('id', settings.id)
+        .eq('id', updatedSettings.id)
         .select('*');
         
       if (error) throw error;
@@ -47,6 +47,7 @@ export function useRateSettings(
         description: "DIY bay rate settings have been saved successfully."
       });
       
+      return true;
     } catch (error: any) {
       console.error("Error updating rate settings:", error);
       toast({
@@ -54,6 +55,7 @@ export function useRateSettings(
         description: "Failed to update rate settings: " + error.message,
         variant: "destructive"
       });
+      return false;
     } finally {
       setIsSaving(false);
       setIsUpdating(false);

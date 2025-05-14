@@ -80,7 +80,7 @@ export const EditBayDialog: React.FC<EditBayDialogProps> = ({
               <Input
                 id="bay-name"
                 value={editedBay.bay_name}
-                onChange={(e) => handleChange('bay_name', e.target.value)}
+                onChange={(e) => handleChange('bay_name' as keyof Bay, e.target.value)}
                 className="col-span-3"
               />
             </div>
@@ -92,7 +92,7 @@ export const EditBayDialog: React.FC<EditBayDialogProps> = ({
               <Input
                 id="bay-location"
                 value={editedBay.bay_location || ''}
-                onChange={(e) => handleChange('bay_location', e.target.value)}
+                onChange={(e) => handleChange('bay_location' as keyof Bay, e.target.value)}
                 className="col-span-3"
               />
             </div>

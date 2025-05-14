@@ -1,13 +1,8 @@
 
 import { useShopId } from '../useShopId';
 import { useToast } from '../use-toast';
-import { 
-  Bay, 
-  createBay, 
-  updateBay, 
-  deleteBay,
-  calculateRates 
-} from '@/services/diybay/diybayService';
+import { Bay, RateSettings } from '@/services/diybay/diybayService';
+import { supabase } from '@/lib/supabase';
 
 /**
  * Hook to handle DIY bay CRUD operations
@@ -30,25 +25,31 @@ export function useDIYBayOperations(bays: Bay[], setBays: (bays: Bay[]) => void,
     try {
       console.log("Starting to add bay:", bayName, "for shop:", shopId);
       
-      // Calculate rates based on current settings
+      // Default hourly rate and calculations
       const hourlyRate = 65; // Default hourly rate
-      const rates = calculateRates(hourlyRate, {
-        id: '',
-        daily_hours: 8,
-        daily_discount_percent: 0,
-        weekly_multiplier: 5,
-        monthly_multiplier: 20
-      });
+      const dailyRate = hourlyRate * 8 * 0.75; // 8 hours with 25% discount
+      const weeklyRate = hourlyRate * 20; // 20x multiplier
+      const monthlyRate = hourlyRate * 40; // 40x multiplier
       
-      const newBay = await createBay({
-        bay_name: bayName || `Bay ${bays.length + 1}`,
-        bay_location: '',
-        hourly_rate: hourlyRate,
-        daily_rate: rates.daily,
-        weekly_rate: rates.weekly,
-        monthly_rate: rates.monthly,
-        is_active: true
-      }, shopId);
+      // Create the bay in the database
+      const { data: newBay, error } = await supabase
+        .from('diy_bay_rates')
+        .insert({
+          bay_name: bayName || `Bay ${bays.length + 1}`,
+          bay_location: '',
+          hourly_rate: hourlyRate,
+          daily_rate: dailyRate,
+          weekly_rate: weeklyRate,
+          monthly_rate: monthlyRate,
+          is_active: true,
+          bay_number: bays.length + 1,
+          bay_type: 'standard',
+          shop_id: shopId
+        })
+        .select('*')
+        .single();
+      
+      if (error) throw error;
       
       console.log("Successfully created bay:", newBay);
       setBays([...bays, newBay]);
@@ -79,7 +80,20 @@ export function useDIYBayOperations(bays: Bay[], setBays: (bays: Bay[]) => void,
   const saveBay = async (bay: Bay): Promise<boolean> => {
     setIsSaving(true);
     try {
-      await updateBay(bay);
+      const { error } = await supabase
+        .from('diy_bay_rates')
+        .update({
+          bay_name: bay.bay_name,
+          bay_location: bay.bay_location,
+          hourly_rate: bay.hourly_rate,
+          daily_rate: bay.daily_rate,
+          weekly_rate: bay.weekly_rate,
+          monthly_rate: bay.monthly_rate,
+          is_active: bay.is_active
+        })
+        .eq('id', bay.id);
+        
+      if (error) throw error;
       
       const updatedBays = bays.map((b) => b.id === bay.id ? bay : b);
       setBays(updatedBays);
@@ -106,7 +120,12 @@ export function useDIYBayOperations(bays: Bay[], setBays: (bays: Bay[]) => void,
   const removeBay = async (bayId: string, bayName: string) => {
     setIsSaving(true);
     try {
-      await deleteBay(bayId);
+      const { error } = await supabase
+        .from('diy_bay_rates')
+        .delete()
+        .eq('id', bayId);
+        
+      if (error) throw error;
       
       const updatedBays = bays.filter((bay) => bay.id !== bayId);
       setBays(updatedBays);
@@ -130,9 +149,28 @@ export function useDIYBayOperations(bays: Bay[], setBays: (bays: Bay[]) => void,
     }
   };
 
+  // Helper function to calculate rates based on hourly rate and settings
+  const calculateRates = (hourlyRate: number, settings: RateSettings) => {
+    // Calculate daily rate (hourly rate * daily hours - discount)
+    const baseDaily = hourlyRate * settings.daily_hours;
+    const discount = baseDaily * (settings.daily_discount_percent / 100);
+    const daily = baseDaily - discount;
+    
+    // Calculate weekly and monthly rates using multipliers
+    const weekly = hourlyRate * settings.weekly_multiplier;
+    const monthly = hourlyRate * settings.monthly_multiplier;
+    
+    return {
+      daily,
+      weekly,
+      monthly
+    };
+  };
+
   return {
     addBay,
     saveBay,
-    removeBay
+    removeBay,
+    calculateRates
   };
 }
