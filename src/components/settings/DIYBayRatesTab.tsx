@@ -51,7 +51,8 @@ export const DIYBayRatesTab: React.FC = () => {
   }, [settings, updateBayRateSettings]);
 
   const handleSaveSettings = useCallback(async () => {
-    await updateBayRateSettings(settings);
+    // Return the result of the update operation
+    return await updateBayRateSettings(settings);
   }, [updateBayRateSettings, settings]);
 
   const handleEditClick = useCallback((bay: Bay) => {
@@ -80,6 +81,21 @@ export const DIYBayRatesTab: React.FC = () => {
       await addBay(bayName);
     },
     [addBay]
+  );
+
+  // This wrapper function ensures saveBay returns a Promise<boolean> like the original,
+  // but satisfies the EditBayDialog's onSave prop type
+  const handleSaveBay = useCallback(
+    async (bay: Bay): Promise<boolean> => {
+      try {
+        // Call the saveBay function and return its result
+        return await saveBay(bay);
+      } catch (error) {
+        console.error("Error saving bay:", error);
+        return false;
+      }
+    },
+    [saveBay]
   );
 
   return (
@@ -167,7 +183,7 @@ export const DIYBayRatesTab: React.FC = () => {
         bay={editBay}
         isOpen={isEditDialogOpen}
         onClose={() => setIsEditDialogOpen(false)}
-        onSave={saveBay}
+        onSave={handleSaveBay}
         calculateRate={calculateRate}
         settings={settings}
         isSaving={isSaving}

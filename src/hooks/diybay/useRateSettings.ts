@@ -23,8 +23,9 @@ export function useRateSettings(
 
   /**
    * Updates rate settings and recalculates all bay rates
+   * @returns Promise<boolean> indicating success or failure
    */
-  const updateBayRateSettings = async (newSettings: RateSettings) => {
+  const updateBayRateSettings = async (newSettings: RateSettings): Promise<boolean> => {
     if (!shopId) return false;
     
     setIsSaving(true);

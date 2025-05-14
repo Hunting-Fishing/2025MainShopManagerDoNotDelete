@@ -72,7 +72,11 @@ export function useDIYBayOperations(bays: Bay[], setBays: (bays: Bay[]) => void,
     }
   };
 
-  const saveBay = async (bay: Bay) => {
+  /**
+   * Save bay changes
+   * @returns Promise<boolean> indicating success or failure
+   */
+  const saveBay = async (bay: Bay): Promise<boolean> => {
     setIsSaving(true);
     try {
       await updateBay(bay);

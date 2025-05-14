@@ -1,453 +1,550 @@
-
-import React, { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import React, { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { Info, Save, Check } from "lucide-react";
-import { BayDetails, RateType, RateModeType } from "@/types/diybay";
-import { calculateRates } from "@/utils/rateCalculations";
+import { Check, X, Info, AlertCircle } from "lucide-react";
+import { Bay, RateSettings } from "@/services/diybay/diybayService";
+import { BayDetails, RateMode } from "@/types/diybay";
+import { 
+  calculateDailyRate, 
+  calculateWeeklyRate, 
+  calculateMonthlyRate, 
+  applyPercentageAdjustment,
+  formatCurrency
+} from "@/utils/rateCalculations";
 
 interface EditBayDialogProps {
+  bay: Bay | null;
   isOpen: boolean;
   onClose: () => void;
-  bay: BayDetails | null;
-  onSave: (bay: BayDetails) => Promise<void>;
-  defaultRateSettings: any;
+  onSave: (bay: Bay) => Promise<boolean>;
+  calculateRate: (type: 'daily' | 'weekly' | 'monthly', hourlyRate: number) => number;
+  settings: RateSettings;
+  isSaving: boolean;
 }
 
 export const EditBayDialog: React.FC<EditBayDialogProps> = ({
+  bay,
   isOpen,
   onClose,
-  bay,
   onSave,
-  defaultRateSettings,
+  calculateRate,
+  settings,
+  isSaving,
 }) => {
-  const [editedBay, setEditedBay] = useState<BayDetails | null>(null);
+  const [editedBay, setEditedBay] = useState<Bay | null>(null);
+  const [manualRates, setManualRates] = useState(false);
   const [activeTab, setActiveTab] = useState("basic");
-  const [isManualRates, setIsManualRates] = useState(false);
-  const [rateMode, setRateMode] = useState<RateModeType>("default");
-  const [percentAdjustment, setPercentAdjustment] = useState(0);
-  const [isSaving, setIsSaving] = useState(false);
+  const [rateMode, setRateMode] = useState<Record<string, RateMode>>({
+    daily: { type: 'default' },
+    weekly: { type: 'default' },
+    monthly: { type: 'default' },
+  });
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
+  const [hasChanges, setHasChanges] = useState(false);
 
-  // Update state when bay changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (bay) {
       setEditedBay({ ...bay });
-      setIsManualRates(bay.rateType === "custom");
-      setRateMode(bay.rateMode || "default");
-      setPercentAdjustment(bay.percentAdjustment || 0);
-    }
-  }, [bay]);
-
-  if (!editedBay) return null;
-
-  const handleBasicInfoChange = (field: keyof BayDetails, value: string | number | boolean) => {
-    setEditedBay((prev) => (prev ? { ...prev, [field]: value } : null));
-  };
-
-  const handleRateChange = (rateField: keyof BayDetails["rates"], value: number) => {
-    if (!editedBay) return;
-
-    setEditedBay({
-      ...editedBay,
-      rates: {
-        ...editedBay.rates,
-        [rateField]: value
-      }
-    });
-  };
-
-  const toggleManualRates = (enabled: boolean) => {
-    setIsManualRates(enabled);
-    if (enabled) {
-      setRateMode("custom");
-      handleBasicInfoChange("rateType", "custom");
-    } else {
-      setRateMode("default");
-      handleBasicInfoChange("rateType", "default");
       
-      // Reset rates to default calculated values
-      if (editedBay && defaultRateSettings) {
-        const calculatedRates = calculateRates(editedBay.rates.hourly, defaultRateSettings);
-        setEditedBay({
-          ...editedBay,
-          rates: {
-            ...editedBay.rates,
-            ...calculatedRates
-          }
-        });
-      }
-    }
-  };
-
-  const handleRateModeChange = (mode: RateModeType) => {
-    setRateMode(mode);
-    handleBasicInfoChange("rateMode", mode);
-    
-    if (mode === "default") {
-      handleBasicInfoChange("rateType", "default");
-      setIsManualRates(false);
+      // Determine if rates are manual (different from calculated defaults)
+      const calculatedDaily = calculateRate('daily', bay.hourly_rate);
+      const calculatedWeekly = calculateRate('weekly', bay.hourly_rate);
+      const calculatedMonthly = calculateRate('monthly', bay.hourly_rate);
       
-      // Reset rates to default
-      if (editedBay && defaultRateSettings) {
-        const calculatedRates = calculateRates(editedBay.rates.hourly, defaultRateSettings);
-        setEditedBay({
-          ...editedBay,
-          rates: {
-            ...editedBay.rates,
-            ...calculatedRates
-          }
-        });
-      }
-    } 
-    else if (mode === "percent") {
-      handleBasicInfoChange("percentAdjustment", percentAdjustment);
-    }
-    else {
-      handleBasicInfoChange("rateType", "custom");
-      setIsManualRates(true);
-    }
-  };
-
-  const handlePercentChange = (percent: number) => {
-    setPercentAdjustment(percent);
-    handleBasicInfoChange("percentAdjustment", percent);
-    
-    // Adjust rates based on percentage
-    if (editedBay && defaultRateSettings) {
-      const baseRates = calculateRates(editedBay.rates.hourly, defaultRateSettings);
-      const adjustedRates = {
-        hourly: editedBay.rates.hourly,
-        daily: baseRates.daily * (1 + percent/100),
-        weekly: baseRates.weekly * (1 + percent/100),
-        monthly: baseRates.monthly * (1 + percent/100)
-      };
+      const isManual = 
+        (bay.daily_rate !== null && Math.abs(bay.daily_rate - calculatedDaily) > 0.01) ||
+        (bay.weekly_rate !== null && Math.abs(bay.weekly_rate - calculatedWeekly) > 0.01) ||
+        (bay.monthly_rate !== null && Math.abs(bay.monthly_rate - calculatedMonthly) > 0.01);
       
-      setEditedBay({
-        ...editedBay,
-        rates: adjustedRates
+      setManualRates(isManual);
+      
+      // Reset rate modes
+      setRateMode({
+        daily: { type: 'default' },
+        weekly: { type: 'default' },
+        monthly: { type: 'default' },
       });
     }
-  };
+    setHasChanges(false);
+    setSaveStatus("idle");
+  }, [bay, calculateRate]);
 
-  const handleSubmit = async () => {
+  const handleInputChange = (field: keyof Bay, value: string | number | boolean) => {
     if (!editedBay) return;
     
-    setIsSaving(true);
+    setEditedBay({
+      ...editedBay,
+      [field]: value,
+    });
+    setHasChanges(true);
+  };
+
+  const handleRateChange = (type: 'hourly' | 'daily' | 'weekly' | 'monthly', value: string) => {
+    if (!editedBay) return;
+    
+    const numValue = parseFloat(value);
+    if (isNaN(numValue)) return;
+    
+    setEditedBay({
+      ...editedBay,
+      [`${type}_rate`]: numValue,
+    });
+    setHasChanges(true);
+  };
+
+  const handleRateModeChange = (type: 'daily' | 'weekly' | 'monthly', mode: RateMode) => {
+    setRateMode({
+      ...rateMode,
+      [type]: mode,
+    });
+    
+    if (!editedBay) return;
+    
+    // Apply the selected rate mode
+    let newRate: number;
+    const hourlyRate = editedBay.hourly_rate;
+    
+    if (mode.type === 'default') {
+      newRate = calculateRate(type, hourlyRate);
+    } else if (mode.type === 'percentage' && mode.percentage !== undefined) {
+      const baseRate = calculateRate(type, hourlyRate);
+      newRate = applyPercentageAdjustment(baseRate, mode.percentage);
+    } else {
+      // Keep current custom rate
+      return;
+    }
+    
+    setEditedBay({
+      ...editedBay,
+      [`${type}_rate`]: newRate,
+    });
+    setHasChanges(true);
+  };
+
+  const handlePercentageChange = (type: 'daily' | 'weekly' | 'monthly', percentage: number) => {
+    setRateMode({
+      ...rateMode,
+      [type]: { type: 'percentage', percentage },
+    });
+    
+    if (!editedBay) return;
+    
+    // Calculate and update the rate
+    const baseRate = calculateRate(type, editedBay.hourly_rate);
+    const adjustedRate = applyPercentageAdjustment(baseRate, percentage);
+    
+    setEditedBay({
+      ...editedBay,
+      [`${type}_rate`]: adjustedRate,
+    });
+    setHasChanges(true);
+  };
+
+  const handleSave = async () => {
+    if (!editedBay) return;
+    
     setSaveStatus("saving");
-    
     try {
-      await onSave(editedBay);
-      setSaveStatus("success");
-      setTimeout(() => {
-        setSaveStatus("idle");
-        onClose();
-      }, 1000);
+      const result = await onSave(editedBay);
+      setSaveStatus(result ? "success" : "error");
+      if (result) {
+        setTimeout(() => {
+          setSaveStatus("idle");
+          setHasChanges(false);
+          onClose();
+        }, 1000);
+      }
     } catch (error) {
-      console.error("Error saving bay:", error);
       setSaveStatus("error");
-      setTimeout(() => setSaveStatus("idle"), 3000);
-    } finally {
-      setIsSaving(false);
+      console.error("Error saving bay:", error);
     }
   };
 
-  // Calculate preview rates based on the current mode and settings
-  const getPreviewRates = () => {
-    if (!editedBay || !defaultRateSettings) return { daily: 0, weekly: 0, monthly: 0 };
+  const getCalculatedRates = () => {
+    if (!editedBay) return { daily: 0, weekly: 0, monthly: 0 };
     
-    if (rateMode === "default") {
-      return calculateRates(editedBay.rates.hourly, defaultRateSettings);
-    }
-    else if (rateMode === "percent") {
-      const baseRates = calculateRates(editedBay.rates.hourly, defaultRateSettings);
-      return {
-        daily: baseRates.daily * (1 + percentAdjustment/100),
-        weekly: baseRates.weekly * (1 + percentAdjustment/100),
-        monthly: baseRates.monthly * (1 + percentAdjustment/100)
-      };
-    }
-    else {
-      return {
-        daily: editedBay.rates.daily,
-        weekly: editedBay.rates.weekly,
-        monthly: editedBay.rates.monthly
-      };
-    }
+    return {
+      daily: calculateRate('daily', editedBay.hourly_rate),
+      weekly: calculateRate('weekly', editedBay.hourly_rate),
+      monthly: calculateRate('monthly', editedBay.hourly_rate),
+    };
   };
 
-  const previewRates = getPreviewRates();
+  const calculatedRates = getCalculatedRates();
+
+  if (!isOpen || !editedBay) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[600px]">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">Edit Bay: {editedBay.name}</DialogTitle>
+          <DialogTitle>{editedBay.bay_name ? `Edit ${editedBay.bay_name}` : "Edit Bay"}</DialogTitle>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
-          <TabsList className="grid grid-cols-3 mb-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full pt-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="basic">Basic Info</TabsTrigger>
             <TabsTrigger value="rates">Rates</TabsTrigger>
             <TabsTrigger value="advanced">Advanced</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="basic" className="space-y-4">
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="name">Bay Name</Label>
+          {/* Basic Info Tab */}
+          <TabsContent value="basic" className="space-y-4 py-4">
+            <div className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="bay_name">Bay Name</Label>
                 <Input
-                  id="name"
-                  value={editedBay.name}
-                  onChange={(e) => handleBasicInfoChange("name", e.target.value)}
+                  id="bay_name"
+                  value={editedBay.bay_name}
+                  onChange={(e) => handleInputChange("bay_name", e.target.value)}
                 />
               </div>
-
-              <div>
-                <Label htmlFor="description">Description</Label>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="bay_location">Location</Label>
                 <Input
-                  id="description"
-                  value={editedBay.description || ""}
-                  onChange={(e) => handleBasicInfoChange("description", e.target.value)}
+                  id="bay_location"
+                  value={editedBay.bay_location || ""}
+                  onChange={(e) => handleInputChange("bay_location", e.target.value)}
+                  placeholder="Optional location description"
                 />
               </div>
-
-              <div className="flex flex-row items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                  <Label className="text-base">Active Status</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Inactive bays cannot be booked by customers
-                  </p>
+              
+              <div className="flex items-center gap-2">
+                <div className="flex-1">
+                  <Label htmlFor="hourly_rate">Hourly Rate</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-[9px] text-gray-400">$</span>
+                    <Input
+                      id="hourly_rate"
+                      className="pl-7"
+                      type="number"
+                      value={editedBay.hourly_rate}
+                      onChange={(e) => handleRateChange("hourly", e.target.value)}
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
                 </div>
-                <Switch
-                  checked={editedBay.active}
-                  onCheckedChange={(checked) => handleBasicInfoChange("active", checked)}
-                />
+                
+                <div className="flex items-center space-x-2 pt-6">
+                  <Switch
+                    id="is_active"
+                    checked={editedBay.is_active}
+                    onCheckedChange={(checked) => handleInputChange("is_active", checked)}
+                  />
+                  <Label htmlFor="is_active">Active</Label>
+                </div>
               </div>
             </div>
           </TabsContent>
 
-          <TabsContent value="rates" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-medium">Bay Rates</h3>
-                <p className="text-sm text-gray-500">Set hourly, daily, weekly, and monthly rates</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm">Manual Rates</span>
-                <Switch 
-                  checked={isManualRates} 
-                  onCheckedChange={toggleManualRates} 
+          {/* Rates Tab */}
+          <TabsContent value="rates" className="space-y-4 py-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="manual_rates"
+                  checked={manualRates}
+                  onCheckedChange={(checked) => setManualRates(checked)}
                 />
+                <Label htmlFor="manual_rates">Manual rate adjustment</Label>
               </div>
-            </div>
-
-            <div className="space-y-4 rounded-md border p-4">
-              <div className="space-y-2">
-                <Label htmlFor="rateMode" className="text-sm">Rate Calculation Mode</Label>
-                <div className="flex flex-wrap gap-2">
-                  <Button 
-                    type="button"
-                    variant={rateMode === "default" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handleRateModeChange("default")}
-                  >
-                    Default Rates
-                  </Button>
-                  <Button 
-                    type="button"
-                    variant={rateMode === "percent" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handleRateModeChange("percent")}
-                  >
-                    Percentage Adjustment
-                  </Button>
-                  <Button 
-                    type="button"
-                    variant={rateMode === "custom" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handleRateModeChange("custom")}
-                  >
-                    Custom Rates
-                  </Button>
-                </div>
-              </div>
-
-              {rateMode === "percent" && (
-                <div className="space-y-2 mt-4">
-                  <Label htmlFor="percentAdjustment">Price Adjustment (%)</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      id="percentAdjustment"
-                      type="number"
-                      value={percentAdjustment}
-                      onChange={(e) => handlePercentChange(parseFloat(e.target.value))}
-                      className="w-24"
-                    />
-                    <span className="text-sm text-gray-500">% adjustment from default rates</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Positive values increase prices, negative values decrease prices
-                  </p>
+              
+              {manualRates && (
+                <div className="text-xs text-muted-foreground">
+                  <AlertCircle className="h-3.5 w-3.5 inline-block mr-1" />
+                  Rates won't update automatically when hourly rate changes
                 </div>
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="hourlyRate">Hourly Rate ($)</Label>
-                <Input
-                  id="hourlyRate"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={editedBay.rates.hourly}
-                  onChange={(e) => handleRateChange("hourly", parseFloat(e.target.value))}
-                  className={isManualRates ? "border-blue-300" : ""}
-                />
+            <div className="space-y-4">
+              {/* Daily Rate */}
+              <div className="grid gap-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="daily_rate">Daily Rate</Label>
+                  {manualRates && (
+                    <div className="flex gap-1.5 items-center">
+                      <Button
+                        size="sm"
+                        variant={rateMode.daily.type === 'default' ? "secondary" : "outline"}
+                        className="h-7 text-xs px-2"
+                        onClick={() => handleRateModeChange('daily', { type: 'default' })}
+                      >
+                        Default
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={rateMode.daily.type === 'percentage' ? "secondary" : "outline"}
+                        className="h-7 text-xs px-2"
+                        onClick={() => handleRateModeChange('daily', { 
+                          type: 'percentage', 
+                          percentage: rateMode.daily.percentage || 0 
+                        })}
+                      >
+                        % Adj
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={rateMode.daily.type === 'custom' ? "secondary" : "outline"}
+                        className="h-7 text-xs px-2"
+                        onClick={() => handleRateModeChange('daily', { type: 'custom' })}
+                      >
+                        Custom
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                
+                {manualRates && rateMode.daily.type === 'percentage' ? (
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      value={rateMode.daily.percentage || 0}
+                      onChange={(e) => handlePercentageChange('daily', parseFloat(e.target.value))}
+                      className="pl-7 pr-12"
+                      min="-100"
+                      step="1"
+                    />
+                    <span className="absolute left-3 top-[9px] text-gray-400">%</span>
+                    <span className="absolute right-3 top-[9px] text-gray-400">
+                      {formatCurrency(editedBay.daily_rate || 0)}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <span className="absolute left-3 top-[9px] text-gray-400">$</span>
+                    <Input
+                      id="daily_rate"
+                      className="pl-7"
+                      type="number"
+                      value={editedBay.daily_rate || 0}
+                      onChange={(e) => handleRateChange("daily", e.target.value)}
+                      disabled={!manualRates || rateMode.daily.type === 'default'}
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+                )}
+                
+                {!manualRates && (
+                  <div className="text-xs text-muted-foreground">
+                    Calculated as {settings.daily_hours} hrs minus {settings.daily_discount_percent}% discount
+                  </div>
+                )}
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="dailyRate">
-                  Daily Rate ($)
-                  {!isManualRates && <span className="ml-2 text-xs text-gray-500">(Calculated)</span>}
-                </Label>
-                <Input
-                  id="dailyRate"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={isManualRates ? editedBay.rates.daily : previewRates.daily.toFixed(2)}
-                  onChange={(e) => handleRateChange("daily", parseFloat(e.target.value))}
-                  disabled={!isManualRates}
-                  className={isManualRates ? "border-blue-300" : "bg-gray-50"}
-                />
+              
+              {/* Weekly Rate */}
+              <div className="grid gap-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="weekly_rate">Weekly Rate</Label>
+                  {manualRates && (
+                    <div className="flex gap-1.5 items-center">
+                      <Button
+                        size="sm"
+                        variant={rateMode.weekly.type === 'default' ? "secondary" : "outline"}
+                        className="h-7 text-xs px-2"
+                        onClick={() => handleRateModeChange('weekly', { type: 'default' })}
+                      >
+                        Default
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={rateMode.weekly.type === 'percentage' ? "secondary" : "outline"}
+                        className="h-7 text-xs px-2"
+                        onClick={() => handleRateModeChange('weekly', { 
+                          type: 'percentage', 
+                          percentage: rateMode.weekly.percentage || 0 
+                        })}
+                      >
+                        % Adj
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={rateMode.weekly.type === 'custom' ? "secondary" : "outline"}
+                        className="h-7 text-xs px-2"
+                        onClick={() => handleRateModeChange('weekly', { type: 'custom' })}
+                      >
+                        Custom
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                
+                {manualRates && rateMode.weekly.type === 'percentage' ? (
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      value={rateMode.weekly.percentage || 0}
+                      onChange={(e) => handlePercentageChange('weekly', parseFloat(e.target.value))}
+                      className="pl-7 pr-12"
+                      min="-100"
+                      step="1"
+                    />
+                    <span className="absolute left-3 top-[9px] text-gray-400">%</span>
+                    <span className="absolute right-3 top-[9px] text-gray-400">
+                      {formatCurrency(editedBay.weekly_rate || 0)}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <span className="absolute left-3 top-[9px] text-gray-400">$</span>
+                    <Input
+                      id="weekly_rate"
+                      className="pl-7"
+                      type="number"
+                      value={editedBay.weekly_rate || 0}
+                      onChange={(e) => handleRateChange("weekly", e.target.value)}
+                      disabled={!manualRates || rateMode.weekly.type === 'default'}
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+                )}
+                
+                {!manualRates && (
+                  <div className="text-xs text-muted-foreground">
+                    Calculated as {settings.weekly_multiplier}× hourly rate
+                  </div>
+                )}
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="weeklyRate">
-                  Weekly Rate ($)
-                  {!isManualRates && <span className="ml-2 text-xs text-gray-500">(Calculated)</span>}
-                </Label>
-                <Input
-                  id="weeklyRate"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={isManualRates ? editedBay.rates.weekly : previewRates.weekly.toFixed(2)}
-                  onChange={(e) => handleRateChange("weekly", parseFloat(e.target.value))}
-                  disabled={!isManualRates}
-                  className={isManualRates ? "border-blue-300" : "bg-gray-50"}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="monthlyRate">
-                  Monthly Rate ($)
-                  {!isManualRates && <span className="ml-2 text-xs text-gray-500">(Calculated)</span>}
-                </Label>
-                <Input
-                  id="monthlyRate"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={isManualRates ? editedBay.rates.monthly : previewRates.monthly.toFixed(2)}
-                  onChange={(e) => handleRateChange("monthly", parseFloat(e.target.value))}
-                  disabled={!isManualRates}
-                  className={isManualRates ? "border-blue-300" : "bg-gray-50"}
-                />
+              
+              {/* Monthly Rate */}
+              <div className="grid gap-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="monthly_rate">Monthly Rate</Label>
+                  {manualRates && (
+                    <div className="flex gap-1.5 items-center">
+                      <Button
+                        size="sm"
+                        variant={rateMode.monthly.type === 'default' ? "secondary" : "outline"}
+                        className="h-7 text-xs px-2"
+                        onClick={() => handleRateModeChange('monthly', { type: 'default' })}
+                      >
+                        Default
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={rateMode.monthly.type === 'percentage' ? "secondary" : "outline"}
+                        className="h-7 text-xs px-2"
+                        onClick={() => handleRateModeChange('monthly', { 
+                          type: 'percentage', 
+                          percentage: rateMode.monthly.percentage || 0 
+                        })}
+                      >
+                        % Adj
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={rateMode.monthly.type === 'custom' ? "secondary" : "outline"}
+                        className="h-7 text-xs px-2"
+                        onClick={() => handleRateModeChange('monthly', { type: 'custom' })}
+                      >
+                        Custom
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                
+                {manualRates && rateMode.monthly.type === 'percentage' ? (
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      value={rateMode.monthly.percentage || 0}
+                      onChange={(e) => handlePercentageChange('monthly', parseFloat(e.target.value))}
+                      className="pl-7 pr-12"
+                      min="-100"
+                      step="1"
+                    />
+                    <span className="absolute left-3 top-[9px] text-gray-400">%</span>
+                    <span className="absolute right-3 top-[9px] text-gray-400">
+                      {formatCurrency(editedBay.monthly_rate || 0)}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <span className="absolute left-3 top-[9px] text-gray-400">$</span>
+                    <Input
+                      id="monthly_rate"
+                      className="pl-7"
+                      type="number"
+                      value={editedBay.monthly_rate || 0}
+                      onChange={(e) => handleRateChange("monthly", e.target.value)}
+                      disabled={!manualRates || rateMode.monthly.type === 'default'}
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+                )}
+                
+                {!manualRates && (
+                  <div className="text-xs text-muted-foreground">
+                    Calculated as {settings.monthly_multiplier}× hourly rate
+                  </div>
+                )}
               </div>
             </div>
-
-            {!isManualRates && rateMode !== "custom" && (
-              <div className="flex items-center gap-2 p-3 bg-blue-50 rounded text-sm border border-blue-100">
-                <Info className="h-4 w-4 text-blue-600" />
-                <span>
-                  Daily, weekly, and monthly rates are automatically calculated based on your global rate settings.
-                </span>
-              </div>
-            )}
           </TabsContent>
 
-          <TabsContent value="advanced" className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="maxCapacity">Maximum Capacity</Label>
-              <Input
-                id="maxCapacity"
-                type="number"
-                min="1"
-                value={editedBay.maxCapacity || 1}
-                onChange={(e) => handleBasicInfoChange("maxCapacity", parseInt(e.target.value))}
-              />
-              <p className="text-xs text-gray-500">
-                Maximum number of vehicles this bay can accommodate
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="location">Bay Location</Label>
-              <Input
-                id="location"
-                value={editedBay.location || ""}
-                onChange={(e) => handleBasicInfoChange("location", e.target.value)}
-              />
-              <p className="text-xs text-gray-500">
-                Physical location identifier (e.g., "Building A, North Corner")
-              </p>
-            </div>
-
-            <div className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <Label className="text-base">Featured Bay</Label>
-                <p className="text-sm text-muted-foreground">
-                  Featured bays appear at the top of booking listings
-                </p>
+          {/* Advanced Tab */}
+          <TabsContent value="advanced" className="space-y-4 py-4">
+            <div className="grid gap-4">
+              <div className="flex items-center gap-2">
+                <Info className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Advanced settings coming soon</span>
               </div>
-              <Switch
-                checked={editedBay.featured || false}
-                onCheckedChange={(checked) => handleBasicInfoChange("featured", checked)}
-              />
+              
+              <div className="p-4 border rounded-md bg-muted/20">
+                <h3 className="text-sm font-medium mb-2">Default Rate Calculations</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="grid grid-cols-2 gap-2">
+                    <span className="text-muted-foreground">Daily Rate:</span>
+                    <span>{formatCurrency(calculatedRates.daily)}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <span className="text-muted-foreground">Weekly Rate:</span>
+                    <span>{formatCurrency(calculatedRates.weekly)}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <span className="text-muted-foreground">Monthly Rate:</span>
+                    <span>{formatCurrency(calculatedRates.monthly)}</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </TabsContent>
         </Tabs>
 
         <DialogFooter className="flex items-center justify-between">
-          <div className="flex items-center">
+          <div className="flex-1">
             {saveStatus === "success" && (
-              <span className="text-sm text-green-600 flex items-center gap-1">
-                <Check className="h-4 w-4" /> Saved successfully
-              </span>
+              <div className="flex items-center text-green-600 text-sm">
+                <Check className="h-4 w-4 mr-1" />
+                Saved successfully
+              </div>
             )}
             {saveStatus === "error" && (
-              <span className="text-sm text-red-600">Error saving changes</span>
+              <div className="flex items-center text-red-600 text-sm">
+                <X className="h-4 w-4 mr-1" />
+                Error saving changes
+              </div>
             )}
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose} disabled={isSaving}>
+            <Button variant="outline" onClick={onClose} disabled={saveStatus === "saving"}>
               Cancel
             </Button>
-            <Button onClick={handleSubmit} disabled={isSaving}>
-              {isSaving ? (
-                <>
-                  <span className="animate-spin mr-2">⏳</span>
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Changes
-                </>
-              )}
+            <Button 
+              onClick={handleSave} 
+              disabled={!hasChanges || saveStatus === "saving"}
+              className="min-w-[80px]"
+            >
+              {saveStatus === "saving" ? "Saving..." : "Save"}
             </Button>
           </div>
         </DialogFooter>
