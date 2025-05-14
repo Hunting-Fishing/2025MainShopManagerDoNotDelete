@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Table,
   TableBody,
@@ -12,6 +12,8 @@ import { Bay } from "@/services/diybay/diybayService";
 import { formatCurrency } from "@/lib/formatters";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Check, X } from "lucide-react";
 
 interface BaysTableProps {
   bays: Bay[];
@@ -19,6 +21,7 @@ interface BaysTableProps {
   onEditClick: (bay: Bay) => void;
   onDeleteClick: (bay: Bay) => void;
   onHistoryClick: (bay: Bay) => void;
+  onRateChange?: (bay: Bay, field: 'daily_rate' | 'weekly_rate' | 'monthly_rate', value: number) => void;
 }
 
 export const BaysTable: React.FC<BaysTableProps> = ({
@@ -27,7 +30,98 @@ export const BaysTable: React.FC<BaysTableProps> = ({
   onEditClick,
   onDeleteClick,
   onHistoryClick,
+  onRateChange = (bay, field, value) => {},
 }) => {
+  const [editingCell, setEditingCell] = useState<{
+    bayId: string;
+    field: 'daily_rate' | 'weekly_rate' | 'monthly_rate';
+    value: number;
+  } | null>(null);
+
+  const handleCellClick = (bay: Bay, field: 'daily_rate' | 'weekly_rate' | 'monthly_rate') => {
+    setEditingCell({
+      bayId: bay.id,
+      field,
+      value: bay[field] || 0,
+    });
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingCell) return;
+    
+    const bay = bays.find(b => b.id === editingCell.bayId);
+    if (!bay) return;
+    
+    onRateChange(bay, editingCell.field, editingCell.value);
+    setEditingCell(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingCell(null);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!editingCell) return;
+    
+    setEditingCell({
+      ...editingCell,
+      value: parseFloat(e.target.value) || 0,
+    });
+  };
+
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSaveEdit();
+    } else if (e.key === 'Escape') {
+      handleCancelEdit();
+    }
+  };
+
+  const renderRateCell = (bay: Bay, field: 'daily_rate' | 'weekly_rate' | 'monthly_rate') => {
+    const isEditing = editingCell?.bayId === bay.id && editingCell?.field === field;
+    const value = bay[field];
+    
+    if (isEditing) {
+      return (
+        <div className="flex items-center space-x-2">
+          <Input
+            type="number"
+            min="0"
+            step="0.01"
+            value={editingCell.value}
+            onChange={handleInputChange}
+            onKeyDown={handleInputKeyDown}
+            className="w-24 h-8 text-right"
+            autoFocus
+          />
+          <div className="flex space-x-1">
+            <button 
+              onClick={handleSaveEdit}
+              className="p-1 rounded-full text-green-600 hover:bg-green-100"
+            >
+              <Check className="h-4 w-4" />
+            </button>
+            <button 
+              onClick={handleCancelEdit}
+              className="p-1 rounded-full text-red-600 hover:bg-red-100"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      );
+    }
+    
+    return (
+      <div 
+        className="cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors"
+        onClick={() => handleCellClick(bay, field)}
+      >
+        {value ? formatCurrency(value) : "N/A"}
+      </div>
+    );
+  };
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -59,13 +153,13 @@ export const BaysTable: React.FC<BaysTableProps> = ({
                   {formatCurrency(bay.hourly_rate)}
                 </TableCell>
                 <TableCell className="text-right">
-                  {bay.daily_rate ? formatCurrency(bay.daily_rate) : "N/A"}
+                  {renderRateCell(bay, 'daily_rate')}
                 </TableCell>
                 <TableCell className="text-right">
-                  {bay.weekly_rate ? formatCurrency(bay.weekly_rate) : "N/A"}
+                  {renderRateCell(bay, 'weekly_rate')}
                 </TableCell>
                 <TableCell className="text-right">
-                  {bay.monthly_rate ? formatCurrency(bay.monthly_rate) : "N/A"}
+                  {renderRateCell(bay, 'monthly_rate')}
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center space-x-2">

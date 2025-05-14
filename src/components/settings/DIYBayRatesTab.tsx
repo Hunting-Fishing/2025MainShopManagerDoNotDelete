@@ -39,6 +39,10 @@ export const DIYBayRatesTab: React.FC = () => {
     await saveBay({ ...bay, is_active: isActive });
   }, [saveBay]);
 
+  const handleRateChange = useCallback(async (bay: Bay, field: 'daily_rate' | 'weekly_rate' | 'monthly_rate', value: number) => {
+    await saveBay({ ...bay, [field]: value });
+  }, [saveBay]);
+
   const handleSettingsChange = useCallback((field: keyof typeof settings, value: number) => {
     // Create a new settings object with the updated field
     const updatedSettings = { ...settings, [field]: value };
@@ -140,6 +144,7 @@ export const DIYBayRatesTab: React.FC = () => {
               onEditClick={handleEditClick}
               onDeleteClick={handleDeleteClick}
               onHistoryClick={handleHistoryClick}
+              onRateChange={handleRateChange}
             />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
