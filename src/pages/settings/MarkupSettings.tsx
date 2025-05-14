@@ -7,7 +7,7 @@ export const MarkupSettings = () => {
   return (
     <SettingsPageLayout 
       title="Inventory Markup"
-      description="Configure markup percentages for parts based on cost ranges"
+      description="Configure markup percentages for parts based on cost ranges and suppliers"
     >
       <InventoryMarkupTab />
     </SettingsPageLayout>
