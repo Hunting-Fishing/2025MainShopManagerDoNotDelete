@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface Bay {
@@ -27,9 +26,9 @@ export interface RateHistory {
   daily_rate: number | null;
   weekly_rate: number | null;
   monthly_rate: number | null;
-  changed_at: string;
+  changed_at: string;  // Make sure this exists
   changed_by?: string;
-  user_email?: string;  // Make this optional since it might not exist in the raw data
+  user_email?: string;
 }
 
 /**
