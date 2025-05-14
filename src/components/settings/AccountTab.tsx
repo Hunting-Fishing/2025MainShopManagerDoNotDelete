@@ -18,8 +18,7 @@ export function AccountTab() {
     userProfile,
     loading,
     error,
-    updateProfile,
-    savingProfile
+    updateProfile
   } = useUserProfile();
   
   const [formData, setFormData] = useState({
@@ -30,15 +29,17 @@ export function AccountTab() {
     jobTitle: ""
   });
 
+  const [savingProfile, setSavingProfile] = useState(false);
+
   // Handle profile data loading
   useEffect(() => {
     if (userProfile && !loading) {
       setFormData({
-        firstName: userProfile.first_name || "",
-        lastName: userProfile.last_name || "",
+        firstName: userProfile.firstName || "",
+        lastName: userProfile.lastName || "",
         email: userProfile.email || "",
         phone: userProfile.phone || "",
-        jobTitle: userProfile.job_title || ""
+        jobTitle: userProfile.jobTitle || ""
       });
       console.log("Form data updated from userProfile:", userProfile);
     }
@@ -60,12 +61,14 @@ export function AccountTab() {
     e.preventDefault();
     
     try {
+      setSavingProfile(true);
+      
       await updateProfile({
-        first_name: formData.firstName,
-        last_name: formData.lastName,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
         email: formData.email,
         phone: formData.phone,
-        job_title: formData.jobTitle
+        jobTitle: formData.jobTitle
       });
       
       toast({
@@ -79,6 +82,8 @@ export function AccountTab() {
         description: "Failed to update profile. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setSavingProfile(false);
     }
   };
 

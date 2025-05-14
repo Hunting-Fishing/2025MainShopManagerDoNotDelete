@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuthUser } from './useAuthUser';
 import { useToast } from './use-toast';
 
-interface UserProfile {
+export interface UserProfile {
   firstName: string;
   lastName: string;
   email: string;
@@ -15,6 +15,7 @@ interface UserProfile {
 export function useUserProfile() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [savingProfile, setSavingProfile] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { userId } = useAuthUser();
   const { toast } = useToast();
@@ -78,12 +79,12 @@ export function useUserProfile() {
     }
     
     try {
-      setLoading(true);
+      setSavingProfile(true);
       setError(null);
       
       console.log("Updating profile with data:", profileData);
       
-      // Map the form values back to the database column names
+      // Map the camelCase form values to the snake_case database column names
       const updateData: Record<string, any> = {};
       if ('firstName' in profileData) updateData.first_name = profileData.firstName;
       if ('lastName' in profileData) updateData.last_name = profileData.lastName;
@@ -130,13 +131,14 @@ export function useUserProfile() {
         error: err instanceof Error ? err.message : 'Unknown error occurred'
       };
     } finally {
-      setLoading(false);
+      setSavingProfile(false);
     }
   };
 
   return {
     userProfile,
     loading,
+    savingProfile,
     error,
     fetchUserProfile,
     updateProfile
