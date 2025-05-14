@@ -30,7 +30,8 @@ export function ServicesSection({ services, setServices }: ServicesSectionProps)
       };
       setServices([...services, newService]);
       setCustomService('');
-      setIsAdding(false);
+      // Don't close the add panel to allow adding multiple services
+      // setIsAdding(false);
     }
   };
   
@@ -52,7 +53,8 @@ export function ServicesSection({ services, setServices }: ServicesSectionProps)
       quantity: service.quantity || 1
     };
     setServices([...services, serviceWithQuantity]);
-    setIsAdding(false);
+    // Don't close the add panel to allow adding multiple services
+    // setIsAdding(false);
   };
   
   return (
@@ -76,7 +78,7 @@ export function ServicesSection({ services, setServices }: ServicesSectionProps)
       </CardHeader>
       
       <CardContent className="p-0">
-        {isAdding ? (
+        {isAdding && (
           <div className="p-4 border-b">
             <HierarchicalServiceSelector onSelectService={handleServiceSelect} />
             
@@ -115,47 +117,96 @@ export function ServicesSection({ services, setServices }: ServicesSectionProps)
                 </Button>
               </form>
             </div>
-          </div>
-        ) : services.length === 0 ? (
-          <div className="p-8 text-center text-muted-foreground">
-            <p>No services have been added yet</p>
-            <Button 
-              variant="link" 
-              onClick={(e) => {
-                e.preventDefault(); // Prevent page jumping
-                setIsAdding(true);
-              }}
-              className="mt-2"
-            >
-              Add your first service
-            </Button>
-          </div>
-        ) : (
-          <ul className="divide-y">
-            {services.map((service, index) => (
-              <li key={index} className="px-4 py-3 flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium">{service.name}</h4>
-                  {service.category && (
-                    <p className="text-sm text-muted-foreground">{service.category}</p>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  {service.price !== undefined && (
-                    <span className="text-blue-600 font-medium">${service.price}</span>
-                  )}
+            
+            {/* Show selected services even while adding mode is active */}
+            {services.length > 0 && (
+              <div className="mt-4 pt-4 border-t">
+                <h3 className="text-sm font-medium mb-2">Selected Services:</h3>
+                <ul className="divide-y border rounded-md">
+                  {services.map((service, index) => (
+                    <li key={index} className="px-4 py-3 flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium">{service.name}</h4>
+                        {service.category && (
+                          <p className="text-sm text-muted-foreground">{service.category}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {service.price !== undefined && (
+                          <span className="text-blue-600 font-medium">${service.price}</span>
+                        )}
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 w-8 p-0" 
+                          onClick={(e) => handleDeleteService(e, index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-4 flex justify-end">
                   <Button 
-                    variant="ghost" 
+                    variant="outline" 
                     size="sm" 
-                    className="h-8 w-8 p-0" 
-                    onClick={(e) => handleDeleteService(e, index)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setIsAdding(false);
+                    }}
+                    className="h-8"
                   >
-                    <X className="h-4 w-4" />
+                    Done Adding Services
                   </Button>
                 </div>
-              </li>
-            ))}
-          </ul>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {!isAdding && (
+          services.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground">
+              <p>No services have been added yet</p>
+              <Button 
+                variant="link" 
+                onClick={(e) => {
+                  e.preventDefault(); // Prevent page jumping
+                  setIsAdding(true);
+                }}
+                className="mt-2"
+              >
+                Add your first service
+              </Button>
+            </div>
+          ) : (
+            <ul className="divide-y">
+              {services.map((service, index) => (
+                <li key={index} className="px-4 py-3 flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium">{service.name}</h4>
+                    {service.category && (
+                      <p className="text-sm text-muted-foreground">{service.category}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {service.price !== undefined && (
+                      <span className="text-blue-600 font-medium">${service.price}</span>
+                    )}
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-8 w-8 p-0" 
+                      onClick={(e) => handleDeleteService(e, index)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )
         )}
       </CardContent>
     </Card>
