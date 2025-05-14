@@ -18,7 +18,10 @@ export function ServicesSection({ services, setServices }: ServicesSectionProps)
   const [selectedCategory, setSelectedCategory] = useState('General');
   
   // Add a new custom service
-  const handleAddCustomService = () => {
+  const handleAddCustomService = (e: React.FormEvent) => {
+    // Prevent default form submission behavior which causes page jumps
+    e.preventDefault();
+    
     if (customService.trim()) {
       const newService: ServiceItem = {
         name: customService.trim(),
@@ -32,7 +35,10 @@ export function ServicesSection({ services, setServices }: ServicesSectionProps)
   };
   
   // Delete a service
-  const handleDeleteService = (index: number) => {
+  const handleDeleteService = (e: React.MouseEvent, index: number) => {
+    // Prevent default button behavior
+    e.preventDefault();
+    
     const updatedServices = [...services];
     updatedServices.splice(index, 1);
     setServices(updatedServices);
@@ -40,10 +46,10 @@ export function ServicesSection({ services, setServices }: ServicesSectionProps)
   
   // Handle service selection from the hierarchical selector
   const handleServiceSelect = (service: ServiceItem) => {
-    // Add quantity property to the service
+    // Add quantity property to the service if it doesn't exist
     const serviceWithQuantity = {
       ...service,
-      quantity: 1
+      quantity: service.quantity || 1
     };
     setServices([...services, serviceWithQuantity]);
     setIsAdding(false);
@@ -57,7 +63,10 @@ export function ServicesSection({ services, setServices }: ServicesSectionProps)
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={() => setIsAdding(true)}
+            onClick={(e) => {
+              e.preventDefault(); // Prevent page jumping
+              setIsAdding(true);
+            }}
             className="h-8 rounded-full text-sm bg-white border-blue-200"
           >
             <PlusCircle className="mr-1 h-3.5 w-3.5" />
@@ -73,7 +82,7 @@ export function ServicesSection({ services, setServices }: ServicesSectionProps)
             
             <div className="mt-4 pt-4 border-t">
               <p className="text-sm font-medium mb-2">Or add a custom service:</p>
-              <div className="flex space-x-2">
+              <form onSubmit={handleAddCustomService} className="flex space-x-2">
                 <div className="flex-1">
                   <Input
                     placeholder="Enter custom service name"
@@ -83,24 +92,28 @@ export function ServicesSection({ services, setServices }: ServicesSectionProps)
                   />
                 </div>
                 <Button 
+                  type="button"
                   size="sm"
                   variant="ghost"
-                  onClick={() => setIsAdding(false)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsAdding(false);
+                  }}
                   className="h-9 px-2"
                 >
                   <X className="h-4 w-4" />
                 </Button>
                 <Button 
+                  type="submit"
                   size="sm"
                   variant="default"
-                  onClick={handleAddCustomService}
                   disabled={!customService.trim()}
                   className="h-9"
                 >
                   <Check className="h-4 w-4 mr-1" />
                   Add
                 </Button>
-              </div>
+              </form>
             </div>
           </div>
         ) : services.length === 0 ? (
@@ -108,7 +121,10 @@ export function ServicesSection({ services, setServices }: ServicesSectionProps)
             <p>No services have been added yet</p>
             <Button 
               variant="link" 
-              onClick={() => setIsAdding(true)}
+              onClick={(e) => {
+                e.preventDefault(); // Prevent page jumping
+                setIsAdding(true);
+              }}
               className="mt-2"
             >
               Add your first service
@@ -132,7 +148,7 @@ export function ServicesSection({ services, setServices }: ServicesSectionProps)
                     variant="ghost" 
                     size="sm" 
                     className="h-8 w-8 p-0" 
-                    onClick={() => handleDeleteService(index)}
+                    onClick={(e) => handleDeleteService(e, index)}
                   >
                     <X className="h-4 w-4" />
                   </Button>

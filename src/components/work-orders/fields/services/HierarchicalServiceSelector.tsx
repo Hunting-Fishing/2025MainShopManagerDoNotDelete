@@ -93,8 +93,10 @@ export function HierarchicalServiceSelector({ onSelectService }: HierarchicalSer
     }
   }, [selectedSubcategory, selectedCategory, serviceCategories]);
 
-  // Handle service selection
-  const handleServiceSelect = (serviceName: string) => {
+  // Handle service selection with prevention of page jump
+  const handleServiceSelect = (e: React.MouseEvent, serviceName: string) => {
+    e.preventDefault(); // Prevent the default action which might cause page jump
+    
     if (selectedCategory && selectedSubcategory) {
       // Find the service/job details
       const category = serviceCategories.find(cat => cat.name === selectedCategory);
@@ -140,7 +142,9 @@ export function HierarchicalServiceSelector({ onSelectService }: HierarchicalSer
         <ServiceCategoryList 
           categories={categoryNames}
           selectedCategory={selectedCategory}
-          onCategorySelect={setSelectedCategory}
+          onCategorySelect={(category) => {
+            setSelectedCategory(category);
+          }}
         />
       </div>
       
@@ -151,7 +155,9 @@ export function HierarchicalServiceSelector({ onSelectService }: HierarchicalSer
             category={selectedCategory}
             subcategories={subcategoryNames}
             selectedSubcategory={selectedSubcategory}
-            onSelectSubcategory={setSelectedSubcategory}
+            onSelectSubcategory={(subcategory) => {
+              setSelectedSubcategory(subcategory);
+            }}
           />
         ) : (
           <div className="p-4 text-center text-muted-foreground">
@@ -170,7 +176,7 @@ export function HierarchicalServiceSelector({ onSelectService }: HierarchicalSer
                 <li key={i}>
                   <button
                     className="w-full text-left px-2 py-1.5 hover:bg-blue-50 rounded-md text-sm transition"
-                    onClick={() => handleServiceSelect(service)}
+                    onClick={(e) => handleServiceSelect(e, service)}
                   >
                     {service}
                   </button>

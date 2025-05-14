@@ -25,12 +25,16 @@ export function ServiceSubcategoryGrid({
           {subcategories.map((subcategory, index) => (
             <li key={index}>
               <button
+                type="button"
                 className={`w-full text-left px-2 py-1.5 rounded-md text-sm transition ${
                   selectedSubcategory === subcategory
                     ? "bg-blue-100 text-blue-800"
                     : "hover:bg-blue-50"
                 }`}
-                onClick={() => onSelectSubcategory(subcategory)}
+                onClick={(e) => {
+                  e.preventDefault(); // Prevent default button behavior
+                  onSelectSubcategory(subcategory);
+                }}
               >
                 {subcategory}
               </button>

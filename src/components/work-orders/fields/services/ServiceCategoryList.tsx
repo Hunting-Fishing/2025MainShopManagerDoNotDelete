@@ -23,6 +23,7 @@ export function ServiceCategoryList({
           {categories.map((category, index) => (
             <li key={index}>
               <Button
+                type="button"
                 variant={selectedCategory === category ? "default" : "ghost"}
                 size="sm"
                 className={`w-full justify-start text-left ${
@@ -30,7 +31,10 @@ export function ServiceCategoryList({
                     ? "bg-blue-100 text-blue-800 hover:bg-blue-200 hover:text-blue-800" 
                     : ""
                 }`}
-                onClick={() => onCategorySelect(category)}
+                onClick={(e) => {
+                  e.preventDefault(); // Prevent default button behavior
+                  onCategorySelect(category);
+                }}
               >
                 {category}
               </Button>
