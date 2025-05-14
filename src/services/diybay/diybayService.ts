@@ -26,7 +26,8 @@ export interface RateHistory {
   daily_rate: number | null;
   weekly_rate: number | null;
   monthly_rate: number | null;
-  changed_at: string;  // Make sure this exists
+  changed_at: string;
+  created_at?: string;  // Added missing property
   changed_by?: string;
   user_email?: string;
 }
