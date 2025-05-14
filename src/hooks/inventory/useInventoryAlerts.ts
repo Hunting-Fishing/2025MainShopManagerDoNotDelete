@@ -53,7 +53,6 @@ export function useInventoryAlerts() {
           message: `${item.name} is running low (${item.quantity} remaining)`,
           type: "warning",
           link: "/inventory",
-          // Adding duration property to make notifications stay visible longer
           duration: 8000
         });
         
@@ -74,7 +73,6 @@ export function useInventoryAlerts() {
           message: `${item.name} is out of stock and needs to be reordered`,
           type: "error",
           link: "/inventory",
-          // Adding duration property to make notifications stay visible longer
           duration: 10000
         });
         

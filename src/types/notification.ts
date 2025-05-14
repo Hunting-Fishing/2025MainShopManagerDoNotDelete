@@ -12,6 +12,7 @@ export interface Notification {
   category?: 'system' | 'invoice' | 'workOrder' | 'inventory' | 'customer' | 'team' | 'chat';
   priority?: 'low' | 'medium' | 'high';
   expiresAt?: string;
+  duration?: number; // Adding duration property for toast display time
 }
 
 export type NotificationSubscription = {
