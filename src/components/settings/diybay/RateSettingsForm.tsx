@@ -5,8 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { RateSettings } from "@/services/diybay/diybayService";
-import { InfoCircledIcon } from "@radix-ui/react-icons";
-import { Save, Check } from "lucide-react";
+import { Save, Check, Info } from "lucide-react";
 
 interface RateSettingsFormProps {
   settings: RateSettings;
@@ -58,7 +57,7 @@ export const RateSettingsForm: React.FC<RateSettingsFormProps> = ({
       <CardContent className="p-6">
         <div className="bg-blue-50 p-4 rounded-md border border-blue-100 mb-6">
           <div className="flex gap-3">
-            <InfoCircledIcon className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <div>
               <h4 className="text-sm font-semibold text-blue-800 mb-1">How rates are calculated</h4>
               <p className="text-sm text-blue-700">
