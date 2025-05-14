@@ -25,7 +25,7 @@ export interface RateSettings {
   daily_discount_percent: number;
   weekly_multiplier: number;
   monthly_multiplier: number;
-  hourly_base_rate?: number | string; 
+  hourly_base_rate: number | string; 
 }
 
 // Adding the RateHistory interface that's being used

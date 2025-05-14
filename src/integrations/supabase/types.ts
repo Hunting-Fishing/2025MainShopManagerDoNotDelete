@@ -1617,6 +1617,7 @@ export type Database = {
         Row: {
           daily_discount_percent: number | null
           daily_hours: number | null
+          hourly_base_rate: number | null
           id: string
           monthly_multiplier: number | null
           shop_id: string | null
@@ -1627,6 +1628,7 @@ export type Database = {
         Insert: {
           daily_discount_percent?: number | null
           daily_hours?: number | null
+          hourly_base_rate?: number | null
           id?: string
           monthly_multiplier?: number | null
           shop_id?: string | null
@@ -1637,6 +1639,7 @@ export type Database = {
         Update: {
           daily_discount_percent?: number | null
           daily_hours?: number | null
+          hourly_base_rate?: number | null
           id?: string
           monthly_multiplier?: number | null
           shop_id?: string | null

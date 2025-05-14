@@ -19,6 +19,8 @@ export function useRateSettings(
     setIsUpdating(true);
     
     try {
+      console.log("Updating settings:", updatedSettings);
+      
       // Update settings in DB
       const { data, error } = await supabase
         .from('diy_bay_rate_settings')
@@ -27,7 +29,7 @@ export function useRateSettings(
           daily_discount_percent: updatedSettings.daily_discount_percent,
           weekly_multiplier: updatedSettings.weekly_multiplier,
           monthly_multiplier: updatedSettings.monthly_multiplier,
-          hourly_base_rate: updatedSettings.hourly_base_rate || null
+          hourly_base_rate: updatedSettings.hourly_base_rate
         })
         .eq('id', updatedSettings.id)
         .select('*');
