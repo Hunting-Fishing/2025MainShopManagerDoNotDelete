@@ -50,8 +50,10 @@ export const DIYBayRatesTab: React.FC = () => {
     updateBayRateSettings(updatedSettings);
   }, [settings, updateBayRateSettings]);
 
+  // Modify this function to wrap the boolean result and make it void
   const handleSaveSettings = useCallback(async () => {
-    return await updateBayRateSettings(settings);
+    const result = await updateBayRateSettings(settings);
+    return result; // Now compatible with Promise<boolean | void>
   }, [updateBayRateSettings, settings]);
 
   const handleDeleteClick = useCallback((bay: Bay) => {

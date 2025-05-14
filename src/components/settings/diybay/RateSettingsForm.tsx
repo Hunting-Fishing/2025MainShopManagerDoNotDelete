@@ -9,7 +9,7 @@ import { RateSettings } from "@/services/diybay/diybayService";
 export interface RateSettingsFormProps {
   settings: RateSettings;
   onSettingsChange: (field: keyof RateSettings, value: number) => void;
-  onSaveSettings: () => Promise<void>;
+  onSaveSettings: () => Promise<boolean | void>; // Update to accept both boolean or void return types
   isSaving: boolean;
 }
 
