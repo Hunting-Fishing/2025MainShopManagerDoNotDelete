@@ -1,59 +1,40 @@
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Save, DollarSign } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { useLabourRates } from "@/hooks/useLabourRates";
 
 export function LabourRatesTab() {
-  const [rates, setRates] = useState({
-    standard: "125",
-    diagnostic: "145",
-    emergency: "175",
-    warranty: "95",
-    internal: "85",
-    diy: "65"  // Added DIY rate
-  });
+  const { 
+    rates, 
+    loading, 
+    saving, 
+    hasChanges, 
+    handleInputChange, 
+    saveRates 
+  } = useLabourRates();
 
-  const [saving, setSaving] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
-  const { toast } = useToast();
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setRates(prev => ({
-      ...prev,
-      [id]: value
-    }));
-    setHasChanges(true);
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    
-    // Simulate API call
-    try {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      toast({
-        title: "Success",
-        description: "Labour rates have been updated successfully.",
-        variant: "default",
-      });
-      
-      setHasChanges(false);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update labour rates. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Card className="border-gray-100 shadow-md rounded-xl overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-100">
+            <CardTitle className="text-blue-700">Labour Rates</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="space-y-6">
+              <div className="h-32 flex items-center justify-center">
+                <p>Loading labour rates...</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -65,97 +46,97 @@ export function LabourRatesTab() {
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="standard" className="text-sm font-medium flex items-center gap-2">
+                <Label htmlFor="standard_rate" className="text-sm font-medium flex items-center gap-2">
                   <span className="inline-flex p-1.5 bg-blue-100 text-blue-700 rounded-full">
                     <DollarSign className="h-4 w-4" />
                   </span>
                   Standard Rate ($/hour)
                 </Label>
                 <Input 
-                  id="standard" 
+                  id="standard_rate" 
                   type="number" 
-                  value={rates.standard} 
-                  onChange={handleInputChange} 
+                  value={rates.standard_rate} 
+                  onChange={(e) => handleInputChange('standard_rate', e.target.value)} 
                   className="w-full border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all" 
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="diagnostic" className="text-sm font-medium flex items-center gap-2">
+                <Label htmlFor="diagnostic_rate" className="text-sm font-medium flex items-center gap-2">
                   <span className="inline-flex p-1.5 bg-purple-100 text-purple-700 rounded-full">
                     <DollarSign className="h-4 w-4" />
                   </span>
                   Diagnostic Rate ($/hour)
                 </Label>
                 <Input 
-                  id="diagnostic" 
+                  id="diagnostic_rate" 
                   type="number" 
-                  value={rates.diagnostic} 
-                  onChange={handleInputChange} 
+                  value={rates.diagnostic_rate} 
+                  onChange={(e) => handleInputChange('diagnostic_rate', e.target.value)} 
                   className="w-full border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all" 
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="emergency" className="text-sm font-medium flex items-center gap-2">
+                <Label htmlFor="emergency_rate" className="text-sm font-medium flex items-center gap-2">
                   <span className="inline-flex p-1.5 bg-red-100 text-red-700 rounded-full">
                     <DollarSign className="h-4 w-4" />
                   </span>
                   Emergency/After Hours Rate ($/hour)
                 </Label>
                 <Input 
-                  id="emergency" 
+                  id="emergency_rate" 
                   type="number" 
-                  value={rates.emergency} 
-                  onChange={handleInputChange} 
+                  value={rates.emergency_rate} 
+                  onChange={(e) => handleInputChange('emergency_rate', e.target.value)} 
                   className="w-full border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all" 
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="warranty" className="text-sm font-medium flex items-center gap-2">
+                <Label htmlFor="warranty_rate" className="text-sm font-medium flex items-center gap-2">
                   <span className="inline-flex p-1.5 bg-green-100 text-green-700 rounded-full">
                     <DollarSign className="h-4 w-4" />
                   </span>
                   Warranty Work Rate ($/hour)
                 </Label>
                 <Input 
-                  id="warranty" 
+                  id="warranty_rate" 
                   type="number" 
-                  value={rates.warranty} 
-                  onChange={handleInputChange} 
+                  value={rates.warranty_rate} 
+                  onChange={(e) => handleInputChange('warranty_rate', e.target.value)} 
                   className="w-full border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all" 
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="internal" className="text-sm font-medium flex items-center gap-2">
+                <Label htmlFor="internal_rate" className="text-sm font-medium flex items-center gap-2">
                   <span className="inline-flex p-1.5 bg-yellow-100 text-yellow-700 rounded-full">
                     <DollarSign className="h-4 w-4" />
                   </span>
                   Internal Work Rate ($/hour)
                 </Label>
                 <Input 
-                  id="internal" 
+                  id="internal_rate" 
                   type="number" 
-                  value={rates.internal} 
-                  onChange={handleInputChange} 
+                  value={rates.internal_rate} 
+                  onChange={(e) => handleInputChange('internal_rate', e.target.value)} 
                   className="w-full border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all" 
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="diy" className="text-sm font-medium flex items-center gap-2">
+                <Label htmlFor="diy_rate" className="text-sm font-medium flex items-center gap-2">
                   <span className="inline-flex p-1.5 bg-indigo-100 text-indigo-700 rounded-full">
                     <DollarSign className="h-4 w-4" />
                   </span>
                   DIY Bay Rental Rate ($/hour)
                 </Label>
                 <Input 
-                  id="diy" 
+                  id="diy_rate" 
                   type="number" 
-                  value={rates.diy} 
-                  onChange={handleInputChange} 
+                  value={rates.diy_rate} 
+                  onChange={(e) => handleInputChange('diy_rate', e.target.value)} 
                   className="w-full border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all" 
                   placeholder="Enter DIY bay rental rate per hour"
                 />
@@ -167,7 +148,7 @@ export function LabourRatesTab() {
             
             <div className="flex justify-end mt-6">
               <Button 
-                onClick={handleSave} 
+                onClick={saveRates} 
                 disabled={saving || !hasChanges}
                 className={`rounded-full px-6 ${hasChanges 
                   ? 'bg-blue-600 hover:bg-blue-700 text-white' 

@@ -4238,6 +4238,53 @@ export type Database = {
           },
         ]
       }
+      labor_rates: {
+        Row: {
+          created_at: string
+          diagnostic_rate: number
+          diy_rate: number
+          emergency_rate: number
+          id: string
+          internal_rate: number
+          shop_id: string
+          standard_rate: number
+          updated_at: string
+          warranty_rate: number
+        }
+        Insert: {
+          created_at?: string
+          diagnostic_rate?: number
+          diy_rate?: number
+          emergency_rate?: number
+          id?: string
+          internal_rate?: number
+          shop_id: string
+          standard_rate?: number
+          updated_at?: string
+          warranty_rate?: number
+        }
+        Update: {
+          created_at?: string
+          diagnostic_rate?: number
+          diy_rate?: number
+          emergency_rate?: number
+          id?: string
+          internal_rate?: number
+          shop_id?: string
+          standard_rate?: number
+          updated_at?: string
+          warranty_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "labor_rates_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loyalty_redemptions: {
         Row: {
           created_at: string
