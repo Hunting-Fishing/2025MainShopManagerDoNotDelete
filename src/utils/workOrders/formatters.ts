@@ -1,6 +1,6 @@
 
 /**
- * Format a date string to a more readable format
+ * Format a date string to a localized format
  */
 export const formatTimeInHoursAndMinutes = (minutes: number): string => {
   const hours = Math.floor(minutes / 60);
@@ -21,6 +21,15 @@ export const formatTimeInHoursAndMinutes = (minutes: number): string => {
 export const formatDate = (date: string | undefined): string => {
   if (!date) return '';
   return new Date(date).toLocaleDateString();
+};
+
+/**
+ * Format a time string (for display purposes)
+ */
+export const formatTime = (time: string | undefined): string => {
+  if (!time) return '';
+  const timeDate = time ? new Date(time) : null;
+  return timeDate ? timeDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
 };
 
 /**

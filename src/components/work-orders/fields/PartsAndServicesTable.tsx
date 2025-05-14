@@ -1,100 +1,83 @@
-import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Plus, Trash2 } from "lucide-react";
-import { HierarchicalServiceSelector } from "@/components/work-orders/fields/services/HierarchicalServiceSelector";
 
-interface PartsAndServicesTableProps {
-  onServicesChange: (services: any[]) => void;
-  services: any[];
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Plus, Trash } from "lucide-react";
+import { HierarchicalServiceSelector } from './services/HierarchicalServiceSelector';
+
+export interface PartsAndServicesTableProps {
+  items: any[];
+  setItems: React.Dispatch<React.SetStateAction<any[]>>;
 }
 
-export function PartsAndServicesTable({ onServicesChange, services }: PartsAndServicesTableProps) {
-  const [showSelector, setShowSelector] = useState(false);
-  const [selectedServices, setSelectedServices] = useState(services);
-
-  const handleServiceSelect = (service: any) => {
-    const updatedServices = [...selectedServices, service];
-    setSelectedServices(updatedServices);
-    onServicesChange(updatedServices);
-    setShowSelector(false);
+export function PartsAndServicesTable({ items, setItems }: PartsAndServicesTableProps) {
+  const [showServiceSelector, setShowServiceSelector] = React.useState(false);
+  
+  const handleAddService = (service: any) => {
+    setItems([...items, service]);
+    setShowServiceSelector(false);
   };
-
-  const handleRemoveService = (id: string) => {
-    const updatedServices = selectedServices.filter(service => service.id !== id);
-    setSelectedServices(updatedServices);
-    onServicesChange(updatedServices);
+  
+  const handleRemoveItem = (index: number) => {
+    const newItems = [...items];
+    newItems.splice(index, 1);
+    setItems(newItems);
   };
 
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-xl">Parts & Services</CardTitle>
+      <CardHeader className="bg-slate-50">
+        <CardTitle className="text-lg flex justify-between items-center">
+          <span>Parts & Services</span>
+          <Button 
+            onClick={() => setShowServiceSelector(!showServiceSelector)} 
+            variant="outline" 
+            size="sm"
+            className="text-sm"
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            Add Service
+          </Button>
+        </CardTitle>
       </CardHeader>
-      <CardContent>
-        {selectedServices.length > 0 ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Service</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead className="text-right">Price</TableHead>
-                <TableHead className="text-right">Time</TableHead>
-                <TableHead className="text-right">Qty</TableHead>
-                <TableHead className="w-[50px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {selectedServices.map((service) => (
-                <TableRow key={service.id}>
-                  <TableCell className="font-medium">{service.jobName}</TableCell>
-                  <TableCell>
-                    <span className="text-xs text-muted-foreground">
-                      {service.categoryName} &gt; {service.subcategoryName}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">${service.price?.toFixed(2) || '0.00'}</TableCell>
-                  <TableCell className="text-right">{service.estimatedTime || 0} min</TableCell>
-                  <TableCell className="text-right">{service.quantity}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 text-red-500"
-                      onClick={() => handleRemoveService(service.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        ) : (
-          <div className="text-center py-8 text-muted-foreground">
-            No services added yet. Click the button below to add services.
+      <CardContent className="p-0">
+        {showServiceSelector && (
+          <div className="p-4 border-b">
+            <HierarchicalServiceSelector onSelectService={handleAddService} />
           </div>
         )}
-
-        {showSelector ? (
-          <div className="mt-4 border rounded-md p-4 bg-slate-50 dark:bg-slate-800">
-            <h3 className="text-lg font-medium mb-4">Select Service</h3>
-            <HierarchicalServiceSelector onServiceSelect={handleServiceSelect} />
-            <div className="mt-4 flex justify-end">
-              <Button variant="outline" onClick={() => setShowSelector(false)}>Cancel</Button>
-            </div>
-          </div>
+        
+        {items.length > 0 ? (
+          <table className="w-full">
+            <thead className="bg-slate-50 border-b">
+              <tr>
+                <th className="text-left p-3 text-xs font-medium text-slate-500">Service</th>
+                <th className="text-left p-3 text-xs font-medium text-slate-500">Category</th>
+                <th className="text-left p-3 text-xs font-medium text-slate-500">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((item, index) => (
+                <tr key={index} className="border-b">
+                  <td className="p-3">{item.name}</td>
+                  <td className="p-3">{item.category}</td>
+                  <td className="p-3">
+                    <Button 
+                      onClick={() => handleRemoveItem(index)} 
+                      variant="ghost" 
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         ) : (
-          <div className="mt-4 flex justify-center">
-            <Button 
-              type="button" 
-              onClick={() => setShowSelector(true)}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Add Service
-            </Button>
+          <div className="p-6 text-center text-slate-500">
+            No services or parts added yet. Click "Add Service" to begin.
           </div>
         )}
       </CardContent>

@@ -22,8 +22,8 @@ export function useWorkOrderEditForm(workOrder: WorkOrder) {
       priority: workOrder?.priority || "medium",
       technician: workOrder?.technician || "",
       location: workOrder?.location || "",
-      // Convert date string to ISOString for form
-      dueDate: workOrder?.dueDate || new Date().toISOString(),
+      // Handle date properly - store as string in form
+      dueDate: workOrder?.dueDate || new Date().toISOString().split('T')[0],
       notes: workOrder?.notes || "",
       vehicleMake: workOrder?.vehicleMake || "",
       vehicleModel: workOrder?.vehicleModel || "",
