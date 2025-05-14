@@ -1,13 +1,12 @@
 
-import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect } from "react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Slider } from "@/components/ui/slider";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { RateSettings } from "@/services/diybay/diybayService";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Save, Info, DollarSign, Percent, Clock } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface RateSettingsFormProps {
   settings: RateSettings;
@@ -20,224 +19,161 @@ export const RateSettingsForm: React.FC<RateSettingsFormProps> = ({
   settings,
   onSettingsChange,
   onSaveSettings,
-  isSaving,
+  isSaving
 }) => {
-  const [viewMode, setViewMode] = useState<"form" | "table">("form");
+  const [localSettings, setLocalSettings] = useState<RateSettings>(settings);
+  const [isDirty, setIsDirty] = useState(false);
+  
+  // Update local settings when props change
+  useEffect(() => {
+    setLocalSettings(settings);
+  }, [settings]);
   
   const handleInputChange = (field: keyof RateSettings, value: string) => {
-    const numValue = parseFloat(value);
+    const numValue = Number(value);
     if (!isNaN(numValue)) {
+      setLocalSettings(prev => ({ ...prev, [field]: numValue }));
+      setIsDirty(true);
       onSettingsChange(field, numValue);
     }
   };
-
-  const handleDiscountChange = (value: number[]) => {
-    onSettingsChange('daily_discount_percent', value[0]);
+  
+  const handleSave = async () => {
+    await onSaveSettings();
+    setIsDirty(false);
   };
 
   return (
-    <Card className="mb-8">
-      <CardHeader className="pb-3">
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-lg text-gray-800">Rate Settings</CardTitle>
-          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "form" | "table")}>
-            <TabsList className="grid grid-cols-2 w-40">
-              <TabsTrigger value="form">Form</TabsTrigger>
-              <TabsTrigger value="table">Table</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-      </CardHeader>
-      
-      <CardContent>
-        <TabsContent value="form" className="mt-0">
+    <div className="mb-8">
+      <Card className="border-gray-100 shadow-md rounded-xl overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-purple-50 to-indigo-50 border-b border-gray-100">
+          <CardTitle className="text-purple-700 flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            DIY Bay Rate Settings
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="hourly_base_rate" className="text-sm font-medium">
-                  Base Hourly Rate ($)
-                </Label>
-                <Input
-                  id="hourly_base_rate"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={settings.hourly_base_rate || ''}
-                  onChange={(e) => handleInputChange('hourly_base_rate', e.target.value)}
-                  className="mt-2"
-                />
-                <p className="text-sm text-gray-500 mt-1">Default hourly rate for new bays</p>
-              </div>
-              
-              <div>
-                <Label htmlFor="daily_hours" className="text-sm font-medium">
-                  Daily Hours
-                </Label>
-                <Input
-                  id="daily_hours"
-                  type="number"
-                  min="1"
-                  max="24"
-                  value={settings.daily_hours}
-                  onChange={(e) => handleInputChange('daily_hours', e.target.value)}
-                  className="mt-2"
-                />
-                <p className="text-sm text-gray-500 mt-1">Hours counted as a full day</p>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="hourly_base_rate" className="text-sm font-medium flex items-center gap-2">
+                <span className="inline-flex p-1.5 bg-blue-100 text-blue-700 rounded-full">
+                  <DollarSign className="h-4 w-4" />
+                </span>
+                Hourly Base Rate ($/hour)
+              </Label>
+              <Input
+                id="hourly_base_rate"
+                type="number"
+                value={localSettings.hourly_base_rate}
+                onChange={(e) => handleInputChange('hourly_base_rate', e.target.value)}
+                className="w-full border-gray-200"
+                placeholder="65.00"
+              />
+              <p className="text-sm text-gray-500">Base rate for hourly bay rentals</p>
             </div>
             
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between items-center">
-                  <Label htmlFor="daily_discount" className="text-sm font-medium">
-                    Daily Discount
-                  </Label>
-                  <span className="text-sm text-blue-600 font-medium">{settings.daily_discount_percent}%</span>
-                </div>
-                <Slider
-                  id="daily_discount"
-                  min={0}
-                  max={100}
-                  step={1}
-                  value={[settings.daily_discount_percent]}
-                  onValueChange={handleDiscountChange}
-                  className="mt-3"
-                />
-                <p className="text-sm text-gray-500 mt-1">Discount applied to daily rates</p>
-              </div>
-              
-              <div>
-                <Label htmlFor="weekly_multiplier" className="text-sm font-medium">
-                  Weekly Rate Multiplier
-                </Label>
-                <Input
-                  id="weekly_multiplier"
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  value={settings.weekly_multiplier}
-                  onChange={(e) => handleInputChange('weekly_multiplier', e.target.value)}
-                  className="mt-2"
-                />
-                <p className="text-sm text-gray-500 mt-1">Multiplied by hourly rate</p>
-              </div>
-              
-              <div>
-                <Label htmlFor="monthly_multiplier" className="text-sm font-medium">
-                  Monthly Rate Multiplier
-                </Label>
-                <Input
-                  id="monthly_multiplier"
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  value={settings.monthly_multiplier}
-                  onChange={(e) => handleInputChange('monthly_multiplier', e.target.value)}
-                  className="mt-2"
-                />
-                <p className="text-sm text-gray-500 mt-1">Multiplied by hourly rate</p>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="daily_hours" className="text-sm font-medium flex items-center gap-2">
+                <span className="inline-flex p-1.5 bg-green-100 text-green-700 rounded-full">
+                  <Clock className="h-4 w-4" />
+                </span>
+                Daily Hours
+              </Label>
+              <Input
+                id="daily_hours"
+                type="number"
+                value={localSettings.daily_hours}
+                onChange={(e) => handleInputChange('daily_hours', e.target.value)}
+                className="w-full border-gray-200"
+                placeholder="8"
+              />
+              <p className="text-sm text-gray-500">Number of hours in a daily rental</p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="daily_discount_percent" className="text-sm font-medium flex items-center gap-2">
+                <span className="inline-flex p-1.5 bg-yellow-100 text-yellow-700 rounded-full">
+                  <Percent className="h-4 w-4" />
+                </span>
+                Daily Discount (%)
+              </Label>
+              <Input
+                id="daily_discount_percent"
+                type="number"
+                value={localSettings.daily_discount_percent}
+                onChange={(e) => handleInputChange('daily_discount_percent', e.target.value)}
+                className="w-full border-gray-200"
+                placeholder="25"
+                min="0"
+                max="100"
+              />
+              <p className="text-sm text-gray-500">Discount percentage for daily rentals</p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="weekly_multiplier" className="text-sm font-medium flex items-center gap-2">
+                <span className="inline-flex p-1.5 bg-indigo-100 text-indigo-700 rounded-full">
+                  <DollarSign className="h-4 w-4" />
+                </span>
+                Weekly Rate Multiplier
+              </Label>
+              <Input
+                id="weekly_multiplier"
+                type="number"
+                value={localSettings.weekly_multiplier}
+                onChange={(e) => handleInputChange('weekly_multiplier', e.target.value)}
+                className="w-full border-gray-200"
+                placeholder="20"
+              />
+              <p className="text-sm text-gray-500">Multiplier for weekly rate (hourly rate × multiplier)</p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="monthly_multiplier" className="text-sm font-medium flex items-center gap-2">
+                <span className="inline-flex p-1.5 bg-pink-100 text-pink-700 rounded-full">
+                  <DollarSign className="h-4 w-4" />
+                </span>
+                Monthly Rate Multiplier
+              </Label>
+              <Input
+                id="monthly_multiplier"
+                type="number"
+                value={localSettings.monthly_multiplier}
+                onChange={(e) => handleInputChange('monthly_multiplier', e.target.value)}
+                className="w-full border-gray-200"
+                placeholder="40"
+              />
+              <p className="text-sm text-gray-500">Multiplier for monthly rate (hourly rate × multiplier)</p>
             </div>
           </div>
-        </TabsContent>
-        
-        <TabsContent value="table" className="mt-0">
-          <Table className="border rounded-md">
-            <TableHeader className="bg-gray-50">
-              <TableRow>
-                <TableHead className="font-medium">Setting</TableHead>
-                <TableHead className="font-medium">Value</TableHead>
-                <TableHead className="font-medium">Description</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow>
-                <TableCell>Base Hourly Rate</TableCell>
-                <TableCell>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={settings.hourly_base_rate || ''}
-                    onChange={(e) => handleInputChange('hourly_base_rate', e.target.value)}
-                    className="w-24 h-8"
-                  />
-                </TableCell>
-                <TableCell className="text-sm text-gray-500">Default hourly rate for new bays</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Daily Hours</TableCell>
-                <TableCell>
-                  <Input
-                    type="number"
-                    min="1"
-                    max="24"
-                    value={settings.daily_hours}
-                    onChange={(e) => handleInputChange('daily_hours', e.target.value)}
-                    className="w-24 h-8"
-                  />
-                </TableCell>
-                <TableCell className="text-sm text-gray-500">Hours counted as a full day</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Daily Discount</TableCell>
-                <TableCell>
-                  <div className="w-24 flex items-center">
-                    <Input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={settings.daily_discount_percent}
-                      onChange={(e) => handleInputChange('daily_discount_percent', e.target.value)}
-                      className="w-16 h-8 mr-1"
-                    />
-                    <span>%</span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-sm text-gray-500">Discount applied to daily rates</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Weekly Multiplier</TableCell>
-                <TableCell>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    value={settings.weekly_multiplier}
-                    onChange={(e) => handleInputChange('weekly_multiplier', e.target.value)}
-                    className="w-24 h-8"
-                  />
-                </TableCell>
-                <TableCell className="text-sm text-gray-500">Multiplied by hourly rate</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Monthly Multiplier</TableCell>
-                <TableCell>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    value={settings.monthly_multiplier}
-                    onChange={(e) => handleInputChange('monthly_multiplier', e.target.value)}
-                    className="w-24 h-8"
-                  />
-                </TableCell>
-                <TableCell className="text-sm text-gray-500">Multiplied by hourly rate</TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </TabsContent>
-        
-        <div className="flex justify-end mt-6">
-          <Button 
-            onClick={onSaveSettings} 
-            disabled={isSaving}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            {isSaving ? "Saving..." : "Save Settings"}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+          
+          <div className="mt-6 flex flex-col md:flex-row items-center justify-between gap-4 border-t border-gray-100 pt-4">
+            <div className="flex items-center gap-2 text-amber-600">
+              <Info className="h-4 w-4" />
+              <p className="text-sm">
+                Changing the hourly base rate will update all bays using the default rate.
+              </p>
+            </div>
+            <Button 
+              onClick={handleSave} 
+              disabled={isSaving || !isDirty}
+              className="rounded-full px-6"
+            >
+              {isSaving ? (
+                <>
+                  <LoadingSpinner size="sm" className="mr-2" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Save Settings
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
