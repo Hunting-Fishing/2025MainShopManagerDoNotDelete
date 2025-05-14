@@ -36,13 +36,19 @@ export interface RateHistory {
  * Fetches all DIY bays for a shop
  */
 export async function fetchBays(shopId: string): Promise<Bay[]> {
+  console.log("Fetching bays for shop:", shopId);
   const { data, error } = await supabase
     .from('diy_bay_rates')
     .select('*')
     .eq('shop_id', shopId)
     .order('bay_name');
   
-  if (error) throw error;
+  if (error) {
+    console.error("Error fetching bays:", error);
+    throw error;
+  }
+  
+  console.log("Fetched bays:", data);
   return data || [];
 }
 
@@ -50,6 +56,7 @@ export async function fetchBays(shopId: string): Promise<Bay[]> {
  * Fetches rate calculation settings for a shop
  */
 export async function fetchRateSettings(shopId: string): Promise<RateSettings | null> {
+  console.log("Fetching rate settings for shop:", shopId);
   const { data, error } = await supabase
     .from('diy_bay_rate_settings')
     .select('*')
@@ -57,9 +64,11 @@ export async function fetchRateSettings(shopId: string): Promise<RateSettings | 
     .single();
   
   if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
+    console.error("Error fetching rate settings:", error);
     throw error;
   }
   
+  console.log("Fetched rate settings:", data);
   return data || null;
 }
 
@@ -116,6 +125,7 @@ export async function deleteBay(bayId: string): Promise<void> {
  * Fetches rate change history for a bay
  */
 export async function fetchRateHistory(bayId: string): Promise<RateHistory[]> {
+  console.log("Fetching rate history for bay:", bayId);
   const { data, error } = await supabase
     .from('diy_bay_rate_history')
     .select(`
@@ -131,7 +141,12 @@ export async function fetchRateHistory(bayId: string): Promise<RateHistory[]> {
     .eq('bay_id', bayId)
     .order('changed_at', { ascending: false });
   
-  if (error) throw error;
+  if (error) {
+    console.error("Error fetching rate history:", error);
+    throw error;
+  }
+  
+  console.log("Fetched rate history:", data);
   
   // Transform the data to include user email if available
   return data.map(entry => ({

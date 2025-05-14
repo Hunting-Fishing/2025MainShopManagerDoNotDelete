@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useShopId } from './useShopId';
 import { useToast } from './use-toast';
 import {
@@ -34,13 +34,7 @@ export function useDIYBayRates() {
   const { toast } = useToast();
 
   // Load bay data and settings
-  useEffect(() => {
-    if (shopId) {
-      loadData();
-    }
-  }, [shopId]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!shopId) return;
     
     setIsLoading(true);
@@ -50,7 +44,10 @@ export function useDIYBayRates() {
         fetchRateSettings(shopId)
       ]);
       
-      setBays(baysData);
+      console.log("Loaded bays:", baysData);
+      console.log("Loaded settings:", settingsData);
+      
+      setBays(baysData || []);
       if (settingsData) {
         setSettings(settingsData);
       }
@@ -64,7 +61,14 @@ export function useDIYBayRates() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [shopId, toast]);
+
+  // Initial data load
+  useEffect(() => {
+    if (shopId) {
+      loadData();
+    }
+  }, [shopId, loadData]);
 
   const addBay = async (bayName: string) => {
     if (!shopId) {
@@ -170,6 +174,7 @@ export function useDIYBayRates() {
   const loadRateHistory = async (bayId: string) => {
     try {
       const history = await fetchRateHistory(bayId);
+      console.log("Loaded rate history:", history);
       setRateHistory(history);
       return history;
     } catch (error) {
