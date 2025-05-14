@@ -5,11 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RateSettings } from "@/services/diybay/diybayService";
+import { Slider } from "@/components/ui/slider";
+import { Save } from "lucide-react";
 
 export interface RateSettingsFormProps {
   settings: RateSettings;
   onSettingsChange: (field: keyof RateSettings, value: number) => void;
-  onSaveSettings: () => Promise<boolean | void>; // Update to accept both boolean or void return types
+  onSaveSettings: () => Promise<boolean | void>; // Accept both boolean or void return types
   isSaving: boolean;
 }
 
@@ -19,6 +21,10 @@ export const RateSettingsForm: React.FC<RateSettingsFormProps> = ({
   onSaveSettings,
   isSaving
 }) => {
+  const handleSliderChange = (value: number[]) => {
+    onSettingsChange('daily_discount_percent', value[0]);
+  };
+
   return (
     <Card className="mb-8 border-gray-100 shadow-md rounded-xl overflow-hidden">
       <CardHeader className="bg-gradient-to-r from-purple-50 to-indigo-50 border-b border-gray-100">
@@ -55,18 +61,26 @@ export const RateSettingsForm: React.FC<RateSettingsFormProps> = ({
             <p className="text-sm text-gray-500 mt-1">Number of hours charged for a day rate</p>
           </div>
 
-          <div>
+          <div className="sm:col-span-2">
             <Label htmlFor="dailyDiscount" className="block text-sm font-medium mb-2">
-              Daily Discount (%)
+              Daily Discount ({settings.daily_discount_percent}%)
             </Label>
-            <Input
-              id="dailyDiscount"
-              type="number"
-              value={settings.daily_discount_percent}
-              onChange={(e) => onSettingsChange('daily_discount_percent', parseFloat(e.target.value))}
-              className="w-full border-gray-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-            />
-            <p className="text-sm text-gray-500 mt-1">Discount applied to daily rate</p>
+            <div className="pt-2 px-1">
+              <Slider
+                id="dailyDiscount"
+                defaultValue={[settings.daily_discount_percent]}
+                max={50}
+                step={1}
+                onValueChange={handleSliderChange}
+                className="w-full"
+              />
+            </div>
+            <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <span>0%</span>
+              <span>25%</span>
+              <span>50%</span>
+            </div>
+            <p className="text-sm text-gray-500 mt-2">Discount applied to daily rate</p>
           </div>
 
           <div>
@@ -102,9 +116,19 @@ export const RateSettingsForm: React.FC<RateSettingsFormProps> = ({
           <Button
             onClick={onSaveSettings}
             disabled={isSaving}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 rounded-full"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 rounded-full flex items-center"
           >
-            {isSaving ? 'Saving...' : 'Save Settings'}
+            {isSaving ? (
+              <>
+                <span className="mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                Save Settings
+              </>
+            )}
           </Button>
         </div>
       </CardContent>

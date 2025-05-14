@@ -4,6 +4,8 @@ import { Bay } from "@/services/diybay/diybayService";
 import { ViewModeToggle } from "./ViewModeToggle";
 import { BayList } from "./BayList";
 import { AddBayButton } from "./AddBayButton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 
 interface BaySectionProps {
   bays: Bay[];
@@ -33,18 +35,26 @@ export const BaySection: React.FC<BaySectionProps> = ({
   onRateChange,
 }) => {
   return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-medium">Available Bays</h3>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-medium text-gray-800">Available Bays</h3>
         <ViewModeToggle viewMode={viewMode} setViewMode={setViewMode} />
       </div>
 
       <AddBayButton onAddBay={onAddBay} isSaving={isSaving} />
 
       {isLoading ? (
-        <div className="flex justify-center items-center h-40">
-          <p>Loading bays...</p>
+        <div className="flex justify-center items-center h-40 bg-gray-50 rounded-xl border border-gray-200">
+          <p className="text-gray-500">Loading bays...</p>
         </div>
+      ) : bays.length === 0 ? (
+        <Alert className="bg-amber-50 border-amber-200">
+          <AlertTriangle className="h-5 w-5 text-amber-600" />
+          <AlertTitle className="text-amber-800">No bays found</AlertTitle>
+          <AlertDescription className="text-amber-700">
+            You haven't added any DIY bays yet. Click the "Add Bay" button to create your first bay.
+          </AlertDescription>
+        </Alert>
       ) : (
         <BayList
           bays={bays}

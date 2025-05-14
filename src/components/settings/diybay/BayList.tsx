@@ -1,8 +1,8 @@
 
 import React from "react";
 import { Bay } from "@/services/diybay/diybayService";
-import { BaysTable } from "./BaysTable";
 import { BayCard } from "./BayCard";
+import { BaysTable } from "./BaysTable";
 
 interface BayListProps {
   bays: Bay[];
@@ -23,28 +23,8 @@ export const BayList: React.FC<BayListProps> = ({
   onHistoryClick,
   onRateChange,
 }) => {
-  if (bays.length === 0) {
-    return (
-      <div className="bg-muted/20 p-8 rounded-lg text-center">
-        <h4 className="text-lg font-medium mb-2">No bays found</h4>
-        <p className="text-muted-foreground mb-4">
-          You haven't added any DIY bays yet. Add your first bay to get started.
-        </p>
-      </div>
-    );
-  }
-
-  return viewMode === "table" ? (
-    <BaysTable
-      bays={bays}
-      onStatusChange={onStatusChange}
-      onEditClick={onEditClick}
-      onDeleteClick={onDeleteClick}
-      onHistoryClick={onHistoryClick}
-      onRateChange={onRateChange}
-    />
-  ) : (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  return viewMode === "cards" ? (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {bays.map((bay) => (
         <BayCard
           key={bay.id}
@@ -56,5 +36,14 @@ export const BayList: React.FC<BayListProps> = ({
         />
       ))}
     </div>
+  ) : (
+    <BaysTable
+      bays={bays}
+      onStatusChange={onStatusChange}
+      onEditClick={onEditClick}
+      onDeleteClick={onDeleteClick}
+      onHistoryClick={onHistoryClick}
+      onRateChange={onRateChange}
+    />
   );
 };

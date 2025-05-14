@@ -24,7 +24,7 @@ export function useDIYBayState() {
     
     setIsLoading(true);
     try {
-      // Fetch bays data - removing the order by bay_number which doesn't exist
+      // Fetch bays data
       const { data: baysData, error: baysError } = await supabase
         .from('diy_bay_rates')
         .select('*')
@@ -42,8 +42,15 @@ export function useDIYBayState() {
       if (settingsError && settingsError.code !== 'PGRST116') throw settingsError;
       
       // Update state with fetched data
-      if (baysData) setBays(baysData);
+      if (baysData) {
+        console.log("Loaded bays data:", baysData);
+        setBays(baysData);
+      } else {
+        console.log("No bays data found");
+      }
+      
       if (settingsData) {
+        console.log("Loaded settings data:", settingsData);
         setSettings({
           id: settingsData.id,
           daily_hours: settingsData.daily_hours,
@@ -53,6 +60,7 @@ export function useDIYBayState() {
           hourly_base_rate: settingsData.hourly_base_rate || 65 // Use default if not set
         });
       } else {
+        console.log("No settings data found, creating default");
         // Create default settings if none exist
         await createDefaultSettings();
       }
