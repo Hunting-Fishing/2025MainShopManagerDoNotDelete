@@ -48,6 +48,11 @@ import InventoryManager from '@/pages/InventoryManager';
 
 // All routes must be declared here to be used by the RouterProvider
 export const routes: RouteObject[] = [
+  // Login route outside of the layout
+  {
+    path: '/login',
+    element: <Login />
+  },
   {
     path: '/',
     element: <Layout />,
