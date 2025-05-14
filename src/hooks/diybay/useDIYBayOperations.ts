@@ -1,5 +1,4 @@
 
-import { useState } from 'react';
 import { useShopId } from '../useShopId';
 import { useToast } from '../use-toast';
 import { 
@@ -29,6 +28,8 @@ export function useDIYBayOperations(bays: Bay[], setBays: (bays: Bay[]) => void,
     
     setIsSaving(true);
     try {
+      console.log("Starting to add bay:", bayName, "for shop:", shopId);
+      
       // Calculate rates based on current settings
       const hourlyRate = 65; // Default hourly rate
       const rates = calculateRates(hourlyRate, {
@@ -49,6 +50,7 @@ export function useDIYBayOperations(bays: Bay[], setBays: (bays: Bay[]) => void,
         is_active: true
       }, shopId);
       
+      console.log("Successfully created bay:", newBay);
       setBays([...bays, newBay]);
       
       toast({

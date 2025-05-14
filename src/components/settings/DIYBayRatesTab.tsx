@@ -33,6 +33,8 @@ export const DIYBayRatesTab: React.FC = () => {
   const [selectedBay, setSelectedBay] = useState<Bay | null>(null);
   const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
 
+  console.log("DIYBayRatesTab rendered with bays:", bays);
+
   const handleStatusChange = useCallback(async (bay: Bay, isActive: boolean) => {
     await saveBay({ ...bay, is_active: isActive });
   }, [saveBay]);
@@ -70,6 +72,7 @@ export const DIYBayRatesTab: React.FC = () => {
 
   const handleAddBay = useCallback(
     async (bayName: string) => {
+      console.log("Adding bay:", bayName);
       await addBay(bayName);
     },
     [addBay]
@@ -123,7 +126,14 @@ export const DIYBayRatesTab: React.FC = () => {
         </div>
       ) : (
         <>
-          {viewMode === "table" ? (
+          {bays.length === 0 ? (
+            <div className="bg-muted/20 p-8 rounded-lg text-center">
+              <h4 className="text-lg font-medium mb-2">No bays found</h4>
+              <p className="text-muted-foreground mb-4">
+                You haven't added any DIY bays yet. Add your first bay to get started.
+              </p>
+            </div>
+          ) : viewMode === "table" ? (
             <BaysTable
               bays={bays}
               onStatusChange={handleStatusChange}
@@ -143,11 +153,6 @@ export const DIYBayRatesTab: React.FC = () => {
                   onHistoryClick={handleHistoryClick}
                 />
               ))}
-              {bays.length === 0 && (
-                <div className="col-span-full p-6 text-center">
-                  <p>No bays found. Add your first bay to get started.</p>
-                </div>
-              )}
             </div>
           )}
         </>

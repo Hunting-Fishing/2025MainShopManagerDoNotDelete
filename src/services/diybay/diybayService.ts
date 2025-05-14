@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export interface Bay {
@@ -76,16 +77,22 @@ export async function fetchRateSettings(shopId: string): Promise<RateSettings | 
  * Creates a new DIY bay
  */
 export async function createBay(bay: Omit<Bay, 'id'>, shopId: string): Promise<Bay> {
+  console.log("Creating bay:", bay, "for shop:", shopId);
   const { data, error } = await supabase
     .from('diy_bay_rates')
     .insert([{ ...bay, shop_id: shopId }])
     .select();
   
-  if (error) throw error;
+  if (error) {
+    console.error("Error creating bay:", error);
+    throw error;
+  }
+  
   if (!data || data.length === 0) {
     throw new Error('No data returned after creating bay');
   }
   
+  console.log("Created bay:", data[0]);
   return data[0] as Bay;
 }
 
