@@ -11,28 +11,20 @@ import { Badge } from "@/components/ui/badge";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 interface ServiceSubcategoryGridProps {
-  category: ServiceCategory | ServiceMainCategory;
-  checkedServices: Record<string, boolean>;
-  onServiceCheck: (service: string, checked: boolean) => void;
+  category: string;
+  subcategories: string[];
+  selectedSubcategory: string | null;
+  onSelectSubcategory: (subcategory: string) => void;
 }
 
 export const ServiceSubcategoryGrid: React.FC<ServiceSubcategoryGridProps> = ({
   category,
-  checkedServices,
-  onServiceCheck,
+  subcategories,
+  selectedSubcategory,
+  onSelectSubcategory
 }) => {
   // Keep track of expanded subcategories
   const [expandedSubcategories, setExpandedSubcategories] = useState<Record<string, boolean>>({});
-  
-  // Helper function to check if the category is a ServiceMainCategory
-  const isServiceMainCategory = (category: any): category is ServiceMainCategory => {
-    return 'id' in category && 'subcategories' in category;
-  };
-
-  // Determine the subcategories based on the type
-  const subcategories = isServiceMainCategory(category) ? 
-    category.subcategories : 
-    (category as ServiceCategory).subcategories || [];
   
   const toggleSubcategory = (subcategoryId: string) => {
     setExpandedSubcategories(prev => ({
@@ -44,96 +36,33 @@ export const ServiceSubcategoryGrid: React.FC<ServiceSubcategoryGridProps> = ({
   return (
     <TooltipProvider>
       <ScrollArea className="h-[450px] flex-1">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-4 px-2">
-          {subcategories.map((subcategory, subIndex) => {
-            // Get subcategory name and ID based on category type
-            const subcategoryName = isServiceMainCategory(category) 
-              ? (subcategory as any).name 
-              : (subcategory as any).name || "";
-              
-            const subcategoryId = isServiceMainCategory(category) 
-              ? (subcategory as any).id 
-              : `${subcategoryName}-${subIndex}`;
-              
-            const isExpanded = expandedSubcategories[subcategoryId] !== false; // Default to expanded
-            
-            // Get jobs based on the data structure
-            const jobs = isServiceMainCategory(category)
-              ? (subcategory as any).jobs || []
-              : (subcategory as any).services || [];
-
-            return (
-              <Card key={subcategoryId} className="border border-muted bg-card/50 shadow-sm overflow-hidden">
-                <CardHeader className="p-3 border-b bg-esm-blue-50/70 flex flex-row items-center justify-between">
-                  <h4 className="font-medium text-sm text-esm-blue-700 truncate max-w-[90%]">
-                    {subcategoryName}
-                  </h4>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="h-6 w-6 p-0" 
-                    onClick={() => toggleSubcategory(subcategoryId)}
-                  >
-                    {isExpanded ? 
-                      <ChevronUp className="h-4 w-4" /> : 
-                      <ChevronDown className="h-4 w-4" />
-                    }
-                  </Button>
-                </CardHeader>
-                {isExpanded && (
-                  <CardContent className="p-3 pt-2">
-                    <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
-                      {isServiceMainCategory(category) ? (
-                        jobs.map((job) => (
-                          <div key={job.id} className="flex items-start space-x-2 py-1">
-                            <Checkbox
-                              id={`service-${job.id}`}
-                              checked={checkedServices[job.name] || false}
-                              onCheckedChange={(checked) =>
-                                onServiceCheck(job.name, checked === true)
-                              }
-                              className="mt-0.5"
-                            />
-                            <Label
-                              htmlFor={`service-${job.id}`}
-                              className="text-sm cursor-pointer hover:text-foreground leading-normal break-words"
-                            >
-                              {job.name}
-                            </Label>
-                          </div>
-                        ))
-                      ) : (
-                        // Fallback for old format (if still needed)
-                        (subcategory as any).services?.map((service: string, idx: number) => (
-                          <div key={`${service}-${idx}`} className="flex items-start space-x-2 py-1">
-                            <Checkbox
-                              id={`service-${service}-${idx}`}
-                              checked={checkedServices[service] || false}
-                              onCheckedChange={(checked) =>
-                                onServiceCheck(service, checked === true)
-                              }
-                              className="mt-0.5"
-                            />
-                            <Label
-                              htmlFor={`service-${service}-${idx}`}
-                              className="text-sm cursor-pointer hover:text-foreground leading-normal break-words"
-                            >
-                              {service}
-                            </Label>
-                          </div>
-                        ))
-                      )}
-                      
-                      {/* Display message if no jobs/services are available */}
-                      {jobs.length === 0 && (
-                        <p className="text-sm text-muted-foreground italic">No services available</p>
-                      )}
-                    </div>
-                  </CardContent>
+        <div className="p-2">
+          <h3 className="font-medium mb-3 text-sm">
+            Subcategories for {category}
+          </h3>
+          <div className="space-y-1">
+            {subcategories.map((subcategory, index) => (
+              <Button
+                key={`${subcategory}-${index}`}
+                variant="ghost"
+                className={`w-full justify-start text-left h-9 ${selectedSubcategory === subcategory ? 'bg-muted font-medium' : ''}`}
+                onClick={() => onSelectSubcategory(subcategory)}
+              >
+                {subcategory}
+                {selectedSubcategory === subcategory && (
+                  <span className="ml-auto">
+                    <ChevronUp className="h-4 w-4" />
+                  </span>
                 )}
-              </Card>
-            );
-          })}
+              </Button>
+            ))}
+          </div>
+          
+          {subcategories.length === 0 && (
+            <div className="text-center text-muted-foreground p-4">
+              No subcategories available
+            </div>
+          )}
         </div>
       </ScrollArea>
     </TooltipProvider>

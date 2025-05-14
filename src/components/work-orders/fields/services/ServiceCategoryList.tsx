@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 
 interface ServiceCategoryListProps {
-  categories: ServiceMainCategory[] | ServiceCategory[];
+  categories: string[] | ServiceMainCategory[] | ServiceCategory[];
   selectedCategory: string | null;
   onCategorySelect: (category: string) => void;
 }
@@ -28,6 +28,14 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
     return 'id' in category && 'subcategories' in category;
   };
 
+  // Helper function to check if the category is a ServiceCategory
+  const isServiceCategory = (category: any): category is ServiceCategory => {
+    return !isServiceMainCategory(category) && 
+           typeof category === 'object' && 
+           'name' in category && 
+           'subcategories' in category;
+  };
+
   // Helper function to extract subcategory names for a specific category
   const getSubcategoryNames = (category: ServiceMainCategory | ServiceCategory): string[] => {
     if (isServiceMainCategory(category)) {
@@ -39,7 +47,7 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
         });
       });
       return jobNames;
-    } else {
+    } else if (isServiceCategory(category)) {
       // For old format, fall back to subcategories if available
       let names: string[] = [];
       (category as ServiceCategory).subcategories?.forEach(sub => {
@@ -47,6 +55,7 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
       });
       return names;
     }
+    return [];
   };
 
   const toggleCategory = (categoryName: string) => {
@@ -56,28 +65,35 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
     }));
   };
 
-  const getJobsCount = (category: ServiceMainCategory | ServiceCategory): number => {
-    if (isServiceMainCategory(category)) {
+  const getJobsCount = (category: ServiceMainCategory | ServiceCategory | string): number => {
+    if (typeof category === 'string') {
+      return 0;
+    } else if (isServiceMainCategory(category)) {
       return category.subcategories.reduce((total, sub) => total + sub.jobs.length, 0);
-    } else {
+    } else if (isServiceCategory(category)) {
       return (category as ServiceCategory).subcategories?.reduce(
         (total, sub) => total + (sub.services?.length || 0), 0
       ) || 0;
     }
+    return 0;
   };
 
-  const getSubcategoriesCount = (category: ServiceMainCategory | ServiceCategory): number => {
-    if (isServiceMainCategory(category)) {
+  const getSubcategoriesCount = (category: ServiceMainCategory | ServiceCategory | string): number => {
+    if (typeof category === 'string') {
+      return 0;
+    } else if (isServiceMainCategory(category)) {
       return category.subcategories.length;
-    } else {
+    } else if (isServiceCategory(category)) {
       return (category as ServiceCategory).subcategories?.length || 0;
     }
+    return 0;
   };
 
   // Filter categories based on search term
-  const filteredCategories = categories.filter(category => 
-    category.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredCategories = categories.filter(category => {
+    const categoryName = typeof category === 'string' ? category : category.name;
+    return categoryName.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   return (
     <div className="w-[280px] border-r pr-1">
@@ -97,7 +113,7 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
         <div className="space-y-1 pr-2">
           {filteredCategories.map((category) => {
             // Get category name and job count based on the category type
-            const categoryName = category.name;
+            const categoryName = typeof category === 'string' ? category : category.name;
             const isExpanded = expandedCategories[categoryName] || selectedCategory === categoryName;
             const jobsCount = getJobsCount(category);
             const subcategoriesCount = getSubcategoriesCount(category);
@@ -106,7 +122,7 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
             const key = isServiceMainCategory(category) ? (category as ServiceMainCategory).id : categoryName;
 
             // Get services/jobs for this category
-            const services = getSubcategoryNames(category);
+            const services = typeof category === 'string' ? [] : getSubcategoryNames(category as any);
 
             return (
               <div key={key} className="mb-3">
