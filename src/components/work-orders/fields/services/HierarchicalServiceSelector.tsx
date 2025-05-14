@@ -1,17 +1,12 @@
 
-import React, { useEffect, useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Check, ChevronRight, ChevronsUpDown } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from "@/types/serviceHierarchy";
-import { useQuery } from "@tanstack/react-query";
-import { fetchServiceCategories } from "@/lib/services/serviceApi";
-import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "sonner";
+import React, { useState, useEffect } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
+import { Skeleton } from '@/components/ui/skeleton';
 
-interface HierarchicalServiceSelectorProps {
+interface ServiceSelectorProps {
   onServiceSelect: (service: {
     categoryId: string;
     categoryName: string;
@@ -24,244 +19,261 @@ interface HierarchicalServiceSelectorProps {
   }) => void;
 }
 
-export function HierarchicalServiceSelector({ onServiceSelect }: HierarchicalServiceSelectorProps) {
-  const [openCategory, setOpenCategory] = useState(false);
-  const [openSubcategory, setOpenSubcategory] = useState(false);
-  const [openJob, setOpenJob] = useState(false);
-
-  const [selectedCategory, setSelectedCategory] = useState<ServiceMainCategory | null>(null);
-  const [selectedSubcategory, setSelectedSubcategory] = useState<ServiceSubcategory | null>(null);
-  const [selectedJob, setSelectedJob] = useState<ServiceJob | null>(null);
-
-  // Fetch service categories from the developer portal
-  const { data: categories, isLoading, error } = useQuery({
-    queryKey: ['serviceHierarchy'],
-    queryFn: fetchServiceCategories,
+// Mock service data - replace with API call in production
+const fetchServiceHierarchy = async (): Promise<ServiceMainCategory[]> => {
+  // This would be an API call in production
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve([
+        {
+          id: 'cat1',
+          name: 'Engine Service',
+          description: 'Engine service and repair',
+          position: 1,
+          subcategories: [
+            {
+              id: 'sub1',
+              name: 'Oil Change',
+              description: 'Oil change services',
+              jobs: [
+                {
+                  id: 'job1',
+                  name: 'Standard Oil Change',
+                  description: 'Standard oil change with filter replacement',
+                  estimatedTime: 30,
+                  price: 49.99
+                },
+                {
+                  id: 'job2',
+                  name: 'Synthetic Oil Change',
+                  description: 'Full synthetic oil change with premium filter',
+                  estimatedTime: 35,
+                  price: 79.99
+                }
+              ]
+            },
+            {
+              id: 'sub2',
+              name: 'Engine Repair',
+              description: 'Engine repair services',
+              jobs: [
+                {
+                  id: 'job3',
+                  name: 'Timing Belt Replacement',
+                  description: 'Replace timing belt and tensioner',
+                  estimatedTime: 180,
+                  price: 299.99
+                }
+              ]
+            }
+          ]
+        },
+        {
+          id: 'cat2',
+          name: 'Brake Service',
+          description: 'Brake service and repair',
+          position: 2,
+          subcategories: [
+            {
+              id: 'sub3',
+              name: 'Brake Pads',
+              description: 'Brake pad replacement',
+              jobs: [
+                {
+                  id: 'job4',
+                  name: 'Front Brake Pads',
+                  description: 'Replace front brake pads',
+                  estimatedTime: 60,
+                  price: 149.99
+                },
+                {
+                  id: 'job5',
+                  name: 'Rear Brake Pads',
+                  description: 'Replace rear brake pads',
+                  estimatedTime: 60,
+                  price: 129.99
+                }
+              ]
+            }
+          ]
+        }
+      ]);
+    }, 500);
   });
+};
+
+export function HierarchicalServiceSelector({ onServiceSelect }: ServiceSelectorProps) {
+  const [categories, setCategories] = useState<ServiceMainCategory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    if (error) {
-      toast.error("Failed to load service data");
-      console.error("Error loading service hierarchy:", error);
-    }
-  }, [error]);
+    const loadServices = async () => {
+      try {
+        const data = await fetchServiceHierarchy();
+        setCategories(data);
+        
+        // Auto-select first category if exists
+        if (data.length > 0) {
+          setSelectedCategory(data[0].id);
+        }
+      } catch (error) {
+        console.error("Failed to load service hierarchy:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadServices();
+  }, []);
 
-  // Reset selected subcategory when category changes
-  useEffect(() => {
+  const handleCategorySelect = (categoryId: string) => {
+    setSelectedCategory(categoryId);
     setSelectedSubcategory(null);
-    setSelectedJob(null);
-  }, [selectedCategory]);
+  };
 
-  // Reset selected job when subcategory changes
-  useEffect(() => {
-    setSelectedJob(null);
-  }, [selectedSubcategory]);
+  const handleSubcategorySelect = (subcategoryId: string) => {
+    setSelectedSubcategory(subcategoryId);
+  };
 
-  // When a job is selected, call the onServiceSelect callback
-  useEffect(() => {
-    if (selectedCategory && selectedSubcategory && selectedJob) {
+  const handleServiceSelect = (job: ServiceJob, categoryId: string, subcategoryId: string) => {
+    // Find category and subcategory names for the selected job
+    const category = categories.find(cat => cat.id === categoryId);
+    const subcategory = category?.subcategories.find(sub => sub.id === subcategoryId);
+    
+    if (category && subcategory) {
       onServiceSelect({
-        categoryId: selectedCategory.id,
-        categoryName: selectedCategory.name,
-        subcategoryId: selectedSubcategory.id,
-        subcategoryName: selectedSubcategory.name,
-        jobId: selectedJob.id,
-        jobName: selectedJob.name,
-        estimatedTime: selectedJob.estimatedTime,
-        price: selectedJob.price
+        categoryId,
+        categoryName: category.name,
+        subcategoryId,
+        subcategoryName: subcategory.name,
+        jobId: job.id,
+        jobName: job.name,
+        estimatedTime: job.estimatedTime,
+        price: job.price
       });
     }
-  }, [selectedJob, selectedCategory, selectedSubcategory, onServiceSelect]);
+  };
+
+  const filteredCategories = searchTerm 
+    ? categories.filter(category => 
+        category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        category.subcategories.some(sub => 
+          sub.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          sub.jobs.some(job => job.name.toLowerCase().includes(searchTerm.toLowerCase()))
+        )
+      )
+    : categories;
+
+  if (loading) {
+    return (
+      <div className="space-y-3">
+        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-24 w-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Category Selection */}
-        <div>
-          <label className="text-sm font-medium mb-1 block">Service Category</label>
-          <Popover open={openCategory} onOpenChange={setOpenCategory}>
-            <PopoverTrigger asChild>
-              <Button 
-                variant="outline"
-                role="combobox"
-                aria-expanded={openCategory}
-                className="w-full justify-start text-left font-normal"
-              >
-                {selectedCategory ? (
-                  <span>{selectedCategory.name}</span>
-                ) : (
-                  <span className="text-muted-foreground">Select category...</span>
-                )}
-                <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-full p-0" align="start">
-              {isLoading ? (
-                <div className="p-4 space-y-2">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-full" />
+      <Input 
+        type="text" 
+        placeholder="Search services..." 
+        className="mb-4"
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+      />
+
+      {filteredCategories.length > 0 ? (
+        <Tabs defaultValue="categories">
+          <TabsList className="bg-white border-b mb-4 w-full justify-start">
+            <TabsTrigger value="categories">Categories</TabsTrigger>
+            <TabsTrigger value="recent">Recent Services</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="categories" className="mt-0">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Category Selection */}
+              <div className="border rounded-md p-3 bg-gray-50">
+                <h4 className="font-medium mb-2">Categories</h4>
+                <div className="space-y-1">
+                  {filteredCategories.map(category => (
+                    <Button
+                      key={category.id}
+                      variant={selectedCategory === category.id ? "default" : "ghost"}
+                      className="w-full justify-start text-left"
+                      onClick={() => handleCategorySelect(category.id)}
+                    >
+                      {category.name}
+                    </Button>
+                  ))}
                 </div>
-              ) : (
-                <Command>
-                  <CommandInput placeholder="Search categories..." />
-                  <CommandList>
-                    <CommandEmpty>No categories found</CommandEmpty>
-                    <CommandGroup>
-                      {categories?.map(category => (
-                        <CommandItem
-                          key={category.id}
-                          value={category.name}
-                          onSelect={() => {
-                            setSelectedCategory(category);
-                            setOpenCategory(false);
-                          }}
+              </div>
+              
+              {/* Subcategory Selection */}
+              <div className="border rounded-md p-3 bg-gray-50">
+                <h4 className="font-medium mb-2">Subcategories</h4>
+                {selectedCategory ? (
+                  <div className="space-y-1">
+                    {categories
+                      .find(cat => cat.id === selectedCategory)
+                      ?.subcategories.map(subcat => (
+                        <Button
+                          key={subcat.id}
+                          variant={selectedSubcategory === subcat.id ? "default" : "ghost"}
+                          className="w-full justify-start text-left"
+                          onClick={() => handleSubcategorySelect(subcat.id)}
                         >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              selectedCategory?.id === category.id ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          {category.name}
-                        </CommandItem>
+                          {subcat.name}
+                        </Button>
                       ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              )}
-            </PopoverContent>
-          </Popover>
-        </div>
-
-        {/* Subcategory Selection */}
-        <div>
-          <label className="text-sm font-medium mb-1 block">Subcategory</label>
-          <Popover open={openSubcategory} onOpenChange={setOpenSubcategory}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={openSubcategory}
-                className="w-full justify-start text-left font-normal"
-                disabled={!selectedCategory}
-              >
-                {selectedSubcategory ? (
-                  <span>{selectedSubcategory.name}</span>
+                  </div>
                 ) : (
-                  <span className="text-muted-foreground">Select subcategory...</span>
+                  <p className="text-gray-500 text-sm">Select a category first</p>
                 )}
-                <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-full p-0" align="start">
-              <Command>
-                <CommandInput placeholder="Search subcategories..." />
-                <CommandList>
-                  <CommandEmpty>No subcategories found</CommandEmpty>
-                  <CommandGroup>
-                    {selectedCategory?.subcategories.map(subcategory => (
-                      <CommandItem
-                        key={subcategory.id}
-                        value={subcategory.name}
-                        onSelect={() => {
-                          setSelectedSubcategory(subcategory);
-                          setOpenSubcategory(false);
-                        }}
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            selectedSubcategory?.id === subcategory.id ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                        {subcategory.name}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-        </div>
-
-        {/* Job Selection */}
-        <div>
-          <label className="text-sm font-medium mb-1 block">Service/Job</label>
-          <Popover open={openJob} onOpenChange={setOpenJob}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={openJob}
-                className="w-full justify-start text-left font-normal"
-                disabled={!selectedSubcategory}
-              >
-                {selectedJob ? (
-                  <span>{selectedJob.name}</span>
-                ) : (
-                  <span className="text-muted-foreground">Select service/job...</span>
-                )}
-                <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-full p-0" align="start">
-              <Command>
-                <CommandInput placeholder="Search services/jobs..." />
-                <CommandList>
-                  <CommandEmpty>No services/jobs found</CommandEmpty>
-                  <CommandGroup>
-                    {selectedSubcategory?.jobs.map(job => (
-                      <CommandItem
-                        key={job.id}
-                        value={job.name}
-                        onSelect={() => {
-                          setSelectedJob(job);
-                          setOpenJob(false);
-                        }}
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            selectedJob?.id === job.id ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                        <div className="flex flex-col">
-                          <span>{job.name}</span>
-                          {job.price && (
-                            <span className="text-xs text-muted-foreground">${job.price.toFixed(2)}</span>
-                          )}
+              </div>
+              
+              {/* Jobs Selection */}
+              <div className="border rounded-md p-3 bg-gray-50">
+                <h4 className="font-medium mb-2">Services</h4>
+                {selectedSubcategory && selectedCategory ? (
+                  <div className="space-y-1">
+                    {categories
+                      .find(cat => cat.id === selectedCategory)
+                      ?.subcategories
+                      .find(sub => sub.id === selectedSubcategory)
+                      ?.jobs.map(job => (
+                        <div
+                          key={job.id}
+                          className="border rounded-md p-2 hover:bg-gray-100 cursor-pointer"
+                          onClick={() => handleServiceSelect(job, selectedCategory, selectedSubcategory)}
+                        >
+                          <div className="font-medium">{job.name}</div>
+                          <div className="flex justify-between text-sm text-gray-500">
+                            <span>{job.estimatedTime} min</span>
+                            <span>${job.price?.toFixed(2)}</span>
+                          </div>
                         </div>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-        </div>
-      </div>
-
-      {selectedJob && (
-        <div className="p-4 border rounded-md bg-slate-50 dark:bg-slate-900">
-          <h4 className="font-medium mb-2">{selectedJob.name}</h4>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            {selectedJob.description && (
-              <div>
-                <span className="text-muted-foreground">Description:</span> {selectedJob.description}
+                      ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-sm">Select a subcategory first</p>
+                )}
               </div>
-            )}
-            {selectedJob.estimatedTime && (
-              <div>
-                <span className="text-muted-foreground">Estimated Time:</span> {selectedJob.estimatedTime} mins
-              </div>
-            )}
-            {selectedJob.price && (
-              <div>
-                <span className="text-muted-foreground">Price:</span> ${selectedJob.price.toFixed(2)}
-              </div>
-            )}
-          </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="recent" className="mt-0">
+            <p className="text-gray-500">Recently used services will appear here.</p>
+          </TabsContent>
+        </Tabs>
+      ) : (
+        <div className="text-center p-4 text-gray-500">
+          {searchTerm 
+            ? "No services match your search criteria" 
+            : "No services available"}
         </div>
       )}
     </div>

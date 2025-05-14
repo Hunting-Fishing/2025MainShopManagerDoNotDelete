@@ -1,139 +1,68 @@
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { WorkOrder } from "@/types/workOrder";
-import { findWorkOrderById, updateWorkOrder } from "@/utils/workOrders";
-import WorkOrderDetailsView from "@/components/work-orders/WorkOrderDetailsView";
-import WorkOrderEditForm from "@/components/work-orders/WorkOrderEditForm";
-import { toast } from "@/hooks/use-toast";
-import { TimeEntry } from "@/types/workOrder";
+import { toast } from "sonner";
 import { WorkOrderPageLayout } from "@/components/work-orders/WorkOrderPageLayout";
+import { getWorkOrderById } from "@/utils/workOrders";
+import { WorkOrderDetailsView } from "@/components/work-orders/WorkOrderDetailsView";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Button } from "@/components/ui/button";
-import { Edit, Printer } from "lucide-react";
+import { WorkOrder } from "@/types/workOrder";
 
-interface WorkOrderDetailsProps {
-  edit?: boolean;
-}
-
-export default function WorkOrderDetails({ edit = false }: WorkOrderDetailsProps) {
+export default function WorkOrderDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-
-  // Update time entries in the state
-  const handleUpdateTimeEntries = async (updatedEntries: TimeEntry[]) => {
-    if (!workOrder) return;
-    
-    const updatedWorkOrder = {
-      ...workOrder,
-      timeEntries: updatedEntries,
-      totalBillableTime: updatedEntries.reduce((total, entry) => {
-        return entry.billable ? total + entry.duration : total;
-      }, 0)
-    };
-    
-    setWorkOrder(updatedWorkOrder);
-    
-    try {
-      // Save the updated work order to persist the time entries
-      await updateWorkOrder(updatedWorkOrder);
-    } catch (error) {
-      console.error("Error updating time entries:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save time entries.",
-        variant: "destructive",
-      });
-    }
-  };
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchWorkOrder = async () => {
-      setLoading(true);
+    async function loadWorkOrder() {
+      if (!id) return;
+      
       try {
-        if (!id) {
-          navigate("/work-orders");
-          return;
-        }
-
-        // We're now using async findWorkOrderById that connects to Supabase
-        const foundWorkOrder = await findWorkOrderById(id);
-        
-        if (foundWorkOrder) {
-          setWorkOrder(foundWorkOrder);
-        } else {
-          toast({
-            title: "Error",
-            description: "Work order not found.",
-            variant: "destructive",
-          });
-          navigate("/work-orders");
-        }
+        const order = await getWorkOrderById(id);
+        setWorkOrder(order);
       } catch (error) {
-        console.error("Error fetching work order:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load work order details.",
-          variant: "destructive",
-        });
-        navigate("/work-orders");
+        console.error("Error loading work order:", error);
+        toast.error("Failed to load work order");
       } finally {
         setLoading(false);
       }
-    };
-
-    fetchWorkOrder();
-  }, [id, navigate]);
-
-  const handleEdit = () => {
-    navigate(`/work-orders/${id}/edit`);
-  };
-
-  const handlePrint = () => {
-    window.print();
-  };
+    }
+    
+    loadWorkOrder();
+  }, [id]);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-40">
-        <div className="text-lg text-slate-500">Loading work order details...</div>
-      </div>
+      <WorkOrderPageLayout
+        title="Loading Work Order..."
+        description="Please wait while the work order details are being loaded."
+        backLink="/work-orders"
+        backLinkText="Back to Work Orders"
+      >
+        <div className="flex justify-center items-center h-64">
+          <LoadingSpinner size="lg" />
+        </div>
+      </WorkOrderPageLayout>
     );
   }
 
   if (!workOrder) {
-    return null; // This shouldn't happen as we navigate away if no work order is found
+    return (
+      <WorkOrderPageLayout
+        title="Work Order Not Found"
+        description="The requested work order could not be found."
+        backLink="/work-orders"
+        backLinkText="Back to Work Orders"
+      >
+        <div className="flex flex-col items-center justify-center space-y-4 py-12">
+          <p className="text-muted-foreground">The work order you're looking for doesn't exist or has been removed.</p>
+          <Button onClick={() => navigate('/work-orders')}>View All Work Orders</Button>
+        </div>
+      </WorkOrderPageLayout>
+    );
   }
 
-  const actions = !edit ? (
-    <div className="flex gap-2">
-      <Button variant="outline" onClick={handlePrint} className="rounded-full">
-        <Printer className="h-4 w-4 mr-2" />
-        Print
-      </Button>
-      <Button onClick={handleEdit} className="rounded-full bg-blue-600 hover:bg-blue-700">
-        <Edit className="h-4 w-4 mr-2" />
-        Edit
-      </Button>
-    </div>
-  ) : null;
-
-  return (
-    <WorkOrderPageLayout
-      title={edit ? "Edit Work Order" : `Work Order: ${workOrder.id}`}
-      description={edit ? "Modify work order details" : workOrder.description}
-      actions={actions}
-    >
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm">
-        {edit ? (
-          <WorkOrderEditForm workOrder={workOrder} />
-        ) : (
-          <WorkOrderDetailsView 
-            workOrder={workOrder} 
-          />
-        )}
-      </div>
-    </WorkOrderPageLayout>
-  );
+  return <WorkOrderDetailsView workOrder={workOrder} />;
 }

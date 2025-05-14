@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 import { DbTimeEntry, TimeEntry, WorkOrder } from "@/types/workOrder";
 import { toast } from "sonner";
@@ -107,4 +106,25 @@ export function normalizeWorkOrder(workOrder: any): WorkOrder {
     vehicleYear: workOrder.vehicleYear || (workOrder.vehicleDetails?.year || ''),
     // Add other fields as needed
   };
+}
+
+/**
+ * Get a work order by ID
+ */
+export async function getWorkOrderById(id: string): Promise<WorkOrder | null> {
+  try {
+    const { data, error } = await supabase
+      .from('work_orders')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) throw error;
+    
+    return data ? normalizeWorkOrder(data) : null;
+  } catch (err) {
+    console.error('Error fetching work order:', err);
+    toast.error('Failed to fetch work order');
+    return null;
+  }
 }

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from "react-hook-form";
@@ -21,7 +22,8 @@ export function useWorkOrderEditForm(workOrder: WorkOrder) {
       priority: workOrder?.priority || "medium",
       technician: workOrder?.technician || "",
       location: workOrder?.location || "",
-      dueDate: new Date(workOrder?.dueDate || new Date()).toISOString(),
+      // Convert date string to ISOString for form
+      dueDate: workOrder?.dueDate || new Date().toISOString(),
       notes: workOrder?.notes || "",
       vehicleMake: workOrder?.vehicleMake || "",
       vehicleModel: workOrder?.vehicleModel || "",
@@ -43,10 +45,10 @@ export function useWorkOrderEditForm(workOrder: WorkOrder) {
         customer: data.customer,
         description: data.description,
         status: data.status,
-        priority: data.priority,
+        priority: data.priority as WorkOrder['priority'],
         technician: data.technician,
         location: data.location,
-        dueDate: data.dueDate,
+        dueDate: data.dueDate, // Keep as string
         notes: data.notes,
         vehicleMake: data.vehicleMake,
         vehicleModel: data.vehicleModel,
