@@ -1,732 +1,829 @@
 
-import React, { useState, useEffect } from "react";
-import { useDIYBayRates } from "@/hooks/useDIYBayRates";
-import { Bay, RateSettings, RateHistory } from "@/services/diybay/diybayService";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect } from 'react';
 import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
+  Card, CardContent, CardHeader, CardTitle, CardDescription 
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
+} from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
   DialogTitle,
-  DialogTrigger 
+  DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { 
-  Pen, 
-  Trash2, 
-  Plus, 
-  Clock, 
-  Save, 
-  DollarSign, 
-  Ban, 
-  Loader2, 
-  CheckCircle, 
-  History,
-  LayoutGrid,
-  List
-} from "lucide-react";
-import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
+  PlusCircle, Edit, Trash2, MoreVertical, 
+  Save, DollarSign, History, Grid, Table as TableIcon 
+} from 'lucide-react';
+import { ToastAction } from '@/components/ui/toast';
+import { Badge } from '@/components/ui/badge';
+import { useDIYBayRates } from '@/hooks/useDIYBayRates';
+import { useToast } from '@/hooks/use-toast';
 
 export function DIYBayRatesTab() {
-  // State from hook
   const { 
     bays, 
     settings, 
-    isLoading, 
-    isSaving, 
+    isLoading,
+    isSaving,
     rateHistory,
-    addBay, 
+    loadData,
+    addBay,
     saveBay, 
     removeBay, 
     loadRateHistory,
     updateBayRateSettings,
-    calculateRate,
+    calculateRate
   } = useDIYBayRates();
-
-  // Local state
-  const [newBayName, setNewBayName] = useState("");
-  const [isCreating, setIsCreating] = useState(false);
-  const [editedBays, setEditedBays] = useState<Map<string, Bay>>(new Map());
-  const [showRateHistory, setShowRateHistory] = useState(false);
-  const [selectedBayId, setSelectedBayId] = useState<string | null>(null);
-  const [viewStyle, setViewStyle] = useState<'table' | 'card'>('table');
-  const [editSettings, setEditSettings] = useState<RateSettings>({
-    ...settings
-  });
   
   const { toast } = useToast();
 
-  // Update edited settings when main settings change
+  // Configuration states
+  const [showSettings, setShowSettings] = useState(false);
+  const [editedSettings, setEditedSettings] = useState(settings);
+  const [editedBays, setEditedBays] = useState<Record<string, any>>({});
+  const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
+  
+  // Dialog states
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
+  const [newBayName, setNewBayName] = useState("");
+  const [selectedBayId, setSelectedBayId] = useState<string | null>(null);
+  const [selectedBayName, setSelectedBayName] = useState("");
+
+  // Make sure we initialize editedSettings whenever settings change
   useEffect(() => {
-    setEditSettings({...settings});
+    setEditedSettings(settings);
   }, [settings]);
 
-  // Handle create new bay
-  const handleCreateBay = async () => {
-    if (!newBayName.trim()) {
+  // Explicitly reload data on component mount
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleSettingsChange = (field: keyof typeof editedSettings) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.type === 'number' ? Number(e.target.value) : e.target.value;
+    setEditedSettings(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSaveSettings = async () => {
+    const success = await updateBayRateSettings(editedSettings);
+    
+    if (success) {
+      toast({
+        title: "Settings updated",
+        description: "Rate calculation settings have been updated.",
+      });
+      setShowSettings(false);
+    }
+  };
+
+  const handleAddBay = async () => {
+    if (newBayName.trim() === "") {
       toast({
         title: "Error",
-        description: "Please enter a bay name",
+        description: "Please enter a bay name.",
         variant: "destructive",
       });
       return;
     }
-
-    setIsCreating(true);
-    try {
-      await addBay(newBayName);
+    
+    const newBay = await addBay(newBayName);
+    if (newBay) {
       setNewBayName("");
-    } finally {
-      setIsCreating(false);
+      setIsAddDialogOpen(false);
     }
   };
 
-  // Handle starting edit for a bay
-  const startEdit = (bay: Bay) => {
-    // Create a copy of the bay object for editing
-    setEditedBays(new Map(editedBays.set(bay.id, {...bay})));
-  };
-
-  // Handle edit field change for a bay
-  const handleEditChange = (bayId: string, field: keyof Bay, value: any) => {
-    const bay = editedBays.get(bayId);
-    if (bay) {
-      const updatedBay = { ...bay, [field]: value };
-      setEditedBays(new Map(editedBays.set(bayId, updatedBay)));
+  const handleDeleteBay = async () => {
+    if (selectedBayId) {
+      const success = await removeBay(selectedBayId, selectedBayName);
       
-      // If hourly rate changes, recalculate other rates
-      if (field === 'hourly_rate' && settings.id) {
-        const hourlyRate = parseFloat(value);
-        if (!isNaN(hourlyRate)) {
-          updatedBay.daily_rate = calculateRate('daily', hourlyRate);
-          updatedBay.weekly_rate = calculateRate('weekly', hourlyRate);
-          updatedBay.monthly_rate = calculateRate('monthly', hourlyRate);
-          setEditedBays(new Map(editedBays.set(bayId, updatedBay)));
-        }
+      if (success) {
+        setIsDeleteDialogOpen(false);
+        setSelectedBayId(null);
+        setSelectedBayName("");
       }
     }
   };
 
-  // Handle save changes for a bay
-  const handleSaveChanges = async (bayId: string) => {
-    const bay = editedBays.get(bayId);
-    if (bay) {
-      await saveBay(bay);
-      // Remove from edit mode after save
-      const updatedEditedBays = new Map(editedBays);
-      updatedEditedBays.delete(bayId);
-      setEditedBays(updatedEditedBays);
+  const handleViewHistory = async (bay: any) => {
+    setSelectedBayId(bay.id);
+    setSelectedBayName(bay.bay_name);
+    await loadRateHistory(bay.id);
+    setIsHistoryDialogOpen(true);
+  };
+
+  const handleBayEdit = (bay: any, field: string, value: any) => {
+    setEditedBays(prev => ({
+      ...prev,
+      [bay.id]: {
+        ...(prev[bay.id] || bay),
+        [field]: value
+      }
+    }));
+  };
+
+  const handleSaveBay = async (bay: any) => {
+    const editedBay = editedBays[bay.id];
+    if (!editedBay) return;
+    
+    // Create an updated bay object with edited values
+    const updatedBay = {
+      ...bay,
+      ...editedBay
+    };
+    
+    const success = await saveBay(updatedBay);
+    
+    if (success) {
+      // Clear the edited state for this bay
+      setEditedBays(prev => {
+        const newState = { ...prev };
+        delete newState[bay.id];
+        return newState;
+      });
     }
   };
 
-  // Cancel edit for a bay
-  const cancelEdit = (bayId: string) => {
-    const updatedEditedBays = new Map(editedBays);
-    updatedEditedBays.delete(bayId);
-    setEditedBays(updatedEditedBays);
+  const formatCurrency = (amount: number) => {
+    if (amount === null || amount === undefined) return '-';
+    return `$${amount.toFixed(2)}`;
   };
 
-  // Handle saving rate settings
-  const handleSaveSettings = async () => {
-    if (editSettings) {
-      await updateBayRateSettings(editSettings);
+  // Get edited or original value for a bay field
+  const getBayValue = (bay: any, field: string) => {
+    if (editedBays[bay.id] && editedBays[bay.id][field] !== undefined) {
+      return editedBays[bay.id][field];
     }
+    return bay[field];
   };
-
-  // Handle showing rate history for a bay
-  const handleShowHistory = async (bayId: string) => {
-    setSelectedBayId(bayId);
-    await loadRateHistory(bayId);
-    setShowRateHistory(true);
-  };
-
-  // Check if a particular bay is in edit mode
-  const isEditing = (bayId: string) => editedBays.has(bayId);
-
-  // Get the current data for a bay (either from editedBays if editing, or from bays)
-  const getBayData = (bayId: string): Bay => {
-    return editedBays.get(bayId) || bays.find(b => b.id === bayId) as Bay;
+  
+  // Determine if a bay is being edited
+  const isBayEdited = (bayId: string) => {
+    return Boolean(editedBays[bayId]);
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-60">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-        <span className="ml-2 text-lg">Loading bay data...</span>
+      <div className="flex justify-center items-center py-12">
+        <div className="text-center">
+          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading bay data...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header with View Toggle */}
+    <div className="space-y-6">
+      {/* Header Section with Controls */}
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold text-blue-700">DIY Bay Management</h2>
-        <div className="flex items-center space-x-2 bg-gray-100 p-1 rounded-md">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight">DIY Bay Rates</h2>
+          <p className="text-muted-foreground">Manage rates for DIY bay rentals</p>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {/* View Toggle */}
+          <div className="bg-muted rounded-md p-1 flex">
+            <Button
+              variant={viewMode === 'table' ? 'default' : 'ghost'}
+              size="sm"
+              className="flex items-center gap-1"
+              onClick={() => setViewMode('table')}
+            >
+              <TableIcon className="h-4 w-4" />
+              <span className="hidden sm:inline">Table</span>
+            </Button>
+            <Button
+              variant={viewMode === 'card' ? 'default' : 'ghost'}
+              size="sm"
+              className="flex items-center gap-1"
+              onClick={() => setViewMode('card')}
+            >
+              <Grid className="h-4 w-4" />
+              <span className="hidden sm:inline">Cards</span>
+            </Button>
+          </div>
+
           <Button
-            variant={viewStyle === 'table' ? 'default' : 'ghost'}
-            size="sm"
-            className="flex items-center gap-1 rounded-md"
-            onClick={() => setViewStyle('table')}
+            variant="outline"
+            onClick={() => setShowSettings(!showSettings)}
           >
-            <List className="h-4 w-4" />
-            <span className="hidden sm:inline">Table</span>
+            Rate Settings
           </Button>
-          <Button
-            variant={viewStyle === 'card' ? 'default' : 'ghost'}
-            size="sm"
-            className="flex items-center gap-1 rounded-md"
-            onClick={() => setViewStyle('card')}
-          >
-            <LayoutGrid className="h-4 w-4" />
-            <span className="hidden sm:inline">Cards</span>
-          </Button>
+          
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2">
+                <PlusCircle className="h-4 w-4" />
+                Add Bay
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New Bay</DialogTitle>
+                <DialogDescription>
+                  Create a new DIY bay with default rates.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="bayName">Bay Name</Label>
+                  <Input
+                    id="bayName"
+                    value={newBayName}
+                    onChange={(e) => setNewBayName(e.target.value)}
+                    placeholder="Enter bay name"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
+                <Button onClick={handleAddBay} disabled={isSaving}>
+                  {isSaving ? 'Adding...' : 'Add Bay'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
       
       {/* Rate Settings Card */}
-      <Card className="border-gray-100 shadow-md rounded-xl overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-gray-100">
-          <CardTitle className="text-indigo-700 flex items-center gap-2">
-            <DollarSign className="h-5 w-5 text-indigo-600" />
-            Rate Calculation Settings
-          </CardTitle>
-          <CardDescription>Configure how daily, weekly and monthly rates are calculated</CardDescription>
-        </CardHeader>
-        <CardContent className="p-6 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="daily_hours" className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-indigo-600" />
-                Hours in a Day
-              </Label>
-              <Input
-                id="daily_hours"
-                type="number"
-                value={editSettings.daily_hours}
-                onChange={(e) => setEditSettings({...editSettings, daily_hours: Number(e.target.value)})}
-                className="border-gray-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                min="1"
-                max="24"
-              />
-              <p className="text-xs text-gray-500">Number of hours considered a full day rental</p>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="daily_discount" className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-indigo-600" />
-                Day Discount (%)
-              </Label>
-              <Input
-                id="daily_discount"
-                type="number"
-                value={editSettings.daily_discount_percent}
-                onChange={(e) => setEditSettings({...editSettings, daily_discount_percent: Number(e.target.value)})}
-                className="border-gray-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                min="0"
-                max="100"
-              />
-              <p className="text-xs text-gray-500">Discount applied when renting for a full day</p>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="weekly_multiplier" className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-indigo-600" />
-                Weekly Rate Multiplier
-              </Label>
-              <Input
-                id="weekly_multiplier"
-                type="number"
-                value={editSettings.weekly_multiplier}
-                onChange={(e) => setEditSettings({...editSettings, weekly_multiplier: Number(e.target.value)})}
-                className="border-gray-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                min="1"
-              />
-              <p className="text-xs text-gray-500">Hourly rate multiplied by this value for weekly rate</p>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="monthly_multiplier" className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-indigo-600" />
-                Monthly Rate Multiplier
-              </Label>
-              <Input
-                id="monthly_multiplier"
-                type="number"
-                value={editSettings.monthly_multiplier}
-                onChange={(e) => setEditSettings({...editSettings, monthly_multiplier: Number(e.target.value)})}
-                className="border-gray-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                min="1"
-              />
-              <p className="text-xs text-gray-500">Hourly rate multiplied by this value for monthly rate</p>
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter className="flex justify-end bg-gray-50 py-3 px-6">
-          <Button 
-            onClick={handleSaveSettings} 
-            disabled={isSaving}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white"
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
+      {showSettings && (
+        <Card className="border-blue-100 shadow-md">
+          <CardHeader className="bg-blue-50 border-b border-blue-100">
+            <CardTitle className="text-blue-700 flex items-center justify-between">
+              <span>Rate Calculation Settings</span>
+              <Button 
+                size="sm" 
+                onClick={handleSaveSettings}
+                disabled={isSaving}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
                 <Save className="mr-2 h-4 w-4" />
                 Save Settings
-              </>
-            )}
-          </Button>
-        </CardFooter>
-      </Card>
-
-      {/* Bays List */}
-      <Card className="border-gray-100 shadow-md rounded-xl overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-100">
-          <CardTitle className="text-blue-700">
-            DIY Bays
-          </CardTitle>
-          <CardDescription>
-            Manage your DIY repair bays and their rental rates
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="mb-6 flex flex-col sm:flex-row sm:items-center gap-3">
-            <Input
-              placeholder="New bay name"
-              value={newBayName}
-              onChange={(e) => setNewBayName(e.target.value)}
-              className="border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            />
-            <Button 
-              onClick={handleCreateBay} 
-              disabled={isCreating || !newBayName.trim()}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              {isCreating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                <>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Bay
-                </>
-              )}
-            </Button>
-          </div>
-          
-          <Separator className="my-4" />
-          
-          {bays.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500">No bays have been added yet.</p>
-              <p className="text-sm text-gray-400 mt-2">Add your first bay using the form above.</p>
-            </div>
-          ) : viewStyle === 'table' ? (
-            // Table View
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Bay Name</TableHead>
-                    <TableHead>Hourly Rate ($)</TableHead>
-                    <TableHead>Daily Rate ($)</TableHead>
-                    <TableHead>Weekly Rate ($)</TableHead>
-                    <TableHead>Monthly Rate ($)</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {bays.map((bay) => {
-                    const bayData = getBayData(bay.id);
-                    
-                    return (
-                      <TableRow key={bay.id}>
-                        <TableCell className="font-medium">
-                          {isEditing(bay.id) ? (
-                            <Input
-                              value={bayData.bay_name}
-                              onChange={(e) => handleEditChange(bay.id, 'bay_name', e.target.value)}
-                              className="w-full"
-                            />
-                          ) : (
-                            bay.bay_name
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {isEditing(bay.id) ? (
-                            <Input
-                              type="number"
-                              value={bayData.hourly_rate}
-                              onChange={(e) => handleEditChange(bay.id, 'hourly_rate', parseFloat(e.target.value))}
-                              className="w-full"
-                            />
-                          ) : (
-                            `$${bay.hourly_rate}`
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {isEditing(bay.id) ? (
-                            <Input
-                              type="number"
-                              value={bayData.daily_rate || 0}
-                              onChange={(e) => handleEditChange(bay.id, 'daily_rate', parseFloat(e.target.value))}
-                              className="w-full"
-                            />
-                          ) : (
-                            `$${bay.daily_rate || 0}`
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {isEditing(bay.id) ? (
-                            <Input
-                              type="number"
-                              value={bayData.weekly_rate || 0}
-                              onChange={(e) => handleEditChange(bay.id, 'weekly_rate', parseFloat(e.target.value))}
-                              className="w-full"
-                            />
-                          ) : (
-                            `$${bay.weekly_rate || 0}`
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {isEditing(bay.id) ? (
-                            <Input
-                              type="number"
-                              value={bayData.monthly_rate || 0}
-                              onChange={(e) => handleEditChange(bay.id, 'monthly_rate', parseFloat(e.target.value))}
-                              className="w-full"
-                            />
-                          ) : (
-                            `$${bay.monthly_rate || 0}`
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {isEditing(bay.id) ? (
-                            <div className="flex items-center space-x-2">
-                              <Switch
-                                checked={bayData.is_active}
-                                onCheckedChange={(checked) => handleEditChange(bay.id, 'is_active', checked)}
-                              />
-                              <span>{bayData.is_active ? 'Active' : 'Inactive'}</span>
-                            </div>
-                          ) : (
-                            <Badge 
-                              variant="outline" 
-                              className={`${bay.is_active 
-                                ? 'bg-green-100 text-green-800 border-green-300' 
-                                : 'bg-red-100 text-red-800 border-red-300'}`}
-                            >
-                              {bay.is_active ? 'Active' : 'Inactive'}
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            {isEditing(bay.id) ? (
-                              <>
-                                <Button size="sm" variant="outline" onClick={() => handleSaveChanges(bay.id)}>
-                                  <Save className="h-4 w-4" />
-                                </Button>
-                                <Button size="sm" variant="outline" onClick={() => cancelEdit(bay.id)}>
-                                  <Ban className="h-4 w-4" />
-                                </Button>
-                              </>
-                            ) : (
-                              <>
-                                <Button size="sm" variant="outline" onClick={() => startEdit(bay)}>
-                                  <Pen className="h-4 w-4" />
-                                </Button>
-                                <Button size="sm" variant="outline" onClick={() => handleShowHistory(bay.id)}>
-                                  <History className="h-4 w-4" />
-                                </Button>
-                                <Dialog>
-                                  <DialogTrigger asChild>
-                                    <Button size="sm" variant="outline" className="text-red-500 border-red-200 hover:bg-red-50">
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </DialogTrigger>
-                                  <DialogContent>
-                                    <DialogHeader>
-                                      <DialogTitle>Delete Bay</DialogTitle>
-                                      <DialogDescription>
-                                        Are you sure you want to delete "{bay.bay_name}"? This action cannot be undone.
-                                      </DialogDescription>
-                                    </DialogHeader>
-                                    <DialogFooter>
-                                      <Button variant="outline" onClick={() => {}}>Cancel</Button>
-                                      <Button 
-                                        variant="destructive" 
-                                        onClick={() => removeBay(bay.id, bay.bay_name)}
-                                      >
-                                        Delete
-                                      </Button>
-                                    </DialogFooter>
-                                  </DialogContent>
-                                </Dialog>
-                              </>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            // Card View
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {bays.map((bay) => {
-                const bayData = getBayData(bay.id);
+              </Button>
+            </CardTitle>
+            <CardDescription>
+              Configure how daily, weekly, and monthly rates are calculated
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="dailyHours" className="text-sm font-medium">
+                    Daily Hours
+                  </Label>
+                  <Input 
+                    id="dailyHours"
+                    type="number"
+                    value={editedSettings.daily_hours}
+                    onChange={handleSettingsChange('daily_hours')}
+                    min="1"
+                    className="mt-1"
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Number of hours in a standard day rental
+                  </p>
+                </div>
                 
-                return (
-                  <Card key={bay.id} className="border border-gray-200 shadow-sm">
-                    <CardHeader className="pb-2">
-                      <div className="flex justify-between items-start">
-                        {isEditing(bay.id) ? (
-                          <Input
-                            value={bayData.bay_name}
-                            onChange={(e) => handleEditChange(bay.id, 'bay_name', e.target.value)}
-                            className="w-full font-semibold"
+                <div>
+                  <Label htmlFor="dailyDiscount" className="text-sm font-medium">
+                    Daily Discount (%)
+                  </Label>
+                  <Input 
+                    id="dailyDiscount"
+                    type="number"
+                    value={editedSettings.daily_discount_percent}
+                    onChange={handleSettingsChange('daily_discount_percent')}
+                    min="0"
+                    max="100"
+                    className="mt-1"
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Discount percentage applied to daily rate
+                  </p>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="weeklyMultiplier" className="text-sm font-medium">
+                    Weekly Rate Multiplier
+                  </Label>
+                  <Input 
+                    id="weeklyMultiplier"
+                    type="number"
+                    value={editedSettings.weekly_multiplier}
+                    onChange={handleSettingsChange('weekly_multiplier')}
+                    min="1"
+                    step="0.1"
+                    className="mt-1"
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Multiplier of hourly rate for weekly rentals
+                  </p>
+                </div>
+                
+                <div>
+                  <Label htmlFor="monthlyMultiplier" className="text-sm font-medium">
+                    Monthly Rate Multiplier
+                  </Label>
+                  <Input 
+                    id="monthlyMultiplier"
+                    type="number"
+                    value={editedSettings.monthly_multiplier}
+                    onChange={handleSettingsChange('monthly_multiplier')}
+                    min="1"
+                    step="0.1"
+                    className="mt-1"
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Multiplier of hourly rate for monthly rentals
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* Table View */}
+      {viewMode === 'table' && (
+        <Card className="border-gray-100 shadow-md">
+          <CardHeader className="bg-gray-50 border-b border-gray-100">
+            <CardTitle>DIY Bay Rates</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/40">
+                  <TableHead>Bay Name</TableHead>
+                  <TableHead>Location</TableHead>
+                  <TableHead>Hourly Rate</TableHead>
+                  <TableHead>Daily Rate</TableHead>
+                  <TableHead>Weekly Rate</TableHead>
+                  <TableHead>Monthly Rate</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {bays.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                      No DIY bays found. Click "Add Bay" to create one.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  bays.map(bay => (
+                    <TableRow key={bay.id}>
+                      <TableCell>
+                        {isBayEdited(bay.id) ? (
+                          <Input 
+                            value={getBayValue(bay, 'bay_name')}
+                            onChange={(e) => handleBayEdit(bay, 'bay_name', e.target.value)}
+                            className="w-full"
                           />
                         ) : (
-                          <CardTitle className="text-lg">{bay.bay_name}</CardTitle>
+                          bay.bay_name
                         )}
-                        <Badge 
-                          variant="outline" 
-                          className={`${bay.is_active 
-                            ? 'bg-green-100 text-green-800 border-green-300' 
-                            : 'bg-red-100 text-red-800 border-red-300'}`}
-                        >
-                          {bay.is_active ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </div>
-                      {isEditing(bay.id) && (
-                        <div className="flex items-center space-x-2 mt-2">
-                          <Label htmlFor={`active-${bay.id}`}>
-                            Status:
-                          </Label>
-                          <Switch
-                            id={`active-${bay.id}`}
-                            checked={bayData.is_active}
-                            onCheckedChange={(checked) => handleEditChange(bay.id, 'is_active', checked)}
+                      </TableCell>
+                      <TableCell>
+                        {isBayEdited(bay.id) ? (
+                          <Input 
+                            value={getBayValue(bay, 'bay_location')}
+                            onChange={(e) => handleBayEdit(bay, 'bay_location', e.target.value)}
+                            className="w-full"
                           />
-                          <span className="text-sm">{bayData.is_active ? 'Active' : 'Inactive'}</span>
-                        </div>
-                      )}
-                    </CardHeader>
-                    <CardContent className="pb-2">
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <Label className="font-medium">Hourly Rate:</Label>
-                          {isEditing(bay.id) ? (
-                            <div className="flex items-center">
-                              <span className="mr-1">$</span>
-                              <Input
-                                type="number"
-                                value={bayData.hourly_rate}
-                                onChange={(e) => handleEditChange(bay.id, 'hourly_rate', parseFloat(e.target.value))}
-                                className="w-24"
-                              />
-                            </div>
-                          ) : (
-                            <span className="text-blue-600 font-bold">${bay.hourly_rate}</span>
-                          )}
-                        </div>
-                        
-                        <div className="flex justify-between items-center">
-                          <Label className="font-medium">Daily Rate:</Label>
-                          {isEditing(bay.id) ? (
-                            <div className="flex items-center">
-                              <span className="mr-1">$</span>
-                              <Input
-                                type="number"
-                                value={bayData.daily_rate || 0}
-                                onChange={(e) => handleEditChange(bay.id, 'daily_rate', parseFloat(e.target.value))}
-                                className="w-24"
-                              />
-                            </div>
-                          ) : (
-                            <span className="text-blue-600 font-bold">${bay.daily_rate || 0}</span>
-                          )}
-                        </div>
-                        
-                        <div className="flex justify-between items-center">
-                          <Label className="font-medium">Weekly Rate:</Label>
-                          {isEditing(bay.id) ? (
-                            <div className="flex items-center">
-                              <span className="mr-1">$</span>
-                              <Input
-                                type="number"
-                                value={bayData.weekly_rate || 0}
-                                onChange={(e) => handleEditChange(bay.id, 'weekly_rate', parseFloat(e.target.value))}
-                                className="w-24"
-                              />
-                            </div>
-                          ) : (
-                            <span className="text-blue-600 font-bold">${bay.weekly_rate || 0}</span>
-                          )}
-                        </div>
-                        
-                        <div className="flex justify-between items-center">
-                          <Label className="font-medium">Monthly Rate:</Label>
-                          {isEditing(bay.id) ? (
-                            <div className="flex items-center">
-                              <span className="mr-1">$</span>
-                              <Input
-                                type="number"
-                                value={bayData.monthly_rate || 0}
-                                onChange={(e) => handleEditChange(bay.id, 'monthly_rate', parseFloat(e.target.value))}
-                                className="w-24"
-                              />
-                            </div>
-                          ) : (
-                            <span className="text-blue-600 font-bold">${bay.monthly_rate || 0}</span>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                    <CardFooter className="pt-2 flex justify-end space-x-2">
-                      {isEditing(bay.id) ? (
-                        <>
-                          <Button size="sm" variant="outline" onClick={() => handleSaveChanges(bay.id)}>
+                        ) : (
+                          bay.bay_location || '-'
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {isBayEdited(bay.id) ? (
+                          <div className="flex items-center">
+                            <DollarSign className="h-4 w-4 text-muted-foreground mr-1" />
+                            <Input 
+                              type="number"
+                              value={getBayValue(bay, 'hourly_rate')}
+                              onChange={(e) => {
+                                const value = parseFloat(e.target.value);
+                                handleBayEdit(bay, 'hourly_rate', value);
+                                
+                                // Auto-calculate other rates based on settings
+                                if (settings) {
+                                  handleBayEdit(bay, 'daily_rate', calculateRate('daily', value));
+                                  handleBayEdit(bay, 'weekly_rate', calculateRate('weekly', value));
+                                  handleBayEdit(bay, 'monthly_rate', calculateRate('monthly', value));
+                                }
+                              }}
+                              className="w-full"
+                              min="0"
+                              step="0.01"
+                            />
+                          </div>
+                        ) : (
+                          formatCurrency(bay.hourly_rate)
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {isBayEdited(bay.id) ? (
+                          <div className="flex items-center">
+                            <DollarSign className="h-4 w-4 text-muted-foreground mr-1" />
+                            <Input 
+                              type="number"
+                              value={getBayValue(bay, 'daily_rate')}
+                              onChange={(e) => handleBayEdit(bay, 'daily_rate', parseFloat(e.target.value))}
+                              className="w-full"
+                              min="0"
+                              step="0.01"
+                            />
+                          </div>
+                        ) : (
+                          formatCurrency(bay.daily_rate)
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {isBayEdited(bay.id) ? (
+                          <div className="flex items-center">
+                            <DollarSign className="h-4 w-4 text-muted-foreground mr-1" />
+                            <Input 
+                              type="number"
+                              value={getBayValue(bay, 'weekly_rate')}
+                              onChange={(e) => handleBayEdit(bay, 'weekly_rate', parseFloat(e.target.value))}
+                              className="w-full"
+                              min="0"
+                              step="0.01"
+                            />
+                          </div>
+                        ) : (
+                          formatCurrency(bay.weekly_rate)
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {isBayEdited(bay.id) ? (
+                          <div className="flex items-center">
+                            <DollarSign className="h-4 w-4 text-muted-foreground mr-1" />
+                            <Input 
+                              type="number"
+                              value={getBayValue(bay, 'monthly_rate')}
+                              onChange={(e) => handleBayEdit(bay, 'monthly_rate', parseFloat(e.target.value))}
+                              className="w-full"
+                              min="0"
+                              step="0.01"
+                            />
+                          </div>
+                        ) : (
+                          formatCurrency(bay.monthly_rate)
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {isBayEdited(bay.id) ? (
+                          <div className="flex items-center">
+                            <Switch 
+                              checked={getBayValue(bay, 'is_active')}
+                              onCheckedChange={(checked) => handleBayEdit(bay, 'is_active', checked)}
+                            />
+                          </div>
+                        ) : (
+                          <Badge variant={bay.is_active ? "success" : "destructive"}>
+                            {bay.is_active ? "Active" : "Inactive"}
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {isBayEdited(bay.id) ? (
+                          <Button 
+                            size="sm" 
+                            onClick={() => handleSaveBay(bay)} 
+                            disabled={isSaving}
+                          >
                             <Save className="h-4 w-4 mr-1" />
                             Save
                           </Button>
-                          <Button size="sm" variant="outline" onClick={() => cancelEdit(bay.id)}>
-                            <Ban className="h-4 w-4 mr-1" />
-                            Cancel
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <Button size="sm" variant="outline" onClick={() => startEdit(bay)}>
-                            <Pen className="h-4 w-4 mr-1" />
-                            Edit
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={() => handleShowHistory(bay.id)}>
-                            <History className="h-4 w-4 mr-1" />
-                            History
-                          </Button>
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button size="sm" variant="outline" className="text-red-500 border-red-200 hover:bg-red-50">
-                                <Trash2 className="h-4 w-4 mr-1" />
-                                Delete
+                        ) : (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreVertical className="h-4 w-4" />
                               </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Delete Bay</DialogTitle>
-                                <DialogDescription>
-                                  Are you sure you want to delete "{bay.bay_name}"? This action cannot be undone.
-                                </DialogDescription>
-                              </DialogHeader>
-                              <DialogFooter>
-                                <Button variant="outline" onClick={() => {}}>Cancel</Button>
-                                <Button 
-                                  variant="destructive" 
-                                  onClick={() => removeBay(bay.id, bay.bay_name)}
-                                >
-                                  Delete
-                                </Button>
-                              </DialogFooter>
-                            </DialogContent>
-                          </Dialog>
-                        </>
-                      )}
-                    </CardFooter>
-                  </Card>
-                );
-              })}
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleBayEdit(bay, 'editing', true)}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleViewHistory(bay)}>
+                                <History className="h-4 w-4 mr-2" />
+                                Rate History
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                onClick={() => {
+                                  setSelectedBayId(bay.id);
+                                  setSelectedBayName(bay.bay_name);
+                                  setIsDeleteDialogOpen(true);
+                                }}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Card View */}
+      {viewMode === 'card' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {bays.length === 0 ? (
+            <div className="col-span-full p-8 text-center rounded-lg border border-dashed border-gray-300">
+              <p className="text-muted-foreground">No DIY bays found. Click "Add Bay" to create one.</p>
             </div>
+          ) : (
+            bays.map(bay => (
+              <Card key={bay.id} className="border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                <CardHeader className="pb-2">
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-1">
+                      {isBayEdited(bay.id) ? (
+                        <Input 
+                          value={getBayValue(bay, 'bay_name')}
+                          onChange={(e) => handleBayEdit(bay, 'bay_name', e.target.value)}
+                          className="font-medium text-lg mb-1"
+                        />
+                      ) : (
+                        <CardTitle>{bay.bay_name}</CardTitle>
+                      )}
+                      {isBayEdited(bay.id) ? (
+                        <Input 
+                          value={getBayValue(bay, 'bay_location')}
+                          onChange={(e) => handleBayEdit(bay, 'bay_location', e.target.value)}
+                          placeholder="Location (optional)"
+                        />
+                      ) : (
+                        bay.bay_location && <CardDescription>{bay.bay_location}</CardDescription>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      {isBayEdited(bay.id) ? (
+                        <div className="flex items-center">
+                          <span className="mr-2 text-sm">Status:</span>
+                          <Switch 
+                            checked={getBayValue(bay, 'is_active')}
+                            onCheckedChange={(checked) => handleBayEdit(bay, 'is_active', checked)}
+                          />
+                        </div>
+                      ) : (
+                        <Badge variant={bay.is_active ? "success" : "destructive"}>
+                          {bay.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                      )}
+
+                      {!isBayEdited(bay.id) && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleBayEdit(bay, 'editing', true)}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleViewHistory(bay)}>
+                              <History className="h-4 w-4 mr-2" />
+                              Rate History
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              onClick={() => {
+                                setSelectedBayId(bay.id);
+                                setSelectedBayName(bay.bay_name);
+                                setIsDeleteDialogOpen(true);
+                              }}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-gray-50 p-3 rounded-lg space-y-1">
+                      <Label className="text-xs text-muted-foreground">Hourly Rate</Label>
+                      {isBayEdited(bay.id) ? (
+                        <div className="flex items-center mt-1">
+                          <DollarSign className="h-4 w-4 text-muted-foreground" />
+                          <Input 
+                            type="number"
+                            value={getBayValue(bay, 'hourly_rate')}
+                            onChange={(e) => {
+                              const value = parseFloat(e.target.value);
+                              handleBayEdit(bay, 'hourly_rate', value);
+                              
+                              // Auto-calculate other rates based on settings
+                              if (settings) {
+                                handleBayEdit(bay, 'daily_rate', calculateRate('daily', value));
+                                handleBayEdit(bay, 'weekly_rate', calculateRate('weekly', value));
+                                handleBayEdit(bay, 'monthly_rate', calculateRate('monthly', value));
+                              }
+                            }}
+                            className="border-0 p-0 h-auto text-lg font-medium"
+                            min="0"
+                            step="0.01"
+                          />
+                        </div>
+                      ) : (
+                        <div className="text-lg font-medium">{formatCurrency(bay.hourly_rate)}</div>
+                      )}
+                    </div>
+                    <div className="bg-blue-50 p-3 rounded-lg space-y-1">
+                      <Label className="text-xs text-muted-foreground">Daily Rate</Label>
+                      {isBayEdited(bay.id) ? (
+                        <div className="flex items-center mt-1">
+                          <DollarSign className="h-4 w-4 text-muted-foreground" />
+                          <Input 
+                            type="number"
+                            value={getBayValue(bay, 'daily_rate')}
+                            onChange={(e) => handleBayEdit(bay, 'daily_rate', parseFloat(e.target.value))}
+                            className="border-0 p-0 h-auto text-lg font-medium"
+                            min="0"
+                            step="0.01"
+                          />
+                        </div>
+                      ) : (
+                        <div className="text-lg font-medium">{formatCurrency(bay.daily_rate)}</div>
+                      )}
+                    </div>
+                    <div className="bg-green-50 p-3 rounded-lg space-y-1">
+                      <Label className="text-xs text-muted-foreground">Weekly Rate</Label>
+                      {isBayEdited(bay.id) ? (
+                        <div className="flex items-center mt-1">
+                          <DollarSign className="h-4 w-4 text-muted-foreground" />
+                          <Input 
+                            type="number"
+                            value={getBayValue(bay, 'weekly_rate')}
+                            onChange={(e) => handleBayEdit(bay, 'weekly_rate', parseFloat(e.target.value))}
+                            className="border-0 p-0 h-auto text-lg font-medium"
+                            min="0"
+                            step="0.01"
+                          />
+                        </div>
+                      ) : (
+                        <div className="text-lg font-medium">{formatCurrency(bay.weekly_rate)}</div>
+                      )}
+                    </div>
+                    <div className="bg-purple-50 p-3 rounded-lg space-y-1">
+                      <Label className="text-xs text-muted-foreground">Monthly Rate</Label>
+                      {isBayEdited(bay.id) ? (
+                        <div className="flex items-center mt-1">
+                          <DollarSign className="h-4 w-4 text-muted-foreground" />
+                          <Input 
+                            type="number"
+                            value={getBayValue(bay, 'monthly_rate')}
+                            onChange={(e) => handleBayEdit(bay, 'monthly_rate', parseFloat(e.target.value))}
+                            className="border-0 p-0 h-auto text-lg font-medium"
+                            min="0"
+                            step="0.01"
+                          />
+                        </div>
+                      ) : (
+                        <div className="text-lg font-medium">{formatCurrency(bay.monthly_rate)}</div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {isBayEdited(bay.id) && (
+                    <div className="flex justify-end pt-2">
+                      <Button 
+                        size="sm" 
+                        onClick={() => handleSaveBay(bay)} 
+                        disabled={isSaving}
+                        className="w-full"
+                      >
+                        <Save className="h-4 w-4 mr-1" />
+                        Save Changes
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))
           )}
-        </CardContent>
-      </Card>
+        </div>
+      )}
       
-      {/* Rate History Dialog */}
-      <Dialog open={showRateHistory} onOpenChange={setShowRateHistory}>
-        <DialogContent className="max-w-2xl">
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Rate Change History</DialogTitle>
+            <DialogTitle>Delete Bay</DialogTitle>
             <DialogDescription>
-              View the history of rate changes for this bay
+              Are you sure you want to delete "{selectedBayName}"? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          
-          <ScrollArea className="h-[400px] rounded-md border p-4">
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDeleteBay} disabled={isSaving}>
+              {isSaving ? 'Deleting...' : 'Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Rate History Dialog */}
+      <Dialog open={isHistoryDialogOpen} onOpenChange={setIsHistoryDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Rate History - {selectedBayName}</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[400px] overflow-y-auto">
             {rateHistory.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-500">No rate change history available.</p>
-              </div>
+              <p className="text-muted-foreground text-center py-8">
+                No rate change history found for this bay.
+              </p>
             ) : (
               <div className="space-y-4">
                 {rateHistory.map((entry) => (
-                  <div key={entry.id} className="p-4 border rounded-lg bg-gray-50">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center">
-                        <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300">
-                          <Clock className="h-3 w-3 mr-1" />
-                          {format(new Date(entry.changed_at), "MMM d, yyyy 'at' h:mm a")}
-                        </Badge>
+                  <div key={entry.id} className="border-b border-gray-100 pb-4 last:border-0">
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(entry.changed_at).toLocaleString()}
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      <div>
+                        <span className="text-xs text-muted-foreground">Hourly:</span>
+                        <p className="font-medium">{formatCurrency(entry.hourly_rate)}</p>
                       </div>
-                      <Badge variant="outline" className="bg-purple-100 text-purple-700 border-purple-300">
+                      <div>
+                        <span className="text-xs text-muted-foreground">Daily:</span>
+                        <p className="font-medium">{formatCurrency(entry.daily_rate)}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-muted-foreground">Weekly:</span>
+                        <p className="font-medium">{formatCurrency(entry.weekly_rate)}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-muted-foreground">Monthly:</span>
+                        <p className="font-medium">{formatCurrency(entry.monthly_rate)}</p>
+                      </div>
+                    </div>
+                    {entry.changed_by && (
+                      <p className="text-xs text-muted-foreground mt-1">
                         Changed by: {entry.user_email || 'System'}
-                      </Badge>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
-                      <div className="text-center p-2 bg-white rounded-md border">
-                        <p className="text-xs text-gray-500">Hourly Rate</p>
-                        <p className="font-bold text-blue-600">${entry.hourly_rate}</p>
-                      </div>
-                      <div className="text-center p-2 bg-white rounded-md border">
-                        <p className="text-xs text-gray-500">Daily Rate</p>
-                        <p className="font-bold text-blue-600">${entry.daily_rate || 'N/A'}</p>
-                      </div>
-                      <div className="text-center p-2 bg-white rounded-md border">
-                        <p className="text-xs text-gray-500">Weekly Rate</p>
-                        <p className="font-bold text-blue-600">${entry.weekly_rate || 'N/A'}</p>
-                      </div>
-                      <div className="text-center p-2 bg-white rounded-md border">
-                        <p className="text-xs text-gray-500">Monthly Rate</p>
-                        <p className="font-bold text-blue-600">${entry.monthly_rate || 'N/A'}</p>
-                      </div>
-                    </div>
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
             )}
-          </ScrollArea>
-          
+          </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRateHistory(false)}>
-              Close
-            </Button>
+            <Button onClick={() => setIsHistoryDialogOpen(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
