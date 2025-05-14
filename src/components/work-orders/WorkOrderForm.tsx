@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,6 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { Card } from "@/components/ui/card";
 import { WorkOrderTemplate } from "@/types/workOrder";
 import { ServicesSection } from "@/components/work-orders/fields/ServicesSection";
+import { ServiceItem } from "@/types/services";
 
 interface WorkOrderFormProps {
   technicians: string[];
@@ -33,7 +35,7 @@ export function WorkOrderForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [selectedItems, setSelectedItems] = useState<any[]>([]);
-  const [selectedServices, setSelectedServices] = useState<any[]>([]);
+  const [selectedServices, setSelectedServices] = useState<ServiceItem[]>([]);
   
   // Get pre-filled info if coming from a vehicle page
   const customerId = searchParams.get('customerId');
@@ -84,7 +86,7 @@ export function WorkOrderForm({
     }, 0);
     
     const servicesTotal = selectedServices.reduce((acc, service) => {
-      return acc + ((service.price || 0) * service.quantity);
+      return acc + ((service.price || 0) * (service.quantity || 1));
     }, 0);
     
     return itemsTotal + servicesTotal;
@@ -149,7 +151,10 @@ export function WorkOrderForm({
           <Separator className="my-4" />
           
           {/* Services Section - New */}
-          <ServicesSection onServicesChange={setSelectedServices} />
+          <ServicesSection 
+            services={selectedServices} 
+            setServices={setSelectedServices} 
+          />
           
           {/* Parts and Services Section */}
           <Card className="border-t-4 border-t-slate-700">
