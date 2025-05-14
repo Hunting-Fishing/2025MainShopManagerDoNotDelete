@@ -4,179 +4,89 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Save, Plus, Trash2, Info, Settings, Clock } from "lucide-react";
+import { Save, Plus, Trash, DollarSign, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger
-} from "@/components/ui/tooltip";
-import { companyService } from "@/services/settings/companyService";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Slider } from "@/components/ui/slider";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Switch } from "@/components/ui/switch";
+import { formatCurrency } from "@/lib/utils";
 
 interface BayRate {
   id: string;
   name: string;
-  hourlyRate: string;
-  dailyRate: string;
-  weeklyRate: string;
-  monthlyRate: string;
-  useAutoCalculation: boolean;
+  location: string;
+  hourlyRate: number;
+  dailyRate: number;
+  weeklyRate: number;
+  monthlyRate: number;
+}
+
+interface RateMultiplier {
+  daily: number;
+  weekly: number;
+  monthly: number;
 }
 
 export function DIYBayRatesTab() {
   const [bayRates, setBayRates] = useState<BayRate[]>([
     { 
-      id: '1', 
-      name: 'Bay 1', 
-      hourlyRate: '65', 
-      dailyRate: '480', 
-      weeklyRate: '2000', 
-      monthlyRate: '7000',
-      useAutoCalculation: true
+      id: "bay-1", 
+      name: "Bay 1", 
+      location: "Main garage area, first bay on left when entering from south entrance. Has 2-post lift rated for 10,000 lbs.",
+      hourlyRate: 45, 
+      dailyRate: 280, 
+      weeklyRate: 1200, 
+      monthlyRate: 4000 
     },
     { 
-      id: '2', 
-      name: 'Bay 2', 
-      hourlyRate: '70', 
-      dailyRate: '520', 
-      weeklyRate: '2200', 
-      monthlyRate: '7500',
-      useAutoCalculation: true
-    }
+      id: "bay-2", 
+      name: "Bay 2", 
+      location: "Main garage area, second bay from left, has 4-post alignment rack with pneumatic jacks.",
+      hourlyRate: 55, 
+      dailyRate: 350, 
+      weeklyRate: 1500, 
+      monthlyRate: 5000 
+    },
   ]);
 
-  // Calculation settings
-  const [calculationSettings, setCalculationSettings] = useState({
-    shopHoursPerDay: 8,
-    daysPerWeek: 5,
-    daysPerMonth: 20,
-    dailyDiscountPercent: 10,
-    weeklyDiscountPercent: 20,
-    monthlyDiscountPercent: 30
+  // Shop hour settings
+  const [shopHoursPerDay, setShopHoursPerDay] = useState<number>(8);
+  const [daysPerWeek, setDaysPerWeek] = useState<number>(5);
+  const [daysPerMonth, setDaysPerMonth] = useState<number>(22);
+  
+  // Rate multipliers
+  const [useCustomRates, setUseCustomRates] = useState<boolean>(false);
+  const [rateMultipliers, setRateMultipliers] = useState<RateMultiplier>({
+    daily: 0.9, // 10% discount for daily rate
+    weekly: 0.8, // 20% discount for weekly rate
+    monthly: 0.7, // 30% discount for monthly rate
   });
 
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
   const { toast } = useToast();
 
-  // Fetch shop hours when component mounts
+  // Update derived rates when hours change
   useEffect(() => {
-    const fetchShopHours = async () => {
-      try {
-        // Use a dummy shop ID for now - in a real app, you'd get this from context or props
-        const shopId = "current-shop-id";
-        const hours = await companyService.getBusinessHours(shopId);
-        
-        // Calculate average business hours per day from shop hours
-        if (hours && hours.length > 0) {
-          let totalHoursPerWeek = 0;
-          let openDaysCount = 0;
-          
-          hours.forEach(day => {
-            if (!day.is_closed) {
-              const openTime = new Date(`1970-01-01T${day.open_time}`);
-              const closeTime = new Date(`1970-01-01T${day.close_time}`);
-              const hoursOpen = (closeTime.getTime() - openTime.getTime()) / (1000 * 60 * 60);
-              totalHoursPerWeek += hoursOpen;
-              openDaysCount++;
-            }
-          });
-          
-          if (openDaysCount > 0) {
-            const avgHoursPerDay = Math.round(totalHoursPerWeek / openDaysCount);
-            
-            setCalculationSettings(prev => ({
-              ...prev,
-              shopHoursPerDay: avgHoursPerDay,
-              daysPerWeek: openDaysCount
-            }));
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching shop hours:", error);
-      }
-    };
-
-    fetchShopHours();
-  }, []);
-
-  const handleAddBay = () => {
-    const newId = String(bayRates.length + 1);
-    setBayRates([
-      ...bayRates, 
-      { 
-        id: newId, 
-        name: `Bay ${newId}`, 
-        hourlyRate: '65', 
-        dailyRate: '480', 
-        weeklyRate: '2000', 
-        monthlyRate: '7000',
-        useAutoCalculation: true
-      }
-    ]);
-    setHasChanges(true);
-  };
-
-  const handleRemoveBay = (id: string) => {
-    setBayRates(bayRates.filter(bay => bay.id !== id));
-    setHasChanges(true);
-  };
-
-  const handleBayChange = (id: string, field: keyof BayRate, value: string | boolean) => {
-    setBayRates(prevRates => 
-      prevRates.map(bay => 
-        bay.id === id ? { ...bay, [field]: value } : bay
-      )
-    );
-    setHasChanges(true);
-  };
-
-  const handleSettingsChange = (field: keyof typeof calculationSettings, value: number) => {
-    setCalculationSettings(prev => ({
-      ...prev,
-      [field]: value
-    }));
-    setHasChanges(true);
-  };
-
-  // Calculate rates based on hourly rate and settings
-  const calculateRates = (bay: BayRate) => {
-    if (!bay.useAutoCalculation) return bay;
-
-    const hourlyRate = parseFloat(bay.hourlyRate);
-    if (isNaN(hourlyRate)) return bay;
-
-    const { shopHoursPerDay, daysPerWeek, daysPerMonth, dailyDiscountPercent, weeklyDiscountPercent, monthlyDiscountPercent } = calculationSettings;
-    
-    // Calculate daily rate: Hourly rate × hours per day × (1 - daily discount)
-    const dailyRate = hourlyRate * shopHoursPerDay * (1 - dailyDiscountPercent/100);
-    
-    // Calculate weekly rate: Daily rate × days per week × (1 - weekly discount)
-    const weeklyRate = dailyRate * daysPerWeek * (1 - weeklyDiscountPercent/100);
-    
-    // Calculate monthly rate: Daily rate × days per month × (1 - monthly discount)
-    const monthlyRate = dailyRate * daysPerMonth * (1 - monthlyDiscountPercent/100);
-
-    return {
-      ...bay,
-      dailyRate: dailyRate.toFixed(2),
-      weeklyRate: weeklyRate.toFixed(2),
-      monthlyRate: monthlyRate.toFixed(2)
-    };
-  };
-
-  // Apply calculations to all bays that have auto-calculation enabled
-  useEffect(() => {
-    if (hasChanges) {
-      const updatedRates = bayRates.map(bay => 
-        bay.useAutoCalculation ? calculateRates(bay) : bay
-      );
+    if (!useCustomRates) {
+      const updatedRates = bayRates.map(bay => ({
+        ...bay,
+        dailyRate: Math.round(bay.hourlyRate * shopHoursPerDay * rateMultipliers.daily),
+        weeklyRate: Math.round(bay.hourlyRate * shopHoursPerDay * daysPerWeek * rateMultipliers.weekly),
+        monthlyRate: Math.round(bay.hourlyRate * shopHoursPerDay * daysPerMonth * rateMultipliers.monthly)
+      }));
+      
       setBayRates(updatedRates);
     }
-  }, [calculationSettings, hasChanges]);
+  }, [shopHoursPerDay, daysPerWeek, daysPerMonth, useCustomRates, rateMultipliers]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -203,324 +113,403 @@ export function DIYBayRatesTab() {
     }
   };
 
-  const toggleSettings = () => {
-    setShowSettings(!showSettings);
+  const handleAddBay = () => {
+    const newId = `bay-${bayRates.length + 1}`;
+    const baseHourlyRate = 50;
+    
+    const newBay: BayRate = {
+      id: newId,
+      name: `Bay ${bayRates.length + 1}`,
+      location: "",
+      hourlyRate: baseHourlyRate,
+      dailyRate: Math.round(baseHourlyRate * shopHoursPerDay * rateMultipliers.daily),
+      weeklyRate: Math.round(baseHourlyRate * shopHoursPerDay * daysPerWeek * rateMultipliers.weekly),
+      monthlyRate: Math.round(baseHourlyRate * shopHoursPerDay * daysPerMonth * rateMultipliers.monthly),
+    };
+    
+    setBayRates([...bayRates, newBay]);
+    setHasChanges(true);
+  };
+
+  const handleRemoveBay = (bayId: string) => {
+    setBayRates(bayRates.filter(bay => bay.id !== bayId));
+    setHasChanges(true);
+  };
+
+  const handleBayChange = (bayId: string, field: keyof BayRate, value: string | number) => {
+    const updatedRates = bayRates.map(bay => {
+      if (bay.id === bayId) {
+        const updatedBay = { ...bay, [field]: value };
+        
+        // If hourly rate changes and we're not using custom rates, recalculate other rates
+        if (field === 'hourlyRate' && !useCustomRates) {
+          const hourlyRate = Number(value);
+          return {
+            ...updatedBay,
+            dailyRate: Math.round(hourlyRate * shopHoursPerDay * rateMultipliers.daily),
+            weeklyRate: Math.round(hourlyRate * shopHoursPerDay * daysPerWeek * rateMultipliers.weekly),
+            monthlyRate: Math.round(hourlyRate * shopHoursPerDay * daysPerMonth * rateMultipliers.monthly),
+          };
+        }
+        return updatedBay;
+      }
+      return bay;
+    });
+    
+    setBayRates(updatedRates);
+    setHasChanges(true);
+  };
+
+  const handleMultiplierChange = (type: keyof RateMultiplier, value: number[]) => {
+    const multiplierValue = value[0] / 100;
+    setRateMultipliers({
+      ...rateMultipliers,
+      [type]: multiplierValue
+    });
+    setHasChanges(true);
+  };
+
+  const handleCustomRatesToggle = (checked: boolean) => {
+    setUseCustomRates(checked);
+    setHasChanges(true);
+
+    // If turning off custom rates, recalculate all rates based on hourly rate
+    if (!checked) {
+      const updatedRates = bayRates.map(bay => ({
+        ...bay,
+        dailyRate: Math.round(bay.hourlyRate * shopHoursPerDay * rateMultipliers.daily),
+        weeklyRate: Math.round(bay.hourlyRate * shopHoursPerDay * daysPerWeek * rateMultipliers.weekly),
+        monthlyRate: Math.round(bay.hourlyRate * shopHoursPerDay * daysPerMonth * rateMultipliers.monthly)
+      }));
+      
+      setBayRates(updatedRates);
+    }
   };
 
   return (
     <div className="space-y-6">
+      {/* Rate Calculation Settings */}
       <Card className="border-gray-100 shadow-md rounded-xl overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-gray-100 flex flex-row justify-between items-center">
-          <div>
-            <CardTitle className="text-indigo-700">DIY Bay Rental Rates</CardTitle>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={toggleSettings}
-            className="bg-white hover:bg-gray-50"
-          >
-            <Settings className="h-4 w-4 mr-1" />
-            {showSettings ? "Hide Settings" : "Rate Calculation Settings"}
-          </Button>
+        <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-gray-100">
+          <CardTitle className="text-blue-700">DIY Bay Rate Settings</CardTitle>
         </CardHeader>
-        
         <CardContent className="p-6">
-          {showSettings && (
-            <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
-              <h3 className="text-sm font-medium mb-2 flex items-center gap-1.5 text-blue-700">
-                <Settings className="h-4 w-4" />
-                Rate Calculation Settings
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div className="space-y-2">
-                  <Label htmlFor="shopHoursPerDay" className="text-sm flex items-center gap-1.5">
-                    <Clock className="h-3.5 w-3.5 text-blue-600" />
-                    Hours Per Day
-                  </Label>
-                  <Input
-                    id="shopHoursPerDay"
-                    type="number"
-                    min="1"
-                    max="24"
-                    value={calculationSettings.shopHoursPerDay}
-                    onChange={(e) => handleSettingsChange('shopHoursPerDay', parseInt(e.target.value))}
-                    className="border-gray-200"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="daysPerWeek" className="text-sm flex items-center gap-1.5">
-                    <Clock className="h-3.5 w-3.5 text-blue-600" />
-                    Days Per Week
-                  </Label>
-                  <Input
-                    id="daysPerWeek"
-                    type="number"
-                    min="1"
-                    max="7"
-                    value={calculationSettings.daysPerWeek}
-                    onChange={(e) => handleSettingsChange('daysPerWeek', parseInt(e.target.value))}
-                    className="border-gray-200"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="daysPerMonth" className="text-sm flex items-center gap-1.5">
-                    <Clock className="h-3.5 w-3.5 text-blue-600" />
-                    Days Per Month
-                  </Label>
-                  <Input
-                    id="daysPerMonth"
-                    type="number"
-                    min="1"
-                    max="31"
-                    value={calculationSettings.daysPerMonth}
-                    onChange={(e) => handleSettingsChange('daysPerMonth', parseInt(e.target.value))}
-                    className="border-gray-200"
-                  />
-                </div>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-medium">Custom Rates</h3>
+                <p className="text-sm text-gray-500">Enable to manually set daily, weekly and monthly rates</p>
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="dailyDiscountPercent" className="text-sm flex items-center gap-1.5">
-                    Daily Discount %
-                  </Label>
-                  <Input
-                    id="dailyDiscountPercent"
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={calculationSettings.dailyDiscountPercent}
-                    onChange={(e) => handleSettingsChange('dailyDiscountPercent', parseInt(e.target.value))}
-                    className="border-gray-200"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="weeklyDiscountPercent" className="text-sm flex items-center gap-1.5">
-                    Weekly Discount %
-                  </Label>
-                  <Input
-                    id="weeklyDiscountPercent"
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={calculationSettings.weeklyDiscountPercent}
-                    onChange={(e) => handleSettingsChange('weeklyDiscountPercent', parseInt(e.target.value))}
-                    className="border-gray-200"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="monthlyDiscountPercent" className="text-sm flex items-center gap-1.5">
-                    Monthly Discount %
-                  </Label>
-                  <Input
-                    id="monthlyDiscountPercent"
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={calculationSettings.monthlyDiscountPercent}
-                    onChange={(e) => handleSettingsChange('monthlyDiscountPercent', parseInt(e.target.value))}
-                    className="border-gray-200"
-                  />
-                </div>
-              </div>
-              
-              <div className="mt-4 text-xs text-blue-600 bg-blue-50 p-2 rounded-md">
-                <p className="font-medium">How rates are calculated:</p>
-                <ul className="list-disc pl-5 mt-1 space-y-1">
-                  <li>Daily Rate = Hourly Rate × Hours Per Day × (1 - Daily Discount %)</li>
-                  <li>Weekly Rate = Daily Rate × Days Per Week × (1 - Weekly Discount %)</li>
-                  <li>Monthly Rate = Daily Rate × Days Per Month × (1 - Monthly Discount %)</li>
-                </ul>
-              </div>
+              <Switch
+                checked={useCustomRates}
+                onCheckedChange={handleCustomRatesToggle}
+              />
             </div>
-          )}
-          
-          <div className="space-y-6">
-            {bayRates.map((bay) => (
-              <div key={bay.id} className="p-4 border rounded-lg bg-gray-50">
-                <div className="flex justify-between items-center mb-3">
-                  <div className="flex items-center gap-2">
-                    <Input
-                      value={bay.name}
-                      onChange={(e) => handleBayChange(bay.id, 'name', e.target.value)}
-                      className="font-medium text-md w-40 border-gray-200 bg-white"
+            
+            {!useCustomRates && (
+              <div className="rounded-lg border p-4 space-y-4">
+                <h3 className="text-md font-semibold">Rate Calculation Settings</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <Label htmlFor="hours-per-day">Shop Hours Per Day:</Label>
+                      <span className="text-sm font-medium">{shopHoursPerDay} hours</span>
+                    </div>
+                    <Slider 
+                      id="hours-per-day"
+                      min={1} 
+                      max={24} 
+                      step={1} 
+                      value={[shopHoursPerDay]}
+                      onValueChange={(value) => {
+                        setShopHoursPerDay(value[0]);
+                        setHasChanges(true);
+                      }}
+                      className="py-2"
                     />
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="flex items-center ml-2">
-                            <Switch
-                              checked={bay.useAutoCalculation}
-                              onCheckedChange={(checked) => handleBayChange(bay.id, 'useAutoCalculation', checked)}
-                              id={`auto-calc-${bay.id}`}
-                            />
-                            <Label htmlFor={`auto-calc-${bay.id}`} className="ml-2 text-sm">
-                              Auto Calculate
-                            </Label>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="w-60">When enabled, daily, weekly, and monthly rates will be automatically calculated based on the hourly rate and settings</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
                   </div>
                   
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <Label htmlFor="days-per-week">Work Days Per Week:</Label>
+                      <span className="text-sm font-medium">{daysPerWeek} days</span>
+                    </div>
+                    <Slider 
+                      id="days-per-week"
+                      min={1} 
+                      max={7} 
+                      step={1} 
+                      value={[daysPerWeek]}
+                      onValueChange={(value) => {
+                        setDaysPerWeek(value[0]);
+                        setHasChanges(true);
+                      }}
+                      className="py-2"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <Label htmlFor="days-per-month">Work Days Per Month:</Label>
+                      <span className="text-sm font-medium">{daysPerMonth} days</span>
+                    </div>
+                    <Slider 
+                      id="days-per-month"
+                      min={10} 
+                      max={31} 
+                      step={1} 
+                      value={[daysPerMonth]}
+                      onValueChange={(value) => {
+                        setDaysPerMonth(value[0]);
+                        setHasChanges(true);
+                      }}
+                      className="py-2"
+                    />
+                  </div>
+                </div>
+                
+                <div className="pt-4 border-t">
+                  <h4 className="text-md font-semibold mb-4">Discounted Rate Multipliers</h4>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <Label htmlFor="daily-multiplier">
+                          Daily Rate Discount:
+                        </Label>
+                        <span className="text-sm font-medium">
+                          {Math.round((1 - rateMultipliers.daily) * 100)}% off ({rateMultipliers.daily.toFixed(2)}x)
+                        </span>
+                      </div>
+                      <Slider 
+                        id="daily-multiplier"
+                        min={50} 
+                        max={100} 
+                        step={1} 
+                        value={[Math.round(rateMultipliers.daily * 100)]}
+                        onValueChange={(value) => handleMultiplierChange('daily', value)}
+                        className="py-2"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <Label htmlFor="weekly-multiplier">
+                          Weekly Rate Discount:
+                        </Label>
+                        <span className="text-sm font-medium">
+                          {Math.round((1 - rateMultipliers.weekly) * 100)}% off ({rateMultipliers.weekly.toFixed(2)}x)
+                        </span>
+                      </div>
+                      <Slider 
+                        id="weekly-multiplier"
+                        min={40} 
+                        max={95} 
+                        step={1} 
+                        value={[Math.round(rateMultipliers.weekly * 100)]}
+                        onValueChange={(value) => handleMultiplierChange('weekly', value)}
+                        className="py-2"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <Label htmlFor="monthly-multiplier">
+                          Monthly Rate Discount:
+                        </Label>
+                        <span className="text-sm font-medium">
+                          {Math.round((1 - rateMultipliers.monthly) * 100)}% off ({rateMultipliers.monthly.toFixed(2)}x)
+                        </span>
+                      </div>
+                      <Slider 
+                        id="monthly-multiplier"
+                        min={30} 
+                        max={90} 
+                        step={1} 
+                        value={[Math.round(rateMultipliers.monthly * 100)]}
+                        onValueChange={(value) => handleMultiplierChange('monthly', value)}
+                        className="py-2"
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="p-4 border rounded-lg bg-gray-50">
+                  <h4 className="font-medium mb-2">How Rates Are Calculated</h4>
+                  <ul className="text-sm space-y-2 text-gray-600">
+                    <li>• <strong>Daily Rate:</strong> Hourly Rate × {shopHoursPerDay} hours × {rateMultipliers.daily.toFixed(2)} ({Math.round((1 - rateMultipliers.daily) * 100)}% discount)</li>
+                    <li>• <strong>Weekly Rate:</strong> Hourly Rate × {shopHoursPerDay} hours × {daysPerWeek} days × {rateMultipliers.weekly.toFixed(2)} ({Math.round((1 - rateMultipliers.weekly) * 100)}% discount)</li>
+                    <li>• <strong>Monthly Rate:</strong> Hourly Rate × {shopHoursPerDay} hours × {daysPerMonth} days × {rateMultipliers.monthly.toFixed(2)} ({Math.round((1 - rateMultipliers.monthly) * 100)}% discount)</li>
+                  </ul>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-gray-100 shadow-md rounded-xl overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-100">
+          <CardTitle className="text-blue-700">DIY Bay Rates</CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="space-y-6">
+            {bayRates.map((bay, index) => (
+              <div 
+                key={bay.id} 
+                className="p-4 border rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow"
+              >
+                <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 pb-3 border-b">
+                  <div className="flex-1 mb-2 md:mb-0">
+                    <Label htmlFor={`name-${bay.id}`} className="text-sm font-medium mb-1 block">Bay Name</Label>
+                    <Input
+                      id={`name-${bay.id}`}
+                      value={bay.name}
+                      onChange={(e) => handleBayChange(bay.id, 'name', e.target.value)}
+                      className="max-w-xs"
+                    />
+                  </div>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => handleRemoveBay(bay.id)}
-                    className="text-gray-500 hover:text-red-500 hover:bg-red-50"
+                    className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                    disabled={bayRates.length <= 1}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash className="h-4 w-4 mr-1" />
+                    Remove Bay
                   </Button>
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="mb-4">
+                  <Label htmlFor={`location-${bay.id}`} className="text-sm font-medium mb-1 block">Bay Location & Details</Label>
+                  <Textarea
+                    id={`location-${bay.id}`}
+                    value={bay.location}
+                    onChange={(e) => handleBayChange(bay.id, 'location', e.target.value)}
+                    className="min-h-[80px] resize-y"
+                    placeholder="Enter bay location details and equipment information..."
+                    rows={3}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor={`hourly-${bay.id}`} className="flex items-center gap-1.5">
-                      <span className="inline-flex p-1 bg-blue-100 text-blue-700 rounded-full">
-                        <Clock className="h-3.5 w-3.5" />
+                    <Label htmlFor={`hourly-${bay.id}`} className="text-sm font-medium flex items-center gap-2">
+                      <span className="inline-flex p-1.5 bg-blue-100 text-blue-700 rounded-full">
+                        <DollarSign className="h-3 w-3" />
                       </span>
-                      Hourly Rate ($/hour)
+                      Hourly Rate
                     </Label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                       <Input
                         id={`hourly-${bay.id}`}
                         type="number"
-                        min="0"
-                        step="0.01"
                         value={bay.hourlyRate}
-                        onChange={(e) => handleBayChange(bay.id, 'hourlyRate', e.target.value)}
-                        className="pl-7 border-gray-200"
+                        onChange={(e) => handleBayChange(bay.id, 'hourlyRate', Number(e.target.value))}
+                        className="pl-8"
                       />
                     </div>
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor={`daily-${bay.id}`} className="flex items-center gap-1.5">
-                      <span className="inline-flex p-1 bg-green-100 text-green-700 rounded-full">
-                        <Clock className="h-3.5 w-3.5" />
+                    <Label htmlFor={`daily-${bay.id}`} className="text-sm font-medium flex items-center gap-2">
+                      <span className="inline-flex p-1.5 bg-green-100 text-green-700 rounded-full">
+                        <DollarSign className="h-3 w-3" />
                       </span>
-                      Daily Rate ($/day)
+                      Daily Rate
                     </Label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                       <Input
                         id={`daily-${bay.id}`}
                         type="number"
-                        min="0"
-                        step="0.01"
                         value={bay.dailyRate}
-                        onChange={(e) => handleBayChange(bay.id, 'dailyRate', e.target.value)}
-                        className={`pl-7 border-gray-200 ${bay.useAutoCalculation ? 'bg-gray-100' : ''}`}
-                        readOnly={bay.useAutoCalculation}
+                        onChange={(e) => handleBayChange(bay.id, 'dailyRate', Number(e.target.value))}
+                        className="pl-8"
+                        disabled={!useCustomRates}
                       />
                     </div>
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor={`weekly-${bay.id}`} className="flex items-center gap-1.5">
-                      <span className="inline-flex p-1 bg-purple-100 text-purple-700 rounded-full">
-                        <Clock className="h-3.5 w-3.5" />
+                    <Label htmlFor={`weekly-${bay.id}`} className="text-sm font-medium flex items-center gap-2">
+                      <span className="inline-flex p-1.5 bg-purple-100 text-purple-700 rounded-full">
+                        <DollarSign className="h-3 w-3" />
                       </span>
-                      Weekly Rate ($/week)
+                      Weekly Rate
                     </Label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                       <Input
                         id={`weekly-${bay.id}`}
                         type="number"
-                        min="0"
-                        step="0.01"
                         value={bay.weeklyRate}
-                        onChange={(e) => handleBayChange(bay.id, 'weeklyRate', e.target.value)}
-                        className={`pl-7 border-gray-200 ${bay.useAutoCalculation ? 'bg-gray-100' : ''}`}
-                        readOnly={bay.useAutoCalculation}
+                        onChange={(e) => handleBayChange(bay.id, 'weeklyRate', Number(e.target.value))}
+                        className="pl-8"
+                        disabled={!useCustomRates}
                       />
                     </div>
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor={`monthly-${bay.id}`} className="flex items-center gap-1.5">
-                      <span className="inline-flex p-1 bg-yellow-100 text-yellow-700 rounded-full">
-                        <Clock className="h-3.5 w-3.5" />
+                    <Label htmlFor={`monthly-${bay.id}`} className="text-sm font-medium flex items-center gap-2">
+                      <span className="inline-flex p-1.5 bg-yellow-100 text-yellow-700 rounded-full">
+                        <DollarSign className="h-3 w-3" />
                       </span>
-                      Monthly Rate ($/month)
+                      Monthly Rate
                     </Label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                       <Input
                         id={`monthly-${bay.id}`}
                         type="number"
-                        min="0"
-                        step="0.01"
                         value={bay.monthlyRate}
-                        onChange={(e) => handleBayChange(bay.id, 'monthlyRate', e.target.value)}
-                        className={`pl-7 border-gray-200 ${bay.useAutoCalculation ? 'bg-gray-100' : ''}`}
-                        readOnly={bay.useAutoCalculation}
+                        onChange={(e) => handleBayChange(bay.id, 'monthlyRate', Number(e.target.value))}
+                        className="pl-8"
+                        disabled={!useCustomRates}
                       />
                     </div>
                   </div>
                 </div>
               </div>
             ))}
-          </div>
-          
-          <div className="mt-4 flex justify-between">
-            <Button 
-              onClick={handleAddBay} 
-              variant="outline"
-              className="border-indigo-200 text-indigo-700 hover:bg-indigo-50"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Add Bay
-            </Button>
             
             <Button 
-              onClick={handleSave} 
-              disabled={saving || !hasChanges}
-              className={`rounded-full px-6 ${hasChanges 
-                ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                : 'bg-gray-100 text-gray-400'}`}
+              onClick={handleAddBay} 
+              variant="outline" 
+              className="w-full border-dashed border-blue-300 text-blue-600 hover:bg-blue-50"
             >
-              {saving ? (
-                <>
-                  <span className="animate-spin mr-2">⏳</span>
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  {hasChanges ? "Save Changes" : "No Changes"}
-                </>
-              )}
+              <Plus className="mr-2 h-4 w-4" />
+              Add New Bay
             </Button>
+            
+            <div className="flex justify-end mt-6">
+              <Button 
+                onClick={handleSave} 
+                disabled={saving || !hasChanges}
+                className={`rounded-full px-6 ${hasChanges 
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                  : 'bg-gray-100 text-gray-400'}`}
+              >
+                {saving ? (
+                  <>
+                    <span className="animate-spin mr-2">⏳</span>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    {hasChanges ? "Save Changes" : "No Changes"}
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
-      
-      <div className="p-4 border border-blue-100 bg-blue-50 rounded-lg">
-        <h3 className="flex items-center text-blue-800 font-medium mb-2">
-          <Info className="h-4 w-4 mr-2" />
-          Understanding DIY Bay Rental Rates
-        </h3>
-        <p className="text-sm text-blue-700">
-          DIY bay rental rates offer flexibility for customers who want to work on their own vehicles. 
-          Rates can be configured on hourly, daily, weekly or monthly terms, with discounts applied for longer-term rentals.
-        </p>
-        <p className="text-sm text-blue-700 mt-2">
-          When auto-calculation is enabled, rates will be automatically calculated based on your hourly rate and settings - 
-          providing consistent pricing across all rental terms.
-        </p>
-      </div>
     </div>
   );
 }
