@@ -7,12 +7,12 @@ import { useToast } from "@/hooks/use-toast";
 export interface LabourRates {
   id?: string;
   shop_id?: string;
-  standard_rate: number;
-  diagnostic_rate: number;
-  emergency_rate: number;
-  warranty_rate: number;
-  internal_rate: number;
-  diy_rate: number;
+  standard_rate: number | string;
+  diagnostic_rate: number | string;
+  emergency_rate: number | string;
+  warranty_rate: number | string;
+  internal_rate: number | string;
+  diy_rate: number | string;
 }
 
 export function useLabourRates() {
