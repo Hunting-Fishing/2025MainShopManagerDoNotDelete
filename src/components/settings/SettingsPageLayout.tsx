@@ -17,13 +17,15 @@ interface SettingsPageLayoutProps {
   description?: string;
   children: React.ReactNode;
   defaultTab?: string;
+  isLoading?: boolean;
 }
 
 export const SettingsPageLayout: React.FC<SettingsPageLayoutProps> = ({ 
   title, 
   description, 
   children,
-  defaultTab
+  defaultTab,
+  isLoading = false
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -72,7 +74,16 @@ export const SettingsPageLayout: React.FC<SettingsPageLayoutProps> = ({
       </div>
 
       <div className="mt-6">
-        {children}
+        {isLoading ? (
+          <div className="flex items-center justify-center p-12 bg-white rounded-lg shadow-sm border border-gray-100">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+              <p className="text-gray-600 font-medium">Loading content...</p>
+            </div>
+          </div>
+        ) : (
+          children
+        )}
       </div>
     </div>
   );
