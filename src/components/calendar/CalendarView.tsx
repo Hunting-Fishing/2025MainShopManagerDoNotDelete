@@ -14,6 +14,8 @@ interface CalendarViewProps {
   view: CalendarViewType;
   loading?: boolean;
   shiftChats?: ChatRoom[];
+  onDateClick?: (date: Date) => void; // Add new prop
+  isCustomerView?: boolean; // Add new prop
 }
 
 export function CalendarView({ 
@@ -21,7 +23,9 @@ export function CalendarView({
   currentDate, 
   view,
   loading = false,
-  shiftChats = []
+  shiftChats = [],
+  onDateClick,
+  isCustomerView = false
 }: CalendarViewProps) {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [now, setNow] = useState(new Date());
@@ -66,6 +70,8 @@ export function CalendarView({
           onEventClick={handleEventClick}
           currentTime={now}
           shiftChats={shiftChats}
+          onDateClick={onDateClick}
+          isCustomerView={isCustomerView}
         />
       )}
       

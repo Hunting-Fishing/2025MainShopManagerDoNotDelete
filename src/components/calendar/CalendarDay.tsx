@@ -13,8 +13,10 @@ interface CalendarDayProps {
   isCurrentMonth?: boolean;
   isToday?: boolean;
   onEventClick: (event: CalendarEvent) => void;
+  onDateClick?: (date: Date) => void; // New prop for date clicking
   currentTime?: Date;
   shiftChats?: ChatRoom[];
+  isCustomerView?: boolean; // New prop to indicate if this is customer view
 }
 
 export function CalendarDay({ 
@@ -23,8 +25,10 @@ export function CalendarDay({
   isCurrentMonth = true, 
   isToday = false,
   onEventClick,
+  onDateClick,
   currentTime = new Date(),
-  shiftChats = []
+  shiftChats = [],
+  isCustomerView = false
 }: CalendarDayProps) {
   const navigate = useNavigate();
   
@@ -48,14 +52,23 @@ export function CalendarDay({
     navigate(`/chat/${room.id}`);
   };
 
+  // Handle day click for booking (only if in customer view and day is current or future)
+  const handleDayClick = () => {
+    if (isCustomerView && onDateClick && !isPastDate) {
+      onDateClick(date);
+    }
+  };
+
   return (
     <div 
       className={cn(
         "min-h-[120px] border p-1 relative",
         !isCurrentMonth && "bg-slate-50",
         isToday && "bg-blue-50",
-        isPastDate && "bg-red-50 bg-opacity-30"
+        isPastDate && "bg-red-50 bg-opacity-30",
+        isCustomerView && !isPastDate && "cursor-pointer hover:bg-blue-50"
       )}
+      onClick={handleDayClick}
     >
       {/* Past date overlay */}
       {isPastDate && (
@@ -84,7 +97,10 @@ export function CalendarDay({
         {visibleEvents.map((event) => (
           <div 
             key={event.id}
-            onClick={() => onEventClick(event)}
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent triggering the day click
+              onEventClick(event);
+            }}
             className={cn(
               "px-2 py-1 text-xs rounded truncate cursor-pointer relative z-20",
               priorityMap[event.priority].classes.replace("text-xs font-medium", "")
@@ -106,8 +122,16 @@ export function CalendarDay({
       <ShiftChatIndicator 
         date={date}
         chatRooms={shiftChats}
-        onClick={handleShiftChatClick}
+        onClick={(e, room) => {
+          e.stopPropagation(); // Prevent triggering the day click
+          handleShiftChatClick(room);
+        }}
       />
+      
+      {/* Add visual indicator for bookable days in customer view */}
+      {isCustomerView && !isPastDate && (
+        <div className="absolute bottom-1 right-1 w-2 h-2 bg-green-500 rounded-full"></div>
+      )}
     </div>
   );
 }

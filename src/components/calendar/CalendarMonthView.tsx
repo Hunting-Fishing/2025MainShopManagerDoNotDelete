@@ -19,6 +19,8 @@ interface CalendarMonthViewProps {
   onEventClick: (event: CalendarEvent) => void;
   currentTime?: Date;
   shiftChats?: ChatRoom[];
+  onDateClick?: (date: Date) => void; // Add new prop
+  isCustomerView?: boolean; // Add new prop
 }
 
 export function CalendarMonthView({ 
@@ -26,7 +28,9 @@ export function CalendarMonthView({
   events, 
   onEventClick,
   currentTime = new Date(),
-  shiftChats = []
+  shiftChats = [],
+  onDateClick,
+  isCustomerView = false
 }: CalendarMonthViewProps) {
   // Get days in month view (including days from previous/next month to fill the grid)
   const monthStart = startOfMonth(currentDate);
@@ -72,8 +76,10 @@ export function CalendarMonthView({
               isCurrentMonth={isSameMonth(day, monthStart)}
               isToday={isToday(day)}
               onEventClick={onEventClick}
+              onDateClick={onDateClick}
               currentTime={currentTime}
               shiftChats={shiftChats}
+              isCustomerView={isCustomerView}
             />
           );
         })}

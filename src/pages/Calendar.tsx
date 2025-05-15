@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CalendarHeader } from "@/components/calendar/CalendarHeader";
 import { CalendarView } from "@/components/calendar/CalendarView";
 import { CalendarFilters } from "@/components/calendar/CalendarFilters";
@@ -9,6 +9,9 @@ import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { toast } from "@/components/ui/use-toast";
 import { CalendarEvent } from "@/types/calendar";
+import { BookingDialog } from "@/components/calendar/BookingDialog";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/lib/supabase";
 
 export default function Calendar() {
   const navigate = useNavigate();
@@ -16,6 +19,10 @@ export default function Calendar() {
   const [view, setView] = useState<"month" | "week" | "day">("month");
   const [technicianFilter, setTechnicianFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [customerId, setCustomerId] = useState<string | undefined>(undefined);
+  const [isCustomerView, setIsCustomerView] = useState(false);
   
   // Use the custom hook to fetch and manage calendar data
   const { events, shiftChats, isLoading, error } = useCalendarEvents(currentDate, view);
@@ -42,6 +49,42 @@ export default function Calendar() {
     });
   };
 
+  // Check if current user is a customer and get customer ID
+  useEffect(() => {
+    const checkUserRole = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          // Check if user is associated with a customer record
+          const { data: customerData } = await supabase
+            .from('customers')
+            .select('id')
+            .eq('auth_user_id', session.user.id)
+            .single();
+            
+          if (customerData?.id) {
+            setCustomerId(customerData.id);
+            setIsCustomerView(true);
+          } else {
+            setIsCustomerView(false);
+          }
+        }
+      } catch (err) {
+        console.error('Error checking user role:', err);
+      }
+    };
+    
+    checkUserRole();
+  }, []);
+
+  // Handle day click to open booking dialog
+  const handleDayClick = (date: Date) => {
+    if (isCustomerView) {
+      setSelectedDate(date);
+      setIsBookingDialogOpen(true);
+    }
+  };
+
   // Show toast when there's an error
   if (error) {
     toast({
@@ -61,15 +104,23 @@ export default function Calendar() {
           setView={setView}
         />
         
-        <CreateShiftChatButton onClick={handleCreateShiftChat} />
+        {isCustomerView ? (
+          <Button variant="default" onClick={() => setIsBookingDialogOpen(true)}>
+            Book Appointment
+          </Button>
+        ) : (
+          <CreateShiftChatButton onClick={handleCreateShiftChat} />
+        )}
       </div>
       
-      <CalendarFilters 
-        technicianFilter={technicianFilter}
-        setTechnicianFilter={setTechnicianFilter}
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
-      />
+      {!isCustomerView && (
+        <CalendarFilters 
+          technicianFilter={technicianFilter}
+          setTechnicianFilter={setTechnicianFilter}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+        />
+      )}
       
       <div className="border rounded-lg bg-white shadow">
         <CalendarView 
@@ -78,8 +129,23 @@ export default function Calendar() {
           view={view}
           loading={isLoading}
           shiftChats={shiftChats}
+          onDateClick={handleDayClick}
+          isCustomerView={isCustomerView}
         />
       </div>
+
+      {/* Booking dialog */}
+      {selectedDate && (
+        <BookingDialog 
+          date={selectedDate}
+          isOpen={isBookingDialogOpen}
+          onClose={() => {
+            setIsBookingDialogOpen(false);
+            setSelectedDate(null);
+          }}
+          customerId={customerId}
+        />
+      )}
     </div>
   );
 }
