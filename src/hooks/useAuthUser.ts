@@ -11,6 +11,7 @@ interface UseAuthUserResult {
   loading: boolean; // Alias for isLoading for backward compatibility
   isAuthenticated: boolean;
   isAdmin: boolean;
+  isOwner: boolean; // Add the missing isOwner property to the type definition
   error: string | null;
   user?: any; // Adding user property for backward compatibility if needed
 }
@@ -20,6 +21,7 @@ export function useAuthUser(): UseAuthUserResult {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [isOwner, setIsOwner] = useState<boolean>(false); // State for owner role
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -87,13 +89,25 @@ export function useAuthUser(): UseAuthUserResult {
             
           if (roleData && roleData.length > 0 && !roleError) {
             console.log("User roles:", roleData);
+            
+            // Check for owner role specifically
+            const hasOwnerRole = roleData.some(
+              (role) => role.roles && 
+              typeof role.roles === 'object' &&
+              'name' in role.roles &&
+              role.roles.name === 'owner'
+            );
+            
+            // Check for admin role
             const hasAdminRole = roleData.some(
               (role) => role.roles && 
               typeof role.roles === 'object' &&
               'name' in role.roles &&
               (role.roles.name === 'admin' || role.roles.name === 'owner')
             );
-            setIsAdmin(hasAdminRole);
+            
+            setIsOwner(hasOwnerRole);
+            setIsAdmin(hasAdminRole || hasOwnerRole); // Owner is also considered admin
           } else {
             console.log("No roles found or error:", roleError);
           }
@@ -105,6 +119,7 @@ export function useAuthUser(): UseAuthUserResult {
           setUserEmail(null);
           setUserName(null);
           setIsAdmin(false);
+          setIsOwner(false);
         }
         
         // Set up auth state change listener
@@ -139,13 +154,24 @@ export function useAuthUser(): UseAuthUserResult {
                 .eq('user_id', newSession.user.id);
                 
               if (roleData && roleData.length > 0) {
+                // Check for owner role specifically
+                const hasOwnerRole = roleData.some(
+                  (role) => role.roles && 
+                  typeof role.roles === 'object' &&
+                  'name' in role.roles &&
+                  role.roles.name === 'owner'
+                );
+                
+                // Check for admin role
                 const hasAdminRole = roleData.some(
                   (role) => role.roles && 
                   typeof role.roles === 'object' &&
                   'name' in role.roles &&
-                  (role.roles.name === 'admin' || role.roles.name === 'owner')
+                  (role.roles.name === 'admin')
                 );
-                setIsAdmin(hasAdminRole);
+                
+                setIsOwner(hasOwnerRole);
+                setIsAdmin(hasAdminRole || hasOwnerRole); // Owner is also considered admin
               }
               
             } else if (event === 'SIGNED_OUT') {
@@ -154,6 +180,7 @@ export function useAuthUser(): UseAuthUserResult {
               setUserEmail(null);
               setUserName(null);
               setIsAdmin(false);
+              setIsOwner(false);
             }
           }
         );
@@ -181,7 +208,8 @@ export function useAuthUser(): UseAuthUserResult {
     loading: isLoading, // Alias for backward compatibility
     isAuthenticated: !!userId,
     isAdmin,
+    isOwner, // Return the isOwner flag
     error,
-    user: userId ? { id: userId, email: userEmail, name: userName } : null // For backward compatibility
+    user: userId ? { id: userId, email: userEmail, name: userName } : null
   };
 }
