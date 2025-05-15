@@ -41,8 +41,14 @@ export const DIYBayRatesTab: React.FC = () => {
     await saveBay({ ...bay, is_active: isActive });
   }, [saveBay]);
 
-  const handleRateChange = useCallback(async (bay: Bay, field: 'daily_rate' | 'weekly_rate' | 'monthly_rate', value: number) => {
-    await saveBay({ ...bay, [field]: value });
+  // Update this function to return a Promise<boolean> for the EditableCell component
+  const handleRateChange = useCallback(async (bay: Bay, field: 'hourly_rate' | 'daily_rate' | 'weekly_rate' | 'monthly_rate', value: number): Promise<boolean> => {
+    try {
+      return await saveBay({ ...bay, [field]: value });
+    } catch (error) {
+      console.error(`Error updating ${field}:`, error);
+      return false;
+    }
   }, [saveBay]);
 
   const handleSettingsChange = useCallback((field: keyof typeof settings, value: number) => {
@@ -50,10 +56,9 @@ export const DIYBayRatesTab: React.FC = () => {
     updateBayRateSettings(updatedSettings);
   }, [settings, updateBayRateSettings]);
 
-  // Modify this function to wrap the boolean result and make it void
   const handleSaveSettings = useCallback(async () => {
     const result = await updateBayRateSettings(settings);
-    return result; // Now compatible with Promise<boolean | void>
+    return result;
   }, [updateBayRateSettings, settings]);
 
   const handleDeleteClick = useCallback((bay: Bay) => {
