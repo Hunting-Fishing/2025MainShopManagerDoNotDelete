@@ -4,225 +4,220 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
-import { Loader2, ArrowRight, FileText, Calendar, Car, Receipt } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/lib/supabase";
+import { handleApiError } from "@/utils/errorHandling";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 export function CustomerAccountCard() {
-  const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
-  const [isRegistering, setIsRegistering] = useState(false);
+  const [activeTab, setActiveTab] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        password
+        password,
       });
-      
-      if (error) {
-        toast.error("Login failed: " + error.message);
+
+      if (error) throw error;
+
+      // Check if this user is associated with a customer record
+      const { data: customerData, error: customerError } = await supabase
+        .from("customers")
+        .select("*")
+        .eq("auth_user_id", data.user.id)
+        .single();
+
+      // If no customer record is found, this might be a staff member
+      if (customerError && customerError.code === "PGRST116") {
+        // Sign out and redirect to staff login
+        await supabase.auth.signOut();
+        toast("This appears to be a staff account. Redirecting to staff login...");
+        navigate("/staff-login");
         return;
       }
-      
+
       toast.success("Login successful!");
       navigate("/customer-portal");
-    } catch (err) {
-      console.error("Login error:", err);
-      toast.error("An unexpected error occurred");
+    } catch (error) {
+      handleApiError(error, "Failed to log in");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
-      // Sign up the user with Supabase Auth
+      // Create auth user
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             first_name: firstName,
-            last_name: lastName
-          }
-        }
+            last_name: lastName,
+          },
+        },
       });
-      
-      if (error) {
-        toast.error("Registration failed: " + error.message);
-        return;
-      }
-      
-      // Create a customer record in the customers table
-      const { error: customerError } = await supabase.from('customers')
-        .insert({
+
+      if (error) throw error;
+
+      // Create customer record linked to auth user
+      const { error: customerError } = await supabase.from("customers").insert([
+        {
+          auth_user_id: data.user?.id,
           first_name: firstName,
           last_name: lastName,
           email: email,
-          phone: phone,
-          auth_user_id: data.user?.id,
-          // Using a default shop_id - you may need to adjust this based on your requirements
-          shop_id: "00000000-0000-0000-0000-000000000000"
-        });
-        
-      if (customerError) {
-        toast.error("Failed to create customer profile: " + customerError.message);
-        return;
-      }
-      
-      toast.success("Registration successful! Please check your email to confirm your account.");
-      setIsRegistering(false);
-    } catch (err) {
-      console.error("Registration error:", err);
-      toast.error("An unexpected error occurred");
+          phone: phone || null,
+        },
+      ]);
+
+      if (customerError) throw customerError;
+
+      toast.success(
+        "Account created! Please check your email for verification instructions."
+      );
+      setActiveTab("login");
+    } catch (error) {
+      handleApiError(error, "Failed to create account");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <Card className="w-full max-w-md shadow-lg border-blue-100 bg-gradient-to-br from-white to-blue-50">
-      <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-bold text-blue-800">
-          {isRegistering ? "Create Customer Account" : "Customer Account Access"}
-        </CardTitle>
-        <CardDescription>
-          {isRegistering 
-            ? "Register to access your vehicle service history, appointments and more" 
-            : "Sign in to access your service records, schedule appointments and more"}
+    <Card className="w-full max-w-md shadow-lg border-blue-100">
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-2xl text-center">Customer Account</CardTitle>
+        <CardDescription className="text-center">
+          Access your vehicle service history and appointments
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={isRegistering ? handleRegister : handleLogin} className="space-y-4">
-          {isRegistering && (
-            <>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="login">Login</TabsTrigger>
+            <TabsTrigger value="signup">Sign Up</TabsTrigger>
+          </TabsList>
+          <TabsContent value="login">
+            <form onSubmit={handleLogin} className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="your.email@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <Label htmlFor="password">Password</Label>
+                  <a className="text-sm text-blue-600 hover:underline" href="#">
+                    Forgot password?
+                  </a>
+                </div>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <Button
+                type="submit"
+                className="w-full bg-blue-600 hover:bg-blue-700"
+                disabled={isLoading}
+              >
+                {isLoading ? "Logging in..." : "Login to Customer Portal"}
+              </Button>
+            </form>
+          </TabsContent>
+          <TabsContent value="signup">
+            <form onSubmit={handleSignup} className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">First Name</Label>
-                  <Input 
-                    id="firstName" 
-                    placeholder="John" 
-                    required 
+                  <Input
+                    id="firstName"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
+                    required
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lastName">Last Name</Label>
-                  <Input 
-                    id="lastName" 
-                    placeholder="Doe" 
-                    required 
+                  <Input
+                    id="lastName"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
+                    required
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input 
-                  id="phone" 
-                  placeholder="(555) 123-4567" 
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="your.email@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone (optional)</Label>
+                <Input
+                  id="phone"
                   type="tel"
+                  placeholder="(123) 456-7890"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                 />
               </div>
-            </>
-          )}
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input 
-              id="email" 
-              placeholder="you@example.com" 
-              type="email" 
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input 
-              id="password" 
-              placeholder="••••••••" 
-              type="password" 
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-
-          <Button 
-            type="submit" 
-            className="w-full bg-blue-600 hover:bg-blue-700" 
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {isRegistering ? "Creating Account..." : "Signing In..."}
-              </>
-            ) : (
-              <>
-                {isRegistering ? "Create Account" : "Sign In"} 
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </>
-            )}
-          </Button>
-        </form>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <Button
+                type="submit"
+                className="w-full bg-blue-600 hover:bg-blue-700"
+                disabled={isLoading}
+              >
+                {isLoading ? "Creating Account..." : "Create Customer Account"}
+              </Button>
+            </form>
+          </TabsContent>
+        </Tabs>
       </CardContent>
-      <CardFooter className="flex flex-col space-y-4">
-        <div className="text-center w-full">
-          {isRegistering ? (
-            <Button 
-              variant="link" 
-              onClick={() => setIsRegistering(false)}
-              className="text-blue-600"
-            >
-              Already have an account? Sign in
-            </Button>
-          ) : (
-            <Button 
-              variant="link" 
-              onClick={() => setIsRegistering(true)}
-              className="text-blue-600"
-            >
-              Need an account? Register now
-            </Button>
-          )}
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4 w-full text-center">
-          <div className="flex flex-col items-center p-2 rounded-lg bg-blue-50">
-            <Car className="h-5 w-5 text-blue-600 mb-1" />
-            <span className="text-xs text-gray-700">Vehicle Records</span>
-          </div>
-          <div className="flex flex-col items-center p-2 rounded-lg bg-blue-50">
-            <FileText className="h-5 w-5 text-blue-600 mb-1" />
-            <span className="text-xs text-gray-700">Service History</span>
-          </div>
-          <div className="flex flex-col items-center p-2 rounded-lg bg-blue-50">
-            <Calendar className="h-5 w-5 text-blue-600 mb-1" />
-            <span className="text-xs text-gray-700">Book Appointments</span>
-          </div>
-          <div className="flex flex-col items-center p-2 rounded-lg bg-blue-50">
-            <Receipt className="h-5 w-5 text-blue-600 mb-1" />
-            <span className="text-xs text-gray-700">View Invoices</span>
-          </div>
+      <CardFooter className="flex flex-col space-y-2">
+        <div className="text-sm text-gray-500 text-center">
+          By continuing, you agree to our Terms of Service and Privacy Policy.
         </div>
       </CardFooter>
     </Card>

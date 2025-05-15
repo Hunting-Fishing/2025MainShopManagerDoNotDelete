@@ -1,3 +1,4 @@
+
 import React, { Suspense, useEffect, useState } from 'react';
 import {
   BrowserRouter as Router,
@@ -47,6 +48,7 @@ const EmailTemplates = React.lazy(() => import('./pages/EmailTemplates'));
 const Forms = React.lazy(() => import('./pages/Forms'));
 const Payments = React.lazy(() => import('./pages/Payments'));
 const Login = React.lazy(() => import('./pages/Login'));
+const StaffLogin = React.lazy(() => import('./pages/StaffLogin'));
 const CustomerPortal = React.lazy(() => import('./pages/CustomerPortal'));
 
 // Import components
@@ -97,18 +99,18 @@ function AppContent() {
   const location = useLocation();
 
   // Define routes that don't require the sidebar and navbar
-  const isLoginPage = location.pathname === '/login';
+  const isPublicPage = ['/login', '/staff-login'].includes(location.pathname);
 
   return (
     <>
       <SupabaseStatusChecker />
       <div className="flex h-screen bg-gray-50">
-        {!isLoginPage && isAuthenticated && <Sidebar />}
+        {!isPublicPage && isAuthenticated && <Sidebar />}
 
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {!isLoginPage && isAuthenticated && <Navbar />}
+        <div className={`flex flex-col flex-1 overflow-hidden ${!isPublicPage && isAuthenticated ? "" : ""}`}>
+          {!isPublicPage && isAuthenticated && <Navbar />}
 
-          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 md:p-6">
+          <main className={`flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 ${!isPublicPage && isAuthenticated ? "p-4 md:p-6" : ""}`}>
             <Suspense fallback={<Skeleton className="w-60 h-10" />}>
               <Routes>
                 <Route path="/" element={<AuthGate><Dashboard /></AuthGate>} />
@@ -141,7 +143,10 @@ function AppContent() {
                 <Route path="/email-templates" element={<AuthGate><EmailTemplates /></AuthGate>} />
                 <Route path="/forms" element={<AuthGate><Forms /></AuthGate>} />
                 <Route path="/payments" element={<AuthGate><Payments /></AuthGate>} />
+                
+                {/* Public routes */}
                 <Route path="/login" element={<Login />} />
+                <Route path="/staff-login" element={<StaffLogin />} />
                 <Route path="/customer-portal" element={<CustomerPortal />} />
               </Routes>
             </Suspense>

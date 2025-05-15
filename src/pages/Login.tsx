@@ -1,6 +1,7 @@
 
 import { CustomerAccountCard } from "@/components/customer-portal/CustomerAccountCard";
 import { Helmet } from "react-helmet-async";
+import { Link } from "react-router-dom";
 
 export default function Login() {
   return (
@@ -67,7 +68,14 @@ export default function Login() {
         
         {/* Right Side - Login Form */}
         <div className="p-8 md:w-1/2 flex items-center justify-center">
-          <CustomerAccountCard />
+          <div className="w-full max-w-md">
+            <CustomerAccountCard />
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-600">
+                Staff member? <Link to="/staff-login" className="text-blue-600 hover:underline">Staff Login Portal</Link>
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </>
