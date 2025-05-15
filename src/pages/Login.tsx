@@ -72,8 +72,8 @@ export default function Login() {
         {/* Right Side - Login Cards */}
         <div className="p-8 md:w-1/2 flex flex-col items-center justify-center">
           <div className="w-full max-w-md space-y-6">
-            {/* Staff Login Card - Now Primary/Larger */}
-            <Card className="shadow-lg border-t-4 border-t-indigo-600">
+            {/* Staff Login Card */}
+            <Card className="shadow-lg border-t-4 border-t-indigo-600 hover:shadow-xl transition-shadow">
               <CardHeader>
                 <div className="flex items-center justify-center mb-2">
                   <div className="bg-indigo-100 p-3 rounded-full">
@@ -85,8 +85,8 @@ export default function Login() {
                   For shop employees and administrators
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <Button asChild variant="default" className="w-full" size="lg">
+              <CardContent className="pb-6">
+                <Button asChild variant="default" className="w-full bg-indigo-600 hover:bg-indigo-700" size="lg">
                   <Link to="/staff-login" className="flex items-center justify-center gap-2">
                     <Users className="h-4 w-4" />
                     Staff Login Portal
@@ -95,8 +95,8 @@ export default function Login() {
               </CardContent>
             </Card>
             
-            {/* Customer Login Card - Now Secondary/Smaller */}
-            <Card className="shadow-lg border-t-4 border-t-blue-600">
+            {/* Customer Login Card */}
+            <Card className="shadow-lg border-t-4 border-t-blue-600 hover:shadow-xl transition-shadow">
               <CardHeader>
                 <div className="flex items-center justify-center mb-2">
                   <div className="bg-blue-100 p-3 rounded-full">
@@ -108,7 +108,7 @@ export default function Login() {
                   Access your vehicle service history and appointments
                 </CardDescription>
               </CardHeader>
-              <CardContent className="text-center">
+              <CardContent className="pb-6">
                 <CustomerAccountCard />
               </CardContent>
             </Card>
