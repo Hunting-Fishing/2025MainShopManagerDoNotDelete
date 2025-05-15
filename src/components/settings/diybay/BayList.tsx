@@ -2,7 +2,7 @@
 import React from "react";
 import { Bay } from "@/services/diybay/diybayService";
 import { BayCard } from "./BayCard";
-import { BaysTable } from "./BaysTable";
+import BaysTable from "./BaysTable";  // Changed from { BaysTable }
 import { CompactBayList } from "./CompactBayList";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
