@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CustomerAppointmentBooking } from "@/components/customer-portal/CustomerAppointmentBooking";
-import { CustomerWorkOrders } from "@/components/customer-portal/CustomerWorkOrders";
+import CustomerWorkOrders from "@/components/customer-portal/CustomerWorkOrders";
 import { CustomerVehicles } from "@/components/customer-portal/CustomerVehicles";
 import { CustomerProfileInfo } from "@/components/customer-portal/CustomerProfileInfo";
 import { CustomerPortalHeader } from "@/components/customer-portal/CustomerPortalHeader";
