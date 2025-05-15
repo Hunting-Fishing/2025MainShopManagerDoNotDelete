@@ -1356,6 +1356,45 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_shop_relationships: {
+        Row: {
+          customer_id: string
+          id: string
+          joined_at: string
+          shop_id: string
+          status: string
+        }
+        Insert: {
+          customer_id: string
+          id?: string
+          joined_at?: string
+          shop_id: string
+          status?: string
+        }
+        Update: {
+          customer_id?: string
+          id?: string
+          joined_at?: string
+          shop_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_shop_relationships_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_shop_relationships_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_touchpoints: {
         Row: {
           action: string
@@ -5020,6 +5059,44 @@ export type Database = {
         }
         Relationships: []
       }
+      organization_visibility: {
+        Row: {
+          created_at: string
+          display_in_directory: boolean
+          id: string
+          is_public: boolean
+          location_searchable: boolean
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_in_directory?: boolean
+          id?: string
+          is_public?: boolean
+          location_searchable?: boolean
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_in_directory?: boolean
+          id?: string
+          is_public?: boolean
+          location_searchable?: boolean
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_visibility_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           created_at: string
@@ -6673,12 +6750,17 @@ export type Database = {
           email: string | null
           id: string
           industry: string | null
+          is_active: boolean | null
+          latitude: number | null
           logo_url: string | null
+          longitude: number | null
           name: string
           organization_id: string
           other_industry: string | null
           phone: string | null
           postal_code: string | null
+          shop_description: string | null
+          shop_image_url: string | null
           state: string | null
           tax_id: string | null
           updated_at: string
@@ -6691,12 +6773,17 @@ export type Database = {
           email?: string | null
           id?: string
           industry?: string | null
+          is_active?: boolean | null
+          latitude?: number | null
           logo_url?: string | null
+          longitude?: number | null
           name: string
           organization_id: string
           other_industry?: string | null
           phone?: string | null
           postal_code?: string | null
+          shop_description?: string | null
+          shop_image_url?: string | null
           state?: string | null
           tax_id?: string | null
           updated_at?: string
@@ -6709,12 +6796,17 @@ export type Database = {
           email?: string | null
           id?: string
           industry?: string | null
+          is_active?: boolean | null
+          latitude?: number | null
           logo_url?: string | null
+          longitude?: number | null
           name?: string
           organization_id?: string
           other_industry?: string | null
           phone?: string | null
           postal_code?: string | null
+          shop_description?: string | null
+          shop_image_url?: string | null
           state?: string | null
           tax_id?: string | null
           updated_at?: string
