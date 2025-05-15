@@ -11,6 +11,7 @@ import { Loader2 } from "lucide-react";
 import { DndContext, DragEndEvent, closestCenter } from "@dnd-kit/core";
 import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+import { Badge } from "@/components/ui/badge";
 
 interface BaySectionProps {
   bays: Bay[];
@@ -59,6 +60,19 @@ export const BaySection: React.FC<BaySectionProps> = ({
             isSaving={isSaving} 
           />
         </div>
+      </div>
+
+      <div className="px-4 py-2 bg-gray-50 border-b flex flex-wrap gap-2">
+        <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">
+          Active Bay
+        </Badge>
+        <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">
+          Inactive Bay
+        </Badge>
+        <p className="text-sm text-gray-600 ml-auto flex items-center">
+          <span className="mr-1">💡</span> 
+          Drag and drop to reorder bays using the grip handle.
+        </p>
       </div>
 
       <CardContent className="p-4">

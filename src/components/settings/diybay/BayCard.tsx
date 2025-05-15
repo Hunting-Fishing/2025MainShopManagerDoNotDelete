@@ -32,20 +32,25 @@ export const BayCard: React.FC<BayCardProps> = ({
 
   // Style based on bay status
   const cardStyles = bay.is_active
-    ? `overflow-hidden transition ${isDragging ? 'shadow-xl border-blue-400' : 'shadow hover:shadow-md'}`
-    : `overflow-hidden transition ${isDragging ? 'shadow-xl border-blue-400' : 'shadow hover:shadow-md opacity-70 border-dashed'}`;
+    ? `overflow-hidden transition border-l-4 border-l-green-500 ${isDragging ? 'shadow-xl border-blue-400' : 'shadow hover:shadow-md'}`
+    : `overflow-hidden transition border-l-4 border-l-red-500 ${isDragging ? 'shadow-xl border-blue-400' : 'shadow hover:shadow-md opacity-70 border-dashed'}`;
 
   return (
     <Card className={cardStyles}>
-      <CardHeader className="pb-2">
+      <CardHeader className={`pb-2 ${bay.is_active ? 'bg-green-50/50' : 'bg-red-50/50'}`}>
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-1">
-            <GripVertical className="h-5 w-5 text-gray-400" />
+            <GripVertical className="h-5 w-5 text-gray-400 cursor-grab" />
             <CardTitle className="text-xl font-bold flex items-center gap-2">
               {bay.bay_name}
               {!bay.is_active && (
-                <Badge variant="outline" className="text-xs border-gray-300 text-gray-500">
+                <Badge variant="danger" className="text-xs">
                   Inactive
+                </Badge>
+              )}
+              {bay.is_active && (
+                <Badge variant="success" className="text-xs">
+                  Active
                 </Badge>
               )}
             </CardTitle>

@@ -78,11 +78,16 @@ const BayRow: React.FC<BayRowProps> = ({
     return await onRateChange(bay, field, Number(value));
   };
 
+  // Add status-based row highlighting
+  const rowStatusClass = bay.is_active 
+    ? "border-l-4 border-l-green-500 bg-green-50/30" 
+    : "border-l-4 border-l-red-500 bg-red-50/30";
+
   return (
     <TableRow
       ref={setNodeRef}
       style={style}
-      className={isDragging ? "bg-muted/50" : ""}
+      className={`${rowStatusClass} ${isDragging ? "bg-blue-50/50" : ""}`}
     >
       {sortable && (
         <TableCell className="w-10">
@@ -147,11 +152,16 @@ const BayRow: React.FC<BayRowProps> = ({
         disabled={isSaving}
       />
       <TableCell className="text-right">
-        <Switch
-          checked={bay.is_active}
-          onCheckedChange={handleStatusChange}
-          disabled={isSaving}
-        />
+        <div className="flex items-center justify-end gap-2">
+          <span className={bay.is_active ? "text-green-600 text-xs font-medium" : "text-red-600 text-xs font-medium"}>
+            {bay.is_active ? "Active" : "Inactive"}
+          </span>
+          <Switch
+            checked={bay.is_active}
+            onCheckedChange={handleStatusChange}
+            disabled={isSaving}
+          />
+        </div>
       </TableCell>
     </TableRow>
   );

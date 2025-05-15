@@ -1,11 +1,12 @@
 
 import React from "react";
 import { Bay } from "@/services/diybay/diybayService";
-import { Edit, History, Trash2, Loader2, GripVertical } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Edit, Trash2, History, Loader2, GripVertical } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { Badge } from "@/components/ui/badge";
 
 interface CompactBayListProps {
   bays: Bay[];
@@ -17,15 +18,18 @@ interface CompactBayListProps {
   sortable?: boolean;
 }
 
-// Sortable Bay Item component
-const SortableBayItem = ({ 
-  bay, 
-  onStatusChange, 
-  onEditClick, 
-  onDeleteClick, 
-  onHistoryClick, 
-  isSaving 
-}) => {
+interface CompactBayItemProps {
+  bay: Bay;
+  onStatusChange: (bay: Bay, isActive: boolean) => Promise<void>;
+  onEditClick: (bay: Bay) => void;
+  onDeleteClick: (bay: Bay) => void;
+  onHistoryClick: (bay: Bay) => Promise<void>;
+  isSaving?: boolean;
+  sortable?: boolean;
+}
+
+// Sortable wrapper for CompactBayItem
+const SortableCompactBayItem = ({ bay, onStatusChange, onEditClick, onDeleteClick, onHistoryClick, isSaving = false, sortable = false }: CompactBayItemProps) => {
   const {
     attributes,
     listeners,
@@ -33,119 +37,91 @@ const SortableBayItem = ({
     transform,
     transition,
     isDragging
-  } = useSortable({ id: bay.id });
-  
+  } = useSortable({
+    id: bay.id,
+    disabled: !sortable || isSaving
+  });
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
     zIndex: isDragging ? 10 : 1,
   };
+
+  const handleStatusChange = async (checked: boolean) => {
+    await onStatusChange(bay, checked);
+  };
+
+  // Define classes based on active status
+  const itemClassNames = bay.is_active
+    ? `flex items-center justify-between p-3 mb-2 border rounded-lg shadow-sm bg-green-50/50 border-l-4 border-l-green-500 ${isDragging ? 'bg-blue-50 shadow-md' : ''}`
+    : `flex items-center justify-between p-3 mb-2 border rounded-lg shadow-sm bg-red-50/50 border-l-4 border-l-red-500 ${isDragging ? 'bg-blue-50 shadow-md' : ''}`;
   
   return (
     <div 
-      ref={setNodeRef} 
-      style={style} 
-      className={`${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
-      {...attributes} 
-      {...listeners}
+      ref={sortable ? setNodeRef : undefined} 
+      style={sortable ? style : undefined} 
+      className={itemClassNames}
+      {...(sortable ? attributes : {})} 
+      {...(sortable ? listeners : {})}
     >
-      <BayItem 
-        bay={bay} 
-        onStatusChange={onStatusChange} 
-        onEditClick={onEditClick} 
-        onDeleteClick={onDeleteClick} 
-        onHistoryClick={onHistoryClick} 
-        isSaving={isSaving}
-        isDragging={isDragging}
-      />
-    </div>
-  );
-};
-
-// Individual Bay Item component
-const BayItem = ({ 
-  bay, 
-  onStatusChange, 
-  onEditClick, 
-  onDeleteClick, 
-  onHistoryClick, 
-  isSaving,
-  isDragging
-}) => {
-  // Style based on active status and index
-  const rowStyles = bay.is_active 
-    ? `flex items-center justify-between p-3 mb-2 rounded-lg bg-white border ${isDragging ? 'border-blue-400 shadow-lg' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`
-    : `flex items-center justify-between p-3 mb-2 rounded-lg bg-white border-dashed border ${isDragging ? 'border-blue-400 shadow-lg' : 'border-gray-200 opacity-70'}`;
-
-  return (
-    <div className={rowStyles}>
-      <div className="flex items-center">
-        <GripVertical className="h-5 w-5 text-gray-400 mr-2" />
-        <div className="flex flex-col">
+      <div className="flex items-center gap-3">
+        {sortable && <GripVertical className="h-5 w-5 text-gray-400 cursor-grab" />}
+        <div>
           <div className="flex items-center gap-2">
-            <span className="font-medium">{bay.bay_name}</span>
-            {!bay.is_active && (
-              <Badge variant="outline" className="text-xs border-gray-300 text-gray-500">
-                Inactive
-              </Badge>
+            <h3 className="font-semibold">
+              {bay.bay_name}
+            </h3>
+            {bay.is_active ? (
+              <Badge variant="success" className="text-xs">Active</Badge>
+            ) : (
+              <Badge variant="danger" className="text-xs">Inactive</Badge>
             )}
           </div>
-          {bay.bay_location && <span className="text-sm text-gray-500">{bay.bay_location}</span>}
+          <p className="text-sm text-gray-500">
+            ${bay.hourly_rate.toFixed(2)}/hr · 
+            ${bay.daily_rate ? bay.daily_rate.toFixed(2) : '0.00'}/day
+          </p>
         </div>
       </div>
       
-      <div className="flex items-center space-x-2">
-        <div className="hidden md:flex items-center gap-4 mr-4">
-          <div className="bg-blue-50 px-3 py-1 rounded-lg">
-            <span className="text-xs text-blue-600 font-medium">Hourly:</span>
-            <span className="text-sm font-bold ml-1">${bay.hourly_rate.toFixed(2)}</span>
-          </div>
-          <div className="bg-green-50 px-3 py-1 rounded-lg">
-            <span className="text-xs text-green-600 font-medium">Daily:</span>
-            <span className="text-sm font-bold ml-1">
-              ${bay.daily_rate ? bay.daily_rate.toFixed(2) : '0.00'}
-            </span>
-          </div>
-        </div>
-        
+      <div className="flex items-center gap-2">
         <Switch
           checked={bay.is_active}
-          onCheckedChange={(checked) => onStatusChange(bay, checked)}
+          onCheckedChange={handleStatusChange}
           disabled={isSaving}
-          className="mr-2"
         />
         
-        <div className="flex space-x-1">
-          <button
-            onClick={() => onEditClick(bay)}
-            disabled={isSaving}
-            className="p-1 rounded-md text-blue-600 hover:bg-blue-50"
-            title="Edit bay"
-          >
-            {isSaving ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Edit className="h-4 w-4" />
-            )}
-          </button>
-          <button
-            onClick={async () => await onHistoryClick(bay)}
-            disabled={isSaving}
-            className="p-1 rounded-md text-purple-600 hover:bg-purple-50"
-            title="View rate history"
-          >
-            <History className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => onDeleteClick(bay)}
-            disabled={isSaving}
-            className="p-1 rounded-md text-red-600 hover:bg-red-50"
-            title="Delete bay"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onEditClick(bay)}
+          disabled={isSaving}
+          className="text-blue-600 hover:bg-blue-50"
+        >
+          <Edit className="h-4 w-4" />
+        </Button>
+        
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onHistoryClick(bay)}
+          disabled={isSaving}
+          className="text-purple-600 hover:bg-purple-50"
+        >
+          <History className="h-4 w-4" />
+        </Button>
+        
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onDeleteClick(bay)}
+          disabled={isSaving}
+          className="text-red-600 hover:bg-red-50"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
       </div>
     </div>
   );
@@ -161,30 +137,18 @@ export const CompactBayList: React.FC<CompactBayListProps> = ({
   sortable = false
 }) => {
   return (
-    <div className="space-y-1">
+    <div className="space-y-2">
       {bays.map((bay) => (
-        sortable ? (
-          <SortableBayItem
-            key={bay.id}
-            bay={bay}
-            onStatusChange={onStatusChange}
-            onEditClick={onEditClick}
-            onDeleteClick={onDeleteClick}
-            onHistoryClick={onHistoryClick}
-            isSaving={isSaving}
-          />
-        ) : (
-          <BayItem
-            key={bay.id}
-            bay={bay}
-            onStatusChange={onStatusChange}
-            onEditClick={onEditClick}
-            onDeleteClick={onDeleteClick}
-            onHistoryClick={onHistoryClick}
-            isSaving={isSaving}
-            isDragging={false}
-          />
-        )
+        <SortableCompactBayItem
+          key={bay.id}
+          bay={bay}
+          onStatusChange={onStatusChange}
+          onEditClick={onEditClick}
+          onDeleteClick={onDeleteClick}
+          onHistoryClick={onHistoryClick}
+          isSaving={isSaving}
+          sortable={sortable}
+        />
       ))}
     </div>
   );
