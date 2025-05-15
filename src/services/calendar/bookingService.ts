@@ -107,11 +107,11 @@ export async function getAvailableTimeSlots(date: string): Promise<TimeSlot[]> {
           });
           
           if (!hasConflict) {
-            // Type assertion to handle the profiles object correctly
-            const techProfile = tech.profiles as { first_name?: string; last_name?: string } | null;
-            const technicianName = techProfile ? 
-              `${techProfile.first_name || ''} ${techProfile.last_name || ''}`.trim() : 
-              'Unknown';
+            // Properly handle the profiles object with type assertion
+            const profiles = tech.profiles as { first_name?: string; last_name?: string } | null;
+            const technicianName = profiles 
+              ? `${profiles.first_name || ''} ${profiles.last_name || ''}`.trim() 
+              : 'Unknown';
             
             timeSlots.push({
               id: `${tech.technician_id}-${hour}`,
