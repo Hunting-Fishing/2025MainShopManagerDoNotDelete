@@ -15,10 +15,19 @@ export function useRateSettings(
   const { shopId } = useShopId();
 
   const updateBayRateSettings = async (newSettings: RateSettings): Promise<boolean> => {
-    if (!shopId || !settings.id) {
+    if (!shopId) {
       toast({
         title: "Error",
-        description: "Shop ID or settings ID is missing",
+        description: "Unable to save settings: No shop ID found. Please refresh the page or contact support.",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    if (!settings.id) {
+      toast({
+        title: "Error",
+        description: "Settings ID is missing. Please refresh the page or contact support.",
         variant: "destructive"
       });
       return false;
@@ -38,28 +47,67 @@ export function useRateSettings(
         return true;
       }
       
-      // Update settings in database
-      const { error } = await supabase
-        .from('diy_bay_rate_settings')
-        .update({
-          daily_hours: newSettings.daily_hours,
-          daily_discount_percent: newSettings.daily_discount_percent,
-          weekly_multiplier: newSettings.weekly_multiplier,
-          monthly_multiplier: newSettings.monthly_multiplier,
-          hourly_base_rate: newSettings.hourly_base_rate
-        })
-        .eq('id', settings.id);
-        
-      if (error) throw error;
+      // Prepare data for update
+      const updateData: Partial<RateSettings> = {};
+      
+      // Only include fields that have changed
+      if (newSettings.daily_hours !== settings.daily_hours) {
+        updateData.daily_hours = newSettings.daily_hours === '' ? 0 : Number(newSettings.daily_hours);
+      }
+      
+      if (newSettings.daily_discount_percent !== settings.daily_discount_percent) {
+        updateData.daily_discount_percent = newSettings.daily_discount_percent === '' ? 0 : Number(newSettings.daily_discount_percent);
+      }
+      
+      if (newSettings.weekly_multiplier !== settings.weekly_multiplier) {
+        updateData.weekly_multiplier = newSettings.weekly_multiplier === '' ? 0 : Number(newSettings.weekly_multiplier);
+      }
+      
+      if (newSettings.monthly_multiplier !== settings.monthly_multiplier) {
+        updateData.monthly_multiplier = newSettings.monthly_multiplier === '' ? 0 : Number(newSettings.monthly_multiplier);
+      }
+      
+      if (newSettings.hourly_base_rate !== settings.hourly_base_rate) {
+        updateData.hourly_base_rate = newSettings.hourly_base_rate === '' ? 0 : Number(newSettings.hourly_base_rate);
+      }
+      
+      // Update settings in database if there are changes
+      if (Object.keys(updateData).length > 0) {
+        const { error } = await supabase
+          .from('diy_bay_rate_settings')
+          .update(updateData)
+          .eq('id', settings.id);
+          
+        if (error) throw error;
+      }
       
       // Update local settings state
-      setSettings(newSettings);
+      setSettings(prev => ({
+        ...prev,
+        ...updateData
+      }));
       
       // Recalculate rates for all bays using new settings
+      const normalizedSettings = {
+        ...settings,
+        ...updateData
+      };
+      
+      // Convert any string values to numbers for calculation
+      Object.keys(normalizedSettings).forEach(key => {
+        const field = key as keyof RateSettings;
+        if (typeof normalizedSettings[field] === 'string' && normalizedSettings[field] !== '') {
+          normalizedSettings[field] = Number(normalizedSettings[field]);
+        }
+        if (normalizedSettings[field] === '') {
+          normalizedSettings[field] = 0;
+        }
+      });
+      
       const updatedBays = bays.map(bay => {
         if (!bay.hourly_rate) return bay;
         
-        const calculatedRates = calculateRates(bay.hourly_rate, newSettings);
+        const calculatedRates = calculateRates(bay.hourly_rate, normalizedSettings);
         
         return {
           ...bay,

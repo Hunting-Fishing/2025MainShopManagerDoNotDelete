@@ -16,14 +16,18 @@ export function useDIYBayState() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const { shopId } = useShopId();
+  const { shopId, loading: shopIdLoading } = useShopId();
   const { toast } = useToast();
 
   const loadData = async () => {
-    if (!shopId) return;
+    if (!shopId) {
+      console.log("No shop ID available yet");
+      return;
+    }
     
     setIsLoading(true);
     try {
+      console.log("Loading data with shop ID:", shopId);
       // Fetch bays data - now ordering by display_order
       const { data: baysData, error: baysError } = await supabase
         .from('diy_bay_rates')
@@ -79,9 +83,13 @@ export function useDIYBayState() {
   };
   
   const createDefaultSettings = async () => {
-    if (!shopId) return;
+    if (!shopId) {
+      console.error("Cannot create default settings: No shop ID available");
+      return;
+    }
     
     try {
+      console.log("Creating default settings for shop ID:", shopId);
       const { data, error } = await supabase
         .from('diy_bay_rate_settings')
         .insert({
@@ -98,6 +106,7 @@ export function useDIYBayState() {
       if (error) throw error;
       
       if (data) {
+        console.log("Created default settings:", data);
         setSettings({
           id: data.id,
           daily_hours: data.daily_hours,
@@ -114,10 +123,16 @@ export function useDIYBayState() {
   };
 
   useEffect(() => {
-    if (shopId) {
+    if (shopId && !shopIdLoading) {
+      console.log("Shop ID loaded, fetching data:", shopId);
       loadData();
+    } else if (shopIdLoading) {
+      console.log("Waiting for shop ID to load...");
+    } else {
+      console.log("No shop ID available");
+      setIsLoading(false); // No need to keep loading if there's no shop ID
     }
-  }, [shopId]);
+  }, [shopId, shopIdLoading]);
 
   return {
     bays,
