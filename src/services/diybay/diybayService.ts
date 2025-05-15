@@ -16,7 +16,7 @@ export interface Bay {
   // Adding the fields that our components are using
   bay_name: string;
   bay_location: string | null;
-  display_order?: number; // Add display_order property for sorting
+  display_order: number; // Ensure display_order is included in the type
 }
 
 export interface RateSettings {

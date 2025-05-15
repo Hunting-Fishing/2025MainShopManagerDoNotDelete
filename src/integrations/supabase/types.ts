@@ -1663,6 +1663,7 @@ export type Database = {
           bay_name: string
           created_at: string | null
           daily_rate: number | null
+          display_order: number | null
           hourly_rate: number
           id: string
           is_active: boolean | null
@@ -1676,6 +1677,7 @@ export type Database = {
           bay_name: string
           created_at?: string | null
           daily_rate?: number | null
+          display_order?: number | null
           hourly_rate: number
           id?: string
           is_active?: boolean | null
@@ -1689,6 +1691,7 @@ export type Database = {
           bay_name?: string
           created_at?: string | null
           daily_rate?: number | null
+          display_order?: number | null
           hourly_rate?: number
           id?: string
           is_active?: boolean | null

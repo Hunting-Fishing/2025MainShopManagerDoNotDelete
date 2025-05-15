@@ -24,7 +24,7 @@ export function useDIYBayState() {
     
     setIsLoading(true);
     try {
-      // Fetch bays data
+      // Fetch bays data - now ordering by display_order
       const { data: baysData, error: baysError } = await supabase
         .from('diy_bay_rates')
         .select('*')
@@ -121,7 +121,7 @@ export function useDIYBayState() {
 
   return {
     bays,
-    setBays, // Expose the setBays function for drag and drop
+    setBays,
     settings,
     setSettings,
     isLoading,
