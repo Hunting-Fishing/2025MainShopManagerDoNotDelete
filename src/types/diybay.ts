@@ -1,6 +1,8 @@
 
 import { Bay as BaseBay, RateSettings } from "@/services/diybay/diybayService";
 
+export type BayViewMode = "table" | "cards" | "compact";
+
 export interface BayDetails extends BaseBay {
   // Any additional properties specific to the UI representation
 }

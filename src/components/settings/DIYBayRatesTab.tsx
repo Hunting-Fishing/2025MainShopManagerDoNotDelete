@@ -24,7 +24,7 @@ export const DIYBayRatesTab: React.FC = () => {
     calculateRate,
   } = useDIYBayRates();
 
-  const [viewMode, setViewMode] = useState<"table" | "cards">("table");
+  const [viewMode, setViewMode] = useState<"table" | "cards" | "compact">("table");
   
   const {
     editBay,

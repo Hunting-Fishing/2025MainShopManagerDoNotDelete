@@ -9,8 +9,8 @@ import { AlertTriangle } from "lucide-react";
 
 interface BaySectionProps {
   bays: Bay[];
-  viewMode: "table" | "cards";
-  setViewMode: (mode: "table" | "cards") => void;
+  viewMode: "table" | "cards" | "compact";
+  setViewMode: (mode: "table" | "cards" | "compact") => void;
   isLoading: boolean;
   isSaving: boolean;
   onStatusChange: (bay: Bay, isActive: boolean) => Promise<void>;
