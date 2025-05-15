@@ -1,219 +1,277 @@
 
-import { useState, useEffect } from "react";
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Printer, Download, ExternalLink, FileText } from "lucide-react";
-import { supabase } from "@/lib/supabase";
-import { WorkOrder } from "@/types/workOrder";
-import { formatDate } from "@/utils/workOrders";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { format } from "date-fns";
+import { Wrench, FileText, Clock, ChevronRight } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
+import { WorkOrder } from "@/types/workOrder";
 
-export default function CustomerWorkOrders({ customerId }: { customerId?: string }) {
-  const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [vehicleDetails, setVehicleDetails] = useState<{[key: string]: {make: string, model: string, year: string | number}}>({}); 
+interface CustomerWorkOrdersProps {
+  customerId?: string;
+}
+
+const CustomerWorkOrders: React.FC<CustomerWorkOrdersProps> = ({ customerId }) => {
+  const [workOrders, setWorkOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedWorkOrder, setSelectedWorkOrder] = useState<any | null>(null);
+  const [viewDetailsOpen, setViewDetailsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("active");
 
   useEffect(() => {
     async function fetchWorkOrders() {
-      if (!customerId) return;
+      if (!customerId) {
+        console.log("No customer ID provided");
+        setLoading(false);
+        return;
+      }
 
       try {
-        setIsLoading(true);
-        
-        // Fetch work orders for this customer
-        const { data: orderData, error: orderError } = await supabase
+        const { data, error } = await supabase
           .from("work_orders")
-          .select("*")
-          .eq("customer_id", customerId);
+          .select(`
+            *,
+            vehicles:vehicle_id (
+              make,
+              model,
+              year
+            )
+          `)
+          .eq("customer_id", customerId)
+          .order("created_at", { ascending: false });
 
-        if (orderError) {
-          throw orderError;
+        if (error) {
+          console.error("Error fetching work orders:", error);
+          throw error;
         }
 
-        // Fetch vehicle information for these work orders
-        const vehicleIds = orderData
-          .map(order => order.vehicle_id)
-          .filter((id): id is string => !!id);
-        
-        // If there are vehicle IDs, fetch their details
-        if (vehicleIds.length > 0) {
-          const { data: vehicleData, error: vehicleError } = await supabase
-            .from("vehicles")
-            .select("id, make, model, year")
-            .in("id", vehicleIds);
-
-          if (vehicleError) {
-            throw vehicleError;
-          }
-
-          // Create a mapping of vehicle IDs to their details
-          const vehicleMap: {[key: string]: {make: string, model: string, year: string | number}} = {};
-          vehicleData?.forEach(vehicle => {
-            if (vehicle.id) {
-              vehicleMap[vehicle.id] = {
-                make: vehicle.make || '',
-                model: vehicle.model || '',
-                year: vehicle.year || ''
-              };
-            }
-          });
-
-          setVehicleDetails(vehicleMap);
-        }
-
-        setWorkOrders(orderData || []);
+        console.log("Fetched work orders:", data);
+        setWorkOrders(data || []);
       } catch (error) {
-        console.error("Error fetching customer work orders:", error);
+        console.error("Error:", error);
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     }
 
     fetchWorkOrders();
   }, [customerId]);
 
-  const printWorkOrders = () => {
-    const element = document.getElementById("workOrdersTable");
-    if (!element) return;
-    
-    html2canvas(element).then((canvas) => {
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF();
-      const imgWidth = 210;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
-      pdf.save("work-orders.pdf");
-    });
+  const openWorkOrderDetails = (workOrder: any) => {
+    setSelectedWorkOrder(workOrder);
+    setViewDetailsOpen(true);
   };
 
-  const downloadWorkOrders = () => {
-    // Create CSV content
-    const headers = ["Date", "Service", "Status", "Vehicle", "Notes"];
-    const rows = workOrders.map((order) => [
-      formatDate(order.date),
-      order.service_type || "General Service",
-      order.status,
-      order.vehicle_id && vehicleDetails[order.vehicle_id] 
-        ? `${vehicleDetails[order.vehicle_id].year} ${vehicleDetails[order.vehicle_id].make} ${vehicleDetails[order.vehicle_id].model}` 
-        : "Unknown vehicle",
-      order.notes || ""
-    ]);
+  const activeWorkOrders = workOrders.filter(
+    (wo) => !["completed", "cancelled", "invoiced"].includes(wo.status)
+  );
+  const completedWorkOrders = workOrders.filter((wo) =>
+    ["completed", "cancelled", "invoiced"].includes(wo.status)
+  );
 
-    const csvContent = 
-      [headers]
-        .concat(rows)
-        .map((row) => row.map(cell => `"${cell}"`).join(","))
-        .join("\n");
-    
-    // Create and download the file
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", "work-orders.csv");
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  // Status color mapping
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "completed":
-        return "bg-green-100 text-green-800 border border-green-300";
-      case "in-progress":
-        return "bg-blue-100 text-blue-800 border border-blue-300";
+  function getStatusBadgeColor(status: string) {
+    switch (status?.toLowerCase()) {
       case "pending":
         return "bg-yellow-100 text-yellow-800 border border-yellow-300";
+      case "in-progress":
+        return "bg-blue-100 text-blue-800 border border-blue-300";
+      case "completed":
+        return "bg-green-100 text-green-800 border border-green-300";
       case "cancelled":
         return "bg-red-100 text-red-800 border border-red-300";
+      case "invoiced":
+        return "bg-purple-100 text-purple-800 border border-purple-300";
       default:
         return "bg-gray-100 text-gray-800 border border-gray-300";
     }
+  }
+
+  function formatDate(dateString: string | null) {
+    if (!dateString) return "N/A";
+    try {
+      return format(new Date(dateString), "MMM d, yyyy");
+    } catch (e) {
+      return "Invalid date";
+    }
+  }
+
+  const renderWorkOrderList = (workOrders: any[]) => {
+    if (workOrders.length === 0) {
+      return (
+        <div className="text-center py-8 text-muted-foreground">
+          No work orders found.
+        </div>
+      );
+    }
+
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Date</TableHead>
+            <TableHead>Vehicle</TableHead>
+            <TableHead>Service</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {workOrders.map((workOrder) => {
+            // Extract vehicle information safely
+            const vehicleInfo = workOrder.vehicles || {};
+            const make = vehicleInfo.make || "Unknown";
+            const model = vehicleInfo.model || "Unknown";
+            const year = vehicleInfo.year || "";
+            
+            // Format the start date
+            const startDate = workOrder.start_time 
+              ? formatDate(workOrder.start_time) 
+              : formatDate(workOrder.created_at);
+
+            return (
+              <TableRow key={workOrder.id}>
+                <TableCell>{startDate}</TableCell>
+                <TableCell>{year} {make} {model}</TableCell>
+                <TableCell>
+                  {workOrder.description || workOrder.service_type || "General Service"}
+                </TableCell>
+                <TableCell>
+                  <Badge className={getStatusBadgeColor(workOrder.status)}>
+                    {workOrder.status || "Pending"}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openWorkOrderDetails(workOrder)}
+                    className="flex items-center gap-1"
+                  >
+                    Details <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    );
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <Skeleton className="h-8 w-64" />
-          <div className="space-x-2">
-            <Skeleton className="h-9 w-24 inline-block" />
-            <Skeleton className="h-9 w-24 inline-block" />
-          </div>
-        </div>
-        <Skeleton className="h-64 w-full" />
+        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-8 w-full" />
       </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Your Work Orders</CardTitle>
-        <div className="space-x-2">
-          <Button variant="outline" size="sm" onClick={printWorkOrders}>
-            <Printer className="mr-2 h-4 w-4" /> Print
-          </Button>
-          <Button variant="outline" size="sm" onClick={downloadWorkOrders}>
-            <Download className="mr-2 h-4 w-4" /> Download
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {workOrders.length === 0 ? (
-          <div className="text-center p-6">
-            <FileText className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-lg font-medium">No work orders found</h3>
-            <p className="mt-1 text-gray-500">You don't have any work orders in our system yet.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <Table id="workOrdersTable">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Service</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Vehicle</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {workOrders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell>{formatDate(order.date)}</TableCell>
-                    <TableCell>{order.service_type || "General Service"}</TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(order.status)} variant="outline">
-                        {order.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {order.vehicle_id && vehicleDetails[order.vehicle_id] 
-                        ? `${vehicleDetails[order.vehicle_id].year} ${vehicleDetails[order.vehicle_id].make} ${vehicleDetails[order.vehicle_id].model}` 
-                        : "Unknown vehicle"}
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="sm" asChild>
-                        <a href={`/work-orders/${order.id}`} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="h-4 w-4" />
-                          <span className="sr-only">View details</span>
-                        </a>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+    <div className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid grid-cols-2 w-[400px] mb-6">
+          <TabsTrigger value="active">
+            Active ({activeWorkOrders.length})
+          </TabsTrigger>
+          <TabsTrigger value="completed">
+            Completed ({completedWorkOrders.length})
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="active" className="space-y-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-medium">
+                Active Work Orders
+              </CardTitle>
+            </CardHeader>
+            <CardContent>{renderWorkOrderList(activeWorkOrders)}</CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="completed" className="space-y-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-medium">
+                Completed Work Orders
+              </CardTitle>
+            </CardHeader>
+            <CardContent>{renderWorkOrderList(completedWorkOrders)}</CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      <Dialog open={viewDetailsOpen} onOpenChange={setViewDetailsOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Work Order Details</DialogTitle>
+          </DialogHeader>
+
+          {selectedWorkOrder && (
+            <div className="space-y-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="font-semibold mb-2">Vehicle Information</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedWorkOrder.vehicles?.year || ""} {selectedWorkOrder.vehicles?.make || "Unknown"} {selectedWorkOrder.vehicles?.model || "Unknown"}
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold mb-2">Service Details</h3>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Wrench className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-sm">
+                      {selectedWorkOrder.service_type || "General Service"}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-sm">
+                      {selectedWorkOrder.description || "No description provided"}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-sm">
+                      Started on {formatDate(selectedWorkOrder.start_time || selectedWorkOrder.created_at)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-semibold mb-2">Current Status</h3>
+                <Badge className={getStatusBadgeColor(selectedWorkOrder.status) + " text-sm px-3 py-1"}>
+                  {selectedWorkOrder.status || "Pending"}
+                </Badge>
+                {selectedWorkOrder.status === "completed" && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Completed on{" "}
+                    {formatDate(selectedWorkOrder.end_time)}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
   );
-}
+};
+
+export default CustomerWorkOrders;
