@@ -1,16 +1,14 @@
 
-import React, { useState } from 'react';
-import { RateSettings } from '@/services/diybay/diybayService';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Loader2, ChevronDown, ChevronUp } from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { FormField } from "@/components/ui/form-field";
+import { RateSettings } from "@/services/diybay/diybayService";
+import { ChevronDown, ChevronUp, Save } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface RateSettingsFormProps {
   settings: RateSettings;
-  onSettingsChange: (field: keyof RateSettings, value: number | string) => void;
+  onSettingsChange: (field: keyof RateSettings, value: string | number) => void;
   onSaveSettings: () => Promise<boolean>;
   isSaving: boolean;
 }
@@ -19,185 +17,139 @@ export const RateSettingsForm: React.FC<RateSettingsFormProps> = ({
   settings,
   onSettingsChange,
   onSaveSettings,
-  isSaving
+  isSaving,
 }) => {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(true);
   const [localSettings, setLocalSettings] = useState<RateSettings>({
-    ...settings,
-    daily_hours: settings.daily_hours?.toString() || '',
-    daily_discount_percent: settings.daily_discount_percent?.toString() || '',
-    weekly_multiplier: settings.weekly_multiplier?.toString() || '',
-    monthly_multiplier: settings.monthly_multiplier?.toString() || '',
-    hourly_base_rate: settings.hourly_base_rate?.toString() || ''
+    daily_hours: settings.daily_hours.toString(),
+    daily_discount_percent: settings.daily_discount_percent.toString(),
+    weekly_multiplier: settings.weekly_multiplier.toString(),
+    monthly_multiplier: settings.monthly_multiplier.toString(),
+    hourly_base_rate: settings.hourly_base_rate.toString()
   });
-  
-  const handleSettingsChange = (field: keyof RateSettings, value: string) => {
-    // Allow empty string for deletion
+
+  // Update local settings when props change
+  useEffect(() => {
+    setLocalSettings({
+      daily_hours: settings.daily_hours.toString(),
+      daily_discount_percent: settings.daily_discount_percent.toString(),
+      weekly_multiplier: settings.weekly_multiplier.toString(),
+      monthly_multiplier: settings.monthly_multiplier.toString(),
+      hourly_base_rate: settings.hourly_base_rate.toString()
+    });
+  }, [settings]);
+
+  // Handle local form input changes
+  const handleInputChange = (field: keyof RateSettings, value: string) => {
     setLocalSettings(prev => ({
       ...prev,
       [field]: value
     }));
-    
-    // Pass the actual value to parent
-    onSettingsChange(field, value);
   };
 
-  const handleSaveClick = async () => {
-    await onSaveSettings();
-    // Collapse the panel after saving
-    setIsOpen(false);
+  // Save changes
+  const handleSave = async () => {
+    // Convert all string values to numbers for the parent component
+    Object.keys(localSettings).forEach(key => {
+      const field = key as keyof RateSettings;
+      onSettingsChange(field, localSettings[field]);
+    });
+    
+    const success = await onSaveSettings();
+    return success;
   };
 
   return (
-    <Collapsible 
-      open={isOpen} 
-      onOpenChange={setIsOpen} 
-      className="mb-6 border border-gray-200 rounded-lg overflow-hidden"
-    >
-      <CollapsibleTrigger className="w-full bg-gradient-to-b from-white to-gray-50 px-6 py-4 flex items-center justify-between hover:bg-gray-50">
-        <CardTitle className="text-xl font-semibold flex items-center">
-          Rate Calculation Settings
-        </CardTitle>
-        <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
-          {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        </Button>
-      </CollapsibleTrigger>
-      
-      <CollapsibleContent>
-        <Card className="border-0 shadow-none">
-          <CardContent className="pt-4">
-            <p className="text-gray-600 mb-4">
-              Configure how DIY bay rates are calculated based on the hourly rate.
-            </p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-              {/* Daily Rate Settings */}
-              <div className="space-y-2">
-                <Label htmlFor="daily-hours" className="text-sm">
-                  Daily Hours
-                </Label>
-                <div className="flex items-center">
-                  <Input
-                    id="daily-hours"
-                    type="text"
-                    inputMode="decimal"
-                    value={localSettings.daily_hours}
-                    onChange={(e) => handleSettingsChange('daily_hours', e.target.value)}
-                    placeholder="8"
-                    className="w-full"
-                  />
-                  <span className="ml-2 text-sm text-gray-500">hours</span>
-                </div>
-                <p className="text-xs text-gray-500">
-                  Number of hours included in the daily rate
-                </p>
-              </div>
+    <div className="mb-8">
+      <Collapsible 
+        open={isExpanded}
+        onOpenChange={setIsExpanded}
+        className="border rounded-md bg-white shadow-sm overflow-hidden"
+      >
+        <CollapsibleTrigger className="flex items-center justify-between w-full p-4 text-left hover:bg-slate-50 transition-colors">
+          <div className="flex items-center">
+            <h3 className="text-lg font-semibold">Rate Calculation Settings</h3>
+            <span className="ml-2 text-sm text-gray-500">
+              Configure how rates are calculated for different rental periods
+            </span>
+          </div>
+          {isExpanded ? 
+            <ChevronUp className="h-5 w-5 text-gray-500" /> : 
+            <ChevronDown className="h-5 w-5 text-gray-500" />
+          }
+        </CollapsibleTrigger>
+        
+        <CollapsibleContent>
+          <div className="p-4 space-y-6 border-t">
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Daily Hours Setting */}
+              <FormField
+                label="Daily Hours"
+                description="Number of hours counted in a daily rate"
+                type="text"
+                value={localSettings.daily_hours}
+                onChange={(e) => handleInputChange("daily_hours", e.target.value)}
+                className="w-full"
+              />
               
-              <div className="space-y-2">
-                <Label htmlFor="daily-discount" className="text-sm">
-                  Daily Discount
-                </Label>
-                <div className="flex items-center">
-                  <Input
-                    id="daily-discount"
-                    type="text"
-                    inputMode="decimal"
-                    value={localSettings.daily_discount_percent}
-                    onChange={(e) => handleSettingsChange('daily_discount_percent', e.target.value)}
-                    placeholder="25"
-                    className="w-full"
-                  />
-                  <span className="ml-2 text-sm text-gray-500">%</span>
-                </div>
-                <p className="text-xs text-gray-500">
-                  Discount applied to daily rates
-                </p>
-              </div>
+              {/* Daily Discount Setting */}
+              <FormField
+                label="Daily Discount (%)"
+                description="Discount applied to daily rates"
+                type="text"
+                value={localSettings.daily_discount_percent}
+                onChange={(e) => handleInputChange("daily_discount_percent", e.target.value)}
+                className="w-full"
+              />
               
-              {/* Weekly Rate Settings */}
-              <div className="space-y-2">
-                <Label htmlFor="weekly-multiplier" className="text-sm">
-                  Weekly Rate Multiplier
-                </Label>
-                <div className="flex items-center">
-                  <Input
-                    id="weekly-multiplier"
-                    type="text"
-                    inputMode="decimal"
-                    value={localSettings.weekly_multiplier}
-                    onChange={(e) => handleSettingsChange('weekly_multiplier', e.target.value)}
-                    placeholder="5"
-                    className="w-full"
-                  />
-                  <span className="ml-2 text-sm text-gray-500">days</span>
-                </div>
-                <p className="text-xs text-gray-500">
-                  Daily rates × this value = Weekly rate
-                </p>
-              </div>
+              {/* Weekly Multiplier Setting */}
+              <FormField
+                label="Weekly Multiplier"
+                description="Multiplier used for weekly rates (hourly × this value)"
+                type="text"
+                value={localSettings.weekly_multiplier}
+                onChange={(e) => handleInputChange("weekly_multiplier", e.target.value)}
+                className="w-full"
+              />
               
-              {/* Monthly Rate Settings */}
-              <div className="space-y-2">
-                <Label htmlFor="monthly-multiplier" className="text-sm">
-                  Monthly Rate Multiplier
-                </Label>
-                <div className="flex items-center">
-                  <Input
-                    id="monthly-multiplier"
-                    type="text"
-                    inputMode="decimal"
-                    value={localSettings.monthly_multiplier}
-                    onChange={(e) => handleSettingsChange('monthly_multiplier', e.target.value)}
-                    placeholder="20"
-                    className="w-full"
-                  />
-                  <span className="ml-2 text-sm text-gray-500">days</span>
-                </div>
-                <p className="text-xs text-gray-500">
-                  Daily rates × this value = Monthly rate
-                </p>
-              </div>
+              {/* Monthly Multiplier Setting */}
+              <FormField
+                label="Monthly Multiplier"
+                description="Multiplier used for monthly rates (hourly × this value)"
+                type="text"
+                value={localSettings.monthly_multiplier}
+                onChange={(e) => handleInputChange("monthly_multiplier", e.target.value)}
+                className="w-full"
+              />
               
-              {/* Base Hourly Rate */}
-              <div className="space-y-2">
-                <Label htmlFor="base-hourly-rate" className="text-sm">
-                  Base Hourly Rate
-                </Label>
-                <div className="flex items-center">
-                  <span className="mr-2 text-sm text-gray-500">$</span>
-                  <Input
-                    id="base-hourly-rate"
-                    type="text"
-                    inputMode="decimal"
-                    value={localSettings.hourly_base_rate}
-                    onChange={(e) => handleSettingsChange('hourly_base_rate', e.target.value)}
-                    placeholder="65.00"
-                    className="w-full"
-                  />
-                </div>
-                <p className="text-xs text-gray-500">
-                  Default hourly rate for new bays
-                </p>
-              </div>
+              {/* Hourly Base Rate Setting */}
+              <FormField
+                label="Default Hourly Rate"
+                description="Base hourly rate for new bays"
+                type="text"
+                value={localSettings.hourly_base_rate}
+                onChange={(e) => handleInputChange("hourly_base_rate", e.target.value)}
+                className="w-full"
+              />
             </div>
             
             <div className="flex justify-end">
               <Button 
-                onClick={handleSaveClick} 
+                onClick={handleSave}
                 disabled={isSaving}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="flex items-center gap-2"
               >
-                {isSaving ? (
+                {isSaving ? "Saving..." : (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Saving...
+                    <Save className="h-4 w-4" />
+                    Save Changes
                   </>
-                ) : 'Save Changes'}
+                )}
               </Button>
             </div>
-          </CardContent>
-        </Card>
-      </CollapsibleContent>
-    </Collapsible>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+    </div>
   );
 };

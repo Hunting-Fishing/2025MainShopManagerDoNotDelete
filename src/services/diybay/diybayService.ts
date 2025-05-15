@@ -1,3 +1,4 @@
+
 export interface Bay {
   id: string;
   name: string;  
@@ -21,10 +22,10 @@ export interface Bay {
 
 export interface RateSettings {
   id?: string; // Adding this to fix the ID reference errors
-  daily_hours: number;
-  daily_discount_percent: number;
-  weekly_multiplier: number;
-  monthly_multiplier: number;
+  daily_hours: number | string;
+  daily_discount_percent: number | string;
+  weekly_multiplier: number | string;
+  monthly_multiplier: number | string;
   hourly_base_rate: number | string; 
 }
 
@@ -83,13 +84,19 @@ export const deleteBay = async (bayId: string): Promise<void> => {
 
 export const calculateRates = (hourlyRate: number, settings: RateSettings): { daily: number; weekly: number; monthly: number } => {
   // Calculate daily rate (hourly rate * daily hours - discount)
-  const baseDaily = hourlyRate * settings.daily_hours;
-  const discount = baseDaily * (settings.daily_discount_percent / 100);
+  const dailyHours = typeof settings.daily_hours === 'string' ? parseFloat(settings.daily_hours) || 0 : settings.daily_hours;
+  const discountPercent = typeof settings.daily_discount_percent === 'string' ? parseFloat(settings.daily_discount_percent) || 0 : settings.daily_discount_percent;
+  
+  const baseDaily = hourlyRate * dailyHours;
+  const discount = baseDaily * (discountPercent / 100);
   const daily = baseDaily - discount;
   
   // Calculate weekly and monthly rates using multipliers
-  const weekly = hourlyRate * settings.weekly_multiplier;
-  const monthly = hourlyRate * settings.monthly_multiplier;
+  const weeklyMultiplier = typeof settings.weekly_multiplier === 'string' ? parseFloat(settings.weekly_multiplier) || 0 : settings.weekly_multiplier;
+  const monthlyMultiplier = typeof settings.monthly_multiplier === 'string' ? parseFloat(settings.monthly_multiplier) || 0 : settings.monthly_multiplier;
+  
+  const weekly = hourlyRate * weeklyMultiplier;
+  const monthly = hourlyRate * monthlyMultiplier;
   
   return {
     daily,
