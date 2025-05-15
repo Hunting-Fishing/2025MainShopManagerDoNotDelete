@@ -15,11 +15,29 @@ export function useRateSettings(
   const { shopId } = useShopId();
 
   const updateBayRateSettings = async (newSettings: RateSettings): Promise<boolean> => {
-    if (!shopId || !settings.id) return false;
+    if (!shopId || !settings.id) {
+      toast({
+        title: "Error",
+        description: "Shop ID or settings ID is missing",
+        variant: "destructive"
+      });
+      return false;
+    }
     
     setIsSaving(true);
     
     try {
+      // Deep compare to ensure we have actual changes
+      const hasChanges = JSON.stringify(newSettings) !== JSON.stringify(settings);
+      
+      if (!hasChanges) {
+        toast({
+          title: "Info",
+          description: "No changes to save"
+        });
+        return true;
+      }
+      
       // Update settings in database
       const { error } = await supabase
         .from('diy_bay_rate_settings')

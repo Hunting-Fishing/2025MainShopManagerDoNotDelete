@@ -27,6 +27,7 @@ export const DIYBayRatesTab: React.FC = () => {
     calculateRate,
   } = useDIYBayRates();
 
+  const [localSettings, setLocalSettings] = useState(settings);
   const [viewMode, setViewMode] = useState<"table" | "cards" | "compact">("table");
   
   const {
@@ -58,14 +59,12 @@ export const DIYBayRatesTab: React.FC = () => {
   }, [saveBay]);
 
   const handleSettingsChange = useCallback((field: keyof typeof settings, value: number) => {
-    const updatedSettings = { ...settings, [field]: value };
-    updateBayRateSettings(updatedSettings);
-  }, [settings, updateBayRateSettings]);
+    setLocalSettings(prev => ({ ...prev, [field]: value }));
+  }, []);
 
   const handleSaveSettings = useCallback(async () => {
-    const result = await updateBayRateSettings(settings);
-    return result;
-  }, [updateBayRateSettings, settings]);
+    return await updateBayRateSettings(localSettings);
+  }, [updateBayRateSettings, localSettings]);
 
   const handleDeleteClick = useCallback((bay: Bay) => {
     if (window.confirm(`Are you sure you want to delete ${bay.bay_name}?`)) {

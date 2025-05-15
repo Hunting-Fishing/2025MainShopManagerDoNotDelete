@@ -1,188 +1,201 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { ChevronsUp, ChevronsDown, Save } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Save } from "lucide-react";
 import { RateSettings } from "@/services/diybay/diybayService";
+import { 
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 interface RateSettingsFormProps {
   settings: RateSettings;
   onSettingsChange: (field: keyof RateSettings, value: number) => void;
   onSaveSettings: () => Promise<boolean>;
-  isSaving: boolean;
+  isSaving?: boolean;
 }
 
 export const RateSettingsForm: React.FC<RateSettingsFormProps> = ({
   settings,
   onSettingsChange,
   onSaveSettings,
-  isSaving
+  isSaving = false,
 }) => {
-  const [expanded, setExpanded] = useState<string | undefined>("bay-settings");
+  const [localSettings, setLocalSettings] = useState<RateSettings>({...settings});
+  const [hasChanges, setHasChanges] = useState(false);
   
-  const handleAccordionChange = (value: string) => {
-    setExpanded(value === expanded ? undefined : value);
+  // Handle input changes locally without triggering parent state updates
+  const handleInputChange = (field: keyof RateSettings, value: string) => {
+    const numValue = parseFloat(value);
+    
+    if (!isNaN(numValue)) {
+      setLocalSettings(prev => ({
+        ...prev,
+        [field]: numValue
+      }));
+      setHasChanges(true);
+    }
   };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await onSaveSettings();
+  
+  // Only apply changes to parent state when save button is clicked
+  const handleSaveClick = async () => {
+    // Update parent state with local settings
+    Object.keys(localSettings).forEach(key => {
+      const field = key as keyof RateSettings;
+      if (localSettings[field] !== settings[field]) {
+        onSettingsChange(field, Number(localSettings[field]));
+      }
+    });
+    
+    // Save settings to database
+    const success = await onSaveSettings();
+    
+    // Reset the changes flag if saved successfully
+    if (success) {
+      setHasChanges(false);
+    }
   };
 
   return (
-    <Accordion 
-      type="single" 
-      collapsible 
-      value={expanded} 
-      onValueChange={handleAccordionChange}
-      className="mb-8 border-gray-100 shadow-md rounded-xl overflow-hidden"
-    >
-      <AccordionItem value="bay-settings" className="border-0">
-        <AccordionTrigger className="px-5 py-4 bg-gradient-to-r from-blue-50 to-blue-100 hover:no-underline">
-          <div className="flex items-center justify-between w-full">
-            <div>
-              <h3 className="text-lg font-medium text-gray-800">Rate Settings</h3>
-              <p className="text-sm text-gray-600">Configure base rate calculation parameters for DIY bays</p>
-            </div>
-            {expanded === "bay-settings" ? (
-              <ChevronsUp className="h-5 w-5 text-gray-500" />
-            ) : (
-              <ChevronsDown className="h-5 w-5 text-gray-500" />
-            )}
-          </div>
-        </AccordionTrigger>
-        <AccordionContent className="pb-0">
-          <form onSubmit={handleSubmit} className="p-5 bg-white">
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="baseRate" className="text-sm font-medium text-gray-700">
-                    Base Hourly Rate ($)
-                  </Label>
-                  <div className="mt-1 relative">
+    <Card className="shadow-sm mb-8 border-blue-100">
+      <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100">
+        <CardTitle className="text-blue-700 flex items-center justify-between">
+          <span>Bay Rate Calculator Settings</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-0">
+        <Accordion type="single" collapsible defaultValue="settings">
+          <AccordionItem value="settings" className="border-0">
+            <AccordionTrigger className="px-5 py-3 hover:bg-gray-50 font-medium">
+              Rate Calculation Settings
+            </AccordionTrigger>
+            <AccordionContent>
+              <form onSubmit={(e) => { e.preventDefault(); handleSaveClick(); }} className="p-5 bg-white">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="hourly_base_rate" className="text-sm font-medium">
+                      Base Hourly Rate ($)
+                    </Label>
                     <Input
-                      id="baseRate"
+                      id="hourly_base_rate"
                       type="number"
                       min="0"
                       step="0.01"
-                      value={settings.hourly_base_rate || ''}
-                      onChange={(e) => onSettingsChange('hourly_base_rate', Number(e.target.value))}
-                      className="pl-8 mt-1"
+                      value={localSettings.hourly_base_rate}
+                      onChange={(e) => handleInputChange('hourly_base_rate', e.target.value)}
+                      className="w-full border-gray-200 focus:border-blue-500"
                     />
-                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500">
-                      $
-                    </span>
+                    <p className="text-xs text-gray-500">
+                      The default hourly rate for new bays
+                    </p>
                   </div>
-                  <p className="mt-1 text-xs text-gray-500">
-                    Default hourly rate for all DIY bays
-                  </p>
-                </div>
-                <div>
-                  <Label htmlFor="dailyHours" className="text-sm font-medium text-gray-700">
-                    Hours in Daily Rate
-                  </Label>
-                  <Input
-                    id="dailyHours"
-                    type="number"
-                    min="1"
-                    max="24"
-                    value={settings.daily_hours || ''}
-                    onChange={(e) => onSettingsChange('daily_hours', Number(e.target.value))}
-                    className="mt-1"
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    Number of hours considered for a daily rate
-                  </p>
-                </div>
-              </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="dailyDiscount" className="text-sm font-medium text-gray-700">
-                    Daily Discount (%)
-                  </Label>
-                  <div className="mt-1 relative">
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="daily_hours" className="text-sm font-medium">
+                      Daily Hours
+                    </Label>
                     <Input
-                      id="dailyDiscount"
+                      id="daily_hours"
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={localSettings.daily_hours}
+                      onChange={(e) => handleInputChange('daily_hours', e.target.value)}
+                      className="w-full border-gray-200 focus:border-blue-500"
+                    />
+                    <p className="text-xs text-gray-500">
+                      Number of hours in a day rental
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="daily_discount_percent" className="text-sm font-medium">
+                      Daily Discount (%)
+                    </Label>
+                    <Input
+                      id="daily_discount_percent"
                       type="number"
                       min="0"
                       max="100"
-                      value={settings.daily_discount_percent || ''}
-                      onChange={(e) => onSettingsChange('daily_discount_percent', Number(e.target.value))}
-                      className="pr-8 mt-1"
+                      step="1"
+                      value={localSettings.daily_discount_percent}
+                      onChange={(e) => handleInputChange('daily_discount_percent', e.target.value)}
+                      className="w-full border-gray-200 focus:border-blue-500"
                     />
-                    <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-500">
-                      %
-                    </span>
-                  </div>
-                  <p className="mt-1 text-xs text-gray-500">
-                    Discount applied for daily rentals vs hourly rate
-                  </p>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label htmlFor="weeklyMultiplier" className="text-sm font-medium text-gray-700">
-                      Weekly Multiplier
-                    </Label>
-                    <Input
-                      id="weeklyMultiplier"
-                      type="number"
-                      min="1"
-                      step="0.1"
-                      value={settings.weekly_multiplier || ''}
-                      onChange={(e) => onSettingsChange('weekly_multiplier', Number(e.target.value))}
-                      className="mt-1"
-                    />
-                    <p className="mt-1 text-xs text-gray-500">
-                      Daily rate × This = Weekly
+                    <p className="text-xs text-gray-500">
+                      Discount applied to daily rate (% off hourly rate × daily hours)
                     </p>
                   </div>
-                  <div>
-                    <Label htmlFor="monthlyMultiplier" className="text-sm font-medium text-gray-700">
-                      Monthly Multiplier
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="weekly_multiplier" className="text-sm font-medium">
+                      Weekly Rate Multiplier
                     </Label>
                     <Input
-                      id="monthlyMultiplier"
+                      id="weekly_multiplier"
                       type="number"
-                      min="1"
+                      min="0"
                       step="0.1"
-                      value={settings.monthly_multiplier || ''}
-                      onChange={(e) => onSettingsChange('monthly_multiplier', Number(e.target.value))}
-                      className="mt-1"
+                      value={localSettings.weekly_multiplier}
+                      onChange={(e) => handleInputChange('weekly_multiplier', e.target.value)}
+                      className="w-full border-gray-200 focus:border-blue-500"
                     />
-                    <p className="mt-1 text-xs text-gray-500">
-                      Daily rate × This = Monthly
+                    <p className="text-xs text-gray-500">
+                      Multiplier to calculate weekly rate (hourly rate × multiplier)
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="monthly_multiplier" className="text-sm font-medium">
+                      Monthly Rate Multiplier
+                    </Label>
+                    <Input
+                      id="monthly_multiplier"
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={localSettings.monthly_multiplier}
+                      onChange={(e) => handleInputChange('monthly_multiplier', e.target.value)}
+                      className="w-full border-gray-200 focus:border-blue-500"
+                    />
+                    <p className="text-xs text-gray-500">
+                      Multiplier to calculate monthly rate (hourly rate × multiplier)
                     </p>
                   </div>
                 </div>
-              </div>
-            </div>
-            
-            <div className="mt-6 border-t pt-4 flex justify-end">
-              <Button 
-                type="submit" 
-                disabled={isSaving}
-                className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
-              >
-                {isSaving ? (
-                  <>
-                    <span className="animate-spin h-4 w-4 border-2 border-white border-opacity-50 border-t-transparent rounded-full"></span>
-                    <span>Saving...</span>
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-4 w-4" />
-                    <span>Save Rate Settings</span>
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
+                
+                <div className="flex justify-end mt-6">
+                  <Button 
+                    type="submit"
+                    disabled={isSaving || !hasChanges}
+                    className={`rounded-full px-6 ${hasChanges 
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                      : 'bg-gray-100 text-gray-400'}`}
+                  >
+                    {isSaving ? (
+                      <>
+                        <span className="animate-spin mr-2">⏳</span>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        {hasChanges ? "Save Changes" : "No Changes"}
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </CardContent>
+    </Card>
   );
 };
 
