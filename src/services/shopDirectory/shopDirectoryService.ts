@@ -60,9 +60,6 @@ export async function getPublicShops(params: ShopSearchParams = {}): Promise<Sho
       query = query.or(`name.ilike.%${searchTerm}%,city.ilike.%${searchTerm}%,state.ilike.%${searchTerm}%`);
     }
     
-    // If we have coordinates, we could implement distance filtering on the client side
-    // since Supabase doesn't have built-in geospatial functions in the JavaScript client
-    
     // Set result limit
     query = query.limit(limit);
     
@@ -187,7 +184,6 @@ export async function getCustomerShops(customerId: string): Promise<ShopDirector
     }
     
     // Transform the nested data structure into a flat array of shops
-    // We need to map each item.shops to a ShopDirectoryItem
     const shops: ShopDirectoryItem[] = data?.map(item => {
       // Map each shops object to our ShopDirectoryItem interface explicitly
       const shop = item.shops as any;
