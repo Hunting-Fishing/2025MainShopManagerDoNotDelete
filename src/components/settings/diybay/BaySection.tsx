@@ -7,7 +7,7 @@ import { AddBayButton } from "./AddBayButton";
 import { ViewModeToggle } from "./ViewModeToggle";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BayViewMode } from "@/types/diybay";
-import { Loader2 } from "lucide-react";
+import { Loader2, GripVertical } from "lucide-react";
 import { DndContext, DragEndEvent, closestCenter } from "@dnd-kit/core";
 import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
@@ -62,17 +62,21 @@ export const BaySection: React.FC<BaySectionProps> = ({
         </div>
       </div>
 
-      <div className="px-4 py-2 bg-gray-50 border-b flex flex-wrap gap-2">
-        <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">
-          Active Bay
-        </Badge>
-        <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">
-          Inactive Bay
-        </Badge>
-        <p className="text-sm text-gray-600 ml-auto flex items-center">
-          <span className="mr-1">💡</span> 
-          Drag and drop to reorder bays using the grip handle.
-        </p>
+      <div className="px-4 py-3 bg-gray-50 border-b flex flex-wrap items-center gap-4">
+        <div className="flex items-center gap-3">
+          <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">
+            Active Bay
+          </Badge>
+          <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">
+            Inactive Bay
+          </Badge>
+        </div>
+        <div className="flex items-center ml-auto text-sm text-gray-700">
+          <div className="flex items-center bg-gray-100 px-2 py-1 rounded-md border mr-2">
+            <GripVertical size={16} className="text-gray-600 mr-1" />
+            <span>Drag handles to reorder bays</span>
+          </div>
+        </div>
       </div>
 
       <CardContent className="p-4">

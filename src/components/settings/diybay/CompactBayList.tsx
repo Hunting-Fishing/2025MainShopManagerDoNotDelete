@@ -67,7 +67,11 @@ const SortableCompactBayItem = ({ bay, onStatusChange, onEditClick, onDeleteClic
       {...(sortable ? listeners : {})}
     >
       <div className="flex items-center gap-3">
-        {sortable && <GripVertical className="h-5 w-5 text-gray-400 cursor-grab" />}
+        {sortable && (
+          <div className="p-1 bg-gray-100 rounded-md flex items-center justify-center cursor-grab">
+            <GripVertical className="h-5 w-5 text-gray-400" />
+          </div>
+        )}
         <div>
           <div className="flex items-center gap-2">
             <h3 className="font-semibold">

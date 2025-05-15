@@ -45,8 +45,10 @@ export const BayCard: React.FC<BayCardProps> = ({
       <CardHeader className={`pb-2 ${headerBgClass}`}>
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-1">
-            <GripVertical className="h-5 w-5 text-gray-400 cursor-grab" />
-            <CardTitle className="text-xl font-bold flex items-center gap-2">
+            <div className="p-1 bg-gray-100 rounded-md flex items-center justify-center cursor-grab">
+              <GripVertical className="h-5 w-5 text-gray-500" />
+            </div>
+            <CardTitle className="text-xl font-bold flex items-center gap-2 ml-1">
               {bay.bay_name}
               {!bay.is_active && (
                 <Badge variant="danger" className="text-xs">

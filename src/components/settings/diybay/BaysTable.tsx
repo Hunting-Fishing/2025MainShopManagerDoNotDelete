@@ -95,7 +95,7 @@ const BayRow: React.FC<BayRowProps> = ({
             <div 
               {...attributes}
               {...listeners}
-              className={`cursor-grab p-1 hover:bg-gray-100 rounded ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`cursor-grab p-1 hover:bg-gray-100 rounded flex items-center justify-center ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
               aria-label="Reorder bay"
             >
               <GripVertical size={20} className="text-gray-500" />
@@ -182,7 +182,12 @@ const BaysTable: React.FC<BaysTableProps> = ({
       <Table>
         <TableHeader>
           <TableRow className="bg-gray-100">
-            {sortable && <TableHead className="w-10">Order</TableHead>}
+            {sortable && <TableHead className="w-10">
+              <span className="flex items-center gap-1 text-sm font-medium">
+                <GripVertical size={16} className="text-gray-400" />
+                Order
+              </span>
+            </TableHead>}
             <TableHead>Bay Name</TableHead>
             <TableHead>Type</TableHead>
             <TableHead>Hourly Rate</TableHead>
