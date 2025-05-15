@@ -16,7 +16,7 @@ export interface ShopDirectoryItem {
   latitude?: number;
   longitude?: number;
   is_active: boolean;
-  distance?: number; // Only populated when doing location-based searches
+  distance?: number; // Added distance property to the interface
 }
 
 export interface ShopSearchParams {
@@ -73,7 +73,7 @@ export async function getPublicShops(params: ShopSearchParams = {}): Promise<Sho
       throw error;
     }
     
-    let shops = data || [];
+    let shops: ShopDirectoryItem[] = data || [];
     
     // Calculate distances if we have coordinates
     if (latitude && longitude) {
@@ -88,7 +88,8 @@ export async function getPublicShops(params: ShopSearchParams = {}): Promise<Sho
             shop.longitude
           );
         }
-        return { ...shop, distance };
+        // Create a new object with all shop properties plus the distance
+        return { ...shop, distance } as ShopDirectoryItem;
       });
       
       // Filter by radius if requested
@@ -186,7 +187,7 @@ export async function getCustomerShops(customerId: string): Promise<ShopDirector
     }
     
     // Transform the nested data structure into a flat array of shops
-    const shops = data?.map(item => item.shops) || [];
+    const shops: ShopDirectoryItem[] = data?.map(item => item.shops as ShopDirectoryItem) || [];
     
     return shops;
   } catch (error) {
