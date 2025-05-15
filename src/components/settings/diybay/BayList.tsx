@@ -12,7 +12,8 @@ interface BayListProps {
   onEditClick: (bay: Bay) => void;
   onDeleteClick: (bay: Bay) => void;
   onHistoryClick: (bay: Bay) => Promise<void>;
-  onRateChange?: (bay: Bay, field: 'daily_rate' | 'weekly_rate' | 'monthly_rate', value: number) => Promise<void>;
+  onRateChange?: (bay: Bay, field: 'hourly_rate' | 'daily_rate' | 'weekly_rate' | 'monthly_rate', value: number) => Promise<boolean>;
+  isSaving?: boolean;
 }
 
 export const BayList: React.FC<BayListProps> = ({
@@ -23,6 +24,7 @@ export const BayList: React.FC<BayListProps> = ({
   onDeleteClick,
   onHistoryClick,
   onRateChange,
+  isSaving,
 }) => {
   if (viewMode === "cards") {
     return (
@@ -35,6 +37,7 @@ export const BayList: React.FC<BayListProps> = ({
             onEditClick={onEditClick}
             onDeleteClick={onDeleteClick}
             onHistoryClick={onHistoryClick}
+            isSaving={isSaving}
           />
         ))}
       </div>
@@ -47,6 +50,7 @@ export const BayList: React.FC<BayListProps> = ({
         onEditClick={onEditClick}
         onDeleteClick={onDeleteClick}
         onHistoryClick={onHistoryClick}
+        isSaving={isSaving}
       />
     );
   } else {
@@ -58,6 +62,7 @@ export const BayList: React.FC<BayListProps> = ({
         onDeleteClick={onDeleteClick}
         onHistoryClick={onHistoryClick}
         onRateChange={onRateChange}
+        isSaving={isSaving}
       />
     );
   }

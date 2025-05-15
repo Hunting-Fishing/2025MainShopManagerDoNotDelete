@@ -97,7 +97,7 @@ export function useDIYBayOperations(
     }
   };
   
-  const removeBay = async (bayId: string, bayName: string) => {
+  const removeBay = async (bayId: string, bayName: string): Promise<boolean> => {
     setIsSaving(true);
     setSaveError(null);
     

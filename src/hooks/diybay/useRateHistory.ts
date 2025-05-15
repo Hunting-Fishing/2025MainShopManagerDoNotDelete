@@ -1,37 +1,22 @@
 
-import { useState } from 'react';
-import { useToast } from '../use-toast';
-import { 
-  RateHistory, 
-  fetchRateHistory 
-} from '@/services/diybay/diybayService';
+import { useState } from "react";
+import { Bay, RateHistory, fetchRateHistory } from "@/services/diybay/diybayService";
 
-/**
- * Hook to manage rate history for DIY bays
- */
 export function useRateHistory() {
   const [rateHistory, setRateHistory] = useState<RateHistory[]>([]);
-  const { toast } = useToast();
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
-  const loadRateHistory = async (bayId: string): Promise<RateHistory[]> => {
+  const loadRateHistory = async (bay: Bay): Promise<void> => {
+    setIsLoadingHistory(true);
     try {
-      const history = await fetchRateHistory(bayId);
-      console.log("Loaded rate history:", history);
+      const history = await fetchRateHistory(bay.id);
       setRateHistory(history);
-      return history;
     } catch (error) {
-      console.error('Error fetching rate history:', error);
-      toast({
-        title: "Error",
-        description: "Could not load rate history.",
-        variant: "destructive",
-      });
-      return [];
+      console.error("Error loading rate history:", error);
+    } finally {
+      setIsLoadingHistory(false);
     }
   };
 
-  return {
-    rateHistory,
-    loadRateHistory
-  };
+  return { rateHistory, isLoadingHistory, loadRateHistory };
 }

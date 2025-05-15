@@ -1,18 +1,20 @@
 
 import React from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Bay } from "@/services/diybay/diybayService";
-import { formatCurrency } from "@/lib/formatters";
-import { Switch } from "@/components/ui/switch";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Edit2, Clock, Trash2, MapPin } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { formatCurrency } from "@/lib/formatters";
+import { Clock, Edit2, Trash2, Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface BayCardProps {
   bay: Bay;
-  onStatusChange: (bay: Bay, isActive: boolean) => void;
+  onStatusChange: (bay: Bay, isActive: boolean) => Promise<void>;
   onEditClick: (bay: Bay) => void;
   onDeleteClick: (bay: Bay) => void;
-  onHistoryClick: (bay: Bay) => void;
+  onHistoryClick: (bay: Bay) => Promise<void>;
+  isSaving?: boolean;
 }
 
 export const BayCard: React.FC<BayCardProps> = ({
@@ -21,94 +23,92 @@ export const BayCard: React.FC<BayCardProps> = ({
   onEditClick,
   onDeleteClick,
   onHistoryClick,
+  isSaving = false
 }) => {
   return (
-    <Card className="mb-4 overflow-hidden border-none shadow-lg">
-      <CardHeader className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white pb-2">
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-lg font-semibold">
-            {bay.bay_name}
-          </CardTitle>
+    <Card className="overflow-hidden">
+      <div className={`h-2 w-full ${bay.is_active ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+      <CardHeader className="pb-2 flex flex-row justify-between items-center">
+        <div>
+          <CardTitle className="text-lg">{bay.bay_name}</CardTitle>
+          {bay.bay_location && <p className="text-sm text-gray-500">{bay.bay_location}</p>}
+        </div>
+        <Badge variant={bay.is_active ? "default" : "outline"}>
+          {bay.is_active ? "Active" : "Inactive"}
+        </Badge>
+      </CardHeader>
+      
+      <CardContent>
+        <div className="grid grid-cols-2 gap-4 my-4">
+          <div className="text-center p-2 bg-blue-50 rounded-lg">
+            <div className="text-xs text-gray-500">Hourly Rate</div>
+            <div className="font-bold text-lg">{formatCurrency(bay.hourly_rate)}</div>
+          </div>
+          <div className="text-center p-2 bg-blue-50 rounded-lg">
+            <div className="text-xs text-gray-500">Daily Rate</div>
+            <div className="font-bold text-lg">
+              {bay.daily_rate ? formatCurrency(bay.daily_rate) : "—"}
+            </div>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="text-center p-2 bg-blue-50 rounded-lg">
+            <div className="text-xs text-gray-500">Weekly Rate</div>
+            <div className="font-bold text-lg">
+              {bay.weekly_rate ? formatCurrency(bay.weekly_rate) : "—"}
+            </div>
+          </div>
+          <div className="text-center p-2 bg-blue-50 rounded-lg">
+            <div className="text-xs text-gray-500">Monthly Rate</div>
+            <div className="font-bold text-lg">
+              {bay.monthly_rate ? formatCurrency(bay.monthly_rate) : "—"}
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex justify-between items-center pt-2 border-t">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-white/90">
-              {bay.is_active ? "Active" : "Inactive"}
-            </span>
             <Switch
               checked={bay.is_active}
               onCheckedChange={(checked) => onStatusChange(bay, checked)}
-              className="data-[state=checked]:bg-white data-[state=checked]:text-indigo-600"
+              disabled={isSaving}
             />
+            <span className="text-sm">{bay.is_active ? "Active" : "Inactive"}</span>
           </div>
-        </div>
-        {bay.bay_location && (
-          <p className="text-sm text-white/80 mt-1 flex items-center">
-            <MapPin className="h-3 w-3 mr-1" />
-            {bay.bay_location}
-          </p>
-        )}
-      </CardHeader>
-      <CardContent className="pt-4 bg-white">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-indigo-50 p-3 rounded-lg">
-            <h4 className="text-xs font-medium text-indigo-700 mb-1">
-              Hourly Rate
-            </h4>
-            <p className="text-2xl font-bold text-indigo-900">{formatCurrency(bay.hourly_rate)}</p>
+          
+          <div className="flex gap-1">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-8 w-8 p-0 rounded-full"
+              onClick={() => onHistoryClick(bay)}
+              disabled={isSaving}
+            >
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Clock className="h-4 w-4" />}
+              <span className="sr-only">History</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="h-8 w-8 p-0 rounded-full"
+              onClick={() => onEditClick(bay)}
+              disabled={isSaving}
+            >
+              <Edit2 className="h-4 w-4" />
+              <span className="sr-only">Edit</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="h-8 w-8 p-0 rounded-full text-red-500 hover:text-red-600 hover:bg-red-50"
+              onClick={() => onDeleteClick(bay)}
+              disabled={isSaving}
+            >
+              <Trash2 className="h-4 w-4" />
+              <span className="sr-only">Delete</span>
+            </Button>
           </div>
-          <div className="bg-purple-50 p-3 rounded-lg">
-            <h4 className="text-xs font-medium text-purple-700 mb-1">
-              Daily Rate
-            </h4>
-            <p className="text-2xl font-bold text-purple-900">
-              {bay.daily_rate ? formatCurrency(bay.daily_rate) : "N/A"}
-            </p>
-          </div>
-          <div className="bg-blue-50 p-3 rounded-lg">
-            <h4 className="text-xs font-medium text-blue-700 mb-1">
-              Weekly Rate
-            </h4>
-            <p className="text-xl font-bold text-blue-900">
-              {bay.weekly_rate ? formatCurrency(bay.weekly_rate) : "N/A"}
-            </p>
-          </div>
-          <div className="bg-cyan-50 p-3 rounded-lg">
-            <h4 className="text-xs font-medium text-cyan-700 mb-1">
-              Monthly Rate
-            </h4>
-            <p className="text-xl font-bold text-cyan-900">
-              {bay.monthly_rate ? formatCurrency(bay.monthly_rate) : "N/A"}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex justify-end gap-2 mt-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onHistoryClick(bay)}
-            className="rounded-full border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700"
-          >
-            <Clock className="mr-1 h-4 w-4" />
-            History
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onEditClick(bay)}
-            className="rounded-full border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700"
-          >
-            <Edit2 className="mr-1 h-4 w-4" />
-            Edit
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onDeleteClick(bay)}
-            className="rounded-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
-          >
-            <Trash2 className="mr-1 h-4 w-4" />
-            Delete
-          </Button>
         </div>
       </CardContent>
     </Card>

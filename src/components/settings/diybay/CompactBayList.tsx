@@ -3,7 +3,7 @@ import React from "react";
 import { Bay } from "@/services/diybay/diybayService";
 import { formatCurrency } from "@/lib/formatters";
 import { Switch } from "@/components/ui/switch";
-import { Edit2, Clock, Trash2 } from "lucide-react";
+import { Edit2, Clock, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
@@ -13,6 +13,7 @@ interface CompactBayListProps {
   onEditClick: (bay: Bay) => void;
   onDeleteClick: (bay: Bay) => void;
   onHistoryClick: (bay: Bay) => Promise<void>;
+  isSaving?: boolean;
 }
 
 export const CompactBayList: React.FC<CompactBayListProps> = ({
@@ -21,6 +22,7 @@ export const CompactBayList: React.FC<CompactBayListProps> = ({
   onEditClick,
   onDeleteClick,
   onHistoryClick,
+  isSaving = false,
 }) => {
   return (
     <div className="space-y-3">
@@ -57,6 +59,7 @@ export const CompactBayList: React.FC<CompactBayListProps> = ({
                   <Switch
                     checked={bay.is_active}
                     onCheckedChange={(checked) => onStatusChange(bay, checked)}
+                    disabled={isSaving}
                     className="data-[state=checked]:bg-indigo-600"
                   />
                   <span className="text-xs font-medium text-gray-500">
@@ -70,8 +73,9 @@ export const CompactBayList: React.FC<CompactBayListProps> = ({
                     size="sm" 
                     className="h-8 w-8 p-0 rounded-full text-indigo-700 hover:bg-indigo-50"
                     onClick={() => onHistoryClick(bay)}
+                    disabled={isSaving}
                   >
-                    <Clock className="h-4 w-4" />
+                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Clock className="h-4 w-4" />}
                     <span className="sr-only">View History</span>
                   </Button>
                   
@@ -80,6 +84,7 @@ export const CompactBayList: React.FC<CompactBayListProps> = ({
                     size="sm" 
                     className="h-8 w-8 p-0 rounded-full text-indigo-700 hover:bg-indigo-50"
                     onClick={() => onEditClick(bay)}
+                    disabled={isSaving}
                   >
                     <Edit2 className="h-4 w-4" />
                     <span className="sr-only">Edit</span>
@@ -90,6 +95,7 @@ export const CompactBayList: React.FC<CompactBayListProps> = ({
                     size="sm" 
                     className="h-8 w-8 p-0 rounded-full text-red-700 hover:bg-red-50"
                     onClick={() => onDeleteClick(bay)}
+                    disabled={isSaving}
                   >
                     <Trash2 className="h-4 w-4" />
                     <span className="sr-only">Delete</span>

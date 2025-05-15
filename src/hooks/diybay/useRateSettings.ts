@@ -1,52 +1,74 @@
 
-import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { RateSettings } from "@/services/diybay/diybayService";
+import { Bay, RateSettings, calculateRates } from "@/services/diybay/diybayService";
 import { useToast } from "@/hooks/use-toast";
+import { useShopId } from "@/hooks/useShopId";
 
 export function useRateSettings(
   settings: RateSettings,
   setSettings: React.Dispatch<React.SetStateAction<RateSettings>>,
-  bays: any[],
-  setBays: React.Dispatch<React.SetStateAction<any[]>>,
+  bays: Bay[],
+  setBays: React.Dispatch<React.SetStateAction<Bay[]>>,
   setIsSaving: React.Dispatch<React.SetStateAction<boolean>>
 ) {
   const { toast } = useToast();
-  const [isUpdating, setIsUpdating] = useState(false);
-  
-  const updateBayRateSettings = async (updatedSettings: RateSettings) => {
+  const { shopId } = useShopId();
+
+  const updateBayRateSettings = async (newSettings: RateSettings): Promise<boolean> => {
+    if (!shopId || !settings.id) return false;
+    
     setIsSaving(true);
-    setIsUpdating(true);
     
     try {
-      console.log("Updating settings:", updatedSettings);
-      
-      // Update settings in DB
-      const { data, error } = await supabase
+      // Update settings in database
+      const { error } = await supabase
         .from('diy_bay_rate_settings')
         .update({
-          daily_hours: updatedSettings.daily_hours,
-          daily_discount_percent: updatedSettings.daily_discount_percent,
-          weekly_multiplier: updatedSettings.weekly_multiplier,
-          monthly_multiplier: updatedSettings.monthly_multiplier,
-          hourly_base_rate: updatedSettings.hourly_base_rate
+          daily_hours: newSettings.daily_hours,
+          daily_discount_percent: newSettings.daily_discount_percent,
+          weekly_multiplier: newSettings.weekly_multiplier,
+          monthly_multiplier: newSettings.monthly_multiplier,
+          hourly_base_rate: newSettings.hourly_base_rate
         })
-        .eq('id', updatedSettings.id)
-        .select('*');
+        .eq('id', settings.id);
         
       if (error) throw error;
       
-      setSettings(updatedSettings);
+      // Update local settings state
+      setSettings(newSettings);
       
-      // If hourly base rate was updated, update all bay rates
-      if (updatedSettings.hourly_base_rate !== settings.hourly_base_rate) {
-        // Update all bays with the new hourly base rate
-        await updateAllBaysHourlyRate(Number(updatedSettings.hourly_base_rate));
+      // Recalculate rates for all bays using new settings
+      const updatedBays = bays.map(bay => {
+        if (!bay.hourly_rate) return bay;
+        
+        const calculatedRates = calculateRates(bay.hourly_rate, newSettings);
+        
+        return {
+          ...bay,
+          daily_rate: calculatedRates.daily,
+          weekly_rate: calculatedRates.weekly,
+          monthly_rate: calculatedRates.monthly
+        };
+      });
+      
+      // Update bays in database with new calculated rates
+      for (const bay of updatedBays) {
+        await supabase
+          .from('diy_bay_rates')
+          .update({
+            daily_rate: bay.daily_rate,
+            weekly_rate: bay.weekly_rate,
+            monthly_rate: bay.monthly_rate
+          })
+          .eq('id', bay.id);
       }
       
+      // Update local bays state
+      setBays(updatedBays);
+      
       toast({
-        title: "Settings updated",
-        description: "DIY bay rate settings have been saved successfully."
+        title: "Settings saved",
+        description: "Rate settings have been updated successfully."
       });
       
       return true;
@@ -54,51 +76,14 @@ export function useRateSettings(
       console.error("Error updating rate settings:", error);
       toast({
         title: "Error",
-        description: "Failed to update rate settings: " + error.message,
+        description: `Failed to update rate settings: ${error.message}`,
         variant: "destructive"
       });
       return false;
     } finally {
       setIsSaving(false);
-      setIsUpdating(false);
-    }
-  };
-  
-  // Function to update all bays with the new hourly rate
-  const updateAllBaysHourlyRate = async (newHourlyRate: number) => {
-    if (isNaN(newHourlyRate) || newHourlyRate <= 0) return;
-    
-    try {
-      // Get all active bays
-      const { data: activeBays, error: fetchError } = await supabase
-        .from('diy_bay_rates')
-        .select('*')
-        .eq('is_active', true);
-        
-      if (fetchError) throw fetchError;
-      
-      // Update each bay with the new hourly rate
-      for (const bay of activeBays || []) {
-        await supabase
-          .from('diy_bay_rates')
-          .update({ hourly_rate: newHourlyRate })
-          .eq('id', bay.id);
-      }
-      
-      // Refresh bay data in the UI
-      const { data: updatedBays } = await supabase
-        .from('diy_bay_rates')
-        .select('*')
-        .order('bay_number', { ascending: true });
-        
-      if (updatedBays) {
-        setBays(updatedBays);
-      }
-      
-    } catch (error) {
-      console.error("Error updating bay hourly rates:", error);
     }
   };
 
-  return { updateBayRateSettings, isUpdating };
+  return { updateBayRateSettings };
 }
