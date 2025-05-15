@@ -7,11 +7,13 @@ import { AddBayButton } from "./AddBayButton";
 import { ViewModeToggle } from "./ViewModeToggle";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BayViewMode } from "@/types/diybay";
-import { Loader2, GripVertical, AlertCircle } from "lucide-react";
+import { Loader2, GripVertical, AlertCircle, Printer } from "lucide-react";
 import { DndContext, DragEndEvent, closestCenter } from "@dnd-kit/core";
 import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { printElement } from "@/utils/printUtils";
 
 interface BaySectionProps {
   bays: Bay[];
@@ -46,11 +48,23 @@ export const BaySection: React.FC<BaySectionProps> = ({
     setViewMode(mode);
   };
 
+  const handlePrintBays = () => {
+    printElement("diy-bays-content", "DIY Bays Rates");
+  };
+
   return (
     <Card className="mt-8">
       <div className="flex justify-between items-center p-4 border-b">
         <h2 className="text-xl font-semibold">DIY Bays</h2>
         <div className="flex items-center gap-4">
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-1"
+            onClick={handlePrintBays}
+          >
+            <Printer className="h-4 w-4" />
+            Print
+          </Button>
           <ViewModeToggle 
             viewMode={viewMode} 
             setViewMode={handleViewModeChange} 
@@ -81,7 +95,7 @@ export const BaySection: React.FC<BaySectionProps> = ({
         </div>
       </div>
 
-      <CardContent className="p-4">
+      <CardContent className="p-4" id="diy-bays-content">
         {isLoading ? (
           <div className="flex justify-center items-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
@@ -110,7 +124,7 @@ export const BaySection: React.FC<BaySectionProps> = ({
                 onRateChange={onRateChange}
                 isSaving={isSaving}
                 sortable={true}
-                isLoading={isLoading}  // Pass isLoading prop to BayList
+                isLoading={isLoading}
               />
             </SortableContext>
           </DndContext>
