@@ -58,8 +58,8 @@ export function TechnicianEfficiencyTable({ data, isLoading }: TechnicianEfficie
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sortedData.map((tech) => (
-              <TableRow key={tech.id}>
+            {sortedData.map((tech, index) => (
+              <TableRow key={tech.id} colorIndex={index}>
                 <TableCell className="font-medium">{tech.name}</TableCell>
                 <TableCell className="text-right">{tech.totalHours.toFixed(1)}</TableCell>
                 <TableCell className="text-right">{tech.billableHours.toFixed(1)}</TableCell>

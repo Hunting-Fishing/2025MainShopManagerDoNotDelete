@@ -63,8 +63,8 @@ export function HistoryTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {records.map((record) => (
-            <TableRow key={record.id}>
+          {records.map((record, index) => (
+            <TableRow key={record.id} colorIndex={index}>
               <TableCell>
                 <div className="font-medium">{record.userName}</div>
                 <div className="text-xs text-muted-foreground">{record.userId}</div>

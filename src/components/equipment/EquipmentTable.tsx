@@ -49,8 +49,8 @@ export function EquipmentTable({ equipment, loading = false }: EquipmentTablePro
               </TableCell>
             </TableRow>
           ) : (
-            equipment.map((item) => (
-              <TableRow key={item.id} className="hover:bg-slate-50">
+            equipment.map((item, index) => (
+              <TableRow key={item.id} colorIndex={index}>
                 <TableCell className="font-medium text-slate-900">
                   {item.id}
                 </TableCell>

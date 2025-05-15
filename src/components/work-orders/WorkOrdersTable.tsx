@@ -71,10 +71,10 @@ export default function WorkOrdersTable({ workOrders }: WorkOrdersTableProps) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {workOrders.map((order) => (
+          {workOrders.map((order, index) => (
             <TableRow 
               key={order.id}
-              className="hover:bg-slate-50 dark:hover:bg-slate-800/50"
+              colorIndex={index}
             >
               <TableCell className="font-mono text-sm">
                 <Link 

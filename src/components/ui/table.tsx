@@ -27,14 +27,23 @@ TableHeader.displayName = "TableHeader"
 
 const TableBody = React.forwardRef<
   HTMLTableSectionElement,
-  React.HTMLAttributes<HTMLTableSectionElement>
->(({ className, ...props }, ref) => (
-  <tbody
-    ref={ref}
-    className={cn("[&_tr:last-child]:border-0", className)}
-    {...props}
-  />
-))
+  React.HTMLAttributes<HTMLTableSectionElement> & {
+    colorRows?: boolean;
+  }
+>(({ className, colorRows = false, ...props }, ref) => {
+  // Add an additional class for striped rows when colorRows is true
+  const bodyClass = colorRows 
+    ? "[&_tr:nth-of-type(even)]:bg-slate-50 [&_tr:nth-of-type(odd)]:bg-white [&_tr:last-child]:border-0"
+    : "[&_tr:last-child]:border-0";
+    
+  return (
+    <tbody
+      ref={ref}
+      className={cn(bodyClass, className)}
+      {...props}
+    />
+  );
+})
 TableBody.displayName = "TableBody"
 
 const TableFooter = React.forwardRef<
@@ -51,17 +60,39 @@ TableFooter.displayName = "TableFooter"
 
 const TableRow = React.forwardRef<
   HTMLTableRowElement,
-  React.HTMLAttributes<HTMLTableRowElement>
->(({ className, ...props }, ref) => (
-  <tr
-    ref={ref}
-    className={cn(
-      "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
-      className
-    )}
-    {...props}
-  />
-))
+  React.HTMLAttributes<HTMLTableRowElement> & {
+    colorIndex?: number;
+  }
+>(({ className, colorIndex, ...props }, ref) => {
+  // Define an array of background color classes
+  const rowColors = [
+    "hover:bg-blue-50/80 bg-blue-50/30",
+    "hover:bg-green-50/80 bg-green-50/30",
+    "hover:bg-purple-50/80 bg-purple-50/30",
+    "hover:bg-amber-50/80 bg-amber-50/30",
+    "hover:bg-pink-50/80 bg-pink-50/30",
+    "hover:bg-indigo-50/80 bg-indigo-50/30",
+    "hover:bg-sky-50/80 bg-sky-50/30",
+    "hover:bg-emerald-50/80 bg-emerald-50/30",
+  ];
+
+  // If colorIndex is provided, use it to select a background color
+  const colorClass = colorIndex !== undefined 
+    ? rowColors[colorIndex % rowColors.length]
+    : "hover:bg-muted/50";
+
+  return (
+    <tr
+      ref={ref}
+      className={cn(
+        "border-b transition-colors data-[state=selected]:bg-muted",
+        colorClass,
+        className
+      )}
+      {...props}
+    />
+  );
+})
 TableRow.displayName = "TableRow"
 
 const TableHead = React.forwardRef<
