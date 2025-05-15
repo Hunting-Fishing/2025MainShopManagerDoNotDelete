@@ -15,7 +15,7 @@ export default function Login() {
       
       <div className="min-h-screen flex flex-col md:flex-row">
         {/* Left Side - Shop Info */}
-        <div className="bg-gradient-to-br from-blue-700 to-indigo-900 text-white p-8 md:w-1/2 flex flex-col justify-center">
+        <div className="bg-gradient-to-br from-indigo-600 to-purple-700 text-white p-8 md:w-1/2 flex flex-col justify-center">
           <div className="max-w-md mx-auto">
             <h1 className="text-3xl font-bold mb-6">Welcome to Easy Shop Manager</h1>
             <p className="mb-6 text-blue-100">
@@ -26,7 +26,7 @@ export default function Login() {
             
             <div className="space-y-4">
               <div className="flex items-start space-x-3">
-                <div className="bg-blue-600 p-2 rounded-full">
+                <div className="bg-indigo-500 p-2 rounded-full">
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"></path>
                   </svg>
@@ -38,7 +38,7 @@ export default function Login() {
               </div>
               
               <div className="flex items-start space-x-3">
-                <div className="bg-blue-600 p-2 rounded-full">
+                <div className="bg-indigo-500 p-2 rounded-full">
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
                     <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
                     <path d="M9 9h6v6H9z"></path>
@@ -51,7 +51,7 @@ export default function Login() {
               </div>
               
               <div className="flex items-start space-x-3">
-                <div className="bg-blue-600 p-2 rounded-full">
+                <div className="bg-indigo-500 p-2 rounded-full">
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                     <path d="M14 2v6h6"></path>
@@ -70,7 +70,7 @@ export default function Login() {
         </div>
         
         {/* Right Side - Login Cards */}
-        <div className="p-8 md:w-1/2 flex flex-col items-center justify-center">
+        <div className="p-8 md:w-1/2 flex flex-col items-center justify-center bg-gray-50">
           <div className="w-full max-w-md space-y-6">
             {/* Staff Login Card */}
             <Card className="shadow-lg border-t-4 border-t-indigo-600 hover:shadow-xl transition-shadow">

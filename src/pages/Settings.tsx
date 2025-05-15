@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Cog, User, Building, Shield, Bell, Database, Globe2, Gift, Package, Users, Mail, Brush, MailPlus, Link as LinkIcon, ShieldCheck, Briefcase, Percent } from "lucide-react";
 import { SettingsCard } from "@/components/settings/SettingsCard";
 import { Link } from "react-router-dom";
+import { CustomerRequestButton } from "@/components/settings/CustomerRequestButton";
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -160,23 +161,26 @@ const Settings = () => {
 
       <div className="flex justify-between items-center my-6">
         <h1 className="text-2xl font-bold">Settings</h1>
-        <div className="flex space-x-2 bg-muted/20 rounded-md p-1">
-          <button
-            className={`px-3 py-1 rounded-md ${
-              activeTab === "list" ? "bg-white shadow-sm" : ""
-            }`}
-            onClick={() => toggleView("list")}
-          >
-            List View
-          </button>
-          <button
-            className={`px-3 py-1 rounded-md ${
-              activeTab === "grid" ? "bg-white shadow-sm" : ""
-            }`}
-            onClick={() => toggleView("grid")}
-          >
-            Grid View
-          </button>
+        <div className="flex space-x-2">
+          <CustomerRequestButton />
+          <div className="bg-muted/20 rounded-md p-1">
+            <button
+              className={`px-3 py-1 rounded-md ${
+                activeTab === "list" ? "bg-white shadow-sm" : ""
+              }`}
+              onClick={() => toggleView("list")}
+            >
+              List View
+            </button>
+            <button
+              className={`px-3 py-1 rounded-md ${
+                activeTab === "grid" ? "bg-white shadow-sm" : ""
+              }`}
+              onClick={() => toggleView("grid")}
+            >
+              Grid View
+            </button>
+          </div>
         </div>
       </div>
 
