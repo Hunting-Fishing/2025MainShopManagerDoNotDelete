@@ -30,6 +30,7 @@ export const EditableCell: React.FC<EditableCellProps> = ({
   useEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus();
+      inputRef.current.select();
     }
   }, [isEditing]);
 
@@ -123,7 +124,11 @@ export const EditableCell: React.FC<EditableCellProps> = ({
   }
 
   return (
-    <TableCell className="text-right cursor-pointer hover:bg-gray-50" onClick={handleEdit}>
+    <TableCell 
+      className="text-right cursor-pointer hover:bg-gray-50" 
+      onClick={handleEdit} 
+      onDoubleClick={handleEdit} // Adding explicit double-click handler
+    >
       {formatValue(value)}
     </TableCell>
   );
