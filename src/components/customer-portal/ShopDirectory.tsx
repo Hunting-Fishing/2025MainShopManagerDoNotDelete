@@ -2,49 +2,71 @@
 import React, { useState, useEffect } from "react";
 import { 
   getPublicShops, 
-  registerWithShop, 
+  registerWithShop,
   ShopDirectoryItem 
 } from "@/services/shopDirectory/shopDirectoryService";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { 
+  MapPin, 
+  Phone, 
+  Mail, 
+  Search, 
+  Locate, 
+  PlusCircle 
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Search, MapPin, Phone, Mail, ExternalLink, PlusCircle } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 
-export function ShopDirectory({ customerId }: { customerId: string }) {
+interface ShopDirectoryProps {
+  customerId: string;
+}
+
+export function ShopDirectory({ customerId }: ShopDirectoryProps) {
   const [shops, setShops] = useState<ShopDirectoryItem[]>([]);
+  const [filteredShops, setFilteredShops] = useState<ShopDirectoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [locationEnabled, setLocationEnabled] = useState(false);
-  const [userCoordinates, setUserCoordinates] = useState<{latitude: number, longitude: number} | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [userLocation, setUserLocation] = useState<{latitude: number; longitude: number} | null>(null);
+  const [registering, setRegistering] = useState<string | null>(null);
   const { toast } = useToast();
-  
+
+  // Load shops when component mounts
   useEffect(() => {
     loadShops();
-  }, [userCoordinates]);
-  
+  }, []);
+
+  // Filter shops when search term or user location changes
+  useEffect(() => {
+    filterShops();
+  }, [searchTerm, userLocation, shops]);
+
   const loadShops = async () => {
     try {
       setIsLoading(true);
       const params: any = {};
       
+      // If we have user's location, include it in the query
+      if (userLocation) {
+        params.latitude = userLocation.latitude;
+        params.longitude = userLocation.longitude;
+      }
+      
       if (searchTerm) {
         params.searchTerm = searchTerm;
       }
       
-      if (userCoordinates) {
-        params.latitude = userCoordinates.latitude;
-        params.longitude = userCoordinates.longitude;
-        params.radius = 50; // 50 mile radius
-      }
-      
-      const publicShops = await getPublicShops(params);
-      setShops(publicShops);
+      const shopsList = await getPublicShops(params);
+      setShops(shopsList);
+      setFilteredShops(shopsList);
     } catch (error) {
       console.error("Error loading shops:", error);
       toast({
         title: "Error",
-        description: "Failed to load shop directory.",
+        description: "Failed to load shops directory.",
         variant: "destructive",
       });
     } finally {
@@ -52,176 +74,246 @@ export function ShopDirectory({ customerId }: { customerId: string }) {
     }
   };
 
-  const handleRegister = async (shopId: string) => {
+  const filterShops = () => {
+    let filtered = [...shops];
+    
+    // Filter by search term if provided
+    if (searchTerm) {
+      filtered = filtered.filter(shop => 
+        shop.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (shop.city && shop.city.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (shop.state && shop.state.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+    
+    setFilteredShops(filtered);
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      toast({
+        title: "Not Supported",
+        description: "Geolocation is not supported by your browser",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+        
+        // Reload shops with the location params
+        loadShops();
+        
+        toast({
+          title: "Location Found",
+          description: "Showing shops near your current location",
+        });
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+        toast({
+          title: "Location Error",
+          description: error.message || "Could not get your location",
+          variant: "destructive",
+        });
+      }
+    );
+  };
+
+  const handleRegisterWithShop = async (shopId: string) => {
     if (!customerId) {
       toast({
         title: "Error",
-        description: "You must be logged in to register with a shop.",
+        description: "You must be logged in to register with a shop",
         variant: "destructive",
       });
       return;
     }
     
     try {
+      setRegistering(shopId);
       const success = await registerWithShop(customerId, shopId);
+      
       if (success) {
         toast({
-          title: "Success",
-          description: "You've been registered with this shop.",
-          variant: "default",
+          title: "Registration Successful",
+          description: "You have been registered with this shop",
         });
       }
     } catch (error) {
       console.error("Error registering with shop:", error);
       toast({
-        title: "Error",
-        description: "Failed to register with shop. Please try again.",
+        title: "Registration Failed",
+        description: "There was a problem registering with this shop",
         variant: "destructive",
       });
+    } finally {
+      setRegistering(null);
     }
-  };
-
-  const enableLocationSearch = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserCoordinates({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-          });
-          setLocationEnabled(true);
-          toast({
-            title: "Location Enabled",
-            description: "Showing shops near your location.",
-          });
-        },
-        (error) => {
-          console.error("Error getting location:", error);
-          toast({
-            title: "Location Error",
-            description: "Unable to get your location. Please check your browser permissions.",
-            variant: "destructive",
-          });
-        }
-      );
-    } else {
-      toast({
-        title: "Location Not Supported",
-        description: "Your browser doesn't support geolocation.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    loadShops();
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4">
+      <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold tracking-tight">Shop Directory</h2>
       </div>
       
-      <Card>
-        <CardHeader className="pb-3">
-          <CardDescription>
-            Browse and register with shops in our network. Find shops near you or use the search.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <form onSubmit={handleSearch} className="flex-1 flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Search by name, city, or state..."
-                  className="pl-9"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              <Button type="submit">Search</Button>
-            </form>
-            
-            <Button
-              type="button"
-              variant={locationEnabled ? "default" : "outline"}
-              onClick={enableLocationSearch}
-              className="md:w-auto"
-            >
-              <MapPin className="h-4 w-4 mr-2" />
-              {locationEnabled ? "Location Active" : "Use My Location"}
-            </Button>
+      <div className="bg-white p-3 shadow-sm border border-gray-200 rounded-xl flex flex-wrap gap-2 mb-4">
+        <div className="flex flex-1 gap-2">
+          <div className="relative flex-1">
+            <Search className="h-4 w-4 absolute left-2.5 top-2.5 text-gray-500" />
+            <Input
+              placeholder="Search shops by name or location..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+              className="pl-9"
+            />
           </div>
-          
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : shops.length === 0 ? (
-            <div className="text-center py-8 border rounded-lg bg-muted/20">
-              <p className="text-muted-foreground">No shops found. Try a different search term or location.</p>
-            </div>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {shops.map((shop) => (
-                <Card key={shop.id} className="overflow-hidden">
-                  <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b pb-2">
-                    <CardTitle className="text-lg">{shop.name}</CardTitle>
-                    <CardDescription className="flex items-center">
-                      <MapPin className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
-                      {shop.city}, {shop.state}
+          <Button 
+            variant="outline" 
+            onClick={handleGetLocation}
+            className="flex items-center gap-1"
+          >
+            <Locate className="h-4 w-4" />
+            <span>Near Me</span>
+          </Button>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(3)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-6 w-3/4 mb-2" />
+                <Skeleton className="h-4 w-1/3" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-4 w-3/4" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : filteredShops.length === 0 ? (
+        <Card>
+          <CardContent className="pt-6 text-center">
+            <p>No shops found in the directory.</p>
+            {userLocation ? (
+              <p className="mt-2 text-sm text-muted-foreground">
+                Try adjusting your search or expanding your search radius.
+              </p>
+            ) : (
+              <Button 
+                variant="outline" 
+                onClick={handleGetLocation}
+                className="mt-2 flex items-center gap-1"
+              >
+                <Locate className="h-4 w-4" />
+                <span>Find Shops Near Me</span>
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredShops.map((shop) => (
+            <Card key={shop.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+              {shop.shop_image_url && (
+                <div className="h-32 overflow-hidden">
+                  <img 
+                    src={shop.shop_image_url} 
+                    alt={shop.name} 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-lg font-bold text-blue-600">{shop.name}</CardTitle>
+                    <CardDescription>
+                      {shop.city}{shop.city && shop.state ? ", " : ""}{shop.state}
                       {shop.distance !== undefined && (
-                        <span className="ml-2 text-xs px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full">
-                          {shop.distance.toFixed(1)} miles
-                        </span>
+                        <Badge className="ml-2 bg-green-100 text-green-800 border border-green-300 text-xs">
+                          {shop.distance.toFixed(1)} miles away
+                        </Badge>
                       )}
                     </CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-4 space-y-2 text-sm">
-                    <div className="flex items-start">
-                      <MapPin className="h-4 w-4 mr-2 text-muted-foreground mt-0.5" />
-                      <span>{shop.address}</span>
+                  </div>
+                  {shop.logo_url && (
+                    <div className="h-12 w-12 overflow-hidden rounded-md">
+                      <img 
+                        src={shop.logo_url} 
+                        alt={`${shop.name} logo`}
+                        className="w-full h-full object-contain" 
+                      />
                     </div>
-                    {shop.phone && (
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center">
+                    <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <span>{shop.address}</span>
+                  </div>
+                  {shop.phone && (
+                    <div className="flex items-center">
+                      <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span>{shop.phone}</span>
+                    </div>
+                  )}
+                  {shop.email && (
+                    <div className="flex items-center">
+                      <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span>{shop.email}</span>
+                    </div>
+                  )}
+                  
+                  {shop.shop_description && (
+                    <div className="pt-2">
+                      <Label className="text-xs text-muted-foreground">About:</Label>
+                      <p className="text-sm mt-1">{shop.shop_description}</p>
+                    </div>
+                  )}
+                </div>
+                <div className="mt-4">
+                  <Button 
+                    onClick={() => handleRegisterWithShop(shop.id)}
+                    disabled={registering === shop.id}
+                    className="w-full bg-blue-600 hover:bg-blue-700"
+                  >
+                    {registering === shop.id ? (
                       <div className="flex items-center">
-                        <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <span>{shop.phone}</span>
+                        <div className="h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
+                        Registering...
+                      </div>
+                    ) : (
+                      <div className="flex items-center">
+                        <PlusCircle className="h-4 w-4 mr-2" />
+                        Register with Shop
                       </div>
                     )}
-                    {shop.email && (
-                      <div className="flex items-center">
-                        <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <span>{shop.email}</span>
-                      </div>
-                    )}
-                    <div className="pt-2 flex justify-between items-center">
-                      {shop.shop_description && (
-                        <span className="text-xs text-muted-foreground line-clamp-1">
-                          {shop.shop_description}
-                        </span>
-                      )}
-                      <div className="flex space-x-2 mt-2">
-                        <Button 
-                          onClick={() => handleRegister(shop.id)} 
-                          size="sm" 
-                          className="px-3"
-                        >
-                          <PlusCircle className="h-4 w-4 mr-1" />
-                          Register
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
