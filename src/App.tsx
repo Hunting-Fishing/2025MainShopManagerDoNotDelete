@@ -107,7 +107,7 @@ function AppContent() {
       <div className="flex h-screen bg-gray-50">
         {!isPublicPage && isAuthenticated && <Sidebar />}
 
-        <div className={`flex flex-col flex-1 overflow-hidden ${!isPublicPage && isAuthenticated ? "" : ""}`}>
+        <div className={`flex flex-col flex-1 overflow-hidden ${!isPublicPage && isAuthenticated ? "md:ml-64" : ""}`}>
           {!isPublicPage && isAuthenticated && <Navbar />}
 
           <main className={`flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 ${!isPublicPage && isAuthenticated ? "p-4 md:p-6" : ""}`}>
