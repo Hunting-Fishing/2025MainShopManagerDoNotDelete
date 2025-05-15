@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   LayoutDashboard,
@@ -25,6 +24,7 @@ import {
   ShoppingCart
 } from "lucide-react";
 import { SidebarNavItem, NavItem } from "./SidebarNavItem";
+import { useAuthUser } from "@/hooks/useAuthUser";
 
 // Define all navigation items here
 const navigationItems: NavItem[] = [
@@ -160,6 +160,11 @@ const navigationItems: NavItem[] = [
 ];
 
 export function SidebarNavList() {
+  const { isAdmin, isOwner } = useAuthUser();
+  
+  // For staff portal, show all navigation items regardless of role
+  // We'll keep the existing showFor property, but not filter based on it for now
+
   return (
     <div className="grid grid-flow-row auto-rows-max text-sm gap-0.5 group-[[data-collapsed=true]]:justify-center overflow-auto max-h-[calc(100vh-var(--header-height)-theme(spacing.6))]">
       {navigationItems.map((item) => (

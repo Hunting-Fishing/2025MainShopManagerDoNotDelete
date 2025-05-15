@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Home, Car, FileText, Settings, Users, Calendar, Wrench } from 'lucide-react';
+import { SidebarNavList } from './layout/sidebar/SidebarNavList';
 
 const Sidebar: React.FC = () => {
   return (
@@ -11,30 +11,9 @@ const Sidebar: React.FC = () => {
       </div>
       
       <nav>
-        <ul className="space-y-2">
-          <NavItem to="/dashboard" icon={<Home />} label="Dashboard" />
-          <NavItem to="/customers" icon={<Users />} label="Customers" />
-          <NavItem to="/work-orders" icon={<Wrench />} label="Work Orders" />
-          <NavItem to="/calendar" icon={<Calendar />} label="Calendar" />
-          <NavItem to="/invoices" icon={<FileText />} label="Invoices" />
-          <NavItem to="/settings" icon={<Settings />} label="Settings" />
-        </ul>
+        <SidebarNavList />
       </nav>
     </div>
-  );
-};
-
-const NavItem: React.FC<{ to: string; icon: React.ReactNode; label: string }> = ({ to, icon, label }) => {
-  return (
-    <li>
-      <Link 
-        to={to} 
-        className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-indigo-600 transition-colors"
-      >
-        <span className="text-indigo-200">{icon}</span>
-        <span>{label}</span>
-      </Link>
-    </li>
   );
 };
 
