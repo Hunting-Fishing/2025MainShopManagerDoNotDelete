@@ -107,9 +107,10 @@ export async function getAvailableTimeSlots(date: string): Promise<TimeSlot[]> {
           });
           
           if (!hasConflict) {
-            // Fix: Access first_name and last_name from tech.profiles object
-            const technicianName = tech.profiles ? 
-              `${tech.profiles.first_name || ''} ${tech.profiles.last_name || ''}`.trim() : 
+            // Fix: Handle tech.profiles as a single object, not an array
+            const techProfile = tech.profiles;
+            const technicianName = techProfile ? 
+              `${techProfile.first_name || ''} ${techProfile.last_name || ''}`.trim() : 
               'Unknown';
             
             timeSlots.push({
