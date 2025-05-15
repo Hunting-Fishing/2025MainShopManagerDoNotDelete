@@ -1,11 +1,13 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
-import { Edit, History, Trash2, Check, X, Loader2 } from "lucide-react";
+import { Edit, History, Trash2, Check, X, Loader2, GripVertical } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { EditableCell } from "./EditableCell";
 import { Bay } from "@/services/diybay/diybayService";
 import { Badge } from "@/components/ui/badge";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface BaysTableProps {
   bays: Bay[];
@@ -16,7 +18,47 @@ interface BaysTableProps {
   onRateChange?: (bay: Bay, field: 'hourly_rate' | 'daily_rate' | 'weekly_rate' | 'monthly_rate', value: number) => Promise<boolean>;
   isSaving?: boolean;
   onBulkAction?: (action: string, selectedBays: string[]) => void;
+  sortable?: boolean;
 }
+
+// Sortable row component
+const SortableBayRow = ({ bay, children, ...props }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: bay.id });
+  
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : 1,
+  };
+  
+  return (
+    <TableRow 
+      ref={setNodeRef} 
+      style={style}
+      className={`${props.className} ${isDragging ? 'border-blue-400 bg-blue-50' : ''}`}
+    >
+      {React.Children.map(children, (child) => {
+        if (child.props.className?.includes('drag-handle')) {
+          return React.cloneElement(child, {
+            ...child.props,
+            ...attributes,
+            ...listeners,
+            style: { cursor: isDragging ? 'grabbing' : 'grab' }
+          });
+        }
+        return child;
+      })}
+    </TableRow>
+  );
+};
 
 export const BaysTable: React.FC<BaysTableProps> = ({
   bays,
@@ -26,7 +68,8 @@ export const BaysTable: React.FC<BaysTableProps> = ({
   onHistoryClick,
   onRateChange,
   isSaving = false,
-  onBulkAction
+  onBulkAction,
+  sortable = false
 }) => {
   const formatRate = (rate: number | null) => {
     return rate !== null ? `$${rate.toFixed(2)}` : "-";
@@ -49,6 +92,7 @@ export const BaysTable: React.FC<BaysTableProps> = ({
       <Table>
         <TableHeader className="bg-gray-100">
           <TableRow>
+            {sortable && <TableHead className="w-[40px]"></TableHead>}
             <TableHead className="font-semibold">Bay Name</TableHead>
             <TableHead className="font-semibold">Location</TableHead>
             <TableHead className="font-semibold">Hourly Rate</TableHead>
@@ -60,101 +104,120 @@ export const BaysTable: React.FC<BaysTableProps> = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {bays.map((bay, index) => (
-            <TableRow key={bay.id} className={getRowStyles(bay, index)}>
-              <TableCell className="font-medium">
-                <div className="flex items-center gap-2">
-                  {bay.bay_name}
-                  {!bay.is_active && (
-                    <Badge variant="outline" className="text-xs border-gray-300 text-gray-500">
-                      Inactive
-                    </Badge>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell>{bay.bay_location || "-"}</TableCell>
-              
-              {onRateChange ? (
-                <>
-                  <EditableCell
-                    value={bay.hourly_rate}
-                    onSave={async (value) => onRateChange(bay, 'hourly_rate', Number(value))}
-                    isNumber
-                    formatValue={formatRate}
-                    disabled={isSaving || !bay.is_active}
+          {bays.map((bay, index) => {
+            const rowContent = (
+              <>
+                {sortable && (
+                  <TableCell className="drag-handle w-[40px]">
+                    <div className="flex items-center justify-center">
+                      <GripVertical className="w-5 h-5 text-gray-400" />
+                    </div>
+                  </TableCell>
+                )}
+                <TableCell className="font-medium">
+                  <div className="flex items-center gap-2">
+                    {bay.bay_name}
+                    {!bay.is_active && (
+                      <Badge variant="outline" className="text-xs border-gray-300 text-gray-500">
+                        Inactive
+                      </Badge>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>{bay.bay_location || "-"}</TableCell>
+                
+                {onRateChange ? (
+                  <>
+                    <EditableCell
+                      value={bay.hourly_rate}
+                      onSave={async (value) => onRateChange(bay, 'hourly_rate', Number(value))}
+                      isNumber
+                      formatValue={formatRate}
+                      disabled={isSaving || !bay.is_active}
+                    />
+                    <EditableCell
+                      value={bay.daily_rate}
+                      onSave={async (value) => onRateChange(bay, 'daily_rate', Number(value))}
+                      isNumber
+                      formatValue={formatRate}
+                      disabled={isSaving || !bay.is_active}
+                    />
+                    <EditableCell
+                      value={bay.weekly_rate}
+                      onSave={async (value) => onRateChange(bay, 'weekly_rate', Number(value))}
+                      isNumber
+                      formatValue={formatRate}
+                      disabled={isSaving || !bay.is_active}
+                    />
+                    <EditableCell
+                      value={bay.monthly_rate}
+                      onSave={async (value) => onRateChange(bay, 'monthly_rate', Number(value))}
+                      isNumber
+                      formatValue={formatRate}
+                      disabled={isSaving || !bay.is_active}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <TableCell>{formatRate(bay.hourly_rate)}</TableCell>
+                    <TableCell>{formatRate(bay.daily_rate)}</TableCell>
+                    <TableCell>{formatRate(bay.weekly_rate)}</TableCell>
+                    <TableCell>{formatRate(bay.monthly_rate)}</TableCell>
+                  </>
+                )}
+                
+                <TableCell className="text-center">
+                  <Switch
+                    checked={bay.is_active}
+                    disabled={isSaving}
+                    onCheckedChange={async (checked) => {
+                      await onStatusChange(bay, checked);
+                    }}
                   />
-                  <EditableCell
-                    value={bay.daily_rate}
-                    onSave={async (value) => onRateChange(bay, 'daily_rate', Number(value))}
-                    isNumber
-                    formatValue={formatRate}
-                    disabled={isSaving || !bay.is_active}
-                  />
-                  <EditableCell
-                    value={bay.weekly_rate}
-                    onSave={async (value) => onRateChange(bay, 'weekly_rate', Number(value))}
-                    isNumber
-                    formatValue={formatRate}
-                    disabled={isSaving || !bay.is_active}
-                  />
-                  <EditableCell
-                    value={bay.monthly_rate}
-                    onSave={async (value) => onRateChange(bay, 'monthly_rate', Number(value))}
-                    isNumber
-                    formatValue={formatRate}
-                    disabled={isSaving || !bay.is_active}
-                  />
-                </>
-              ) : (
-                <>
-                  <TableCell>{formatRate(bay.hourly_rate)}</TableCell>
-                  <TableCell>{formatRate(bay.daily_rate)}</TableCell>
-                  <TableCell>{formatRate(bay.weekly_rate)}</TableCell>
-                  <TableCell>{formatRate(bay.monthly_rate)}</TableCell>
-                </>
-              )}
-              
-              <TableCell className="text-center">
-                <Switch
-                  checked={bay.is_active}
-                  disabled={isSaving}
-                  onCheckedChange={async (checked) => {
-                    await onStatusChange(bay, checked);
-                  }}
-                />
-              </TableCell>
-              <TableCell className="text-right space-x-2">
-                <button
-                  onClick={() => onEditClick(bay)}
-                  disabled={isSaving}
-                  className="inline-flex items-center justify-center rounded-md p-1 text-blue-600 hover:bg-blue-50"
-                  title="Edit bay"
-                >
-                  {isSaving ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Edit className="h-4 w-4" />
-                  )}
-                </button>
-                <button
-                  onClick={async () => await onHistoryClick(bay)}
-                  disabled={isSaving}
-                  className="inline-flex items-center justify-center rounded-md p-1 text-purple-600 hover:bg-purple-50"
-                  title="View rate history"
-                >
-                  <History className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => onDeleteClick(bay)}
-                  disabled={isSaving}
-                  className="inline-flex items-center justify-center rounded-md p-1 text-red-600 hover:bg-red-50"
-                  title="Delete bay"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </TableCell>
-            </TableRow>
-          ))}
+                </TableCell>
+                <TableCell className="text-right space-x-2">
+                  <button
+                    onClick={() => onEditClick(bay)}
+                    disabled={isSaving}
+                    className="inline-flex items-center justify-center rounded-md p-1 text-blue-600 hover:bg-blue-50"
+                    title="Edit bay"
+                  >
+                    {isSaving ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Edit className="h-4 w-4" />
+                    )}
+                  </button>
+                  <button
+                    onClick={async () => await onHistoryClick(bay)}
+                    disabled={isSaving}
+                    className="inline-flex items-center justify-center rounded-md p-1 text-purple-600 hover:bg-purple-50"
+                    title="View rate history"
+                  >
+                    <History className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => onDeleteClick(bay)}
+                    disabled={isSaving}
+                    className="inline-flex items-center justify-center rounded-md p-1 text-red-600 hover:bg-red-50"
+                    title="Delete bay"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </TableCell>
+              </>
+            );
+
+            return sortable ? (
+              <SortableBayRow key={bay.id} bay={bay} className={getRowStyles(bay, index)}>
+                {rowContent}
+              </SortableBayRow>
+            ) : (
+              <TableRow key={bay.id} className={getRowStyles(bay, index)}>
+                {rowContent}
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>
