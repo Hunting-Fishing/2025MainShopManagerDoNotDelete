@@ -72,25 +72,7 @@ export default function Login() {
         {/* Right Side - Login Cards */}
         <div className="p-8 md:w-1/2 flex flex-col items-center justify-center">
           <div className="w-full max-w-md space-y-6">
-            {/* Customer Login Card */}
-            <Card className="shadow-lg border-t-4 border-t-blue-600">
-              <CardHeader>
-                <div className="flex items-center justify-center mb-2">
-                  <div className="bg-blue-100 p-3 rounded-full">
-                    <User className="h-6 w-6 text-blue-600" />
-                  </div>
-                </div>
-                <CardTitle className="text-center">Customer Login</CardTitle>
-                <CardDescription className="text-center">
-                  Access your vehicle service history and appointments
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <CustomerAccountCard />
-              </CardContent>
-            </Card>
-            
-            {/* Staff Login Card */}
+            {/* Staff Login Card - Now Primary/Larger */}
             <Card className="shadow-lg border-t-4 border-t-indigo-600">
               <CardHeader>
                 <div className="flex items-center justify-center mb-2">
@@ -103,13 +85,31 @@ export default function Login() {
                   For shop employees and administrators
                 </CardDescription>
               </CardHeader>
-              <CardContent className="text-center">
-                <Button asChild variant="outline" className="w-full" size="lg">
+              <CardContent>
+                <Button asChild variant="default" className="w-full" size="lg">
                   <Link to="/staff-login" className="flex items-center justify-center gap-2">
                     <Users className="h-4 w-4" />
                     Staff Login Portal
                   </Link>
                 </Button>
+              </CardContent>
+            </Card>
+            
+            {/* Customer Login Card - Now Secondary/Smaller */}
+            <Card className="shadow-lg border-t-4 border-t-blue-600">
+              <CardHeader>
+                <div className="flex items-center justify-center mb-2">
+                  <div className="bg-blue-100 p-3 rounded-full">
+                    <User className="h-6 w-6 text-blue-600" />
+                  </div>
+                </div>
+                <CardTitle className="text-center">Customer Login</CardTitle>
+                <CardDescription className="text-center">
+                  Access your vehicle service history and appointments
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="text-center">
+                <CustomerAccountCard />
               </CardContent>
             </Card>
           </div>
