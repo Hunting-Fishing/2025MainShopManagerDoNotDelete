@@ -83,6 +83,7 @@ export const BaySection: React.FC<BaySectionProps> = ({
         ) : viewMode === "cards" ? (
           <BayList 
             bays={bays}
+            viewMode={viewMode}
             onStatusChange={onStatusChange}
             onEditClick={onEditClick}
             onDeleteClick={onDeleteClick}

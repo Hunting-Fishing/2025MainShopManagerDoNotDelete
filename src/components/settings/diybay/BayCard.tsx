@@ -1,12 +1,10 @@
 
 import React from "react";
 import { Bay } from "@/services/diybay/diybayService";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { formatCurrency } from "@/lib/formatters";
-import { Clock, Edit2, Trash2, Loader2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import { Edit, Trash2, History, Loader2 } from "lucide-react";
 
 interface BayCardProps {
   bay: Bay;
@@ -23,94 +21,98 @@ export const BayCard: React.FC<BayCardProps> = ({
   onEditClick,
   onDeleteClick,
   onHistoryClick,
-  isSaving = false
+  isSaving = false,
 }) => {
+  const handleStatusChange = async (checked: boolean) => {
+    await onStatusChange(bay, checked);
+  };
+
   return (
     <Card className="overflow-hidden">
-      <div className={`h-2 w-full ${bay.is_active ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-      <CardHeader className="pb-2 flex flex-row justify-between items-center">
-        <div>
-          <CardTitle className="text-lg">{bay.bay_name}</CardTitle>
-          {bay.bay_location && <p className="text-sm text-gray-500">{bay.bay_location}</p>}
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-xl font-bold">{bay.bay_name}</CardTitle>
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-500">
+              {bay.is_active ? "Active" : "Inactive"}
+            </span>
+            <Switch
+              checked={bay.is_active}
+              onCheckedChange={handleStatusChange}
+              disabled={isSaving}
+            />
+          </div>
         </div>
-        <Badge variant={bay.is_active ? "default" : "outline"}>
-          {bay.is_active ? "Active" : "Inactive"}
-        </Badge>
       </CardHeader>
       
       <CardContent>
-        <div className="grid grid-cols-2 gap-4 my-4">
-          <div className="text-center p-2 bg-blue-50 rounded-lg">
-            <div className="text-xs text-gray-500">Hourly Rate</div>
-            <div className="font-bold text-lg">{formatCurrency(bay.hourly_rate)}</div>
-          </div>
-          <div className="text-center p-2 bg-blue-50 rounded-lg">
-            <div className="text-xs text-gray-500">Daily Rate</div>
-            <div className="font-bold text-lg">
-              {bay.daily_rate ? formatCurrency(bay.daily_rate) : "—"}
-            </div>
-          </div>
-        </div>
+        {bay.bay_location && (
+          <p className="text-sm text-gray-600 mb-4">Location: {bay.bay_location}</p>
+        )}
         
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="text-center p-2 bg-blue-50 rounded-lg">
-            <div className="text-xs text-gray-500">Weekly Rate</div>
-            <div className="font-bold text-lg">
-              {bay.weekly_rate ? formatCurrency(bay.weekly_rate) : "—"}
-            </div>
-          </div>
-          <div className="text-center p-2 bg-blue-50 rounded-lg">
-            <div className="text-xs text-gray-500">Monthly Rate</div>
-            <div className="font-bold text-lg">
-              {bay.monthly_rate ? formatCurrency(bay.monthly_rate) : "—"}
-            </div>
-          </div>
-        </div>
-        
-        <div className="flex justify-between items-center pt-2 border-t">
-          <div className="flex items-center gap-2">
-            <Switch
-              checked={bay.is_active}
-              onCheckedChange={(checked) => onStatusChange(bay, checked)}
-              disabled={isSaving}
-            />
-            <span className="text-sm">{bay.is_active ? "Active" : "Inactive"}</span>
+        <div className="grid grid-cols-2 gap-4 mb-2">
+          <div className="bg-blue-50 p-3 rounded-lg">
+            <p className="text-xs text-blue-600 font-semibold">Hourly Rate</p>
+            <p className="text-lg font-bold">${bay.hourly_rate.toFixed(2)}</p>
           </div>
           
-          <div className="flex gap-1">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="h-8 w-8 p-0 rounded-full"
-              onClick={() => onHistoryClick(bay)}
-              disabled={isSaving}
-            >
-              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Clock className="h-4 w-4" />}
-              <span className="sr-only">History</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="h-8 w-8 p-0 rounded-full"
-              onClick={() => onEditClick(bay)}
-              disabled={isSaving}
-            >
-              <Edit2 className="h-4 w-4" />
-              <span className="sr-only">Edit</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="h-8 w-8 p-0 rounded-full text-red-500 hover:text-red-600 hover:bg-red-50"
-              onClick={() => onDeleteClick(bay)}
-              disabled={isSaving}
-            >
-              <Trash2 className="h-4 w-4" />
-              <span className="sr-only">Delete</span>
-            </Button>
+          <div className="bg-green-50 p-3 rounded-lg">
+            <p className="text-xs text-green-600 font-semibold">Daily Rate</p>
+            <p className="text-lg font-bold">
+              ${bay.daily_rate ? bay.daily_rate.toFixed(2) : '0.00'}
+            </p>
+          </div>
+          
+          <div className="bg-purple-50 p-3 rounded-lg">
+            <p className="text-xs text-purple-600 font-semibold">Weekly Rate</p>
+            <p className="text-lg font-bold">
+              ${bay.weekly_rate ? bay.weekly_rate.toFixed(2) : '0.00'}
+            </p>
+          </div>
+          
+          <div className="bg-amber-50 p-3 rounded-lg">
+            <p className="text-xs text-amber-600 font-semibold">Monthly Rate</p>
+            <p className="text-lg font-bold">
+              ${bay.monthly_rate ? bay.monthly_rate.toFixed(2) : '0.00'}
+            </p>
           </div>
         </div>
       </CardContent>
+      
+      <CardFooter className="bg-gray-50 border-t flex justify-between pt-3">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onEditClick(bay)}
+          disabled={isSaving}
+          className="text-blue-600 border-blue-300 hover:bg-blue-50"
+        >
+          {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Edit className="h-4 w-4 mr-1" />}
+          Edit
+        </Button>
+        
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onHistoryClick(bay)}
+          disabled={isSaving}
+          className="text-purple-600 border-purple-300 hover:bg-purple-50"
+        >
+          {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <History className="h-4 w-4 mr-1" />}
+          History
+        </Button>
+        
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onDeleteClick(bay)}
+          disabled={isSaving}
+          className="text-red-600 border-red-300 hover:bg-red-50"
+        >
+          {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4 mr-1" />}
+          Delete
+        </Button>
+      </CardFooter>
     </Card>
   );
 };
