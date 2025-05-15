@@ -19,7 +19,7 @@ export const RateSettingsForm: React.FC<RateSettingsFormProps> = ({
   onSaveSettings,
   isSaving,
 }) => {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false); // Changed to false so it's collapsed by default
   const [localSettings, setLocalSettings] = useState<RateSettings>({
     daily_hours: settings.daily_hours.toString(),
     daily_discount_percent: settings.daily_discount_percent.toString(),
