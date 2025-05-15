@@ -107,8 +107,8 @@ export async function getAvailableTimeSlots(date: string): Promise<TimeSlot[]> {
           });
           
           if (!hasConflict) {
-            // Fix: Handle tech.profiles as a single object, not an array
-            const techProfile = tech.profiles;
+            // Type assertion to handle the profiles object correctly
+            const techProfile = tech.profiles as { first_name?: string; last_name?: string } | null;
             const technicianName = techProfile ? 
               `${techProfile.first_name || ''} ${techProfile.last_name || ''}`.trim() : 
               'Unknown';
