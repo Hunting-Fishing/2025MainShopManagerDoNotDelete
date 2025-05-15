@@ -2,27 +2,31 @@
 import React, { useState } from "react";
 import {
   Table,
-  TableBody,
-  TableCell,
-  TableHead,
   TableHeader,
+  TableBody,
   TableRow,
+  TableHead,
+  TableCell,
 } from "@/components/ui/table";
 import { Bay } from "@/services/diybay/diybayService";
-import { formatCurrency } from "@/lib/formatters";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Edit2, Clock, Trash2 } from "lucide-react";
+import { formatCurrency } from "@/lib/formatters";
 import { Input } from "@/components/ui/input";
-import { Check, X, Save, FileEdit } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface BaysTableProps {
   bays: Bay[];
-  onStatusChange: (bay: Bay, isActive: boolean) => void;
+  onStatusChange: (bay: Bay, isActive: boolean) => Promise<void>;
   onEditClick: (bay: Bay) => void;
   onDeleteClick: (bay: Bay) => void;
-  onHistoryClick: (bay: Bay) => void;
-  onRateChange?: (bay: Bay, field: 'daily_rate' | 'weekly_rate' | 'monthly_rate', value: number) => void;
+  onHistoryClick: (bay: Bay) => Promise<void>;
+  onRateChange?: (bay: Bay, field: 'daily_rate' | 'weekly_rate' | 'monthly_rate', value: number) => Promise<void>;
+}
+
+interface EditableCell {
+  bayId: string;
+  field: 'hourly_rate' | 'daily_rate' | 'weekly_rate' | 'monthly_rate' | null;
 }
 
 export const BaysTable: React.FC<BaysTableProps> = ({
@@ -31,274 +35,186 @@ export const BaysTable: React.FC<BaysTableProps> = ({
   onEditClick,
   onDeleteClick,
   onHistoryClick,
-  onRateChange = () => {},
+  onRateChange
 }) => {
-  const [editingCell, setEditingCell] = useState<{
-    bayId: string;
-    field: 'daily_rate' | 'weekly_rate' | 'monthly_rate';
-    value: number;
-    originalValue: number;
-  } | null>(null);
+  const [editingCell, setEditingCell] = useState<EditableCell>({ bayId: '', field: null });
+  const [editValue, setEditValue] = useState<string>('');
   
-  const [saveStatus, setSaveStatus] = useState<{
-    bayId: string;
-    field: string;
-    status: 'saving' | 'success' | 'error';
-  } | null>(null);
-
-  const handleCellClick = (bay: Bay, field: 'daily_rate' | 'weekly_rate' | 'monthly_rate') => {
-    setEditingCell({
-      bayId: bay.id,
-      field,
-      value: bay[field] || 0,
-      originalValue: bay[field] || 0
-    });
+  const handleCellClick = (bay: Bay, field: 'hourly_rate' | 'daily_rate' | 'weekly_rate' | 'monthly_rate') => {
+    setEditingCell({ bayId: bay.id, field });
+    setEditValue(bay[field]?.toString() || '0');
   };
-
-  const handleSaveEdit = async () => {
-    if (!editingCell) return;
+  
+  const handleBlur = async (bay: Bay) => {
+    if (!editingCell.field) return;
     
-    const bay = bays.find(b => b.id === editingCell.bayId);
-    if (!bay) return;
+    const numValue = parseFloat(editValue);
+    if (isNaN(numValue)) return;
     
-    try {
-      setSaveStatus({
-        bayId: editingCell.bayId,
-        field: editingCell.field,
-        status: 'saving'
-      });
-      
-      await onRateChange(bay, editingCell.field, editingCell.value);
-      
-      setSaveStatus({
-        bayId: editingCell.bayId,
-        field: editingCell.field,
-        status: 'success'
-      });
-      
-      // Clear success status after a moment
-      setTimeout(() => {
-        if (saveStatus?.status === 'success') {
-          setSaveStatus(null);
-        }
-      }, 1500);
-      
-      setEditingCell(null);
-    } catch (error) {
-      console.error('Error saving rate:', error);
-      setSaveStatus({
-        bayId: editingCell.bayId,
-        field: editingCell.field,
-        status: 'error'
-      });
-      
-      // Clear error status after a moment
-      setTimeout(() => {
-        if (saveStatus?.status === 'error') {
-          setSaveStatus(null);
-        }
-      }, 3000);
+    if (editingCell.field === 'hourly_rate') {
+      // For hourly rate, use the full edit dialog as it affects other rates
+      onEditClick(bay);
+    } else if (onRateChange) {
+      // For other rates, use the direct rate change handler
+      await onRateChange(bay, editingCell.field, numValue);
     }
-  };
-
-  const handleCancelEdit = () => {
-    setEditingCell(null);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!editingCell) return;
     
-    setEditingCell({
-      ...editingCell,
-      value: parseFloat(e.target.value) || 0,
-    });
+    setEditingCell({ bayId: '', field: null });
   };
-
-  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  
+  const handleKeyDown = (e: React.KeyboardEvent, bay: Bay) => {
     if (e.key === 'Enter') {
-      handleSaveEdit();
+      handleBlur(bay);
     } else if (e.key === 'Escape') {
-      handleCancelEdit();
+      setEditingCell({ bayId: '', field: null });
     }
-  };
-
-  const renderRateCell = (bay: Bay, field: 'daily_rate' | 'weekly_rate' | 'monthly_rate') => {
-    const isEditing = editingCell?.bayId === bay.id && editingCell?.field === field;
-    const value = bay[field];
-    const isSaving = saveStatus?.bayId === bay.id && saveStatus?.field === field && saveStatus?.status === 'saving';
-    const isSuccess = saveStatus?.bayId === bay.id && saveStatus?.field === field && saveStatus?.status === 'success';
-    const isError = saveStatus?.bayId === bay.id && saveStatus?.field === field && saveStatus?.status === 'error';
-    
-    if (isEditing) {
-      return (
-        <div className="flex items-center space-x-2">
-          <Input
-            type="number"
-            min="0"
-            step="0.01"
-            value={editingCell.value}
-            onChange={handleInputChange}
-            onKeyDown={handleInputKeyDown}
-            className="w-24 h-8 text-right"
-            autoFocus
-          />
-          <div className="flex space-x-1">
-            <button 
-              onClick={handleSaveEdit}
-              className="p-1 rounded-full text-green-600 hover:bg-green-100"
-              disabled={isSaving}
-            >
-              <Check className="h-4 w-4" />
-            </button>
-            <button 
-              onClick={handleCancelEdit}
-              className="p-1 rounded-full text-red-600 hover:bg-red-100"
-              disabled={isSaving}
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      );
-    }
-    
-    if (isSaving) {
-      return (
-        <div className="flex items-center justify-between">
-          <span className="text-gray-500">{formatCurrency(value || 0)}</span>
-          <span className="text-blue-600 animate-pulse ml-2 text-xs">Saving...</span>
-        </div>
-      );
-    }
-    
-    if (isSuccess) {
-      return (
-        <div className="flex items-center justify-between">
-          <span>{formatCurrency(value || 0)}</span>
-          <Check className="h-4 w-4 text-green-600 ml-2" />
-        </div>
-      );
-    }
-    
-    if (isError) {
-      return (
-        <div className="flex items-center justify-between">
-          <span>{formatCurrency(value || 0)}</span>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <X className="h-4 w-4 text-red-600 ml-2" />
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Failed to save. Click to try again.</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-      );
-    }
-    
-    return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div 
-              className="cursor-pointer hover:bg-blue-50 p-2 rounded transition-colors flex justify-between items-center group"
-              onClick={() => handleCellClick(bay, field)}
-            >
-              <span>{value ? formatCurrency(value) : "N/A"}</span>
-              <FileEdit className="h-3.5 w-3.5 text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </div>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Click to edit {field.replace('_rate', '')} rate</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
   };
 
   return (
-    <div className="rounded-md border">
+    <div className="rounded-md border shadow-sm overflow-hidden">
       <Table>
-        <TableHeader>
+        <TableHeader className="bg-gray-50">
           <TableRow>
-            <TableHead>Bay Name</TableHead>
-            <TableHead>Location</TableHead>
-            <TableHead className="text-right">Hourly Rate</TableHead>
-            <TableHead className="text-right">Daily Rate</TableHead>
-            <TableHead className="text-right">Weekly Rate</TableHead>
-            <TableHead className="text-right">Monthly Rate</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead className="w-1/5 font-medium">Bay Name</TableHead>
+            <TableHead className="w-1/6 font-medium">Location</TableHead>
+            <TableHead className="w-1/6 text-center font-medium">Hourly Rate</TableHead>
+            <TableHead className="w-1/6 text-center font-medium">Daily Rate</TableHead>
+            <TableHead className="w-1/6 text-center font-medium">Weekly Rate</TableHead>
+            <TableHead className="w-1/6 text-center font-medium">Monthly Rate</TableHead>
+            <TableHead className="w-1/6 text-center font-medium">Status</TableHead>
+            <TableHead className="w-1/6 text-right font-medium">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {bays.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={8} className="h-24 text-center">
-                No bays found. Add your first bay to get started.
+          {bays.map((bay) => (
+            <TableRow key={bay.id} className="hover:bg-slate-50">
+              <TableCell className="font-medium">{bay.bay_name}</TableCell>
+              <TableCell>{bay.bay_location || "—"}</TableCell>
+              
+              <TableCell 
+                className="text-center cursor-pointer hover:bg-blue-50 transition-colors" 
+                onClick={() => handleCellClick(bay, 'hourly_rate')}
+              >
+                {editingCell.bayId === bay.id && editingCell.field === 'hourly_rate' ? (
+                  <Input
+                    type="number"
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    onBlur={() => handleBlur(bay)}
+                    onKeyDown={(e) => handleKeyDown(e, bay)}
+                    autoFocus
+                    className="h-8 text-center"
+                  />
+                ) : (
+                  <span className="font-medium">{formatCurrency(bay.hourly_rate)}</span>
+                )}
+              </TableCell>
+              
+              <TableCell 
+                className="text-center cursor-pointer hover:bg-blue-50 transition-colors" 
+                onClick={() => handleCellClick(bay, 'daily_rate')}
+              >
+                {editingCell.bayId === bay.id && editingCell.field === 'daily_rate' ? (
+                  <Input
+                    type="number"
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    onBlur={() => handleBlur(bay)}
+                    onKeyDown={(e) => handleKeyDown(e, bay)}
+                    autoFocus
+                    className="h-8 text-center"
+                  />
+                ) : (
+                  bay.daily_rate ? formatCurrency(bay.daily_rate) : "—"
+                )}
+              </TableCell>
+              
+              <TableCell 
+                className="text-center cursor-pointer hover:bg-blue-50 transition-colors" 
+                onClick={() => handleCellClick(bay, 'weekly_rate')}
+              >
+                {editingCell.bayId === bay.id && editingCell.field === 'weekly_rate' ? (
+                  <Input
+                    type="number"
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    onBlur={() => handleBlur(bay)}
+                    onKeyDown={(e) => handleKeyDown(e, bay)}
+                    autoFocus
+                    className="h-8 text-center"
+                  />
+                ) : (
+                  bay.weekly_rate ? formatCurrency(bay.weekly_rate) : "—"
+                )}
+              </TableCell>
+              
+              <TableCell 
+                className="text-center cursor-pointer hover:bg-blue-50 transition-colors" 
+                onClick={() => handleCellClick(bay, 'monthly_rate')}
+              >
+                {editingCell.bayId === bay.id && editingCell.field === 'monthly_rate' ? (
+                  <Input
+                    type="number"
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    onBlur={() => handleBlur(bay)}
+                    onKeyDown={(e) => handleKeyDown(e, bay)}
+                    autoFocus
+                    className="h-8 text-center"
+                  />
+                ) : (
+                  bay.monthly_rate ? formatCurrency(bay.monthly_rate) : "—"
+                )}
+              </TableCell>
+              
+              <TableCell>
+                <div className="flex justify-center items-center gap-2">
+                  <Switch
+                    checked={bay.is_active}
+                    onCheckedChange={(checked) => onStatusChange(bay, checked)}
+                    className="data-[state=checked]:bg-green-600"
+                  />
+                  <span className="text-sm font-medium text-gray-500">
+                    {bay.is_active ? "Active" : "Inactive"}
+                  </span>
+                </div>
+              </TableCell>
+              
+              <TableCell className="text-right">
+                <div className="flex justify-end gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                    onClick={() => onHistoryClick(bay)}
+                  >
+                    <Clock className="h-4 w-4" />
+                    <span className="sr-only">View Rate History</span>
+                  </Button>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                    onClick={() => onEditClick(bay)}
+                  >
+                    <Edit2 className="h-4 w-4" />
+                    <span className="sr-only">Edit Bay</span>
+                  </Button>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    onClick={() => onDeleteClick(bay)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span className="sr-only">Delete Bay</span>
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
-          ) : (
-            bays.map((bay) => (
-              <TableRow key={bay.id} className={bay.is_active ? "" : "bg-gray-50"}>
-                <TableCell className="font-medium">{bay.bay_name}</TableCell>
-                <TableCell>{bay.bay_location || "N/A"}</TableCell>
-                <TableCell className="text-right">
-                  {formatCurrency(bay.hourly_rate)}
-                </TableCell>
-                <TableCell className="text-right">
-                  {renderRateCell(bay, 'daily_rate')}
-                </TableCell>
-                <TableCell className="text-right">
-                  {renderRateCell(bay, 'weekly_rate')}
-                </TableCell>
-                <TableCell className="text-right">
-                  {renderRateCell(bay, 'monthly_rate')}
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      checked={bay.is_active}
-                      onCheckedChange={(checked) =>
-                        onStatusChange(bay, checked)
-                      }
-                      aria-label="Toggle bay status"
-                    />
-                    <Badge 
-                      variant={bay.is_active ? "success" : "danger"}
-                      className="text-xs font-medium"
-                    >
-                      {bay.is_active ? "Active" : "Inactive"}
-                    </Badge>
-                  </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <button
-                      onClick={() => onHistoryClick(bay)}
-                      className="text-blue-600 hover:text-blue-800 font-medium"
-                    >
-                      History
-                    </button>
-                    <button
-                      onClick={() => onEditClick(bay)}
-                      className="text-blue-600 hover:text-blue-800 font-medium"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => onDeleteClick(bay)}
-                      className="text-red-600 hover:text-red-800 font-medium"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
+          ))}
         </TableBody>
       </Table>
     </div>
