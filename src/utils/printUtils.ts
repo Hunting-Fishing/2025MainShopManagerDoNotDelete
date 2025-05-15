@@ -24,10 +24,16 @@ export const printElement = (elementId: string, title: string = 'Print') => {
   
   // Create print-friendly styles
   const styles = `
+    @page {
+      size: auto;
+      margin: 20mm 10mm;
+    }
     body {
       font-family: Arial, sans-serif;
-      margin: 20px;
+      margin: 0;
+      padding: 20px;
       color: #000;
+      background: #fff;
     }
     table {
       width: 100%;
@@ -45,16 +51,74 @@ export const printElement = (elementId: string, title: string = 'Print') => {
     }
     .print-header {
       margin-bottom: 20px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
     }
     .print-footer {
       margin-top: 30px;
+      padding-top: 10px;
       font-size: 12px;
       text-align: center;
       color: #666;
+      border-top: 1px solid #eee;
     }
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      page-break-inside: avoid;
+    }
+    .grid {
+      display: grid;
+    }
+    .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+    .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .gap-2 { gap: 0.5rem; }
+    .gap-4 { gap: 1rem; }
+    .rounded { border-radius: 4px; }
+    .rounded-full { border-radius: 9999px; }
+    .font-bold { font-weight: bold; }
+    .text-sm { font-size: 0.875rem; }
+    .text-lg { font-size: 1.125rem; }
+    .text-xs { font-size: 0.75rem; }
+    .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+    .px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
+    .p-2 { padding: 0.5rem; }
+    .p-3 { padding: 0.75rem; }
+    .p-4 { padding: 1rem; }
+    .font-medium { font-weight: 500; }
+    .font-semibold { font-weight: 600; }
+    .space-y-4 > * + * { margin-top: 1rem; }
+    .text-gray-500 { color: #6b7280; }
+    .mb-1 { margin-bottom: 0.25rem; }
+    .mb-3 { margin-bottom: 0.75rem; }
+    .mb-6 { margin-bottom: 1.5rem; }
+    .flex { display: flex; }
+    .flex-1 { flex: 1 1 0%; }
+    .justify-between { justify-content: space-between; }
+    .items-start { align-items: flex-start; }
+    
+    /* Default print dialog hides background colors, this ensures they print */
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    
     @media print {
-      button {
+      button, .no-print {
         display: none;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      .page-break {
+        page-break-after: always;
+      }
+      .card {
+        break-inside: avoid;
       }
     }
   `;
@@ -70,14 +134,11 @@ export const printElement = (elementId: string, title: string = 'Print') => {
         <style>${styles}</style>
       </head>
       <body>
-        <div class="print-header">
-          <h1>${title}</h1>
-          <p>Printed on: ${printDate}</p>
-        </div>
-        <div id="print-content">
+        <div class="print-content">
           ${element.innerHTML}
         </div>
         <div class="print-footer">
+          <p>Printed on: ${printDate}</p>
           <p>This document is for internal use only.</p>
         </div>
       </body>

@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Bay } from "@/services/diybay/diybayService";
 import { BayList } from "./BayList";
@@ -13,7 +13,7 @@ import { DndContext, DragEndEvent, closestCenter, KeyboardSensor, PointerSensor,
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import { printElement } from "@/utils/printUtils";
+import { PrintPreviewDialog } from "./PrintPreviewDialog";
 
 interface BaySectionProps {
   bays: Bay[];
@@ -44,6 +44,8 @@ export const BaySection: React.FC<BaySectionProps> = ({
   onHistoryClick,
   onDragEnd,
 }) => {
+  const [isPrintPreviewOpen, setIsPrintPreviewOpen] = useState(false);
+  
   // Set up drag-and-drop sensors
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -51,10 +53,6 @@ export const BaySection: React.FC<BaySectionProps> = ({
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
-  
-  const handlePrint = () => {
-    printElement("bays-content", "Available Bays");
-  };
   
   return (
     <Card className="mt-6">
@@ -64,7 +62,7 @@ export const BaySection: React.FC<BaySectionProps> = ({
           <div className="flex items-center gap-4">
             <ViewModeToggle viewMode={viewMode} setViewMode={setViewMode} />
             <Button 
-              onClick={handlePrint}
+              onClick={() => setIsPrintPreviewOpen(true)}
               variant="outline"
               size="sm"
               className="flex items-center gap-1"
@@ -148,6 +146,13 @@ export const BaySection: React.FC<BaySectionProps> = ({
           )}
         </div>
       </CardContent>
+
+      {/* Print Preview Dialog */}
+      <PrintPreviewDialog 
+        isOpen={isPrintPreviewOpen}
+        setIsOpen={setIsPrintPreviewOpen}
+        bays={bays}
+      />
     </Card>
   );
 };
