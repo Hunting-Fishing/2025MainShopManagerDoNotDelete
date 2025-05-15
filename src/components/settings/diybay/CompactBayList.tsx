@@ -1,11 +1,13 @@
 
 import React from "react";
 import { Bay } from "@/services/diybay/diybayService";
+import { Edit, History, Trash2, Loader2, GripVertical } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Check, X, Edit, History, Trash2, Loader2 } from "lucide-react";
 
-export interface CompactBayListProps {
+interface CompactBayListProps {
   bays: Bay[];
   onStatusChange: (bay: Bay, isActive: boolean) => Promise<void>;
   onEditClick: (bay: Bay) => void;
@@ -15,8 +17,15 @@ export interface CompactBayListProps {
   sortable?: boolean;
 }
 
-// A sortable item component
-const SortableBayItem = ({ bay, onStatusChange, onEditClick, onDeleteClick, onHistoryClick, isSaving = false }) => {
+// Sortable Bay Item component
+const SortableBayItem = ({ 
+  bay, 
+  onStatusChange, 
+  onEditClick, 
+  onDeleteClick, 
+  onHistoryClick, 
+  isSaving 
+}) => {
   const {
     attributes,
     listeners,
@@ -25,116 +34,114 @@ const SortableBayItem = ({ bay, onStatusChange, onEditClick, onDeleteClick, onHi
     transition,
     isDragging
   } = useSortable({ id: bay.id });
-
+  
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
     zIndex: isDragging ? 10 : 1,
   };
-
+  
   return (
     <div 
       ref={setNodeRef} 
-      style={style}
-      className={`flex items-center justify-between p-3 bg-white rounded-lg border ${
-        isDragging ? 'border-blue-400 shadow-lg' : 'border-gray-200 shadow-sm'
-      } hover:shadow-md transition-shadow mb-2`}
+      style={style} 
+      className={`${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+      {...attributes} 
+      {...listeners}
     >
-      <div className="flex items-center gap-2">
-        <div 
-          {...attributes} 
-          {...listeners} 
-          className="cursor-grab p-1 text-gray-400 hover:text-gray-600"
-        >
-          <GripVertical className="h-5 w-5" />
-        </div>
-        <div>
-          <h3 className="font-medium text-gray-900">{bay.bay_name}</h3>
-          {bay.bay_location && (
-            <p className="text-sm text-gray-500">{bay.bay_location}</p>
-          )}
-        </div>
-      </div>
-      
-      <div className="flex items-center gap-2">
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-          bay.is_active 
-            ? 'bg-green-100 text-green-800 border border-green-300' 
-            : 'bg-gray-100 text-gray-800 border border-gray-200'
-        }`}>
-          {bay.is_active ? 'Active' : 'Inactive'}
-        </span>
-        
-        <div className="flex items-center space-x-1">
-          <button
-            onClick={() => onEditClick(bay)}
-            disabled={isSaving}
-            className="p-1 text-blue-600 hover:text-blue-800"
-          >
-            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Edit className="h-4 w-4" />}
-          </button>
-          <button
-            onClick={() => onHistoryClick(bay)}
-            disabled={isSaving}
-            className="p-1 text-purple-600 hover:text-purple-800"
-          >
-            <History className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => onDeleteClick(bay)}
-            disabled={isSaving}
-            className="p-1 text-red-600 hover:text-red-800"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
+      <BayItem 
+        bay={bay} 
+        onStatusChange={onStatusChange} 
+        onEditClick={onEditClick} 
+        onDeleteClick={onDeleteClick} 
+        onHistoryClick={onHistoryClick} 
+        isSaving={isSaving}
+        isDragging={isDragging}
+      />
     </div>
   );
 };
 
-// Non-sortable version of the item
-const BayItem = ({ bay, onStatusChange, onEditClick, onDeleteClick, onHistoryClick, isSaving = false }) => {
+// Individual Bay Item component
+const BayItem = ({ 
+  bay, 
+  onStatusChange, 
+  onEditClick, 
+  onDeleteClick, 
+  onHistoryClick, 
+  isSaving,
+  isDragging
+}) => {
+  // Style based on active status and index
+  const rowStyles = bay.is_active 
+    ? `flex items-center justify-between p-3 mb-2 rounded-lg bg-white border ${isDragging ? 'border-blue-400 shadow-lg' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`
+    : `flex items-center justify-between p-3 mb-2 rounded-lg bg-white border-dashed border ${isDragging ? 'border-blue-400 shadow-lg' : 'border-gray-200 opacity-70'}`;
+
   return (
-    <div 
-      className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow mb-2"
-    >
-      <div>
-        <h3 className="font-medium text-gray-900">{bay.bay_name}</h3>
-        {bay.bay_location && (
-          <p className="text-sm text-gray-500">{bay.bay_location}</p>
-        )}
+    <div className={rowStyles}>
+      <div className="flex items-center">
+        <GripVertical className="h-5 w-5 text-gray-400 mr-2" />
+        <div className="flex flex-col">
+          <div className="flex items-center gap-2">
+            <span className="font-medium">{bay.bay_name}</span>
+            {!bay.is_active && (
+              <Badge variant="outline" className="text-xs border-gray-300 text-gray-500">
+                Inactive
+              </Badge>
+            )}
+          </div>
+          {bay.bay_location && <span className="text-sm text-gray-500">{bay.bay_location}</span>}
+        </div>
       </div>
       
-      <div className="flex items-center gap-2">
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-          bay.is_active 
-            ? 'bg-green-100 text-green-800 border border-green-300' 
-            : 'bg-gray-100 text-gray-800 border border-gray-200'
-        }`}>
-          {bay.is_active ? 'Active' : 'Inactive'}
-        </span>
+      <div className="flex items-center space-x-2">
+        <div className="hidden md:flex items-center gap-4 mr-4">
+          <div className="bg-blue-50 px-3 py-1 rounded-lg">
+            <span className="text-xs text-blue-600 font-medium">Hourly:</span>
+            <span className="text-sm font-bold ml-1">${bay.hourly_rate.toFixed(2)}</span>
+          </div>
+          <div className="bg-green-50 px-3 py-1 rounded-lg">
+            <span className="text-xs text-green-600 font-medium">Daily:</span>
+            <span className="text-sm font-bold ml-1">
+              ${bay.daily_rate ? bay.daily_rate.toFixed(2) : '0.00'}
+            </span>
+          </div>
+        </div>
         
-        <div className="flex items-center space-x-1">
+        <Switch
+          checked={bay.is_active}
+          onCheckedChange={(checked) => onStatusChange(bay, checked)}
+          disabled={isSaving}
+          className="mr-2"
+        />
+        
+        <div className="flex space-x-1">
           <button
             onClick={() => onEditClick(bay)}
             disabled={isSaving}
-            className="p-1 text-blue-600 hover:text-blue-800"
+            className="p-1 rounded-md text-blue-600 hover:bg-blue-50"
+            title="Edit bay"
           >
-            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Edit className="h-4 w-4" />}
+            {isSaving ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Edit className="h-4 w-4" />
+            )}
           </button>
           <button
-            onClick={() => onHistoryClick(bay)}
+            onClick={async () => await onHistoryClick(bay)}
             disabled={isSaving}
-            className="p-1 text-purple-600 hover:text-purple-800"
+            className="p-1 rounded-md text-purple-600 hover:bg-purple-50"
+            title="View rate history"
           >
             <History className="h-4 w-4" />
           </button>
           <button
             onClick={() => onDeleteClick(bay)}
             disabled={isSaving}
-            className="p-1 text-red-600 hover:text-red-800"
+            className="p-1 rounded-md text-red-600 hover:bg-red-50"
+            title="Delete bay"
           >
             <Trash2 className="h-4 w-4" />
           </button>
@@ -151,10 +158,10 @@ export const CompactBayList: React.FC<CompactBayListProps> = ({
   onDeleteClick,
   onHistoryClick,
   isSaving = false,
-  sortable = false,
+  sortable = false
 }) => {
   return (
-    <div className="space-y-2">
+    <div className="space-y-1">
       {bays.map((bay) => (
         sortable ? (
           <SortableBayItem
@@ -175,6 +182,7 @@ export const CompactBayList: React.FC<CompactBayListProps> = ({
             onDeleteClick={onDeleteClick}
             onHistoryClick={onHistoryClick}
             isSaving={isSaving}
+            isDragging={false}
           />
         )
       ))}
