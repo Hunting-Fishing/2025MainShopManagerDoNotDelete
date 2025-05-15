@@ -17,7 +17,7 @@ interface CompactBayListProps {
   onHistoryClick: (bay: Bay) => Promise<void>;
   isSaving?: boolean;
   sortable?: boolean;
-  isLoading?: boolean;  // Add isLoading prop to the interface
+  isLoading?: boolean;
 }
 
 export const CompactBayList: React.FC<CompactBayListProps> = ({
@@ -28,7 +28,7 @@ export const CompactBayList: React.FC<CompactBayListProps> = ({
   onHistoryClick,
   isSaving = false,
   sortable = false,
-  isLoading = false,  // Add default value for isLoading
+  isLoading = false,
 }) => {
   if (isLoading) {
     return <div className="text-center py-8">Loading bays...</div>;
@@ -84,8 +84,13 @@ const BayItem: React.FC<BayItemProps> = ({
   onHistoryClick,
   isSaving = false,
 }) => {
+  // Always apply status-based colors
+  const statusClasses = bay.is_active 
+    ? 'border-green-300 bg-green-50 hover:bg-green-100' 
+    : 'border-red-300 bg-red-50 hover:bg-red-100';
+
   return (
-    <div className={`flex items-center justify-between p-3 rounded-lg border ${bay.is_active ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+    <div className={`flex items-center justify-between p-3 rounded-lg border ${statusClasses}`}>
       <div className="flex items-center space-x-3">
         <div className="bg-blue-100 hover:bg-blue-200 rounded p-1 cursor-grab">
           <GripVertical size={18} className="text-blue-600" />

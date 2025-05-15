@@ -49,11 +49,16 @@ export const DraggableBayRow: React.FC<DraggableBayRowProps> = ({
     return await onRateChange(bay, field, parseFloat(value));
   };
 
+  // Define status-based styling classes
+  const statusClasses = bay.is_active 
+    ? 'bg-green-50 border-green-200' 
+    : 'bg-red-50 border-red-200';
+
   return (
     <TableRow 
       ref={setNodeRef} 
       style={style}
-      className={`border-b border-gray-200 transition-colors ${bay.is_active ? 'hover:bg-green-50' : 'hover:bg-red-50 bg-red-50/30'} mb-2`}
+      className={`border-b transition-colors ${statusClasses} hover:${bay.is_active ? 'bg-green-100' : 'bg-red-100'} mb-2`}
     >
       <TableCell className="w-10">
         <div
