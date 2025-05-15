@@ -2,12 +2,15 @@
 import { CustomerAccountCard } from "@/components/customer-portal/CustomerAccountCard";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { User, Users } from "lucide-react";
 
 export default function Login() {
   return (
     <>
       <Helmet>
-        <title>Customer Login | Easy Shop Manager</title>
+        <title>Login | Easy Shop Manager</title>
       </Helmet>
       
       <div className="min-h-screen flex flex-col md:flex-row">
@@ -66,15 +69,49 @@ export default function Login() {
           </div>
         </div>
         
-        {/* Right Side - Login Form */}
-        <div className="p-8 md:w-1/2 flex items-center justify-center">
-          <div className="w-full max-w-md">
-            <CustomerAccountCard />
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
-                Staff member? <Link to="/staff-login" className="text-blue-600 hover:underline">Staff Login Portal</Link>
-              </p>
-            </div>
+        {/* Right Side - Login Cards */}
+        <div className="p-8 md:w-1/2 flex flex-col items-center justify-center">
+          <div className="w-full max-w-md space-y-6">
+            {/* Customer Login Card */}
+            <Card className="shadow-lg border-t-4 border-t-blue-600">
+              <CardHeader>
+                <div className="flex items-center justify-center mb-2">
+                  <div className="bg-blue-100 p-3 rounded-full">
+                    <User className="h-6 w-6 text-blue-600" />
+                  </div>
+                </div>
+                <CardTitle className="text-center">Customer Login</CardTitle>
+                <CardDescription className="text-center">
+                  Access your vehicle service history and appointments
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <CustomerAccountCard />
+              </CardContent>
+            </Card>
+            
+            {/* Staff Login Card */}
+            <Card className="shadow-lg border-t-4 border-t-indigo-600">
+              <CardHeader>
+                <div className="flex items-center justify-center mb-2">
+                  <div className="bg-indigo-100 p-3 rounded-full">
+                    <Users className="h-6 w-6 text-indigo-600" />
+                  </div>
+                </div>
+                <CardTitle className="text-center">Staff Login</CardTitle>
+                <CardDescription className="text-center">
+                  For shop employees and administrators
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="text-center">
+                <Button asChild variant="outline" className="w-full" size="lg">
+                  <Link to="/staff-login" className="flex items-center justify-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Staff Login Portal
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
