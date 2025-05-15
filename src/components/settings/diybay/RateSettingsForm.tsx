@@ -1,15 +1,12 @@
 
-import React, { useState, useEffect } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
-import { RateSettings } from "@/services/diybay/diybayService";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import React, { useState } from 'react';
+import { RateSettings } from '@/services/diybay/diybayService';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface RateSettingsFormProps {
   settings: RateSettings;
@@ -22,187 +19,185 @@ export const RateSettingsForm: React.FC<RateSettingsFormProps> = ({
   settings,
   onSettingsChange,
   onSaveSettings,
-  isSaving,
+  isSaving
 }) => {
-  // Local state to track form values
-  const [localSettings, setLocalSettings] = useState<{
-    [key in keyof RateSettings]?: string | number;
-  }>({});
-  const [hasChanges, setHasChanges] = useState(false);
-
-  // Initialize local settings from props
-  useEffect(() => {
-    setLocalSettings({
-      daily_hours: settings.daily_hours.toString(),
-      daily_discount_percent: settings.daily_discount_percent.toString(),
-      weekly_multiplier: settings.weekly_multiplier.toString(),
-      monthly_multiplier: settings.monthly_multiplier.toString(),
-      hourly_base_rate: settings.hourly_base_rate.toString(),
-    });
-  }, [settings]);
-
-  // Check if there are changes
-  useEffect(() => {
-    const hasAnyChanges =
-      localSettings.daily_hours?.toString() !== settings.daily_hours?.toString() ||
-      localSettings.daily_discount_percent?.toString() !== settings.daily_discount_percent?.toString() ||
-      localSettings.weekly_multiplier?.toString() !== settings.weekly_multiplier?.toString() ||
-      localSettings.monthly_multiplier?.toString() !== settings.monthly_multiplier?.toString() ||
-      localSettings.hourly_base_rate?.toString() !== settings.hourly_base_rate?.toString();
-
-    setHasChanges(hasAnyChanges);
-  }, [localSettings, settings]);
-
-  // Handle local input changes
-  const handleLocalChange = (field: keyof RateSettings, value: string) => {
-    setLocalSettings((prev) => ({
+  const [isOpen, setIsOpen] = useState(true);
+  const [localSettings, setLocalSettings] = useState<RateSettings>({
+    ...settings,
+    daily_hours: settings.daily_hours?.toString() || '',
+    daily_discount_percent: settings.daily_discount_percent?.toString() || '',
+    weekly_multiplier: settings.weekly_multiplier?.toString() || '',
+    monthly_multiplier: settings.monthly_multiplier?.toString() || '',
+    hourly_base_rate: settings.hourly_base_rate?.toString() || ''
+  });
+  
+  const handleSettingsChange = (field: keyof RateSettings, value: string) => {
+    // Allow empty string for deletion
+    setLocalSettings(prev => ({
       ...prev,
-      [field]: value,
+      [field]: value
     }));
+    
+    // Pass the actual value to parent
+    onSettingsChange(field, value);
   };
 
-  // Save changes to parent component
-  const handleSave = async () => {
-    // Convert all form values to numbers before saving
-    if (localSettings.daily_hours !== undefined) {
-      onSettingsChange("daily_hours", localSettings.daily_hours === "" ? 0 : Number(localSettings.daily_hours));
-    }
-    if (localSettings.daily_discount_percent !== undefined) {
-      onSettingsChange("daily_discount_percent", localSettings.daily_discount_percent === "" ? 0 : Number(localSettings.daily_discount_percent));
-    }
-    if (localSettings.weekly_multiplier !== undefined) {
-      onSettingsChange("weekly_multiplier", localSettings.weekly_multiplier === "" ? 0 : Number(localSettings.weekly_multiplier));
-    }
-    if (localSettings.monthly_multiplier !== undefined) {
-      onSettingsChange("monthly_multiplier", localSettings.monthly_multiplier === "" ? 0 : Number(localSettings.monthly_multiplier));
-    }
-    if (localSettings.hourly_base_rate !== undefined) {
-      onSettingsChange("hourly_base_rate", localSettings.hourly_base_rate === "" ? 0 : Number(localSettings.hourly_base_rate));
-    }
-
-    const success = await onSaveSettings();
-    if (success) {
-      setHasChanges(false);
-    }
-    return success;
+  const handleSaveClick = async () => {
+    await onSaveSettings();
+    // Collapse the panel after saving
+    setIsOpen(false);
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden mb-6">
-      <Accordion type="single" collapsible defaultValue="item-1">
-        <AccordionItem value="item-1">
-          <AccordionTrigger className="px-4 py-3 bg-gray-50 hover:bg-gray-100">
-            <h3 className="text-lg font-medium">Rate Calculation Settings</h3>
-          </AccordionTrigger>
-          <AccordionContent>
-            <div className="p-4 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label htmlFor="daily_hours" className="text-sm font-medium">
-                    Daily Hours
-                  </label>
+    <Collapsible 
+      open={isOpen} 
+      onOpenChange={setIsOpen} 
+      className="mb-6 border border-gray-200 rounded-lg overflow-hidden"
+    >
+      <CollapsibleTrigger className="w-full bg-gradient-to-b from-white to-gray-50 px-6 py-4 flex items-center justify-between hover:bg-gray-50">
+        <CardTitle className="text-xl font-semibold flex items-center">
+          Rate Calculation Settings
+        </CardTitle>
+        <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
+          {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </Button>
+      </CollapsibleTrigger>
+      
+      <CollapsibleContent>
+        <Card className="border-0 shadow-none">
+          <CardContent className="pt-4">
+            <p className="text-gray-600 mb-4">
+              Configure how DIY bay rates are calculated based on the hourly rate.
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+              {/* Daily Rate Settings */}
+              <div className="space-y-2">
+                <Label htmlFor="daily-hours" className="text-sm">
+                  Daily Hours
+                </Label>
+                <div className="flex items-center">
                   <Input
-                    id="daily_hours"
+                    id="daily-hours"
                     type="text"
-                    value={localSettings.daily_hours || ""}
-                    onChange={(e) => handleLocalChange("daily_hours", e.target.value)}
+                    inputMode="decimal"
+                    value={localSettings.daily_hours}
+                    onChange={(e) => handleSettingsChange('daily_hours', e.target.value)}
                     placeholder="8"
-                    className="max-w-xs"
+                    className="w-full"
                   />
-                  <p className="text-xs text-gray-500">
-                    Number of hours included in a daily rate
-                  </p>
+                  <span className="ml-2 text-sm text-gray-500">hours</span>
                 </div>
-
-                <div className="space-y-2">
-                  <label htmlFor="daily_discount" className="text-sm font-medium">
-                    Daily Discount (%)
-                  </label>
-                  <Input
-                    id="daily_discount"
-                    type="text"
-                    value={localSettings.daily_discount_percent || ""}
-                    onChange={(e) => handleLocalChange("daily_discount_percent", e.target.value)}
-                    placeholder="25"
-                    className="max-w-xs"
-                  />
-                  <p className="text-xs text-gray-500">
-                    Percentage discount applied to daily rate
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <label htmlFor="weekly_multiplier" className="text-sm font-medium">
-                    Weekly Rate Multiplier
-                  </label>
-                  <Input
-                    id="weekly_multiplier"
-                    type="text"
-                    value={localSettings.weekly_multiplier || ""}
-                    onChange={(e) => handleLocalChange("weekly_multiplier", e.target.value)}
-                    placeholder="20"
-                    className="max-w-xs"
-                  />
-                  <p className="text-xs text-gray-500">
-                    Multiplier for calculating weekly rate from hourly rate
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <label htmlFor="monthly_multiplier" className="text-sm font-medium">
-                    Monthly Rate Multiplier
-                  </label>
-                  <Input
-                    id="monthly_multiplier"
-                    type="text"
-                    value={localSettings.monthly_multiplier || ""}
-                    onChange={(e) => handleLocalChange("monthly_multiplier", e.target.value)}
-                    placeholder="40"
-                    className="max-w-xs"
-                  />
-                  <p className="text-xs text-gray-500">
-                    Multiplier for calculating monthly rate from hourly rate
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <label htmlFor="base_rate" className="text-sm font-medium">
-                    Base Hourly Rate
-                  </label>
-                  <Input
-                    id="base_rate"
-                    type="text"
-                    value={localSettings.hourly_base_rate || ""}
-                    onChange={(e) => handleLocalChange("hourly_base_rate", e.target.value)}
-                    placeholder="65"
-                    className="max-w-xs"
-                  />
-                  <p className="text-xs text-gray-500">
-                    Default hourly rate for new bays
-                  </p>
-                </div>
+                <p className="text-xs text-gray-500">
+                  Number of hours included in the daily rate
+                </p>
               </div>
-
-              <div className="flex justify-end mt-4">
-                <Button
-                  onClick={handleSave}
-                  disabled={isSaving || !hasChanges}
-                  className={`px-4 flex items-center space-x-2 ${!hasChanges ? "opacity-50" : ""}`}
-                >
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Saving...</span>
-                    </>
-                  ) : (
-                    <span>{hasChanges ? "Save Changes" : "No Changes"}</span>
-                  )}
-                </Button>
+              
+              <div className="space-y-2">
+                <Label htmlFor="daily-discount" className="text-sm">
+                  Daily Discount
+                </Label>
+                <div className="flex items-center">
+                  <Input
+                    id="daily-discount"
+                    type="text"
+                    inputMode="decimal"
+                    value={localSettings.daily_discount_percent}
+                    onChange={(e) => handleSettingsChange('daily_discount_percent', e.target.value)}
+                    placeholder="25"
+                    className="w-full"
+                  />
+                  <span className="ml-2 text-sm text-gray-500">%</span>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Discount applied to daily rates
+                </p>
+              </div>
+              
+              {/* Weekly Rate Settings */}
+              <div className="space-y-2">
+                <Label htmlFor="weekly-multiplier" className="text-sm">
+                  Weekly Rate Multiplier
+                </Label>
+                <div className="flex items-center">
+                  <Input
+                    id="weekly-multiplier"
+                    type="text"
+                    inputMode="decimal"
+                    value={localSettings.weekly_multiplier}
+                    onChange={(e) => handleSettingsChange('weekly_multiplier', e.target.value)}
+                    placeholder="5"
+                    className="w-full"
+                  />
+                  <span className="ml-2 text-sm text-gray-500">days</span>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Daily rates × this value = Weekly rate
+                </p>
+              </div>
+              
+              {/* Monthly Rate Settings */}
+              <div className="space-y-2">
+                <Label htmlFor="monthly-multiplier" className="text-sm">
+                  Monthly Rate Multiplier
+                </Label>
+                <div className="flex items-center">
+                  <Input
+                    id="monthly-multiplier"
+                    type="text"
+                    inputMode="decimal"
+                    value={localSettings.monthly_multiplier}
+                    onChange={(e) => handleSettingsChange('monthly_multiplier', e.target.value)}
+                    placeholder="20"
+                    className="w-full"
+                  />
+                  <span className="ml-2 text-sm text-gray-500">days</span>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Daily rates × this value = Monthly rate
+                </p>
+              </div>
+              
+              {/* Base Hourly Rate */}
+              <div className="space-y-2">
+                <Label htmlFor="base-hourly-rate" className="text-sm">
+                  Base Hourly Rate
+                </Label>
+                <div className="flex items-center">
+                  <span className="mr-2 text-sm text-gray-500">$</span>
+                  <Input
+                    id="base-hourly-rate"
+                    type="text"
+                    inputMode="decimal"
+                    value={localSettings.hourly_base_rate}
+                    onChange={(e) => handleSettingsChange('hourly_base_rate', e.target.value)}
+                    placeholder="65.00"
+                    className="w-full"
+                  />
+                </div>
+                <p className="text-xs text-gray-500">
+                  Default hourly rate for new bays
+                </p>
               </div>
             </div>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-    </div>
+            
+            <div className="flex justify-end">
+              <Button 
+                onClick={handleSaveClick} 
+                disabled={isSaving}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : 'Save Changes'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </CollapsibleContent>
+    </Collapsible>
   );
 };

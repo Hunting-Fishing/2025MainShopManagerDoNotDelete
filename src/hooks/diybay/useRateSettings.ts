@@ -50,24 +50,24 @@ export function useRateSettings(
       // Prepare data for update
       const updateData: Partial<RateSettings> = {};
       
-      // Only include fields that have changed
-      if (newSettings.daily_hours !== settings.daily_hours) {
+      // Only include fields that have changed, using proper type handling
+      if (Number(newSettings.daily_hours) !== Number(settings.daily_hours)) {
         updateData.daily_hours = newSettings.daily_hours === '' ? 0 : Number(newSettings.daily_hours);
       }
       
-      if (newSettings.daily_discount_percent !== settings.daily_discount_percent) {
+      if (Number(newSettings.daily_discount_percent) !== Number(settings.daily_discount_percent)) {
         updateData.daily_discount_percent = newSettings.daily_discount_percent === '' ? 0 : Number(newSettings.daily_discount_percent);
       }
       
-      if (newSettings.weekly_multiplier !== settings.weekly_multiplier) {
+      if (Number(newSettings.weekly_multiplier) !== Number(settings.weekly_multiplier)) {
         updateData.weekly_multiplier = newSettings.weekly_multiplier === '' ? 0 : Number(newSettings.weekly_multiplier);
       }
       
-      if (newSettings.monthly_multiplier !== settings.monthly_multiplier) {
+      if (Number(newSettings.monthly_multiplier) !== Number(settings.monthly_multiplier)) {
         updateData.monthly_multiplier = newSettings.monthly_multiplier === '' ? 0 : Number(newSettings.monthly_multiplier);
       }
       
-      if (newSettings.hourly_base_rate !== settings.hourly_base_rate) {
+      if (Number(newSettings.hourly_base_rate) !== Number(settings.hourly_base_rate)) {
         updateData.hourly_base_rate = newSettings.hourly_base_rate === '' ? 0 : Number(newSettings.hourly_base_rate);
       }
       
@@ -94,20 +94,21 @@ export function useRateSettings(
       };
       
       // Convert any string values to numbers for calculation
-      Object.keys(normalizedSettings).forEach(key => {
+      const calculationSettings: RateSettings = { ...normalizedSettings };
+      Object.keys(calculationSettings).forEach(key => {
         const field = key as keyof RateSettings;
-        if (typeof normalizedSettings[field] === 'string' && normalizedSettings[field] !== '') {
-          normalizedSettings[field] = Number(normalizedSettings[field]);
+        if (typeof calculationSettings[field] === 'string' && calculationSettings[field] !== '') {
+          calculationSettings[field] = Number(calculationSettings[field]);
         }
-        if (normalizedSettings[field] === '') {
-          normalizedSettings[field] = 0;
+        if (calculationSettings[field] === '') {
+          calculationSettings[field] = 0;
         }
       });
       
       const updatedBays = bays.map(bay => {
         if (!bay.hourly_rate) return bay;
         
-        const calculatedRates = calculateRates(bay.hourly_rate, normalizedSettings);
+        const calculatedRates = calculateRates(bay.hourly_rate, calculationSettings);
         
         return {
           ...bay,
