@@ -7,6 +7,8 @@ import CustomerWorkOrders from "@/components/customer-portal/CustomerWorkOrders"
 import { CustomerVehicles } from "@/components/customer-portal/CustomerVehicles";
 import { CustomerProfileInfo } from "@/components/customer-portal/CustomerProfileInfo";
 import { CustomerPortalHeader } from "@/components/customer-portal/CustomerPortalHeader";
+import { ShopDirectory } from "@/components/customer-portal/ShopDirectory";
+import { CustomerShops } from "@/components/customer-portal/CustomerShops";
 import { Helmet } from "react-helmet-async";
 import { useAuthUser } from "@/hooks/useAuthUser";
 import { CustomerLoginRequired } from "@/components/customer-portal/CustomerLoginRequired";
@@ -120,10 +122,12 @@ export default function CustomerPortal() {
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-              <TabsList className="grid grid-cols-4 mb-6">
+              <TabsList className="grid grid-cols-6 mb-6">
                 <TabsTrigger value="appointments">Appointments</TabsTrigger>
                 <TabsTrigger value="work-orders">Work Orders</TabsTrigger>
                 <TabsTrigger value="vehicles">My Vehicles</TabsTrigger>
+                <TabsTrigger value="my-shops">My Shops</TabsTrigger>
+                <TabsTrigger id="shop-directory-tab" value="shop-directory">Shop Directory</TabsTrigger>
                 <TabsTrigger value="profile">My Profile</TabsTrigger>
               </TabsList>
               <TabsContent value="appointments" id="portal-appointments">
@@ -134,6 +138,12 @@ export default function CustomerPortal() {
               </TabsContent>
               <TabsContent value="vehicles" id="portal-vehicles">
                 <CustomerVehicles customerId={customerData?.id} />
+              </TabsContent>
+              <TabsContent value="my-shops" id="portal-my-shops">
+                <CustomerShops customerId={customerData?.id} />
+              </TabsContent>
+              <TabsContent value="shop-directory" id="portal-shop-directory">
+                <ShopDirectory customerId={customerData?.id} />
               </TabsContent>
               <TabsContent value="profile" id="portal-profile">
                 <CustomerProfileInfo customer={customerData} />
