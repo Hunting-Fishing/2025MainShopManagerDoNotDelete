@@ -8537,6 +8537,10 @@ export type Database = {
         }
         Returns: string
       }
+      is_customer: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
       process_referral_reward: {
         Args: { referral_id: string; points?: number }
         Returns: string
@@ -8593,6 +8597,7 @@ export type Database = {
         | "technician"
         | "reception"
         | "other_staff"
+        | "customer"
       form_field_type:
         | "text"
         | "textarea"
@@ -8741,6 +8746,7 @@ export const Constants = {
         "technician",
         "reception",
         "other_staff",
+        "customer",
       ],
       form_field_type: [
         "text",
