@@ -1,4 +1,3 @@
-
 export interface Bay {
   id: string;
   name: string;  
