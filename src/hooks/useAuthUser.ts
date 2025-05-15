@@ -40,11 +40,12 @@ export function useAuthUser(): UseAuthUserResult {
         if (session) {
           setUserId(session.user.id);
           setUserEmail(session.user.email);
+          console.log("Authenticated user:", session.user.id, session.user.email);
           
           // Fetch user profile to get name
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
-            .select('first_name, last_name, department, job_title')
+            .select('first_name, last_name, department, job_title, shop_id')
             .eq('id', session.user.id)
             .single();
             
@@ -53,18 +54,39 @@ export function useAuthUser(): UseAuthUserResult {
               .filter(Boolean)
               .join(' ');
             setUserName(fullName || session.user.email?.split('@')[0] || 'User');
+            console.log("User profile data:", profileData);
+            console.log("User shop_id:", profileData.shop_id);
+            
+            // If profile has a shop_id, fetch the shop details
+            if (profileData.shop_id) {
+              const { data: shopData, error: shopError } = await supabase
+                .from('shops')
+                .select('*')
+                .eq('id', profileData.shop_id)
+                .single();
+                
+              if (shopData && !shopError) {
+                console.log("User's shop details:", shopData);
+              } else {
+                console.error("Error fetching shop details:", shopError);
+              }
+            } else {
+              console.log("User profile does not have a shop_id");
+            }
           } else {
             // Fallback name if profile not found
             setUserName(session.user.email?.split('@')[0] || 'User');
+            console.error("Error fetching profile data:", profileError);
           }
           
           // Check if user has admin role - using the proper table join
-          const { data: roleData } = await supabase
+          const { data: roleData, error: roleError } = await supabase
             .from('user_roles')
             .select('roles:role_id(name)')
             .eq('user_id', session.user.id);
             
-          if (roleData && roleData.length > 0) {
+          if (roleData && roleData.length > 0 && !roleError) {
+            console.log("User roles:", roleData);
             const hasAdminRole = roleData.some(
               (role) => role.roles && 
               typeof role.roles === 'object' &&
@@ -72,10 +94,13 @@ export function useAuthUser(): UseAuthUserResult {
               (role.roles.name === 'admin' || role.roles.name === 'owner')
             );
             setIsAdmin(hasAdminRole);
+          } else {
+            console.log("No roles found or error:", roleError);
           }
           
         } else {
           // No session found
+          console.log("No authenticated session found");
           setUserId(null);
           setUserEmail(null);
           setUserName(null);
@@ -85,6 +110,7 @@ export function useAuthUser(): UseAuthUserResult {
         // Set up auth state change listener
         const { data: { subscription } } = await supabase.auth.onAuthStateChange(
           async (event, newSession) => {
+            console.log("Auth state changed:", event);
             if (event === 'SIGNED_IN' && newSession) {
               setUserId(newSession.user.id);
               setUserEmail(newSession.user.email);
@@ -92,7 +118,7 @@ export function useAuthUser(): UseAuthUserResult {
               // Fetch user profile for name on sign in
               const { data: profileData } = await supabase
                 .from('profiles')
-                .select('first_name, last_name, department, job_title')
+                .select('first_name, last_name, department, job_title, shop_id')
                 .eq('id', newSession.user.id)
                 .single();
                 
@@ -101,6 +127,7 @@ export function useAuthUser(): UseAuthUserResult {
                   .filter(Boolean)
                   .join(' ');
                 setUserName(fullName || newSession.user.email?.split('@')[0] || 'User');
+                console.log("User signed in, profile data:", profileData);
               } else {
                 setUserName(newSession.user.email?.split('@')[0] || 'User');
               }
@@ -122,6 +149,7 @@ export function useAuthUser(): UseAuthUserResult {
               }
               
             } else if (event === 'SIGNED_OUT') {
+              console.log("User signed out");
               setUserId(null);
               setUserEmail(null);
               setUserName(null);

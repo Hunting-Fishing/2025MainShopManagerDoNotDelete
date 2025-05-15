@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
  * Fetch all shops from the database that the user has access to
  */
 export const getAllShops = async () => {
+  console.log("Fetching shops...");
   const { data, error } = await supabase
     .from("shops")
     .select("*")
@@ -15,6 +16,7 @@ export const getAllShops = async () => {
     throw error;
   }
 
+  console.log("Shops fetched:", data);
   return data || [];
 };
 
@@ -42,9 +44,11 @@ export const getShopById = async (shopId: string) => {
 export const getDefaultShop = async () => {
   // First try to get the user's shop from their profile
   try {
+    console.log("Getting user's default shop...");
     const { data: { user } } = await supabase.auth.getUser();
     
     if (user) {
+      console.log("Checking profile for user:", user.id);
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('shop_id')
@@ -52,7 +56,10 @@ export const getDefaultShop = async () => {
         .single();
       
       if (!profileError && profile?.shop_id) {
+        console.log("Found shop_id in profile:", profile.shop_id);
         return await getShopById(profile.shop_id);
+      } else {
+        console.log("No shop_id found in profile or error:", profileError);
       }
     }
   } catch (error) {
@@ -61,19 +68,24 @@ export const getDefaultShop = async () => {
   
   // Try to get the default shop from settings
   try {
+    console.log("Trying to get shop from settings...");
     const { data: settings, error: settingsError } = await supabase
       .from("shop_settings")
       .select("shop_id")
       .single();
 
     if (!settingsError && settings?.shop_id) {
+      console.log("Found shop_id in settings:", settings.shop_id);
       return await getShopById(settings.shop_id);
+    } else {
+      console.log("No shop_id in settings or error:", settingsError);
     }
   } catch (error) {
     console.warn("Could not determine default shop from settings:", error);
   }
 
   // Fall back to getting the first shop
+  console.log("Falling back to first shop...");
   const { data, error } = await supabase
     .from("shops")
     .select("*")
@@ -83,6 +95,7 @@ export const getDefaultShop = async () => {
   if (error) {
     console.error("Error fetching default shop:", error);
     // As a last resort, return a placeholder shop with zero UUID
+    console.log("Returning placeholder shop");
     return {
       id: "00000000-0000-0000-0000-000000000000",
       name: "Main Shop",
@@ -95,5 +108,6 @@ export const getDefaultShop = async () => {
     };
   }
 
+  console.log("Returning first shop:", data);
   return data;
 };

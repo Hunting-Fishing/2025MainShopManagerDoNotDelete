@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { getAllShops, getDefaultShop } from "@/services/shops/shopService";
 
 export const useShopData = () => {
@@ -30,6 +30,8 @@ export const useShopData = () => {
           return;
         }
         
+        console.log("Fetching user profile for shop_id:", user.id);
+        
         // Get the user's profile to find their shop_id
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
@@ -39,28 +41,30 @@ export const useShopData = () => {
         
         if (profileError) {
           console.error("Error fetching user profile:", profileError);
-          toast({
-            title: "Error",
-            description: "Failed to load user profile. Using default shop.",
-            variant: "destructive"
-          });
+          console.log("Trying to get all shops instead");
           
           // Fall back to fetching all shops
           const shops = await getAllShops();
+          console.log("Available shops from getAllShops:", shops);
           setAvailableShops(shops.map(shop => ({ id: shop.id, name: shop.name })));
           
           // Get default shop
           const defaultShop = await getDefaultShop();
+          console.log("Default shop:", defaultShop);
           setCurrentUserShopId(defaultShop.id);
           
           return;
         }
         
+        console.log("User profile shop_id:", profile?.shop_id);
+        
         // Set the current user's shop ID
         setCurrentUserShopId(profile.shop_id);
         
         // Get all shops for dropdown (may be limited by RLS)
+        console.log("Fetching all shops");
         const shops = await getAllShops();
+        console.log("All shops:", shops);
         setAvailableShops(shops.map(shop => ({ id: shop.id, name: shop.name })));
       } catch (error) {
         console.error("Error fetching shop data:", error);
