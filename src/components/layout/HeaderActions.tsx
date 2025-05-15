@@ -66,14 +66,30 @@ export function UserMenu() {
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
-      await supabase.auth.signOut();
+      
+      // Clean up any auth-related storage to prevent auth limbo
+      localStorage.removeItem('supabase.auth.token');
+      // Remove all Supabase auth keys from localStorage
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+      // Remove from sessionStorage if in use
+      Object.keys(sessionStorage || {}).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          sessionStorage.removeItem(key);
+        }
+      });
+      
+      await supabase.auth.signOut({ scope: 'global' });
       
       toast({
         title: "Logged out",
         description: "You have been successfully logged out.",
       });
       
-      // Ensure we navigate to the login page after successful logout
+      // Navigate to login page with replace to prevent going back
       navigate('/login', { replace: true });
       
     } catch (error) {
@@ -135,7 +151,7 @@ export function UserMenu() {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleLogout} disabled={isLoggingOut} className="cursor-pointer">
+        <DropdownMenuItem onClick={handleLogout} disabled={isLoggingOut} className="cursor-pointer text-red-600">
           <LogOut className="mr-2 h-4 w-4" />
           <span>{isLoggingOut ? "Logging out..." : "Log out"}</span>
         </DropdownMenuItem>

@@ -62,8 +62,8 @@ export function CustomerPortalHeader({ customerName }: CustomerPortalHeaderProps
         description: "You have been successfully logged out.",
       });
       
-      // Navigate to login page
-      navigate('/login');
+      // Navigate to login page with replace to prevent going back
+      navigate('/login', { replace: true });
     } catch (error) {
       console.error("Logout error:", error);
       toast({

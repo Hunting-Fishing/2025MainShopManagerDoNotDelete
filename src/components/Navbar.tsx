@@ -19,12 +19,25 @@ const Navbar: React.FC = () => {
   
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
+      // Clean up any auth-related storage to prevent auth limbo
+      localStorage.removeItem('supabase.auth.token');
+      // Remove all Supabase auth keys from localStorage
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      // Sign out (global scope)
+      await supabase.auth.signOut({ scope: 'global' });
+      
       toast({
         title: "Logged out",
         description: "You have been successfully logged out."
       });
-      navigate('/login');
+      
+      // Navigate to login page with replace to prevent going back
+      navigate('/login', { replace: true });
     } catch (error) {
       console.error('Error signing out:', error);
       toast({
