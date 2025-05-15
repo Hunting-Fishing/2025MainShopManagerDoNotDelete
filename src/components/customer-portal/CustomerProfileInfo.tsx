@@ -1,248 +1,318 @@
 
-import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { useForm } from "react-hook-form";
-import { toast } from "@/components/ui/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
-import { useAuthUser } from "@/hooks/useAuthUser";
+import { Loader2, Mail, Phone, Home, Key } from "lucide-react";
 
-type ProfileFormData = {
-  first_name: string;
-  last_name: string;
-  phone: string;
-  address: string;
-  city: string;
-  state: string;
-  postal_code: string;
+interface CustomerProfileInfoProps {
+  customer: any;
 }
 
-export function CustomerProfileInfo() {
-  const { userId, userEmail } = useAuthUser();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+export function CustomerProfileInfo({ customer }: CustomerProfileInfoProps) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    firstName: customer?.first_name || '',
+    lastName: customer?.last_name || '',
+    email: customer?.email || '',
+    phone: customer?.phone || '',
+    address: customer?.address || '',
+    city: customer?.city || '',
+    state: customer?.state || '',
+    postalCode: customer?.postal_code || '',
+  });
   
-  const { register, handleSubmit, reset, formState: { errors, isDirty } } = useForm<ProfileFormData>({
-    defaultValues: {
-      first_name: '',
-      last_name: '',
-      phone: '',
-      address: '',
-      city: '',
-      state: '',
-      postal_code: '',
-    }
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
   });
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (!userId) return;
-      
-      setIsLoading(true);
-      try {
-        // First check if the customer exists
-        const { data: customerData, error: customerError } = await supabase
-          .from('customers')
-          .select('*')
-          .eq('user_id', userId)
-          .single();
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  };
 
-        if (customerError && customerError.code !== 'PGRST116') {
-          throw customerError;
-        }
-        
-        if (customerData) {
-          // If customer exists, populate form
-          reset({
-            first_name: customerData.first_name || '',
-            last_name: customerData.last_name || '',
-            phone: customerData.phone || '',
-            address: customerData.address || '',
-            city: customerData.city || '',
-            state: customerData.state || '',
-            postal_code: customerData.postal_code || '',
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load your profile information.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setPasswordData({
+      ...passwordData,
+      [name]: value,
+    });
+  };
 
-    fetchProfile();
-  }, [userId, reset]);
-
-  const onSubmit = async (data: ProfileFormData) => {
-    if (!userId) return;
+  const handleProfileUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
     
-    setIsSubmitting(true);
     try {
-      // Check if customer already exists
-      const { data: existingCustomer, error: checkError } = await supabase
+      // Update customer in the database
+      const { error } = await supabase
         .from('customers')
-        .select('id')
-        .eq('user_id', userId)
-        .single();
+        .update({
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          phone: formData.phone,
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          postal_code: formData.postalCode
+        })
+        .eq('id', customer.id);
         
-      if (checkError && checkError.code !== 'PGRST116') {
-        throw checkError;
+      if (error) {
+        throw error;
       }
       
-      if (existingCustomer) {
-        // Update existing customer
-        const { error: updateError } = await supabase
-          .from('customers')
-          .update(data)
-          .eq('user_id', userId);
-          
-        if (updateError) throw updateError;
-      } else {
-        // Insert new customer
-        const { error: insertError } = await supabase
-          .from('customers')
-          .insert([{
-            ...data,
-            user_id: userId,
-            email: userEmail
-          }]);
-          
-        if (insertError) throw insertError;
-      }
-      
-      toast({
-        title: "Profile Updated",
-        description: "Your profile information has been saved.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update profile. Please try again.",
-        variant: "destructive",
-      });
+      toast.success("Profile updated successfully");
+    } catch (err) {
+      console.error("Error updating profile:", err);
+      toast.error("Failed to update profile");
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
+    }
+  };
+
+  const handlePasswordUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error("New passwords don't match");
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      // Update password with Supabase Auth
+      const { error } = await supabase.auth.updateUser({ 
+        password: passwordData.newPassword 
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast.success("Password updated successfully");
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+    } catch (err) {
+      console.error("Error updating password:", err);
+      toast.error("Failed to update password");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold">Your Profile</h2>
-        <p className="text-muted-foreground">
-          Manage your personal information and contact details.
-        </p>
-      </div>
-
-      <Card>
-        <CardContent className="pt-6">
-          {isLoading ? (
-            <div className="flex justify-center py-10">
-              <div className="h-10 w-10 border-4 border-t-blue-600 border-b-blue-600 border-l-transparent border-r-transparent rounded-full animate-spin"></div>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              <div>
-                <h3 className="text-lg font-medium">Personal Information</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                  <div>
-                    <Label htmlFor="first_name">First Name</Label>
-                    <Input 
-                      id="first_name" 
-                      {...register("first_name", { required: "First name is required" })}
-                      className={errors.first_name ? "border-red-500" : ""}
+    <div>
+      <Tabs defaultValue="profile">
+        <TabsList className="mb-4">
+          <TabsTrigger value="profile">Profile Information</TabsTrigger>
+          <TabsTrigger value="security">Password & Security</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="profile">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl">Personal Information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleProfileUpdate} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name</Label>
+                    <div className="relative">
+                      <Input
+                        id="firstName"
+                        name="firstName"
+                        value={formData.firstName}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input
+                      id="lastName"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleInputChange}
                     />
-                    {errors.first_name && (
-                      <p className="text-red-500 text-sm mt-1">{errors.first_name.message}</p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <div className="relative">
+                      <Input
+                        id="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        readOnly
+                        className="pl-10"
+                      />
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    </div>
+                    <p className="text-xs text-gray-500">Email cannot be changed. Contact support for assistance.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone</Label>
+                    <div className="relative">
+                      <Input
+                        id="phone"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleInputChange}
+                        className="pl-10"
+                      />
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="address">Address</Label>
+                  <div className="relative">
+                    <Input
+                      id="address"
+                      name="address"
+                      value={formData.address}
+                      onChange={handleInputChange}
+                      className="pl-10"
+                    />
+                    <Home className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="city">City</Label>
+                    <Input
+                      id="city"
+                      name="city"
+                      value={formData.city}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="state">State</Label>
+                    <Input
+                      id="state"
+                      name="state"
+                      value={formData.state}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="postalCode">Postal Code</Label>
+                    <Input
+                      id="postalCode"
+                      name="postalCode"
+                      value={formData.postalCode}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex justify-end">
+                  <Button 
+                    type="submit" 
+                    disabled={isLoading}
+                    className="w-full md:w-auto"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Updating...
+                      </>
+                    ) : (
+                      "Update Profile"
                     )}
-                  </div>
-                  <div>
-                    <Label htmlFor="last_name">Last Name</Label>
-                    <Input 
-                      id="last_name" 
-                      {...register("last_name", { required: "Last name is required" })}
-                      className={errors.last_name ? "border-red-500" : ""}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="security">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl">Change Password</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handlePasswordUpdate} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="currentPassword">Current Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="currentPassword"
+                      name="currentPassword"
+                      type="password"
+                      value={passwordData.currentPassword}
+                      onChange={handlePasswordChange}
+                      className="pl-10"
                     />
-                    {errors.last_name && (
-                      <p className="text-red-500 text-sm mt-1">{errors.last_name.message}</p>
+                    <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">New Password</Label>
+                  <Input
+                    id="newPassword"
+                    name="newPassword"
+                    type="password"
+                    value={passwordData.newPassword}
+                    onChange={handlePasswordChange}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                  <Input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    value={passwordData.confirmPassword}
+                    onChange={handlePasswordChange}
+                  />
+                </div>
+                
+                <div className="flex justify-end">
+                  <Button 
+                    type="submit" 
+                    disabled={isLoading || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword}
+                    className="w-full md:w-auto"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Updating...
+                      </>
+                    ) : (
+                      "Update Password"
                     )}
-                  </div>
+                  </Button>
                 </div>
-                <div className="mt-4">
-                  <Label htmlFor="email">Email</Label>
-                  <Input 
-                    id="email" 
-                    value={userEmail || ''}
-                    disabled
-                  />
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Email cannot be changed
-                  </p>
-                </div>
-                <div className="mt-4">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input 
-                    id="phone" 
-                    {...register("phone")}
-                  />
-                </div>
-              </div>
-              
-              <Separator />
-              
-              <div>
-                <h3 className="text-lg font-medium">Address Information</h3>
-                <div className="grid gap-4 mt-4">
-                  <div>
-                    <Label htmlFor="address">Street Address</Label>
-                    <Input 
-                      id="address" 
-                      {...register("address")}
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                      <Label htmlFor="city">City</Label>
-                      <Input 
-                        id="city" 
-                        {...register("city")}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="state">State</Label>
-                      <Input 
-                        id="state" 
-                        {...register("state")}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="postal_code">Postal Code</Label>
-                      <Input 
-                        id="postal_code" 
-                        {...register("postal_code")}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex justify-end">
-                <Button type="submit" disabled={isSubmitting || !isDirty}>
-                  {isSubmitting ? "Saving..." : "Save Changes"}
-                </Button>
-              </div>
-            </form>
-          )}
-        </CardContent>
-      </Card>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

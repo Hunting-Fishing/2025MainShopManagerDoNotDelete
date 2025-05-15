@@ -1,281 +1,265 @@
 
 import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useForm } from "react-hook-form";
-import { toast } from "@/components/ui/use-toast";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CustomerVehicle } from "@/types/customer";
 import { supabase } from "@/lib/supabase";
-import { useAuthUser } from "@/hooks/useAuthUser";
-import { Car, Plus } from "lucide-react";
+import { getVehicleDisplayName } from "@/types/customer/vehicle";
+import { Car, Calendar, Download, FileText, Wrench } from "lucide-react";
 
-type Vehicle = {
-  id: string;
-  make: string;
-  model: string;
-  year: string;
-  vin?: string;
-  license_plate?: string;
-  mileage?: number;
-  color?: string;
+interface CustomerVehiclesProps {
+  customerId?: string;
 }
 
-type VehicleFormData = {
-  make: string;
-  model: string;
-  year: string;
-  vin: string;
-  license_plate: string;
-  mileage: number;
-  color: string;
-}
-
-export function CustomerVehicles() {
-  const { userId } = useAuthUser();
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<VehicleFormData>({
-    defaultValues: {
-      make: '',
-      model: '',
-      year: new Date().getFullYear().toString(),
-      vin: '',
-      license_plate: '',
-      mileage: 0,
-      color: '',
-    }
-  });
+export function CustomerVehicles({ customerId }: CustomerVehiclesProps) {
+  const [vehicles, setVehicles] = useState<CustomerVehicle[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedVehicle, setSelectedVehicle] = useState<string | null>(null);
+  const [serviceHistory, setServiceHistory] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchVehicles = async () => {
-      if (!userId) return;
+    async function fetchVehicles() {
+      if (!customerId) return;
       
-      setIsLoading(true);
       try {
         const { data, error } = await supabase
-          .from('vehicles')
-          .select('*')
-          .eq('customer_id', userId)
-          .order('created_at', { ascending: false });
-
+          .from("vehicles")
+          .select("*")
+          .eq("customer_id", customerId);
+          
         if (error) throw error;
         
-        if (data) {
-          setVehicles(data);
+        setVehicles(data || []);
+        
+        // Select the first vehicle by default if available
+        if (data && data.length > 0) {
+          setSelectedVehicle(data[0].id);
+          fetchVehicleServiceHistory(data[0].id);
         }
-      } catch (error) {
-        console.error('Error fetching vehicles:', error);
+      } catch (err) {
+        console.error("Error fetching vehicles:", err);
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
-    };
-
-    fetchVehicles();
-  }, [userId]);
-
-  const onSubmit = async (data: VehicleFormData) => {
-    if (!userId) return;
+    }
     
-    setIsSubmitting(true);
+    fetchVehicles();
+  }, [customerId]);
+  
+  async function fetchVehicleServiceHistory(vehicleId: string) {
     try {
-      const { data: newVehicle, error } = await supabase
-        .from('vehicles')
-        .insert([
-          { 
-            ...data,
-            customer_id: userId
-          }
-        ])
-        .select()
-        .single();
-
+      // Fetch work orders related to this vehicle
+      const { data: workOrders, error } = await supabase
+        .from("work_orders")
+        .select("*")
+        .eq("vehicle_id", vehicleId)
+        .order('created_at', { ascending: false });
+        
       if (error) throw error;
       
-      setVehicles(prev => [newVehicle, ...prev]);
-      setIsDialogOpen(false);
-      reset();
-      
-      toast({
-        title: "Vehicle Added",
-        description: "Your vehicle has been successfully added.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to add vehicle. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
+      setServiceHistory(workOrders || []);
+    } catch (err) {
+      console.error("Error fetching vehicle service history:", err);
+      setServiceHistory([]);
     }
+  }
+  
+  const handleVehicleSelect = (vehicleId: string) => {
+    setSelectedVehicle(vehicleId);
+    fetchVehicleServiceHistory(vehicleId);
   };
+  
+  const handleDownloadServiceHistory = () => {
+    // In a real implementation, this would generate and download 
+    // a PDF of the selected vehicle's service history
+    alert("This would download the service history as a PDF");
+  };
+  
+  if (loading) {
+    return (
+      <div className="flex justify-center p-8">
+        <div className="h-10 w-10 border-4 border-t-blue-600 border-b-blue-600 border-l-transparent border-r-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+  
+  if (vehicles.length === 0) {
+    return (
+      <div className="text-center p-8">
+        <Car className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+        <h3 className="text-xl font-semibold mb-2">No Vehicles Found</h3>
+        <p className="text-gray-500 mb-4">
+          You don't have any vehicles linked to your account yet.
+        </p>
+        <Button>Contact Us to Add a Vehicle</Button>
+      </div>
+    );
+  }
+  
+  const selectedVehicleData = vehicles.find(v => v.id === selectedVehicle);
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="space-y-2">
-          <h2 className="text-2xl font-bold">Your Vehicles</h2>
-          <p className="text-muted-foreground">
-            Manage the vehicles associated with your account.
-          </p>
-        </div>
-        <Button onClick={() => setIsDialogOpen(true)} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Add Vehicle
-        </Button>
+      {/* Vehicle Selection */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {vehicles.map((vehicle) => (
+          <Card 
+            key={vehicle.id} 
+            className={`cursor-pointer transition-all ${
+              selectedVehicle === vehicle.id 
+                ? "border-blue-500 shadow-md bg-blue-50" 
+                : "hover:border-blue-300"
+            }`}
+            onClick={() => handleVehicleSelect(vehicle.id!)}
+          >
+            <CardContent className="p-4">
+              <div className="flex items-start space-x-4">
+                <div className="bg-blue-100 p-3 rounded-full">
+                  <Car className="h-5 w-5 text-blue-700" />
+                </div>
+                <div>
+                  <h3 className="font-medium">{getVehicleDisplayName(vehicle)}</h3>
+                  <p className="text-sm text-gray-600">
+                    {vehicle.vin ? `VIN: ${vehicle.vin}` : "No VIN recorded"}
+                  </p>
+                  {vehicle.license_plate && (
+                    <span className="inline-block bg-gray-100 text-gray-800 text-xs px-2 py-1 mt-1 rounded">
+                      {vehicle.license_plate}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
-
-      {isLoading ? (
-        <div className="flex justify-center py-10">
-          <div className="h-10 w-10 border-4 border-t-blue-600 border-b-blue-600 border-l-transparent border-r-transparent rounded-full animate-spin"></div>
-        </div>
-      ) : vehicles.length === 0 ? (
+      
+      {/* Vehicle Details */}
+      {selectedVehicleData && (
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-10 text-center">
-            <Car className="h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium">No vehicles found</h3>
-            <p className="text-sm text-gray-500 mt-2 max-w-sm">
-              You haven't added any vehicles yet. Add a vehicle to book service appointments.
-            </p>
-            <Button onClick={() => setIsDialogOpen(true)} className="mt-4">
-              Add Your First Vehicle
-            </Button>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle>Vehicle Details</CardTitle>
+            <div className="flex space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex items-center gap-1"
+                onClick={handleDownloadServiceHistory}
+              >
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">Download History</span>
+              </Button>
+              <Button variant="outline" size="sm" className="flex items-center gap-1">
+                <Calendar className="h-4 w-4" />
+                <span className="hidden sm:inline">Book Service</span>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="info">
+              <TabsList className="mb-4">
+                <TabsTrigger value="info">Vehicle Info</TabsTrigger>
+                <TabsTrigger value="service">Service History</TabsTrigger>
+              </TabsList>
+              <TabsContent value="info">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2">
+                      <span className="text-gray-500">Make:</span>
+                      <span className="font-medium">{selectedVehicleData.make}</span>
+                    </div>
+                    <div className="grid grid-cols-2">
+                      <span className="text-gray-500">Model:</span>
+                      <span className="font-medium">{selectedVehicleData.model}</span>
+                    </div>
+                    <div className="grid grid-cols-2">
+                      <span className="text-gray-500">Year:</span>
+                      <span className="font-medium">{selectedVehicleData.year}</span>
+                    </div>
+                    <div className="grid grid-cols-2">
+                      <span className="text-gray-500">VIN:</span>
+                      <span className="font-medium font-mono text-sm">{selectedVehicleData.vin || "N/A"}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2">
+                      <span className="text-gray-500">License Plate:</span>
+                      <span className="font-medium">{selectedVehicleData.license_plate || "N/A"}</span>
+                    </div>
+                    <div className="grid grid-cols-2">
+                      <span className="text-gray-500">Color:</span>
+                      <span className="font-medium">{selectedVehicleData.color || "N/A"}</span>
+                    </div>
+                    <div className="grid grid-cols-2">
+                      <span className="text-gray-500">Engine:</span>
+                      <span className="font-medium">{selectedVehicleData.engine || "N/A"}</span>
+                    </div>
+                    <div className="grid grid-cols-2">
+                      <span className="text-gray-500">Last Service:</span>
+                      <span className="font-medium">
+                        {selectedVehicleData.last_service_date 
+                          ? new Date(selectedVehicleData.last_service_date).toLocaleDateString() 
+                          : "No service record"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+              <TabsContent value="service">
+                {serviceHistory.length === 0 ? (
+                  <div className="text-center p-8">
+                    <Wrench className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                    <h3 className="text-lg font-medium mb-1">No Service History</h3>
+                    <p className="text-gray-500">
+                      This vehicle doesn't have any service records yet.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="border rounded-md">
+                    <div className="grid grid-cols-12 gap-2 p-3 font-medium bg-gray-50 border-b">
+                      <div className="col-span-3">Date</div>
+                      <div className="col-span-6">Service</div>
+                      <div className="col-span-3">Status</div>
+                    </div>
+                    {serviceHistory.map((record) => (
+                      <div key={record.id} className="grid grid-cols-12 gap-2 p-3 border-b last:border-0">
+                        <div className="col-span-3">
+                          {new Date(record.created_at).toLocaleDateString()}
+                        </div>
+                        <div className="col-span-6">{record.description || "General Service"}</div>
+                        <div className="col-span-3">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            record.status === 'completed' 
+                              ? 'bg-green-100 text-green-800' 
+                              : record.status === 'in-progress' 
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {record.status === 'completed' 
+                              ? 'Completed' 
+                              : record.status === 'in-progress'
+                                ? 'In Progress'
+                                : 'Pending'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                <div className="mt-4 flex justify-end">
+                  <Button variant="outline" size="sm" className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Request Full Service Report
+                  </Button>
+                </div>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {vehicles.map((vehicle) => (
-            <Card key={vehicle.id} className="overflow-hidden">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-medium">
-                    {vehicle.year} {vehicle.make} {vehicle.model}
-                  </h3>
-                  {vehicle.color && (
-                    <div 
-                      className="w-4 h-4 rounded-full" 
-                      style={{ backgroundColor: vehicle.color }}
-                      title={vehicle.color}
-                    ></div>
-                  )}
-                </div>
-                
-                <div className="mt-4 space-y-2 text-sm text-gray-500">
-                  {vehicle.license_plate && (
-                    <div className="flex justify-between">
-                      <span>License Plate:</span>
-                      <span className="font-medium">{vehicle.license_plate}</span>
-                    </div>
-                  )}
-                  
-                  {vehicle.vin && (
-                    <div className="flex justify-between">
-                      <span>VIN:</span>
-                      <span className="font-medium">{vehicle.vin}</span>
-                    </div>
-                  )}
-                  
-                  {vehicle.mileage && (
-                    <div className="flex justify-between">
-                      <span>Mileage:</span>
-                      <span className="font-medium">{vehicle.mileage.toLocaleString()} mi</span>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
       )}
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Add Vehicle</DialogTitle>
-            <DialogDescription>
-              Add a new vehicle to your account to enable scheduling service appointments.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="year">Year</Label>
-                  <Input 
-                    id="year" 
-                    {...register("year", { required: true })}
-                  />
-                </div>
-                <div className="col-span-2">
-                  <Label htmlFor="make">Make</Label>
-                  <Input 
-                    id="make" 
-                    {...register("make", { required: true })}
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <Label htmlFor="model">Model</Label>
-                <Input 
-                  id="model" 
-                  {...register("model", { required: true })}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="vin">VIN (Optional)</Label>
-                <Input 
-                  id="vin" 
-                  {...register("vin")}
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="license_plate">License Plate (Optional)</Label>
-                  <Input 
-                    id="license_plate" 
-                    {...register("license_plate")}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="color">Color (Optional)</Label>
-                  <Input 
-                    id="color" 
-                    type="text"
-                    {...register("color")}
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <Label htmlFor="mileage">Mileage (Optional)</Label>
-                <Input 
-                  id="mileage" 
-                  type="number"
-                  {...register("mileage", { min: 0, valueAsNumber: true })}
-                />
-              </div>
-            </div>
-            
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Adding..." : "Add Vehicle"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { CustomerAppointmentBooking } from "@/components/customer-portal/Custome
 import { CustomerWorkOrders } from "@/components/customer-portal/CustomerWorkOrders";
 import { CustomerVehicles } from "@/components/customer-portal/CustomerVehicles";
 import { CustomerProfileInfo } from "@/components/customer-portal/CustomerProfileInfo";
+import { CustomerPortalHeader } from "@/components/customer-portal/CustomerPortalHeader";
 import { Helmet } from "react-helmet-async";
 import { useAuthUser } from "@/hooks/useAuthUser";
 import { CustomerLoginRequired } from "@/components/customer-portal/CustomerLoginRequired";
@@ -15,6 +16,7 @@ export default function CustomerPortal() {
   const [activeTab, setActiveTab] = useState("appointments");
   const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+  const [customerData, setCustomerData] = useState<any>(null);
   
   useEffect(() => {
     async function checkAuthStatus() {
@@ -28,6 +30,21 @@ export default function CustomerPortal() {
         }
         
         setUserId(data.session?.user?.id || null);
+        
+        // If we have a user, fetch their customer data
+        if (data.session?.user?.id) {
+          const { data: customerData, error: customerError } = await supabase
+            .from("customers")
+            .select("*")
+            .eq("auth_user_id", data.session.user.id)
+            .single();
+            
+          if (customerError) {
+            console.error("Error fetching customer data:", customerError);
+          } else {
+            setCustomerData(customerData);
+          }
+        }
       } catch (err) {
         console.error("Unexpected error checking auth:", err);
       } finally {
@@ -39,8 +56,26 @@ export default function CustomerPortal() {
     
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      async (_event, session) => {
         setUserId(session?.user?.id || null);
+        
+        // If we have a user, fetch their customer data
+        if (session?.user?.id) {
+          const { data: customerData, error: customerError } = await supabase
+            .from("customers")
+            .select("*")
+            .eq("auth_user_id", session.user.id)
+            .single();
+            
+          if (customerError) {
+            console.error("Error fetching customer data:", customerError);
+          } else {
+            setCustomerData(customerData);
+          }
+        } else {
+          setCustomerData(null);
+        }
+        
         setIsLoading(false);
       }
     );
@@ -49,6 +84,10 @@ export default function CustomerPortal() {
       subscription.unsubscribe();
     };
   }, []);
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+  };
 
   if (isLoading) {
     return (
@@ -62,40 +101,42 @@ export default function CustomerPortal() {
     return <CustomerLoginRequired />;
   }
 
+  const customerName = customerData ? 
+    `${customerData.first_name || ''} ${customerData.last_name || ''}`.trim() : 
+    'Customer';
+
   return (
     <>
       <Helmet>
         <title>Customer Portal | Easy Shop Manager</title>
       </Helmet>
 
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Customer Portal</h1>
-        </div>
+      <div className="space-y-6" id="portal-content">
+        <CustomerPortalHeader customerName={customerName} />
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle>Welcome to your customer portal</CardTitle>
+            <CardTitle>Your Customer Portal</CardTitle>
           </CardHeader>
           <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
               <TabsList className="grid grid-cols-4 mb-6">
                 <TabsTrigger value="appointments">Appointments</TabsTrigger>
                 <TabsTrigger value="work-orders">Work Orders</TabsTrigger>
                 <TabsTrigger value="vehicles">My Vehicles</TabsTrigger>
                 <TabsTrigger value="profile">My Profile</TabsTrigger>
               </TabsList>
-              <TabsContent value="appointments">
+              <TabsContent value="appointments" id="portal-appointments">
                 <CustomerAppointmentBooking />
               </TabsContent>
-              <TabsContent value="work-orders">
-                <CustomerWorkOrders />
+              <TabsContent value="work-orders" id="portal-work-orders">
+                <CustomerWorkOrders customerId={customerData?.id} />
               </TabsContent>
-              <TabsContent value="vehicles">
-                <CustomerVehicles />
+              <TabsContent value="vehicles" id="portal-vehicles">
+                <CustomerVehicles customerId={customerData?.id} />
               </TabsContent>
-              <TabsContent value="profile">
-                <CustomerProfileInfo />
+              <TabsContent value="profile" id="portal-profile">
+                <CustomerProfileInfo customer={customerData} />
               </TabsContent>
             </Tabs>
           </CardContent>

@@ -1,243 +1,75 @@
 
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { supabase } from "@/lib/supabase";
-import { toast } from "@/hooks/use-toast";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
-import { Loader2 } from "lucide-react";
+import { CustomerAccountCard } from "@/components/customer-portal/CustomerAccountCard";
+import { Helmet } from "react-helmet-async";
 
-const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("login");
-  const navigate = useNavigate();
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!email || !password) {
-      toast({
-        title: "Required fields missing",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsLoading(true);
-    
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Login successful",
-        description: "Welcome back!",
-      });
-      
-      navigate("/dashboard");
-    } catch (error: any) {
-      toast({
-        title: "Login failed",
-        description: error.message || "Failed to login. Please check your credentials.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!email || !password || !firstName || !lastName) {
-      toast({
-        title: "Required fields missing",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsLoading(true);
-    
-    try {
-      // Add metadata for the user registration including name
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            first_name: firstName,
-            last_name: lastName,
-          }
-        }
-      });
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Registration successful",
-        description: "Check your email for the confirmation link",
-      });
-      
-      // Switch back to login tab
-      setActiveTab("login");
-    } catch (error: any) {
-      toast({
-        title: "Registration failed",
-        description: error.message || "Failed to create account.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+export default function Login() {
   return (
-    <div className="flex items-center justify-center min-h-screen bg-slate-50 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl text-esm-blue-600">Easy Shop Manager</CardTitle>
-          <CardDescription>Access your shop management dashboard</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="register">Register</TabsTrigger>
-            </TabsList>
+    <>
+      <Helmet>
+        <title>Customer Login | Easy Shop Manager</title>
+      </Helmet>
+      
+      <div className="min-h-screen flex flex-col md:flex-row">
+        {/* Left Side - Shop Info */}
+        <div className="bg-gradient-to-br from-blue-700 to-indigo-900 text-white p-8 md:w-1/2 flex flex-col justify-center">
+          <div className="max-w-md mx-auto">
+            <h1 className="text-3xl font-bold mb-6">Welcome to Easy Shop Manager</h1>
+            <p className="mb-6 text-blue-100">
+              Your trusted automotive service shop management solution. 
+              Create an account to access your vehicle service history, 
+              schedule appointments, and more.
+            </p>
             
-            <TabsContent value="login">
-              <form onSubmit={handleLogin}>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input 
-                      id="email" 
-                      type="email" 
-                      placeholder="your.email@example.com" 
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input 
-                      id="password" 
-                      type="password" 
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-esm-blue-600 hover:bg-esm-blue-700"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Logging in...
-                      </>
-                    ) : (
-                      "Login"
-                    )}
-                  </Button>
+            <div className="space-y-4">
+              <div className="flex items-start space-x-3">
+                <div className="bg-blue-600 p-2 rounded-full">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"></path>
+                  </svg>
                 </div>
-              </form>
-            </TabsContent>
-            
-            <TabsContent value="register">
-              <form onSubmit={handleSignUp}>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="firstName">First Name</Label>
-                      <Input 
-                        id="firstName" 
-                        type="text" 
-                        placeholder="John" 
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="lastName">Last Name</Label>
-                      <Input 
-                        id="lastName" 
-                        type="text" 
-                        placeholder="Doe" 
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
-                    <Input 
-                      id="signup-email" 
-                      type="email" 
-                      placeholder="your.email@example.com" 
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
-                    <Input 
-                      id="signup-password" 
-                      type="password" 
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-esm-blue-600 hover:bg-esm-blue-700"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Creating account...
-                      </>
-                    ) : (
-                      "Create Account"
-                    )}
-                  </Button>
+                <div>
+                  <h3 className="font-semibold">Secure Access</h3>
+                  <p className="text-sm text-blue-100">Safely access your service records and information</p>
                 </div>
-              </form>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-        <CardFooter className="flex flex-col">
-          <Separator className="my-2" />
-          <p className="text-sm text-center text-muted-foreground mt-2">
-            By continuing, you agree to Easy Shop Manager's Terms of Service and Privacy Policy.
-          </p>
-        </CardFooter>
-      </Card>
-    </div>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <div className="bg-blue-600 p-2 rounded-full">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+                    <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+                    <path d="M9 9h6v6H9z"></path>
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-semibold">Convenient Scheduling</h3>
+                  <p className="text-sm text-blue-100">Book appointments online at your convenience</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <div className="bg-blue-600 p-2 rounded-full">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <path d="M14 2v6h6"></path>
+                    <path d="M16 13H8"></path>
+                    <path d="M16 17H8"></path>
+                    <path d="M10 9H8"></path>
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-semibold">Digital Records</h3>
+                  <p className="text-sm text-blue-100">Access and print your service history and invoices</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Right Side - Login Form */}
+        <div className="p-8 md:w-1/2 flex items-center justify-center">
+          <CustomerAccountCard />
+        </div>
+      </div>
+    </>
   );
-};
-
-export default Login;
+}
