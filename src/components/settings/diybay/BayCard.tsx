@@ -32,8 +32,8 @@ export const BayCard: React.FC<BayCardProps> = ({
 
   // Enhanced style based on bay status with more prominent colors
   const cardStyles = bay.is_active
-    ? `overflow-hidden transition border-l-4 border-l-green-500 ${isDragging ? 'shadow-xl border-blue-400' : 'shadow hover:shadow-md'} mb-3`
-    : `overflow-hidden transition border-l-4 border-l-red-500 ${isDragging ? 'shadow-xl border-blue-400' : 'shadow hover:shadow-md opacity-70 border-dashed'} mb-3`;
+    ? `overflow-hidden transition border-l-4 border-l-green-500 ${isDragging ? 'shadow-xl border-blue-400' : 'shadow hover:shadow-md'} mb-4`
+    : `overflow-hidden transition border-l-4 border-l-red-500 ${isDragging ? 'shadow-xl border-blue-400' : 'shadow hover:shadow-md opacity-70 border-dashed'} mb-4`;
 
   // Define header background based on status
   const headerBgClass = bay.is_active 
@@ -44,9 +44,9 @@ export const BayCard: React.FC<BayCardProps> = ({
     <Card className={cardStyles}>
       <CardHeader className={`pb-2 ${headerBgClass}`}>
         <div className="flex justify-between items-center">
-          <div className="flex items-center gap-1">
-            <div className="p-1 bg-gray-100 rounded-md flex items-center justify-center cursor-grab">
-              <GripVertical className="h-5 w-5 text-gray-500" />
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-blue-100 rounded-md flex items-center justify-center cursor-grab hover:bg-blue-200">
+              <GripVertical className="h-5 w-5 text-blue-600" />
             </div>
             <CardTitle className="text-xl font-bold flex items-center gap-2 ml-1">
               {bay.bay_name}

@@ -55,8 +55,8 @@ const SortableCompactBayItem = ({ bay, onStatusChange, onEditClick, onDeleteClic
 
   // Define classes based on active status - enhanced with stronger colors
   const itemClassNames = bay.is_active
-    ? `flex items-center justify-between p-3 mb-3 border rounded-lg shadow-sm bg-green-50 border-l-4 border-l-green-500 ${isDragging ? 'bg-blue-50 shadow-md' : ''}`
-    : `flex items-center justify-between p-3 mb-3 border rounded-lg shadow-sm bg-red-50 border-l-4 border-l-red-500 ${isDragging ? 'bg-blue-50 shadow-md' : ''}`;
+    ? `flex items-center justify-between p-4 mb-4 border rounded-lg shadow-sm bg-green-50 border-l-4 border-l-green-500 ${isDragging ? 'bg-blue-50 shadow-md' : ''}`
+    : `flex items-center justify-between p-4 mb-4 border rounded-lg shadow-sm bg-red-50 border-l-4 border-l-red-500 ${isDragging ? 'bg-blue-50 shadow-md' : ''}`;
   
   return (
     <div 
@@ -68,8 +68,8 @@ const SortableCompactBayItem = ({ bay, onStatusChange, onEditClick, onDeleteClic
     >
       <div className="flex items-center gap-3">
         {sortable && (
-          <div className="p-1 bg-gray-100 rounded-md flex items-center justify-center cursor-grab">
-            <GripVertical className="h-5 w-5 text-gray-400" />
+          <div className="p-2 bg-blue-100 rounded-md flex items-center justify-center cursor-grab hover:bg-blue-200">
+            <GripVertical className="h-5 w-5 text-blue-600" />
           </div>
         )}
         <div>
