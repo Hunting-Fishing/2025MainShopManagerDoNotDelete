@@ -78,16 +78,16 @@ const BayRow: React.FC<BayRowProps> = ({
     return await onRateChange(bay, field, Number(value));
   };
 
-  // Add status-based row highlighting
+  // Add status-based row highlighting with improved contrast and clarity
   const rowStatusClass = bay.is_active 
-    ? "border-l-4 border-l-green-500 bg-green-50/30" 
-    : "border-l-4 border-l-red-500 bg-red-50/30";
+    ? "border-l-4 border-l-green-500 bg-green-50" 
+    : "border-l-4 border-l-red-500 bg-red-50";
 
   return (
     <TableRow
       ref={setNodeRef}
       style={style}
-      className={`${rowStatusClass} ${isDragging ? "bg-blue-50/50" : ""}`}
+      className={`${rowStatusClass} ${isDragging ? "bg-blue-50" : ""} mb-2 hover:bg-opacity-80`}
     >
       {sortable && (
         <TableCell className="w-10">
@@ -121,7 +121,7 @@ const BayRow: React.FC<BayRowProps> = ({
           </div>
         </TableCell>
       )}
-      <TableCell>{bay.bay_name}</TableCell>
+      <TableCell><span className="font-medium">{bay.bay_name}</span></TableCell>
       <TableCell>{bay.bay_type}</TableCell>
       <EditableCell
         value={bay.hourly_rate}
@@ -181,7 +181,7 @@ const BaysTable: React.FC<BaysTableProps> = ({
     <div className="border rounded-md overflow-hidden">
       <Table>
         <TableHeader>
-          <TableRow>
+          <TableRow className="bg-gray-100">
             {sortable && <TableHead className="w-10">Order</TableHead>}
             <TableHead>Bay Name</TableHead>
             <TableHead>Type</TableHead>

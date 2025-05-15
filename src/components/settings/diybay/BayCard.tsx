@@ -30,14 +30,19 @@ export const BayCard: React.FC<BayCardProps> = ({
     await onStatusChange(bay, checked);
   };
 
-  // Style based on bay status
+  // Enhanced style based on bay status with more prominent colors
   const cardStyles = bay.is_active
-    ? `overflow-hidden transition border-l-4 border-l-green-500 ${isDragging ? 'shadow-xl border-blue-400' : 'shadow hover:shadow-md'}`
-    : `overflow-hidden transition border-l-4 border-l-red-500 ${isDragging ? 'shadow-xl border-blue-400' : 'shadow hover:shadow-md opacity-70 border-dashed'}`;
+    ? `overflow-hidden transition border-l-4 border-l-green-500 ${isDragging ? 'shadow-xl border-blue-400' : 'shadow hover:shadow-md'} mb-3`
+    : `overflow-hidden transition border-l-4 border-l-red-500 ${isDragging ? 'shadow-xl border-blue-400' : 'shadow hover:shadow-md opacity-70 border-dashed'} mb-3`;
+
+  // Define header background based on status
+  const headerBgClass = bay.is_active 
+    ? 'bg-green-50' 
+    : 'bg-red-50';
 
   return (
     <Card className={cardStyles}>
-      <CardHeader className={`pb-2 ${bay.is_active ? 'bg-green-50/50' : 'bg-red-50/50'}`}>
+      <CardHeader className={`pb-2 ${headerBgClass}`}>
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-1">
             <GripVertical className="h-5 w-5 text-gray-400 cursor-grab" />

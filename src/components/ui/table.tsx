@@ -85,7 +85,7 @@ const TableRow = React.forwardRef<
     <tr
       ref={ref}
       className={cn(
-        "border-b transition-colors data-[state=selected]:bg-muted",
+        "border-b transition-colors data-[state=selected]:bg-muted mb-2", // Added mb-2 for spacing between rows
         colorClass,
         className
       )}

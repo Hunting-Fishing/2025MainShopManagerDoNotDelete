@@ -53,10 +53,10 @@ const SortableCompactBayItem = ({ bay, onStatusChange, onEditClick, onDeleteClic
     await onStatusChange(bay, checked);
   };
 
-  // Define classes based on active status
+  // Define classes based on active status - enhanced with stronger colors
   const itemClassNames = bay.is_active
-    ? `flex items-center justify-between p-3 mb-2 border rounded-lg shadow-sm bg-green-50/50 border-l-4 border-l-green-500 ${isDragging ? 'bg-blue-50 shadow-md' : ''}`
-    : `flex items-center justify-between p-3 mb-2 border rounded-lg shadow-sm bg-red-50/50 border-l-4 border-l-red-500 ${isDragging ? 'bg-blue-50 shadow-md' : ''}`;
+    ? `flex items-center justify-between p-3 mb-3 border rounded-lg shadow-sm bg-green-50 border-l-4 border-l-green-500 ${isDragging ? 'bg-blue-50 shadow-md' : ''}`
+    : `flex items-center justify-between p-3 mb-3 border rounded-lg shadow-sm bg-red-50 border-l-4 border-l-red-500 ${isDragging ? 'bg-blue-50 shadow-md' : ''}`;
   
   return (
     <div 
