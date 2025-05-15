@@ -7,12 +7,13 @@ import { BaysTable } from "./BaysTable";
 import { CompactBayList } from "./CompactBayList";
 import { ViewModeToggle } from "./ViewModeToggle";
 import { BayViewMode } from "@/types/diybay";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, Printer } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { DndContext, DragEndEvent, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import { printElement } from "@/utils/printUtils";
 
 interface BaySectionProps {
   bays: Bay[];
@@ -51,6 +52,10 @@ export const BaySection: React.FC<BaySectionProps> = ({
     })
   );
   
+  const handlePrint = () => {
+    printElement("bays-content", "Available Bays");
+  };
+  
   return (
     <Card className="mt-6">
       <CardHeader className="pb-3">
@@ -58,6 +63,16 @@ export const BaySection: React.FC<BaySectionProps> = ({
           <CardTitle>Available Bays</CardTitle>
           <div className="flex items-center gap-4">
             <ViewModeToggle viewMode={viewMode} setViewMode={setViewMode} />
+            <Button 
+              onClick={handlePrint}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1"
+              disabled={isLoading || bays.length === 0}
+            >
+              <Printer className="h-4 w-4 mr-1" />
+              Print
+            </Button>
             <Button 
               onClick={onAddBay} 
               disabled={isSaving || isLoading}
@@ -76,60 +91,62 @@ export const BaySection: React.FC<BaySectionProps> = ({
       </CardHeader>
       
       <CardContent className="pt-0">
-        {isLoading ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-          </div>
-        ) : bays.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            No bays have been added yet. Click the "Add Bay" button to create your first bay.
-          </div>
-        ) : (
-          <DndContext 
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={onDragEnd}
-            modifiers={[restrictToVerticalAxis]}
-          >
-            <SortableContext 
-              items={bays.map(bay => bay.id)} 
-              strategy={verticalListSortingStrategy}
+        <div id="bays-content">
+          {isLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+            </div>
+          ) : bays.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              No bays have been added yet. Click the "Add Bay" button to create your first bay.
+            </div>
+          ) : (
+            <DndContext 
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={onDragEnd}
+              modifiers={[restrictToVerticalAxis]}
             >
-              {viewMode === "table" ? (
-                <BaysTable 
-                  bays={bays}
-                  onStatusChange={onStatusChange}
-                  onRateChange={onRateChange} 
-                  onEditClick={onEditClick}
-                  onDeleteClick={onDeleteClick}
-                  onHistoryClick={onHistoryClick}
-                  isSaving={isSaving}
-                />
-              ) : viewMode === "cards" ? (
-                <BayList 
-                  bays={bays}
-                  viewMode={viewMode}
-                  onStatusChange={onStatusChange}
-                  onEditClick={onEditClick}
-                  onDeleteClick={onDeleteClick}
-                  onHistoryClick={onHistoryClick}
-                  isSaving={isSaving}
-                  sortable={true}
-                />
-              ) : (
-                <CompactBayList 
-                  bays={bays}
-                  onStatusChange={onStatusChange}
-                  onEditClick={onEditClick}
-                  onDeleteClick={onDeleteClick}
-                  onHistoryClick={onHistoryClick}
-                  isSaving={isSaving}
-                  sortable={true}
-                />
-              )}
-            </SortableContext>
-          </DndContext>
-        )}
+              <SortableContext 
+                items={bays.map(bay => bay.id)} 
+                strategy={verticalListSortingStrategy}
+              >
+                {viewMode === "table" ? (
+                  <BaysTable 
+                    bays={bays}
+                    onStatusChange={onStatusChange}
+                    onRateChange={onRateChange} 
+                    onEditClick={onEditClick}
+                    onDeleteClick={onDeleteClick}
+                    onHistoryClick={onHistoryClick}
+                    isSaving={isSaving}
+                  />
+                ) : viewMode === "cards" ? (
+                  <BayList 
+                    bays={bays}
+                    viewMode={viewMode}
+                    onStatusChange={onStatusChange}
+                    onEditClick={onEditClick}
+                    onDeleteClick={onDeleteClick}
+                    onHistoryClick={onHistoryClick}
+                    isSaving={isSaving}
+                    sortable={true}
+                  />
+                ) : (
+                  <CompactBayList 
+                    bays={bays}
+                    onStatusChange={onStatusChange}
+                    onEditClick={onEditClick}
+                    onDeleteClick={onDeleteClick}
+                    onHistoryClick={onHistoryClick}
+                    isSaving={isSaving}
+                    sortable={true}
+                  />
+                )}
+              </SortableContext>
+            </DndContext>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
