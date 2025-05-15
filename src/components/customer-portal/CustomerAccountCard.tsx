@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
@@ -7,6 +7,14 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
 import { User } from "lucide-react";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export function CustomerAccountCard() {
   const [isSignIn, setIsSignIn] = useState(true);
@@ -15,7 +23,35 @@ export function CustomerAccountCard() {
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [shops, setShops] = useState<Array<{id: string, name: string}>>([]);
+  const [selectedShops, setSelectedShops] = useState<string[]>([]);
   const navigate = useNavigate();
+
+  // Fetch available shops
+  useEffect(() => {
+    const fetchShops = async () => {
+      const { data, error } = await supabase
+        .from('shops')
+        .select('id, name')
+        .order('name');
+      
+      if (error) {
+        console.error("Error fetching shops:", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Could not load available shops. Please try again later.",
+        });
+        return;
+      }
+      
+      setShops(data || []);
+    };
+
+    if (!isSignIn) {
+      fetchShops();
+    }
+  }, [isSignIn]);
 
   // Clean up any auth-related storage to prevent auth limbo
   const cleanupAuthState = () => {
@@ -50,9 +86,22 @@ export function CustomerAccountCard() {
 
       if (error) throw error;
       
+      // Check if user is a customer
+      const { data: roleData, error: roleError } = await supabase
+        .rpc('is_customer', { user_id: data.user.id });
+        
+      if (roleError) {
+        throw new Error("Error verifying user role");
+      }
+      
+      if (!roleData) {
+        await supabase.auth.signOut();
+        throw new Error("This login is for customers only. Please use the staff login portal if you're a staff member.");
+      }
+      
       toast({
         title: "Signed in",
-        description: "You have successfully signed in to your account.",
+        description: "Welcome back to your customer portal.",
       });
       
       navigate('/customer-portal');
@@ -68,9 +117,27 @@ export function CustomerAccountCard() {
     }
   };
 
+  const toggleShopSelection = (shopId: string) => {
+    setSelectedShops(current => 
+      current.includes(shopId)
+        ? current.filter(id => id !== shopId)
+        : [...current, shopId]
+    );
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    
+    if (selectedShops.length === 0 && !isSignIn) {
+      toast({
+        variant: "destructive",
+        title: "Shop selection required",
+        description: "Please select at least one shop to continue.",
+      });
+      setIsLoading(false);
+      return;
+    }
     
     try {
       // Clean up existing auth state first
@@ -89,16 +156,51 @@ export function CustomerAccountCard() {
         options: {
           data: {
             first_name: firstName,
-            last_name: lastName
+            last_name: lastName,
+            role: "customer" // Explicitly set role to customer
           }
         }
       });
 
       if (error) throw error;
       
+      // Create customer record
+      const { error: customerError } = await supabase
+        .from('customers')
+        .insert({
+          first_name: firstName,
+          last_name: lastName,
+          email: email,
+          auth_user_id: data.user?.id,
+          shop_id: selectedShops[0] // Primary shop
+        });
+      
+      if (customerError) {
+        console.error("Error creating customer:", customerError);
+        throw new Error("Failed to create customer profile");
+      }
+      
+      // Create shop relationships for additional shops
+      if (selectedShops.length > 1) {
+        const shopRelationships = selectedShops.slice(1).map(shopId => ({
+          customer_id: data.user?.id,
+          shop_id: shopId,
+          status: 'active'
+        }));
+        
+        const { error: relationshipError } = await supabase
+          .from('customer_shop_relationships')
+          .insert(shopRelationships);
+          
+        if (relationshipError) {
+          console.error("Error creating shop relationships:", relationshipError);
+          // Non-fatal error, just log it
+        }
+      }
+      
       toast({
         title: "Account created",
-        description: "Your account has been created. Please check your email for verification.",
+        description: "Your customer account has been created. Please check your email for verification.",
       });
       
       // If email confirmation is disabled in Supabase settings,
@@ -148,6 +250,33 @@ export function CustomerAccountCard() {
                 placeholder="Last Name"
               />
             </div>
+            
+            <div className="space-y-2">
+              <Label>Select Shop(s)</Label>
+              <div className="max-h-40 overflow-y-auto border rounded-md p-2">
+                {shops.map((shop) => (
+                  <div key={shop.id} className="flex items-center space-x-2 py-1">
+                    <Checkbox 
+                      id={`shop-${shop.id}`} 
+                      checked={selectedShops.includes(shop.id)}
+                      onCheckedChange={() => toggleShopSelection(shop.id)}
+                    />
+                    <Label 
+                      htmlFor={`shop-${shop.id}`}
+                      className="cursor-pointer"
+                    >
+                      {shop.name}
+                    </Label>
+                  </div>
+                ))}
+                {shops.length === 0 && (
+                  <p className="text-sm text-gray-500">Loading shops...</p>
+                )}
+              </div>
+              <p className="text-xs text-gray-500">
+                Select all shops you'd like to work with. You can add more later.
+              </p>
+            </div>
           </>
         )}
         
@@ -193,7 +322,10 @@ export function CustomerAccountCard() {
       <div className="text-center">
         <Button 
           variant="link" 
-          onClick={() => setIsSignIn(!isSignIn)}
+          onClick={() => {
+            setIsSignIn(!isSignIn);
+            setSelectedShops([]);
+          }}
           className="text-blue-600"
         >
           {isSignIn ? "Create a new account" : "Already have an account? Sign in"}
