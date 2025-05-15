@@ -110,6 +110,7 @@ export const BaySection: React.FC<BaySectionProps> = ({
                 onRateChange={onRateChange}
                 isSaving={isSaving}
                 sortable={true}
+                isLoading={isLoading}  // Pass isLoading prop to BayList
               />
             </SortableContext>
           </DndContext>

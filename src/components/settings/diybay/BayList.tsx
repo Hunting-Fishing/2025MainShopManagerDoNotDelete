@@ -17,6 +17,7 @@ interface BayListProps {
   onRateChange?: (bay: Bay, field: 'hourly_rate' | 'daily_rate' | 'weekly_rate' | 'monthly_rate', value: number) => Promise<boolean>;
   isSaving?: boolean;
   sortable?: boolean;
+  isLoading?: boolean;  // Add isLoading prop to the interface
 }
 
 // Sortable wrapper for BayCard
@@ -60,8 +61,9 @@ export const BayList: React.FC<BayListProps> = ({
   onDeleteClick,
   onHistoryClick,
   onRateChange,
-  isSaving,
+  isSaving = false,
   sortable = false,
+  isLoading = false,  // Add default value for isLoading
 }) => {
   if (viewMode === "cards") {
     return (
@@ -107,12 +109,13 @@ export const BayList: React.FC<BayListProps> = ({
     return (
       <BaysTable
         bays={bays}
+        isLoading={isLoading}  // Pass isLoading prop
+        isSaving={isSaving}
         onStatusChange={onStatusChange}
         onEditClick={onEditClick}
         onDeleteClick={onDeleteClick}
         onHistoryClick={onHistoryClick}
         onRateChange={onRateChange}
-        isSaving={isSaving}
       />
     );
   }
