@@ -39,9 +39,9 @@ export function CustomerRequestButton() {
     setIsSubmitting(true);
     
     try {
-      // Insert into customer_requests table
+      // Use the generic query approach to insert into customer_requests table
       const { error } = await supabase
-        .from('customer_requests')
+        .from('customer_requests' as any)
         .insert({
           first_name: formData.firstName,
           last_name: formData.lastName,
