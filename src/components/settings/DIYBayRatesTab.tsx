@@ -7,10 +7,13 @@ import { RateSettingsForm } from "./diybay/RateSettingsForm";
 import { BaySection } from "./diybay/BaySection";
 import { DIYBayDialogs } from "./diybay/DIYBayDialogs";
 import { useDialogState } from "@/hooks/diybay/useDialogState";
+import { useBayOrder } from "@/hooks/diybay/useBayOrder";
+import { toast } from "@/hooks/use-toast";
 
 export const DIYBayRatesTab: React.FC = () => {
   const {
     bays,
+    setBays,
     settings,
     isLoading,
     isSaving,
@@ -36,6 +39,9 @@ export const DIYBayRatesTab: React.FC = () => {
     handleEditClick,
     handleHistoryClick
   } = useDialogState();
+
+  // Add bay ordering functionality
+  const { handleDragEnd, isSavingOrder } = useBayOrder(bays, setBays);
 
   const handleStatusChange = useCallback(async (bay: Bay, isActive: boolean) => {
     await saveBay({ ...bay, is_active: isActive });
@@ -105,13 +111,14 @@ export const DIYBayRatesTab: React.FC = () => {
         viewMode={viewMode}
         setViewMode={setViewMode}
         isLoading={isLoading}
-        isSaving={isSaving}
+        isSaving={isSaving || isSavingOrder}
         onStatusChange={handleStatusChange}
         onEditClick={handleEditClick}
         onDeleteClick={handleDeleteClick}
         onHistoryClick={handleHistoryClickWrapper}
         onAddBay={addBay}
         onRateChange={handleRateChange}
+        onDragEnd={handleDragEnd}
       />
 
       <DIYBayDialogs 

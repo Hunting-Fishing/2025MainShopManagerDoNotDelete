@@ -4,6 +4,8 @@ import { Bay } from "@/services/diybay/diybayService";
 import { BayCard } from "./BayCard";
 import { BaysTable } from "./BaysTable";
 import { CompactBayList } from "./CompactBayList";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface BayListProps {
   bays: Bay[];
@@ -14,7 +16,41 @@ interface BayListProps {
   onHistoryClick: (bay: Bay) => Promise<void>;
   onRateChange?: (bay: Bay, field: 'hourly_rate' | 'daily_rate' | 'weekly_rate' | 'monthly_rate', value: number) => Promise<boolean>;
   isSaving?: boolean;
+  sortable?: boolean;
 }
+
+// Sortable wrapper for BayCard
+const SortableBayCard = ({ bay, onStatusChange, onEditClick, onDeleteClick, onHistoryClick, isSaving = false }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: bay.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className={`mb-4 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`} {...attributes} {...listeners}>
+      <BayCard
+        bay={bay}
+        onStatusChange={onStatusChange}
+        onEditClick={onEditClick}
+        onDeleteClick={onDeleteClick}
+        onHistoryClick={onHistoryClick}
+        isSaving={isSaving}
+        isDragging={isDragging}
+      />
+    </div>
+  );
+};
 
 export const BayList: React.FC<BayListProps> = ({
   bays,
@@ -25,20 +61,33 @@ export const BayList: React.FC<BayListProps> = ({
   onHistoryClick,
   onRateChange,
   isSaving,
+  sortable = false,
 }) => {
   if (viewMode === "cards") {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {bays.map((bay) => (
-          <BayCard
-            key={bay.id}
-            bay={bay}
-            onStatusChange={onStatusChange}
-            onEditClick={onEditClick}
-            onDeleteClick={onDeleteClick}
-            onHistoryClick={onHistoryClick}
-            isSaving={isSaving}
-          />
+          sortable ? (
+            <SortableBayCard
+              key={bay.id}
+              bay={bay}
+              onStatusChange={onStatusChange}
+              onEditClick={onEditClick}
+              onDeleteClick={onDeleteClick}
+              onHistoryClick={onHistoryClick}
+              isSaving={isSaving}
+            />
+          ) : (
+            <BayCard
+              key={bay.id}
+              bay={bay}
+              onStatusChange={onStatusChange}
+              onEditClick={onEditClick}
+              onDeleteClick={onDeleteClick}
+              onHistoryClick={onHistoryClick}
+              isSaving={isSaving}
+            />
+          )
         ))}
       </div>
     );
@@ -51,6 +100,7 @@ export const BayList: React.FC<BayListProps> = ({
         onDeleteClick={onDeleteClick}
         onHistoryClick={onHistoryClick}
         isSaving={isSaving}
+        sortable={sortable}
       />
     );
   } else {

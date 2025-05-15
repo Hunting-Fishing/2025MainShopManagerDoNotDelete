@@ -9,6 +9,10 @@ import { ViewModeToggle } from "./ViewModeToggle";
 import { BayViewMode } from "@/types/diybay";
 import { Loader2, Plus } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { DndContext, DragEndEvent, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 
 interface BaySectionProps {
   bays: Bay[];
@@ -22,6 +26,7 @@ interface BaySectionProps {
   onEditClick: (bay: Bay) => void;
   onDeleteClick: (bay: Bay) => void;
   onHistoryClick: (bay: Bay) => Promise<void>;
+  onDragEnd?: (event: DragEndEvent) => void;
 }
 
 export const BaySection: React.FC<BaySectionProps> = ({
@@ -36,7 +41,16 @@ export const BaySection: React.FC<BaySectionProps> = ({
   onEditClick,
   onDeleteClick,
   onHistoryClick,
+  onDragEnd,
 }) => {
+  // Set up drag-and-drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+  
   return (
     <Card className="mt-6">
       <CardHeader className="pb-3">
@@ -70,35 +84,51 @@ export const BaySection: React.FC<BaySectionProps> = ({
           <div className="text-center py-8 text-gray-500">
             No bays have been added yet. Click the "Add Bay" button to create your first bay.
           </div>
-        ) : viewMode === "table" ? (
-          <BaysTable 
-            bays={bays}
-            onStatusChange={onStatusChange}
-            onRateChange={onRateChange} 
-            onEditClick={onEditClick}
-            onDeleteClick={onDeleteClick}
-            onHistoryClick={onHistoryClick}
-            isSaving={isSaving}
-          />
-        ) : viewMode === "cards" ? (
-          <BayList 
-            bays={bays}
-            viewMode={viewMode}
-            onStatusChange={onStatusChange}
-            onEditClick={onEditClick}
-            onDeleteClick={onDeleteClick}
-            onHistoryClick={onHistoryClick}
-            isSaving={isSaving}
-          />
         ) : (
-          <CompactBayList 
-            bays={bays}
-            onStatusChange={onStatusChange}
-            onEditClick={onEditClick}
-            onDeleteClick={onDeleteClick}
-            onHistoryClick={onHistoryClick}
-            isSaving={isSaving}
-          />
+          <DndContext 
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={onDragEnd}
+            modifiers={[restrictToVerticalAxis]}
+          >
+            <SortableContext 
+              items={bays.map(bay => bay.id)} 
+              strategy={verticalListSortingStrategy}
+            >
+              {viewMode === "table" ? (
+                <BaysTable 
+                  bays={bays}
+                  onStatusChange={onStatusChange}
+                  onRateChange={onRateChange} 
+                  onEditClick={onEditClick}
+                  onDeleteClick={onDeleteClick}
+                  onHistoryClick={onHistoryClick}
+                  isSaving={isSaving}
+                />
+              ) : viewMode === "cards" ? (
+                <BayList 
+                  bays={bays}
+                  viewMode={viewMode}
+                  onStatusChange={onStatusChange}
+                  onEditClick={onEditClick}
+                  onDeleteClick={onDeleteClick}
+                  onHistoryClick={onHistoryClick}
+                  isSaving={isSaving}
+                  sortable={true}
+                />
+              ) : (
+                <CompactBayList 
+                  bays={bays}
+                  onStatusChange={onStatusChange}
+                  onEditClick={onEditClick}
+                  onDeleteClick={onDeleteClick}
+                  onHistoryClick={onHistoryClick}
+                  isSaving={isSaving}
+                  sortable={true}
+                />
+              )}
+            </SortableContext>
+          </DndContext>
         )}
       </CardContent>
     </Card>

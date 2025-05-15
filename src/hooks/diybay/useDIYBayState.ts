@@ -28,7 +28,8 @@ export function useDIYBayState() {
       const { data: baysData, error: baysError } = await supabase
         .from('diy_bay_rates')
         .select('*')
-        .eq('shop_id', shopId);
+        .eq('shop_id', shopId)
+        .order('display_order', { ascending: true });
         
       if (baysError) throw baysError;
       
@@ -120,7 +121,7 @@ export function useDIYBayState() {
 
   return {
     bays,
-    setBays,
+    setBays, // Expose the setBays function for drag and drop
     settings,
     setSettings,
     isLoading,

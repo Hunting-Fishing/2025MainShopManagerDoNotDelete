@@ -54,6 +54,7 @@ export function useDIYBayRates() {
   return {
     // State
     bays,
+    setBays, // Expose setBays for the drag and drop functionality
     settings,
     isLoading,
     isSaving,

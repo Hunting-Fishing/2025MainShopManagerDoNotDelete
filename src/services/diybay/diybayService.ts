@@ -1,4 +1,3 @@
-
 export interface Bay {
   id: string;
   name: string;  
@@ -17,6 +16,7 @@ export interface Bay {
   // Adding the fields that our components are using
   bay_name: string;
   bay_location: string | null;
+  display_order?: number; // Add display_order property for sorting
 }
 
 export interface RateSettings {
@@ -64,7 +64,8 @@ export const createBay = async (bayData: Partial<Bay>, shopId: string): Promise<
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     bay_name: bayData.bay_name || '',
-    bay_location: bayData.bay_location || null
+    bay_location: bayData.bay_location || null,
+    display_order: bayData.display_order || 0
   };
 };
 

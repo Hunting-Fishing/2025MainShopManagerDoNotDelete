@@ -4,7 +4,7 @@ import { Bay } from "@/services/diybay/diybayService";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
-import { Edit, Trash2, History, Loader2 } from "lucide-react";
+import { Edit, Trash2, History, Loader2, GripVertical } from "lucide-react";
 
 interface BayCardProps {
   bay: Bay;
@@ -13,6 +13,7 @@ interface BayCardProps {
   onDeleteClick: (bay: Bay) => void;
   onHistoryClick: (bay: Bay) => Promise<void>;
   isSaving?: boolean;
+  isDragging?: boolean;
 }
 
 export const BayCard: React.FC<BayCardProps> = ({
@@ -22,16 +23,20 @@ export const BayCard: React.FC<BayCardProps> = ({
   onDeleteClick,
   onHistoryClick,
   isSaving = false,
+  isDragging = false,
 }) => {
   const handleStatusChange = async (checked: boolean) => {
     await onStatusChange(bay, checked);
   };
 
   return (
-    <Card className="overflow-hidden">
+    <Card className={`overflow-hidden transition ${isDragging ? 'shadow-xl border-blue-400' : 'shadow hover:shadow-md'}`}>
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
-          <CardTitle className="text-xl font-bold">{bay.bay_name}</CardTitle>
+          <div className="flex items-center gap-1">
+            <GripVertical className="h-5 w-5 text-gray-400" />
+            <CardTitle className="text-xl font-bold">{bay.bay_name}</CardTitle>
+          </div>
           <div className="flex items-center space-x-2">
             <span className="text-sm text-gray-500">
               {bay.is_active ? "Active" : "Inactive"}
