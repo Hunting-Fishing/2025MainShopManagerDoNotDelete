@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 interface AddBayButtonProps {
-  onAddBay: (bayName: string) => Promise<Bay | null>;
+  onAddBay: () => Promise<boolean>;
   isSaving: boolean;
 }
 
@@ -21,7 +21,7 @@ export const AddBayButton: React.FC<AddBayButtonProps> = ({ onAddBay, isSaving }
     
     setIsAdding(true);
     try {
-      await onAddBay(bayName);
+      await onAddBay();
       setBayName("");
       setIsOpen(false);
     } finally {

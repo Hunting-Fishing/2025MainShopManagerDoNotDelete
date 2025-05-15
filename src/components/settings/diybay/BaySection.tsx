@@ -50,8 +50,14 @@ export const BaySection: React.FC<BaySectionProps> = ({
       <div className="flex justify-between items-center p-4 border-b">
         <h2 className="text-xl font-semibold">DIY Bays</h2>
         <div className="flex items-center gap-4">
-          <ViewModeToggle currentMode={viewMode} onChange={handleViewModeChange} />
-          <AddBayButton onClick={onAddBay} disabled={isSaving} />
+          <ViewModeToggle 
+            viewMode={viewMode} 
+            setViewMode={handleViewModeChange} 
+          />
+          <AddBayButton 
+            onAddBay={onAddBay} 
+            isSaving={isSaving} 
+          />
         </div>
       </div>
 
