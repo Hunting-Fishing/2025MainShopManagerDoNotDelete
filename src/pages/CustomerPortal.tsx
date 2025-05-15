@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CustomerAppointmentBooking } from "@/components/customer-portal/CustomerAppointmentBooking";
@@ -9,10 +9,46 @@ import { CustomerProfileInfo } from "@/components/customer-portal/CustomerProfil
 import { Helmet } from "react-helmet-async";
 import { useAuthUser } from "@/hooks/useAuthUser";
 import { CustomerLoginRequired } from "@/components/customer-portal/CustomerLoginRequired";
+import { supabase } from "@/lib/supabase";
 
 export default function CustomerPortal() {
   const [activeTab, setActiveTab] = useState("appointments");
-  const { userId, isLoading } = useAuthUser();
+  const [isLoading, setIsLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
+  
+  useEffect(() => {
+    async function checkAuthStatus() {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Auth error:", error);
+          setIsLoading(false);
+          return;
+        }
+        
+        setUserId(data.session?.user?.id || null);
+      } catch (err) {
+        console.error("Unexpected error checking auth:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    checkAuthStatus();
+    
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUserId(session?.user?.id || null);
+        setIsLoading(false);
+      }
+    );
+    
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   if (isLoading) {
     return (
