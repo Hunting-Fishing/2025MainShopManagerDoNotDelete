@@ -1,310 +1,365 @@
+import React, { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { formatDate } from '@/utils/workOrderUtils';
+import { Search, Filter, Wrench } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Skeleton } from '@/components/ui/skeleton';
+import { WorkOrder, priorityMap } from '@/types/workOrder';
 
-import { useState, useEffect } from "react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { WorkOrder, priorityMap } from "@/types/workOrder";
-import { formatDate } from "@/utils/workOrderUtils";
-import { Wrench, Search, Info, Download } from "lucide-react";
-import { supabase } from "@/lib/supabase";
-import { printElement } from "@/utils/printUtils";
-
-interface CustomerWorkOrdersProps {
-  customerId?: string;
+// Define an extended type to handle the database response format
+interface WorkOrderWithVehicle extends WorkOrder {
+  vehicleDetails?: {
+    make: string;
+    model: string;
+    year: string;
+  };
+  start_time?: string;
 }
 
-export function CustomerWorkOrders({ customerId }: CustomerWorkOrdersProps) {
+export default function CustomerWorkOrders() {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [selectedWorkOrder, setSelectedWorkOrder] = useState<WorkOrder | null>(null);
-  
+  const [filteredOrders, setFilteredOrders] = useState<WorkOrder[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedOrder, setSelectedOrder] = useState<WorkOrder | null>(null);
+
   useEffect(() => {
-    async function fetchWorkOrders() {
-      if (!customerId) return;
+    fetchWorkOrders();
+  }, []);
+
+  const fetchWorkOrders = async () => {
+    setIsLoading(true);
+    try {
+      const { data: user } = await supabase.auth.getUser();
       
-      try {
-        const { data, error } = await supabase
-          .from("work_orders")
-          .select("*, vehicles(*)")
-          .eq("customer_id", customerId)
-          .order("created_at", { ascending: false });
-          
-        if (error) throw error;
-        
-        // Map the data to match the WorkOrder type
-        const mappedWorkOrders = (data || []).map(wo => ({
-          id: wo.id,
-          customer: wo.customer_id || "",
-          customerId: wo.customer_id || "",
-          description: wo.description || "",
-          status: wo.status || "pending",
-          priority: wo.priority || "medium",
-          technician: wo.technician || "",
-          technicianId: wo.technician_id || "",
-          date: wo.created_at || new Date().toISOString(),
-          dueDate: wo.end_time || new Date().toISOString(),
-          location: "",
-          // Include additional fields from the database
-          vehicles: wo.vehicles || [],
-          vehicleId: wo.vehicle_id,
-          // Handle date fields
-          start_time: wo.start_time,
-          createdAt: wo.created_at,
-          updatedAt: wo.updated_at
-        }));
-        
-        setWorkOrders(mappedWorkOrders);
-      } catch (err) {
-        console.error("Error fetching work orders:", err);
-      } finally {
-        setLoading(false);
+      if (!user?.user?.id) {
+        setIsLoading(false);
+        return;
       }
+
+      // Get the customer ID associated with this user
+      const { data: customerData } = await supabase
+        .from('customers')
+        .select('id')
+        .eq('auth_user_id', user.user.id)
+        .single();
+
+      if (!customerData) {
+        setIsLoading(false);
+        return;
+      }
+      
+      // Fetch work orders with join to vehicles
+      const { data } = await supabase
+        .from('work_orders')
+        .select(`
+          id, 
+          description, 
+          status, 
+          priority,
+          start_time,
+          end_time,
+          vehicle_id,
+          technician,
+          location,
+          created_at,
+          updated_at,
+          vehicles:vehicle_id (
+            make,
+            model,
+            year
+          )
+        `)
+        .eq('customer_id', customerData.id)
+        .order('created_at', { ascending: false });
+
+      if (data) {
+        // Map the database response to our WorkOrder type
+        const mappedOrders = data.map(order => ({
+          id: order.id,
+          customer: '', // Will be populated from customer data if needed
+          description: order.description || '',
+          status: order.status || 'pending',
+          priority: order.priority || 'medium',
+          technician: order.technician || '',
+          date: order.created_at || '',
+          dueDate: order.end_time || order.created_at || '',
+          location: order.location || '',
+          notes: '',
+          // Store vehicle details in a format that matches our component usage
+          vehicleDetails: order.vehicles ? {
+            make: order.vehicles.make || '',
+            model: order.vehicles.model || '',
+            year: order.vehicles.year || '',
+          } : undefined,
+          // Keep track of start_time for rendering
+          start_time: order.start_time
+        })) as WorkOrder[];
+
+        setWorkOrders(mappedOrders);
+        setFilteredOrders(mappedOrders);
+      }
+    } catch (error) {
+      console.error('Error fetching work orders:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Apply filters when searchTerm or statusFilter changes
+    let result = [...workOrders];
+    
+    // Filter by search term
+    if (searchTerm) {
+      result = result.filter(order => 
+        order.description.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        order.id.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
     
-    fetchWorkOrders();
-  }, [customerId]);
-  
-  // Filter work orders based on search term and status
-  const filteredWorkOrders = workOrders.filter(wo => {
-    const matchesSearch = searchTerm.trim() === '' || 
-      wo.description.toLowerCase().includes(searchTerm.toLowerCase());
-      
-    const matchesStatus = statusFilter === null || wo.status === statusFilter;
+    // Filter by status
+    if (statusFilter !== 'all') {
+      result = result.filter(order => order.status === statusFilter);
+    }
     
-    return matchesSearch && matchesStatus;
-  });
-  
-  // Handle print work order
-  const handlePrintWorkOrder = (workOrder: WorkOrder) => {
-    printElement(
-      'work-order-details', 
-      `Work Order ${workOrder.id.substring(0, 8)}`
-    );
+    setFilteredOrders(result);
+  }, [searchTerm, statusFilter, workOrders]);
+
+  const handleOpenDetails = (order: WorkOrder) => {
+    setSelectedOrder(order);
   };
-  
-  if (loading) {
+
+  if (isLoading) {
     return (
-      <div className="flex justify-center p-8">
-        <div className="h-10 w-10 border-4 border-t-blue-600 border-b-blue-600 border-l-transparent border-r-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-  
-  if (workOrders.length === 0) {
-    return (
-      <div className="text-center p-8">
-        <Wrench className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-        <h3 className="text-xl font-semibold mb-2">No Work Orders Found</h3>
-        <p className="text-gray-500 mb-4">
-          You don't have any work orders in our system yet.
-        </p>
-        <Button>Contact Us for Assistance</Button>
+      <div className="space-y-4">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-64 w-full" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col md:flex-row gap-4 justify-between">
-        <div className="relative w-full md:w-64">
-          <Input
-            placeholder="Search work orders..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
-          />
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+    <Card className="shadow-md">
+      <CardHeader>
+        <CardTitle className="text-2xl font-bold">Your Work Orders</CardTitle>
+        <div className="flex flex-col md:flex-row gap-4 mt-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search work orders..."
+              className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-gray-500" />
+            <select
+              className="border border-gray-300 rounded px-3 py-1.5"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="all">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="in-progress">In Progress</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant={statusFilter === null ? "default" : "outline"}
-            size="sm"
-            onClick={() => setStatusFilter(null)}
-          >
-            All
-          </Button>
-          <Button
-            variant={statusFilter === "pending" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setStatusFilter("pending")}
-          >
-            Pending
-          </Button>
-          <Button
-            variant={statusFilter === "in-progress" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setStatusFilter("in-progress")}
-          >
-            In Progress
-          </Button>
-          <Button
-            variant={statusFilter === "completed" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setStatusFilter("completed")}
-          >
-            Completed
-          </Button>
-        </div>
-      </div>
-      
-      <div className="border rounded-md">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Work Order ID</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Vehicle</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredWorkOrders.map((wo) => (
-              <TableRow key={wo.id}>
-                <TableCell className="font-mono">{wo.id.substring(0, 8)}</TableCell>
-                <TableCell>{wo.description}</TableCell>
-                <TableCell>
-                  {wo.vehicles && wo.vehicles.length > 0 ? 
-                    `${wo.vehicles[0].year} ${wo.vehicles[0].make} ${wo.vehicles[0].model}` : 
-                    "N/A"}
-                </TableCell>
-                <TableCell>{formatDate(wo.start_time || wo.createdAt || wo.date)}</TableCell>
-                <TableCell>
-                  <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                    wo.status === 'completed' 
-                      ? 'bg-green-100 text-green-800' 
-                      : wo.status === 'in-progress' 
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {wo.status.charAt(0).toUpperCase() + wo.status.slice(1)}
-                  </span>
-                </TableCell>
-                <TableCell className="text-right">
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="mr-2"
-                        onClick={() => setSelectedWorkOrder(wo)}
-                      >
-                        <Info className="h-4 w-4 mr-1" />
-                        Details
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-3xl" id="work-order-details">
-                      <DialogHeader>
-                        <DialogTitle>Work Order Details</DialogTitle>
-                      </DialogHeader>
-                      {selectedWorkOrder && (
-                        <div className="space-y-6">
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <h2 className="text-xl font-semibold mb-1">
-                                Work Order #{selectedWorkOrder.id.substring(0, 8)}
-                              </h2>
-                              <p className="text-gray-500">
-                                Created: {formatDate(selectedWorkOrder.createdAt || selectedWorkOrder.date)}
-                              </p>
-                            </div>
-                            <Button 
-                              variant="outline"
-                              size="sm"
-                              className="flex items-center gap-1"
-                              onClick={() => handlePrintWorkOrder(selectedWorkOrder)}
-                            >
-                              <Download className="h-4 w-4" />
-                              Download PDF
-                            </Button>
-                          </div>
-                          
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-4">
-                              <div>
-                                <h3 className="text-sm font-medium text-gray-500">Description</h3>
-                                <p className="mt-1">{selectedWorkOrder.description}</p>
-                              </div>
-                              
-                              <div>
-                                <h3 className="text-sm font-medium text-gray-500">Status</h3>
-                                <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium mt-1 ${
-                                  selectedWorkOrder.status === 'completed' 
-                                    ? 'bg-green-100 text-green-800' 
-                                    : selectedWorkOrder.status === 'in-progress' 
-                                      ? 'bg-blue-100 text-blue-800'
-                                      : 'bg-gray-100 text-gray-800'
-                                }`}>
-                                  {selectedWorkOrder.status.charAt(0).toUpperCase() + selectedWorkOrder.status.slice(1)}
-                                </span>
-                              </div>
-                              
-                              <div>
-                                <h3 className="text-sm font-medium text-gray-500">Priority</h3>
-                                <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium mt-1 ${
-                                  priorityMap[selectedWorkOrder.priority as keyof typeof priorityMap]?.classes || 'bg-gray-100 text-gray-800'
-                                }`}>
-                                  {priorityMap[selectedWorkOrder.priority as keyof typeof priorityMap]?.label || 'Medium'}
-                                </span>
-                              </div>
-                            </div>
-                            
-                            <div className="space-y-4">
-                              <div>
-                                <h3 className="text-sm font-medium text-gray-500">Vehicle</h3>
-                                <p className="mt-1">
-                                  {selectedWorkOrder.vehicles && selectedWorkOrder.vehicles.length > 0 ? 
-                                    `${selectedWorkOrder.vehicles[0].year} ${selectedWorkOrder.vehicles[0].make} ${selectedWorkOrder.vehicles[0].model}` : 
-                                    "N/A"}
-                                </p>
-                              </div>
-                              
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <h3 className="text-sm font-medium text-gray-500">Start Date</h3>
-                                  <p className="mt-1">
-                                    {selectedWorkOrder.start_time ? 
-                                      formatDate(selectedWorkOrder.start_time) : 
-                                      "Not scheduled"}
-                                  </p>
-                                </div>
-                                <div>
-                                  <h3 className="text-sm font-medium text-gray-500">Due Date</h3>
-                                  <p className="mt-1">
-                                    {selectedWorkOrder.dueDate ? 
-                                      formatDate(selectedWorkOrder.dueDate) : 
-                                      "Not specified"}
-                                  </p>
-                                </div>
-                              </div>
-                              
-                              <div>
-                                <h3 className="text-sm font-medium text-gray-500">Assigned Technician</h3>
-                                <p className="mt-1">{selectedWorkOrder.technician || "Not assigned"}</p>
-                              </div>
-                            </div>
-                          </div>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="grid" className="w-full">
+          <TabsList className="mb-4">
+            <TabsTrigger value="grid">Grid View</TabsTrigger>
+            <TabsTrigger value="list">List View</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="grid">
+            {filteredOrders.length === 0 ? (
+              <div className="text-center py-8">
+                <Wrench className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+                <h3 className="text-lg font-medium">No Work Orders Found</h3>
+                <p className="text-gray-500 mt-1">There are no work orders matching your filters.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredOrders.map((order) => (
+                  <Card key={order.id} className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleOpenDetails(order)}>
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <Badge variant="outline" className={`${priorityMap[order.priority].classes} mt-1`}>
+                            {priorityMap[order.priority].label}
+                          </Badge>
+                          <h3 className="font-semibold mt-2 text-lg line-clamp-1">{order.description}</h3>
                         </div>
+                        <Badge className={
+                          order.status === "completed" ? "bg-green-100 text-green-800 border border-green-300" :
+                          order.status === "in-progress" ? "bg-blue-100 text-blue-800 border border-blue-300" : 
+                          order.status === "cancelled" ? "bg-red-100 text-red-800 border border-red-300" :
+                          "bg-yellow-100 text-yellow-800 border border-yellow-300"
+                        }>
+                          {order.status === "in-progress" ? "In Progress" : 
+                           order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                        </Badge>
+                      </div>
+                      
+                      {order.vehicleDetails && (
+                        <p className="text-sm text-gray-600 mt-2">
+                          {order.vehicleDetails.year} {order.vehicleDetails.make} {order.vehicleDetails.model}
+                        </p>
                       )}
-                    </DialogContent>
-                  </Dialog>
-                </TableCell>
-              </TableRow>
-            ))}
-            {filteredWorkOrders.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                  No matching work orders found
-                </TableCell>
-              </TableRow>
+                      
+                      <div className="mt-3 text-sm text-gray-500">
+                        <p>Created: {formatDate(order.date)}</p>
+                        {(order as WorkOrderWithVehicle).start_time && (
+                          <p>Scheduled: {formatDate((order as WorkOrderWithVehicle).start_time || '')}</p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             )}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
+          </TabsContent>
+          
+          <TabsContent value="list">
+            {filteredOrders.length === 0 ? (
+              <div className="text-center py-8">
+                <Wrench className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+                <h3 className="text-lg font-medium">No Work Orders Found</h3>
+                <p className="text-gray-500 mt-1">There are no work orders matching your filters.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-2 px-4 font-semibold">Description</th>
+                      <th className="text-left py-2 px-4 font-semibold">Vehicle</th>
+                      <th className="text-left py-2 px-4 font-semibold">Status</th>
+                      <th className="text-left py-2 px-4 font-semibold">Date</th>
+                      <th className="text-left py-2 px-4 font-semibold">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredOrders.map((order) => (
+                      <tr key={order.id} className="border-b hover:bg-gray-50">
+                        <td className="py-3 px-4">{order.description}</td>
+                        <td className="py-3 px-4">
+                          {order.vehicleDetails && (
+                            <span>{order.vehicleDetails.year} {order.vehicleDetails.make} {order.vehicleDetails.model}</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4">
+                          <Badge className={
+                            order.status === "completed" ? "bg-green-100 text-green-800 border border-green-300" :
+                            order.status === "in-progress" ? "bg-blue-100 text-blue-800 border border-blue-300" : 
+                            order.status === "cancelled" ? "bg-red-100 text-red-800 border border-red-300" :
+                            "bg-yellow-100 text-yellow-800 border border-yellow-300"
+                          }>
+                            {order.status === "in-progress" ? "In Progress" : 
+                            order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                          </Badge>
+                        </td>
+                        <td className="py-3 px-4">
+                          {formatDate((order as WorkOrderWithVehicle).start_time || order.date)}
+                        </td>
+                        <td className="py-3 px-4">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleOpenDetails(order)}
+                          >
+                            Details
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+
+      {/* Work Order Details Dialog */}
+      {selectedOrder && (
+        <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Work Order Details</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-4 gap-4">
+                <div className="col-span-4">
+                  <h2 className="text-xl font-semibold">{selectedOrder.description}</h2>
+                </div>
+                <div className="col-span-2">
+                  <label className="text-sm text-gray-500">Status</label>
+                  <div>
+                    <Badge className={
+                      selectedOrder.status === "completed" ? "bg-green-100 text-green-800 border border-green-300" :
+                      selectedOrder.status === "in-progress" ? "bg-blue-100 text-blue-800 border border-blue-300" : 
+                      selectedOrder.status === "cancelled" ? "bg-red-100 text-red-800 border border-red-300" :
+                      "bg-yellow-100 text-yellow-800 border border-yellow-300"
+                    }>
+                      {selectedOrder.status === "in-progress" ? "In Progress" : 
+                       selectedOrder.status.charAt(0).toUpperCase() + selectedOrder.status.slice(1)}
+                    </Badge>
+                  </div>
+                </div>
+                <div className="col-span-2">
+                  <label className="text-sm text-gray-500">Priority</label>
+                  <div>
+                    <Badge variant="outline" className={priorityMap[selectedOrder.priority].classes}>
+                      {priorityMap[selectedOrder.priority].label}
+                    </Badge>
+                  </div>
+                </div>
+                <div className="col-span-2">
+                  <label className="text-sm text-gray-500">Created Date</label>
+                  <p>{formatDate(selectedOrder.date)}</p>
+                </div>
+                <div className="col-span-2">
+                  <label className="text-sm text-gray-500">Scheduled Date</label>
+                  <p>{formatDate((selectedOrder as WorkOrderWithVehicle).start_time || '')}</p>
+                </div>
+                <div className="col-span-2">
+                  <label className="text-sm text-gray-500">Location</label>
+                  <p>{selectedOrder.location || 'Not specified'}</p>
+                </div>
+                <div className="col-span-2">
+                  <label className="text-sm text-gray-500">Technician</label>
+                  <p>{selectedOrder.technician || 'Not assigned'}</p>
+                </div>
+                <div className="col-span-4">
+                  <label className="text-sm text-gray-500">Vehicle</label>
+                  {selectedOrder.vehicleDetails && (
+                    <p>{selectedOrder.vehicleDetails.year} {selectedOrder.vehicleDetails.make} {selectedOrder.vehicleDetails.model}</p>
+                  )}
+                </div>
+                <div className="col-span-4">
+                  <label className="text-sm text-gray-500">Notes</label>
+                  <p className="text-sm">{selectedOrder.notes || 'No notes available'}</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <Button onClick={() => setSelectedOrder(null)}>Close</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </Card>
   );
 }
