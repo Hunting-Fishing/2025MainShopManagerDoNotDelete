@@ -103,6 +103,7 @@ export const BayList: React.FC<BayListProps> = ({
         onHistoryClick={onHistoryClick}
         isSaving={isSaving}
         sortable={sortable}
+        isLoading={isLoading} // Pass isLoading prop to CompactBayList
       />
     );
   } else {

@@ -146,6 +146,7 @@ const DraggableBayRow: React.FC<DraggableBayRowProps> = ({
         isNumber={true}
         formatValue={(val) => formatCurrency(val || 0)}
         disabled={isSaving}
+        prefix="$"
       />
       <EditableCell
         value={bay.daily_rate}
@@ -153,6 +154,7 @@ const DraggableBayRow: React.FC<DraggableBayRowProps> = ({
         isNumber={true}
         formatValue={(val) => formatCurrency(val || 0)}
         disabled={isSaving}
+        prefix="$"
       />
       <EditableCell
         value={bay.weekly_rate}
@@ -160,6 +162,7 @@ const DraggableBayRow: React.FC<DraggableBayRowProps> = ({
         isNumber={true}
         formatValue={(val) => formatCurrency(val || 0)}
         disabled={isSaving}
+        prefix="$"
       />
       <EditableCell
         value={bay.monthly_rate}
@@ -167,6 +170,7 @@ const DraggableBayRow: React.FC<DraggableBayRowProps> = ({
         isNumber={true}
         formatValue={(val) => formatCurrency(val || 0)}
         disabled={isSaving}
+        prefix="$"
       />
       <TableCell>
         <div className="flex items-center space-x-2">
