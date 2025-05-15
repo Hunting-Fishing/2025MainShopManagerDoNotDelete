@@ -187,7 +187,27 @@ export async function getCustomerShops(customerId: string): Promise<ShopDirector
     }
     
     // Transform the nested data structure into a flat array of shops
-    const shops: ShopDirectoryItem[] = data?.map(item => item.shops as ShopDirectoryItem) || [];
+    // We need to map each item.shops to a ShopDirectoryItem
+    const shops: ShopDirectoryItem[] = data?.map(item => {
+      // Map each shops object to our ShopDirectoryItem interface explicitly
+      const shop = item.shops as any;
+      return {
+        id: shop.id,
+        name: shop.name,
+        address: shop.address,
+        city: shop.city,
+        state: shop.state,
+        postal_code: shop.postal_code,
+        phone: shop.phone,
+        email: shop.email,
+        logo_url: shop.logo_url,
+        shop_description: shop.shop_description,
+        shop_image_url: shop.shop_image_url,
+        latitude: shop.latitude,
+        longitude: shop.longitude,
+        is_active: shop.is_active
+      };
+    }) || [];
     
     return shops;
   } catch (error) {
