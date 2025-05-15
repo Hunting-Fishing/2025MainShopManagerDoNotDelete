@@ -1,21 +1,16 @@
 
-import React, { useState, useEffect } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { ChevronsUp, ChevronsDown, Save } from "lucide-react";
 import { RateSettings } from "@/services/diybay/diybayService";
-import { Save, Info, DollarSign, Percent, Clock, LayoutGrid, Table, Scroll } from "lucide-react";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-
-type RateSettingViewMode = "cards" | "table" | "scroll";
 
 interface RateSettingsFormProps {
   settings: RateSettings;
   onSettingsChange: (field: keyof RateSettings, value: number) => void;
-  onSaveSettings: () => Promise<boolean | void>;
+  onSaveSettings: () => Promise<boolean>;
   isSaving: boolean;
 }
 
@@ -25,340 +20,170 @@ export const RateSettingsForm: React.FC<RateSettingsFormProps> = ({
   onSaveSettings,
   isSaving
 }) => {
-  const [localSettings, setLocalSettings] = useState<RateSettings>(settings);
-  const [isDirty, setIsDirty] = useState(false);
-  const [viewMode, setViewMode] = useState<RateSettingViewMode>("cards");
+  const [expanded, setExpanded] = useState<string | undefined>("bay-settings");
   
-  // Update local settings when props change
-  useEffect(() => {
-    setLocalSettings(settings);
-  }, [settings]);
-  
-  const handleInputChange = (field: keyof RateSettings, value: string) => {
-    const numValue = Number(value);
-    if (!isNaN(numValue)) {
-      setLocalSettings(prev => ({ ...prev, [field]: numValue }));
-      setIsDirty(true);
-      onSettingsChange(field, numValue);
-    }
+  const handleAccordionChange = (value: string) => {
+    setExpanded(value === expanded ? undefined : value);
   };
-  
-  const handleSave = async () => {
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     await onSaveSettings();
-    setIsDirty(false);
-  };
-
-  // Render appropriate content based on view mode
-  const renderContent = () => {
-    if (viewMode === "scroll") {
-      return (
-        <ScrollArea className="h-60 px-1">
-          <div className="space-y-4 pr-4">
-            {renderSettingsFields()}
-          </div>
-        </ScrollArea>
-      );
-    } else if (viewMode === "table") {
-      return (
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-purple-50">
-                <th className="text-left p-3 text-purple-700 border-b border-gray-200">Setting</th>
-                <th className="text-left p-3 text-purple-700 border-b border-gray-200">Value</th>
-                <th className="text-left p-3 text-purple-700 border-b border-gray-200">Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="border-b border-gray-100">
-                <td className="p-3 flex items-center gap-2">
-                  <span className="inline-flex p-1.5 bg-blue-100 text-blue-700 rounded-full">
-                    <DollarSign className="h-4 w-4" />
-                  </span>
-                  <span>Hourly Base Rate</span>
-                </td>
-                <td className="p-3">
-                  <Input
-                    type="number"
-                    value={localSettings.hourly_base_rate}
-                    onChange={(e) => handleInputChange('hourly_base_rate', e.target.value)}
-                    className="w-24 border-gray-200"
-                  />
-                </td>
-                <td className="p-3 text-gray-500 text-sm">Base rate for hourly bay rentals</td>
-              </tr>
-              <tr className="border-b border-gray-100">
-                <td className="p-3 flex items-center gap-2">
-                  <span className="inline-flex p-1.5 bg-green-100 text-green-700 rounded-full">
-                    <Clock className="h-4 w-4" />
-                  </span>
-                  <span>Daily Hours</span>
-                </td>
-                <td className="p-3">
-                  <Input
-                    type="number"
-                    value={localSettings.daily_hours}
-                    onChange={(e) => handleInputChange('daily_hours', e.target.value)}
-                    className="w-24 border-gray-200"
-                  />
-                </td>
-                <td className="p-3 text-gray-500 text-sm">Number of hours in a daily rental</td>
-              </tr>
-              <tr className="border-b border-gray-100">
-                <td className="p-3 flex items-center gap-2">
-                  <span className="inline-flex p-1.5 bg-yellow-100 text-yellow-700 rounded-full">
-                    <Percent className="h-4 w-4" />
-                  </span>
-                  <span>Daily Discount</span>
-                </td>
-                <td className="p-3">
-                  <Input
-                    type="number"
-                    value={localSettings.daily_discount_percent}
-                    onChange={(e) => handleInputChange('daily_discount_percent', e.target.value)}
-                    className="w-24 border-gray-200"
-                    min="0"
-                    max="100"
-                  />
-                </td>
-                <td className="p-3 text-gray-500 text-sm">Discount percentage for daily rentals</td>
-              </tr>
-              <tr className="border-b border-gray-100">
-                <td className="p-3 flex items-center gap-2">
-                  <span className="inline-flex p-1.5 bg-indigo-100 text-indigo-700 rounded-full">
-                    <DollarSign className="h-4 w-4" />
-                  </span>
-                  <span>Weekly Rate Multiplier</span>
-                </td>
-                <td className="p-3">
-                  <Input
-                    type="number"
-                    value={localSettings.weekly_multiplier}
-                    onChange={(e) => handleInputChange('weekly_multiplier', e.target.value)}
-                    className="w-24 border-gray-200"
-                  />
-                </td>
-                <td className="p-3 text-gray-500 text-sm">Multiplier for weekly rate</td>
-              </tr>
-              <tr>
-                <td className="p-3 flex items-center gap-2">
-                  <span className="inline-flex p-1.5 bg-pink-100 text-pink-700 rounded-full">
-                    <DollarSign className="h-4 w-4" />
-                  </span>
-                  <span>Monthly Rate Multiplier</span>
-                </td>
-                <td className="p-3">
-                  <Input
-                    type="number"
-                    value={localSettings.monthly_multiplier}
-                    onChange={(e) => handleInputChange('monthly_multiplier', e.target.value)}
-                    className="w-24 border-gray-200"
-                  />
-                </td>
-                <td className="p-3 text-gray-500 text-sm">Multiplier for monthly rate</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      );
-    } else {
-      // Cards view (default)
-      return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {renderSettingsFields()}
-        </div>
-      );
-    }
-  };
-
-  // Common settings fields for cards and scroll views
-  const renderSettingsFields = () => {
-    return (
-      <>
-        <div className="space-y-2">
-          <Label htmlFor="hourly_base_rate" className="text-sm font-medium flex items-center gap-2">
-            <span className="inline-flex p-1.5 bg-blue-100 text-blue-700 rounded-full">
-              <DollarSign className="h-4 w-4" />
-            </span>
-            Hourly Base Rate ($/hour)
-          </Label>
-          <Input
-            id="hourly_base_rate"
-            type="number"
-            value={localSettings.hourly_base_rate}
-            onChange={(e) => handleInputChange('hourly_base_rate', e.target.value)}
-            className="w-full border-gray-200"
-            placeholder="65.00"
-          />
-          <p className="text-sm text-gray-500">Base rate for hourly bay rentals</p>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="daily_hours" className="text-sm font-medium flex items-center gap-2">
-            <span className="inline-flex p-1.5 bg-green-100 text-green-700 rounded-full">
-              <Clock className="h-4 w-4" />
-            </span>
-            Daily Hours
-          </Label>
-          <Input
-            id="daily_hours"
-            type="number"
-            value={localSettings.daily_hours}
-            onChange={(e) => handleInputChange('daily_hours', e.target.value)}
-            className="w-full border-gray-200"
-            placeholder="8"
-          />
-          <p className="text-sm text-gray-500">Number of hours in a daily rental</p>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="daily_discount_percent" className="text-sm font-medium flex items-center gap-2">
-            <span className="inline-flex p-1.5 bg-yellow-100 text-yellow-700 rounded-full">
-              <Percent className="h-4 w-4" />
-            </span>
-            Daily Discount (%)
-          </Label>
-          <Input
-            id="daily_discount_percent"
-            type="number"
-            value={localSettings.daily_discount_percent}
-            onChange={(e) => handleInputChange('daily_discount_percent', e.target.value)}
-            className="w-full border-gray-200"
-            placeholder="25"
-            min="0"
-            max="100"
-          />
-          <p className="text-sm text-gray-500">Discount percentage for daily rentals</p>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="weekly_multiplier" className="text-sm font-medium flex items-center gap-2">
-            <span className="inline-flex p-1.5 bg-indigo-100 text-indigo-700 rounded-full">
-              <DollarSign className="h-4 w-4" />
-            </span>
-            Weekly Rate Multiplier
-          </Label>
-          <Input
-            id="weekly_multiplier"
-            type="number"
-            value={localSettings.weekly_multiplier}
-            onChange={(e) => handleInputChange('weekly_multiplier', e.target.value)}
-            className="w-full border-gray-200"
-            placeholder="20"
-          />
-          <p className="text-sm text-gray-500">Multiplier for weekly rate (hourly rate × multiplier)</p>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="monthly_multiplier" className="text-sm font-medium flex items-center gap-2">
-            <span className="inline-flex p-1.5 bg-pink-100 text-pink-700 rounded-full">
-              <DollarSign className="h-4 w-4" />
-            </span>
-            Monthly Rate Multiplier
-          </Label>
-          <Input
-            id="monthly_multiplier"
-            type="number"
-            value={localSettings.monthly_multiplier}
-            onChange={(e) => handleInputChange('monthly_multiplier', e.target.value)}
-            className="w-full border-gray-200"
-            placeholder="40"
-          />
-          <p className="text-sm text-gray-500">Multiplier for monthly rate (hourly rate × multiplier)</p>
-        </div>
-      </>
-    );
   };
 
   return (
-    <div className="mb-8">
-      <Card className="border-gray-100 shadow-md rounded-xl overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-purple-50 to-indigo-50 border-b border-gray-100">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-purple-700 flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              DIY Bay Rate Settings
-            </CardTitle>
+    <Accordion 
+      type="single" 
+      collapsible 
+      value={expanded} 
+      onValueChange={handleAccordionChange}
+      className="mb-8 border-gray-100 shadow-md rounded-xl overflow-hidden"
+    >
+      <AccordionItem value="bay-settings" className="border-0">
+        <AccordionTrigger className="px-5 py-4 bg-gradient-to-r from-blue-50 to-blue-100 hover:no-underline">
+          <div className="flex items-center justify-between w-full">
+            <div>
+              <h3 className="text-lg font-medium text-gray-800">Rate Settings</h3>
+              <p className="text-sm text-gray-600">Configure base rate calculation parameters for DIY bays</p>
+            </div>
+            {expanded === "bay-settings" ? (
+              <ChevronsUp className="h-5 w-5 text-gray-500" />
+            ) : (
+              <ChevronsDown className="h-5 w-5 text-gray-500" />
+            )}
+          </div>
+        </AccordionTrigger>
+        <AccordionContent className="pb-0">
+          <form onSubmit={handleSubmit} className="p-5 bg-white">
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="baseRate" className="text-sm font-medium text-gray-700">
+                    Base Hourly Rate ($)
+                  </Label>
+                  <div className="mt-1 relative">
+                    <Input
+                      id="baseRate"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={settings.hourly_base_rate || ''}
+                      onChange={(e) => onSettingsChange('hourly_base_rate', Number(e.target.value))}
+                      className="pl-8 mt-1"
+                    />
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500">
+                      $
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Default hourly rate for all DIY bays
+                  </p>
+                </div>
+                <div>
+                  <Label htmlFor="dailyHours" className="text-sm font-medium text-gray-700">
+                    Hours in Daily Rate
+                  </Label>
+                  <Input
+                    id="dailyHours"
+                    type="number"
+                    min="1"
+                    max="24"
+                    value={settings.daily_hours || ''}
+                    onChange={(e) => onSettingsChange('daily_hours', Number(e.target.value))}
+                    className="mt-1"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Number of hours considered for a daily rate
+                  </p>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="dailyDiscount" className="text-sm font-medium text-gray-700">
+                    Daily Discount (%)
+                  </Label>
+                  <div className="mt-1 relative">
+                    <Input
+                      id="dailyDiscount"
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={settings.daily_discount_percent || ''}
+                      onChange={(e) => onSettingsChange('daily_discount_percent', Number(e.target.value))}
+                      className="pr-8 mt-1"
+                    />
+                    <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-500">
+                      %
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Discount applied for daily rentals vs hourly rate
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="weeklyMultiplier" className="text-sm font-medium text-gray-700">
+                      Weekly Multiplier
+                    </Label>
+                    <Input
+                      id="weeklyMultiplier"
+                      type="number"
+                      min="1"
+                      step="0.1"
+                      value={settings.weekly_multiplier || ''}
+                      onChange={(e) => onSettingsChange('weekly_multiplier', Number(e.target.value))}
+                      className="mt-1"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Daily rate × This = Weekly
+                    </p>
+                  </div>
+                  <div>
+                    <Label htmlFor="monthlyMultiplier" className="text-sm font-medium text-gray-700">
+                      Monthly Multiplier
+                    </Label>
+                    <Input
+                      id="monthlyMultiplier"
+                      type="number"
+                      min="1"
+                      step="0.1"
+                      value={settings.monthly_multiplier || ''}
+                      onChange={(e) => onSettingsChange('monthly_multiplier', Number(e.target.value))}
+                      className="mt-1"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Daily rate × This = Monthly
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
             
-            <div className="bg-white rounded-lg p-1 shadow-sm border border-indigo-100">
-              <ToggleGroup 
-                type="single" 
-                value={viewMode} 
-                onValueChange={(value) => value && setViewMode(value as RateSettingViewMode)}
-                className="flex items-center"
+            <div className="mt-6 border-t pt-4 flex justify-end">
+              <Button 
+                type="submit" 
+                disabled={isSaving}
+                className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
               >
-                <ToggleGroupItem
-                  value="cards"
-                  aria-label="Cards view"
-                  className={`rounded-md px-3 py-2 ${
-                    viewMode === "cards" 
-                      ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white" 
-                      : "text-gray-600 hover:bg-indigo-50 hover:text-indigo-600"
-                  }`}
-                >
-                  <LayoutGrid className="h-4 w-4 mr-1" />
-                  <span className="text-xs font-medium">Cards</span>
-                </ToggleGroupItem>
-                
-                <ToggleGroupItem
-                  value="table"
-                  aria-label="Table view"
-                  className={`rounded-md px-3 py-2 ${
-                    viewMode === "table" 
-                      ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white" 
-                      : "text-gray-600 hover:bg-indigo-50 hover:text-indigo-600"
-                  }`}
-                >
-                  <Table className="h-4 w-4 mr-1" />
-                  <span className="text-xs font-medium">Table</span>
-                </ToggleGroupItem>
-                
-                <ToggleGroupItem
-                  value="scroll"
-                  aria-label="Scroll view"
-                  className={`rounded-md px-3 py-2 ${
-                    viewMode === "scroll" 
-                      ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white" 
-                      : "text-gray-600 hover:bg-indigo-50 hover:text-indigo-600"
-                  }`}
-                >
-                  <Scroll className="h-4 w-4 mr-1" />
-                  <span className="text-xs font-medium">Scroll</span>
-                </ToggleGroupItem>
-              </ToggleGroup>
+                {isSaving ? (
+                  <>
+                    <span className="animate-spin h-4 w-4 border-2 border-white border-opacity-50 border-t-transparent rounded-full"></span>
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    <span>Save Rate Settings</span>
+                  </>
+                )}
+              </Button>
             </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-6">
-          {renderContent()}
-          
-          <div className="mt-6 flex flex-col md:flex-row items-center justify-between gap-4 border-t border-gray-100 pt-4">
-            <div className="flex items-center gap-2 text-amber-600">
-              <Info className="h-4 w-4" />
-              <p className="text-sm">
-                Changing the hourly base rate will update all bays using the default rate.
-              </p>
-            </div>
-            <Button 
-              onClick={handleSave} 
-              disabled={isSaving || !isDirty}
-              className="rounded-full px-6"
-            >
-              {isSaving ? (
-                <>
-                  <LoadingSpinner size="sm" className="mr-2" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Settings
-                </>
-              )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          </form>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
   );
 };
+
+export default RateSettingsForm;
