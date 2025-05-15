@@ -1,87 +1,65 @@
 
 /**
- * Utility function to print a specific element
- * @param elementId The ID of the element to print
- * @param title Optional title for the print document
+ * Print an element by its id
+ * @param elementId The id of the element to print
+ * @param title Optional title for the print window
  */
-export const printElement = (elementId: string, title?: string) => {
+export const printElement = (elementId: string, title?: string): void => {
   const element = document.getElementById(elementId);
   
   if (!element) {
-    console.error(`Element with id "${elementId}" not found`);
+    console.error(`Element with id ${elementId} not found`);
     return;
   }
   
   const printWindow = window.open('', '_blank');
-  
   if (!printWindow) {
-    console.error("Could not open print window");
+    alert('Please allow popups for this website to print content');
     return;
   }
   
-  // Get styles from the current page
-  const styles = Array.from(document.styleSheets)
-    .map(styleSheet => {
-      try {
-        return Array.from(styleSheet.cssRules)
-          .map(rule => rule.cssText)
-          .join('\n');
-      } catch (e) {
-        // Skip external stylesheets
-        return '';
-      }
-    })
-    .join('\n');
-  
-  // Create the print document
-  printWindow.document.write(`
+  const htmlContent = `
     <!DOCTYPE html>
     <html>
       <head>
-        <title>${title || 'Print'}</title>
+        <title>${title || 'Print Document'}</title>
         <style>
-          ${styles}
-          @media print {
-            body {
-              padding: 20px;
-              font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            }
-            @page {
-              size: auto;
-              margin: 10mm;
-            }
-            .print-header {
-              text-align: center;
-              margin-bottom: 20px;
-              border-bottom: 1px solid #ddd;
-              padding-bottom: 10px;
-            }
+          body {
+            font-family: Arial, sans-serif;
+            margin: 2rem;
+            line-height: 1.5;
+          }
+          .print-header {
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #ccc;
+          }
+          .print-date {
+            margin-top: 1rem;
+            color: #666;
+            font-size: 0.9rem;
           }
         </style>
       </head>
       <body>
         <div class="print-header">
           <h1>${title || 'Print Document'}</h1>
-          <p>${new Date().toLocaleDateString()}</p>
+          <div class="print-date">Generated on: ${new Date().toLocaleString()}</div>
         </div>
-        ${element.outerHTML}
+        ${element.innerHTML}
       </body>
     </html>
-  `);
+  `;
   
+  printWindow.document.open();
+  printWindow.document.write(htmlContent);
   printWindow.document.close();
   
-  // Wait for resources to load
-  printWindow.addEventListener('load', () => {
-    printWindow.focus();
+  // Wait for content to load
+  printWindow.setTimeout(() => {
     printWindow.print();
-    
-    // Some browsers will automatically close the window after printing
-    // For others, we'll set a timeout
-    setTimeout(() => {
-      if (!printWindow.closed) {
-        printWindow.close();
-      }
-    }, 1000);
-  });
+    printWindow.onafterprint = () => {
+      printWindow.close();
+    };
+  }, 500);
 };

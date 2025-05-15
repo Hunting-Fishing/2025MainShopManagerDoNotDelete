@@ -110,6 +110,29 @@ export async function getPublicShops(params: ShopSearchParams = {}): Promise<Sho
   }
 }
 
+// Helper function to calculate distance between two points using Haversine formula
+function calculateDistance(
+  lat1: number, 
+  lon1: number, 
+  lat2: number, 
+  lon2: number
+): number {
+  const R = 3958.8; // Earth's radius in miles
+  const dLat = toRadians(lat2 - lat1);
+  const dLon = toRadians(lon2 - lon1);
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const distance = R * c;
+  return distance;
+}
+
+function toRadians(degrees: number): number {
+  return degrees * (Math.PI / 180);
+}
+
 export async function registerWithShop(customerId: string, shopId: string): Promise<boolean> {
   try {
     const { data, error } = await supabase
@@ -157,13 +180,12 @@ export async function getCustomerShops(customerId: string): Promise<ShopDirector
     const { data, error } = await supabase
       .from('customer_shop_relationships')
       .select(`
-        shop_id,
-        shops:shop_id(
-          id, 
-          name, 
-          address, 
-          city, 
-          state, 
+        shops (
+          id,
+          name,
+          address,
+          city,
+          state,
           postal_code,
           phone,
           email,
@@ -187,6 +209,7 @@ export async function getCustomerShops(customerId: string): Promise<ShopDirector
     const shops: ShopDirectoryItem[] = data?.map(item => {
       // Map each shops object to our ShopDirectoryItem interface explicitly
       const shop = item.shops as any;
+      
       return {
         id: shop.id,
         name: shop.name,
@@ -210,25 +233,4 @@ export async function getCustomerShops(customerId: string): Promise<ShopDirector
     console.error("Error in getCustomerShops:", error);
     return [];
   }
-}
-
-// Haversine formula to calculate the distance between two points on Earth
-function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 3958.8; // Earth's radius in miles
-  const dLat = toRadians(lat2 - lat1);
-  const dLon = toRadians(lon2 - lon1);
-  
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  const distance = R * c;
-  
-  return distance;
-}
-
-function toRadians(degrees: number): number {
-  return degrees * (Math.PI / 180);
 }
