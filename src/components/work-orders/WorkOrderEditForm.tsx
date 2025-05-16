@@ -21,7 +21,7 @@ export default function WorkOrderEditForm({ workOrder }: WorkOrderEditFormProps)
     error: formError 
   } = useWorkOrderEditForm(workOrder.id);
   
-  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>(workOrder.time_entries || []);
+  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>(workOrder.timeEntries || []);
   const { technicians, isLoading: loadingTechnicians } = useTechnicians();
 
   // Handle updating time entries

@@ -31,6 +31,15 @@ export interface WorkOrder {
   vehicle_make?: string;
   vehicle_model?: string;
   timeEntries?: TimeEntry[];
+  priority?: string;
+  date?: string;
+  dueDate?: string;
+  due_date?: string;
+  location?: string;
+  notes?: string;
+  technician?: string;
+  total_billable_time?: number;
+  inventory_items?: any[];
 }
 
 export interface WorkOrderTemplate {
@@ -44,6 +53,7 @@ export interface WorkOrderTemplate {
   last_used?: string;
   usage_count: number;
   created_at?: string;
+  location?: string;
 }
 
 export interface TimeEntry {
@@ -70,3 +80,12 @@ export enum WorkOrderTypes {
   DIAGNOSTIC = 'diagnostic',
   OTHER = 'other'
 }
+
+// Export a statusMap for components that need it
+export const statusMap = {
+  "pending": "Pending",
+  "in-progress": "In Progress",
+  "completed": "Completed",
+  "cancelled": "Cancelled",
+  "on-hold": "On Hold"
+};

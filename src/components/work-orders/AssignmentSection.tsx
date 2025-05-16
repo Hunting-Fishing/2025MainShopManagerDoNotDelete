@@ -46,18 +46,15 @@ export const AssignmentSection: React.FC<AssignmentSectionProps> = ({
       {/* Technician Field */}
       <FormField
         control={form.control}
-        name="technician_id"
+        name="technician"
         render={({ field }) => (
           <FormItem>
             <FormLabel>Assigned Technician</FormLabel>
             <Select
               onValueChange={(value) => {
                 field.onChange(value);
-                // Also set the display name for backward compatibility
-                const tech = technicians.find(t => t.id === value);
-                if (tech) {
-                  form.setValue("technician", tech.name);
-                }
+                // Also set the technician_id for backward compatibility
+                form.setValue("technician_id", value);
               }}
               defaultValue={field.value}
               disabled={isLoading}

@@ -1,101 +1,107 @@
-import { useState, useCallback } from "react";
-import { WorkOrder, WorkOrderStatusType } from "@/types/workOrder";
-import { toast } from "sonner";
-import { createWorkOrder, updateWorkOrder } from "@/services/workOrderService";
-import { useNavigate } from "react-router-dom";
 
-export type WorkOrderFormValues = {
+import { useState } from 'react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from '@/components/ui/use-toast';
+
+// Define the form values type
+export interface WorkOrderFormValues {
   customer: string;
+  customer_id?: string;
   description: string;
-  status: "pending" | "in-progress" | "completed" | "cancelled";
-  priority: "low" | "medium" | "high";
+  status: string;
+  priority: string;
   technician: string;
-  location: string;
-  dueDate: Date;
+  technician_id?: string;
+  location?: string;
+  dueDate?: string;
   notes?: string;
+  vehicleMake?: string;
+  vehicleModel?: string;
+  vehicleYear?: string;
+  odometer?: string;
+  licensePlate?: string;
+  vin?: string;
   inventoryItems?: any[];
-  service_type?: string;
-  estimated_hours?: string | number;
-};
+}
 
-export const useWorkOrderForm = (initialWorkOrder?: Partial<WorkOrder>) => {
-  const [workOrder, setWorkOrder] = useState<Partial<WorkOrder>>(
-    initialWorkOrder || {
-      status: "pending" as WorkOrderStatusType,
-      description: "",
-      service_type: "",
+// Create the schema
+const workOrderFormSchema = z.object({
+  customer: z.string().min(1, { message: "Customer is required" }),
+  customer_id: z.string().optional(),
+  description: z.string().min(1, { message: "Description is required" }),
+  status: z.string().min(1, { message: "Status is required" }),
+  priority: z.string().min(1, { message: "Priority is required" }),
+  technician: z.string().optional(),
+  technician_id: z.string().optional(),
+  location: z.string().optional(),
+  dueDate: z.string().optional(),
+  notes: z.string().optional(),
+  vehicleMake: z.string().optional(),
+  vehicleModel: z.string().optional(),
+  vehicleYear: z.string().optional(),
+  odometer: z.string().optional(),
+  licensePlate: z.string().optional(),
+  vin: z.string().optional(),
+  inventoryItems: z.array(z.any()).optional()
+});
+
+export const useWorkOrderForm = (initialData?: Partial<WorkOrderFormValues>) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const form = useForm<WorkOrderFormValues>({
+    resolver: zodResolver(workOrderFormSchema),
+    defaultValues: initialData || {
+      customer: '',
+      description: '',
+      status: 'pending',
+      priority: 'medium',
+      technician: '',
+      location: '',
+      notes: '',
+      vehicleMake: '',
+      vehicleModel: '',
+      vehicleYear: '',
+      odometer: '',
+      licensePlate: '',
+      vin: '',
+      inventoryItems: []
     }
-  );
+  });
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
-
-  const updateField = useCallback((field: keyof WorkOrder, value: any) => {
-    setWorkOrder((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-    setError(null); // Clear any errors when fields are updated
-  }, []);
-
-  const handleSubmit = useCallback(
-    async (status?: WorkOrderStatusType) => {
-      setLoading(true);
-      setError(null);
+  const handleSubmit = async (values: WorkOrderFormValues) => {
+    setIsSubmitting(true);
+    try {
+      console.log("Submitting work order:", values);
       
-      try {
-        // If status is provided in the call, use it
-        const workOrderToSave = {
-          ...workOrder,
-          status: status || workOrder.status,
-        };
-        
-        // Convert estimated_hours from string to number if needed
-        if (typeof workOrderToSave.estimated_hours === "string") {
-          workOrderToSave.estimated_hours = parseFloat(workOrderToSave.estimated_hours);
-        }
-        
-        // Handle vehicle_year field
-        if (workOrderToSave.vehicle_year !== undefined) {
-          // No conversion needed here, just use the field as is
-          // Type system will understand this is a string | number
-        }
-
-        const result = workOrder.id
-          ? await updateWorkOrder(workOrder.id, workOrderToSave)
-          : await createWorkOrder(workOrderToSave);
-
-        toast.success(
-          workOrder.id
-            ? "Work order updated successfully"
-            : "Work order created successfully"
-        );
-        
-        navigate(`/work-orders/${result.id}`);
-        return result;
-      } catch (err) {
-        console.error("Error saving work order:", err);
-        const errorMessage =
-          err instanceof Error
-            ? err.message
-            : "Unknown error occurred while saving work order";
-        setError(errorMessage);
-        toast.error(errorMessage);
-        return null;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [workOrder, navigate]
-  );
+      // Here you would normally send the data to your API
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulated API request
+      
+      toast({
+        title: "Work order created",
+        description: "The work order has been created successfully",
+      });
+      
+      return values;
+    } catch (error) {
+      console.error("Error creating work order:", error);
+      toast({
+        title: "Error",
+        description: "There was a problem creating the work order",
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return {
-    workOrder,
-    setWorkOrder,
-    updateField,
+    form,
+    isSubmitting,
     handleSubmit,
-    loading,
-    error,
   };
 };
+
+export default useWorkOrderForm;

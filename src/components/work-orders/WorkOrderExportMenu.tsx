@@ -37,7 +37,7 @@ export function WorkOrderExportMenu({ workOrder }: WorkOrderExportMenuProps) {
       };
       
       // Format time entries data if they exist
-      const timeEntriesData = workOrder.time_entries ? workOrder.time_entries.map(entry => ({
+      const timeEntriesData = workOrder.timeEntries ? workOrder.timeEntries.map(entry => ({
         employeeName: entry.employee_name,
         startTime: entry.start_time ? new Date(entry.start_time).toLocaleString() : 'N/A',
         endTime: entry.end_time ? new Date(entry.end_time).toLocaleString() : 'Ongoing',

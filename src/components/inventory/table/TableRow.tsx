@@ -71,7 +71,7 @@ export const InventoryTableRow = ({
           ) : col.id === 'unit_price' ? (
             formatPrice(item.unit_price || 0)
           ) : col.id === 'created_at' || col.id === 'updated_at' ? (
-            formatDate(item[col.id])
+            formatDate(item[col.id as keyof InventoryItemExtended] as string)
           ) : (
             item[col.id as keyof InventoryItemExtended] || "N/A"
           )}
