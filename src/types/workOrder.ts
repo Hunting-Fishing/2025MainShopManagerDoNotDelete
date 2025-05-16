@@ -26,6 +26,11 @@ export interface WorkOrder {
   invoiced_at?: string;
   invoice_id?: string;
   vehicle_year?: string | number;
+  // Adding missing fields
+  customer?: string;
+  vehicle_make?: string;
+  vehicle_model?: string;
+  timeEntries?: TimeEntry[];
 }
 
 export interface WorkOrderTemplate {
@@ -55,3 +60,7 @@ export interface TimeEntry {
 }
 
 export type WorkOrderUpdater = (workOrder: Partial<WorkOrder>) => Partial<WorkOrder>;
+
+// Define types needed by equipment components
+export type WorkOrderPriorityType = 'low' | 'medium' | 'high' | 'critical';
+export type WorkOrderTypes = 'repair' | 'maintenance' | 'inspection' | 'diagnostic' | 'other';

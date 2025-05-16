@@ -1,7 +1,13 @@
 
 import { Customer } from './customer';
 import { WorkOrder } from './workOrder';
-import { StaffMember } from './staff';
+
+// Export StaffMember so it can be used by other components
+export interface StaffMember {
+  id: string;
+  name: string;
+  role?: string;
+}
 
 export interface Invoice {
   id: string;
@@ -30,6 +36,9 @@ export interface Invoice {
   relatedWorkOrder?: WorkOrder; // For joined data
   related_work_order?: WorkOrder; // For database joined data
   created_at?: string;
+  // Adding missing fields
+  items?: InvoiceItem[];
+  assignedStaff?: StaffMember[];
 }
 
 export interface InvoiceItem {
@@ -41,6 +50,7 @@ export interface InvoiceItem {
   total: number;
   hours?: boolean;
   sku?: string;
+  category?: string;
   invoice_id: string;
 }
 
@@ -55,9 +65,26 @@ export interface InvoiceTemplate {
   default_notes?: string;
   default_due_date_days?: number;
   items?: InvoiceItem[];
+  // Adding fields used in components
+  defaultItems?: InvoiceItem[];
+  defaultTaxRate?: number;
+  defaultDueDateDays?: number;
+  defaultNotes?: string;
 }
 
 export type InvoiceUpdater = (field: keyof Invoice, value: any) => void;
 
 export const createInvoiceUpdater = (updater: (invoice: Invoice) => Invoice) =>
   (prev: Invoice) => updater(prev);
+
+// Add the InvoiceFiltersProps interface
+export interface InvoiceFiltersProps {
+  onFilterChange: (filters: any) => void;
+  filters: {
+    status: string[];
+    dateRange: [Date | null, Date | null];
+    minAmount: number;
+    maxAmount: number;
+    customer: string;
+  };
+}

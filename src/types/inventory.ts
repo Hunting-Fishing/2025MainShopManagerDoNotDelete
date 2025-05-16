@@ -1,144 +1,49 @@
+
 export interface InventoryItem {
   id: string;
   name: string;
-  sku?: string;
-  category?: string;
-  price: number;
+  sku: string;
   description?: string;
-  quantity?: number;
+  price: number;
+  unit_price?: number; // alias for price for db compatibility
+  category?: string;
   supplier?: string;
   status?: string;
+  quantity?: number;
+  reorder_point?: number;
 }
 
-export interface InventoryItemExtended {
-  id: string;
-  name: string;
-  sku: string;
-  category: string;
-  supplier: string;
+export interface InventoryItemExtended extends InventoryItem {
   quantity: number;
-  reorderPoint: number;
-  unitPrice: number;
-  location: string;
+  reorder_point: number;
+  unit_price: number;
+  created_at?: string;
+  updated_at?: string;
+  location?: string;
   status: string;
-  description?: string;
-  coreCharge?: number;
-  environmentalFee?: number;
-  freightFee?: number;
-  otherFee?: number;
-  otherFeeDescription?: string;
-  
-  // New fields to match the provided requirements
-  partNumber?: string;
-  manufacturer?: string;
-  cost?: number;
-  marginMarkup?: number;
-  retailPrice?: number;
-  wholesalePrice?: number;
-  specialTax?: number;
-  onOrder?: number;
-  onHold?: number;
-  minimumOrder?: number;
-  maximumOrder?: number;
-  totalQtySold?: number;
-  dateBought?: string;
-  dateLast?: string;
-  serialNumbers?: string;
-  itemCondition?: string; // New, Used, Rebuilt, OEM
-  barcode?: string;
-  reorderQuantity?: number;
-  categoryId?: string;
-  locationId?: string;
-  supplierId?: string;
-  subcategory?: string;
-  vehicleCompatibility?: string;
-  warrantyPeriod?: string;
-  notes?: string;
-
-  // Additional fields
-  quantityReserved?: number;
-  quantityAvailable?: number;
-  totalValue?: number;
+  supplier: string;
 }
 
-export interface AutoReorderSettings {
-  enabled: boolean;
-  threshold: number;
-  quantity: number;
-}
-
-export interface ReorderSettings {
-  itemId: string;
-  threshold: number;
-  quantity: number;
-  enabled: boolean;
-}
-
-// New types for the enhanced inventory system
 export interface InventoryCategory {
   id: string;
   name: string;
-  description?: string;
-  parent_id?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface InventoryLocation {
-  id: string;
-  name: string;
-  description?: string;
-  parent_id?: string;
-  created_at: string;
-  updated_at: string;
+  count?: number;
 }
 
 export interface InventorySupplier {
   id: string;
   name: string;
-  contact_name?: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  website?: string;
-  preferred_shipping_method?: string;
-  notes?: string;
-  created_at: string;
-  updated_at: string;
+  count?: number;
 }
 
-export interface InventoryAdjustment {
+export interface InventoryLocation {
   id: string;
-  item_id: string;
-  quantity_change: number;
-  reason: string;
-  user_id: string;
-  created_at: string;
-  notes?: string;
+  name: string;
+  count?: number;
 }
 
-export interface InventoryValuation {
-  total_cost: number;
-  total_retail: number;
-  item_count: number;
-  last_updated: string;
-}
-
-export type InventoryItemStatus = 
-  | "In Stock" 
-  | "Low Stock" 
-  | "Out of Stock" 
-  | "Discontinued"
-  | "On Order";
-
-export interface InventoryTransaction {
-  id: string;
-  item_id: string;
-  quantity: number;
-  transaction_type: "purchase" | "sale" | "adjustment" | "transfer" | "return" | "write-off";
-  reference_id?: string;
-  reference_type?: string;
-  created_at: string;
-  user_id: string;
-  notes?: string;
+export interface InventoryStatus {
+  value: string;
+  label: string;
+  count?: number;
 }

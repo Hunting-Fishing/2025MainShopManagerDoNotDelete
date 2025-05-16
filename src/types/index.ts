@@ -21,5 +21,5 @@ export * from "./repair";
 export * from "./interaction";
 
 // Re-export specific types with renamed imports to prevent circular dependencies
-import { TimeEntry } from "./workOrder";
-export { TimeEntry };
+import { TimeEntry, WorkOrderPriorityType, WorkOrderTypes } from "./workOrder";
+export { TimeEntry, WorkOrderPriorityType, WorkOrderTypes };

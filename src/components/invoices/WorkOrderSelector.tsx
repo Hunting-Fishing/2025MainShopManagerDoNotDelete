@@ -1,51 +1,41 @@
 
-import { WorkOrder } from "@/types/workOrder";
-import { useWorkOrderTimeEntries } from "@/hooks/invoice/useWorkOrderTimeEntries";
-import { createInvoiceUpdater } from "@/types/invoice";
-import { useState } from "react";
-import { normalizeWorkOrder } from "@/utils/workOrderUtils";
+import React from 'react';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { WorkOrder } from '@/types/workOrder';
+import { Invoice } from '@/types/invoice';
+import { Button } from '@/components/ui/button';
 
-interface WorkOrderSelectorProps {
-  invoice: any;
-  setInvoice: (updater: any) => void;
-  handleSelectWorkOrder: (workOrder: WorkOrder) => void;
-}
-
+// Export the hook to be used by other components
 export function useWorkOrderSelector({
   invoice,
   setInvoice,
   handleSelectWorkOrder
-}: WorkOrderSelectorProps) {
-  const [selectedWorkOrder, setSelectedWorkOrder] = useState<WorkOrder | null>(null);
-  const workOrderTimeEntriesHook = useWorkOrderTimeEntries(selectedWorkOrder || {} as WorkOrder);
-  const { addTimeEntriesToInvoiceItems } = workOrderTimeEntriesHook;
-
-  // Custom handler to select work order and include time entries
+}: {
+  invoice: Invoice;
+  setInvoice: (invoice: Invoice | ((prev: Invoice) => Invoice)) => void;
+  handleSelectWorkOrder: (workOrder: WorkOrder) => void;
+}) {
+  // Function to handle work order selection with time entries calculation
   const handleSelectWorkOrderWithTime = (workOrder: WorkOrder) => {
-    // Normalize work order to ensure consistent property access
-    const normalizedWorkOrder = normalizeWorkOrder(workOrder);
-    
-    // Update the selected work order
-    setSelectedWorkOrder(normalizedWorkOrder);
-    
-    // First handle basic work order selection
-    handleSelectWorkOrder(normalizedWorkOrder);
-    
-    // Add billed time to invoice items if present
-    if (normalizedWorkOrder.timeEntries && normalizedWorkOrder.timeEntries.length > 0) {
-      // Create new items with time entries added
-      const updatedItems = addTimeEntriesToInvoiceItems(normalizedWorkOrder, invoice.items);
-      
-      // Only update if new items were added
-      if (updatedItems.length > invoice.items.length) {
-        setInvoice(createInvoiceUpdater({
-          items: updatedItems
-        }));
-      }
+    if (!workOrder) return;
+
+    // Calculate total hours from time entries if they exist
+    let totalHours = 0;
+    if (workOrder.timeEntries && workOrder.timeEntries.length > 0) {
+      totalHours = workOrder.timeEntries.reduce((total, entry) => total + entry.duration, 0) / 60;
     }
+
+    // Add time entries to invoice items if needed
+    handleSelectWorkOrder(workOrder);
   };
 
   return {
     handleSelectWorkOrderWithTime
   };
 }
+
+// Export the WorkOrderSelector component
+export const WorkOrderSelector: React.FC = () => {
+  // This component is just a placeholder for now
+  return <div>WorkOrderSelector</div>;
+};

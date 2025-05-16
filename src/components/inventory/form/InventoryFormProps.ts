@@ -15,4 +15,16 @@ export interface InventoryFormFieldProps {
   error?: string;
   required?: boolean;
   description?: string;
+  value?: string;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  placeholder?: string;
+  type?: string;
+  min?: string;
+  step?: string;
+  as?: string;
+}
+
+export interface SelectOption {
+  value: string;
+  label: string;
 }

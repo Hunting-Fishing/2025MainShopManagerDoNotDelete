@@ -8,8 +8,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { FormControl, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
-// Export the SelectOption interface
 export interface SelectOption {
   value: string;
   label: string;
@@ -32,41 +32,37 @@ export function InventoryFormSelect({
   onValueChange,
   options,
   error,
-  required,
+  required = false,
 }: InventoryFormSelectProps) {
-  // Check if options are in SelectOption format or simple string array
-  const isSelectOptionFormat = options.length > 0 && typeof options[0] !== 'string';
-  
+  // Format options to ensure they are all SelectOption objects
+  const formattedOptions = options.map((option) => {
+    if (typeof option === "string") {
+      return { value: option, label: option };
+    }
+    return option;
+  });
+
   return (
     <div className="space-y-2">
       <Label htmlFor={id} className="flex items-center">
         {label}
+        {required && <span className="text-red-500 ml-1">*</span>}
       </Label>
       
       <Select value={value} onValueChange={onValueChange}>
-        <SelectTrigger id={id} className={error ? "border-red-500" : ""}>
-          <SelectValue placeholder={`Select ${label.toLowerCase()}`} />
+        <SelectTrigger id={id}>
+          <SelectValue placeholder={`Select ${label}`} />
         </SelectTrigger>
         <SelectContent>
-          {isSelectOptionFormat ? 
-            (options as SelectOption[]).map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))
-          :
-            (options as string[]).map((option) => (
-              <SelectItem key={option} value={option}>
-                {option}
-              </SelectItem>
-            ))
-          }
+          {formattedOptions.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
       
-      {error && (
-        <p className="text-sm text-red-500">{error}</p>
-      )}
+      {error && <p className="text-sm text-red-500">{error}</p>}
     </div>
   );
 }

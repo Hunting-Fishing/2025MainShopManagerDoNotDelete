@@ -13,8 +13,8 @@ interface CallLoggerProps {
 
 export function CallLogger({ workOrder }: CallLoggerProps) {
   const phoneNumber = ""; // This would come from customer data in a real app
-  const customerName = workOrder.customer;
-  const customerId = ""; // This would be the actual customer ID in a real app
+  const customerName = workOrder.customer || "Customer";
+  const customerId = workOrder.customer_id || ""; // This would be the actual customer ID in a real app
   
   return (
     <Card>
