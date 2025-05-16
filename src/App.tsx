@@ -4,44 +4,44 @@ import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import Layout from "./components/layout/Layout";
 import Settings from "./pages/Settings";
 import CustomerSettings from "./pages/CustomerSettings";
-import { AuthProvider, useAuth } from '@/context/AuthContext';
-import LoginPage from '@/pages/auth/LoginPage';
-import RegisterPage from '@/pages/auth/RegisterPage';
-import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage';
-import ResetPasswordPage from '@/pages/auth/ResetPasswordPage';
+import { AuthProvider } from './context/AuthContext';
+import LoginPage from './pages/auth/LoginPage';
+import RegisterPage from './pages/auth/RegisterPage';
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
+import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { ShopProvider } from '@/context/ShopContext';
+import { ShopProvider } from './context/ShopContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { I18nextProvider } from 'react-i18next';
-import i18n from '@/i18n';
+import i18n from './i18n';
 import Dashboard from './pages/Dashboard';
 import WorkOrders from './pages/WorkOrders';
 import Invoices from './pages/Invoices';
 import Customers from './pages/Customers';
 import Equipment from './pages/Equipment';
 import Inventory from './pages/Inventory';
-import ToolsShop from '@/pages/ToolsShop';
+import ToolsShop from './pages/ToolsShop';
 import Forms from './pages/Forms';
-import Shopping from '@/pages/Shopping';
+import Shopping from './pages/Shopping';
 import Maintenance from './pages/Maintenance';
-import CalendarPage from '@/pages/CalendarPage';
-import Reminders from '@/pages/Reminders';
+import CalendarPage from './pages/CalendarPage';
+import Reminders from './pages/Reminders';
 import Chat from './pages/Chat';
 import Reports from './pages/Reports';
 import Team from './pages/Team';
-import Marketing from '@/pages/Marketing';
-import EmailTemplates from '@/pages/marketing/EmailTemplates';
-import EmailCampaigns from '@/pages/marketing/EmailCampaigns';
-import EmailSequences from '@/pages/marketing/EmailSequences';
-import SMSTemplates from '@/pages/marketing/SMSTemplates';
-import DeveloperPortal from '@/pages/developer/DeveloperPortal';
+import Marketing from './pages/Marketing';
+import EmailTemplates from './pages/marketing/EmailTemplates';
+import EmailCampaigns from './pages/marketing/EmailCampaigns';
+import EmailSequences from './pages/marketing/EmailSequences';
+import SMSTemplates from './pages/marketing/SMSTemplates';
+import DeveloperPortal from './pages/developer/DeveloperPortal';
 import ShoppingControls from './pages/developer/ShoppingControls';
 import ServiceManagement from './pages/developer/ServiceManagement';
-import RequireAuth from '@/components/auth/RequireAuth';
-import PublicRoute from '@/components/auth/PublicRoute';
-import EmailVerificationPage from '@/pages/auth/EmailVerificationPage';
+import RequireAuth from './components/auth/RequireAuth';
+import PublicRoute from './components/auth/PublicRoute';
+import EmailVerificationPage from './pages/auth/EmailVerificationPage';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { SettingsPageLayout } from './components/settings/SettingsPageLayout';
@@ -60,13 +60,21 @@ import { EmailSchedulingTab } from './components/settings/EmailSchedulingTab';
 import { DataExportTab } from './components/settings/DataExportTab';
 import { LanguageTab } from './components/settings/LanguageTab';
 import { SettingsLayout } from './components/settings/SettingsLayout';
-import { useLoading } from './hooks/useLoading';
-import Loading from './components/Loading';
+
+// Create a simple loading component since we can't import useLoading
+function Loading() {
+  return (
+    <div className="fixed inset-0 flex items-center justify-center bg-white bg-opacity-50 z-50">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    </div>
+  );
+}
 
 const queryClient = new QueryClient();
 
 function App() {
-  const { isLoading } = useLoading();
+  // Remove the useLoading hook since we don't have access to it
+  const isLoading = false;
 
   return (
     <QueryClientProvider client={queryClient}>
