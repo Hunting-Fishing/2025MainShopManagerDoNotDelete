@@ -10,6 +10,7 @@ export function useInvoiceData(initialWorkOrderId?: string) {
     id: uuidv4(),
     number: `INV-${Date.now().toString().slice(-6)}`,
     customer: '',
+    customer_id: '', // Ensure this required field is set
     customer_address: '',
     customer_email: '',
     status: 'draft',
@@ -27,7 +28,8 @@ export function useInvoiceData(initialWorkOrderId?: string) {
     created_by: '',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-    assignedStaff: []
+    assignedStaff: [],
+    items: [] // Ensure this required field is set
   });
   
   const [items, setItems] = useState<InvoiceItem[]>([]);
@@ -79,6 +81,7 @@ export function useInvoiceData(initialWorkOrderId?: string) {
       description: inventoryItem.description || inventoryItem.name,
       quantity: 1,
       price: inventoryItem.price || inventoryItem.unit_price || 0,
+      total: inventoryItem.price || inventoryItem.unit_price || 0,
       sku: inventoryItem.sku,
       category: inventoryItem.category,
     };
@@ -140,9 +143,11 @@ export function useInvoiceData(initialWorkOrderId?: string) {
   const handleAddLaborItem = () => {
     const newItem: InvoiceItem = {
       id: uuidv4(),
+      name: "Labor", // Add the required name field
       description: 'Labor',
       quantity: 1,
       price: 100,
+      total: 100, // Calculate the total correctly
       hours: true
     };
     

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { WorkOrderFormHeader } from "@/components/work-orders/WorkOrderFormHeader";
@@ -118,7 +117,6 @@ const WorkOrderCreate = () => {
       <WorkOrderCreateForm
         form={form}
         onSubmit={onSubmit}
-        isLoading={isSubmitting}
       />
     </div>
   );

@@ -1,4 +1,3 @@
-
 import { useInvoiceFormState } from "@/hooks/invoice/useInvoiceFormState";
 import { useInvoiceTemplates } from "@/hooks/invoice/useInvoiceTemplates";
 import { useInvoiceSave } from "@/hooks/invoice/useInvoiceSave";
@@ -58,9 +57,11 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
   const handleAddLaborItem = () => {
     const newItem: InvoiceItem = {
       id: crypto.randomUUID(),
+      name: "Labor", // Add required name field
       description: "Labor",
       quantity: 1,
       price: 0,
+      total: 0, // Add required total field
       hours: true
     };
     setItems(prev => [...prev, newItem]);

@@ -21,14 +21,14 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { InvoiceFiltersProps } from "@/types/invoice";
 
-export function InvoiceFilters({ onApplyFilters, filters, setFilters, resetFilters }: InvoiceFiltersProps) {
+export function InvoiceFilters({ filters, onFilterChange, onApplyFilters, setFilters, resetFilters }: InvoiceFiltersProps) {
   // If filters and setFilters aren't provided, create local state
   const [localFilters, setLocalFilters] = React.useState(filters || {
     status: "all",
     customer: "",
     dateRange: {
-      from: null,
-      to: null
+      from: undefined,
+      to: undefined
     }
   });
 
@@ -38,7 +38,10 @@ export function InvoiceFilters({ onApplyFilters, filters, setFilters, resetFilte
       setFilters(updatedFilters);
     } else {
       setLocalFilters(updatedFilters);
-      onApplyFilters(updatedFilters);
+      
+      if (onApplyFilters) {
+        onApplyFilters(updatedFilters);
+      }
     }
   };
 
@@ -51,12 +54,15 @@ export function InvoiceFilters({ onApplyFilters, filters, setFilters, resetFilte
         status: "all",
         customer: "",
         dateRange: {
-          from: null,
-          to: null
+          from: undefined,
+          to: undefined
         }
       };
       setLocalFilters(defaultFilters);
-      onApplyFilters(defaultFilters);
+      
+      if (onApplyFilters) {
+        onApplyFilters(defaultFilters);
+      }
     }
   };
 
@@ -70,7 +76,7 @@ export function InvoiceFilters({ onApplyFilters, filters, setFilters, resetFilte
     handleFiltersChange({ ...activeFilters, customer: event.target.value });
   };
   
-  const handleDateRangeChange = (field: "from" | "to", value: Date | null) => {
+  const handleDateRangeChange = (field: "from" | "to", value: Date | undefined) => {
     handleFiltersChange({
       ...activeFilters,
       dateRange: {

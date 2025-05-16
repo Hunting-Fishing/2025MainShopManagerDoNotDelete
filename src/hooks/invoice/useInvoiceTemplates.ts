@@ -135,6 +135,75 @@ export function useInvoiceTemplates() {
     };
   }, []);
 
+  // Update the example templates to include required total field
+  const exampleTemplate1: InvoiceTemplate = {
+    id: "template-1",
+    name: "Basic Service",
+    description: "Standard service template with common items",
+    default_tax_rate: 0.08,
+    default_due_date_days: 30,
+    default_notes: "Thank you for your business!",
+    default_items: [
+      { 
+        id: "item-1", 
+        name: "Oil Change", 
+        description: "Standard oil change", 
+        quantity: 1, 
+        price: 39.99, 
+        total: 39.99 
+      },
+      { 
+        id: "item-2", 
+        name: "Filter Replacement", 
+        description: "Engine filter replacement", 
+        quantity: 1, 
+        price: 25.00, 
+        total: 25.00 
+      }
+    ],
+    created_at: new Date().toISOString(),
+    usage_count: 0,
+    last_used: null,
+  };
+
+  const exampleTemplate2: InvoiceTemplate = {
+    id: "template-2",
+    name: "Full Service",
+    description: "Complete vehicle service template",
+    default_tax_rate: 0.08,
+    default_due_date_days: 30,
+    default_notes: "Thank you for choosing our full service option!",
+    default_items: [
+      { 
+        id: "item-3", 
+        name: "Oil Change", 
+        description: "Premium oil change", 
+        quantity: 1, 
+        price: 59.99, 
+        total: 59.99 
+      },
+      { 
+        id: "item-4", 
+        name: "Filter Replacement", 
+        description: "Engine and air filter replacement", 
+        quantity: 1, 
+        price: 45.00, 
+        total: 45.00 
+      },
+      { 
+        id: "item-5", 
+        name: "Tire Rotation", 
+        description: "Standard tire rotation", 
+        quantity: 1, 
+        price: 35.00, 
+        total: 35.00 
+      }
+    ],
+    created_at: new Date().toISOString(),
+    usage_count: 0,
+    last_used: null,
+  };
+
   return {
     templates,
     isLoading,

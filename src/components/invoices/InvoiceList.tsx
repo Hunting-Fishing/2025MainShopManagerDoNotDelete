@@ -30,12 +30,12 @@ export function InvoiceList({ invoices, isLoading, error }: InvoiceListProps) {
     // Filter by date range
     if (filters.dateRange && filters.dateRange.from) {
       const fromDate = new Date(filters.dateRange.from);
-      result = result.filter(invoice => new Date(invoice.date) >= fromDate);
+      result = result.filter(invoice => new Date(invoice.date || invoice.issue_date) >= fromDate);
     }
     
     if (filters.dateRange && filters.dateRange.to) {
       const toDate = new Date(filters.dateRange.to);
-      result = result.filter(invoice => new Date(invoice.date) <= toDate);
+      result = result.filter(invoice => new Date(invoice.date || invoice.issue_date) <= toDate);
     }
     
     // Filter by creator if applicable
@@ -73,7 +73,9 @@ export function InvoiceList({ invoices, isLoading, error }: InvoiceListProps) {
       <div className="p-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <InvoiceListHeader />
-          <InvoiceFiltersDropdown onApplyFilters={applyFilters} />
+          <InvoiceFiltersDropdown 
+            onApplyFilters={applyFilters} 
+          />
         </div>
         
         <InvoiceListTable invoices={filteredInvoices} />

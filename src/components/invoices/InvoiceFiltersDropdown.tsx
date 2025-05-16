@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -8,10 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export function InvoiceFiltersDropdown({ onApplyFilters }: InvoiceFiltersDropdownProps) {
-  const [filters, setFilters] = useState({
-    status: "",
-    customer: "",
+export function InvoiceFiltersDropdown({ filters, onFilterChange, onResetFilters, onApplyFilters }: InvoiceFiltersDropdownProps) {
+  const [localFilters, setLocalFilters] = useState({
+    status: filters?.status || "",
+    customer: filters?.customer || "",
     dateFrom: "",
     dateTo: "",
     minAmount: "",
@@ -19,11 +18,21 @@ export function InvoiceFiltersDropdown({ onApplyFilters }: InvoiceFiltersDropdow
   });
 
   const handleFilterChange = (key: string, value: string) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setLocalFilters(prev => ({ ...prev, [key]: value }));
+    
+    if (onFilterChange) {
+      onFilterChange({ [key]: value });
+    }
   };
 
   const handleApplyFilters = () => {
-    onApplyFilters(filters);
+    onApplyFilters(localFilters);
+  };
+
+  const handleReset = () => {
+    if (onResetFilters) {
+      onResetFilters();
+    }
   };
 
   return (
@@ -41,7 +50,7 @@ export function InvoiceFiltersDropdown({ onApplyFilters }: InvoiceFiltersDropdow
           <div className="space-y-2">
             <Label>Status</Label>
             <Select 
-              value={filters.status} 
+              value={localFilters.status} 
               onValueChange={(value) => handleFilterChange('status', value)}
             >
               <SelectTrigger>
@@ -62,7 +71,7 @@ export function InvoiceFiltersDropdown({ onApplyFilters }: InvoiceFiltersDropdow
             <Label>Customer</Label>
             <Input 
               placeholder="Search by customer name"
-              value={filters.customer}
+              value={localFilters.customer}
               onChange={(e) => handleFilterChange('customer', e.target.value)}
             />
           </div>
@@ -72,7 +81,7 @@ export function InvoiceFiltersDropdown({ onApplyFilters }: InvoiceFiltersDropdow
               <Label className="text-sm">From Date</Label>
               <Input 
                 type="date"
-                value={filters.dateFrom}
+                value={localFilters.dateFrom}
                 onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
               />
             </div>
@@ -80,7 +89,7 @@ export function InvoiceFiltersDropdown({ onApplyFilters }: InvoiceFiltersDropdow
               <Label className="text-sm">To Date</Label>
               <Input 
                 type="date"
-                value={filters.dateTo}
+                value={localFilters.dateTo}
                 onChange={(e) => handleFilterChange('dateTo', e.target.value)}
               />
             </div>
@@ -91,7 +100,7 @@ export function InvoiceFiltersDropdown({ onApplyFilters }: InvoiceFiltersDropdow
               <Label className="text-sm">Min Amount ($)</Label>
               <Input 
                 type="number"
-                value={filters.minAmount}
+                value={localFilters.minAmount}
                 onChange={(e) => handleFilterChange('minAmount', e.target.value)}
               />
             </div>
@@ -99,7 +108,7 @@ export function InvoiceFiltersDropdown({ onApplyFilters }: InvoiceFiltersDropdow
               <Label className="text-sm">Max Amount ($)</Label>
               <Input 
                 type="number"
-                value={filters.maxAmount}
+                value={localFilters.maxAmount}
                 onChange={(e) => handleFilterChange('maxAmount', e.target.value)}
               />
             </div>

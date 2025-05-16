@@ -13,7 +13,19 @@ import {
   InvoiceTemplate 
 } from "@/types/invoice";
 import { InventoryItem } from "@/types/inventory";
-import { createInventoryItemAdapter } from "./InvoiceCreate";
+
+// Create an adapter to convert InventoryItem to InvoiceItem
+export const createInventoryItemAdapter = (inventoryItem: InventoryItem): InvoiceItem => {
+  return {
+    id: inventoryItem.id,
+    name: inventoryItem.name || '',
+    description: inventoryItem.description || "",
+    sku: inventoryItem.sku || "",
+    price: inventoryItem.price || 0,
+    quantity: 1,
+    total: inventoryItem.price || 0
+  };
+};
 
 export default function InvoiceCreate() {
   const { workOrderId } = useParams<{ workOrderId?: string }>();
@@ -131,16 +143,7 @@ export default function InvoiceCreate() {
 
   // Create an adapter to convert InventoryItem to InvoiceItem
   const handleAddInventoryItem = (inventoryItem: InventoryItem) => {
-    const invoiceItem: InvoiceItem = {
-      id: inventoryItem.id,
-      name: inventoryItem.name || '',
-      description: inventoryItem.description || "",
-      sku: inventoryItem.sku || "",
-      price: inventoryItem.price || 0,
-      quantity: 1,
-      total: inventoryItem.price || 0
-    };
-    
+    const invoiceItem = createInventoryItemAdapter(inventoryItem);
     baseAddInventoryItem(invoiceItem);
   };
 

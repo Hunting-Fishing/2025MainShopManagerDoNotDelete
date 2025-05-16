@@ -3,7 +3,7 @@
 export interface InvoiceItem {
   id: string;
   name: string;
-  description: string;
+  description?: string;
   sku?: string;
   price: number;
   quantity: number;
@@ -65,12 +65,16 @@ export interface InvoiceTemplate {
 export interface InvoiceFiltersProps {
   filters: InvoiceFilters;
   onFilterChange: (filters: Partial<InvoiceFilters>) => void;
+  onApplyFilters?: (filters: any) => void;
+  setFilters?: (filters: any) => void;
+  resetFilters?: () => void;
 }
 
 export interface InvoiceFiltersDropdownProps {
-  filters: InvoiceFilters;
-  onFilterChange: (filters: Partial<InvoiceFilters>) => void;
-  onResetFilters: () => void;
+  filters?: InvoiceFilters;
+  onFilterChange?: (filters: Partial<InvoiceFilters>) => void;
+  onResetFilters?: () => void;
+  onApplyFilters: (filters: any) => void;
 }
 
 export interface InvoiceFilters {

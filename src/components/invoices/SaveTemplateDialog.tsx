@@ -32,7 +32,7 @@ type FormValues = z.infer<typeof formSchema>;
 interface SaveTemplateDialogProps {
   currentInvoice: Invoice;
   taxRate: number;
-  onSaveTemplate: (template: Omit<InvoiceTemplate, 'id' | 'createdAt' | 'usageCount'>) => void;
+  onSaveTemplate: (template: Omit<InvoiceTemplate, "id" | "created_at" | "usage_count">) => void;
 }
 
 export function SaveTemplateDialog({ currentInvoice, taxRate, onSaveTemplate }: SaveTemplateDialogProps) {
@@ -58,11 +58,13 @@ export function SaveTemplateDialog({ currentInvoice, taxRate, onSaveTemplate }: 
     const template = {
       name: values.name,
       description: values.description || "",
-      defaultNotes: values.defaultNotes || "",
-      defaultDueDateDays: values.defaultDueDateDays,
-      defaultTaxRate: values.defaultTaxRate,
-      lastUsed: null,
-      defaultItems: templateItems,
+      default_notes: values.defaultNotes || "",
+      default_due_date_days: values.defaultDueDateDays,
+      default_tax_rate: values.defaultTaxRate,
+      default_items: templateItems,
+      last_used: null,
+      created_at: new Date().toISOString(),
+      usage_count: 0
     };
 
     onSaveTemplate(template);
