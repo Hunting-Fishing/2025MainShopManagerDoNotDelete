@@ -16,9 +16,9 @@ export const mapToDbWorkOrder = (workOrder: Partial<WorkOrder>) => {
     location: workOrder.location,
     notes: workOrder.notes,
     total_billable_time: workOrder.totalBillableTime,
-    created_by: workOrder.createdBy,
+    created_by: workOrder.created_by,
     created_at: workOrder.createdAt,
-    last_updated_by: workOrder.lastUpdatedBy,
+    last_updated_by: workOrder.last_updated_by,
     last_updated_at: workOrder.lastUpdatedAt
   };
 };
@@ -37,9 +37,9 @@ export const mapFromDbWorkOrder = (dbWorkOrder: any, timeEntries: TimeEntry[] = 
     location: dbWorkOrder.location,
     notes: dbWorkOrder.notes || '',
     totalBillableTime: dbWorkOrder.total_billable_time || 0,
-    createdBy: dbWorkOrder.created_by,
+    created_by: dbWorkOrder.created_by,
     createdAt: dbWorkOrder.created_at,
-    lastUpdatedBy: dbWorkOrder.last_updated_by,
+    last_updated_by: dbWorkOrder.last_updated_by,
     lastUpdatedAt: dbWorkOrder.last_updated_at,
     timeEntries,
     inventoryItems
@@ -49,10 +49,10 @@ export const mapFromDbWorkOrder = (dbWorkOrder: any, timeEntries: TimeEntry[] = 
 // Map time entry from DB format to app format
 export const mapTimeEntryFromDb = (entry: any): TimeEntry => ({
   id: entry.id,
-  employeeId: entry.employee_id,
-  employeeName: entry.employee_name,
-  startTime: entry.start_time,
-  endTime: entry.end_time,
+  employee_id: entry.employee_id,
+  employee_name: entry.employee_name,
+  start_time: entry.start_time,
+  end_time: entry.end_time,
   duration: entry.duration,
   notes: entry.notes,
   billable: entry.billable
@@ -65,5 +65,5 @@ export const mapInventoryItemFromDb = (item: any): WorkOrderInventoryItem => ({
   sku: item.sku,
   category: item.category,
   quantity: item.quantity,
-  unitPrice: item.unit_price
+  unit_price: item.unit_price
 });

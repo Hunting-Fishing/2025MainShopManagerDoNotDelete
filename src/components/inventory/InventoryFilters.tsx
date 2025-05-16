@@ -1,9 +1,11 @@
 
 import React from "react";
-import { Badge } from "@/components/ui/badge";
+import { Dispatch, SetStateAction } from "react";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MultiSelect } from "@/components/ui/multi-select";
+import { Filter } from "lucide-react";
 
 export interface InventoryFiltersProps {
   categories: string[];
@@ -14,14 +16,14 @@ export interface InventoryFiltersProps {
   statusFilter: string[];
   supplierFilter: string;
   locationFilter: string;
-  setCategoryFilter: (value: string[]) => void;
-  setStatusFilter: (value: string[]) => void;
-  setSupplierFilter: (value: string) => void;
-  setLocationFilter: (value: string) => void;
+  setCategoryFilter: Dispatch<SetStateAction<string[]>>;
+  setStatusFilter: Dispatch<SetStateAction<string[]>>;
+  setSupplierFilter: Dispatch<SetStateAction<string>>;
+  setLocationFilter: Dispatch<SetStateAction<string>>;
   onReset: () => void;
 }
 
-export function InventoryFilters({
+export const InventoryFilters: React.FC<InventoryFiltersProps> = ({
   categories,
   statuses,
   suppliers,
@@ -35,130 +37,77 @@ export function InventoryFilters({
   setSupplierFilter,
   setLocationFilter,
   onReset
-}: InventoryFiltersProps) {
-  // Calculate active filter count
-  const activeFiltersCount = 
-    categoryFilter.length + 
-    statusFilter.length + 
-    (supplierFilter ? 1 : 0) + 
-    (locationFilter ? 1 : 0);
-  
-  // Category filter handler
-  const handleCategoryChange = (category: string) => {
-    if (categoryFilter.includes(category)) {
-      setCategoryFilter(categoryFilter.filter(c => c !== category));
-    } else {
-      setCategoryFilter([...categoryFilter, category]);
-    }
-  };
-  
-  // Status filter handler
-  const handleStatusChange = (status: string) => {
-    if (statusFilter.includes(status)) {
-      setStatusFilter(statusFilter.filter(s => s !== status));
-    } else {
-      setStatusFilter([...statusFilter, status]);
-    }
-  };
-
+}) => {
   return (
-    <div className="bg-white rounded-lg shadow p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="font-medium">Filters</h3>
-        {activeFiltersCount > 0 && (
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary">{activeFiltersCount}</Badge>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={onReset}
-              className="h-8 px-2 text-xs"
-            >
-              Reset
-            </Button>
-          </div>
-        )}
+    <div className="bg-white rounded-lg shadow p-4">
+      <div className="flex items-center mb-4">
+        <Filter className="w-5 h-5 mr-2 text-gray-500" />
+        <h2 className="text-lg font-medium">Filters</h2>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={onReset}
+          className="ml-auto text-sm"
+        >
+          Reset
+        </Button>
       </div>
       
-      {/* Category Filter */}
-      <div>
-        <h4 className="text-sm font-medium mb-2">Category</h4>
-        <ScrollArea className="h-32">
-          <div className="space-y-2">
-            {categories.map((category) => (
-              <div key={category} className="flex items-center space-x-2">
-                <Checkbox 
-                  id={`category-${category}`}
-                  checked={categoryFilter.includes(category)}
-                  onCheckedChange={() => handleCategoryChange(category)}
-                />
-                <label 
-                  htmlFor={`category-${category}`}
-                  className="text-sm cursor-pointer"
-                >
-                  {category}
-                </label>
-              </div>
-            ))}
-          </div>
-        </ScrollArea>
-      </div>
-      
-      {/* Status Filter */}
-      <div>
-        <h4 className="text-sm font-medium mb-2">Status</h4>
-        <div className="space-y-2">
-          {statuses.map((status) => (
-            <div key={status} className="flex items-center space-x-2">
-              <Checkbox 
-                id={`status-${status}`}
-                checked={statusFilter.includes(status)}
-                onCheckedChange={() => handleStatusChange(status)}
-              />
-              <label 
-                htmlFor={`status-${status}`}
-                className="text-sm cursor-pointer"
-              >
-                {status}
-              </label>
-            </div>
-          ))}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div>
+          <label className="block text-sm font-medium mb-1">Categories</label>
+          <MultiSelect 
+            options={categories.map(cat => ({ label: cat, value: cat }))}
+            selected={categoryFilter}
+            onChange={setCategoryFilter}
+            placeholder="Select categories"
+          />
         </div>
-      </div>
-      
-      {/* Supplier Filter */}
-      <div>
-        <h4 className="text-sm font-medium mb-2">Supplier</h4>
-        <select
-          value={supplierFilter}
-          onChange={(e) => setSupplierFilter(e.target.value)}
-          className="w-full rounded-md border border-input px-3 py-2 text-sm"
-        >
-          <option value="">All Suppliers</option>
-          {suppliers.map((supplier) => (
-            <option key={supplier} value={supplier}>
-              {supplier}
-            </option>
-          ))}
-        </select>
-      </div>
-      
-      {/* Location Filter */}
-      <div>
-        <h4 className="text-sm font-medium mb-2">Location</h4>
-        <select
-          value={locationFilter}
-          onChange={(e) => setLocationFilter(e.target.value)}
-          className="w-full rounded-md border border-input px-3 py-2 text-sm"
-        >
-          <option value="">All Locations</option>
-          {locations.map((location) => (
-            <option key={location} value={location}>
-              {location}
-            </option>
-          ))}
-        </select>
+        
+        <div>
+          <label className="block text-sm font-medium mb-1">Status</label>
+          <MultiSelect 
+            options={statuses.map(status => ({ label: status, value: status }))}
+            selected={statusFilter}
+            onChange={setStatusFilter}
+            placeholder="Select status"
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium mb-1">Supplier</label>
+          <Select value={supplierFilter} onValueChange={setSupplierFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="All suppliers" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All suppliers</SelectItem>
+              {suppliers.map((supplier) => (
+                <SelectItem key={supplier} value={supplier}>
+                  {supplier}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium mb-1">Location</label>
+          <Select value={locationFilter} onValueChange={setLocationFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="All locations" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All locations</SelectItem>
+              {locations.map((location) => (
+                <SelectItem key={location} value={location}>
+                  {location}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
     </div>
   );
-}
+};

@@ -1,222 +1,252 @@
 
 import { supabase } from "@/lib/supabase";
 import { 
-  PurchaseOrder, 
-  PurchaseOrderItem, 
-  CreatePurchaseOrderDto,
-  UpdatePurchaseOrderDto 
-} from "@/types/inventory/purchaseOrders";
-import { handleApiError } from "@/utils/errorHandling";
-import { createInventoryTransaction } from "./transactionService";
+  InventoryPurchaseOrder, 
+  InventoryPurchaseOrderItem 
+} from "@/types/inventory";
+import { recordInventoryTransaction } from "./transactionService";
 
-export async function getPurchaseOrders(): Promise<PurchaseOrder[]> {
+export const createPurchaseOrder = async (order: Omit<InventoryPurchaseOrder, 'id'>): Promise<InventoryPurchaseOrder> => {
   try {
     const { data, error } = await supabase
-      .from("inventory_purchase_orders")
-      .select("*, inventory_vendors(name, contact_name)")
-      .order("order_date", { ascending: false });
-
-    if (error) throw error;
-    return data || [];
-  } catch (error) {
-    handleApiError(error, "Failed to fetch purchase orders");
-    return [];
-  }
-}
-
-export async function getPurchaseOrderById(id: string): Promise<PurchaseOrder | null> {
-  try {
-    const { data, error } = await supabase
-      .from("inventory_purchase_orders")
-      .select("*, inventory_vendors(name, contact_name)")
-      .eq("id", id)
+      .from('inventory_purchase_orders')
+      .insert([{
+        vendor_id: order.vendor_id,
+        order_date: order.order_date,
+        expected_delivery_date: order.expected_delivery_date,
+        total_amount: order.total_amount,
+        created_by: order.created_by,
+        status: order.status || 'draft',
+        notes: order.notes
+      }])
+      .select('*')
       .single();
-
-    if (error) throw error;
-    
-    // Now get the items for this purchase order
-    const { data: itemsData, error: itemsError } = await supabase
-      .from("inventory_purchase_order_items")
-      .select("*, inventory_items(name, sku)")
-      .eq("purchase_order_id", id);
       
-    if (itemsError) throw itemsError;
+    if (error) {
+      throw error;
+    }
     
-    // Map the items to include inventory item details
-    const items = itemsData.map(item => ({
-      ...item,
-      item_name: item.inventory_items?.name,
-      item_sku: item.inventory_items?.sku
+    if (order.items && order.items.length > 0) {
+      const orderItems = order.items.map(item => ({
+        ...item,
+        purchase_order_id: data.id
+      }));
+      
+      const { error: itemsError } = await supabase
+        .from('inventory_purchase_order_items')
+        .insert(orderItems);
+        
+      if (itemsError) {
+        throw itemsError;
+      }
+    }
+    
+    return {
+      ...data,
+      items: order.items || []
+    };
+  } catch (error) {
+    console.error('Error creating purchase order:', error);
+    throw error;
+  }
+};
+
+export const getPurchaseOrders = async (): Promise<InventoryPurchaseOrder[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('inventory_purchase_orders')
+      .select('*')
+      .order('order_date', { ascending: false });
+      
+    if (error) {
+      throw error;
+    }
+    
+    const ordersWithItems = await Promise.all(data.map(async order => {
+      const { data: items, error: itemsError } = await supabase
+        .from('inventory_purchase_order_items')
+        .select('*')
+        .eq('purchase_order_id', order.id);
+        
+      if (itemsError) {
+        throw itemsError;
+      }
+      
+      return {
+        ...order,
+        items: items || []
+      };
     }));
     
-    return { ...data, items };
+    return ordersWithItems;
   } catch (error) {
-    handleApiError(error, `Failed to fetch purchase order ${id}`);
-    return null;
+    console.error('Error fetching purchase orders:', error);
+    return [];
   }
-}
+};
 
-export async function createPurchaseOrder(purchaseOrder: CreatePurchaseOrderDto): Promise<PurchaseOrder | null> {
-  try {
-    // Begin a transaction
-    const { data, error } = await supabase.rpc('create_purchase_order_transaction', {
-      vendor_id: purchaseOrder.vendor_id,
-      expected_delivery_date: purchaseOrder.expected_delivery_date,
-      notes: purchaseOrder.notes,
-      items: purchaseOrder.items
-    });
-
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    // If Supabase RPC isn't available, fallback to manual transaction
-    try {
-      // Calculate total amount
-      const totalAmount = purchaseOrder.items.reduce(
-        (sum, item) => sum + (item.quantity * item.unit_price), 
-        0
-      );
-
-      // Start a transaction
-      // Create the purchase order
-      const { data: orderData, error: orderError } = await supabase
-        .from("inventory_purchase_orders")
-        .insert({
-          vendor_id: purchaseOrder.vendor_id,
-          expected_delivery_date: purchaseOrder.expected_delivery_date,
-          notes: purchaseOrder.notes,
-          total_amount: totalAmount
-        })
-        .select()
-        .single();
-
-      if (orderError) throw orderError;
-
-      // Create the purchase order items
-      const orderItems = purchaseOrder.items.map(item => ({
-        purchase_order_id: orderData.id,
-        inventory_item_id: item.inventory_item_id,
-        quantity: item.quantity,
-        quantity_received: 0,
-        unit_price: item.unit_price,
-        total_price: item.quantity * item.unit_price
-      }));
-
-      const { error: itemsError } = await supabase
-        .from("inventory_purchase_order_items")
-        .insert(orderItems);
-
-      if (itemsError) throw itemsError;
-
-      // Return the created purchase order with items
-      return await getPurchaseOrderById(orderData.id);
-    } catch (fallbackError) {
-      handleApiError(fallbackError, "Failed to create purchase order");
-      return null;
-    }
-  }
-}
-
-export async function updatePurchaseOrder(
-  id: string, 
-  updates: UpdatePurchaseOrderDto
-): Promise<PurchaseOrder | null> {
+export const getPurchaseOrderById = async (id: string): Promise<InventoryPurchaseOrder | null> => {
   try {
     const { data, error } = await supabase
-      .from("inventory_purchase_orders")
-      .update(updates)
-      .eq("id", id)
-      .select()
+      .from('inventory_purchase_orders')
+      .select('*')
+      .eq('id', id)
       .single();
-
-    if (error) throw error;
-    return data;
+      
+    if (error) {
+      throw error;
+    }
+    
+    const { data: items, error: itemsError } = await supabase
+      .from('inventory_purchase_order_items')
+      .select('*')
+      .eq('purchase_order_id', id);
+      
+    if (itemsError) {
+      throw itemsError;
+    }
+    
+    return {
+      ...data,
+      items: items || []
+    };
   } catch (error) {
-    handleApiError(error, `Failed to update purchase order ${id}`);
+    console.error(`Error fetching purchase order ${id}:`, error);
     return null;
   }
-}
+};
 
-export async function receivePurchaseOrderItems(
-  orderId: string,
-  receivedItems: Array<{ id: string, quantity_received: number }>
-): Promise<boolean> {
+export const updatePurchaseOrder = async (order: InventoryPurchaseOrder): Promise<InventoryPurchaseOrder> => {
   try {
-    // Get the current purchase order
-    const purchaseOrder = await getPurchaseOrderById(orderId);
-    if (!purchaseOrder) throw new Error("Purchase order not found");
-    
-    // Update each received item
-    for (const item of receivedItems) {
-      // Update the item received quantity
-      const { error: updateError } = await supabase
-        .from("inventory_purchase_order_items")
-        .update({ quantity_received: item.quantity_received })
-        .eq("id", item.id);
-        
-      if (updateError) throw updateError;
+    const { data, error } = await supabase
+      .from('inventory_purchase_orders')
+      .update({
+        vendor_id: order.vendor_id,
+        expected_delivery_date: order.expected_delivery_date,
+        total_amount: order.total_amount,
+        status: order.status,
+        notes: order.notes,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', order.id)
+      .select('*')
+      .single();
       
-      // Find the item to get its details
-      const poItem = purchaseOrder.items?.find(i => i.id === item.id);
-      if (!poItem) continue;
-      
-      // Create an inventory transaction for this received item
-      await createInventoryTransaction({
-        inventory_item_id: poItem.inventory_item_id,
-        transaction_type: "purchase",
-        quantity: item.quantity_received,
-        reference_type: "purchase_order",
-        reference_id: orderId,
-        notes: `Received from PO #${orderId}`
-      });
+    if (error) {
+      throw error;
     }
     
-    // Check if all items are received
-    const { data: updatedItems, error: checkError } = await supabase
-      .from("inventory_purchase_order_items")
-      .select("quantity, quantity_received")
-      .eq("purchase_order_id", orderId);
+    // Update items - first delete existing items
+    await supabase
+      .from('inventory_purchase_order_items')
+      .delete()
+      .eq('purchase_order_id', order.id);
       
-    if (checkError) throw checkError;
-    
-    // Determine if all items are fully received or partially received
-    let allItemsReceived = true;
-    let anyItemsReceived = false;
-    
-    for (const item of updatedItems) {
-      if (item.quantity_received > 0) {
-        anyItemsReceived = true;
-      }
-      if (item.quantity_received < item.quantity) {
-        allItemsReceived = false;
-      }
+    // Then insert new items
+    if (order.items && order.items.length > 0) {
+      const orderItems = order.items.map(item => ({
+        ...item,
+        purchase_order_id: order.id
+      }));
+      
+      await supabase
+        .from('inventory_purchase_order_items')
+        .insert(orderItems);
     }
     
-    // Update the purchase order status
-    const newStatus = allItemsReceived ? "received" : (anyItemsReceived ? "partially_received" : "submitted");
-    await updatePurchaseOrder(orderId, { 
-      status: newStatus as any,
-      received_date: allItemsReceived ? new Date().toISOString() : undefined
-    });
-    
-    return true;
+    return {
+      ...data,
+      items: order.items || []
+    };
   } catch (error) {
-    handleApiError(error, `Failed to receive purchase order items for order ${orderId}`);
-    return false;
+    console.error(`Error updating purchase order ${order.id}:`, error);
+    throw error;
   }
-}
+};
 
-export async function cancelPurchaseOrder(id: string): Promise<boolean> {
+export const receivePurchaseOrder = async (
+  orderId: string, 
+  receivedItems: InventoryPurchaseOrderItem[]
+): Promise<InventoryPurchaseOrder | null> => {
+  try {
+    // Update the order status
+    const { data, error } = await supabase
+      .from('inventory_purchase_orders')
+      .update({
+        received_date: new Date().toISOString(),
+        status: 'received',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', orderId)
+      .select('*')
+      .single();
+      
+    if (error) {
+      throw error;
+    }
+    
+    // Update the item quantities in inventory and record transactions
+    for (const item of receivedItems) {
+      // Update inventory quantity
+      const { error: updateError } = await supabase
+        .from('inventory_items')
+        .update({
+          quantity: supabase.rpc('increment_quantity', { 
+            item_id: item.inventory_item_id,
+            amount: item.quantity_received
+          }),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', item.inventory_item_id);
+        
+      if (updateError) {
+        throw updateError;
+      }
+      
+      // Record inventory transaction
+      await recordInventoryTransaction({
+        inventory_item_id: item.inventory_item_id,
+        quantity: item.quantity_received,
+        transaction_type: 'received',
+        reference_id: orderId,
+        reference_type: 'purchase_order',
+        notes: `Received from purchase order ${orderId}`
+      });
+      
+      // Update the received quantity in the order item
+      await supabase
+        .from('inventory_purchase_order_items')
+        .update({
+          quantity_received: item.quantity_received,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', item.id);
+    }
+    
+    return getPurchaseOrderById(orderId);
+  } catch (error) {
+    console.error(`Error receiving purchase order ${orderId}:`, error);
+    throw error;
+  }
+};
+
+export const cancelPurchaseOrder = async (orderId: string): Promise<boolean> => {
   try {
     const { error } = await supabase
-      .from("inventory_purchase_orders")
-      .update({ status: "cancelled" })
-      .eq("id", id);
+      .from('inventory_purchase_orders')
+      .update({
+        status: 'cancelled',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', orderId);
       
-    if (error) throw error;
+    if (error) {
+      throw error;
+    }
+    
     return true;
   } catch (error) {
-    handleApiError(error, `Failed to cancel purchase order ${id}`);
+    console.error(`Error cancelling purchase order ${orderId}:`, error);
     return false;
   }
-}
+};

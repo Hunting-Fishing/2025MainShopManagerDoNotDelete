@@ -1,214 +1,238 @@
 
-import { useParams } from "react-router-dom";
-import { useInvoiceForm } from "@/hooks/useInvoiceForm";
-import { InvoiceCreateLayout } from "@/components/invoices/InvoiceCreateLayout";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { WorkOrderSelector } from "@/components/invoices/WorkOrderSelector";
-import { supabase } from "@/lib/supabase"; 
-import { useQuery } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { InvoiceForm } from "@/components/invoices/InvoiceForm";
+import { useInvoice } from "@/hooks/useInvoice";
+import { useWorkOrders } from "@/hooks/useWorkOrders";
+import { useInventory } from "@/hooks/useInventory";
+import { useInvoiceTemplates } from "@/hooks/useInvoiceTemplates";
+import { useStaff } from "@/hooks/useStaff";
+import { Invoice, InvoiceItem, InvoiceTemplate } from "@/types/invoice";
 import { WorkOrder } from "@/types/workOrder";
-import { 
-  InvoiceItem, 
-  StaffMember, 
-  InvoiceTemplate 
-} from "@/types/invoice";
 import { InventoryItem } from "@/types/inventory";
 
-export default function InvoiceCreate() {
-  const { workOrderId } = useParams<{ workOrderId?: string }>();
-  const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
-  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
-  
-  const { data: workOrdersData } = useQuery({
-    queryKey: ['workOrders'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('work_orders')
-        .select('*');
-      if (error) throw error;
-      return data;
-    }
+const InvoiceCreate = () => {
+  const navigate = useNavigate();
+  const { createInvoice } = useInvoice();
+  const { workOrders } = useWorkOrders();
+  const { items: inventoryItems } = useInventory();
+  const { templates, saveTemplate } = useInvoiceTemplates();
+  const { staffMembers } = useStaff();
+
+  // State for the invoice being created
+  const [invoice, setInvoice] = useState<Invoice>({
+    id: crypto.randomUUID(),
+    customer: "",
+    customer_email: "",
+    customer_address: "",
+    date: new Date().toISOString().split('T')[0],
+    due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    items: [],
+    subtotal: 0,
+    tax: 0,
+    tax_rate: 0.0,
+    total: 0,
+    notes: "",
+    status: "draft",
+    work_order_id: "",
+    created_by: "Current User",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    assignedStaff: [],
   });
 
-  const { data: inventoryData } = useQuery({
-    queryKey: ['inventoryItems'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('inventory_items')
-        .select('*');
-      if (error) throw error;
-      return data;
-    }
-  });
+  // UI state
+  const [showWorkOrderDialog, setShowWorkOrderDialog] = useState(false);
+  const [showInventoryDialog, setShowInventoryDialog] = useState(false);
+  const [showStaffDialog, setShowStaffDialog] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data: staffData } = useQuery({
-    queryKey: ['staffMembers'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name, job_title');
-      if (error) throw error;
-      return data;
-    }
-  });
-
+  // Calculate subtotal, tax, and total whenever items change
   useEffect(() => {
-    if (workOrdersData) {
-      const formattedWorkOrders = workOrdersData.map((wo: any) => ({
-        id: wo.id,
-        customer: wo.customer || "",
-        description: wo.description || "No description",
-        status: wo.status || "",
-        date: wo.created_at || "",
-        dueDate: wo.due_date || "",
-        priority: wo.priority || "medium",
-        technician: wo.technician || "Unassigned",
-        location: wo.location || "",
-        notes: wo.notes,
-        customer_id: wo.customer_id,
-        vehicle_id: wo.vehicle_id,
-        created_at: wo.created_at,
-        updated_at: wo.updated_at,
-        technician_id: wo.technician_id,
-        total_cost: wo.total_cost,
-        estimated_hours: wo.estimated_hours,
-      }));
-      setWorkOrders(formattedWorkOrders);
-    }
-    if (inventoryData) {
-      const formattedInventory = inventoryData.map((item: any) => ({
-        id: item.id,
-        name: item.name,
-        sku: item.sku || "",
-        description: item.description || "",
-        price: Number(item.unit_price) || 0,
-        category: item.category || "",
-        supplier: item.supplier || "",
-        status: item.status || "",
-        quantity: Number(item.quantity) || 0
-      }));
-      setInventoryItems(formattedInventory);
-    }
-    if (staffData) {
-      const formattedStaff = staffData.map((staff: any) => ({
-        id: staff.id || "",
-        name: getStaffName(staff)
-      }));
-      setStaffMembers(formattedStaff);
-    }
-  }, [workOrdersData, inventoryData, staffData]);
+    const subtotal = invoice.items.reduce(
+      (sum, item) => sum + item.quantity * item.price,
+      0
+    );
+    const tax = subtotal * invoice.tax_rate;
+    const total = subtotal + tax;
 
-  const {
-    invoice,
-    subtotal,
-    tax,
-    taxRate,
-    total,
-    showWorkOrderDialog,
-    showInventoryDialog,
-    showStaffDialog,
-    templates,
-    setInvoice,
-    setShowWorkOrderDialog,
-    setShowInventoryDialog,
-    setShowStaffDialog,
-    handleSelectWorkOrder,
-    handleAddInventoryItem,
-    handleAddStaffMember,
-    handleRemoveStaffMember,
-    handleRemoveItem,
-    handleUpdateItemQuantity,
-    handleUpdateItemDescription,
-    handleUpdateItemPrice,
-    handleAddLaborItem,
-    handleSaveInvoice,
-    handleApplyTemplate,
-    handleSaveTemplate,
-    onTaxRateChange,
-    items,
-    assignedStaff
-  } = useInvoiceForm();
+    setInvoice((prev) => ({
+      ...prev,
+      subtotal,
+      tax,
+      total,
+    }));
+  }, [invoice.items, invoice.tax_rate]);
 
-  // Get staff name helper function
-  const getStaffName = (staff: any) => {
-    if (staff && staff.first_name && staff.last_name) {
-      return `${staff.first_name} ${staff.last_name}`;
-    }
-    return "Unknown Staff";
+  const handleSelectWorkOrder = (workOrder: WorkOrder) => {
+    if (!workOrder) return;
+
+    setInvoice((prev) => ({
+      ...prev,
+      customer: workOrder.customer || "",
+      customer_address: workOrder.location || "",
+      work_order_id: workOrder.id,
+      description: workOrder.description || "",
+      assignedStaff: workOrder.technician
+        ? [{ id: workOrder.technician_id || "", name: workOrder.technician }]
+        : [],
+    }));
+    setShowWorkOrderDialog(false);
   };
 
-  // Adapter functions for type compatibility
-  const handleAddInventoryItemAdapter = (item: InventoryItem) => {
-    const invoiceItem: InvoiceItem = {
-      id: item.id,
-      name: item.name || "",
+  const handleAddInventoryItem = (item: InvoiceItem) => {
+    setInvoice((prev) => ({
+      ...prev,
+      items: [
+        ...prev.items,
+        {
+          id: crypto.randomUUID(),
+          name: item.name || "",
+          description: item.description || "",
+          quantity: 1,
+          price: item.price,
+          total: item.price,
+        },
+      ],
+    }));
+    setShowInventoryDialog(false);
+  };
+
+  const handleRemoveItem = (id: string) => {
+    setInvoice((prev) => ({
+      ...prev,
+      items: prev.items.filter((item) => item.id !== id),
+    }));
+  };
+
+  const handleUpdateItemQuantity = (id: string, quantity: number) => {
+    setInvoice((prev) => ({
+      ...prev,
+      items: prev.items.map((item) =>
+        item.id === id ? { ...item, quantity, total: quantity * item.price } : item
+      ),
+    }));
+  };
+
+  const handleUpdateItemDescription = (id: string, description: string) => {
+    setInvoice((prev) => ({
+      ...prev,
+      items: prev.items.map((item) =>
+        item.id === id ? { ...item, description } : item
+      ),
+    }));
+  };
+
+  const handleUpdateItemPrice = (id: string, price: number) => {
+    setInvoice((prev) => ({
+      ...prev,
+      items: prev.items.map((item) =>
+        item.id === id ? { ...item, price, total: item.quantity * price } : item
+      ),
+    }));
+  };
+
+  const handleAddLaborItem = () => {
+    setInvoice((prev) => ({
+      ...prev,
+      items: [
+        ...prev.items,
+        {
+          id: crypto.randomUUID(),
+          name: "Labor",
+          description: "Labor hours",
+          quantity: 1,
+          price: 85,
+          total: 85,
+          hours: true,
+        },
+      ],
+    }));
+  };
+
+  // Adapter function to convert InventoryItem to InvoiceItem
+  const inventoryToInvoiceItem = (item: InventoryItem): InvoiceItem => {
+    return {
+      id: crypto.randomUUID(),
+      name: item.name,
       description: item.description || "",
       quantity: 1,
       price: item.price || 0,
       total: item.price || 0,
-      sku: item.sku || "",
-      category: item.category || ""
     };
-    handleAddInventoryItem(invoiceItem);
   };
 
-  const handleRemoveItemAdapter = (id: string) => {
-    handleRemoveItem(id);
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      await createInvoice(invoice);
+      navigate("/invoices");
+    } catch (error) {
+      console.error("Error creating invoice:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleUpdateItemQuantityAdapter = (id: string, quantity: number) => {
-    handleUpdateItemQuantity(id, quantity);
+  const handleApplyTemplate = (template: InvoiceTemplate) => {
+    if (!template) return;
+
+    const templateItems = template.default_items || [];
+    
+    setInvoice((prev) => ({
+      ...prev,
+      tax_rate: template.default_tax_rate || prev.tax_rate,
+      notes: template.default_notes || prev.notes,
+      items: [
+        ...prev.items,
+        ...templateItems.map((item) => ({
+          ...item,
+          id: crypto.randomUUID(),
+          total: (item.quantity || 1) * (item.price || 0),
+        })),
+      ],
+    }));
   };
 
-  const handleUpdateItemDescriptionAdapter = (id: string, description: string) => {
-    handleUpdateItemDescription(id, description);
-  };
-
-  const handleUpdateItemPriceAdapter = (id: string, price: number) => {
-    handleUpdateItemPrice(id, price);
-  };
-
-  const handleAddLaborItemAdapter = () => {
-    handleAddLaborItem();
-  };
-
-  const handleSaveTemplateAdapter = async (template: Omit<InvoiceTemplate, "id" | "created_at" | "usage_count">) => {
-    await handleSaveTemplate(template);
+  const handleSaveTemplate = async (template: Omit<InvoiceTemplate, "id" | "created_at" | "usage_count">) => {
+    try {
+      const savedTemplate = await saveTemplate(template);
+      return;
+    } catch (error) {
+      console.error("Error saving template:", error);
+    }
   };
 
   return (
-    <InvoiceCreateLayout
-      invoice={invoice}
-      subtotal={subtotal}
-      tax={tax}
-      taxRate={taxRate}
-      total={total}
-      items={items || []}
-      showWorkOrderDialog={showWorkOrderDialog}
-      showInventoryDialog={showInventoryDialog}
-      showStaffDialog={showStaffDialog}
-      workOrders={workOrders}
-      inventoryItems={inventoryItems}
-      staffMembers={staffMembers}
-      templates={templates}
-      setInvoice={setInvoice}
-      setShowWorkOrderDialog={setShowWorkOrderDialog}
-      setShowInventoryDialog={setShowInventoryDialog}
-      setShowStaffDialog={setShowStaffDialog}
-      handleSelectWorkOrder={handleSelectWorkOrder}
-      handleAddInventoryItem={handleAddInventoryItemAdapter}
-      handleAddStaffMember={handleAddStaffMember}
-      handleRemoveStaffMember={handleRemoveStaffMember}
-      handleRemoveItem={handleRemoveItemAdapter}
-      handleUpdateItemQuantity={handleUpdateItemQuantityAdapter}
-      handleUpdateItemDescription={handleUpdateItemDescriptionAdapter}
-      handleUpdateItemPrice={handleUpdateItemPriceAdapter}
-      handleAddLaborItem={handleAddLaborItemAdapter}
-      handleSaveInvoice={handleSaveInvoice}
-      handleApplyTemplate={handleApplyTemplate}
-      handleSaveTemplate={handleSaveTemplateAdapter}
-      onTaxRateChange={onTaxRateChange}
-    />
+    <div className="container mx-auto p-4">
+      <InvoiceForm
+        invoice={invoice}
+        setInvoice={setInvoice}
+        onSubmit={handleSubmit}
+        isSubmitting={isSubmitting}
+        showWorkOrderDialog={showWorkOrderDialog}
+        setShowWorkOrderDialog={setShowWorkOrderDialog}
+        showInventoryDialog={showInventoryDialog}
+        setShowInventoryDialog={setShowInventoryDialog}
+        showStaffDialog={showStaffDialog}
+        setShowStaffDialog={setShowStaffDialog}
+        workOrders={workOrders}
+        inventoryItems={inventoryItems}
+        templates={templates}
+        staffMembers={staffMembers}
+        onSelectWorkOrder={handleSelectWorkOrder}
+        onAddInventoryItem={handleAddInventoryItem}
+        onRemoveItem={handleRemoveItem}
+        onUpdateItemQuantity={handleUpdateItemQuantity}
+        onUpdateItemDescription={handleUpdateItemDescription}
+        onUpdateItemPrice={handleUpdateItemPrice}
+        onAddLaborItem={handleAddLaborItem}
+        onApplyTemplate={handleApplyTemplate}
+        onSaveTemplate={handleSaveTemplate}
+      />
+    </div>
   );
-}
+};
+
+export default InvoiceCreate;

@@ -1,80 +1,85 @@
 
 import { 
   getInventoryItems,
-  getInventoryItemById,
-  createInventoryItem,
-  updateInventoryItem,
-  updateInventoryQuantity,
-  deleteInventoryItem
-} from './inventory/crudService';
-
-import { 
-  filterInventoryItems,
+  createInventoryItem, 
+  updateInventoryItem, 
+  deleteInventoryItem,
   getInventoryCategories,
   getInventorySuppliers,
   getInventoryLocations,
-  getInventoryStatuses
-} from './inventory/filterService';
+  filterInventoryItems,
+  calculateTotalValue
+} from "./inventory/index";
 
-import {
-  recordInventoryTransaction,
-  getItemTransactions
-} from './inventory/transactionService';
+import { 
+  InventoryItemExtended, 
+  InventoryFilter 
+} from "@/types/inventory";
 
-import {
-  getInventoryStatus,
-  formatInventoryItem,
-  formatInventoryForApi,
-  mapApiToInventoryItem
-} from './inventory/utils';
+import { supabase } from "@/lib/supabase";
 
-// Create a clearAllInventoryItems function
-const clearAllInventoryItems = async (): Promise<boolean> => {
+export { 
+  getInventoryItems,
+  createInventoryItem, 
+  updateInventoryItem, 
+  deleteInventoryItem,
+  getInventoryCategories,
+  getInventorySuppliers,
+  getInventoryLocations,
+  filterInventoryItems,
+  calculateTotalValue
+};
+
+export const getInventoryStatistics = async () => {
   try {
-    // This is a dangerous operation and should be protected
-    // Ideally with admin permissions and confirmation
-    const { error } = await supabase
-      .from('inventory_items')
-      .delete()
-      .not('id', 'is', null);
-      
-    if (error) throw error;
-    return true;
+    const items = await getInventoryItems();
+    
+    const totalItems = items.length;
+    const totalValue = calculateTotalValue(items);
+    const lowStockCount = items.filter(item => 
+      item.quantity > 0 && item.quantity <= item.reorder_point
+    ).length;
+    const outOfStockCount = items.filter(item => item.quantity <= 0).length;
+    
+    return {
+      totalItems,
+      totalValue,
+      lowStockCount,
+      outOfStockCount
+    };
   } catch (error) {
-    console.error('Error clearing all inventory items:', error);
-    return false;
+    console.error("Error getting inventory statistics:", error);
+    return {
+      totalItems: 0,
+      totalValue: 0,
+      lowStockCount: 0,
+      outOfStockCount: 0
+    };
   }
 };
 
-// Aliases for backward compatibility
-const getAllInventoryItems = getInventoryItems;
+export const bulkUpdateInventory = async (items: InventoryItemExtended[]) => {
+  const { data, error } = await supabase.from('inventory_items').upsert(
+    items.map(item => ({
+      id: item.id,
+      name: item.name,
+      sku: item.sku,
+      category: item.category,
+      description: item.description,
+      quantity: item.quantity,
+      reorder_point: item.reorder_point,
+      unit_price: item.unit_price,
+      supplier: item.supplier,
+      location: item.location,
+      status: item.status,
+      updated_at: new Date().toISOString()
+    }))
+  );
 
-// Export everything
-export {
-  // CRUD operations
-  getInventoryItems,
-  getAllInventoryItems, // Alias
-  getInventoryItemById,
-  createInventoryItem,
-  updateInventoryItem,
-  updateInventoryQuantity,
-  deleteInventoryItem,
-  clearAllInventoryItems,
-  
-  // Filter operations
-  filterInventoryItems,
-  getInventoryCategories,
-  getInventorySuppliers,
-  getInventoryLocations, 
-  getInventoryStatuses,
-  
-  // Transaction operations
-  recordInventoryTransaction,
-  getItemTransactions,
-  
-  // Utils
-  getInventoryStatus,
-  formatInventoryItem,
-  formatInventoryForApi,
-  mapApiToInventoryItem
+  if (error) {
+    console.error("Error bulk updating inventory:", error);
+    throw error;
+  }
+
+  return data;
 };

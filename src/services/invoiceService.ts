@@ -1,246 +1,272 @@
 
-import { supabase } from '@/lib/supabase';
-import { Invoice, InvoiceItem, InvoiceTemplate } from '@/types/invoice';
-import { formatApiInvoice, formatInvoiceForApi } from '@/utils/invoiceUtils';
+import { supabase } from "@/lib/supabase";
+import { Invoice, InvoiceItem, InvoiceTemplate } from "@/types/invoice";
 
-// Get a list of all invoices
+// Helper function to format an API invoice object
+export const formatApiInvoice = (invoice: any): Invoice => {
+  return {
+    id: invoice.id,
+    number: invoice.number || invoice.id.substring(0, 8).toUpperCase(),
+    customer: invoice.customer || "",
+    customer_id: invoice.customer_id,
+    customer_email: invoice.customer_email || "",
+    customer_address: invoice.customer_address || "",
+    date: invoice.date || invoice.issue_date || new Date().toISOString(),
+    due_date: invoice.due_date || "",
+    status: invoice.status || "draft",
+    subtotal: Number(invoice.subtotal) || 0,
+    tax_rate: Number(invoice.tax_rate) || 0,
+    tax: Number(invoice.tax) || 0,
+    total: Number(invoice.total) || 0,
+    notes: invoice.notes || "",
+    work_order_id: invoice.work_order_id || "",
+    description: invoice.description || "",
+    payment_method: invoice.payment_method || "",
+    created_by: invoice.created_by || "",
+    created_at: invoice.created_at || new Date().toISOString(),
+    updated_at: invoice.updated_at || new Date().toISOString(),
+    assignedStaff: invoice.assignedStaff || [],
+    items: invoice.items || [],
+  };
+};
+
+// Helper function to format an invoice for API submission
+export const formatInvoiceForApi = (invoice: Invoice): any => {
+  return {
+    id: invoice.id,
+    customer: invoice.customer,
+    customer_id: invoice.customer_id,
+    customer_email: invoice.customer_email,
+    customer_address: invoice.customer_address,
+    issue_date: invoice.date,
+    due_date: invoice.due_date,
+    status: invoice.status,
+    subtotal: Number(invoice.subtotal),
+    tax_rate: Number(invoice.tax_rate),
+    tax: Number(invoice.tax),
+    total: Number(invoice.total),
+    notes: invoice.notes,
+    work_order_id: invoice.work_order_id,
+    description: invoice.description,
+    payment_method: invoice.payment_method,
+    created_by: invoice.created_by,
+    created_at: invoice.created_at,
+    updated_at: new Date().toISOString(),
+  };
+};
+
 export const getInvoices = async (): Promise<Invoice[]> => {
   try {
-    const { data, error } = await supabase
-      .from('invoices')
-      .select('*')
-      .order('created_at', { ascending: false });
-      
-    if (error) throw error;
-    
-    // Map API response to our Invoice type
-    return data.map(invoice => formatApiInvoice(invoice));
+    const { data, error } = await supabase.from("invoices").select("*");
+
+    if (error) {
+      throw error;
+    }
+
+    // Fetch items for each invoice
+    const invoicesWithItems = await Promise.all(
+      data.map(async (invoice) => {
+        const { data: items, error: itemsError } = await supabase
+          .from("invoice_items")
+          .select("*")
+          .eq("invoice_id", invoice.id);
+
+        if (itemsError) {
+          console.error("Error fetching invoice items:", itemsError);
+          return formatApiInvoice(invoice);
+        }
+
+        // Fetch assigned staff
+        const { data: staff, error: staffError } = await supabase
+          .from("invoice_staff")
+          .select("*")
+          .eq("invoice_id", invoice.id);
+
+        if (staffError) {
+          console.error("Error fetching invoice staff:", staffError);
+          return formatApiInvoice({ ...invoice, items });
+        }
+
+        return formatApiInvoice({
+          ...invoice,
+          items,
+          assignedStaff: staff || [],
+        });
+      })
+    );
+
+    return invoicesWithItems;
   } catch (error) {
-    console.error('Error fetching invoices:', error);
-    throw error;
+    console.error("Error fetching invoices:", error);
+    return [];
   }
 };
 
-// Get a single invoice by ID
 export const getInvoiceById = async (id: string): Promise<Invoice | null> => {
   try {
-    // Get invoice data
-    const { data: invoiceData, error: invoiceError } = await supabase
-      .from('invoices')
-      .select('*')
-      .eq('id', id)
+    const { data: invoice, error } = await supabase
+      .from("invoices")
+      .select("*")
+      .eq("id", id)
       .single();
-      
-    if (invoiceError) throw invoiceError;
-    
-    // Get invoice items
-    const { data: itemsData, error: itemsError } = await supabase
-      .from('invoice_items')
-      .select('*')
-      .eq('invoice_id', id);
-      
-    if (itemsError) throw itemsError;
-    
-    // Get staff assignments
-    const { data: staffData, error: staffError } = await supabase
-      .from('invoice_staff')
-      .select('*')
-      .eq('invoice_id', id);
-      
-    if (staffError) throw staffError;
-    
-    // Format staff data
-    const assignedStaff = staffData ? staffData.map(staff => ({
-      id: staff.id,
-      name: staff.staff_name
-    })) : [];
-    
-    // Return combined data
-    const invoiceWithItems = {
-      ...invoiceData,
-      items: itemsData || [],
-      assignedStaff
-    };
-    
-    return formatApiInvoice(invoiceWithItems);
+
+    if (error) {
+      throw error;
+    }
+
+    // Fetch items for the invoice
+    const { data: items, error: itemsError } = await supabase
+      .from("invoice_items")
+      .select("*")
+      .eq("invoice_id", id);
+
+    if (itemsError) {
+      console.error("Error fetching invoice items:", itemsError);
+    }
+
+    // Fetch assigned staff
+    const { data: staff, error: staffError } = await supabase
+      .from("invoice_staff")
+      .select("*")
+      .eq("invoice_id", id);
+
+    if (staffError) {
+      console.error("Error fetching invoice staff:", staffError);
+    }
+
+    return formatApiInvoice({
+      ...invoice,
+      items: items || [],
+      assignedStaff: staff || [],
+    });
   } catch (error) {
     console.error(`Error fetching invoice ${id}:`, error);
     return null;
   }
 };
 
-// Create a new invoice
-export const createInvoice = async (invoice: Omit<Invoice, 'id'>): Promise<Invoice> => {
+export const createInvoice = async (invoice: Invoice): Promise<Invoice> => {
   try {
-    // Extract items and staff for separate insertion
-    const { items = [], assignedStaff = [], ...invoiceData } = invoice;
-    
-    // Format for API
-    const formattedInvoice = formatInvoiceForApi(invoiceData as Invoice);
-    
-    // Insert invoice
-    const { data: createdInvoice, error: invoiceError } = await supabase
-      .from('invoices')
-      .insert({
-        ...formattedInvoice,
-        created_at: new Date().toISOString()
-      })
-      .select()
-      .single();
-      
-    if (invoiceError) throw invoiceError;
-    
-    // Insert items if any
-    if (items.length > 0) {
-      const formattedItems = items.map(item => ({
-        invoice_id: createdInvoice.id,
+    // Format the invoice for the API
+    const apiInvoice = formatInvoiceForApi(invoice);
+
+    // Insert the invoice
+    const { data, error } = await supabase
+      .from("invoices")
+      .insert([apiInvoice])
+      .select();
+
+    if (error) {
+      throw error;
+    }
+
+    // Insert the invoice items
+    if (invoice.items && invoice.items.length > 0) {
+      const formattedItems = invoice.items.map((item) => ({
+        invoice_id: invoice.id,
         id: item.id,
-        description: item.description || '',
-        quantity: Number(item.quantity),
-        price: Number(item.price),
+        description: item.description,
+        quantity: item.quantity,
+        price: item.price,
         hours: item.hours || false,
-        category: item.category || '',
-        sku: item.sku || '',
-        name: item.name || '',
-        total: Number(item.quantity) * Number(item.price)
+        category: item.category || null,
+        sku: item.sku || null,
+        name: item.name || null,
+        total: item.quantity * item.price,
       }));
-      
-      const { error: itemsError } = await supabase
-        .from('invoice_items')
-        .insert(formattedItems);
-        
-      if (itemsError) throw itemsError;
+
+      await supabase.from("invoice_items").insert(formattedItems);
     }
-    
-    // Insert staff assignments if any
-    if (assignedStaff.length > 0) {
-      const formattedStaff = assignedStaff.map(staff => ({
-        invoice_id: createdInvoice.id,
-        staff_name: staff.name
+
+    // Insert assigned staff
+    if (invoice.assignedStaff && invoice.assignedStaff.length > 0) {
+      const formattedStaff = invoice.assignedStaff.map((staff) => ({
+        invoice_id: invoice.id,
+        staff_name: staff.name,
       }));
-      
-      const { error: staffError } = await supabase
-        .from('invoice_staff')
-        .insert(formattedStaff);
-        
-      if (staffError) throw staffError;
+
+      await supabase.from("invoice_staff").insert(formattedStaff);
     }
-    
-    // Return complete invoice with items and staff
-    return {
-      ...formatApiInvoice(createdInvoice),
-      items,
-      assignedStaff
-    };
+
+    return invoice;
   } catch (error) {
-    console.error('Error creating invoice:', error);
+    console.error("Error creating invoice:", error);
     throw error;
   }
 };
 
-// Update an existing invoice
-export const updateInvoice = async (id: string, updates: Partial<Invoice>): Promise<Invoice> => {
+export const updateInvoice = async (invoice: Invoice): Promise<Invoice> => {
   try {
-    const { items, assignedStaff, ...invoiceUpdates } = updates;
-    
-    // Update invoice data
-    const formattedUpdates = formatInvoiceForApi(invoiceUpdates as Invoice);
-    
-    const { data: updatedInvoice, error: invoiceError } = await supabase
-      .from('invoices')
-      .update({
-        ...formattedUpdates,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', id)
-      .select()
-      .single();
-      
-    if (invoiceError) throw invoiceError;
-    
-    // Update items if included in updates
-    if (items) {
-      // First delete existing items
-      const { error: deleteError } = await supabase
-        .from('invoice_items')
-        .delete()
-        .eq('invoice_id', id);
-        
-      if (deleteError) throw deleteError;
-      
-      // Then insert new items
-      if (items.length > 0) {
-        const formattedItems = items.map(item => ({
-          invoice_id: id,
-          id: item.id,
-          name: item.name || '',
-          description: item.description || '',
-          quantity: Number(item.quantity),
-          price: Number(item.price),
-          total: Number(item.quantity) * Number(item.price),
-          hours: item.hours || false,
-          category: item.category || '',
-          sku: item.sku || ''
-        }));
-        
-        const { error: insertError } = await supabase
-          .from('invoice_items')
-          .upsert(formattedItems);
-          
-        if (insertError) throw insertError;
-      }
+    // Format the invoice for the API
+    const apiInvoice = formatInvoiceForApi(invoice);
+    delete apiInvoice.created_at; // Don't update the created_at timestamp
+
+    // Update the invoice
+    const { data, error } = await supabase
+      .from("invoices")
+      .update(apiInvoice)
+      .eq("id", invoice.id)
+      .select();
+
+    if (error) {
+      throw error;
     }
-    
-    // Update staff assignments if included in updates
-    if (assignedStaff) {
-      // First delete existing assignments
-      const { error: deleteStaffError } = await supabase
-        .from('invoice_staff')
-        .delete()
-        .eq('invoice_id', id);
-        
-      if (deleteStaffError) throw deleteStaffError;
-      
-      // Then insert new assignments
-      if (assignedStaff.length > 0) {
-        const formattedStaff = assignedStaff.map(staff => ({
-          invoice_id: id,
-          staff_name: staff.name
-        }));
-        
-        const { error: insertStaffError } = await supabase
-          .from('invoice_staff')
-          .insert(formattedStaff);
-          
-        if (insertStaffError) throw insertStaffError;
-      }
+
+    // Delete existing invoice items and re-insert
+    await supabase.from("invoice_items").delete().eq("invoice_id", invoice.id);
+
+    // Insert the updated invoice items
+    if (invoice.items && invoice.items.length > 0) {
+      const formattedItems = invoice.items.map((item) => ({
+        invoice_id: invoice.id,
+        id: item.id || crypto.randomUUID(),
+        name: item.name || null,
+        description: item.description,
+        quantity: item.quantity,
+        price: item.price,
+        hours: item.hours || false,
+        category: item.category || null,
+        sku: item.sku || null,
+        total: item.total || item.quantity * item.price,
+      }));
+
+      await supabase.from("invoice_items").insert(formattedItems);
     }
-    
-    // Get updated invoice with items and staff
-    return getInvoiceById(id) as Promise<Invoice>;
+
+    // Update assigned staff
+    await supabase.from("invoice_staff").delete().eq("invoice_id", invoice.id);
+
+    if (invoice.assignedStaff && invoice.assignedStaff.length > 0) {
+      const formattedStaff = invoice.assignedStaff.map((staff) => ({
+        invoice_id: invoice.id,
+        staff_name: staff.name,
+      }));
+
+      await supabase.from("invoice_staff").insert(formattedStaff);
+    }
+
+    return invoice;
   } catch (error) {
-    console.error(`Error updating invoice ${id}:`, error);
+    console.error(`Error updating invoice ${invoice.id}:`, error);
     throw error;
   }
 };
 
-// Delete an invoice
 export const deleteInvoice = async (id: string): Promise<boolean> => {
   try {
-    // Delete related records first
-    await Promise.all([
-      supabase.from('invoice_items').delete().eq('invoice_id', id),
-      supabase.from('invoice_staff').delete().eq('invoice_id', id)
-    ]);
-    
-    // Then delete the invoice
-    const { error } = await supabase
-      .from('invoices')
-      .delete()
-      .eq('id', id);
-      
-    if (error) throw error;
-    
+    // Delete invoice items first (foreign key constraint)
+    await supabase.from("invoice_items").delete().eq("invoice_id", id);
+
+    // Delete invoice staff (foreign key constraint)
+    await supabase.from("invoice_staff").delete().eq("invoice_id", id);
+
+    // Delete the invoice
+    const { error } = await supabase.from("invoices").delete().eq("id", id);
+
+    if (error) {
+      throw error;
+    }
+
     return true;
   } catch (error) {
     console.error(`Error deleting invoice ${id}:`, error);
@@ -248,80 +274,87 @@ export const deleteInvoice = async (id: string): Promise<boolean> => {
   }
 };
 
-// Save an invoice template
-export const saveInvoiceTemplate = async (template: Omit<InvoiceTemplate, 'id' | 'created_at' | 'usage_count'>): Promise<InvoiceTemplate> => {
+export const getInvoiceTemplates = async (): Promise<InvoiceTemplate[]> => {
   try {
     const { data, error } = await supabase
-      .from('invoice_templates')
-      .insert({
-        name: template.name,
-        description: template.description,
-        default_tax_rate: template.default_tax_rate || 0,
-        default_due_date_days: template.default_due_date_days || 30,
-        default_notes: template.default_notes || '',
-        last_used: null,
-        usage_count: 0
-      })
-      .select()
-      .single();
-      
-    if (error) throw error;
-    
-    // Insert template items if provided
-    if (template.invoice_template_items && template.invoice_template_items.length > 0) {
-      const templateItems = template.invoice_template_items.map(item => ({
-        template_id: data.id,
-        name: item.name || '',
-        description: item.description || '',
-        quantity: item.quantity || 1,
-        price: item.price || 0,
-        hours: item.hours || false,
-        sku: item.sku || '',
-        category: item.category || ''
-      }));
-      
-      const { error: itemsError } = await supabase
-        .from('invoice_template_items')
-        .insert(templateItems);
-        
-      if (itemsError) throw itemsError;
+      .from("invoice_templates")
+      .select("*");
+
+    if (error) {
+      throw error;
     }
-    
-    return data as InvoiceTemplate;
+
+    // Fetch template items for each template
+    const templatesWithItems = await Promise.all(
+      data.map(async (template) => {
+        const { data: items, error: itemsError } = await supabase
+          .from("invoice_template_items")
+          .select("*")
+          .eq("template_id", template.id);
+
+        if (itemsError) {
+          console.error("Error fetching template items:", itemsError);
+          return { ...template, default_items: [] };
+        }
+
+        return { ...template, default_items: items || [] };
+      })
+    );
+
+    return templatesWithItems;
   } catch (error) {
-    console.error('Error saving invoice template:', error);
-    throw error;
+    console.error("Error fetching invoice templates:", error);
+    return [];
   }
 };
 
-// Get all invoice templates
-export const getInvoiceTemplates = async (): Promise<InvoiceTemplate[]> => {
+export const saveInvoiceTemplate = async (
+  template: Omit<InvoiceTemplate, "id" | "created_at" | "usage_count">
+): Promise<InvoiceTemplate> => {
   try {
-    const { data: templates, error: templatesError } = await supabase
-      .from('invoice_templates')
-      .select('*')
-      .order('name');
-      
-    if (templatesError) throw templatesError;
-    
-    // Get template items for each template
-    const templatesWithItems = await Promise.all(templates.map(async (template) => {
-      const { data: items, error: itemsError } = await supabase
-        .from('invoice_template_items')
-        .select('*')
-        .eq('template_id', template.id);
-        
-      if (itemsError) throw itemsError;
-      
-      return {
-        ...template,
-        invoice_template_items: items || []
-      };
-    }));
-    
-    return templatesWithItems;
+    // Insert the template
+    const { data, error } = await supabase
+      .from("invoice_templates")
+      .insert([
+        {
+          name: template.name,
+          description: template.description,
+          default_tax_rate: template.default_tax_rate,
+          default_notes: template.default_notes,
+          default_due_date_days: template.default_due_date_days,
+        },
+      ])
+      .select();
+
+    if (error) {
+      throw error;
+    }
+
+    const newTemplate = data[0];
+
+    // Insert template items if available
+    if (template.default_items && template.default_items.length > 0) {
+      const formattedItems = template.default_items.map((item) => ({
+        template_id: newTemplate.id,
+        name: item.name || "",
+        description: item.description || "",
+        quantity: item.quantity || 1,
+        price: item.price || 0,
+        hours: item.hours || false,
+        category: item.category || null,
+        sku: item.sku || null,
+      }));
+
+      await supabase.from("invoice_template_items").insert(formattedItems);
+    }
+
+    return {
+      ...newTemplate,
+      default_items: template.default_items || [],
+      usage_count: 0,
+    };
   } catch (error) {
-    console.error('Error fetching invoice templates:', error);
-    return [];
+    console.error("Error saving invoice template:", error);
+    throw error;
   }
 };

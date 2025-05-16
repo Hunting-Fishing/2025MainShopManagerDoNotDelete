@@ -62,6 +62,7 @@ export const formatInventoryItem = (item: Partial<InventoryItemExtended>): Inven
     quantity: Number(item.quantity) || 0,
     reorder_point: Number(item.reorder_point) || 10,
     unit_price: Number(item.unit_price) || 0,
+    price: Number(item.unit_price) || 0, // Add price property that maps to unit_price
     supplier: item.supplier || '',
     location: item.location || '',
     status: item.status || 'In Stock',
@@ -78,7 +79,7 @@ export const formatInventoryForApi = (item: Partial<InventoryItemExtended>): any
     ...item,
     quantity: Number(item.quantity),
     reorder_point: Number(item.reorder_point),
-    unit_price: Number(item.unit_price),
+    unit_price: Number(item.price || item.unit_price),
   };
 };
 

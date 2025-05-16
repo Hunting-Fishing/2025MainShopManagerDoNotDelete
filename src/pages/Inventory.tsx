@@ -1,17 +1,19 @@
 
 import React from "react";
-import { InventoryHeader } from "@/components/inventory/InventoryHeader";
 import { InventoryFilters } from "@/components/inventory/InventoryFilters";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
-import { InventoryAlerts } from "@/components/inventory/InventoryAlerts";
-import { useInventoryFilters } from "@/hooks/useInventoryFilters";
-import { useInventoryManager } from "@/hooks/inventory/useInventoryManager";
-import { AutoReorderStatus } from "@/components/inventory/alerts/AutoReorderStatus";
-import { PendingOrdersCard } from "@/components/inventory/PendingOrdersCard";
+import { EmptyInventory } from "@/components/inventory/EmptyInventory";
+import { InventoryStockHeader } from "@/components/inventory/InventoryStockHeader";
+import { useInventoryFilters } from "@/hooks/inventory/useInventoryFilters";
+import { useInventoryCrud } from "@/hooks/inventory/useInventoryCrud";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
-export default function Inventory() {
+const Inventory = () => {
   const {
+    filteredItems,
+    filters,
+    updateFilter,
+    resetFilters,
     loading,
     searchQuery,
     setSearchQuery,
@@ -23,74 +25,70 @@ export default function Inventory() {
     setSupplierFilter,
     locationFilter,
     setLocationFilter,
-    filteredItems,
     error,
     categories,
     statuses,
     suppliers,
     locations
   } = useInventoryFilters();
-  
-  const { autoReorderSettings, lowStockItems, outOfStockItems } = useInventoryManager();
+
+  const inventoryCrud = useInventoryCrud();
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-[500px]">
-        <LoadingSpinner size="lg" />
+      <div className="container mx-auto p-4">
+        <div className="flex justify-center items-center h-80">
+          <LoadingSpinner size="lg" />
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex flex-col justify-center items-center h-[500px] space-y-4">
-        <div className="text-xl font-semibold text-red-500">Error loading inventory data</div>
-        <div className="text-gray-600">{error}</div>
+      <div className="container mx-auto p-4">
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+          <p className="text-red-700">Error loading inventory: {error}</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <InventoryHeader />
-      
-      {/* Inventory Alerts Section */}
-      <div className="grid gap-6 md:grid-cols-3">
-        <div className="md:col-span-2">
-          <InventoryAlerts />
-        </div>
-        <PendingOrdersCard />
+    <div className="container mx-auto p-4">
+      <InventoryStockHeader
+        title="Inventory Management"
+        description="Manage your inventory items, track stock levels, and view inventory metrics."
+        showControls={true}
+        onExport={() => console.log("Export inventory")}
+        onImport={() => console.log("Import inventory")}
+      />
+
+      <div className="mb-6">
+        <InventoryFilters
+          categories={categories}
+          statuses={statuses}
+          suppliers={suppliers}
+          locations={locations}
+          categoryFilter={categoryFilter}
+          statusFilter={statusFilter}
+          supplierFilter={supplierFilter}
+          locationFilter={locationFilter}
+          setCategoryFilter={setCategoryFilter}
+          setStatusFilter={setStatusFilter}
+          setSupplierFilter={setSupplierFilter}
+          setLocationFilter={setLocationFilter}
+          onReset={resetFilters}
+        />
       </div>
-      
-      <AutoReorderStatus 
-        items={[...lowStockItems, ...outOfStockItems]} 
-        autoReorderSettings={autoReorderSettings} 
-      />
 
-      {/* Filters and search */}
-      <InventoryFilters 
-        categories={categories}
-        statuses={statuses}
-        suppliers={suppliers}
-        locations={locations}
-        categoryFilter={categoryFilter}
-        statusFilter={statusFilter}
-        supplierFilter={supplierFilter}
-        locationFilter={locationFilter}
-        setCategoryFilter={setCategoryFilter}
-        setStatusFilter={setStatusFilter}
-        setSupplierFilter={setSupplierFilter}
-        setLocationFilter={setLocationFilter}
-      />
-
-      {/* Inventory Items table */}
       {filteredItems.length > 0 ? (
-        <InventoryTable items={filteredItems} />
+        <InventoryTable items={filteredItems} onUpdateItem={inventoryCrud.updateItem} />
       ) : (
-        <div className="flex justify-center items-center h-48 border rounded-lg bg-gray-50">
-          <p className="text-gray-500">No inventory items found matching your criteria</p>
-        </div>
+        <EmptyInventory />
       )}
     </div>
   );
-}
+};
+
+export default Inventory;

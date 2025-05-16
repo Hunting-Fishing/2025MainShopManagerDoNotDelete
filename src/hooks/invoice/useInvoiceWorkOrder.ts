@@ -10,7 +10,7 @@ export const useInvoiceWorkOrder = () => {
     return {
       workOrderId: workOrder.id,
       customer: workOrder.customer || '',
-      customerAddress: workOrder.location || '', // Use location field instead of customer_address/address
+      customerAddress: workOrder.location || '', // Use location field
       description: workOrder.description || '',
       assignedStaff: workOrder.technician ? [{ id: workOrder.technician_id || '', name: workOrder.technician }] : []
     };

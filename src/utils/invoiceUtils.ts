@@ -1,67 +1,86 @@
 
-import { Invoice } from '@/types/invoice';
+import { Invoice, InvoiceItem } from "@/types/invoice";
 
-/**
- * Formats API response to match our Invoice type
- */
-export const formatApiInvoice = (apiInvoice: any): Invoice => {
-  return {
-    id: apiInvoice.id || '',
-    number: apiInvoice.number || apiInvoice.id || '',
-    customer: apiInvoice.customer || '',
-    customer_id: apiInvoice.customer_id,
-    customer_address: apiInvoice.customer_address || '',
-    customer_email: apiInvoice.customer_email || '',
-    status: apiInvoice.status || 'draft',
-    issue_date: apiInvoice.issue_date || apiInvoice.date || new Date().toISOString().split('T')[0],
-    due_date: apiInvoice.due_date || '',
-    date: apiInvoice.date || apiInvoice.issue_date || new Date().toISOString().split('T')[0],
-    description: apiInvoice.description || '',
-    payment_method: apiInvoice.payment_method || '',
-    subtotal: Number(apiInvoice.subtotal) || 0,
-    tax: Number(apiInvoice.tax) || 0,
-    tax_rate: Number(apiInvoice.tax_rate) || 0,
-    total: Number(apiInvoice.total) || 0,
-    notes: apiInvoice.notes || '',
-    work_order_id: apiInvoice.work_order_id || '',
-    created_by: apiInvoice.created_by || '',
-    created_at: apiInvoice.created_at || new Date().toISOString(),
-    updated_at: apiInvoice.updated_at || new Date().toISOString(),
-    assignedStaff: apiInvoice.assignedStaff || [],
-    items: apiInvoice.items || []
+// Get the appropriate color for an invoice status
+export const getInvoiceStatusColor = (status: string): string => {
+  const statusColors: Record<string, string> = {
+    draft: "bg-gray-100 text-gray-800 border border-gray-300",
+    pending: "bg-yellow-100 text-yellow-800 border border-yellow-300",
+    paid: "bg-green-100 text-green-800 border border-green-300",
+    overdue: "bg-red-100 text-red-800 border border-red-300",
+    cancelled: "bg-pink-100 text-pink-800 border border-pink-300",
+    default: "bg-blue-100 text-blue-800 border border-blue-300"
   };
+
+  return statusColors[status] || statusColors.default;
 };
 
-/**
- * Formats our Invoice object for API submission
- */
+// Prepare an invoice for API submission
 export const formatInvoiceForApi = (invoice: Invoice): any => {
   return {
-    ...invoice,
-    // Ensure numeric fields are properly formatted
-    subtotal: Number(invoice.subtotal),
-    tax: Number(invoice.tax),
-    tax_rate: Number(invoice.tax_rate),
-    total: Number(invoice.total)
+    id: invoice.id,
+    customer: invoice.customer,
+    customer_id: invoice.customer_id,
+    customer_email: invoice.customer_email,
+    customer_address: invoice.customer_address,
+    issue_date: invoice.date,
+    due_date: invoice.due_date,
+    status: invoice.status,
+    subtotal: invoice.subtotal,
+    tax_rate: invoice.tax_rate,
+    tax: invoice.tax,
+    total: invoice.total,
+    notes: invoice.notes,
+    work_order_id: invoice.work_order_id,
+    description: invoice.description,
+    payment_method: invoice.payment_method,
+    created_by: invoice.created_by,
+    created_at: invoice.created_at,
+    updated_at: new Date().toISOString(),
   };
 };
 
-/**
- * Returns Tailwind CSS class for invoice status
- */
-export const getInvoiceStatusColor = (status: string): string => {
-  switch (status.toLowerCase()) {
-    case 'paid':
-      return 'bg-green-100 text-green-800 border border-green-300';
-    case 'pending':
-      return 'bg-yellow-100 text-yellow-800 border border-yellow-300';
-    case 'overdue':
-      return 'bg-red-100 text-red-800 border border-red-300';
-    case 'draft':
-      return 'bg-gray-100 text-gray-800 border border-gray-300';
-    case 'cancelled':
-      return 'bg-slate-100 text-slate-800 border border-slate-300';
-    default:
-      return 'bg-gray-100 text-gray-800 border border-gray-300';
-  }
+// Format API response to our Invoice type
+export const formatApiInvoice = (invoice: any): Invoice => {
+  return {
+    id: invoice.id,
+    number: invoice.number || invoice.id.substring(0, 8).toUpperCase(),
+    customer: invoice.customer || "",
+    customer_id: invoice.customer_id,
+    customer_email: invoice.customer_email || "",
+    customer_address: invoice.customer_address || "",
+    date: invoice.date || invoice.issue_date || new Date().toISOString(),
+    due_date: invoice.due_date || "",
+    status: invoice.status || "draft",
+    subtotal: Number(invoice.subtotal) || 0,
+    tax_rate: Number(invoice.tax_rate) || 0,
+    tax: Number(invoice.tax) || 0,
+    total: Number(invoice.total) || 0,
+    notes: invoice.notes || "",
+    work_order_id: invoice.work_order_id || "",
+    description: invoice.description || "",
+    payment_method: invoice.payment_method || "",
+    created_by: invoice.created_by || "",
+    created_at: invoice.created_at || new Date().toISOString(),
+    updated_at: invoice.updated_at || new Date().toISOString(),
+    assignedStaff: invoice.assignedStaff || [],
+    items: invoice.items || [],
+  };
+};
+
+// Calculate invoice totals
+export const calculateInvoiceTotals = (items: InvoiceItem[], taxRate: number = 0): { subtotal: number; tax: number; total: number } => {
+  const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+  const tax = subtotal * taxRate;
+  const total = subtotal + tax;
+  
+  return { subtotal, tax, total };
+};
+
+// Format money value as currency
+export const formatMoney = (amount: number): string => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(amount);
 };

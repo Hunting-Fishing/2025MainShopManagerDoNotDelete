@@ -1,47 +1,70 @@
 
-import { format } from 'date-fns';
+import { WorkOrder } from "@/types/workOrder";
 
-/**
- * Format a date string into a standardized format
- */
+// Format a date string
 export const formatDate = (dateString: string): string => {
-  if (!dateString) return '';
+  if (!dateString) return 'N/A';
+  
   try {
     const date = new Date(dateString);
-    return format(date, 'MMM d, yyyy');
+    return date.toLocaleDateString();
   } catch (error) {
-    console.error('Error formatting date:', error);
-    return dateString;
+    console.error("Error formatting date:", error);
+    return 'Invalid Date';
   }
 };
 
-/**
- * Format a time string into a standardized format
- */
+// Format a time string
 export const formatTime = (timeString: string): string => {
-  if (!timeString) return '';
+  if (!timeString) return 'N/A';
+  
   try {
     const date = new Date(timeString);
-    return format(date, 'h:mm a');
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   } catch (error) {
-    console.error('Error formatting time:', error);
-    return timeString;
+    console.error("Error formatting time:", error);
+    return 'Invalid Time';
   }
 };
 
-/**
- * Format a duration in minutes to hours and minutes format
- */
+// Format time in hours and minutes
 export const formatTimeInHoursAndMinutes = (minutes: number): string => {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
+  if (!minutes) return '0h 0m';
   
-  return `${hours}h ${mins.toString().padStart(2, '0')}m`;
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  
+  if (hours === 0) {
+    return `${remainingMinutes}m`;
+  } else if (remainingMinutes === 0) {
+    return `${hours}h`;
+  } else {
+    return `${hours}h ${remainingMinutes}m`;
+  }
 };
 
-// Add color styling for different priority levels
-export const priorityColorMap = {
-  "low": "bg-green-100 text-green-800 border border-green-300",
-  "medium": "bg-yellow-100 text-yellow-800 border border-yellow-300",
-  "high": "bg-red-100 text-red-800 border border-red-300"
+// Normalize a work order by ensuring all required fields are present
+export const normalizeWorkOrder = (order: any): WorkOrder => {
+  return {
+    id: order.id || '',
+    customer: order.customer || '',
+    customer_id: order.customer_id,
+    vehicle_id: order.vehicle_id,
+    description: order.description || '',
+    status: order.status || 'pending',
+    priority: order.priority || 'medium',
+    date: order.date || order.created_at || new Date().toISOString(),
+    dueDate: order.due_date,
+    technician: order.technician || '',
+    technician_id: order.technician_id,
+    location: order.location || '',
+    notes: order.notes || '',
+    totalBillableTime: order.total_billable_time || 0,
+    created_by: order.created_by || '',
+    createdAt: order.created_at || new Date().toISOString(),
+    last_updated_by: order.last_updated_by || '',
+    lastUpdatedAt: order.last_updated_at,
+    timeEntries: [],
+    inventoryItems: []
+  };
 };

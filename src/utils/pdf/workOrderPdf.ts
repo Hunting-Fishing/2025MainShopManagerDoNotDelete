@@ -1,132 +1,108 @@
 
 import { jsPDF } from "jspdf";
-import 'jspdf-autotable';
-import { WorkOrder } from "@/types/workOrder";
-import { formatTimeInHoursAndMinutes } from "@/utils/dateUtils";
-import { configurePdf, addFooter } from "./pdfConfig";
+import "jspdf-autotable";
+import { WorkOrder, TimeEntry, WorkOrderInventoryItem } from "@/types/workOrder";
+import { formatDate, formatCurrency } from "@/utils/formatters";
 
-/**
- * Generate a detailed work order PDF with better formatting
- */
-export const generateWorkOrderPdf = (workOrder: WorkOrder) => {
-  // Create new PDF document
+export const generateWorkOrderPdf = (workOrder: WorkOrder): jsPDF => {
   const doc = new jsPDF();
   
-  // Configure document with branding
-  configurePdf(doc, `Work Order #${workOrder.id}`);
+  // Add header
+  doc.setFontSize(20);
+  doc.text("Work Order", 14, 20);
   
-  // Add customer information
-  doc.setFontSize(11);
-  doc.setTextColor(0, 0, 0);
-  doc.text("Customer:", 14, 50);
   doc.setFontSize(10);
-  doc.text(workOrder.customer, 14, 55);
-  doc.text(workOrder.location || "", 14, 60);
+  doc.text(`ID: ${workOrder.id}`, 14, 30);
+  doc.text(`Date: ${formatDate(workOrder.date)}`, 14, 35);
+  doc.text(`Due Date: ${formatDate(workOrder.dueDate || "")}`, 14, 40);
   
-  // Add work order details
-  doc.setFontSize(11);
-  doc.text("Work Order Details:", 120, 50);
+  // Add status and priority
+  doc.text(`Status: ${workOrder.status}`, 120, 30);
+  doc.text(`Priority: ${workOrder.priority}`, 120, 35);
+  
+  // Add customer and vehicle info
+  doc.setFontSize(14);
+  doc.text("Customer Information", 14, 55);
   doc.setFontSize(10);
-  doc.text(`Date: ${workOrder.date}`, 120, 55);
-  doc.text(`Due Date: ${workOrder.dueDate}`, 120, 60);
-  doc.text(`Status: ${workOrder.status.toUpperCase()}`, 120, 65);
-  doc.text(`Priority: ${workOrder.priority.toUpperCase()}`, 120, 70);
-  doc.text(`Technician: ${workOrder.technician}`, 120, 75);
+  doc.text(`Customer: ${workOrder.customer}`, 14, 65);
+  doc.text(`Location: ${workOrder.location || "N/A"}`, 14, 70);
   
-  // Add description section
-  doc.setFontSize(11);
-  doc.text("Description:", 14, 75);
+  // Add description and notes
+  doc.setFontSize(14);
+  doc.text("Description", 14, 85);
   doc.setFontSize(10);
+  doc.text(workOrder.description || "No description provided", 14, 95);
   
-  // Wrap text to ensure it fits within page
-  const splitDescription = doc.splitTextToSize(workOrder.description || "No description provided", 180);
-  doc.text(splitDescription, 14, 80);
+  doc.setFontSize(14);
+  doc.text("Notes", 14, 110);
+  doc.setFontSize(10);
+  doc.text(workOrder.notes || "No notes provided", 14, 120);
   
-  let currentY = 90 + (splitDescription.length - 1) * 5;
-  
-  // Add inventory items if available
+  // Add inventory items table
   if (workOrder.inventoryItems && workOrder.inventoryItems.length > 0) {
-    doc.setFontSize(11);
-    doc.text("Parts & Inventory:", 14, currentY);
-    currentY += 5;
+    doc.setFontSize(14);
+    doc.text("Parts & Materials", 14, 135);
     
-    doc.autoTable({
-      startY: currentY,
-      head: [['Item', 'SKU', 'Category', 'Quantity', 'Unit Price', 'Total']],
-      body: workOrder.inventoryItems.map(item => [
-        item.name,
-        item.sku,
-        item.category,
-        item.quantity.toString(),
-        `$${item.unitPrice.toFixed(2)}`,
-        `$${(item.quantity * item.unitPrice).toFixed(2)}`
-      ]),
-      styles: { fontSize: 9, cellPadding: 3 },
-      headStyles: { fillColor: [66, 139, 202] },
-      margin: { top: currentY, right: 14, bottom: 20, left: 14 },
+    const inventoryHeaders = [["Name", "SKU", "Category", "Quantity", "Price", "Total"]];
+    const inventoryData = workOrder.inventoryItems.map((item) => [
+      item.name,
+      item.sku,
+      item.category,
+      item.quantity.toString(),
+      formatCurrency(item.unit_price),
+      formatCurrency(item.quantity * item.unit_price)
+    ]);
+    
+    (doc as any).autoTable({
+      head: inventoryHeaders,
+      body: inventoryData,
+      startY: 140,
+      headStyles: { fillColor: [66, 139, 202] }
     });
-    
-    currentY = (doc as any).lastAutoTable.finalY + 10;
   }
   
-  // Add time entries if available
+  // Add time entries table
+  const timeEntriesY = (doc as any).lastAutoTable ? 
+    (doc as any).lastAutoTable.finalY + 20 : 
+    145;
+  
   if (workOrder.timeEntries && workOrder.timeEntries.length > 0) {
-    doc.setFontSize(11);
-    doc.text("Time Entries:", 14, currentY);
-    currentY += 5;
+    doc.setFontSize(14);
+    doc.text("Labor & Time Entries", 14, timeEntriesY);
     
-    doc.autoTable({
-      startY: currentY,
-      head: [['Technician', 'Start Time', 'End Time', 'Duration', 'Billable', 'Notes']],
-      body: workOrder.timeEntries.map(entry => [
-        entry.employeeName,
-        new Date(entry.startTime).toLocaleString(),
-        entry.endTime ? new Date(entry.endTime).toLocaleString() : 'Ongoing',
-        formatTimeInHoursAndMinutes(entry.duration),
-        entry.billable ? 'Yes' : 'No',
-        entry.notes || ''
-      ]),
-      styles: { fontSize: 9, cellPadding: 3 },
-      headStyles: { fillColor: [66, 139, 202] },
-      margin: { top: currentY, right: 14, bottom: 20, left: 14 },
+    const timeHeaders = [["Technician", "Start Time", "End Time", "Duration", "Notes", "Billable"]];
+    const timeData = workOrder.timeEntries.map((entry) => [
+      entry.employee_name || '',
+      entry.start_time || '',
+      entry.end_time || '',
+      entry.duration ? `${entry.duration} min` : '',
+      entry.notes || '',
+      entry.billable ? "Yes" : "No"
+    ]);
+    
+    (doc as any).autoTable({
+      head: timeHeaders,
+      body: timeData,
+      startY: timeEntriesY + 5,
+      headStyles: { fillColor: [66, 139, 202] }
     });
-    
-    currentY = (doc as any).lastAutoTable.finalY + 10;
   }
   
-  // Add notes section
-  if (workOrder.notes) {
-    doc.setFontSize(11);
-    doc.text("Notes:", 14, currentY);
-    currentY += 5;
-    
-    // Wrap notes text to ensure it fits within page
-    const splitNotes = doc.splitTextToSize(workOrder.notes, 180);
-    doc.text(splitNotes, 14, currentY);
-    
-    currentY += splitNotes.length * 5 + 5;
-  }
+  // Add signature section
+  const signatureY = (doc as any).lastAutoTable ? 
+    (doc as any).lastAutoTable.finalY + 20 : 
+    timeEntriesY + 20;
   
-  // Add billable time summary if available
-  if (workOrder.totalBillableTime) {
-    doc.setFontSize(11);
-    doc.setFont(undefined, 'bold');
-    doc.text(`Total Billable Time: ${formatTimeInHoursAndMinutes(workOrder.totalBillableTime)}`, 14, currentY);
-    doc.setFont(undefined, 'normal');
-  }
-  
-  // Add signature areas
-  currentY += 20;
-  doc.setFontSize(10);
-  doc.text("Customer Signature: _______________________________", 14, currentY);
-  doc.text("Date: _______________", 130, currentY);
-  
-  currentY += 15;
-  doc.text("Technician Signature: _______________________________", 14, currentY);
-  doc.text("Date: _______________", 130, currentY);
+  doc.setFontSize(12);
+  doc.text("Customer Signature", 14, signatureY);
+  doc.line(14, signatureY + 15, 100, signatureY + 15);
+  doc.text("Technician Signature", 120, signatureY);
+  doc.line(120, signatureY + 15, 196, signatureY + 15);
   
   // Add footer
-  addFooter(doc);
+  const pageHeight = doc.internal.pageSize.height;
+  doc.setFontSize(8);
+  doc.text("Generated on " + new Date().toLocaleString(), 14, pageHeight - 10);
   
   return doc;
 };
