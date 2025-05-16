@@ -2,10 +2,10 @@
 export interface Invoice {
   id: string;
   customer: string;
-  customerEmail: string;
-  customerAddress: string;
+  customer_email: string;
+  customer_address: string;
   date: string;
-  dueDate: string;
+  due_date: string;
   subtotal: number;
   tax: number;
   total: number;
@@ -13,12 +13,12 @@ export interface Invoice {
   items: InvoiceItem[];
   notes?: string;
   description?: string;
-  paymentMethod?: string;
-  workOrderId?: string;
+  payment_method?: string;
+  work_order_id?: string;
   assignedStaff: StaffMember[];
-  createdBy: string;
-  lastUpdatedBy?: string;
-  lastUpdatedAt?: string;
+  created_by: string;
+  last_updated_by?: string;
+  last_updated_at?: string;
   customer_id?: string;
 }
 
@@ -30,6 +30,8 @@ export interface InvoiceItem {
   price: number;
   total: number;
   hours?: boolean;
+  sku?: string;
+  category?: string;
 }
 
 export interface StaffMember {
@@ -38,29 +40,17 @@ export interface StaffMember {
   role?: string;
 }
 
-export interface InventoryItem {
-  id: string;
-  name: string;
-  sku: string;
-  description?: string;
-  price: number;
-  category?: string;
-  supplier?: string;
-  status?: string;
-  quantity?: number;
-}
-
 export interface InvoiceTemplate {
   id: string;
   name: string;
   description: string;
-  createdAt: string;
-  lastUsed: string | null;
-  usageCount: number;
-  defaultTaxRate: number;
-  defaultDueDateDays: number;
-  defaultNotes: string;
-  defaultItems: InvoiceItem[];
+  created_at: string;
+  last_used: string | null;
+  usage_count: number;
+  default_tax_rate: number;
+  default_due_date_days: number;
+  default_notes: string;
+  invoice_template_items: InvoiceItem[];
 }
 
 // Helper function to create an invoice updater
@@ -70,3 +60,6 @@ export const createInvoiceUpdater = (updates: Partial<Invoice>) => {
     ...updates
   });
 };
+
+// Re-export the StaffMember type
+export { StaffMember };

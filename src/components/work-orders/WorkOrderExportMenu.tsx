@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { exportToCSV, exportToExcel, exportMultiSheetExcel } from "@/utils/export";
 import { toast } from "@/components/ui/use-toast";
-import { WorkOrder } from "@/data/workOrdersData";
+import { WorkOrder, TimeEntry } from "@/types/workOrder";
 import { generateWorkOrderPdf, savePdf } from "@/utils/pdf";
 
 interface WorkOrderExportMenuProps {
@@ -22,38 +22,38 @@ export function WorkOrderExportMenu({ workOrder }: WorkOrderExportMenuProps) {
       // Prepare data for export
       const exportData = {
         id: workOrder.id,
-        customer: workOrder.customer,
+        customer: workOrder.customer || 'N/A',
         description: workOrder.description,
         status: workOrder.status,
-        priority: workOrder.priority,
-        date: workOrder.date,
-        dueDate: workOrder.dueDate,
-        technician: workOrder.technician,
-        location: workOrder.location,
+        priority: workOrder.priority || 'medium',
+        date: workOrder.created_at || 'N/A',
+        dueDate: workOrder.due_date || 'N/A',
+        technician: workOrder.technician_id || 'N/A',
+        location: workOrder.location || 'N/A',
         notes: workOrder.notes || "N/A",
-        totalBillableTime: workOrder.totalBillableTime 
-          ? workOrder.totalBillableTime
+        totalBillableTime: workOrder.total_billable_time 
+          ? workOrder.total_billable_time
           : "N/A"
       };
       
       // Format time entries data if they exist
-      const timeEntriesData = workOrder.timeEntries ? workOrder.timeEntries.map(entry => ({
-        employeeName: entry.employeeName,
-        startTime: new Date(entry.startTime).toLocaleString(),
-        endTime: entry.endTime ? new Date(entry.endTime).toLocaleString() : 'Ongoing',
-        duration: entry.duration,
+      const timeEntriesData = workOrder.time_entries ? workOrder.time_entries.map(entry => ({
+        employeeName: entry.employee_name,
+        startTime: entry.start_time ? new Date(entry.start_time).toLocaleString() : 'N/A',
+        endTime: entry.end_time ? new Date(entry.end_time).toLocaleString() : 'Ongoing',
+        duration: entry.duration || 0,
         notes: entry.notes || '',
         billable: entry.billable ? 'Yes' : 'No'
       })) : [];
       
       // Format inventory items if they exist
-      const inventoryItemsData = workOrder.inventoryItems ? workOrder.inventoryItems.map(item => ({
+      const inventoryItemsData = workOrder.inventory_items ? workOrder.inventory_items.map(item => ({
         name: item.name,
         sku: item.sku,
         category: item.category,
         quantity: item.quantity,
-        unitPrice: item.unitPrice.toFixed(2),
-        total: (item.quantity * item.unitPrice).toFixed(2)
+        unitPrice: item.unit_price.toFixed(2),
+        total: (item.quantity * item.unit_price).toFixed(2)
       })) : [];
       
       switch (format) {

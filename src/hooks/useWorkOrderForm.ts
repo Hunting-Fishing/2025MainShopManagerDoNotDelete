@@ -1,9 +1,22 @@
-
 import { useState, useCallback } from "react";
 import { WorkOrder, WorkOrderStatusType } from "@/types/workOrder";
 import { toast } from "sonner";
 import { createWorkOrder, updateWorkOrder } from "@/services/workOrderService";
 import { useNavigate } from "react-router-dom";
+
+export type WorkOrderFormValues = {
+  customer: string;
+  description: string;
+  status: "pending" | "in-progress" | "completed" | "cancelled";
+  priority: "low" | "medium" | "high";
+  technician: string;
+  location: string;
+  dueDate: Date;
+  notes?: string;
+  inventoryItems?: any[];
+  service_type?: string;
+  estimated_hours?: string | number;
+};
 
 export const useWorkOrderForm = (initialWorkOrder?: Partial<WorkOrder>) => {
   const [workOrder, setWorkOrder] = useState<Partial<WorkOrder>>(

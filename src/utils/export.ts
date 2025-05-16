@@ -1,82 +1,90 @@
 
-import { saveAs } from 'file-saver';
-import * as XLSX from 'xlsx';
-import { Parser } from '@json2csv/plainjs';
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
+import { Parser } from "@json2csv/plainjs";
 
-/**
- * Export data to CSV file
- */
 export function exportToCSV(data: any[], filename: string) {
   try {
     const parser = new Parser();
     const csv = parser.parse(data);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    saveAs(blob, `${filename}.csv`);
+    
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `${filename}.csv`);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   } catch (error) {
-    console.error('Error exporting to CSV:', error);
-    throw new Error('Failed to export data to CSV');
+    console.error("CSV Export Error:", error);
+    throw error;
   }
 }
 
-/**
- * Export data to Excel file
- */
 export function exportToExcel(data: any[], filename: string) {
   try {
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Data');
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
+    
     XLSX.writeFile(workbook, `${filename}.xlsx`);
   } catch (error) {
-    console.error('Error exporting to Excel:', error);
-    throw new Error('Failed to export data to Excel');
+    console.error("Excel Export Error:", error);
+    throw error;
   }
 }
 
-/**
- * Export multiple sheets of data to Excel file
- * @param workbookData Object with keys as sheet names and values as arrays of data
- * @param filename Name for the exported file (without extension)
- */
-export function exportMultiSheetExcel(
-  workbookData: { [sheetName: string]: any[] },
-  filename: string
-) {
+export function exportMultiSheetExcel(data: Record<string, any[]>, filename: string) {
   try {
     const workbook = XLSX.utils.book_new();
     
-    // Convert workbook data object into sheet structure
-    const sheets = Object.entries(workbookData).map(([name, data]) => ({
-      name,
-      data: XLSX.utils.json_to_sheet(data)
-    }));
-    
-    // Add each sheet to the workbook
-    sheets.forEach(sheet => {
-      XLSX.utils.book_append_sheet(workbook, sheet.data, sheet.name);
+    // Create a worksheet for each sheet in the data object
+    Object.entries(data).forEach(([sheetName, sheetData]) => {
+      const worksheet = XLSX.utils.json_to_sheet(sheetData);
+      XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
     });
     
-    // Write to file
     XLSX.writeFile(workbook, `${filename}.xlsx`);
   } catch (error) {
-    console.error('Error exporting multi-sheet Excel:', error);
-    throw new Error('Failed to export multi-sheet data to Excel');
+    console.error("Multi-Sheet Excel Export Error:", error);
+    throw error;
   }
 }
 
-/**
- * Export data to PDF file
- * @param data Data to export
- * @param filename Name for the exported file (without extension)
- */
 export function exportToPDF(data: any[], filename: string) {
   try {
-    // This is a placeholder - in a real implementation,
-    // you would use a library like jsPDF to generate the PDF
-    console.log('PDF export requested for:', data);
-    throw new Error('PDF export not implemented yet');
+    const doc = new jsPDF();
+    
+    // Add title
+    doc.setFontSize(18);
+    doc.text(filename, 14, 22);
+    
+    // Get column names
+    const columns = Object.keys(data[0]);
+    
+    // Format data for autoTable
+    const rows = data.map(item => Object.values(item));
+    
+    // Generate the table
+    autoTable(doc, {
+      head: [columns],
+      body: rows,
+      startY: 30,
+      theme: 'grid',
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [66, 139, 202] }
+    });
+    
+    // Save the PDF
+    doc.save(`${filename}.pdf`);
   } catch (error) {
-    console.error('Error exporting to PDF:', error);
+    console.error("PDF Export Error:", error);
     throw error;
   }
 }

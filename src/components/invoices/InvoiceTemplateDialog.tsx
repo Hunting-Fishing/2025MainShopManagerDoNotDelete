@@ -62,20 +62,20 @@ export function InvoiceTemplateDialog({ templates, onSelectTemplate }: InvoiceTe
                             <div className="flex items-center gap-1">
                               <Calendar size={12} />
                               <span>
-                                {template.defaultItems.length} items
+                                {template.invoice_template_items ? template.invoice_template_items.length : 0} items
                               </span>
                             </div>
                             <div className="flex items-center gap-1">
                               <User size={12} />
                               <span>
-                                Used {template.usageCount} times
+                                Used {template.usage_count} times
                               </span>
                             </div>
-                            {template.lastUsed && (
+                            {template.last_used && (
                               <div className="flex items-center gap-1">
                                 <Clock size={12} />
                                 <span>
-                                  Used {formatDistanceToNow(new Date(template.lastUsed))} ago
+                                  Used {formatDistanceToNow(new Date(template.last_used))} ago
                                 </span>
                               </div>
                             )}

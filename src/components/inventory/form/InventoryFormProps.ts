@@ -29,5 +29,5 @@ export interface SelectOption {
   label: string;
 }
 
-// Export SelectOption to make it available to other modules
-export { SelectOption as SelectOption };
+// Use 'export type' to fix the re-exporting issue
+export type { SelectOption as SelectOptionType };

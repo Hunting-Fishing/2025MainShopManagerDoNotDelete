@@ -12,12 +12,25 @@ interface WorkOrderEditFormProps {
 }
 
 export default function WorkOrderEditForm({ workOrder }: WorkOrderEditFormProps) {
-  const { form, onSubmit, isSubmitting, formError, timeEntries, setTimeEntries } = useWorkOrderEditForm(workOrder);
+  const { 
+    workOrder: editWorkOrder, 
+    updateField, 
+    handleSubmit, 
+    loading, 
+    saving: isSubmitting, 
+    error: formError 
+  } = useWorkOrderEditForm(workOrder.id);
+  
+  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>(workOrder.time_entries || []);
   const { technicians, isLoading: loadingTechnicians } = useTechnicians();
 
   // Handle updating time entries
   const handleUpdateTimeEntries = (updatedEntries: TimeEntry[]) => {
     setTimeEntries(updatedEntries);
+  };
+  
+  const onSubmit = async (data: any) => {
+    await handleSubmit();
   };
 
   return (
@@ -29,7 +42,7 @@ export default function WorkOrderEditForm({ workOrder }: WorkOrderEditFormProps)
       <WorkOrderEditFormContent
         workOrderId={workOrder.id}
         technicians={technicians}
-        form={form}
+        form={{ handleSubmit: onSubmit }}
         onSubmit={onSubmit}
         isSubmitting={isSubmitting}
         error={formError}
