@@ -60,11 +60,10 @@ export const normalizeWorkOrder = (order: any): WorkOrder => {
     location: order.location || '',
     notes: order.notes || '',
     totalBillableTime: order.total_billable_time || 0,
-    created_by: order.created_by || '',
     createdAt: order.created_at || new Date().toISOString(),
-    last_updated_by: order.last_updated_by || '',
-    lastUpdatedAt: order.last_updated_at,
+    updatedAt: order.updated_at,
     timeEntries: [],
     inventoryItems: []
+    // created_by: order.created_by || '', // Removed this problematic field
   };
 };

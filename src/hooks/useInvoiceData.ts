@@ -1,55 +1,202 @@
 
-import { useState, useEffect } from "react";
-import { getInvoiceById } from "@/services/invoiceService";
-import { Invoice } from "@/types/invoice";
+import { useState } from 'react';
+import { StaffMember, Invoice, InvoiceItem } from '@/types/invoice';
+import { WorkOrder } from '@/types/workOrder';
+import { InventoryItem } from '@/types/inventory';
+import { v4 as uuidv4 } from 'uuid';
 
-export const useInvoiceData = () => {
-  const [invoice, setInvoice] = useState<Invoice | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const getInvoiceData = async (id: string): Promise<Invoice | null> => {
-    try {
-      const invoice = await getInvoiceById(id);
-      if (!invoice) return null;
+export function useInvoiceData(initialWorkOrderId?: string) {
+  const [invoice, setInvoice] = useState<Invoice>({
+    id: uuidv4(),
+    number: `INV-${Date.now().toString().slice(-6)}`,
+    customer: '',
+    customer_address: '',
+    customer_email: '',
+    status: 'draft',
+    issue_date: new Date().toISOString().split('T')[0],
+    due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    date: new Date().toISOString().split('T')[0],
+    description: '',
+    payment_method: '',
+    subtotal: 0,
+    tax: 0,
+    tax_rate: 0.08,
+    total: 0,
+    notes: '',
+    work_order_id: initialWorkOrderId || '',
+    created_by: '',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    assignedStaff: []
+  });
+  
+  const [items, setItems] = useState<InvoiceItem[]>([]);
+  
+  const [showWorkOrderDialog, setShowWorkOrderDialog] = useState(false);
+  const [showInventoryDialog, setShowInventoryDialog] = useState(false);
+  const [showStaffDialog, setShowStaffDialog] = useState(false);
+  
+  // Calculations
+  const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const taxRate = invoice.tax_rate;
+  const tax = subtotal * taxRate;
+  const total = subtotal + tax;
+  
+  // Functions to handle work orders
+  const handleSelectWorkOrder = (workOrder: WorkOrder) => {
+    // Update invoice with selected work order data
+    setInvoice(prev => ({
+      ...prev,
+      customer: workOrder.customer || '',
+      work_order_id: workOrder.id,
+      description: `Services for ${workOrder.description || 'work order'}`
+    }));
+    
+    // Add any inventory items from work order
+    if (workOrder.inventoryItems && workOrder.inventoryItems.length > 0) {
+      // Convert work order inventory items to invoice items
+      const newItems = workOrder.inventoryItems.map(woItem => ({
+        id: uuidv4(),
+        name: woItem.name,
+        description: `${woItem.name} (${woItem.sku})`,
+        quantity: woItem.quantity,
+        price: woItem.unit_price,
+        sku: woItem.sku,
+        category: woItem.category
+      }));
       
-      // Fix customer type mismatch
-      return {
-        ...invoice,
-        // Ensure that customer is handled as a string as required by the Invoice type
-        customer: typeof invoice.customer === 'object' ? 
-          (invoice.customer && 'name' in invoice.customer ? invoice.customer.name : String(invoice.customer)) : 
-          (invoice.customer || ''),
-        // Add any other necessary conversions
-      };
-    } catch (error) {
-      console.error("Error fetching invoice:", error);
-      return null;
+      setItems(prev => [...prev, ...newItems]);
     }
+    
+    setShowWorkOrderDialog(false);
   };
-
-  const loadInvoice = async (id: string) => {
-    setLoading(true);
-    setError(null);
+  
+  // Functions to handle inventory items
+  const handleAddInventoryItem = (inventoryItem: InventoryItem) => {
+    const newItem: InvoiceItem = {
+      id: uuidv4(),
+      name: inventoryItem.name,
+      description: inventoryItem.description || inventoryItem.name,
+      quantity: 1,
+      price: inventoryItem.price || inventoryItem.unit_price || 0,
+      sku: inventoryItem.sku,
+      category: inventoryItem.category,
+    };
+    
+    setItems(prev => [...prev, newItem]);
+    setShowInventoryDialog(false);
+  };
+  
+  // Functions to handle staff
+  const handleAddStaffMember = (staffMember: StaffMember) => {
+    const staffExists = invoice.assignedStaff?.some(s => s.id === staffMember.id);
+    if (staffExists) return;
+    
+    setInvoice(prev => ({
+      ...prev,
+      assignedStaff: [...(prev.assignedStaff || []), staffMember]
+    }));
+    
+    setShowStaffDialog(false);
+  };
+  
+  const handleRemoveStaffMember = (staffId: string) => {
+    setInvoice(prev => ({
+      ...prev,
+      assignedStaff: (prev.assignedStaff || []).filter(s => s.id !== staffId)
+    }));
+  };
+  
+  // Functions to handle invoice items
+  const handleRemoveItem = (itemId: string) => {
+    setItems(prev => prev.filter(item => item.id !== itemId));
+  };
+  
+  const handleUpdateItemQuantity = (itemId: string, quantity: number) => {
+    setItems(prev => 
+      prev.map(item => 
+        item.id === itemId ? { ...item, quantity } : item
+      )
+    );
+  };
+  
+  const handleUpdateItemDescription = (itemId: string, description: string) => {
+    setItems(prev => 
+      prev.map(item => 
+        item.id === itemId ? { ...item, description } : item
+      )
+    );
+  };
+  
+  const handleUpdateItemPrice = (itemId: string, price: number) => {
+    setItems(prev => 
+      prev.map(item => 
+        item.id === itemId ? { ...item, price } : item
+      )
+    );
+  };
+  
+  // Add labor item
+  const handleAddLaborItem = () => {
+    const newItem: InvoiceItem = {
+      id: uuidv4(),
+      description: 'Labor',
+      quantity: 1,
+      price: 100,
+      hours: true
+    };
+    
+    setItems(prev => [...prev, newItem]);
+  };
+  
+  // Save invoice
+  const handleSaveInvoice = async () => {
     try {
-      const invoiceData = await getInvoiceData(id);
-      if (invoiceData) {
-        setInvoice(invoiceData);
-      } else {
-        setError("Invoice not found");
-      }
-    } catch (e: any) {
-      setError(e.message || "Failed to load invoice");
-    } finally {
-      setLoading(false);
+      // Update invoice with calculations and items
+      const updatedInvoice: Invoice = {
+        ...invoice,
+        items,
+        subtotal,
+        tax,
+        tax_rate: taxRate,
+        total,
+        updated_at: new Date().toISOString()
+      };
+      
+      // Save to database code would go here
+      console.log('Saving invoice:', updatedInvoice);
+      
+      return updatedInvoice;
+    } catch (error) {
+      console.error('Error saving invoice:', error);
+      throw error;
     }
   };
-
+  
   return {
     invoice,
-    loading,
-    error,
-    loadInvoice,
+    items,
     setInvoice,
+    setItems,
+    showWorkOrderDialog,
+    showInventoryDialog,
+    showStaffDialog,
+    setShowWorkOrderDialog,
+    setShowInventoryDialog,
+    setShowStaffDialog,
+    handleSelectWorkOrder,
+    handleAddInventoryItem,
+    handleAddStaffMember,
+    handleRemoveStaffMember,
+    handleRemoveItem,
+    handleUpdateItemQuantity,
+    handleUpdateItemDescription,
+    handleUpdateItemPrice,
+    handleAddLaborItem,
+    handleSaveInvoice,
+    subtotal,
+    tax,
+    taxRate,
+    total
   };
-};
+}

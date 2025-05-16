@@ -25,7 +25,7 @@ export interface WorkOrder {
   priority: WorkOrderPriorityType;
   date?: string;
   dueDate?: string;
-  due_date?: string;
+  due_date?: string; 
   technician?: string;
   technician_id?: string;
   location?: string;
@@ -67,7 +67,7 @@ export interface WorkOrderInventoryItem {
   name: string;
   sku: string;
   category: string;
-  workOrderId?: string; // Added camelCase version
+  workOrderId?: string;
   quantity: number;
   unit_price: number;
   total: number;

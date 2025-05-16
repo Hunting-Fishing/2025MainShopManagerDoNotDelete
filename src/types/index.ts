@@ -66,7 +66,12 @@ export interface User {
 }
 
 // For maintenance types
-export type { MaintenanceSchedule } from "./maintenance";
+export interface MaintenanceSchedule {
+  id: string;
+  name: string;
+  interval: number;
+  interval_type: 'days' | 'months' | 'mileage';
+}
 
 // For repair types
 export interface RepairService {
@@ -84,16 +89,16 @@ export interface RepairPart {
   price?: number;
 }
 
-// For filter types
-export interface FilterOptions {
+// For filter types (avoid naming conflicts)
+export interface FilterOptionsType {
   startDate: string;
   endDate: string;
 }
 
-export interface SortOptions {
+export interface SortOptionsType {
   field: string;
   direction: 'asc' | 'desc';
 }
 
-// Use export type for type exports
-export type { FilterOptions, SortOptions };
+// Use type exports
+export type { FilterOptionsType as FilterOptions, SortOptionsType as SortOptions };

@@ -18,18 +18,5 @@ export interface InventoryAdjustment {
   quantity: number;
   adjustment_type: string;
   notes?: string;
-}
-
-export interface InventoryValuation {
-  total_value: number;
-  average_cost: number;
-  item_count: number;
-  last_updated: string;
-}
-
-export interface InventoryItemStatus {
-  id: string;
-  name: string;
-  color: string;
-  count?: number;
+  performed_by?: string;
 }

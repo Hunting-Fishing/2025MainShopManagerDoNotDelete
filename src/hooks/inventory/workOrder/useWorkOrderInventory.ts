@@ -1,7 +1,7 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
-import { WorkOrderFormValues } from "@/types/workOrder";
+import { WorkOrderFormValues, WorkOrderInventoryItem } from "@/types/workOrder";
 import { InventoryItemExtended } from "@/types/inventory";
 
 export const useWorkOrderInventory = (form: UseFormReturn<WorkOrderFormValues>) => {

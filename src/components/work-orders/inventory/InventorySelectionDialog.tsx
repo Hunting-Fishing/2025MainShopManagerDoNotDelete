@@ -1,14 +1,28 @@
 
 import React, { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { Search } from "lucide-react";
 import { InventoryItemExtended } from "@/types/inventory";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 
-export interface InventorySelectionDialogProps {
+interface InventorySelectionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAddItem: (item: InventoryItemExtended) => void;
@@ -17,143 +31,145 @@ export interface InventorySelectionDialogProps {
 export const InventorySelectionDialog: React.FC<InventorySelectionDialogProps> = ({
   open,
   onOpenChange,
-  onAddItem
+  onAddItem,
 }) => {
-  const [inventoryItems, setInventoryItems] = useState<InventoryItemExtended[]>([]);
-  const [filteredItems, setFilteredItems] = useState<InventoryItemExtended[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  
-  // Fetch inventory items
+  const [items, setItems] = useState<InventoryItemExtended[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // Load inventory items when the dialog opens
   useEffect(() => {
     if (open) {
       fetchInventoryItems();
     }
   }, [open]);
-  
-  // Filter items based on search query
-  useEffect(() => {
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      setFilteredItems(
-        inventoryItems.filter(
-          item => 
-            item.name.toLowerCase().includes(query) ||
-            item.sku.toLowerCase().includes(query) ||
-            (item.category && item.category.toLowerCase().includes(query))
-        )
-      );
-    } else {
-      setFilteredItems(inventoryItems);
-    }
-  }, [searchQuery, inventoryItems]);
-  
+
   const fetchInventoryItems = async () => {
-    setIsLoading(true);
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('inventory_items')
         .select('*')
-        .filter('quantity', 'gt', 0) // Only show items in stock
         .order('name');
         
       if (error) throw error;
       
       if (data) {
-        const formattedItems = data.map(item => ({
+        // Transform to match the InventoryItemExtended type
+        const mappedItems = data.map(item => ({
           id: item.id,
           name: item.name,
-          sku: item.sku || '',
-          description: item.description || '',
-          category: item.category || '',
-          supplier: item.supplier || '',
+          sku: item.sku,
+          description: item.description || "",
+          price: item.unit_price, // Map unit_price to price
+          unit_price: item.unit_price,
+          category: item.category || "",
+          supplier: item.supplier || "",
           quantity: item.quantity || 0,
           reorder_point: item.reorder_point || 0,
-          unit_price: item.unit_price || 0,
-          price: item.unit_price || 0,
-          location: item.location || '',
-          status: item.status || 'In Stock'
+          status: item.status || "In Stock",
+          location: item.location || "",
+          created_at: item.created_at,
+          updated_at: item.updated_at,
         }));
-        setInventoryItems(formattedItems);
-        setFilteredItems(formattedItems);
+        setItems(mappedItems);
       }
     } catch (error) {
-      console.error("Error fetching inventory items:", error);
+      console.error("Error fetching inventory:", error);
+      // Fallback to empty items
+      setItems([]);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
-  
+
+  const filteredItems = items.filter(
+    (item) =>
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.category.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const handleAddItem = (item: InventoryItemExtended) => {
     onAddItem(item);
-    // Don't close the dialog to allow adding multiple items
   };
-  
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[800px]">
+      <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Select Inventory Items</DialogTitle>
+          <DialogTitle>Select Inventory Item</DialogTitle>
+          <DialogDescription>
+            Select items to add to this work order
+          </DialogDescription>
         </DialogHeader>
-        
+
         <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search items by name, SKU, or category..."
-            className="pl-10"
+            placeholder="Search by name, SKU, or category..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-8"
           />
         </div>
-        
-        {isLoading ? (
-          <div className="flex justify-center py-8">Loading inventory items...</div>
-        ) : (
+
+        <div className="overflow-auto flex-grow">
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Name</TableHead>
                 <TableHead>SKU</TableHead>
-                <TableHead>Item</TableHead>
                 <TableHead>Category</TableHead>
-                <TableHead>Available</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead className="text-right">Action</TableHead>
+                <TableHead className="text-right">Stock</TableHead>
+                <TableHead className="text-right">Price</TableHead>
+                <TableHead></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredItems.length === 0 && (
+              {loading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center">
-                    No inventory items found
+                  <TableCell colSpan={6} className="text-center py-8">
+                    Loading inventory items...
                   </TableCell>
                 </TableRow>
+              ) : filteredItems.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8">
+                    No inventory items found.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredItems.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">{item.name}</TableCell>
+                    <TableCell>{item.sku}</TableCell>
+                    <TableCell>{item.category}</TableCell>
+                    <TableCell className="text-right">
+                      <Badge
+                        variant={item.quantity <= 0 ? "destructive" : item.quantity <= item.reorder_point ? "outline" : "secondary"}
+                      >
+                        {item.quantity}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      ${item.unit_price ? item.unit_price.toFixed(2) : "0.00"}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleAddItem(item)}
+                        disabled={item.quantity <= 0}
+                      >
+                        Add
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
               )}
-              {filteredItems.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>{item.sku}</TableCell>
-                  <TableCell>{item.name}</TableCell>
-                  <TableCell>{item.category}</TableCell>
-                  <TableCell>{item.quantity}</TableCell>
-                  <TableCell>${item.unit_price.toFixed(2)}</TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      size="sm"
-                      onClick={() => handleAddItem(item)}
-                      disabled={item.quantity <= 0}
-                    >
-                      Add
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
             </TableBody>
           </Table>
-        )}
-        
-        <div className="flex justify-end">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Close
-          </Button>
         </div>
       </DialogContent>
     </Dialog>

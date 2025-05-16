@@ -6,6 +6,7 @@ import { WorkOrderInventoryField } from "./WorkOrderInventoryField";
 import { useInventoryManager } from "@/hooks/inventory/useInventoryManager";
 import { toast } from "@/hooks/use-toast";
 import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
+import { WorkOrderFormValues } from "@/types/workOrder";
 
 interface InventorySectionWrapperProps {
   form: UseFormReturn<WorkOrderFormSchemaValues>;
@@ -28,11 +29,13 @@ export const InventorySectionWrapper: React.FC<InventorySectionWrapperProps> = (
         title: "Inventory Alerts",
         description: `${lowStockItems.length} items low on stock, ${outOfStockItems.length} items out of stock.`,
         variant: "warning",
-        // Extended duration to ensure users have time to read the message
         duration: 8000
       });
     }
   }, [checkInventoryAlerts, lowStockItems, outOfStockItems]);
   
-  return <WorkOrderInventoryField form={form as any} />;
+  // Type cast is safer here than using "as any", we know the form has compatible fields
+  const compatibleForm = form as unknown as UseFormReturn<WorkOrderFormValues>;
+
+  return <WorkOrderInventoryField form={compatibleForm} />;
 };
