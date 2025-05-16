@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Invoice, InvoiceTemplate, InvoiceItem } from "@/types/invoice";
+import { Invoice, InvoiceTemplate } from "@/types/invoice";
 
 interface SaveTemplateDialogProps {
   invoice?: Invoice;
@@ -13,6 +13,8 @@ interface SaveTemplateDialogProps {
   taxRate: number;
   onSaveTemplate: (template: Omit<InvoiceTemplate, 'id' | 'createdAt' | 'usageCount'>) => void;
   onClose?: () => void;
+  open?: boolean; // Added to support external control
+  isOpen?: boolean; // Alternative prop name
 }
 
 export function SaveTemplateDialog({ 
@@ -20,9 +22,11 @@ export function SaveTemplateDialog({
   currentInvoice,
   taxRate, 
   onSaveTemplate,
-  onClose 
+  onClose,
+  open: externalOpen,
+  isOpen: alternativeOpen
 }: SaveTemplateDialogProps) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(externalOpen || alternativeOpen || false);
   const [templateName, setTemplateName] = useState("");
   const [templateDescription, setTemplateDescription] = useState("");
   
@@ -32,14 +36,18 @@ export function SaveTemplateDialog({
   const handleSave = () => {
     if (!templateName.trim() || !invoiceData) return;
     
-    // Map to template structure - fix: use defaultItems instead of default_items
+    // Create template with correct property names
     const template: Omit<InvoiceTemplate, 'id' | 'createdAt' | 'usageCount'> = {
       name: templateName,
       description: templateDescription || "",
+      defaultTaxRate: taxRate,
+      defaultDueDateDays: 30, // Default value
+      defaultNotes: invoiceData.notes || "",
+      defaultItems: invoiceData.items || [],
+      // Include snake_case aliases for compatibility
       default_tax_rate: taxRate,
-      default_due_date_days: 30, // Default value
-      default_notes: invoiceData.notes || "",
-      defaultItems: invoiceData.items || []
+      default_due_date_days: 30,
+      default_notes: invoiceData.notes || ""
     };
     
     onSaveTemplate(template);
@@ -61,7 +69,7 @@ export function SaveTemplateDialog({
   };
   
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={externalOpen !== undefined ? externalOpen : alternativeOpen !== undefined ? alternativeOpen : open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           Save as Template

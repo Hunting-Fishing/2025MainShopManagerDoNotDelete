@@ -16,7 +16,15 @@ export const createEmptyInvoice = (): Invoice => {
     items: [],
     created_by: "",
     created_at: new Date().toISOString(),
-    shop_id: "default-shop" // Added required shop_id property
+    shop_id: "default-shop",
+    // Add aliases for compatibility
+    customerAddress: "",
+    customerEmail: "",
+    dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    createdBy: "",
+    createdAt: new Date().toISOString(),
+    // Add missing required fields
+    assignedStaff: []
   };
 };
 

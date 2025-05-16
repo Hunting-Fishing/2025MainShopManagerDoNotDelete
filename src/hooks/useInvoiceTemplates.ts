@@ -27,11 +27,18 @@ export function useInvoiceTemplates(updateInvoice?: (updater: InvoiceUpdater) =>
       if (error) throw error;
       
       if (data && data.length > 0) {
-        const formattedTemplates = data.map(template => {
+        const formattedTemplates: InvoiceTemplate[] = data.map(template => {
           return {
             id: template.id,
             name: template.name,
             description: template.description || "",
+            created_at: template.created_at,
+            last_used: template.last_used || null,
+            usage_count: template.usage_count || 0,
+            default_tax_rate: template.default_tax_rate || 0.08,
+            default_due_date_days: template.default_due_date_days || 30,
+            default_notes: template.default_notes || "",
+            // Add camelCase aliases
             createdAt: template.created_at,
             lastUsed: template.last_used || null,
             usageCount: template.usage_count || 0,
@@ -76,18 +83,19 @@ export function useInvoiceTemplates(updateInvoice?: (updater: InvoiceUpdater) =>
     
     const currentDate = new Date();
     const dueDate = new Date(currentDate);
-    dueDate.setDate(dueDate.getDate() + template.defaultDueDateDays);
+    dueDate.setDate(dueDate.getDate() + (template.defaultDueDateDays || template.default_due_date_days || 30));
     
     // Generate new IDs for each item to ensure uniqueness
-    const itemsWithNewIds = template.defaultItems.map(item => ({
+    const itemsWithNewIds = (template.defaultItems || []).map(item => ({
       ...item,
       id: uuidv4()
     }));
     
     updateInvoice((prev) => ({
       ...prev,
-      notes: template.defaultNotes || prev.notes,
+      notes: (template.defaultNotes || template.default_notes || "") || prev.notes,
       dueDate: dueDate.toISOString().split('T')[0],
+      due_date: dueDate.toISOString().split('T')[0],
       items: itemsWithNewIds
     }));
     
@@ -118,7 +126,13 @@ export function useInvoiceTemplates(updateInvoice?: (updater: InvoiceUpdater) =>
       setTemplates(prev => 
         prev.map(t => 
           t.id === templateId 
-            ? { ...t, lastUsed: new Date().toISOString(), usageCount: t.usageCount + 1 }
+            ? { 
+                ...t, 
+                lastUsed: new Date().toISOString(), 
+                last_used: new Date().toISOString(),
+                usageCount: (t.usageCount || 0) + 1,
+                usage_count: (t.usage_count || 0) + 1
+              }
             : t
         )
       );
@@ -139,9 +153,9 @@ export function useInvoiceTemplates(updateInvoice?: (updater: InvoiceUpdater) =>
           id: templateId,
           name: newTemplate.name,
           description: newTemplate.description,
-          default_tax_rate: newTemplate.defaultTaxRate,
-          default_due_date_days: newTemplate.defaultDueDateDays,
-          default_notes: newTemplate.defaultNotes,
+          default_tax_rate: newTemplate.defaultTaxRate || newTemplate.default_tax_rate,
+          default_due_date_days: newTemplate.defaultDueDateDays || newTemplate.default_due_date_days,
+          default_notes: newTemplate.defaultNotes || newTemplate.default_notes,
           created_at: new Date().toISOString(),
           usage_count: 0
         });
@@ -171,11 +185,22 @@ export function useInvoiceTemplates(updateInvoice?: (updater: InvoiceUpdater) =>
       
       // Create full template object for state
       const template: InvoiceTemplate = {
-        ...newTemplate,
         id: templateId,
+        name: newTemplate.name,
+        description: newTemplate.description || "",
+        default_tax_rate: newTemplate.defaultTaxRate || newTemplate.default_tax_rate || 0,
+        default_due_date_days: newTemplate.defaultDueDateDays || newTemplate.default_due_date_days || 30,
+        default_notes: newTemplate.defaultNotes || newTemplate.default_notes || "",
+        created_at: new Date().toISOString(),
+        usage_count: 0,
+        // Add camelCase aliases
         createdAt: new Date().toISOString(),
         usageCount: 0,
-        lastUsed: null
+        lastUsed: null,
+        defaultTaxRate: newTemplate.defaultTaxRate || newTemplate.default_tax_rate || 0,
+        defaultDueDateDays: newTemplate.defaultDueDateDays || newTemplate.default_due_date_days || 30,
+        defaultNotes: newTemplate.defaultNotes || newTemplate.default_notes || "",
+        defaultItems: newTemplate.defaultItems || []
       };
       
       // Add to templates list in state

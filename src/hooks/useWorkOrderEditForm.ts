@@ -7,6 +7,7 @@ import { WorkOrderFormSchemaValues, workOrderFormSchema } from "@/schemas/workOr
 import { toast } from "sonner";
 import { WorkOrder, TimeEntry } from "@/types/workOrder";
 import { updateWorkOrder } from "@/utils/workOrders/crud";
+import { normalizeWorkOrderStatus } from "@/utils/typeAdapters";
 
 export function useWorkOrderEditForm(workOrder: WorkOrder) {
   const navigate = useNavigate();
@@ -14,21 +15,25 @@ export function useWorkOrderEditForm(workOrder: WorkOrder) {
   const [formError, setFormError] = useState<string | null>(null);
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>(workOrder?.timeEntries || []);
 
+  // Use the normalizer to ensure status is a valid type
+  const normalizedStatus = normalizeWorkOrderStatus(workOrder?.status || "pending");
+
   const form = useForm<WorkOrderFormSchemaValues>({
     resolver: zodResolver(workOrderFormSchema),
     defaultValues: {
       customer: workOrder?.customer || "",
       description: workOrder?.description || "",
-      status: workOrder?.status || "pending",
+      status: normalizedStatus,
       priority: workOrder?.priority || "medium",
       technician: workOrder?.technician || "",
       location: workOrder?.location || "",
       // Convert string date to Date object for form
       dueDate: workOrder?.dueDate ? new Date(workOrder.dueDate) : new Date(),
       notes: workOrder?.notes || "",
-      vehicleMake: workOrder?.vehicleMake || "",
-      vehicleModel: workOrder?.vehicleModel || "",
-      vehicleYear: workOrder?.vehicleYear || "",
+      // Handle vehicle details with optional chaining
+      vehicleMake: workOrder?.vehicle_make || workOrder?.vehicleMake || "",
+      vehicleModel: workOrder?.vehicle_model || workOrder?.vehicleModel || "",
+      vehicleYear: workOrder?.vehicle_year || "",
       odometer: workOrder?.odometer || "",
       licensePlate: workOrder?.licensePlate || "",
       vin: workOrder?.vin || "",
@@ -42,7 +47,7 @@ export function useWorkOrderEditForm(workOrder: WorkOrder) {
     try {
       // Prepare the data for updating the work order
       const updatedWorkOrderData: Partial<WorkOrder> = {
-        id: workOrder.id, // Ensure you have the ID of the work order
+        id: workOrder.id,
         customer: data.customer,
         description: data.description,
         status: data.status,
@@ -52,9 +57,12 @@ export function useWorkOrderEditForm(workOrder: WorkOrder) {
         // Convert Date to string
         dueDate: data.dueDate.toISOString().split('T')[0],
         notes: data.notes,
+        // Use both snake_case and camelCase for compatibility
+        vehicle_make: data.vehicleMake,
+        vehicle_model: data.vehicleModel,
+        vehicle_year: data.vehicleYear,
         vehicleMake: data.vehicleMake,
         vehicleModel: data.vehicleModel,
-        vehicleYear: data.vehicleYear,
         odometer: data.odometer,
         licensePlate: data.licensePlate,
         vin: data.vin,

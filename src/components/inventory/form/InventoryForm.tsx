@@ -33,11 +33,6 @@ export const InventoryFormComponent: React.FC<InventoryFormProps> = ({
     ? (suppliers as string[]).map(sup => ({ value: sup, label: sup }))
     : suppliers as SelectOption[];
 
-  // Fix: Handle select change properly - create a wrapper that converts the event to name/value
-  const handleSelectChangeWrapper = (name: string, value: string) => {
-    handleSelectChange(name, value);
-  };
-
   return (
     <form onSubmit={handleFormSubmit} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -99,7 +94,7 @@ export const InventoryFormComponent: React.FC<InventoryFormProps> = ({
           label="Category"
           name="category"
           value={formData.category}
-          onChange={handleSelectChangeWrapper}
+          onChange={(name, value) => handleSelectChange(name, value)}
           error={formErrors.category}
           options={categoryOptions}
           required
@@ -108,7 +103,7 @@ export const InventoryFormComponent: React.FC<InventoryFormProps> = ({
           label="Supplier"
           name="supplier"
           value={formData.supplier}
-          onChange={handleSelectChangeWrapper}
+          onChange={(name, value) => handleSelectChange(name, value)}
           error={formErrors.supplier}
           options={supplierOptions}
           required
@@ -131,7 +126,7 @@ export const InventoryFormComponent: React.FC<InventoryFormProps> = ({
           label="Status"
           name="status"
           value={formData.status}
-          onChange={handleSelectChangeWrapper}
+          onChange={(name, value) => handleSelectChange(name, value)}
           error={formErrors.status}
           options={[
             { value: "In Stock", label: "In Stock" },

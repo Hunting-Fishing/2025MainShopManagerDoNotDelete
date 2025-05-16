@@ -1,6 +1,7 @@
 
 import { useWorkOrderTemplates } from "@/hooks/useWorkOrderTemplates";
 import { WorkOrderTemplate, WorkOrderStatusType } from "@/types/workOrder";
+import { normalizeWorkOrderStatus } from "@/utils/typeAdapters";
 
 // This file now re-exports the hook that fetches data from the database
 export { useWorkOrderTemplates };
@@ -17,8 +18,10 @@ export const updateTemplateUsage = async (templateId: string) => {
 // Update this function to return a properly typed WorkOrderTemplate
 export const createTemplate = async () => {
   console.warn('Using deprecated function. Please use useWorkOrderTemplates hook instead.');
-  // Cast the return value to WorkOrderTemplate to ensure it's properly typed
-  const status: WorkOrderStatusType = 'pending'; // Using a valid status from WorkOrderStatusType
+  
+  // Return a valid WorkOrderTemplate
+  const status = normalizeWorkOrderStatus("pending");
+  
   return {
     id: '',
     name: '',
@@ -28,8 +31,8 @@ export const createTemplate = async () => {
     technician: '',
     notes: '',
     location: '',
-    createdAt: new Date().toISOString(),
-    usageCount: 0,
-    inventoryItems: []
+    created_at: new Date().toISOString(), // Use snake_case for API compatibility
+    usage_count: 0,
+    inventory_items: []
   } as WorkOrderTemplate;
 };
