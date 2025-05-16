@@ -20,6 +20,7 @@ import Dashboard from './pages/Dashboard';
 import WorkOrders from './pages/WorkOrders';
 import Invoices from './pages/Invoices';
 import Customers from './pages/Customers';
+import CustomerProfiles from './pages/CustomerProfiles';
 import Equipment from './pages/Equipment';
 import Inventory from './pages/Inventory';
 import ToolsShop from './pages/ToolsShop';
@@ -44,6 +45,7 @@ import PublicRoute from './components/auth/PublicRoute';
 import EmailVerificationPage from './pages/auth/EmailVerificationPage';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { NotificationsProvider } from './context/notifications';
 
 // Create a simple loading component since we don't have useLoading
 function Loading() {
@@ -67,52 +69,55 @@ function App() {
           <I18nextProvider i18n={i18n}>
             <AuthProvider>
               <ShopProvider>
-                <div className="app-container">
-                  <ToastContainer position="top-right" autoClose={3000} />
-                  {isLoading && <Loading />}
-                  <Routes>
-                    <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
-                    <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
-                    <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
-                    <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
-                    <Route path="/verify-email" element={<PublicRoute><EmailVerificationPage /></PublicRoute>} />
-                    <Route
-                      path="/"
-                      element={
-                        <RequireAuth>
-                          <Layout />
-                        </RequireAuth>
-                      }
-                    >
-                      <Route index element={<Dashboard />} />
-                      <Route path="dashboard" element={<Dashboard />} />
-                      <Route path="work-orders" element={<WorkOrders />} />
-                      <Route path="invoices" element={<Invoices />} />
-                      <Route path="customers" element={<Customers />} />
-                      <Route path="equipment" element={<Equipment />} />
-                      <Route path="inventory" element={<Inventory />} />
-                      <Route path="tools" element={<ToolsShop />} />
-                      <Route path="forms" element={<Forms />} />
-                      <Route path="shopping" element={<Shopping />} />
-                      <Route path="maintenance" element={<Maintenance />} />
-                      <Route path="calendar" element={<CalendarPage />} />
-                      <Route path="reminders" element={<Reminders />} />
-                      <Route path="chat" element={<Chat />} />
-                      <Route path="reports" element={<Reports />} />
-                      <Route path="team" element={<Team />} />
-                      <Route path="marketing" element={<Marketing />} />
-                      <Route path="email-templates" element={<EmailTemplates />} />
-                      <Route path="email-campaigns" element={<EmailCampaigns />} />
-                      <Route path="email-sequences" element={<EmailSequences />} />
-                      <Route path="sms-templates" element={<SMSTemplates />} />
-                      <Route path="developer" element={<DeveloperPortal />} />
-                      <Route path="developer/shopping-controls" element={<ShoppingControls />} />
-                      <Route path="developer/service-management" element={<ServiceManagement />} />
-                      <Route path="settings" element={<Settings />} />
-                      <Route path="settings/customer" element={<CustomerSettings />} />
-                    </Route>
-                  </Routes>
-                </div>
+                <NotificationsProvider>
+                  <div className="app-container">
+                    <ToastContainer position="top-right" autoClose={3000} />
+                    {isLoading && <Loading />}
+                    <Routes>
+                      <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+                      <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
+                      <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
+                      <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
+                      <Route path="/verify-email" element={<PublicRoute><EmailVerificationPage /></PublicRoute>} />
+                      <Route
+                        path="/"
+                        element={
+                          <RequireAuth>
+                            <Layout />
+                          </RequireAuth>
+                        }
+                      >
+                        <Route index element={<Dashboard />} />
+                        <Route path="dashboard" element={<Dashboard />} />
+                        <Route path="work-orders" element={<WorkOrders />} />
+                        <Route path="invoices" element={<Invoices />} />
+                        <Route path="customers" element={<Customers />} />
+                        <Route path="customer-profiles" element={<CustomerProfiles />} />
+                        <Route path="equipment" element={<Equipment />} />
+                        <Route path="inventory" element={<Inventory />} />
+                        <Route path="tools" element={<ToolsShop />} />
+                        <Route path="forms" element={<Forms />} />
+                        <Route path="shopping" element={<Shopping />} />
+                        <Route path="maintenance" element={<Maintenance />} />
+                        <Route path="calendar" element={<CalendarPage />} />
+                        <Route path="reminders" element={<Reminders />} />
+                        <Route path="chat" element={<Chat />} />
+                        <Route path="reports" element={<Reports />} />
+                        <Route path="team" element={<Team />} />
+                        <Route path="marketing" element={<Marketing />} />
+                        <Route path="email-templates" element={<EmailTemplates />} />
+                        <Route path="email-campaigns" element={<EmailCampaigns />} />
+                        <Route path="email-sequences" element={<EmailSequences />} />
+                        <Route path="sms-templates" element={<SMSTemplates />} />
+                        <Route path="developer" element={<DeveloperPortal />} />
+                        <Route path="developer/shopping-controls" element={<ShoppingControls />} />
+                        <Route path="developer/service-management" element={<ServiceManagement />} />
+                        <Route path="settings" element={<Settings />} />
+                        <Route path="settings/customer" element={<CustomerSettings />} />
+                      </Route>
+                    </Routes>
+                  </div>
+                </NotificationsProvider>
               </ShopProvider>
             </AuthProvider>
           </I18nextProvider>
