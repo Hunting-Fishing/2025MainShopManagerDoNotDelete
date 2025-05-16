@@ -9,6 +9,7 @@ import { SpecialOrderDialog } from "./SpecialOrderDialog";
 import { useWorkOrderInventory } from "@/hooks/inventory/workOrder/useWorkOrderInventory";
 import { supabase } from "@/integrations/supabase/client";
 import { WorkOrderFormValues } from "@/types/workOrder";
+import { WorkOrderInventoryItem } from "./WorkOrderInventoryItem";
 
 interface WorkOrderInventoryFieldProps {
   form: UseFormReturn<WorkOrderFormValues>;
@@ -57,9 +58,13 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
     // Generate a temporary ID for the item
     const tempId = `temp-${Date.now()}`;
     
-    const newItem = {
+    const newItem: WorkOrderInventoryItem = {
       id: tempId,
-      ...item,
+      name: item.name,
+      sku: item.sku,
+      category: item.category,
+      quantity: item.quantity,
+      unit_price: item.unit_price || 0,
       total: item.quantity * (item.unit_price || 0) // Ensure total is calculated
     };
     

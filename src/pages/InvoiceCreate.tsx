@@ -12,19 +12,10 @@ import {
   InvoiceTemplate 
 } from "@/types/invoice";
 import { InventoryItem } from "@/types/inventory";
+import { inventoryItemToInvoiceItem } from "@/utils/inventory/inventoryCalculations";
 
-// Create adapter function to convert InventoryItem to InvoiceItem
-export const createInventoryItemAdapter = (inventoryItem: InventoryItem): InvoiceItem => {
-  return {
-    id: inventoryItem.id,
-    name: inventoryItem.name,
-    description: inventoryItem.description || inventoryItem.name,
-    quantity: 1,
-    price: inventoryItem.price || inventoryItem.unit_price || 0,
-    total: inventoryItem.price || inventoryItem.unit_price || 0,
-    sku: inventoryItem.sku || '',
-  };
-};
+// Use the utility function to create an adapter
+export const createInventoryItemAdapter = inventoryItemToInvoiceItem;
 
 export default function InvoiceCreate() {
   const { workOrderId } = useParams<{ workOrderId?: string }>();
@@ -154,9 +145,9 @@ export default function InvoiceCreate() {
     return "Unknown Staff";
   };
 
-  // Create an adapter wrapper for handleAddInventoryItem
+  // Fix the adapter by explicitly converting types
   const handleInventoryItemSelected = (inventoryItem: InventoryItem) => {
-    const invoiceItem = createInventoryItemAdapter(inventoryItem);
+    const invoiceItem = createInventoryItemAdapter(inventoryItem as any);
     handleAddInventoryItem(invoiceItem);
   };
 

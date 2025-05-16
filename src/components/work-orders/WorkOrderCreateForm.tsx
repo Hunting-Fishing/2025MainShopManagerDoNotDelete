@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   Form,
@@ -24,14 +25,29 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  priorityOptions,
-  statusOptions,
-  technicianOptions,
-} from "@/data/workOrderData";
 import { UseFormReturn } from "react-hook-form";
-import { WorkOrderPartsSections } from "./parts/WorkOrderPartsSections";
-import { WorkOrderInventorySection } from "./WorkOrderInventorySection";
+import WorkOrderPartsSections from "./parts/WorkOrderPartsSections";
+import WorkOrderInventorySection from "./WorkOrderInventorySection";
+
+// Define mock data since we couldn't find @/data/workOrderData
+const statusOptions = [
+  { value: "pending", label: "Pending" },
+  { value: "in-progress", label: "In Progress" },
+  { value: "completed", label: "Completed" },
+  { value: "cancelled", label: "Cancelled" }
+];
+
+const priorityOptions = [
+  { value: "low", label: "Low" },
+  { value: "medium", label: "Medium" },
+  { value: "high", label: "High" }
+];
+
+const technicianOptions = [
+  { value: "john-doe", label: "John Doe" },
+  { value: "jane-smith", label: "Jane Smith" },
+  { value: "bob-johnson", label: "Bob Johnson" }
+];
 
 // Define the WorkOrderFormValues type
 export type WorkOrderFormValues = {
