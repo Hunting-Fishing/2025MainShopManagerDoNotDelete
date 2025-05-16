@@ -11,22 +11,28 @@ interface NotesSectionProps {
 
 export const NotesSection: React.FC<NotesSectionProps> = ({ form }) => {
   return (
-    <FormField
-      control={form.control}
-      name="notes"
-      render={({ field }) => (
-        <FormItem className="col-span-1 md:col-span-2">
-          <FormLabel>Additional Notes</FormLabel>
-          <FormControl>
-            <Textarea
-              placeholder="Enter any additional details or instructions"
-              className="min-h-[100px]"
-              {...field}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
+    <div className="space-y-4">
+      <h3 className="text-lg font-medium">Notes</h3>
+      
+      <FormField
+        control={form.control}
+        name="notes"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Additional Notes</FormLabel>
+            <FormControl>
+              <Textarea 
+                placeholder="Add any additional notes about this work order..."
+                className="min-h-[120px]"
+                {...field} 
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </div>
   );
 };
+
+export default NotesSection;

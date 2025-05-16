@@ -1,39 +1,63 @@
 
-import { InvoiceTemplateDialog } from "../invoices/InvoiceTemplateDialog";
-import { SaveTemplateDialog } from "../invoices/SaveTemplateDialog";
-import { Invoice, InvoiceTemplate } from "@/types/invoice";
+import React from 'react';
+import { Button } from "@/components/ui/button";
 import { useInvoiceTemplates } from "@/hooks/useInvoiceTemplates";
+import { Invoice, InvoiceTemplate } from "@/types/invoice";
 
 interface InvoiceTemplateActionsProps {
   invoice: Invoice;
-  taxRate: number;
-  onSelectTemplate?: (template: InvoiceTemplate) => void;
-  onSaveTemplate?: (template: Omit<InvoiceTemplate, 'id' | 'createdAt' | 'usageCount'>) => void;
+  onApplyTemplate: (template: InvoiceTemplate) => void;
+  onSaveTemplate: (template: Omit<InvoiceTemplate, "id" | "created_at" | "usage_count">) => Promise<void>;
 }
 
-export function InvoiceTemplateActions({
+export const InvoiceTemplateActions: React.FC<InvoiceTemplateActionsProps> = ({
   invoice,
-  taxRate,
-  onSelectTemplate,
+  onApplyTemplate,
   onSaveTemplate
-}: InvoiceTemplateActionsProps) {
-  const { templates, handleApplyTemplate, handleSaveTemplate } = useInvoiceTemplates();
-  
-  // Use the provided handlers or the default ones from the hook
-  const handleTemplateSelect = onSelectTemplate || handleApplyTemplate;
-  const handleTemplateSave = onSaveTemplate || handleSaveTemplate;
+}) => {
+  const { 
+    templates, 
+    isLoading, 
+    error,
+    fetchTemplates,
+    applyTemplate,
+    saveTemplate,
+    createTemplateFromInvoice
+  } = useInvoiceTemplates();
+
+  // Apply the selected template to the current invoice
+  const handleApplyTemplate = (template: InvoiceTemplate) => {
+    onApplyTemplate(template);
+  };
+
+  // Save the current invoice as a template
+  const handleSaveAsTemplate = async (name: string, description: string) => {
+    try {
+      const templateData = createTemplateFromInvoice(invoice, name, description);
+      await onSaveTemplate(templateData);
+    } catch (error) {
+      console.error("Error saving template:", error);
+    }
+  };
 
   return (
-    <div className="flex gap-2">
-      <InvoiceTemplateDialog 
-        templates={templates} 
-        onSelectTemplate={handleTemplateSelect} 
-      />
-      <SaveTemplateDialog 
-        currentInvoice={invoice} 
-        taxRate={taxRate}
-        onSaveTemplate={handleTemplateSave} 
-      />
+    <div className="flex flex-col space-y-2">
+      <Button 
+        variant="outline" 
+        size="sm" 
+        onClick={() => console.log("Open template selector")}
+      >
+        Apply Template
+      </Button>
+      <Button 
+        variant="outline" 
+        size="sm"
+        onClick={() => console.log("Open save template dialog")}
+      >
+        Save as Template
+      </Button>
     </div>
   );
-}
+};
+
+export default InvoiceTemplateActions;

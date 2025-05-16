@@ -10,5 +10,14 @@ export interface WorkOrderInventoryItem {
   total: number;
 }
 
+// Extended type with additional properties for special order items
+export interface ExtendedWorkOrderInventoryItem extends WorkOrderInventoryItem {
+  itemStatus?: "special-order" | "ordered" | "in-stock";
+  estimatedArrivalDate?: string;
+  supplierName?: string;
+  supplierOrderRef?: string;
+  notes?: string;
+}
+
 // Export the type for use in other files
 export default WorkOrderInventoryItem;
