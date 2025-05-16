@@ -1,5 +1,5 @@
 
-import { Notification, NotificationPreferences, NotificationSubscription } from '@/types/notification';
+import { Notification, NotificationPreferences } from '@/types/notification';
 
 export interface NotificationsContextProps {
   notifications: Notification[];

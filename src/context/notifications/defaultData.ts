@@ -11,7 +11,7 @@ export const defaultPreferences: NotificationPreferences = {
     invoice: 'realtime',
     workOrder: 'realtime',
     inventory: 'daily',
-    customer: 'hourly',
+    customer: 'hourly', // This is now valid with our updated type
     team: 'realtime',
     chat: 'realtime'
   },

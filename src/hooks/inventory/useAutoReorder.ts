@@ -1,125 +1,79 @@
 
-import { useState, useEffect } from "react";
-import { 
-  getAutoReorderSettings, 
-  enableAutoReorder as enableAutoReorderService,
-  disableAutoReorder as disableAutoReorderService
-} from "@/services/inventory/autoReorderService";
-import { getInventoryItemById } from "@/services/inventory/crudService";
-import { useNotifications } from "@/context/NotificationsContext";
-import { toast } from "@/hooks/use-toast";
+import { useState } from 'react';
+import { useNotifications } from '@/context/notifications';
 
-export interface AutoReorderSettings {
-  enabled: boolean;
-  threshold: number;
-  quantity: number;
-}
+// Mock function to simulate an API call to reorder inventory
+const makeReorderApiCall = (items: any[]): Promise<any> => {
+  return new Promise((resolve) => {
+    // Simulate API call delay
+    setTimeout(() => {
+      resolve({
+        success: true,
+        orderId: `PO-${Math.floor(Math.random() * 100000)}`,
+        items: items
+      });
+    }, 1500);
+  });
+};
 
 export function useAutoReorder() {
-  const [autoReorderSettings, setAutoReorderSettings] = useState<Record<string, AutoReorderSettings>>({});
-  const [loading, setLoading] = useState(true);
+  const [isReordering, setIsReordering] = useState(false);
+  const [lastReorderResult, setLastReorderResult] = useState<any>(null);
   const { addNotification } = useNotifications();
 
-  // Load auto-reorder settings
-  useEffect(() => {
-    async function loadSettings() {
-      try {
-        const settings = await getAutoReorderSettings();
-        setAutoReorderSettings(settings);
-      } catch (error) {
-        console.error("Error loading auto-reorder settings:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
+  /**
+   * Automatically reorder items that are low in stock
+   * @param items Array of items that need to be reordered
+   */
+  const reorderItems = async (items: any[]) => {
+    if (isReordering || !items.length) return;
     
-    loadSettings();
-  }, []);
-
-  // Function to enable auto-reordering for an item
-  const enableAutoReorder = async (itemId: string, threshold: number, quantity: number) => {
+    setIsReordering(true);
+    
     try {
-      await enableAutoReorderService(itemId, threshold, quantity);
+      // In a real app, this would call your inventory API
+      const result = await makeReorderApiCall(items);
       
-      // Update local state
-      setAutoReorderSettings(prev => ({
-        ...prev,
-        [itemId]: { enabled: true, threshold, quantity }
-      }));
+      setLastReorderResult(result);
       
-      toast({
-        title: "Auto-reorder enabled",
-        description: `Auto-reorder has been enabled for this item when stock falls below ${threshold}`,
-      });
+      if (result.success) {
+        // Show success notification
+        addNotification({
+          title: "Auto-Reorder Complete",
+          message: `Successfully ordered ${items.length} items. Order #${result.orderId}`,
+          type: "success",
+          category: "inventory",
+          priority: "medium",
+          link: "/inventory/orders"
+        });
+      } else {
+        // Show error notification
+        addNotification({
+          title: "Reorder Failed",
+          message: "There was an issue with the automatic reordering process",
+          type: "error",
+          category: "inventory",
+          priority: "high"
+        });
+      }
     } catch (error) {
-      console.error("Error enabling auto-reorder:", error);
-      toast({
-        title: "Error",
-        description: "Failed to enable auto-reorder",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Function to disable auto-reordering for an item
-  const disableAutoReorder = async (itemId: string) => {
-    try {
-      await disableAutoReorderService(itemId);
-      
-      // Update local state
-      setAutoReorderSettings(prev => {
-        const newSettings = { ...prev };
-        if (newSettings[itemId]) {
-          newSettings[itemId] = { ...newSettings[itemId], enabled: false };
-        }
-        return newSettings;
-      });
-      
-      toast({
-        title: "Auto-reorder disabled",
-        description: "Auto-reorder has been disabled for this item",
-      });
-    } catch (error) {
-      console.error("Error disabling auto-reorder:", error);
-      toast({
-        title: "Error",
-        description: "Failed to disable auto-reorder",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Function to place an automatic order
-  const placeAutomaticOrder = async (itemId: string) => {
-    try {
-      const item = await getInventoryItemById(itemId);
-      if (!item) return;
-      
-      const orderQuantity = autoReorderSettings[itemId]?.quantity || 10;
-      
-      // In a real app, this would connect to a purchasing API
-      // For now, we'll just show a toast notification
-      toast({
-        title: "Automatic Order Placed",
-        description: `Ordered ${orderQuantity} units of ${item.name}`,
-      });
+      console.error("Error during auto-reorder:", error);
       
       addNotification({
-        title: "Automatic Order Placed",
-        message: `Ordered ${orderQuantity} units of ${item.name}`,
-        type: "info",
-        link: "/inventory"
+        title: "Reorder Failed",
+        message: "There was an error processing your auto-reorder",
+        type: "error",
+        category: "system",
+        priority: "high"
       });
-    } catch (error) {
-      console.error("Error placing automatic order:", error);
+    } finally {
+      setIsReordering(false);
     }
   };
 
   return {
-    autoReorderSettings,
-    loading,
-    enableAutoReorder,
-    disableAutoReorder,
-    placeAutomaticOrder
+    reorderItems,
+    isReordering,
+    lastReorderResult
   };
 }

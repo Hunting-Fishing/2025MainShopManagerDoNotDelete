@@ -5,13 +5,13 @@ export interface NotificationPreferences {
   inApp: boolean;
   sound: string;
   frequencies: {
-    system: "realtime" | "daily" | "weekly" | "off";
-    invoice: "realtime" | "daily" | "weekly" | "off";
-    workOrder: "realtime" | "daily" | "weekly" | "off";
-    inventory: "realtime" | "daily" | "weekly" | "off";
-    customer: "realtime" | "daily" | "weekly" | "off";
-    team: "realtime" | "daily" | "weekly" | "off";
-    chat: "realtime" | "daily" | "weekly" | "off";
+    system: "realtime" | "daily" | "weekly" | "off" | "hourly";
+    invoice: "realtime" | "daily" | "weekly" | "off" | "hourly";
+    workOrder: "realtime" | "daily" | "weekly" | "off" | "hourly";
+    inventory: "realtime" | "daily" | "weekly" | "off" | "hourly";
+    customer: "realtime" | "daily" | "weekly" | "off" | "hourly";
+    team: "realtime" | "daily" | "weekly" | "off" | "hourly";
+    chat: "realtime" | "daily" | "weekly" | "off" | "hourly";
   };
   subscriptions: {
     category: string;
@@ -29,4 +29,12 @@ export interface Notification {
   priority: "low" | "medium" | "high";
   category: "system" | "invoice" | "workOrder" | "inventory" | "customer" | "team" | "chat";
   duration?: number;
+  link?: string; // Optional link to navigate to when clicked
+  sender?: string; // Optional sender ID/info
+  recipient?: string; // Optional recipient ID/info
 }
+
+export type NotificationSubscription = {
+  category: string;
+  enabled: boolean;
+};
