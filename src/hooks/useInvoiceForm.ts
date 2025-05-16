@@ -6,13 +6,92 @@ import { useInvoiceTotals } from "@/hooks/invoice/useInvoiceTotals";
 import { useInvoiceWorkOrder } from "@/hooks/invoice/useInvoiceWorkOrder";
 import { StaffMember, Invoice, InvoiceTemplate, InvoiceItem } from "@/types/invoice";
 import { InventoryItem } from "@/types/inventory";
+import { useState } from "react";
 
 export interface UseInvoiceFormStateProps {
   initialWorkOrderId?: string;
 }
 
+// Create a placeholder implementation for useInvoiceFormState if needed
+const useInvoiceFormStatePlaceholder = (props?: UseInvoiceFormStateProps) => {
+  const [invoice, setInvoice] = useState<Invoice>({
+    id: crypto.randomUUID(),
+    customer: "",
+    customer_address: "",
+    customer_email: "",
+    description: "",
+    notes: "",
+    date: new Date().toISOString().split('T')[0],
+    due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    status: "draft",
+    items: [],
+    created_by: "",
+    created_at: new Date().toISOString()
+  });
+  
+  const [items, setItems] = useState<InvoiceItem[]>([]);
+  const [assignedStaff, setAssignedStaff] = useState<StaffMember[]>([]);
+  const [showWorkOrderDialog, setShowWorkOrderDialog] = useState(false);
+  const [showInventoryDialog, setShowInventoryDialog] = useState(false);
+  const [showStaffDialog, setShowStaffDialog] = useState(false);
+  
+  const handleAddInventoryItem = (item: InvoiceItem) => {
+    setItems(prev => [...prev, item]);
+  };
+  
+  const handleRemoveItem = (id: string) => {
+    setItems(prev => prev.filter(item => item.id !== id));
+  };
+  
+  const handleUpdateItemQuantity = (id: string, quantity: number) => {
+    setItems(prev => prev.map(item => item.id === id ? { ...item, quantity } : item));
+  };
+  
+  const handleUpdateItemDescription = (id: string, description: string) => {
+    setItems(prev => prev.map(item => item.id === id ? { ...item, description } : item));
+  };
+  
+  const handleUpdateItemPrice = (id: string, price: number) => {
+    setItems(prev => prev.map(item => item.id === id ? { ...item, price } : item));
+  };
+  
+  const handleAddLaborItem = (item: InvoiceItem) => {
+    setItems(prev => [...prev, item]);
+  };
+  
+  const handleAddStaffMember = (member: StaffMember) => {
+    setAssignedStaff(prev => [...prev, member]);
+  };
+  
+  const handleRemoveStaffMember = (id: string) => {
+    setAssignedStaff(prev => prev.filter(member => member.id !== id));
+  };
+  
+  return {
+    invoice,
+    setInvoice,
+    items,
+    assignedStaff,
+    showWorkOrderDialog,
+    setShowWorkOrderDialog,
+    showInventoryDialog,
+    setShowInventoryDialog,
+    showStaffDialog,
+    setShowStaffDialog,
+    handleAddInventoryItem,
+    handleRemoveItem,
+    handleUpdateItemQuantity,
+    handleUpdateItemDescription,
+    handleUpdateItemPrice,
+    handleAddLaborItem,
+    handleAddStaffMember,
+    handleRemoveStaffMember,
+  };
+};
+
 export function useInvoiceForm(initialWorkOrderId?: string) {
-  // Use form state hook with correct typing
+  // Use actual form state hook if it's properly implemented, otherwise use placeholder
+  const useFormStateHook = useInvoiceFormState || useInvoiceFormStatePlaceholder;
   const props: UseInvoiceFormStateProps = initialWorkOrderId ? { initialWorkOrderId } : {};
   
   const {
@@ -34,7 +113,7 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
     handleAddLaborItem,
     handleAddStaffMember,
     handleRemoveStaffMember,
-  } = useInvoiceFormState(props);
+  } = useFormStateHook(props);
 
   // Use invoice templates hook
   const { 
@@ -113,6 +192,8 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
     taxRate,
     total,
     isSubmitting,
+    items,
+    assignedStaff,
     
     // Dialog states
     showWorkOrderDialog,

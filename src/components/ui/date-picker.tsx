@@ -17,6 +17,7 @@ export interface DatePickerProps {
   placeholder?: string;
   className?: string;
   disabled?: boolean;
+  onDateChange?: (date: Date) => void; // Added for backward compatibility
 }
 
 export function DatePicker({
@@ -24,8 +25,15 @@ export function DatePicker({
   onSelect,
   placeholder = "Select date",
   className,
-  disabled = false
+  disabled = false,
+  onDateChange
 }: DatePickerProps) {
+  // Handle both callback patterns
+  const handleDateSelect = (selectedDate: Date | undefined) => {
+    if (onSelect) onSelect(selectedDate);
+    if (onDateChange && selectedDate) onDateChange(selectedDate);
+  };
+  
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -46,8 +54,9 @@ export function DatePicker({
         <Calendar
           mode="single"
           selected={date}
-          onSelect={onSelect}
+          onSelect={handleDateSelect}
           initialFocus
+          className="p-3 pointer-events-auto"
         />
       </PopoverContent>
     </Popover>

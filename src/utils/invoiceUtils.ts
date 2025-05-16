@@ -53,3 +53,25 @@ export const formatInvoiceNumber = (id: string): string => {
   // If no numeric part, use the whole ID
   return `INV-${id}`;
 };
+
+/**
+ * Get appropriate color for invoice status
+ * @param status Invoice status
+ * @returns CSS color class for the status
+ */
+export const getInvoiceStatusColor = (status: string): string => {
+  switch (status?.toLowerCase()) {
+    case 'draft':
+      return 'text-slate-500 bg-slate-100';
+    case 'pending':
+      return 'text-amber-700 bg-amber-100';
+    case 'paid':
+      return 'text-green-700 bg-green-100';
+    case 'overdue':
+      return 'text-red-700 bg-red-100';
+    case 'cancelled':
+      return 'text-gray-700 bg-gray-100';
+    default:
+      return 'text-slate-500 bg-slate-100';
+  }
+};

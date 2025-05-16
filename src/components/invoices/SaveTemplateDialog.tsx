@@ -12,13 +12,15 @@ interface SaveTemplateDialogProps {
   currentInvoice?: Invoice;
   taxRate: number;
   onSaveTemplate: (template: Omit<InvoiceTemplate, 'id' | 'createdAt' | 'usageCount'>) => void;
+  onClose?: () => void;
 }
 
 export function SaveTemplateDialog({ 
   invoice, 
   currentInvoice,
   taxRate, 
-  onSaveTemplate 
+  onSaveTemplate,
+  onClose 
 }: SaveTemplateDialogProps) {
   const [open, setOpen] = useState(false);
   const [templateName, setTemplateName] = useState("");
@@ -42,6 +44,7 @@ export function SaveTemplateDialog({
     
     onSaveTemplate(template);
     setOpen(false);
+    if (onClose) onClose();
     resetForm();
   };
   
@@ -49,9 +52,16 @@ export function SaveTemplateDialog({
     setTemplateName("");
     setTemplateDescription("");
   };
+
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen);
+    if (!newOpen && onClose) {
+      onClose();
+    }
+  };
   
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           Save as Template
@@ -88,6 +98,7 @@ export function SaveTemplateDialog({
               variant="outline" 
               onClick={() => {
                 setOpen(false);
+                if (onClose) onClose();
                 resetForm();
               }}
             >

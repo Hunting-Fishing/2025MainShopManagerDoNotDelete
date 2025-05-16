@@ -1,152 +1,153 @@
 
-import React from "react";
-import { Control, Controller } from "react-hook-form";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Package, Plus } from "lucide-react";
-import { WorkOrderInventoryItem } from "@/types/workOrder";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { 
+  Table, 
+  TableHeader, 
+  TableRow, 
+  TableHead, 
+  TableBody, 
+  TableCell 
+} from '@/components/ui/table';
+import { Plus, Trash } from 'lucide-react';
+import { UseFormReturn } from 'react-hook-form';
+import { WorkOrderInventoryItem } from '@/types/workOrder';
 
-interface WorkOrderInventoryFieldProps {
-  control: Control<any>;
-  inventoryItems: WorkOrderInventoryItem[];
-  onRemoveItem: (index: number) => void;
-  onShowAddDialog: () => void;
-  onShowSpecialOrderDialog: () => void;
-  name?: string;
+export interface WorkOrderInventoryFieldProps {
+  inventoryItems?: WorkOrderInventoryItem[];
+  onAdd?: (item: WorkOrderInventoryItem) => void;
+  onRemove?: (id: string) => void;
+  form?: any; // Allow form to be passed in
 }
 
 export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = ({
-  control,
-  inventoryItems,
-  onRemoveItem,
-  onShowAddDialog,
-  onShowSpecialOrderDialog,
-  name = "inventoryItems"
+  inventoryItems = [],
+  onAdd,
+  onRemove,
+  form
 }) => {
+  const [showAddDialog, setShowAddDialog] = useState(false);
+
+  const handleAddItem = () => {
+    setShowAddDialog(true);
+  };
+
+  const handleRemoveItem = (id: string) => {
+    if (onRemove) {
+      onRemove(id);
+    }
+  };
+
+  // Helper to format currency
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2
+    }).format(value);
+  };
+
+  // Create a new item with default values
+  const createNewItem = (): WorkOrderInventoryItem => {
+    return {
+      id: crypto.randomUUID(),
+      name: '',
+      quantity: 1,
+      unit_price: 0,
+      status: 'in-stock',
+      category: 'Parts',
+      sku: '',
+      description: '',
+    };
+  };
+
+  const handleAddSpecialOrder = (partialItem: Partial<WorkOrderInventoryItem>) => {
+    if (onAdd) {
+      onAdd({
+        ...createNewItem(),
+        ...partialItem,
+        // Make sure we don't include properties that aren't in WorkOrderInventoryItem
+        name: partialItem.name || '',
+        quantity: partialItem.quantity || 1,
+        unit_price: partialItem.unit_price || 0,
+        status: partialItem.status as 'in-stock' | 'ordered' | 'backordered' | 'out-of-stock' || 'ordered',
+      });
+    }
+    setShowAddDialog(false);
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <Label className="text-base font-medium">Parts & Materials</Label>
-        <div className="flex items-center space-x-2">
-          <Button 
-            type="button" 
-            variant="outline" 
-            size="sm" 
-            onClick={onShowAddDialog}
-          >
-            <Package className="mr-2 h-4 w-4" />
-            Add Inventory Item
-          </Button>
-          <Button 
-            type="button" 
-            variant="outline" 
-            size="sm" 
-            onClick={onShowSpecialOrderDialog}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Special Order
-          </Button>
-        </div>
+      <div className="flex justify-between items-center">
+        <h3 className="text-base font-medium">Parts & Materials</h3>
+        <Button variant="outline" size="sm" onClick={handleAddItem}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Item
+        </Button>
       </div>
-      
-      <Controller
-        control={control}
-        name={name}
-        render={({ field }) => (
-          <>
-            {inventoryItems.length === 0 ? (
-              <div className="border border-dashed rounded-md p-6 text-center text-muted-foreground">
-                No inventory items added. Click "Add Inventory Item" or "Special Order" to add parts.
-              </div>
+
+      <div className="border rounded-md">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Item</TableHead>
+              <TableHead>Quantity</TableHead>
+              <TableHead>Unit Price</TableHead>
+              <TableHead>Total</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {inventoryItems.length > 0 ? (
+              inventoryItems.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell className="font-medium">
+                    {item.name}
+                    {item.description && (
+                      <p className="text-xs text-muted-foreground">{item.description}</p>
+                    )}
+                  </TableCell>
+                  <TableCell>{item.quantity}</TableCell>
+                  <TableCell>{formatCurrency(item.unit_price)}</TableCell>
+                  <TableCell>{formatCurrency(item.quantity * item.unit_price)}</TableCell>
+                  <TableCell>
+                    <span className="text-xs bg-blue-100 text-blue-800 rounded-full px-2 py-1">
+                      {item.status}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemoveItem(item.id)}
+                    >
+                      <Trash className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
             ) : (
-              <div className="border rounded-md overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead className="bg-slate-50">
-                    <tr className="border-b">
-                      <th className="text-left p-3 font-medium">Item</th>
-                      <th className="text-center p-3 font-medium">Qty</th>
-                      <th className="text-right p-3 font-medium">Price</th>
-                      <th className="text-right p-3 font-medium">Total</th>
-                      <th className="text-center p-3 font-medium">Status</th>
-                      <th className="text-right p-3 font-medium">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {inventoryItems.map((item, index) => {
-                      // Handle both field naming conventions safely
-                      const unitPrice = item.unitPrice ?? 0;
-                      const quantity = item.quantity ?? 1;
-                      const total = unitPrice * quantity;
-                      
-                      return (
-                        <tr key={index} className="border-b last:border-b-0">
-                          <td className="p-3">
-                            <div className="font-medium">{item.name}</div>
-                            <div className="text-xs text-slate-500">
-                              {item.category && <span className="mr-2">{item.category}</span>}
-                              {item.sku && <span>SKU: {item.sku}</span>}
-                            </div>
-                            {item.supplierName && (
-                              <div className="text-xs text-slate-500">
-                                Supplier: {item.supplierName}
-                                {item.supplierOrderRef && ` (Ref: ${item.supplierOrderRef})`}
-                              </div>
-                            )}
-                          </td>
-                          <td className="p-3 text-center">{quantity}</td>
-                          <td className="p-3 text-right">${unitPrice.toFixed(2)}</td>
-                          <td className="p-3 text-right">${total.toFixed(2)}</td>
-                          <td className="p-3 text-center">
-                            <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(item.itemStatus)}`}>
-                              {formatStatus(item.itemStatus)}
-                            </span>
-                          </td>
-                          <td className="p-3 text-right">
-                            <Button 
-                              type="button" 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => onRemoveItem(index)}
-                            >
-                              Remove
-                            </Button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
+                  No parts or materials added
+                </TableCell>
+              </TableRow>
             )}
-          </>
-        )}
-      />
+          </TableBody>
+        </Table>
+      </div>
+
+      {showAddDialog && (
+        <div className="border rounded-md p-4 mt-4 bg-muted/50">
+          <h4 className="font-medium mb-4">Add Special Order Item</h4>
+          {/* Special order form would go here */}
+          <div className="flex justify-end mt-4 space-x-2">
+            <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
+            <Button onClick={() => handleAddSpecialOrder({ name: 'New Special Order' })}>Add Item</Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-
-function getStatusColor(status?: string) {
-  switch (status) {
-    case 'in-stock':
-      return 'bg-green-100 text-green-800';
-    case 'ordered':
-      return 'bg-blue-100 text-blue-800';
-    case 'backordered':
-      return 'bg-amber-100 text-amber-800';
-    case 'out-of-stock':
-      return 'bg-red-100 text-red-800';
-    case 'special-order':
-      return 'bg-purple-100 text-purple-800';
-    default:
-      return 'bg-slate-100 text-slate-800';
-  }
-}
-
-function formatStatus(status?: string) {
-  if (!status) return 'Unknown';
-  
-  // Convert kebab-case to Title Case
-  return status.split('-')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-}
