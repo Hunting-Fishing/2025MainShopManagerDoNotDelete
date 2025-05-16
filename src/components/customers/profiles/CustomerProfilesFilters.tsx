@@ -5,13 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Search, Filter, X } from 'lucide-react';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -36,10 +29,10 @@ export function CustomerProfilesFilters({ filters, onFilterChange }: CustomerPro
   
   // Add a tag filter
   const handleAddTag = (tag: string) => {
-    if (!filters.tags.includes(tag)) {
+    if (!filters.tags?.includes(tag)) {
       onFilterChange({
         ...filters,
-        tags: [...filters.tags, tag]
+        tags: [...(filters.tags || []), tag]
       });
     }
   };
@@ -48,7 +41,7 @@ export function CustomerProfilesFilters({ filters, onFilterChange }: CustomerPro
   const handleRemoveTag = (tag: string) => {
     onFilterChange({
       ...filters,
-      tags: filters.tags.filter(t => t !== tag)
+      tags: (filters.tags || []).filter(t => t !== tag)
     });
   };
   
@@ -71,7 +64,7 @@ export function CustomerProfilesFilters({ filters, onFilterChange }: CustomerPro
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search customers..."
-            value={filters.searchQuery}
+            value={filters.searchQuery || ''}
             onChange={handleSearchChange}
             className="pl-10 bg-gray-50 dark:bg-slate-900 border-gray-200 dark:border-gray-700"
           />
@@ -87,7 +80,7 @@ export function CustomerProfilesFilters({ filters, onFilterChange }: CustomerPro
             >
               <Filter className="mr-2 h-4 w-4" />
               Filter Tags
-              {filters.tags.length > 0 && (
+              {filters.tags && filters.tags.length > 0 && (
                 <Badge className="ml-2 bg-primary text-white" variant="secondary">
                   {filters.tags.length}
                 </Badge>
@@ -101,14 +94,14 @@ export function CustomerProfilesFilters({ filters, onFilterChange }: CustomerPro
                 {commonTags.map(tag => (
                   <Badge 
                     key={tag}
-                    variant={filters.tags.includes(tag) ? "default" : "outline"}
+                    variant={filters.tags?.includes(tag) ? "default" : "outline"}
                     className={`cursor-pointer hover:bg-primary/90 ${
-                      filters.tags.includes(tag) 
+                      filters.tags?.includes(tag) 
                         ? "bg-primary text-white" 
                         : "bg-gray-50 text-gray-700 hover:text-white"
                     }`}
                     onClick={() => 
-                      filters.tags.includes(tag) 
+                      filters.tags?.includes(tag) 
                         ? handleRemoveTag(tag) 
                         : handleAddTag(tag)
                     }
@@ -123,7 +116,7 @@ export function CustomerProfilesFilters({ filters, onFilterChange }: CustomerPro
                   variant="ghost" 
                   size="sm" 
                   onClick={clearFilters}
-                  disabled={!filters.searchQuery && filters.tags.length === 0}
+                  disabled={!filters.searchQuery && (!filters.tags || filters.tags.length === 0)}
                 >
                   Clear all
                 </Button>
@@ -137,7 +130,7 @@ export function CustomerProfilesFilters({ filters, onFilterChange }: CustomerPro
       </div>
       
       {/* Active filter badges */}
-      {(filters.tags.length > 0) && (
+      {(filters.tags && filters.tags.length > 0) && (
         <div className="flex flex-wrap gap-2 mt-4">
           {filters.tags.map(tag => (
             <Badge key={tag} variant="secondary" className="bg-blue-100 text-blue-800 border border-blue-300 px-3 py-1">
@@ -149,7 +142,7 @@ export function CustomerProfilesFilters({ filters, onFilterChange }: CustomerPro
             </Badge>
           ))}
           
-          {(filters.searchQuery || filters.tags.length > 0) && (
+          {(filters.searchQuery || (filters.tags && filters.tags.length > 0)) && (
             <Button 
               variant="ghost" 
               size="sm" 

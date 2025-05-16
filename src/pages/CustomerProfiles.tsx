@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCustomers } from '@/hooks/useCustomers';
 import { CustomerProfileCard } from '@/components/customers/profiles/CustomerProfileCard';
 import { CustomerProfilesHeader } from '@/components/customers/profiles/CustomerProfilesHeader';
@@ -53,6 +53,15 @@ export default function CustomerProfiles() {
       });
     }
   };
+  
+  // Add debug logs to help diagnose issues
+  useEffect(() => {
+    console.log("CustomerProfiles component rendered");
+    console.log("Customers data:", customers);
+    console.log("Filtered customers:", filteredCustomers);
+    console.log("Loading state:", loading);
+    console.log("Error state:", error);
+  }, [customers, filteredCustomers, loading, error]);
 
   if (loading) {
     return (
@@ -76,8 +85,8 @@ export default function CustomerProfiles() {
   return (
     <div className="container mx-auto p-4 space-y-6">
       <CustomerProfilesHeader 
-        totalCustomers={customers.length} 
-        filteredCount={filteredCustomers.length}
+        totalCustomers={customers?.length || 0} 
+        filteredCount={filteredCustomers?.length || 0}
         onExport={handleExport}
         view={view}
         onViewChange={toggleView}
@@ -88,10 +97,10 @@ export default function CustomerProfiles() {
         onFilterChange={handleFilterChange} 
       />
 
-      {filteredCustomers.length === 0 ? (
-        <div className="text-center p-8">
+      {filteredCustomers?.length === 0 ? (
+        <div className="text-center p-8 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
           <h3 className="text-xl font-semibold mb-2">No customer profiles found</h3>
-          <p className="text-muted-foreground">Try adjusting your filters or adding new customers.</p>
+          <p className="text-muted-foreground mb-4">Try adjusting your filters or adding new customers.</p>
           <Button className="mt-4" variant="default" asChild>
             <a href="/customers/new">Add New Customer</a>
           </Button>
@@ -101,7 +110,7 @@ export default function CustomerProfiles() {
           ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" 
           : "space-y-4"
         }>
-          {filteredCustomers.map((customer) => (
+          {filteredCustomers?.map((customer) => (
             <CustomerProfileCard
               key={customer.id}
               customer={customer}
