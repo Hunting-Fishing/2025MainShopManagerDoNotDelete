@@ -1,44 +1,55 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { WorkOrderInventoryItem } from "@/types/workOrder";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 import { SelectedInventoryTable } from "./SelectedInventoryTable";
 
-export interface WorkOrderInventoryItemsProps {
+interface WorkOrderInventoryItemsProps {
   workOrderId: string;
   inventoryItems: WorkOrderInventoryItem[];
 }
 
-export const WorkOrderInventoryItems: React.FC<WorkOrderInventoryItemsProps> = ({
+export function WorkOrderInventoryItems({
   workOrderId,
-  inventoryItems,
-}) => {
-  // These handlers would normally connect to API services
+  inventoryItems
+}: WorkOrderInventoryItemsProps) {
+  const [items, setItems] = useState<WorkOrderInventoryItem[]>(inventoryItems || []);
+  const [isAddingItem, setIsAddingItem] = useState(false);
+  
+  // Handle updating quantity
   const handleUpdateQuantity = (id: string, quantity: number) => {
-    console.log(`Update quantity for ${id} to ${quantity}`);
+    setItems(prevItems =>
+      prevItems.map(item =>
+        item.id === id ? { ...item, quantity } : item
+      )
+    );
   };
-
-  const handleRemoveItem = (id: string) => {
-    console.log(`Remove item ${id}`);
+  
+  // Handle removing item
+  const handleRemove = (id: string) => {
+    setItems(prevItems => prevItems.filter(item => item.id !== id));
   };
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-medium">Parts and Materials</h3>
+      <div className="flex justify-between">
+        <h3 className="text-lg font-medium">Parts & Materials</h3>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => setIsAddingItem(true)}
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Add Item
+        </Button>
+      </div>
       
       <SelectedInventoryTable
-        items={inventoryItems}
+        items={items}
         onUpdateQuantity={handleUpdateQuantity}
-        onRemoveItem={handleRemoveItem}
+        onRemove={handleRemove}
       />
-      
-      <div className="flex justify-end mt-4">
-        <div className="bg-slate-50 p-4 rounded-md">
-          <span className="text-sm text-slate-500">Total Cost: </span>
-          <span className="font-medium">
-            ${inventoryItems.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0).toFixed(2)}
-          </span>
-        </div>
-      </div>
     </div>
   );
-};
+}

@@ -3,9 +3,9 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { TimeEntry } from "@/types/workOrder";
-import { TimeEntryForm } from "./TimeEntryForm";
-import { useTimeEntryForm } from "./hooks/useTimeEntryForm";
+import { calculateTotalTime, calculateBillableTime, formatTimeInHoursAndMinutes } from "@/utils/workOrderUtils";
 import { TimeEntryTable } from "./TimeEntryTable";
+import { TimeEntryDialog } from "./TimeEntryDialog";
 
 export interface TimeTrackingSectionProps {
   workOrderId: string;
@@ -13,91 +13,97 @@ export interface TimeTrackingSectionProps {
   onUpdateTimeEntries: (entries: TimeEntry[]) => void;
 }
 
-export const TimeTrackingSection: React.FC<TimeTrackingSectionProps> = ({
+export function TimeTrackingSection({ 
   workOrderId,
-  timeEntries,
-  onUpdateTimeEntries,
-}) => {
-  const [isAddingEntry, setIsAddingEntry] = useState(false);
-  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
+  timeEntries, 
+  onUpdateTimeEntries 
+}: TimeTrackingSectionProps) {
+  const [showDialog, setShowDialog] = useState(false);
+  const [currentEntry, setCurrentEntry] = useState<TimeEntry | undefined>(undefined);
 
-  const editingEntry = editingEntryId
-    ? timeEntries.find(entry => entry.id === editingEntryId)
-    : null;
-
-  const formProps = useTimeEntryForm({
-    workOrderId,
-    timeEntry: editingEntry,
-    onSave: handleSaveTimeEntry,
-    onCancel: handleCancelEdit
-  });
-
-  function handleAddNewEntry() {
-    setIsAddingEntry(true);
-    setEditingEntryId(null);
-  }
-
-  function handleEditEntry(entryId: string) {
-    setEditingEntryId(entryId);
-    setIsAddingEntry(false);
-  }
-
-  function handleSaveTimeEntry(timeEntry: TimeEntry) {
-    let updatedEntries: TimeEntry[];
-
-    if (editingEntryId) {
-      // Updating existing entry
-      updatedEntries = timeEntries.map((entry) =>
-        entry.id === editingEntryId ? timeEntry : entry
+  // Total time calculations
+  const totalTime = calculateTotalTime(timeEntries);
+  const totalBillableTime = calculateBillableTime(timeEntries);
+  
+  // Open dialog to add a new time entry
+  const handleAddEntry = () => {
+    setCurrentEntry(undefined);
+    setShowDialog(true);
+  };
+  
+  // Open dialog to edit an existing time entry
+  const handleEditEntry = (entry: TimeEntry) => {
+    setCurrentEntry(entry);
+    setShowDialog(true);
+  };
+  
+  // Delete a time entry
+  const handleDeleteEntry = (entryId: string) => {
+    const updatedEntries = timeEntries.filter(entry => entry.id !== entryId);
+    onUpdateTimeEntries(updatedEntries);
+  };
+  
+  // Save a new or edited time entry
+  const handleSaveEntry = (entryData: Partial<TimeEntry>) => {
+    if (currentEntry) {
+      // Editing existing entry
+      const updatedEntries = timeEntries.map(entry => 
+        entry.id === currentEntry.id ? { ...entry, ...entryData } : entry
       );
+      onUpdateTimeEntries(updatedEntries);
     } else {
       // Adding new entry
-      updatedEntries = [...timeEntries, timeEntry];
+      const newEntry: TimeEntry = {
+        id: crypto.randomUUID(),
+        work_order_id: workOrderId,
+        ...entryData as Omit<TimeEntry, 'id' | 'work_order_id'>
+      };
+      onUpdateTimeEntries([...timeEntries, newEntry]);
     }
-
-    onUpdateTimeEntries(updatedEntries);
-    setIsAddingEntry(false);
-    setEditingEntryId(null);
-  }
-
-  function handleDeleteEntry(entryId: string) {
-    const updatedEntries = timeEntries.filter((entry) => entry.id !== entryId);
-    onUpdateTimeEntries(updatedEntries);
-    
-    if (editingEntryId === entryId) {
-      setEditingEntryId(null);
-      setIsAddingEntry(false);
-    }
-  }
-
-  function handleCancelEdit() {
-    setIsAddingEntry(false);
-    setEditingEntryId(null);
-  }
+  };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium">Time Tracking</h3>
-        <Button onClick={handleAddNewEntry} disabled={isAddingEntry || !!editingEntryId}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Time Entry
+        <div>
+          <h3 className="text-lg font-medium">Time Tracking</h3>
+          <div className="text-sm text-muted-foreground">
+            <span className="mr-4">
+              Total time: {formatTimeInHoursAndMinutes(totalTime)}
+            </span>
+            <span>
+              Billable time: {formatTimeInHoursAndMinutes(totalBillableTime)}
+            </span>
+          </div>
+        </div>
+        <Button
+          onClick={handleAddEntry}
+          variant="outline"
+          size="sm"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Add Time
         </Button>
       </div>
 
-      {(isAddingEntry || editingEntryId) && (
-        <div className="border p-4 rounded-md bg-muted/50">
-          <h4 className="text-sm font-medium mb-4">
-            {editingEntryId ? "Edit Time Entry" : "New Time Entry"}
-          </h4>
-          <TimeEntryForm {...formProps} />
+      {timeEntries.length > 0 ? (
+        <TimeEntryTable
+          entries={timeEntries}
+          onEdit={handleEditEntry}
+          onDelete={handleDeleteEntry}
+        />
+      ) : (
+        <div className="text-center py-8 border rounded-md">
+          <p className="text-muted-foreground">No time entries recorded for this work order.</p>
         </div>
       )}
-
-      <TimeEntryTable 
-        entries={timeEntries} 
-        onEdit={handleEditEntry} 
-        onDelete={handleDeleteEntry} 
+      
+      <TimeEntryDialog
+        isOpen={showDialog}
+        onClose={() => setShowDialog(false)}
+        onSave={handleSaveEntry}
+        entry={currentEntry}
+        workOrderId={workOrderId}
       />
     </div>
   );

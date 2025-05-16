@@ -1,101 +1,57 @@
 
-import React, { useState } from "react";
+import React from "react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { TableHead } from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Plus } from "lucide-react";
-
-// Column type definition
-export type ColumnId = 
-  | "name" 
-  | "sku" 
-  | "partNumber" 
-  | "barcode"
-  | "category" 
-  | "subcategory" 
-  | "manufacturer"
-  | "vehicleCompatibility"
-  | "location" 
-  | "quantity" 
-  | "quantityReserved"
-  | "quantityAvailable"
-  | "onOrder"
-  | "reorderPoint"
-  | "cost"
-  | "unitPrice" 
-  | "marginMarkup"
-  | "totalValue"
-  | "warrantyPeriod"
-  | "status"
-  | "supplier" 
-  | "dateBought"
-  | "dateLast"
-  | "notes";
+import { GripVertical, Eye, EyeOff } from "lucide-react";
 
 export interface Column {
-  id: ColumnId;
+  id: string;
+  name: string; // Added to match TableBody.Column interface
   label: string;
   visible: boolean;
 }
 
 interface SortableColumnHeaderProps {
   column: Column;
-  onHideColumn?: (columnId: ColumnId) => void;
-  onAddColumn?: () => void;
+  onToggleVisibility: (id: string) => void;
 }
 
-export const SortableColumnHeader = ({ 
-  column, 
-  onHideColumn,
-  onAddColumn 
-}: SortableColumnHeaderProps) => {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: column.id });
-  
+export function SortableColumnHeader({ column, onToggleVisibility }: SortableColumnHeaderProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: column.id,
+  });
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    opacity: isDragging ? 0.5 : 1,
+    cursor: "grab",
   };
-  
+
   return (
-    <TableHead ref={setNodeRef} style={style} {...attributes} {...listeners} className="select-none cursor-grab">
-      <div className="flex flex-col items-center">
-        <div className="flex items-center">
-          <GripVertical className="w-4 h-4 text-gray-400 mr-1" />
-          <span>{column.label}</span>
+    <TableHead
+      ref={setNodeRef}
+      style={style}
+      className="whitespace-nowrap px-4 py-3 text-left text-sm font-medium"
+    >
+      <div className="flex items-center">
+        <div {...attributes} {...listeners} className="mr-2 flex-shrink-0">
+          <GripVertical className="h-4 w-4 text-gray-500" />
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 mt-1">
-              <span className="text-xs text-gray-500">•••</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem>Sort Ascending</DropdownMenuItem>
-            <DropdownMenuItem>Sort Descending</DropdownMenuItem>
-            <DropdownMenuItem>Filter</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            {onHideColumn && (
-              <DropdownMenuItem onClick={() => onHideColumn(column.id)}>
-                Hide Column
-              </DropdownMenuItem>
-            )}
-            {onAddColumn && (
-              <DropdownMenuItem onClick={onAddColumn}>
-                <Plus className="w-4 h-4 mr-1" />
-                Add Column
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <span>{column.label}</span>
+        <button
+          type="button"
+          onClick={() => onToggleVisibility(column.id)}
+          className="ml-2 rounded p-1 hover:bg-gray-100"
+        >
+          {column.visible ? (
+            <Eye className="h-3 w-3 text-gray-500" />
+          ) : (
+            <EyeOff className="h-3 w-3 text-gray-500" />
+          )}
+        </button>
       </div>
     </TableHead>
   );
-};
+}

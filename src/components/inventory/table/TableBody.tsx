@@ -7,6 +7,8 @@ import { TableRow } from "./TableRow";
 export interface Column {
   id: string;
   name: string;
+  label?: string;
+  visible?: boolean;
 }
 
 interface TableBodyProps {

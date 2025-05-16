@@ -1,94 +1,73 @@
 
-import React from 'react';
-import { TimeEntry } from '@/types/workOrder';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Edit, Trash2 } from 'lucide-react';
-import { format } from 'date-fns';
+import React from "react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Pencil, Trash } from "lucide-react";
+import { TimeEntry } from "@/types/workOrder";
+import { formatTimeInHoursAndMinutes } from "@/utils/workOrderUtils";
+import { format } from "date-fns";
 
-export interface TimeEntryTableProps {
+interface TimeEntryTableProps {
   entries: TimeEntry[];
-  onEdit: (entryId: string) => void;
+  onEdit: (entry: TimeEntry) => void;
   onDelete: (entryId: string) => void;
 }
 
-export const TimeEntryTable: React.FC<TimeEntryTableProps> = ({ 
-  entries, 
-  onEdit, 
-  onDelete 
-}) => {
-  const formatDuration = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours}h ${mins}m`;
+export function TimeEntryTable({ entries, onEdit, onDelete }: TimeEntryTableProps) {
+  const formatDateTime = (dateTimeStr: string) => {
+    try {
+      const date = new Date(dateTimeStr);
+      return format(date, 'MMM d, yyyy h:mm a');
+    } catch (e) {
+      return dateTimeStr;
+    }
   };
-
-  if (entries.length === 0) {
-    return (
-      <div className="py-8 text-center border rounded-md">
-        <p className="text-muted-foreground">No time entries recorded</p>
-      </div>
-    );
-  }
 
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Employee</TableHead>
-          <TableHead>Date</TableHead>
+          <TableHead>Technician</TableHead>
           <TableHead>Start Time</TableHead>
           <TableHead>End Time</TableHead>
-          <TableHead>Duration</TableHead>
-          <TableHead>Billable</TableHead>
+          <TableHead className="text-right">Duration</TableHead>
+          <TableHead>Notes</TableHead>
+          <TableHead className="text-center">Billable</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {entries.map((entry) => {
-          // Parse dates for formatting
-          const startDateTime = new Date(entry.start_time);
-          const endDateTime = entry.end_time ? new Date(entry.end_time) : null;
-          
-          return (
-            <TableRow key={entry.id}>
-              <TableCell>{entry.employee_name}</TableCell>
-              <TableCell>{format(startDateTime, 'MMM dd, yyyy')}</TableCell>
-              <TableCell>{format(startDateTime, 'h:mm a')}</TableCell>
-              <TableCell>
-                {endDateTime ? format(endDateTime, 'h:mm a') : 'In progress'}
-              </TableCell>
-              <TableCell>{formatDuration(entry.duration)}</TableCell>
-              <TableCell>{entry.billable ? 'Yes' : 'No'}</TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    onClick={() => onEdit(entry.id)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    onClick={() => onDelete(entry.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          );
-        })}
+        {entries.map((entry) => (
+          <TableRow key={entry.id}>
+            <TableCell>{entry.employee_name}</TableCell>
+            <TableCell>{formatDateTime(entry.start_time)}</TableCell>
+            <TableCell>{entry.end_time ? formatDateTime(entry.end_time) : "N/A"}</TableCell>
+            <TableCell className="text-right">{formatTimeInHoursAndMinutes(entry.duration)}</TableCell>
+            <TableCell className="max-w-xs truncate">{entry.notes}</TableCell>
+            <TableCell className="text-center">
+              {entry.billable ? "Yes" : "No"}
+            </TableCell>
+            <TableCell className="text-right">
+              <div className="flex justify-end space-x-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onEdit(entry)}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onDelete(entry.id)}
+                >
+                  <Trash className="h-4 w-4" />
+                </Button>
+              </div>
+            </TableCell>
+          </TableRow>
+        ))}
       </TableBody>
     </Table>
   );
-};
+}

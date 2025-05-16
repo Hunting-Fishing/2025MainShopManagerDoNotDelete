@@ -6,7 +6,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { TimeEntryForm } from "./TimeEntryForm";
 import { TimeEntry } from "@/types/workOrder";
 
@@ -26,7 +25,7 @@ export const TimeEntryDialog: React.FC<TimeEntryDialogProps> = ({
   workOrderId,
 }) => {
   // Prepare initial data for form if editing
-  const initialData = entry ? {
+  const initialData: Partial<TimeEntry> = entry ? {
     ...entry
   } : {
     work_order_id: workOrderId,
@@ -35,6 +34,7 @@ export const TimeEntryDialog: React.FC<TimeEntryDialogProps> = ({
 
   const handleFormSubmit = (formData: Partial<TimeEntry>) => {
     onSave(formData);
+    onClose();
   };
 
   return (

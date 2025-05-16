@@ -4,6 +4,7 @@ export * from './generators';
 export * from './mappers';
 export * from './crud';
 export * from './activity';
+export * from './formatters';
 
 // Import and re-export formatters explicitly to avoid ambiguity
 import { formatDate, formatTime, formatTimeInHoursAndMinutes, normalizeWorkOrder } from './formatters';
@@ -13,7 +14,7 @@ export { formatDate, formatTime, formatTimeInHoursAndMinutes, normalizeWorkOrder
 export const statusMap = {
   "pending": "Pending",
   "in-progress": "In Progress",
-  "on-hold": "On Hold", // Added missing "on-hold" status
+  "on-hold": "On Hold",
   "completed": "Completed",
   "cancelled": "Cancelled"
 };
