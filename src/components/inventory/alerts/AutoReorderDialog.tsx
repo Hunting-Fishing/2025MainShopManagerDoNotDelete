@@ -1,91 +1,92 @@
 
-import { Button } from "@/components/ui/button";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
+import React, { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
   DialogTitle,
-  DialogTrigger 
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { BellPlus } from "lucide-react";
-import { useState } from "react";
-import { InventoryItemExtended } from "@/types/inventory";
-import { AutoReorderSettings } from "@/hooks/inventory/useInventoryManager";
+  DialogFooter
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { InventoryItemExtended } from '@/types/inventory';
+import { AutoReorderSettings } from '@/hooks/inventory/useInventoryManager';
 
 interface AutoReorderDialogProps {
+  open: boolean;
+  onClose: () => void;
   item: InventoryItemExtended;
-  autoReorderSettings: AutoReorderSettings | Record<string, AutoReorderSettings>;
-  onEnableAutoReorder: (itemId: string, threshold: number, quantity: number) => void;
+  currentSettings?: AutoReorderSettings;
+  onSave: (threshold: number, quantity: number) => void;
 }
 
-export function AutoReorderDialog({ 
-  item, 
-  autoReorderSettings,
-  onEnableAutoReorder 
-}: AutoReorderDialogProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [threshold, setThreshold] = useState(5);
-  const [quantity, setQuantity] = useState(20);
+const AutoReorderDialog: React.FC<AutoReorderDialogProps> = ({
+  open,
+  onClose,
+  item,
+  currentSettings,
+  onSave
+}) => {
+  const [threshold, setThreshold] = useState<number>(
+    currentSettings?.threshold || item.reorder_point || 5
+  );
+  const [quantity, setQuantity] = useState<number>(
+    currentSettings?.quantity || 10
+  );
 
-  const handleEnableAutoReorder = () => {
-    onEnableAutoReorder(item.id, threshold, quantity);
-    setIsOpen(false);
+  const handleSave = () => {
+    onSave(threshold, quantity);
+    onClose();
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="sm">
-          <BellPlus className="h-4 w-4 mr-1" />
-          Auto-reorder
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Configure Auto-reorder</DialogTitle>
-          <DialogDescription>
-            Set up automatic reordering for {item.name}
-          </DialogDescription>
+          <DialogTitle>Configure Auto-Reorder</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="threshold">Reorder When Stock Falls Below</Label>
-            <Input 
-              id="threshold" 
-              type="number" 
-              min="1"
-              value={threshold}
-              onChange={(e) => setThreshold(parseInt(e.target.value) || 1)}
-            />
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="item-name">Item</Label>
+            <Input id="item-name" value={item.name} readOnly className="bg-gray-50" />
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="auto-quantity">Quantity to Order Automatically</Label>
-            <Input 
-              id="auto-quantity" 
-              type="number" 
-              min="1"
-              value={quantity}
-              onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+          <div className="space-y-2">
+            <Label htmlFor="threshold">Reorder Threshold</Label>
+            <Input
+              id="threshold"
+              type="number"
+              value={threshold}
+              onChange={(e) => setThreshold(Number(e.target.value))}
+              min={1}
             />
+            <p className="text-sm text-gray-500">
+              Auto-reorder will be triggered when stock falls below this level
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="quantity">Reorder Quantity</Label>
+            <Input
+              id="quantity"
+              type="number"
+              value={quantity}
+              onChange={(e) => setQuantity(Number(e.target.value))}
+              min={1}
+            />
+            <p className="text-sm text-gray-500">
+              This many units will be ordered automatically
+            </p>
           </div>
         </div>
         <DialogFooter>
-          <Button onClick={handleEnableAutoReorder}>
-            {typeof autoReorderSettings === 'object' && 'enabled' in autoReorderSettings 
-              ? (autoReorderSettings as AutoReorderSettings).enabled 
-                ? "Update Auto-reorder" 
-                : "Enable Auto-reorder"
-              : typeof autoReorderSettings === 'object' && autoReorderSettings[item.id]?.enabled
-                ? "Update Auto-reorder"
-                : "Enable Auto-reorder"
-            }
+          <Button variant="outline" onClick={onClose}>
+            Cancel
           </Button>
+          <Button onClick={handleSave}>Save Settings</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-}
+};
+
+export default AutoReorderDialog;

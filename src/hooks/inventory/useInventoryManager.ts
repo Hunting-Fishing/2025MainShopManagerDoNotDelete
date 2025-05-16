@@ -1,14 +1,28 @@
 
 import { useState, useEffect } from 'react';
-import { getInventoryItems } from '@/services/inventory/crudService';
-import { countLowStockItems, countOutOfStockItems } from '@/services/inventory/utils';
+import { getInventoryItems, updateInventoryItem } from '@/services/inventory/crudService';
 import { InventoryItemExtended } from '@/types/inventory';
+import { 
+  countLowStockItems, 
+  countOutOfStockItems,
+  formatInventoryItem 
+} from '@/utils/inventory/inventoryUtils';
+import { useNotifications } from '@/context/notifications';
+import { toast } from '@/hooks/use-toast';
+
+export interface AutoReorderSettings {
+  enabled: boolean;
+  threshold: number;
+  quantity: number;
+}
 
 export const useInventoryManager = () => {
   const [lowStockItems, setLowStockItems] = useState<InventoryItemExtended[]>([]);
   const [outOfStockItems, setOutOfStockItems] = useState<InventoryItemExtended[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [autoReorderSettings, setAutoReorderSettings] = useState<Record<string, AutoReorderSettings>>({});
+  const { addNotification } = useNotifications();
   
   const checkInventoryAlerts = async () => {
     setLoading(true);
@@ -37,6 +51,127 @@ export const useInventoryManager = () => {
       setLoading(false);
     }
   };
+
+  // Function to manually reorder an item
+  const reorderItem = async (itemId: string, quantity: number) => {
+    try {
+      const item = await getInventoryItems().then(items => 
+        items.find(item => item.id === itemId)
+      );
+      
+      if (!item) {
+        toast({
+          title: "Error",
+          description: "Item not found",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // In a real app, this would connect to a purchasing API
+      toast({
+        title: "Order Placed",
+        description: `Manually ordered ${quantity} units of ${item.name}`,
+      });
+      
+      addNotification({
+        title: "Order Placed",
+        message: `Manually ordered ${quantity} units of ${item.name}`,
+        type: "success",
+        link: "/inventory"
+      });
+    } catch (error) {
+      console.error("Error placing manual order:", error);
+      toast({
+        title: "Error",
+        description: "Failed to place order",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Function to enable auto-reordering for an item
+  const enableAutoReorder = async (itemId: string, threshold: number, quantity: number) => {
+    try {
+      // In a real app, this would save to a database
+      setAutoReorderSettings(prev => ({
+        ...prev,
+        [itemId]: { enabled: true, threshold, quantity }
+      }));
+      
+      toast({
+        title: "Auto-reorder enabled",
+        description: `Auto-reorder has been enabled for this item when stock falls below ${threshold}`,
+      });
+    } catch (error) {
+      console.error("Error enabling auto-reorder:", error);
+      toast({
+        title: "Error",
+        description: "Failed to enable auto-reorder",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Function to handle inventory reservation for work orders
+  const reserveInventory = async (itemId: string, quantity: number) => {
+    try {
+      const item = await getInventoryItems().then(items => 
+        items.find(item => item.id === itemId)
+      );
+      
+      if (!item) return false;
+      
+      const currentQuantity = Number(item.quantity);
+      if (currentQuantity < quantity) return false;
+      
+      // Update item with reduced quantity and increased onHold
+      const updatedItem = {
+        ...item,
+        quantity: currentQuantity - quantity,
+        onHold: (Number(item.onHold) || 0) + quantity
+      };
+      
+      await updateInventoryItem(itemId, updatedItem);
+      return true;
+    } catch (error) {
+      console.error("Error reserving inventory:", error);
+      return false;
+    }
+  };
+
+  // Function to handle inventory consumption for work orders
+  const consumeWorkOrderInventory = async (itemId: string, quantity: number) => {
+    try {
+      const item = await getInventoryItems().then(items => 
+        items.find(item => item.id === itemId)
+      );
+      
+      if (!item) return false;
+      
+      // Release from onHold if present, otherwise reduce quantity directly
+      const currentOnHold = Number(item.onHold) || 0;
+      let updateData: Partial<InventoryItemExtended>;
+      
+      if (currentOnHold >= quantity) {
+        updateData = {
+          onHold: currentOnHold - quantity
+        };
+      } else {
+        const remainingQuantity = quantity - currentOnHold;
+        updateData = {
+          onHold: 0,
+          quantity: Math.max(0, Number(item.quantity) - remainingQuantity)
+        };
+      }
+      
+      await updateInventoryItem(itemId, updateData);
+      return true;
+    } catch (error) {
+      console.error("Error consuming inventory:", error);
+      return false;
+    }
+  };
   
   useEffect(() => {
     checkInventoryAlerts();
@@ -49,6 +184,11 @@ export const useInventoryManager = () => {
     outOfStockCount: outOfStockItems.length,
     checkInventoryAlerts,
     loading,
-    error
+    error,
+    reorderItem,
+    enableAutoReorder,
+    autoReorderSettings,
+    reserveInventory,
+    consumeWorkOrderInventory
   };
 };

@@ -4,15 +4,15 @@ import { AlertTriangle } from "lucide-react";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useInventoryManager } from "@/hooks/inventory/useInventoryManager";
 import { NoInventoryAlerts } from "./alerts/NoInventoryAlerts";
-import { AlertItemRow } from "./alerts/AlertItemRow";
+import AlertItemRow from "./alerts/AlertItemRow";
 
 export function LowStockAlerts() {
   const { 
     lowStockItems, 
-    outOfStockItems, 
+    outOfStockItems,
     reorderItem,
     enableAutoReorder,
-    autoReorderSettings 
+    autoReorderSettings
   } = useInventoryManager();
   
   const allAlertItems = [...lowStockItems, ...outOfStockItems];

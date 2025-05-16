@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { InventoryItemExtended } from '@/types/inventory';
 import { getInventoryItems } from '@/services/inventory/crudService';
-import { countLowStockItems, countOutOfStockItems } from '@/services/inventory/utils';
+import { countLowStockItems, countOutOfStockItems } from '@/utils/inventory/inventoryUtils';
 
 export function useInventoryAlerts() {
   const [lowStockCount, setLowStockCount] = useState(0);
