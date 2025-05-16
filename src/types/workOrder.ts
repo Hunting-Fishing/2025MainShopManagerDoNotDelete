@@ -21,6 +21,10 @@ export interface WorkOrderInventoryItem {
   category: string;
   quantity: number;
   unitPrice: number;
+  notes?: string;
+  estimatedArrivalDate?: string;
+  supplierName?: string;
+  itemStatus?: 'in-stock' | 'ordered' | 'backordered' | 'out-of-stock';
 }
 
 export interface WorkOrder {
@@ -80,3 +84,38 @@ export interface WorkOrderTemplate {
   lastUsed?: string;
   usageCount?: number;
 }
+
+// Status and priority mappings for displaying in UI
+export const statusMap: Record<string, string> = {
+  'pending': 'Pending',
+  'in-progress': 'In Progress',
+  'completed': 'Completed',
+  'cancelled': 'Cancelled',
+  'on-hold': 'On Hold'
+};
+
+export const priorityMap: Record<string, {label: string, classes: string}> = {
+  'low': {
+    label: 'Low',
+    classes: 'bg-blue-100 text-blue-700 border border-blue-300'
+  },
+  'medium': {
+    label: 'Medium',
+    classes: 'bg-amber-100 text-amber-700 border border-amber-300'
+  },
+  'high': {
+    label: 'High',
+    classes: 'bg-red-100 text-red-700 border border-red-300'
+  }
+};
+
+// Common date formatting utility for work orders
+export const formatDate = (dateString: string): string => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+};
