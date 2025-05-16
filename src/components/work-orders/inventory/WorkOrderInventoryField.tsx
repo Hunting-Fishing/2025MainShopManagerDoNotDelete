@@ -52,12 +52,11 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
     return {
       id: crypto.randomUUID(),
       name: '',
-      quantity: 1,
-      unit_price: 0,
-      status: 'in-stock',
-      category: 'Parts',
       sku: '',
-      description: '',
+      category: 'Parts',
+      quantity: 1,
+      unitPrice: 0,
+      itemStatus: 'in-stock',
     };
   };
 
@@ -69,8 +68,8 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
         // Make sure we don't include properties that aren't in WorkOrderInventoryItem
         name: partialItem.name || '',
         quantity: partialItem.quantity || 1,
-        unit_price: partialItem.unit_price || 0,
-        status: partialItem.status as 'in-stock' | 'ordered' | 'backordered' | 'out-of-stock' || 'ordered',
+        unitPrice: partialItem.unitPrice || 0,
+        itemStatus: partialItem.itemStatus || 'ordered',
       });
     }
     setShowAddDialog(false);
@@ -104,16 +103,16 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
                 <TableRow key={item.id}>
                   <TableCell className="font-medium">
                     {item.name}
-                    {item.description && (
-                      <p className="text-xs text-muted-foreground">{item.description}</p>
+                    {item.notes && (
+                      <p className="text-xs text-muted-foreground">{item.notes}</p>
                     )}
                   </TableCell>
                   <TableCell>{item.quantity}</TableCell>
-                  <TableCell>{formatCurrency(item.unit_price)}</TableCell>
-                  <TableCell>{formatCurrency(item.quantity * item.unit_price)}</TableCell>
+                  <TableCell>{formatCurrency(item.unitPrice)}</TableCell>
+                  <TableCell>{formatCurrency(item.quantity * item.unitPrice)}</TableCell>
                   <TableCell>
                     <span className="text-xs bg-blue-100 text-blue-800 rounded-full px-2 py-1">
-                      {item.status}
+                      {item.itemStatus || 'in-stock'}
                     </span>
                   </TableCell>
                   <TableCell>

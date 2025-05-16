@@ -26,7 +26,8 @@ const useInvoiceFormStatePlaceholder = (props?: UseInvoiceFormStateProps) => {
     status: "draft",
     items: [],
     created_by: "",
-    created_at: new Date().toISOString()
+    created_at: new Date().toISOString(),
+    shop_id: "default-shop" // Make sure this property exists
   });
   
   const [items, setItems] = useState<InvoiceItem[]>([]);
@@ -94,6 +95,9 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
   const useFormStateHook = useInvoiceFormState || useInvoiceFormStatePlaceholder;
   const props: UseInvoiceFormStateProps = initialWorkOrderId ? { initialWorkOrderId } : {};
   
+  const formState = useFormStateHook(props);
+  
+  // Destructure for convenience and type safety
   const {
     invoice,
     setInvoice,
@@ -113,7 +117,7 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
     handleAddLaborItem,
     handleAddStaffMember,
     handleRemoveStaffMember,
-  } = useFormStateHook(props);
+  } = formState;
 
   // Use invoice templates hook
   const { 

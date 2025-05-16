@@ -35,11 +35,11 @@ export function SaveTemplateDialog({
     // Map to template structure
     const template: Omit<InvoiceTemplate, 'id' | 'createdAt' | 'usageCount'> = {
       name: templateName,
-      description: templateDescription || undefined,
+      description: templateDescription || "",
       default_tax_rate: taxRate,
       default_due_date_days: 30, // Default value
-      default_notes: invoiceData.notes || undefined,
-      default_items: invoiceData.items || []
+      default_notes: invoiceData.notes || "",
+      defaultItems: invoiceData.items || []
     };
     
     onSaveTemplate(template);

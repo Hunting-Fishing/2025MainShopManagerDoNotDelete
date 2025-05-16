@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { InventoryFormProps } from "./InventoryFormProps";
@@ -33,8 +34,9 @@ export const InventoryFormComponent: React.FC<InventoryFormProps> = ({
     ? (suppliers as string[]).map(sup => ({ value: sup, label: sup }))
     : suppliers as SelectOption[];
 
-  // Create a wrapper function to adapt the event format to the required API
-  const adaptSelectChangeHandler = (name: string, value: string) => {
+  // Handle select change properly - this function should already exist in the component
+  // but we're fixing it to match the expected type signature
+  const handleSelectChangeWrapper = (name: string, value: string) => {
     handleSelectChange(name, value);
   };
 
@@ -99,7 +101,7 @@ export const InventoryFormComponent: React.FC<InventoryFormProps> = ({
           label="Category"
           name="category"
           value={formData.category}
-          onChange={adaptSelectChangeHandler}
+          onChange={handleSelectChangeWrapper}
           error={formErrors.category}
           options={categoryOptions}
           required
@@ -108,7 +110,7 @@ export const InventoryFormComponent: React.FC<InventoryFormProps> = ({
           label="Supplier"
           name="supplier"
           value={formData.supplier}
-          onChange={adaptSelectChangeHandler}
+          onChange={handleSelectChangeWrapper}
           error={formErrors.supplier}
           options={supplierOptions}
           required
@@ -131,7 +133,7 @@ export const InventoryFormComponent: React.FC<InventoryFormProps> = ({
           label="Status"
           name="status"
           value={formData.status}
-          onChange={adaptSelectChangeHandler}
+          onChange={handleSelectChangeWrapper}
           error={formErrors.status}
           options={[
             { value: "In Stock", label: "In Stock" },

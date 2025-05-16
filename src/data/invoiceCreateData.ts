@@ -15,7 +15,8 @@ export const createEmptyInvoice = (): Invoice => {
     status: "draft",
     items: [],
     created_by: "",
-    created_at: new Date().toISOString()
+    created_at: new Date().toISOString(),
+    shop_id: "default-shop" // Add default shop_id
   };
 };
 
@@ -40,7 +41,8 @@ export const mockInventoryItems = [
   }
 ];
 
-export const mockStaffMembers = [
+// Fix the staff members mock data
+export const mockStaffMembers: StaffMember[] = [
   {
     id: "staff-1",
     name: "John Smith"
