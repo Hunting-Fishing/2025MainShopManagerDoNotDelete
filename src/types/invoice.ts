@@ -1,4 +1,3 @@
-
 export interface Invoice {
   id: string;
   number: string;
@@ -9,6 +8,9 @@ export interface Invoice {
   status: 'draft' | 'pending' | 'paid' | 'overdue' | 'cancelled';
   issue_date: string;
   due_date: string;
+  date?: string; // Added date field
+  description?: string; // Added description field
+  payment_method?: string; // Added payment_method field
   subtotal: number;
   tax: number;
   tax_rate: number;
@@ -59,3 +61,12 @@ export const createInvoiceUpdater = (updates: Partial<Invoice>) => {
     ...updates
   });
 };
+
+// Adding the export for filter props interfaces
+export interface InvoiceFiltersProps {
+  onApplyFilters: (filters: any) => void;
+}
+
+export interface InvoiceFiltersDropdownProps {
+  onApplyFilters: (filters: any) => void;
+}

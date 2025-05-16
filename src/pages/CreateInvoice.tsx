@@ -1,8 +1,7 @@
-
 import { useParams } from "react-router-dom";
 import { useInvoiceForm } from "@/hooks/useInvoiceForm";
 import { InvoiceCreateLayout } from "@/components/invoices/InvoiceCreateLayout";
-import { WorkOrderSelector } from "@/components/invoices/WorkOrderSelector";
+import { useWorkOrderSelector } from "@/hooks/invoices/useWorkOrderSelector";
 import { supabase } from "@/lib/supabase"; 
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
@@ -128,6 +127,12 @@ export default function InvoiceCreate() {
     items
   } = useInvoiceForm(workOrderId);
 
+  const workOrderSelector = useWorkOrderSelector({
+    invoice,
+    setInvoice,
+    handleSelectWorkOrder,
+  });
+
   const getStaffName = (staff: any) => {
     if (staff && staff.first_name && staff.last_name) {
       return `${staff.first_name} ${staff.last_name}`;
@@ -135,19 +140,11 @@ export default function InvoiceCreate() {
     return "Unknown Staff";
   };
 
-  const handleAddInventoryItemAdapter = (inventoryItem: InventoryItem) => {
-    // Convert InventoryItem to InvoiceItem
-    const invoiceItem: InvoiceItem = {
-      id: inventoryItem.id,
-      description: inventoryItem.description || inventoryItem.name,
-      quantity: 1,
-      price: inventoryItem.price,
-      name: inventoryItem.name,
-      sku: inventoryItem.sku,
-      category: inventoryItem.category
-    };
-    
-    handleAddInventoryItem(invoiceItem);
+  // Create a wrapper that adapts the type from InvoiceTemplate to void
+  const handleSaveTemplateAdapter = async (
+    templateData: Omit<InvoiceTemplate, "id" | "created_at" | "usage_count">
+  ): Promise<void> => {
+    await handleSaveTemplate(templateData);
   };
 
   return (
@@ -169,7 +166,7 @@ export default function InvoiceCreate() {
       setShowWorkOrderDialog={setShowWorkOrderDialog}
       setShowInventoryDialog={setShowInventoryDialog}
       setShowStaffDialog={setShowStaffDialog}
-      handleSelectWorkOrder={handleSelectWorkOrder}
+      handleSelectWorkOrder={workOrderSelector.handleSelectWorkOrderWithTime}
       handleAddInventoryItem={handleAddInventoryItem}
       handleAddStaffMember={handleAddStaffMember}
       handleRemoveStaffMember={handleRemoveStaffMember}
@@ -180,7 +177,7 @@ export default function InvoiceCreate() {
       handleAddLaborItem={handleAddLaborItem}
       handleSaveInvoice={handleSaveInvoice}
       handleApplyTemplate={handleApplyTemplate}
-      handleSaveTemplate={handleSaveTemplate}
+      handleSaveTemplate={handleSaveTemplateAdapter}
       onTaxRateChange={(rate) => console.log("Tax rate changed:", rate)}
     />
   );

@@ -22,7 +22,7 @@ export function useInvoiceSave() {
         ...invoice,
         status,
         // Ensure dates are in the correct format
-        date: formatDate(invoice.date),
+        issue_date: formatDate(invoice.issue_date),
         due_date: formatDate(invoice.due_date),
       };
 

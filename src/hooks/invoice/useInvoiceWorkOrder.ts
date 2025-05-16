@@ -1,33 +1,19 @@
 
-import { useState } from "react";
-import { WorkOrder } from "@/types/workOrder";
+import { Invoice } from '@/types/invoice';
+import { WorkOrder } from '@/types/workOrder';
 
-export function useInvoiceWorkOrder(initialWorkOrderId: string = "") {
-  const [workOrderId, setWorkOrderId] = useState<string>(initialWorkOrderId);
-  const [customer, setCustomer] = useState<string>("");
-  const [description, setDescription] = useState<string>("");
-
-  // Handle selecting a work order
+export const useInvoiceWorkOrder = () => {
   const handleSelectWorkOrder = (workOrder: WorkOrder) => {
-    setWorkOrderId(workOrder.id);
-    setCustomer(workOrder.customer);
-    setDescription(workOrder.description);
-    
+    if (!workOrder) return { workOrderId: '', customer: '', customerAddress: '', assignedStaff: [] };
+
     return {
       workOrderId: workOrder.id,
-      customer: workOrder.customer,
-      description: workOrder.description,
-      assignedStaff: [workOrder.technician].filter(t => t !== "Unassigned")
+      customer: workOrder.customer || '',
+      customerAddress: workOrder.customer_address || '',
+      description: workOrder.description || '',
+      assignedStaff: workOrder.technician ? [workOrder.technician] : []
     };
   };
 
-  return {
-    workOrderId,
-    customer,
-    description,
-    setWorkOrderId,
-    setCustomer,
-    setDescription,
-    handleSelectWorkOrder
-  };
-}
+  return { handleSelectWorkOrder };
+};
