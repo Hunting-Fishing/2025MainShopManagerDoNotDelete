@@ -63,9 +63,10 @@ export function useInvoiceData(initialWorkOrderId?: string) {
         description: `${woItem.name} (${woItem.sku})`,
         quantity: woItem.quantity,
         price: woItem.unit_price,
+        total: woItem.quantity * woItem.unit_price,
         sku: woItem.sku,
         category: woItem.category
-      }));
+      } as InvoiceItem));
       
       setItems(prev => [...prev, ...newItems]);
     }
@@ -118,7 +119,7 @@ export function useInvoiceData(initialWorkOrderId?: string) {
   const handleUpdateItemQuantity = (itemId: string, quantity: number) => {
     setItems(prev => 
       prev.map(item => 
-        item.id === itemId ? { ...item, quantity } : item
+        item.id === itemId ? { ...item, quantity, total: quantity * item.price } : item
       )
     );
   };
@@ -134,7 +135,7 @@ export function useInvoiceData(initialWorkOrderId?: string) {
   const handleUpdateItemPrice = (itemId: string, price: number) => {
     setItems(prev => 
       prev.map(item => 
-        item.id === itemId ? { ...item, price } : item
+        item.id === itemId ? { ...item, price, total: item.quantity * price } : item
       )
     );
   };

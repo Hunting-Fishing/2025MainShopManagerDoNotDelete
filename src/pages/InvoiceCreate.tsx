@@ -14,16 +14,16 @@ import {
 } from "@/types/invoice";
 import { InventoryItem } from "@/types/inventory";
 
-// Create an adapter to convert InventoryItem to InvoiceItem
+// Create adapter function to convert InventoryItem to InvoiceItem
 export const createInventoryItemAdapter = (inventoryItem: InventoryItem): InvoiceItem => {
   return {
     id: inventoryItem.id,
-    name: inventoryItem.name || '',
-    description: inventoryItem.description || "",
-    sku: inventoryItem.sku || "",
-    price: inventoryItem.price || 0,
+    name: inventoryItem.name,
+    description: inventoryItem.description || inventoryItem.name,
     quantity: 1,
-    total: inventoryItem.price || 0
+    price: inventoryItem.price || inventoryItem.unit_price || 0,
+    total: inventoryItem.price || inventoryItem.unit_price || 0,
+    sku: inventoryItem.sku || '',
   };
 };
 
@@ -96,6 +96,7 @@ export default function InvoiceCreate() {
         sku: item.sku || "",
         description: item.description || "",
         price: Number(item.unit_price) || 0,
+        unit_price: Number(item.unit_price) || 0,
         category: item.category || "",
         supplier: item.supplier || "",
         status: item.status || "",
@@ -127,7 +128,7 @@ export default function InvoiceCreate() {
     setShowInventoryDialog,
     setShowStaffDialog,
     handleSelectWorkOrder,
-    handleAddInventoryItem: baseAddInventoryItem,
+    handleAddInventoryItem,
     handleAddStaffMember,
     handleRemoveStaffMember,
     handleRemoveItem,
@@ -141,12 +142,6 @@ export default function InvoiceCreate() {
     items
   } = useInvoiceForm(workOrderId);
 
-  // Create an adapter to convert InventoryItem to InvoiceItem
-  const handleAddInventoryItem = (inventoryItem: InventoryItem) => {
-    const invoiceItem = createInventoryItemAdapter(inventoryItem);
-    baseAddInventoryItem(invoiceItem);
-  };
-
   const workOrderSelector = useWorkOrderSelector({
     invoice,
     setInvoice,
@@ -158,6 +153,12 @@ export default function InvoiceCreate() {
       return `${staff.first_name} ${staff.last_name}`;
     }
     return "Unknown Staff";
+  };
+
+  // Create an adapter wrapper for handleAddInventoryItem
+  const handleInventoryItemSelected = (inventoryItem: InventoryItem) => {
+    const invoiceItem = createInventoryItemAdapter(inventoryItem);
+    handleAddInventoryItem(invoiceItem);
   };
 
   // Create a wrapper that adapts the type from InvoiceTemplate to void
@@ -187,7 +188,7 @@ export default function InvoiceCreate() {
       setShowInventoryDialog={setShowInventoryDialog}
       setShowStaffDialog={setShowStaffDialog}
       handleSelectWorkOrder={workOrderSelector.handleSelectWorkOrderWithTime}
-      handleAddInventoryItem={handleAddInventoryItem}
+      handleAddInventoryItem={handleInventoryItemSelected}
       handleAddStaffMember={handleAddStaffMember}
       handleRemoveStaffMember={handleRemoveStaffMember}
       handleRemoveItem={handleRemoveItem}
