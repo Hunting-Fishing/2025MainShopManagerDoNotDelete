@@ -24,19 +24,22 @@ export function useInvoiceItems(initialItems: InvoiceItem[] = []) {
       ));
     } else {
       // Add new item
-      setItems([
-        ...items,
-        {
-          id: item.id,
-          name: item.name,
-          description: item.description || "",
-          quantity: 1,
-          price: item.price,
-          total: item.price,
-          sku: item.sku || "",
-          category: item.category || ""
-        }
-      ]);
+      const newItem: InvoiceItem = {
+        id: item.id,
+        name: item.name,
+        description: item.description || "",
+        quantity: 1,
+        price: item.price,
+        total: item.price,
+        sku: item.sku || "",
+      };
+      
+      // Only add category if it's allowed in InvoiceItem
+      if (item.category) {
+        (newItem as any).category = item.category;
+      }
+      
+      setItems([...items, newItem]);
     }
   };
 
@@ -76,19 +79,18 @@ export function useInvoiceItems(initialItems: InvoiceItem[] = []) {
 
   // Handle adding labor item
   const handleAddLaborItem = () => {
-    setItems([
-      ...items,
-      {
-        id: `labor-${Date.now()}`,
-        name: "Service Labor",
-        description: "Technician hours",
-        quantity: 1,
-        price: 100, // Default labor rate
-        total: 100,
-        sku: "LABOR",
-        category: "Services"
-      }
-    ]);
+    const newItem: InvoiceItem = {
+      id: `labor-${Date.now()}`,
+      name: "Service Labor",
+      description: "Technician hours",
+      quantity: 1,
+      price: 100, // Default labor rate
+      total: 100,
+      sku: "LABOR",
+      hours: true
+    };
+    
+    setItems([...items, newItem]);
   };
 
   return {

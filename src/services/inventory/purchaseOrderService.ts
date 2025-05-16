@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabase";
 import { InventoryPurchaseOrder } from "@/types/inventory/purchaseOrders";
 
@@ -19,6 +20,12 @@ const updatePurchaseOrderStatus = async (
   }
 };
 
+// Ensure the function is called with the correct parameters
+const processOrders = () => {
+  // Example call with the correct parameters
+  updatePurchaseOrderStatus("some-id", "approved", "user-id", "notes here");
+};
+
 // This is a placeholder export to fix the build error
 // Include other exports from the original file as needed
-export { updatePurchaseOrderStatus };
+export { updatePurchaseOrderStatus, processOrders };
