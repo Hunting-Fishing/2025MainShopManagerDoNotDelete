@@ -40,7 +40,7 @@ export function InvoiceList({ invoices, isLoading, error }: InvoiceListProps) {
     
     // Filter by creator if applicable
     if (filters.created_by) {
-      result = result.filter(invoice => invoice.created_by.toLowerCase().includes(filters.created_by.toLowerCase()));
+      result = result.filter(invoice => invoice.created_by?.toLowerCase().includes(filters.created_by.toLowerCase()));
     }
     
     // Filter by search term (customer name, invoice number)
@@ -49,7 +49,7 @@ export function InvoiceList({ invoices, isLoading, error }: InvoiceListProps) {
       result = result.filter(invoice => 
         invoice.id.toLowerCase().includes(term) || 
         invoice.customer.toLowerCase().includes(term) ||
-        invoice.created_by.toLowerCase().includes(term)
+        (invoice.created_by || '').toLowerCase().includes(term)
       );
     }
     
@@ -61,7 +61,7 @@ export function InvoiceList({ invoices, isLoading, error }: InvoiceListProps) {
   }
 
   if (error) {
-    return <ErrorState message={error.message} />;
+    return <ErrorState onRetry={() => {}} />;
   }
 
   if (!invoices || invoices.length === 0) {

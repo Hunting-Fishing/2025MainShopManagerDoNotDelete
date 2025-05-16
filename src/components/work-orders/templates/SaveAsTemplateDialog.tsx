@@ -1,105 +1,109 @@
 
-import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { WorkOrderTemplate, WorkOrderStatusType, WorkOrderPriorityType } from "@/types/workOrder";
-import { v4 as uuidv4 } from "uuid";
+import React, { useState } from 'react';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { WorkOrder, WorkOrderInventoryItem, WorkOrderTemplate } from '@/types/workOrder';
 
 interface SaveAsTemplateDialogProps {
-  formValues: any;
-  onSave: (template: WorkOrderTemplate) => void;
+  open: boolean;
+  onClose: () => void;
+  workOrder: WorkOrder;
+  onSave: (template: Partial<WorkOrderTemplate>) => Promise<void>;
 }
 
-export function SaveAsTemplateDialog({ formValues, onSave }: SaveAsTemplateDialogProps) {
-  const [open, setOpen] = useState(false);
-  const [templateName, setTemplateName] = useState("");
+export function SaveAsTemplateDialog({ open, onClose, workOrder, onSave }: SaveAsTemplateDialogProps) {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const handleSave = () => {
-    if (!templateName.trim()) return;
+  const handleSave = async () => {
+    if (!name.trim()) return;
     
     setSaving(true);
     
-    // Extract values we want to save in the template
-    const {
-      description,
-      status,
-      priority,
-      technician,
-      location,
-      notes,
-      inventoryItems,
-      customer
-    } = formValues;
+    try {
+      // Create template from work order
+      const template: Partial<WorkOrderTemplate> = {
+        name,
+        description,
+        status: workOrder.status,
+        priority: workOrder.priority,
+        technician: workOrder.technician || '',
+        notes: workOrder.notes || '',
+        location: workOrder.location || '',
+        inventory_items: workOrder.inventory_items || []
+      };
+      
+      await onSave(template);
+      handleClose();
+    } catch (error) {
+      console.error('Error saving template:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
 
-    // Create template object
-    const template: WorkOrderTemplate = {
-      id: uuidv4(),
-      name: templateName,
-      description: description || "",
-      createdAt: new Date().toISOString(),
-      usageCount: 0,
-      customer: customer || undefined,
-      location: location || undefined,
-      // Use type assertions to ensure we conform to the expected types
-      status: (status as string) as WorkOrderStatusType,
-      priority: (priority as string) as WorkOrderPriorityType,
-      technician: technician || "",
-      notes: notes || undefined,
-      inventoryItems: inventoryItems || []
-    };
-    
-    // Save the template
-    onSave(template);
-    
-    // Reset form
-    setTemplateName("");
-    setSaving(false);
-    setOpen(false);
+  const handleClose = () => {
+    setName('');
+    setDescription('');
+    onClose();
   };
 
   return (
-    <>
-      <Button variant="outline" onClick={() => setOpen(true)}>
-        Save as Template
-      </Button>
-      
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Save Work Order as Template</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label htmlFor="template-name" className="text-sm font-medium">
-                Template Name
-              </label>
-              <Input
-                id="template-name"
-                placeholder="Enter template name"
-                value={templateName}
-                onChange={(e) => setTemplateName(e.target.value)}
-              />
-            </div>
-            
-            <p className="text-sm text-slate-500">
-              This will save the current work order configuration as a template
-              that can be reused for future work orders.
-            </p>
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Save as Template</DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="template-name">Template Name</Label>
+            <Input
+              id="template-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Basic Oil Change Service"
+            />
           </div>
           
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button disabled={saving || !templateName} onClick={handleSave}>
-              {saving ? "Saving..." : "Save Template"}
-            </Button>
+          <div>
+            <Label htmlFor="template-description">Description (Optional)</Label>
+            <Textarea
+              id="template-description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Describe when to use this template"
+              rows={3}
+            />
           </div>
-        </DialogContent>
-      </Dialog>
-    </>
+          
+          <div className="text-sm text-muted-foreground">
+            This will save the current work order's status, priority, assigned technician, location, notes and inventory items as a template.
+          </div>
+        </div>
+        
+        <DialogFooter>
+          <Button variant="outline" onClick={handleClose}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSave} 
+            disabled={saving || !name.trim()}
+          >
+            {saving ? 'Saving...' : 'Save Template'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

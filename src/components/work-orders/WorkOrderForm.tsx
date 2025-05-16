@@ -15,7 +15,7 @@ import { WorkOrderFormHeader } from "@/components/work-orders/WorkOrderFormHeade
 import { WorkOrderSummary } from "@/components/work-orders/fields/WorkOrderSummary";
 import { Separator } from "@/components/ui/separator";
 import { Card } from "@/components/ui/card";
-import { WorkOrderTemplate } from "@/types/workOrder";
+import { WorkOrderTemplate, WorkOrderStatusType, WorkOrderPriorityType } from "@/types/workOrder";
 import { ServicesSection } from "@/components/work-orders/fields/ServicesSection";
 import { ServiceItem } from "@/types/services";
 
@@ -67,8 +67,14 @@ export function WorkOrderForm({
   useEffect(() => {
     if (initialTemplate) {
       form.setValue("description", initialTemplate.description || "");
-      form.setValue("status", initialTemplate.status);
-      form.setValue("priority", initialTemplate.priority);
+      // Handle potential status type differences
+      if (initialTemplate.status && ["pending", "in-progress", "on-hold", "completed", "cancelled"].includes(initialTemplate.status)) {
+        form.setValue("status", initialTemplate.status as WorkOrderStatusType);
+      }
+      // Handle potential priority type differences
+      if (initialTemplate.priority && ["low", "medium", "high"].includes(initialTemplate.priority)) {
+        form.setValue("priority", initialTemplate.priority as WorkOrderPriorityType);
+      }
       form.setValue("notes", initialTemplate.notes || "");
       form.setValue("technician", initialTemplate.technician || "");
       

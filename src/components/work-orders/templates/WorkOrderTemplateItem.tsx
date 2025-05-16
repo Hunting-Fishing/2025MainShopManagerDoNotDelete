@@ -1,51 +1,68 @@
 
-import { Calendar, Clock, Package } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { WorkOrderTemplate } from "@/types/workOrder";
-import { format } from "date-fns";
+import React from 'react';
+import { format } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Clipboard, Clock } from 'lucide-react';
+import { WorkOrderTemplate } from '@/types/workOrder';
 
 interface WorkOrderTemplateItemProps {
   template: WorkOrderTemplate;
-  onSelect: () => void;
+  onApply: (template: WorkOrderTemplate) => void;
 }
 
-export function WorkOrderTemplateItem({ template, onSelect }: WorkOrderTemplateItemProps) {
-  const lastUsedFormatted = template.lastUsed 
-    ? format(new Date(template.lastUsed), "MMM d, yyyy") 
-    : "Never";
-  
-  const itemCount = template.inventoryItems?.length || 0;
-
+export function WorkOrderTemplateItem({ template, onApply }: WorkOrderTemplateItemProps) {
   return (
-    <Card className="hover:bg-gray-50">
+    <Card className="hover:border-blue-300 transition-all">
       <CardContent className="p-4">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <h4 className="font-medium">{template.name}</h4>
-            <p className="text-sm text-gray-500">{template.description}</p>
-            
-            <div className="mt-2 flex flex-wrap gap-3 text-xs text-gray-500">
-              <div className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                <span>Used {template.usageCount} times</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
-                <span>Last used: {lastUsedFormatted}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Package className="h-3 w-3" />
-                <span>{itemCount} items</span>
-              </div>
-            </div>
+        <div className="flex items-start justify-between mb-2">
+          <h3 className="font-medium">{template.name}</h3>
+          <div className="text-xs text-muted-foreground">
+            {template.last_used && (
+              <span className="flex items-center">
+                <Clock className="h-3 w-3 mr-1" />
+                Last used: {format(new Date(template.last_used), 'MMM d, yyyy')}
+              </span>
+            )}
           </div>
-          
-          <Button size="sm" onClick={onSelect}>
-            Use
-          </Button>
+        </div>
+        
+        <p className="text-sm text-muted-foreground mb-3">
+          {template.description || 'No description'}
+        </p>
+        
+        <div className="flex flex-wrap gap-2 mb-3">
+          <span className="text-xs bg-gray-100 rounded-full px-2 py-1">
+            {template.status}
+          </span>
+          {template.priority && (
+            <span className="text-xs bg-gray-100 rounded-full px-2 py-1">
+              {template.priority} priority
+            </span>
+          )}
+          {template.technician && (
+            <span className="text-xs bg-gray-100 rounded-full px-2 py-1">
+              Tech: {template.technician}
+            </span>
+          )}
+          {template.inventory_items && template.inventory_items.length > 0 && (
+            <span className="text-xs bg-gray-100 rounded-full px-2 py-1">
+              {template.inventory_items.length} items
+            </span>
+          )}
         </div>
       </CardContent>
+      
+      <CardFooter className="bg-gray-50 p-3 flex justify-end">
+        <Button 
+          size="sm" 
+          variant="outline"
+          onClick={() => onApply(template)}
+        >
+          <Clipboard className="h-3 w-3 mr-1" />
+          Apply Template
+        </Button>
+      </CardFooter>
     </Card>
   );
 }

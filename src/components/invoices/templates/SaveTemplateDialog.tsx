@@ -11,7 +11,7 @@ export interface SaveTemplateDialogProps {
   open: boolean;
   onClose: () => void;
   invoice: Invoice;
-  onSaveTemplate: (template: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount">) => void;
+  onSaveTemplate: (template: Omit<InvoiceTemplate, "id" | "created_at" | "usage_count">) => void;
 }
 
 export function SaveTemplateDialog({ open, onClose, invoice, onSaveTemplate }: SaveTemplateDialogProps) {
@@ -24,14 +24,14 @@ export function SaveTemplateDialog({ open, onClose, invoice, onSaveTemplate }: S
   const handleSave = () => {
     setSaving(true);
     
-    const template: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount"> = {
+    const template: Omit<InvoiceTemplate, "id" | "created_at" | "usage_count"> = {
       name,
       description,
-      defaultTaxRate: taxRate / 100,
-      defaultDueDateDays: dueDays,
-      defaultNotes: invoice.notes || "",
-      defaultItems: invoice.items,
-      lastUsed: null
+      default_tax_rate: taxRate / 100,
+      default_due_date_days: dueDays,
+      default_notes: invoice.notes || "",
+      default_items: invoice.items,
+      last_used: null
     };
     
     onSaveTemplate(template);

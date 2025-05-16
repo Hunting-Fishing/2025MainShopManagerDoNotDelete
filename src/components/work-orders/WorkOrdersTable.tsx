@@ -90,7 +90,7 @@ export default function WorkOrdersTable({ workOrders }: WorkOrdersTableProps) {
                   {order.location && (
                     <span className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" /> 
-                      {format(new Date(order.date || order.createdAt || new Date()), "MMM d, yyyy")}
+                      {format(new Date(order.date || order.created_at || new Date()), "MMM d, yyyy")}
                     </span>
                   )}
                   {order.technician && (
@@ -99,10 +99,10 @@ export default function WorkOrdersTable({ workOrders }: WorkOrdersTableProps) {
                       {order.technician}
                     </span>
                   )}
-                  {order.totalBillableTime && (
+                  {order.total_billable_time && (
                     <span className="flex items-center gap-1">
                       <Clock className="h-3 w-3" /> 
-                      {Math.floor(order.totalBillableTime / 60)}h {order.totalBillableTime % 60}m
+                      {Math.floor(order.total_billable_time / 60)}h {order.total_billable_time % 60}m
                     </span>
                   )}
                 </div>
@@ -113,16 +113,18 @@ export default function WorkOrdersTable({ workOrders }: WorkOrdersTableProps) {
                   variant="outline" 
                   className={`rounded-full border px-2 py-1 font-medium ${getStatusStyles(order.status)}`}
                 >
-                  {statusMap[order.status as keyof typeof statusMap] || order.status}
+                  {statusMap[order.status] || order.status}
                 </Badge>
               </TableCell>
               <TableCell>
-                {order.dueDate ? format(new Date(order.dueDate), "MMM d, yyyy") : "—"}
+                {(order.dueDate || order.due_date) ? 
+                  format(new Date(order.dueDate || order.due_date || ""), "MMM d, yyyy") : 
+                  "—"}
               </TableCell>
               <TableCell>
                 <Badge 
                   variant="outline" 
-                  className={`rounded-full border text-xs ${priorityMap[order.priority as keyof typeof priorityMap]?.classes || ""}`}
+                  className={`rounded-full border text-xs ${priorityMap[order.priority]?.classes || ""}`}
                 >
                   {order.priority}
                 </Badge>

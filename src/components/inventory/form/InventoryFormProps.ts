@@ -21,7 +21,7 @@ export interface InventoryFormFieldProps {
   type?: string;
   min?: string;
   step?: string;
-  as?: string; // This property is needed for textarea support
+  as?: string; // Added the "as" property for textarea support
 }
 
 export interface SelectOption {

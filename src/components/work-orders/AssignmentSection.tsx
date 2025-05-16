@@ -31,7 +31,10 @@ export const AssignmentSection: React.FC<AssignmentSectionProps> = ({
   // Convert string date to Date object for the calendar
   const getDueDateValue = () => {
     const dateValue = form.watch("dueDate");
-    return dateValue ? new Date(dateValue) : undefined;
+    if (typeof dateValue === 'string') {
+      return new Date(dateValue);
+    }
+    return dateValue as Date;
   };
 
   // Handle date selection and convert back to string
@@ -53,8 +56,8 @@ export const AssignmentSection: React.FC<AssignmentSectionProps> = ({
             <Select
               onValueChange={(value) => {
                 field.onChange(value);
-                // Also set the technician_id for backward compatibility
-                form.setValue("technician_id", value);
+                // Also set the technician for backward compatibility
+                form.setValue("technician", value);
               }}
               defaultValue={field.value}
               disabled={isLoading}
@@ -95,7 +98,12 @@ export const AssignmentSection: React.FC<AssignmentSectionProps> = ({
                     )}
                   >
                     {field.value ? (
-                      format(new Date(field.value), "PPP")
+                      format(
+                        typeof field.value === 'string'
+                          ? new Date(field.value)
+                          : field.value,
+                        "PPP"
+                      )
                     ) : (
                       <span>Select a date</span>
                     )}
@@ -118,4 +126,4 @@ export const AssignmentSection: React.FC<AssignmentSectionProps> = ({
       />
     </>
   );
-};
+}

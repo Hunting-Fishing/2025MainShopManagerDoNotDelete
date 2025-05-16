@@ -1,59 +1,50 @@
 
+import { Customer } from "./customer";
+import { Vehicle } from "./vehicle";
+import { InventoryItem } from "./inventory";
+
 export type WorkOrderStatusType = 
-  | 'pending'
-  | 'in-progress'
-  | 'completed'
-  | 'cancelled'
-  | 'on-hold';
+  | "pending" 
+  | "in-progress" 
+  | "on-hold" 
+  | "completed" 
+  | "cancelled";
+
+export type WorkOrderPriorityType = 
+  | "low" 
+  | "medium" 
+  | "high";
 
 export interface WorkOrder {
   id: string;
+  customer: string;
   customer_id?: string;
   vehicle_id?: string;
-  advisor_id?: string;
-  technician_id?: string;
-  estimated_hours?: number;
-  total_cost?: number;
-  status: WorkOrderStatusType;
   description?: string;
-  service_type?: string;
-  created_by?: string;
-  created_at?: string;
-  updated_at?: string;
-  start_time?: string; 
-  end_time?: string;
-  service_category_id?: string;
-  invoiced_at?: string;
-  invoice_id?: string;
-  vehicle_year?: string | number;
-  // Adding missing fields
-  customer?: string;
-  vehicle_make?: string;
-  vehicle_model?: string;
-  timeEntries?: TimeEntry[];
-  priority?: string;
+  status: WorkOrderStatusType;
+  priority: WorkOrderPriorityType;
   date?: string;
   dueDate?: string;
   due_date?: string;
+  technician?: string;
+  technician_id?: string;
   location?: string;
   notes?: string;
-  technician?: string;
-  total_billable_time?: number;
-  inventory_items?: any[];
-}
-
-export interface WorkOrderTemplate {
-  id: string;
-  name: string;
-  description?: string;
-  status?: WorkOrderStatusType;
-  priority?: string;
-  technician?: string;
-  notes?: string;
-  last_used?: string;
-  usage_count: number;
+  createdAt?: string;
   created_at?: string;
-  location?: string;
+  updatedAt?: string;
+  updated_at?: string;
+  invoice_id?: string;
+  total_cost?: number;
+  estimated_hours?: number;
+  timeEntries?: TimeEntry[];
+  time_entries?: TimeEntry[];
+  totalBillableTime?: number;
+  total_billable_time?: number;
+  inventory_items?: WorkOrderInventoryItem[];
+  inventoryItems?: WorkOrderInventoryItem[];
+  customerData?: Customer;
+  vehicleData?: Vehicle;
 }
 
 export interface TimeEntry {
@@ -63,29 +54,88 @@ export interface TimeEntry {
   employee_name: string;
   start_time: string;
   end_time?: string;
-  duration: number; // in minutes
+  duration: number;
   billable: boolean;
   notes?: string;
+}
+
+export interface WorkOrderInventoryItem {
+  id: string;
+  name: string;
+  sku: string;
+  quantity: number;
+  unit_price: number;
+  category?: string;
+}
+
+export interface WorkOrderTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  status: WorkOrderStatusType;
+  priority?: WorkOrderPriorityType;
+  technician?: string;
+  notes?: string;
+  location?: string;
   created_at?: string;
+  last_used?: string;
+  usage_count?: number;
+  items?: WorkOrderInventoryItem[];
+  inventory_items?: WorkOrderInventoryItem[];
 }
 
-export type WorkOrderUpdater = (workOrder: Partial<WorkOrder>) => Partial<WorkOrder>;
-
-// Define types needed by equipment components
-export type WorkOrderPriorityType = 'low' | 'medium' | 'high' | 'critical';
-export enum WorkOrderTypes {
-  REPAIR = 'repair',
-  MAINTENANCE = 'maintenance',
-  INSPECTION = 'inspection',
-  DIAGNOSTIC = 'diagnostic',
-  OTHER = 'other'
+export interface WorkOrderFormSchemaValues {
+  customer: string;
+  description: string;
+  status: string;
+  priority: string;
+  technician: string;
+  location: string;
+  dueDate: Date | string;
+  notes: string;
+  vehicleMake: string;
+  vehicleModel: string;
+  vehicleYear: string;
+  odometer: string;
+  licensePlate: string;
+  vin: string;
+  inventoryItems?: WorkOrderInventoryItem[];
 }
 
-// Export a statusMap for components that need it
+export interface WorkOrderFormValues {
+  estimated_hours: number;
+  status: WorkOrderStatusType;
+  description: string;
+  service_type: string;
+  customer: string;
+  location: string;
+  notes: string;
+  priority: WorkOrderPriorityType;
+  dueDate: string;
+  technician: string;
+  technician_id: string;
+  inventoryItems: WorkOrderInventoryItem[];
+}
+
 export const statusMap = {
   "pending": "Pending",
   "in-progress": "In Progress",
+  "on-hold": "On Hold",
   "completed": "Completed",
-  "cancelled": "Cancelled",
-  "on-hold": "On Hold"
+  "cancelled": "Cancelled"
+};
+
+export const priorityMap = {
+  "low": {
+    label: "Low",
+    classes: "bg-blue-100 text-blue-800 border-blue-200"
+  },
+  "medium": {
+    label: "Medium",
+    classes: "bg-yellow-100 text-yellow-800 border-yellow-200"
+  },
+  "high": {
+    label: "High",
+    classes: "bg-red-100 text-red-800 border-red-200"
+  }
 };

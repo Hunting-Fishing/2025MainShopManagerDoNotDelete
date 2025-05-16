@@ -31,11 +31,11 @@ export function WorkOrdersExportMenu({ workOrders }: WorkOrdersExportMenuProps) 
       description: order.description || "N/A",
       status: order.status,
       priority: order.priority,
-      date: order.date,
-      dueDate: order.dueDate,
+      date: order.date || order.created_at || new Date().toString(),
+      dueDate: order.dueDate || order.due_date || "N/A",
       technician: order.technician,
       location: order.location || "N/A",
-      billableTime: order.totalBillableTime ? `${order.totalBillableTime} minutes` : "N/A",
+      billableTime: order.total_billable_time ? `${order.total_billable_time} minutes` : "N/A",
     }));
 
     // Define columns for PDF export
