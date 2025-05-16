@@ -1,204 +1,208 @@
 
-import React, { useState, useEffect } from "react";
-import { InventoryFormField } from "./InventoryFormField";
-import { InventoryFormProps } from "./InventoryFormProps";
-import { InventoryFormStatus } from "./InventoryFormStatus";
-import { InventoryFormSelect, SelectOption } from "./InventoryFormSelect";
-import { InventoryFormActions } from "./InventoryFormActions";
+import React, { useState } from 'react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { InventoryItemExtended } from "@/types/inventory";
 
-export function InventoryForm({
-  initialValues,
-  onSubmit,
-  onCancel,
-  isSubmitting = false,
-  title = "Inventory Item"
+export interface InventoryFormProps {
+  initialData?: Partial<InventoryItemExtended>;
+  onSubmit: (formData: Omit<InventoryItemExtended, "id">) => Promise<void> | void;
+  isLoading?: boolean;
+  onCancel: () => void;
+}
+
+export function InventoryForm({ 
+  initialData, 
+  onSubmit, 
+  isLoading = false, 
+  onCancel 
 }: InventoryFormProps) {
-  const [values, setValues] = useState(initialValues || {});
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    if (initialValues) {
-      setValues(initialValues);
+  const [formData, setFormData] = useState<Partial<InventoryItemExtended>>(
+    initialData || {
+      name: '',
+      sku: '',
+      description: '',
+      category: '',
+      supplier: '',
+      location: '',
+      quantity: 0,
+      reorder_point: 5,
+      unit_price: 0,
+      status: 'In Stock'
     }
-  }, [initialValues]);
+  );
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setValues(prev => ({ ...prev, [name]: value }));
-    // Clear error when field is edited
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: "" }));
-    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: Number(value) }));
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    setValues(prev => ({ ...prev, [name]: value }));
-    // Clear error when field is selected
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: "" }));
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-    
-    if (!values.name) {
-      newErrors.name = "Name is required";
-    }
-    
-    if (!values.sku) {
-      newErrors.sku = "SKU is required";
-    }
-    
-    if (!values.category) {
-      newErrors.category = "Category is required";
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (validateForm()) {
-      onSubmit(values);
-    }
+    onSubmit(formData as Omit<InventoryItemExtended, "id">);
   };
-
-  // Calculate status based on quantity and reorder_point
-  const getStatus = (): string => {
-    const quantity = Number(values.quantity) || 0;
-    const reorderPoint = Number(values.reorder_point) || 10;
-    
-    if (quantity <= 0) {
-      return "Out of Stock";
-    } else if (quantity <= reorderPoint) {
-      return "Low Stock";
-    } else {
-      return "In Stock";
-    }
-  };
-
-  const categoryOptions = [
-    "Parts", "Fluids", "Tools", "Accessories", "Electrical", "Engine", 
-    "Suspension", "Brakes", "Filters", "Other"
-  ];
-
-  const supplierOptions = [
-    "AutoZone", "NAPA", "O'Reilly", "Advance Auto Parts", "Dealer", 
-    "Genuine Parts Co.", "Custom", "Other"
-  ];
-
-  const locationOptions = [
-    "Main Storage", "Front Counter", "Back Room", "Mezzanine", 
-    "Tool Cabinet", "Parts Cabinet", "Other"
-  ];
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow-sm border">
+      <h2 className="text-2xl font-bold">{initialData ? 'Edit' : 'Add'} Inventory Item</h2>
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-6">
-          <h2 className="text-2xl font-semibold">{title}</h2>
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+              Item Name *
+            </label>
+            <Input
+              id="name"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+            />
+          </div>
           
-          <InventoryFormField
-            label="Name"
-            name="name"
-            value={values.name || ""}
-            onChange={handleChange}
-            error={errors.name}
-            required
-            placeholder="Enter item name"
-          />
+          <div>
+            <label htmlFor="sku" className="block text-sm font-medium text-gray-700 mb-1">
+              SKU *
+            </label>
+            <Input
+              id="sku"
+              name="sku"
+              value={formData.sku}
+              onChange={handleChange}
+              required
+            />
+          </div>
           
-          <InventoryFormField
-            label="SKU"
-            name="sku"
-            value={values.sku || ""}
-            onChange={handleChange}
-            error={errors.sku}
-            required
-            placeholder="Enter unique SKU"
-          />
+          <div>
+            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+              Category
+            </label>
+            <Select 
+              value={formData.category || ''} 
+              onValueChange={(value) => handleSelectChange('category', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Parts">Parts</SelectItem>
+                <SelectItem value="Fluids">Fluids</SelectItem>
+                <SelectItem value="Tools">Tools</SelectItem>
+                <SelectItem value="Accessories">Accessories</SelectItem>
+                <SelectItem value="Other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           
-          <InventoryFormSelect
-            id="category"
-            label="Category"
-            value={values.category || ""}
-            onValueChange={(value) => handleSelectChange("category", value)}
-            options={categoryOptions}
-            error={errors.category}
-            required
-          />
-          
-          <InventoryFormField
-            label="Description"
-            name="description"
-            value={values.description || ""}
-            onChange={handleChange}
-            placeholder="Enter item description"
-            as="textarea"
-          />
+          <div>
+            <label htmlFor="supplier" className="block text-sm font-medium text-gray-700 mb-1">
+              Supplier
+            </label>
+            <Input
+              id="supplier"
+              name="supplier"
+              value={formData.supplier || ''}
+              onChange={handleChange}
+            />
+          </div>
         </div>
         
-        <div className="space-y-6">
-          <InventoryFormStatus status={values.status || getStatus()} />
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-1">
+              Quantity *
+            </label>
+            <Input
+              id="quantity"
+              name="quantity"
+              type="number"
+              value={formData.quantity}
+              onChange={handleNumberChange}
+              required
+            />
+          </div>
           
-          <InventoryFormField
-            label="Quantity"
-            name="quantity"
-            value={values.quantity?.toString() || "0"}
-            onChange={handleChange}
-            type="number"
-            min="0"
-            step="1"
-          />
+          <div>
+            <label htmlFor="reorder_point" className="block text-sm font-medium text-gray-700 mb-1">
+              Reorder Point
+            </label>
+            <Input
+              id="reorder_point"
+              name="reorder_point"
+              type="number"
+              value={formData.reorder_point}
+              onChange={handleNumberChange}
+            />
+          </div>
           
-          <InventoryFormField
-            label="Reorder Point"
-            name="reorder_point"
-            value={values.reorder_point?.toString() || "10"}
-            onChange={handleChange}
-            type="number"
-            min="0"
-            step="1"
-            description="Item will be marked as 'Low Stock' when quantity falls below this value"
-          />
+          <div>
+            <label htmlFor="unit_price" className="block text-sm font-medium text-gray-700 mb-1">
+              Unit Price *
+            </label>
+            <Input
+              id="unit_price"
+              name="unit_price"
+              type="number"
+              step="0.01"
+              value={formData.unit_price}
+              onChange={handleNumberChange}
+              required
+            />
+          </div>
           
-          <InventoryFormField
-            label="Unit Price"
-            name="unit_price"
-            value={values.unit_price?.toString() || ""}
-            onChange={handleChange}
-            type="number"
-            min="0"
-            step="0.01"
-            placeholder="0.00"
-            description="Cost per unit"
-          />
-          
-          <InventoryFormSelect
-            id="supplier"
-            label="Supplier"
-            value={values.supplier || ""}
-            onValueChange={(value) => handleSelectChange("supplier", value)}
-            options={supplierOptions}
-          />
-          
-          <InventoryFormSelect
-            id="location"
-            label="Storage Location"
-            value={values.location || ""}
-            onValueChange={(value) => handleSelectChange("location", value)}
-            options={locationOptions}
-          />
+          <div>
+            <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
+              Location
+            </label>
+            <Input
+              id="location"
+              name="location"
+              value={formData.location || ''}
+              onChange={handleChange}
+            />
+          </div>
         </div>
       </div>
       
-      <InventoryFormActions 
-        loading={isSubmitting} 
-        onCancel={onCancel}
-      />
+      <div>
+        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+          Description
+        </label>
+        <Textarea
+          id="description"
+          name="description"
+          value={formData.description || ''}
+          onChange={handleChange}
+          rows={3}
+        />
+      </div>
+      
+      <div className="flex justify-end space-x-4 pt-4">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? "Saving..." : (initialData ? "Update" : "Add") + " Item"}
+        </Button>
+      </div>
     </form>
   );
 }

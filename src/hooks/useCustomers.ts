@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Customer } from "@/types/customer";
 import { getAllCustomers } from "@/services/customer/customerQueryService";
@@ -6,6 +5,16 @@ import { useToast } from "@/hooks/use-toast";
 import { checkSupabaseConnection } from "@/lib/supabase";
 import { filterCustomers } from "@/utils/search/customerSearch";
 import { CustomerFilters } from "@/components/customers/filters/CustomerFilterControls";
+
+// Define a proper interface for FilterOptions that matches CustomerFilters
+interface FilterOptions {
+  searchQuery: string;
+  tags: string[];
+  dateRange: {
+    startDate: string;
+    endDate: string;
+  } | null;
+}
 
 export const useCustomers = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -85,7 +94,16 @@ export const useCustomers = () => {
   useEffect(() => {
     if (customers && customers.length > 0) {
       console.log("Filtering customers with filters:", filters);
-      const filtered = filterCustomers(customers, filters);
+      // Convert CustomerFilters to FilterOptions format before passing
+      const filterOptions: FilterOptions = {
+        searchQuery: filters.searchQuery,
+        tags: filters.tags,
+        dateRange: filters.dateRange ? {
+          startDate: filters.dateRange.from?.toString() || '',
+          endDate: filters.dateRange.to?.toString() || ''
+        } : null
+      };
+      const filtered = filterCustomers(customers, filterOptions);
       console.log(`Filtered customers: ${filtered.length} of ${customers.length}`);
       setFilteredCustomers(filtered);
     }

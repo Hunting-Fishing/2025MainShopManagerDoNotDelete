@@ -8,11 +8,11 @@ import { toast } from "@/hooks/use-toast";
 
 export default function InventoryAdd() {
   const navigate = useNavigate();
-  const { createItem, loading } = useInventoryCrud();
+  const { addItem, isLoading } = useInventoryCrud();
 
   const handleSubmit = async (formData: Omit<InventoryItemExtended, "id">) => {
     try {
-      await createItem(formData);
+      await addItem(formData);
       toast({
         variant: "success",
         title: "Success",
@@ -39,7 +39,7 @@ export default function InventoryAdd() {
       <div className="container mx-auto">
         <InventoryForm 
           onSubmit={handleSubmit}
-          loading={loading}
+          isLoading={isLoading}
           onCancel={handleCancel}
         />
       </div>

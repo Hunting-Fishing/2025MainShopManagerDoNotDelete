@@ -21,6 +21,8 @@ export default function Inventory() {
     setStatusFilter,
     supplierFilter,
     setSupplierFilter,
+    locationFilter,
+    setLocationFilter,
     filteredItems,
     error,
   } = useInventoryFilters();
@@ -63,14 +65,18 @@ export default function Inventory() {
 
       {/* Filters and search */}
       <InventoryFilters 
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
+        categories={Array.from(new Set(filteredItems.map(item => item.category))).filter(Boolean) as string[]}
+        statuses={Array.from(new Set(filteredItems.map(item => item.status))).filter(Boolean) as string[]}
+        suppliers={Array.from(new Set(filteredItems.map(item => item.supplier))).filter(Boolean) as string[]}
+        locations={Array.from(new Set(filteredItems.map(item => item.location))).filter(Boolean) as string[]}
         categoryFilter={categoryFilter}
-        setCategoryFilter={setCategoryFilter}
         statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
         supplierFilter={supplierFilter}
+        locationFilter={locationFilter}
+        setCategoryFilter={setCategoryFilter}
+        setStatusFilter={setStatusFilter}
         setSupplierFilter={setSupplierFilter}
+        setLocationFilter={setLocationFilter}
       />
 
       {/* Inventory Items table */}
