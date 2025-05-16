@@ -57,8 +57,7 @@ export function useInventoryForm(initialData?: InventoryItemExtended) {
           serialNumbers: [], 
           itemCondition: "",
           warrantyPeriod: "",
-          notes: "",
-          unitPrice: 0
+          notes: ""
         }
   );
 

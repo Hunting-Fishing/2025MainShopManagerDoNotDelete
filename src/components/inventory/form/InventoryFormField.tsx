@@ -1,44 +1,51 @@
 
-import React from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import React from 'react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { FormErrors } from '@/hooks/inventory/useInventoryFormValidation';
 
-interface InventoryFormFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface InventoryFormFieldProps {
   label: string;
   name: string;
+  type: string;
+  value: string | number;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   error?: string;
+  placeholder?: string;
   required?: boolean;
-  description?: string;
+  min?: number;
+  step?: number;
 }
 
-export function InventoryFormField({
+export const InventoryFormField: React.FC<InventoryFormFieldProps> = ({
   label,
   name,
+  type,
+  value,
+  onChange,
   error,
-  required,
-  description,
-  ...props
-}: InventoryFormFieldProps) {
+  placeholder,
+  required = false,
+  min,
+  step
+}) => {
   return (
     <div className="space-y-2">
-      <Label htmlFor={name} className="flex items-center">
-        {label}
+      <Label htmlFor={name} className="text-sm font-medium">
+        {label} {required && <span className="text-red-500">*</span>}
       </Label>
-      
-      <Input 
+      <Input
         id={name}
         name={name}
+        type={type}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
         className={error ? "border-red-500" : ""}
-        {...props}
+        min={min}
+        step={step}
       />
-      
-      {description && (
-        <p className="text-xs text-muted-foreground">{description}</p>
-      )}
-      
-      {error && (
-        <p className="text-sm text-red-500">{error}</p>
-      )}
+      {error && <p className="text-sm text-red-500">{error}</p>}
     </div>
   );
-}
+};

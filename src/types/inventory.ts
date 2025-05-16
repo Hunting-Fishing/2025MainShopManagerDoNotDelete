@@ -21,4 +21,32 @@ export interface InventoryItemExtended {
   created_at: string;
   updated_at: string;
   description?: string;
+  
+  // Additional fields needed by the components
+  partNumber?: string;
+  barcode?: string;
+  subcategory?: string;
+  manufacturer?: string;
+  vehicleCompatibility?: string;
+  onHold?: number;
+  onOrder?: number;
+  minimumOrder?: number;
+  maximumOrder?: number;
+  cost?: number;
+  marginMarkup?: number;
+  retailPrice?: number;
+  wholesalePrice?: number;
+  specialTax?: number;
+  coreCharge?: number;
+  environmentalFee?: number;
+  freightFee?: number;
+  otherFee?: number;
+  otherFeeDescription?: string;
+  totalQtySold?: number;
+  dateBought?: string;
+  dateLast?: string;
+  serialNumbers?: string[]; 
+  itemCondition?: string;
+  warrantyPeriod?: string;
+  notes?: string;
 }
