@@ -1,112 +1,80 @@
+
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { WorkOrder, TimeEntry } from "@/types/workOrder";
-import { WorkOrderInventoryItems } from "./WorkOrderInventoryItems";
-import { TimeTrackingSection } from "../time-tracking/TimeTrackingSection";
-import { ExtendedWorkOrderInventoryItem } from "@/types/workOrder";
+import { TimeTracking } from "../time-tracking/TimeTracking";
+import { WorkOrderNotes } from "./WorkOrderNotes";
+import { WorkOrderDocuments } from "./WorkOrderDocuments";
+import { WorkOrderHistory } from "./WorkOrderHistory";
+import { WorkOrderInventoryItems } from "../inventory/WorkOrderInventoryItems";
+import { TimeEntry, WorkOrder, WorkOrderInventoryItem } from "@/types/workOrder";
 
 interface WorkOrderDetailsTabsProps {
   workOrder: WorkOrder;
   onUpdateTimeEntries: (entries: TimeEntry[]) => void;
+  onUpdateNotes?: (notes: string) => void;
 }
 
 export const WorkOrderDetailsTabs: React.FC<WorkOrderDetailsTabsProps> = ({
   workOrder,
-  onUpdateTimeEntries
+  onUpdateTimeEntries,
+  onUpdateNotes,
 }) => {
   const [activeTab, setActiveTab] = useState("details");
+
+  // Extract inventory items from work order
+  const inventoryItems = workOrder.inventory_items || workOrder.inventoryItems || [];
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
   };
 
-  // Ensure inventoryItems is defined
-  const inventoryItems = workOrder.inventoryItems || [];
+  const handleUpdateNotes = (notes: string) => {
+    if (onUpdateNotes) {
+      onUpdateNotes(notes);
+    }
+  };
 
   return (
-    <Tabs defaultValue="details" value={activeTab} onValueChange={handleTabChange}>
-      <TabsList>
+    <Tabs
+      defaultValue="details"
+      value={activeTab}
+      onValueChange={handleTabChange}
+      className="w-full"
+    >
+      <TabsList className="grid grid-cols-4 mb-8">
         <TabsTrigger value="details">Details</TabsTrigger>
         <TabsTrigger value="time">Time Tracking</TabsTrigger>
         <TabsTrigger value="inventory">Inventory</TabsTrigger>
         <TabsTrigger value="documents">Documents</TabsTrigger>
-        <TabsTrigger value="communications">Communications</TabsTrigger>
       </TabsList>
 
       <TabsContent value="details">
-        {/* Details content */}
-        <div className="p-4 border rounded-md">
-          <h3 className="font-medium mb-4">Work Order Details</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-slate-500">Customer</p>
-              <p className="font-medium">{workOrder.customer}</p>
-            </div>
-            <div>
-              <p className="text-sm text-slate-500">Status</p>
-              <p className="font-medium">{workOrder.status}</p>
-            </div>
-            <div>
-              <p className="text-sm text-slate-500">Priority</p>
-              <p className="font-medium">{workOrder.priority}</p>
-            </div>
-            <div>
-              <p className="text-sm text-slate-500">Technician</p>
-              <p className="font-medium">{workOrder.technician || "Unassigned"}</p>
-            </div>
-            <div>
-              <p className="text-sm text-slate-500">Due Date</p>
-              <p className="font-medium">{workOrder.due_date}</p>
-            </div>
-            <div>
-              <p className="text-sm text-slate-500">Created</p>
-              <p className="font-medium">{workOrder.created_at}</p>
-            </div>
-          </div>
-          
-          {workOrder.description && (
-            <div className="mt-4">
-              <p className="text-sm text-slate-500">Description</p>
-              <p className="mt-1">{workOrder.description}</p>
-            </div>
-          )}
-          
-          {workOrder.notes && (
-            <div className="mt-4">
-              <p className="text-sm text-slate-500">Notes</p>
-              <p className="mt-1">{workOrder.notes}</p>
-            </div>
-          )}
+        <div className="space-y-8">
+          <WorkOrderNotes
+            notes={workOrder.notes || ""}
+            onUpdateNotes={handleUpdateNotes}
+          />
+          <WorkOrderHistory workOrderId={workOrder.id} />
         </div>
       </TabsContent>
 
       <TabsContent value="time">
-        <TimeTrackingSection 
-          work_order_id={workOrder.id}
-          timeEntries={workOrder.timeEntries || []}
+        <TimeTracking
+          workOrderId={workOrder.id}
+          timeEntries={workOrder.time_entries || []}
           onUpdateTimeEntries={onUpdateTimeEntries}
         />
       </TabsContent>
 
       <TabsContent value="inventory">
-        <WorkOrderInventoryItems 
+        <WorkOrderInventoryItems
           workOrderId={workOrder.id}
-          inventoryItems={inventoryItems as ExtendedWorkOrderInventoryItem[]}
+          inventoryItems={inventoryItems as WorkOrderInventoryItem[]}
         />
       </TabsContent>
 
       <TabsContent value="documents">
-        <div className="p-4 border rounded-md">
-          <h3 className="font-medium mb-4">Documents</h3>
-          <p className="text-muted-foreground">Document management features coming soon.</p>
-        </div>
-      </TabsContent>
-
-      <TabsContent value="communications">
-        <div className="p-4 border rounded-md">
-          <h3 className="font-medium mb-4">Communications</h3>
-          <p className="text-muted-foreground">Communication history will appear here.</p>
-        </div>
+        <WorkOrderDocuments workOrderId={workOrder.id} />
       </TabsContent>
     </Tabs>
   );

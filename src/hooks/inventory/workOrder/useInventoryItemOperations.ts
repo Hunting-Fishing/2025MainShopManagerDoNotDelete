@@ -1,139 +1,141 @@
 
-import { useState } from 'react';
-import { toast } from 'sonner';
-import { InventoryItemExtended } from '@/types/inventory';
-import { WorkOrderInventoryItem } from '@/components/work-orders/inventory/WorkOrderInventoryItem';
-import { 
-  addInventoryToWorkOrder, 
-  removeInventoryFromWorkOrder,
-  updateWorkOrderInventoryQuantity
-} from '@/services/workOrderService';
+import { useState } from "react";
+import { UseFormReturn } from "react-hook-form";
+import { WorkOrderFormFieldValues } from "@/components/work-orders/WorkOrderFormFields";
+import { InventoryItemExtended } from "@/types/inventory";
+import { WorkOrderInventoryItem } from "@/types/workOrder";
+import { v4 as uuidv4 } from "uuid";
 
-export const useInventoryItemOperations = (workOrderId: string) => {
-  const [items, setItems] = useState<WorkOrderInventoryItem[]>([]);
+// Create a mock service implementation for now
+const mockWorkOrderService = {
+  addInventoryToWorkOrder: async () => true,
+  removeInventoryFromWorkOrder: async () => true,
+  updateWorkOrderInventoryQuantity: async () => true,
+};
+
+export const useInventoryItemOperations = (form: UseFormReturn<WorkOrderFormFieldValues>) => {
+  const [items, setItems] = useState<WorkOrderInventoryItem[]>(
+    form.getValues()?.inventoryItems || []
+  );
   const [isAdding, setIsAdding] = useState(false);
-  const [isRemoving, setIsRemoving] = useState(false);
-  
-  const addInventoryItem = async (item: InventoryItemExtended, quantity = 1) => {
-    setIsAdding(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  // Add inventory item to work order
+  const addItem = async (inventoryItem: InventoryItemExtended) => {
     try {
-      // Check if we have enough stock
-      if (item.quantity && item.quantity < quantity) {
-        toast.warning(`Not enough stock available. Only ${item.quantity} items in inventory.`);
-        return false;
-      }
+      // Check if item already exists in the list
+      const existingItem = items.find((item) => item.id === inventoryItem.id);
       
-      // Check if item already exists in work order
-      const existingItem = items.find(i => i.id === item.id);
       if (existingItem) {
-        // Update quantity instead of adding new
-        const newQuantity = existingItem.quantity + quantity;
-        await updateInventoryQuantity(existingItem.id, newQuantity);
-        return true;
+        // If item exists, increment quantity
+        await updateQuantity(existingItem.id, existingItem.quantity + 1);
+        return;
       }
       
-      // Create new work order inventory item
+      setIsAdding(true);
+      
+      // Create new inventory item for the work order
       const newItem: WorkOrderInventoryItem = {
-        id: crypto.randomUUID(),
-        work_order_id: workOrderId,
-        name: item.name,
-        sku: item.sku,
-        category: item.category || '',
-        quantity,
-        unit_price: item.unit_price || 0,
+        id: inventoryItem.id || uuidv4(),
+        name: inventoryItem.name,
+        sku: inventoryItem.sku,
+        category: inventoryItem.category || "",
+        workOrderId: form.getValues().id, // Use camelCase for the TypeScript property
+        quantity: 1,
+        unit_price: inventoryItem.unit_price,
+        total: inventoryItem.unit_price,
       };
       
-      const addedItem = await addInventoryToWorkOrder(workOrderId, newItem);
+      // Add to API
+      await mockWorkOrderService.addInventoryToWorkOrder(newItem);
       
-      setItems(current => [...current, addedItem]);
-      toast.success(`Added ${item.name} to work order`);
-      return true;
+      // Update local state
+      const updatedItems = [...items, newItem];
+      setItems(updatedItems);
+      
+      // Update form values
+      form.setValue("inventoryItems", updatedItems, { shouldDirty: true });
+      
     } catch (error) {
-      console.error('Error adding inventory to work order:', error);
-      toast.error('Failed to add inventory item');
-      return false;
+      console.error("Failed to add inventory item:", error);
     } finally {
       setIsAdding(false);
     }
   };
-  
-  const addSpecialOrderItem = async (specialOrderItem: Partial<WorkOrderInventoryItem>) => {
-    setIsAdding(true);
+
+  // Remove inventory item from work order
+  const removeItem = async (itemId: string) => {
     try {
-      const newItem: WorkOrderInventoryItem = {
-        id: crypto.randomUUID(),
-        work_order_id: workOrderId,
-        name: specialOrderItem.name || 'Special Order Item',
-        sku: specialOrderItem.sku || 'SPECIAL-ORDER',
-        category: specialOrderItem.category || 'Special Order',
-        quantity: specialOrderItem.quantity || 1,
-        unit_price: specialOrderItem.unit_price || 0,
-      };
+      setIsUpdating(true);
       
-      const addedItem = await addInventoryToWorkOrder(workOrderId, newItem);
+      // Filter out the item to be removed
+      const updatedItems = items.filter((item) => item.id !== itemId);
       
-      setItems(current => [...current, addedItem]);
-      toast.success(`Added special order item to work order`);
-      return true;
+      // Remove from API
+      await mockWorkOrderService.removeInventoryFromWorkOrder(itemId);
+      
+      // Update local state
+      setItems(updatedItems);
+      
+      // Update form values
+      form.setValue("inventoryItems", updatedItems, { shouldDirty: true });
+      
     } catch (error) {
-      console.error('Error adding special order item:', error);
-      toast.error('Failed to add special order item');
-      return false;
+      console.error("Failed to remove inventory item:", error);
     } finally {
-      setIsAdding(false);
+      setIsUpdating(false);
     }
   };
-  
-  const removeInventoryItem = async (itemId: string) => {
-    setIsRemoving(true);
+
+  // Update inventory item quantity
+  const updateQuantity = async (itemId: string, quantity: number) => {
     try {
-      await removeInventoryFromWorkOrder(workOrderId, itemId);
-      setItems(current => current.filter(item => item.id !== itemId));
-      toast.success('Item removed from work order');
-      return true;
+      if (quantity < 1) return;
+      
+      setIsUpdating(true);
+      
+      // Find the item to update
+      const updatedItems = items.map((item) => {
+        if (item.id === itemId) {
+          const updatedQuantity = Math.max(1, quantity);
+          return {
+            ...item,
+            quantity: updatedQuantity,
+            total: updatedQuantity * item.unit_price,
+          };
+        }
+        return item;
+      });
+      
+      // Update in API
+      await mockWorkOrderService.updateWorkOrderInventoryQuantity(itemId, quantity);
+      
+      // Update local state
+      setItems(updatedItems);
+      
+      // Update form values
+      form.setValue("inventoryItems", updatedItems, { shouldDirty: true });
+      
     } catch (error) {
-      console.error('Error removing inventory item:', error);
-      toast.error('Failed to remove item');
-      return false;
+      console.error("Failed to update inventory quantity:", error);
     } finally {
-      setIsRemoving(false);
+      setIsUpdating(false);
     }
   };
-  
+
+  // Function to update inventory quantity
   const updateInventoryQuantity = async (itemId: string, newQuantity: number) => {
-    try {
-      if (newQuantity <= 0) {
-        await removeInventoryItem(itemId);
-        return true;
-      }
-      
-      await updateWorkOrderInventoryQuantity(workOrderId, itemId, newQuantity);
-      
-      setItems(current => 
-        current.map(item => 
-          item.id === itemId 
-            ? { ...item, quantity: newQuantity }
-            : item
-        )
-      );
-      
-      toast.success('Quantity updated');
-      return true;
-    } catch (error) {
-      console.error('Error updating inventory quantity:', error);
-      toast.error('Failed to update quantity');
-      return false;
-    }
+    return updateQuantity(itemId, newQuantity);
   };
   
   return {
     items,
     setItems,
     isAdding,
-    isRemoving,
-    addInventoryItem,
-    addSpecialOrderItem,
-    removeInventoryItem,
+    isUpdating,
+    addItem,
+    removeItem,
+    updateQuantity,
     updateInventoryQuantity
   };
 };

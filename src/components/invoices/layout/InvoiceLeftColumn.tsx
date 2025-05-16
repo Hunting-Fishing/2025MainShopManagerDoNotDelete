@@ -1,209 +1,250 @@
-
-import React from 'react';
+import React, { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Invoice, InvoiceItem, InvoiceTemplate } from "@/types/invoice";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import { WorkOrder } from "@/types/workOrder";
-import { InvoiceItemsTable } from "../InvoiceItemsTable";
-import { InvoiceTemplateActions } from "../InvoiceTemplateActions";
-import { WorkOrderSelector } from "../WorkOrderSelector";
-import { InventoryItemSelector } from "../InventoryItemSelector";
-import { InventoryItem } from '@/types/inventory';
+import { Invoice, InvoiceTemplate } from "@/types/invoice";
+import { InventoryItem } from "@/types/inventory";
+import { InventoryItemSelector } from "./InventoryItemSelector";
+import { WorkOrderSelector } from "./WorkOrderSelector";
+import { TemplateSelector } from "./TemplateSelector";
 
-interface InvoiceLeftColumnProps {
+// Define the props interface for the InvoiceLeftColumn component
+export interface InvoiceLeftColumnProps {
   invoice: Invoice;
-  setInvoice: React.Dispatch<React.SetStateAction<Invoice>>;
-  subtotal: number;
-  tax: number;
-  taxRate: number;
-  total: number;
-  handleRemoveItem: (id: string) => void;
-  handleUpdateItemQuantity: (id: string, quantity: number) => void;
-  handleUpdateItemDescription: (id: string, description: string) => void;
-  handleUpdateItemPrice: (id: string, price: number) => void;
-  handleAddLaborItem: () => void;
-  showWorkOrderDialog: boolean;
-  setShowWorkOrderDialog: React.Dispatch<React.SetStateAction<boolean>>;
   workOrders: WorkOrder[];
-  handleSelectWorkOrder: (workOrder: WorkOrder) => void;
-  showInventoryDialog: boolean;
-  setShowInventoryDialog: React.Dispatch<React.SetStateAction<boolean>>;
   inventoryItems: InventoryItem[];
-  handleAddInventoryItem: (item: InvoiceItem) => void;
   templates: InvoiceTemplate[];
-  handleApplyTemplate: (template: InvoiceTemplate) => void;
-  handleSaveTemplate: (template: Omit<InvoiceTemplate, "id" | "created_at" | "usage_count">) => Promise<void>;
+  showWorkOrderDialog: boolean;
+  setShowWorkOrderDialog: (show: boolean) => void;
+  showStaffDialog?: boolean; // Made optional for backward compatibility
+  onWorkOrderSelect: (workOrderId: string) => void;
+  onCustomerChange: (customerId: string) => void;
+  onAddressChange: (address: string) => void;
+  onEmailChange: (email: string) => void;
+  onCustomerNameChange: (name: string) => void;
+  onNotesChange: (notes: string) => void;
+  onAddInventoryItem: (item: InventoryItem) => void;
+  onRemoveInventoryItem: (itemId: string) => void;
+  onUpdateItemQuantity: (itemId: string, quantity: number) => void;
+  onSaveTemplate: (template: Omit<InvoiceTemplate, "id" | "created_at" | "usage_count">) => Promise<void>;
+  onGenerateFromWorkOrder: (workOrderId: string) => void;
 }
 
-export function InvoiceLeftColumn({
+// InvoiceLeftColumn component
+export const InvoiceLeftColumn: React.FC<InvoiceLeftColumnProps> = ({
   invoice,
-  setInvoice,
-  subtotal,
-  tax,
-  taxRate,
-  total,
-  handleRemoveItem,
-  handleUpdateItemQuantity,
-  handleUpdateItemDescription,
-  handleUpdateItemPrice,
-  handleAddLaborItem,
+  workOrders,
+  inventoryItems,
+  templates,
   showWorkOrderDialog,
   setShowWorkOrderDialog,
-  workOrders,
-  handleSelectWorkOrder,
-  showInventoryDialog,
-  setShowInventoryDialog,
-  inventoryItems,
-  handleAddInventoryItem,
-  templates,
-  handleApplyTemplate,
-  handleSaveTemplate
-}: InvoiceLeftColumnProps) {
-  
-  // Handler for updating invoice notes
-  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInvoice(prev => ({
-      ...prev,
-      notes: e.target.value
-    }));
+  onWorkOrderSelect,
+  onCustomerChange,
+  onAddressChange,
+  onEmailChange,
+  onCustomerNameChange,
+  onNotesChange,
+  onAddInventoryItem,
+  onRemoveInventoryItem,
+  onUpdateItemQuantity,
+  onSaveTemplate,
+  onGenerateFromWorkOrder,
+}) => {
+  const [showInventoryDialog, setShowInventoryDialog] = useState(false);
+  const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(
+    invoice.date ? new Date(invoice.date) : undefined
+  );
+  const [selectedDueDate, setSelectedDueDate] = React.useState<
+    Date | undefined
+  >(invoice.due_date ? new Date(invoice.due_date) : undefined);
+
+  const handleDateChange = (date: Date | undefined) => {
+    setSelectedDate(date);
   };
 
-  // Handler for adding a new work order to the invoice
-  const handleSelectWorkOrderForInvoice = (workOrder: WorkOrder) => {
-    // Update invoice customer information if needed
-    if (!invoice.customer || invoice.customer === "New Customer") {
-      setInvoice(prev => ({
-        ...prev,
-        customer: workOrder.customer || "Unknown Customer",
-        work_order_id: workOrder.id
-      }));
-    } else {
-      setInvoice(prev => ({
-        ...prev,
-        work_order_id: workOrder.id
-      }));
-    }
-
-    // Add work order items to invoice if they exist
-    if (workOrder.inventory_items && workOrder.inventory_items.length > 0) {
-      const newItems = workOrder.inventory_items.map(item => ({
-        id: crypto.randomUUID(),
-        name: item.name,
-        description: item.name,
-        quantity: item.quantity,
-        price: item.unit_price,
-        total: item.quantity * item.unit_price,
-        sku: item.sku,
-        category: item.category || 'Parts'
-      }));
-
-      setInvoice(prev => ({
-        ...prev,
-        items: [...prev.items, ...newItems]
-      }));
-    }
-
-    handleSelectWorkOrder(workOrder);
-    setShowWorkOrderDialog(false);
-  };
-
-  // Handler for adding inventory item to invoice
-  const handleAddInventoryItemToInvoice = (item: InventoryItem) => {
-    const newItem: InvoiceItem = {
-      id: crypto.randomUUID(),
-      name: item.name,
-      description: item.description || item.name,
-      quantity: 1,
-      price: item.price || item.unit_price,
-      total: item.price || item.unit_price,
-      sku: item.sku || "",
-      category: item.category || ""
-    };
-
-    handleAddInventoryItem(newItem);
-    setShowInventoryDialog(false);
+  const handleDueDateChange = (date: Date | undefined) => {
+    setSelectedDueDate(date);
   };
 
   return (
-    <div className="w-full space-y-6">
-      {/* Invoice Description */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium">Invoice Items</h3>
-          <InvoiceTemplateActions 
-            invoice={invoice} 
-            taxRate={taxRate} 
-            templates={templates}
-            onSelectTemplate={handleApplyTemplate} 
-            onSaveTemplate={handleSaveTemplate} 
-          />
-        </div>
-        <Separator />
+    <div className="w-1/2 p-4">
+      <h2 className="text-lg font-semibold mb-4">Invoice Details</h2>
+
+      {/* Customer Section */}
+      <div className="mb-4">
+        <Label htmlFor="customer">Customer</Label>
+        <Input
+          type="text"
+          id="customer"
+          value={invoice.customer}
+          onChange={(e) => onCustomerNameChange(e.target.value)}
+          className="mb-2"
+        />
+        <Label htmlFor="customer_address">Address</Label>
+        <Textarea
+          id="customer_address"
+          value={invoice.customer_address || ""}
+          onChange={(e) => onAddressChange(e.target.value)}
+          className="mb-2"
+        />
+        <Label htmlFor="customer_email">Email</Label>
+        <Input
+          type="email"
+          id="customer_email"
+          value={invoice.customer_email || ""}
+          onChange={(e) => onEmailChange(e.target.value)}
+        />
       </div>
 
-      {/* Invoice Items Table */}
-      <InvoiceItemsTable 
-        items={invoice.items} 
-        onRemoveItem={handleRemoveItem}
-        onUpdateItemQuantity={handleUpdateItemQuantity}
-        onUpdateItemDescription={handleUpdateItemDescription}
-        onUpdateItemPrice={handleUpdateItemPrice}
-      />
+      {/* Date Section */}
+      <div className="mb-4">
+        <Label>Date</Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant={"outline"}
+              className={cn(
+                "w-[240px] justify-start text-left font-normal",
+                !selectedDate && "text-muted-foreground"
+              )}
+            >
+              {selectedDate ? (
+                format(selectedDate, "PPP")
+              ) : (
+                <span>Pick a date</span>
+              )}
+              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={handleDateChange}
+              disabled={(date) => date > new Date()}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
 
-      {/* Add Item Actions */}
-      <div className="flex flex-wrap gap-2">
-        <Button 
-          size="sm" 
-          variant="outline" 
-          onClick={() => setShowWorkOrderDialog(true)}
-        >
-          Link Work Order
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => setShowInventoryDialog(true)}
-        >
+      {/* Due Date Section */}
+      <div className="mb-4">
+        <Label>Due Date</Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant={"outline"}
+              className={cn(
+                "w-[240px] justify-start text-left font-normal",
+                !selectedDueDate && "text-muted-foreground"
+              )}
+            >
+              {selectedDueDate ? (
+                format(selectedDueDate, "PPP")
+              ) : (
+                <span>Pick a due date</span>
+              )}
+              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={selectedDueDate}
+              onSelect={handleDueDateChange}
+              disabled={(date) => date < new Date()}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+
+      {/* Notes Section */}
+      <div className="mb-4">
+        <Label htmlFor="notes">Notes</Label>
+        <Textarea
+          id="notes"
+          value={invoice.notes || ""}
+          onChange={(e) => onNotesChange(e.target.value)}
+        />
+      </div>
+
+      {/* Inventory Items Section */}
+      <div className="mb-4">
+        <h3 className="text-md font-semibold mb-2">Inventory Items</h3>
+        <Button onClick={() => setShowInventoryDialog(true)}>
           Add Inventory Item
         </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={handleAddLaborItem}
-        >
-          Add Labor Item
-        </Button>
+        {/* Display added inventory items here */}
       </div>
 
-      {/* Item Selection Dialogs */}
-      <WorkOrderSelector
-        isOpen={showWorkOrderDialog}
-        onClose={() => setShowWorkOrderDialog(false)}
-        onSelectWorkOrder={handleSelectWorkOrderForInvoice}
-        workOrders={workOrders}
-      />
-      
+      {/* Work Order Section */}
+      <div className="mb-4">
+        <h3 className="text-md font-semibold mb-2">Work Order</h3>
+        <Button onClick={() => setShowWorkOrderDialog(true)}>
+          Select Work Order
+        </Button>
+        {/* Display selected work order here */}
+      </div>
+
+      {/* Template Section */}
+      <div>
+        <h3 className="text-md font-semibold mb-2">Template</h3>
+        <Select>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Select a theme" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="light">Light</SelectItem>
+            <SelectItem value="dark">Dark</SelectItem>
+            <SelectItem value="system">System</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Dialogs */}
       <InventoryItemSelector
-        isOpen={showInventoryDialog}
+        open={showInventoryDialog}
         onClose={() => setShowInventoryDialog(false)}
-        onSelect={handleAddInventoryItemToInvoice}
+        onSelect={(item) => {
+          onAddInventoryItem(item);
+          setShowInventoryDialog(false);
+        }}
         inventoryItems={inventoryItems}
         templates={templates}
-        onApplyTemplate={handleApplyTemplate}
+        onApplyTemplate={(template) => {
+          console.log("Applying template:", template);
+        }}
       />
 
-      {/* Footer */}
-      <div className="w-full space-y-6">
-        <div className="px-4 py-6 rounded-lg bg-gray-50">
-          <h3 className="text-sm font-medium mb-2">Invoice Notes</h3>
-          <textarea
-            className="w-full h-24 p-3 border border-gray-300 rounded-md text-sm"
-            placeholder="Add notes to your invoice (terms, payment instructions, etc.)"
-            value={invoice.notes || ""}
-            onChange={handleNotesChange}
-          />
-        </div>
-      </div>
+      <WorkOrderSelector
+        open={showWorkOrderDialog}
+        onClose={() => setShowWorkOrderDialog(false)}
+        workOrders={workOrders}
+        onSelect={(workOrderId) => {
+          onWorkOrderSelect(workOrderId);
+          setShowWorkOrderDialog(false);
+        }}
+      />
     </div>
   );
-}
+};

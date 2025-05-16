@@ -1,71 +1,118 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
 import { TimeEntry } from "@/types/workOrder";
 
 interface TimeEntryFormProps {
-  formData: Partial<TimeEntry>;
-  errors: Record<string, string>;
-  handleChange: (field: keyof TimeEntry, value: any) => void;
-  calculateDuration: () => void;
-  handleSubmit: () => void;
-  handleCancel: () => void;
-  isEditing: boolean;
+  initialData: Partial<TimeEntry>;
+  onSubmit: (data: Partial<TimeEntry>) => void;
+  onCancel: () => void;
 }
 
 export const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
-  formData,
-  errors,
-  handleChange,
-  calculateDuration,
-  handleSubmit,
-  handleCancel,
-  isEditing
+  initialData,
+  onSubmit,
+  onCancel,
 }) => {
+  const [formData, setFormData] = useState<Partial<TimeEntry>>(initialData);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const handleChange = (field: keyof TimeEntry, value: any) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    
+    // Clear error for this field if it exists
+    if (errors[field]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
+
+  const calculateDuration = () => {
+    if (formData.start_time && formData.end_time) {
+      const start = new Date(formData.start_time);
+      const end = new Date(formData.end_time);
+      const durationMs = end.getTime() - start.getTime();
+      const durationMinutes = Math.floor(durationMs / (1000 * 60));
+      
+      handleChange('duration', durationMinutes);
+    }
+  };
+
+  const handleSubmit = () => {
+    const validationErrors: Record<string, string> = {};
+    
+    if (!formData.employee_name) {
+      validationErrors.employee_name = "Employee name is required";
+    }
+    
+    if (!formData.start_time) {
+      validationErrors.start_time = "Start time is required";
+    }
+    
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+    
+    // Calculate duration if end time exists and not already set
+    if (formData.start_time && formData.end_time && !formData.duration) {
+      calculateDuration();
+    }
+    
+    onSubmit(formData);
+  };
+
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="space-y-4 pt-2">
+      <div className="grid grid-cols-1 gap-4">
         <div>
-          <Label htmlFor="employee_name">Employee Name</Label>
+          <Label htmlFor="employee_name">Employee</Label>
           <Input
             id="employee_name"
             value={formData.employee_name || ''}
             onChange={(e) => handleChange('employee_name', e.target.value)}
-            placeholder="Enter employee name"
+            placeholder="Employee Name"
+            className={errors.employee_name ? "border-red-500" : ""}
           />
-          {errors.employee_name && <p className="text-sm text-red-500">{errors.employee_name}</p>}
+          {errors.employee_name && (
+            <p className="text-xs text-red-500 mt-1">{errors.employee_name}</p>
+          )}
         </div>
 
-        <div>
-          <Label htmlFor="start_time">Start Time</Label>
-          <Input
-            id="start_time"
-            type="datetime-local"
-            value={formData.start_time || ''}
-            onChange={(e) => {
-              handleChange('start_time', e.target.value);
-              calculateDuration();
-            }}
-          />
-          {errors.start_time && <p className="text-sm text-red-500">{errors.start_time}</p>}
-        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="start_time">Start Time</Label>
+            <Input
+              id="start_time"
+              type="datetime-local"
+              value={formData.start_time || ''}
+              onChange={(e) => handleChange('start_time', e.target.value)}
+              className={errors.start_time ? "border-red-500" : ""}
+            />
+            {errors.start_time && (
+              <p className="text-xs text-red-500 mt-1">{errors.start_time}</p>
+            )}
+          </div>
 
-        <div>
-          <Label htmlFor="end_time">End Time</Label>
-          <Input
-            id="end_time"
-            type="datetime-local"
-            value={formData.end_time || ''}
-            onChange={(e) => {
-              handleChange('end_time', e.target.value);
-              calculateDuration();
-            }}
-          />
-          {errors.end_time && <p className="text-sm text-red-500">{errors.end_time}</p>}
+          <div>
+            <Label htmlFor="end_time">End Time</Label>
+            <Input
+              id="end_time"
+              type="datetime-local"
+              value={formData.end_time || ''}
+              onChange={(e) => {
+                handleChange('end_time', e.target.value);
+                setTimeout(calculateDuration, 100);
+              }}
+            />
+          </div>
         </div>
 
         <div>
@@ -73,39 +120,39 @@ export const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
           <Input
             id="duration"
             type="number"
-            min="0"
-            value={formData.duration?.toString() || '0'}
-            onChange={(e) => handleChange('duration', parseInt(e.target.value, 10))}
+            value={formData.duration?.toString() || ''}
+            onChange={(e) => handleChange('duration', parseInt(e.target.value))}
+            disabled={!!formData.end_time}
           />
-          {errors.duration && <p className="text-sm text-red-500">{errors.duration}</p>}
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="billable"
+            checked={formData.billable !== false}
+            onCheckedChange={(checked) => handleChange('billable', checked)}
+          />
+          <Label htmlFor="billable">Billable</Label>
+        </div>
+
+        <div>
+          <Label htmlFor="notes">Notes</Label>
+          <Textarea
+            id="notes"
+            value={formData.notes || ''}
+            onChange={(e) => handleChange('notes', e.target.value)}
+            placeholder="Add notes about this time entry"
+            rows={3}
+          />
         </div>
       </div>
 
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="billable"
-          checked={formData.billable !== undefined ? formData.billable : true}
-          onCheckedChange={(checked) => handleChange('billable', !!checked)}
-        />
-        <Label htmlFor="billable">Billable Time</Label>
-      </div>
-
-      <div>
-        <Label htmlFor="notes">Notes</Label>
-        <Textarea
-          id="notes"
-          value={formData.notes || ''}
-          onChange={(e) => handleChange('notes', e.target.value)}
-          placeholder="Add any additional notes about this time entry"
-        />
-      </div>
-
-      <div className="flex justify-end space-x-2">
-        <Button type="button" variant="outline" onClick={handleCancel}>
+      <div className="flex justify-end gap-2 mt-4">
+        <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button onClick={handleSubmit}>
-          {isEditing ? 'Update' : 'Add'} Time Entry
+        <Button type="button" onClick={handleSubmit}>
+          Save
         </Button>
       </div>
     </div>

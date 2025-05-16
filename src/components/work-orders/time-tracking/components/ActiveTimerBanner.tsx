@@ -1,31 +1,42 @@
 
 import React from "react";
+import { Clock, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Pause } from "lucide-react";
 import { TimeEntry } from "@/types/workOrder";
+import { formatTimeInHoursAndMinutes } from "@/utils/workOrderUtils";
 
 interface ActiveTimerBannerProps {
-  activeTimer: TimeEntry;
+  timer: TimeEntry;
   onStopTimer: () => void;
+  currentDuration: number;
 }
 
-export function ActiveTimerBanner({ activeTimer, onStopTimer }: ActiveTimerBannerProps) {
+export const ActiveTimerBanner: React.FC<ActiveTimerBannerProps> = ({
+  timer,
+  onStopTimer,
+  currentDuration,
+}) => {
   return (
-    <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded flex justify-between items-center">
-      <div>
-        <p className="font-medium">Timer Running</p>
-        <p className="text-sm text-slate-500">
-          Started: {new Date(activeTimer.startTime).toLocaleTimeString()}
-        </p>
+    <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 flex justify-between items-center">
+      <div className="flex items-center">
+        <Clock className="h-5 w-5 text-blue-500 mr-2" />
+        <div>
+          <p className="font-medium">Active timer for {timer.employee_name}</p>
+          <p className="text-sm text-gray-600">Started {new Date(timer.start_time).toLocaleTimeString()}</p>
+        </div>
       </div>
-      <Button 
-        variant="destructive" 
-        size="sm" 
-        onClick={onStopTimer}
-      >
-        <Pause className="mr-1 h-4 w-4" />
-        Stop
-      </Button>
+      <div className="flex items-center gap-4">
+        <span className="font-medium text-xl">{formatTimeInHoursAndMinutes(currentDuration)}</span>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onStopTimer}
+          className="flex items-center"
+        >
+          <Pause className="h-4 w-4 mr-1" />
+          Stop
+        </Button>
+      </div>
     </div>
   );
-}
+};

@@ -1,97 +1,163 @@
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
-import { StaffSelector } from "@/components/invoices/StaffSelector";
+import { PlusCircle, UserPlus, XCircle } from "lucide-react";
 import { StaffMember } from "@/types/invoice";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
-interface InvoiceRightColumnProps {
-  invoiceDescription: string;
-  setInvoiceDescription: (description: string) => void;
-  invoiceNotes: string;
-  setInvoiceNotes: (notes: string) => void;
+// Define the props interface for the InvoiceRightColumn component
+export interface InvoiceRightColumnProps {
+  createdBy?: string; // Support both camelCase and snake_case
+  created_by?: string;
+  assignedStaff: StaffMember[];
   staffMembers: StaffMember[];
+  subtotal: number;
+  taxRate: number;
+  tax: number;
+  total: number;
   showStaffDialog: boolean;
   setShowStaffDialog: (show: boolean) => void;
-  handleAddStaffMember: (staff: StaffMember) => void;
-  handleRemoveStaffMember: (staffId: string) => void;
+  onCreatedByChange: (value: any) => void;
+  onAddStaffMember: (staff: StaffMember) => void;
+  onRemoveStaffMember: (staffId: string) => void;
+  onTaxRateChange: (value: number) => void;
 }
 
-export function InvoiceRightColumn({
-  invoiceDescription,
-  setInvoiceDescription,
-  invoiceNotes,
-  setInvoiceNotes,
+// Define the StaffDialog component
+const StaffDialog: React.FC<{
+  open: boolean;
+  onClose: () => void;
+  staffMembers: StaffMember[];
+  onSelect: (staff: StaffMember) => void;
+}> = ({ open, onClose, staffMembers, onSelect }) => {
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Add Staff Member</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          {staffMembers.map((staff) => (
+            <Button
+              key={staff.id}
+              variant="outline"
+              className="justify-start"
+              onClick={() => onSelect(staff)}
+            >
+              {staff.name} ({staff.role || "Technician"})
+            </Button>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// Define the InvoiceRightColumn component
+export const InvoiceRightColumn: React.FC<InvoiceRightColumnProps> = ({
+  // Handle both camelCase and snake_case for backward compatibility
+  createdBy,
+  created_by,
+  assignedStaff,
   staffMembers,
+  subtotal,
+  taxRate,
+  tax,
+  total,
   showStaffDialog,
   setShowStaffDialog,
-  handleAddStaffMember,
-  handleRemoveStaffMember
-}: InvoiceRightColumnProps) {
+  onCreatedByChange,
+  onAddStaffMember,
+  onRemoveStaffMember,
+  onTaxRateChange,
+}) => {
+  // Use either createdBy or created_by, preferring createdBy if both are provided
+  const actualCreatedBy = createdBy !== undefined ? createdBy : created_by;
+  
   return (
-    <Card className="col-span-3">
-      <CardHeader>
-        <CardTitle>Additional Details</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Description */}
-        <div className="space-y-2">
-          <Label htmlFor="description">Description</Label>
-          <Textarea
-            id="description"
-            placeholder="Brief description of the invoice"
-            value={invoiceDescription}
-            onChange={(e) => setInvoiceDescription(e.target.value)}
-          />
-        </div>
-
-        {/* Notes */}
-        <div className="space-y-2">
-          <Label htmlFor="notes">Notes</Label>
-          <Textarea
-            id="notes"
-            placeholder="Additional notes or information"
-            value={invoiceNotes}
-            onChange={(e) => setInvoiceNotes(e.target.value)}
-          />
-        </div>
-
-        {/* Assigned Staff */}
-        <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <Label>Assigned Staff</Label>
-            <Button variant="outline" size="sm" onClick={() => setShowStaffDialog(true)}>
-              Add Staff
-            </Button>
-          </div>
-          <Separator />
-          {staffMembers.length === 0 ? (
-            <p className="text-sm text-slate-500">No staff assigned to this invoice.</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {staffMembers.map((staff) => (
-                <div key={staff.id} className="flex items-center space-x-2 border rounded-full px-3 py-1 text-sm">
-                  <span>{staff.name}</span>
-                  <button onClick={() => handleRemoveStaffMember(staff.id)} className="hover:text-red-500">
-                    &times;
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Staff Selector Dialog */}
-        <StaffSelector
-          isOpen={showStaffDialog}
-          staffMembers={staffMembers}
-          onClose={() => setShowStaffDialog(false)}
-          onAddStaffMember={handleAddStaffMember}
+    <div className="bg-secondary rounded-md p-4 space-y-4">
+      {/* Created By */}
+      <div>
+        <Label htmlFor="createdBy">Created By</Label>
+        <Input
+          id="createdBy"
+          type="text"
+          value={actualCreatedBy || ""}
+          onChange={(e) => onCreatedByChange(e.target.value)}
         />
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* Assigned Staff */}
+      <div>
+        <Label>Assigned Staff</Label>
+        <div className="flex items-center space-x-2 mb-2">
+          {assignedStaff.map((staff) => (
+            <div
+              key={staff.id}
+              className="flex items-center bg-muted rounded-full px-3 py-1 text-sm"
+            >
+              <span>{staff.name}</span>
+              <XCircle
+                className="h-4 w-4 ml-1 cursor-pointer"
+                onClick={() => onRemoveStaffMember(staff.id)}
+              />
+            </div>
+          ))}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowStaffDialog(true)}
+          >
+            <UserPlus className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Subtotal, Tax Rate, Tax, Total */}
+      <div className="space-y-2">
+        <div className="flex justify-between">
+          <span>Subtotal:</span>
+          <span>${subtotal.toFixed(2)}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="taxRate">Tax Rate:</Label>
+          <div className="flex items-center space-x-2">
+            <Input
+              id="taxRate"
+              type="number"
+              value={taxRate.toString()}
+              onChange={(e) => onTaxRateChange(parseFloat(e.target.value))}
+              className="w-20 text-right"
+            />
+            <span>%</span>
+          </div>
+        </div>
+        <div className="flex justify-between">
+          <span>Tax:</span>
+          <span>${tax.toFixed(2)}</span>
+        </div>
+        <div className="flex justify-between font-medium">
+          <span>Total:</span>
+          <span>${total.toFixed(2)}</span>
+        </div>
+      </div>
+
+      {/* Staff Dialog */}
+      <StaffDialog
+        open={showStaffDialog}
+        onClose={() => setShowStaffDialog(false)}
+        staffMembers={staffMembers}
+        onSelect={(staff) => {
+          onAddStaffMember(staff);
+          setShowStaffDialog(false);
+        }}
+      />
+    </div>
   );
-}
+};

@@ -3,8 +3,8 @@ import { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { WorkOrderFormFieldValues } from "@/components/work-orders/WorkOrderFormFields";
 import { InventoryItemExtended } from "@/types/inventory";
-import { useInventoryManager } from "@/hooks/inventory/useInventoryManager";
 import { WorkOrderInventoryItem } from "@/types/workOrder";
+import { useInventoryManager } from "@/hooks/inventory/useInventoryManager";
 import { useInventoryStatusEffects } from "./useInventoryStatusEffects";
 import { useInventoryItemOperations } from "./useInventoryItemOperations";
 
@@ -49,6 +49,13 @@ export const useWorkOrderInventory = (form: UseFormReturn<WorkOrderFormFieldValu
     showInventoryDialog,
     setShowInventoryDialog,
     selectedItems,
+    setSelectedItems,
+    isAdding,
+    isUpdating,
+    items,
+    addItem,
+    removeItem,
+    updateQuantity,
     handleAddItem,
     handleRemoveItem,
     handleUpdateQuantity

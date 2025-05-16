@@ -69,9 +69,9 @@ export const SelectedInventoryTable: React.FC<SelectedInventoryTableProps> = ({
                   </Button>
                 </div>
               </td>
-              <td className="px-4 py-3 text-sm text-right">${item.unitPrice.toFixed(2)}</td>
+              <td className="px-4 py-3 text-sm text-right">${item.unit_price.toFixed(2)}</td>
               <td className="px-4 py-3 text-sm font-medium text-right">
-                ${(item.quantity * item.unitPrice).toFixed(2)}
+                ${(item.quantity * item.unit_price).toFixed(2)}
               </td>
               <td className="px-4 py-3 text-sm text-center">
                 <Button 
