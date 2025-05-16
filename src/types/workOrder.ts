@@ -1,5 +1,4 @@
 
-
 export type WorkOrderStatusType = 'pending' | 'in-progress' | 'completed' | 'cancelled' | 'on-hold';
 export type WorkOrderPriorityType = 'low' | 'medium' | 'high';
 
@@ -121,4 +120,3 @@ export const formatDate = (dateString: string): string => {
     day: 'numeric'
   });
 };
-

@@ -49,3 +49,35 @@ export const formatDate = (date: Date | string, format: 'short' | 'medium' | 'lo
   
   return new Intl.DateTimeFormat('en-US', options).format(dateObj);
 };
+
+/**
+ * Format a phone number to standard format (XXX) XXX-XXXX
+ * @param phoneNumber Phone number to format
+ * @returns Formatted phone number
+ */
+export const formatPhoneNumber = (phoneNumber: string): string => {
+  if (!phoneNumber) return '';
+  
+  // Remove all non-numeric characters
+  const cleaned = phoneNumber.replace(/\D/g, '');
+  
+  // Format the phone number
+  if (cleaned.length === 10) {
+    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+  } else if (cleaned.length === 11 && cleaned[0] === '1') {
+    return `(${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
+  }
+  
+  // Return original if it doesn't match expected formats
+  return phoneNumber;
+};
+
+/**
+ * Clean a phone number to remove all non-numeric characters
+ * @param phoneNumber Phone number to clean
+ * @returns Cleaned phone number (only digits)
+ */
+export const cleanPhoneNumber = (phoneNumber: string): string => {
+  if (!phoneNumber) return '';
+  return phoneNumber.replace(/\D/g, '');
+};

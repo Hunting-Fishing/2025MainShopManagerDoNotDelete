@@ -1,138 +1,99 @@
 
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Invoice } from '@/types/invoice';
-import { formatDate, formatCurrency } from '@/lib/utils';
-import { 
+import React from "react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { MoreHorizontal, Eye, Download, FileEdit } from "lucide-react";
+import { formatCurrency } from "@/utils/formatters";
+import { Invoice } from "@/types/invoice";
+import {
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
-  TableRow
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { File, FileText, ExternalLink, MoreHorizontal } from 'lucide-react';
+  TableRow,
+} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { formatInvoiceNumber } from "@/utils/invoiceUtils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface InvoiceListTableProps {
   invoices: Invoice[];
+  isLoading?: boolean;
 }
 
-export const InvoiceListTable: React.FC<InvoiceListTableProps> = ({ invoices }) => {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'paid':
-        return 'bg-green-100 text-green-800 hover:bg-green-200/50';
-      case 'overdue':
-        return 'bg-red-100 text-red-800 hover:bg-red-200/50';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200/50';
-      case 'draft':
-        return 'bg-gray-100 text-gray-800 hover:bg-gray-200/50';
-      case 'void':
-        return 'bg-slate-100 text-slate-800 hover:bg-slate-200/50';
-      case 'cancelled':
-        return 'bg-rose-100 text-rose-800 hover:bg-rose-200/50';
-      default:
-        return 'bg-blue-100 text-blue-800 hover:bg-blue-200/50';
-    }
-  };
+export function InvoiceListTable({ invoices, isLoading = false }: InvoiceListTableProps) {
+  if (isLoading) {
+    return <InvoiceListSkeleton />;
+  }
 
   if (invoices.length === 0) {
     return (
-      <div className="border rounded-lg p-8 text-center">
-        <div className="flex justify-center mb-4">
-          <FileText className="h-12 w-12 text-gray-300" />
-        </div>
-        <h3 className="text-lg font-medium">No invoices found</h3>
-        <p className="text-sm text-muted-foreground mt-2 mb-6">
-          No invoices match your current filters or there are no invoices created yet.
-        </p>
-        <Link to="/invoices/new">
-          <Button>
-            Create Invoice
-          </Button>
-        </Link>
+      <div className="text-center py-12">
+        <p className="text-slate-500">No invoices found.</p>
       </div>
     );
   }
 
   return (
-    <div className="border rounded-lg overflow-hidden">
-      <Table>
+    <div className="rounded-md border">
+      <Table className="min-w-full">
         <TableHeader>
-          <TableRow>
-            <TableHead>Invoice #</TableHead>
+          <TableRow className="bg-slate-50">
+            <TableHead className="w-[100px]">Invoice #</TableHead>
             <TableHead>Customer</TableHead>
             <TableHead>Date</TableHead>
-            <TableHead>Due Date</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Amount</TableHead>
+            <TableHead className="text-right">Amount</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {invoices.map((invoice) => (
             <TableRow key={invoice.id}>
-              <TableCell>
-                <div className="flex items-center">
-                  <File className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <Link 
-                    to={`/invoices/${invoice.id}`}
-                    className="font-medium hover:underline"
-                  >
-                    {invoice.invoice_number || `INV-${invoice.id.substring(0, 8)}`}
-                  </Link>
-                </div>
-                {invoice.workOrderId && (
-                  <div className="mt-1">
-                    <Link 
-                      to={`/work-orders/${invoice.workOrderId}`}
-                      className="text-xs text-blue-600 hover:underline flex items-center"
-                    >
-                      <span>Work Order</span>
-                      <ExternalLink className="h-3 w-3 ml-1" />
-                    </Link>
-                  </div>
-                )}
+              <TableCell className="font-medium">
+                {invoice.invoice_number || formatInvoiceNumber(invoice.id)}
               </TableCell>
               <TableCell>{invoice.customer}</TableCell>
-              <TableCell>{formatDate(invoice.date || '')}</TableCell>
-              <TableCell>{formatDate(invoice.dueDate || '')}</TableCell>
+              <TableCell>{new Date(invoice.date).toLocaleDateString()}</TableCell>
               <TableCell>
-                <Badge className={getStatusColor(invoice.status)} variant="outline">
-                  {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
-                </Badge>
+                <InvoiceStatusBadge status={invoice.status} />
               </TableCell>
-              <TableCell>{formatCurrency(invoice.total)}</TableCell>
+              <TableCell className="text-right">
+                {formatCurrency(invoice.total || 0)}
+              </TableCell>
               <TableCell className="text-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <span className="sr-only">Open menu</span>
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem>
-                      <Link to={`/invoices/${invoice.id}`} className="w-full">View</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Link to={`/invoices/edit/${invoice.id}`} className="w-full">Edit</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem>Mark as Paid</DropdownMenuItem>
-                    <DropdownMenuItem>Email Invoice</DropdownMenuItem>
-                    <DropdownMenuItem>Print Invoice</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
+                    <Link to={`/invoices/${invoice.id}`}>
+                      <DropdownMenuItem>
+                        <Eye className="h-4 w-4 mr-2" />
+                        View
+                      </DropdownMenuItem>
+                    </Link>
+                    <Link to={`/invoices/${invoice.id}/edit`}>
+                      <DropdownMenuItem>
+                        <FileEdit className="h-4 w-4 mr-2" />
+                        Edit
+                      </DropdownMenuItem>
+                    </Link>
+                    <Link to={`/invoices/${invoice.id}/print`} target="_blank">
+                      <DropdownMenuItem>
+                        <Download className="h-4 w-4 mr-2" />
+                        Print
+                      </DropdownMenuItem>
+                    </Link>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </TableCell>
@@ -142,4 +103,70 @@ export const InvoiceListTable: React.FC<InvoiceListTableProps> = ({ invoices }) 
       </Table>
     </div>
   );
-};
+}
+
+function InvoiceStatusBadge({ status }: { status: string }) {
+  const statusClasses = {
+    draft: "bg-slate-100 text-slate-800 border-slate-200",
+    pending: "bg-amber-100 text-amber-800 border-amber-200",
+    paid: "bg-green-100 text-green-800 border-green-200",
+    overdue: "bg-red-100 text-red-800 border-red-200",
+    cancelled: "bg-slate-100 text-slate-800 border-slate-200",
+    void: "bg-slate-100 text-slate-800 border-slate-200",
+    sent: "bg-blue-100 text-blue-800 border-blue-200",
+  };
+
+  const statusLabels = {
+    draft: "Draft",
+    pending: "Pending",
+    paid: "Paid",
+    overdue: "Overdue",
+    cancelled: "Cancelled",
+    void: "Void",
+    sent: "Sent",
+  };
+
+  const classes = statusClasses[status as keyof typeof statusClasses] || statusClasses.draft;
+  const label = statusLabels[status as keyof typeof statusLabels] || status;
+
+  return (
+    <span
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${classes}`}
+    >
+      {label}
+    </span>
+  );
+}
+
+function InvoiceListSkeleton() {
+  return (
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-slate-50">
+            <TableHead className="w-[100px]">Invoice #</TableHead>
+            <TableHead>Customer</TableHead>
+            <TableHead>Date</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="text-right">Amount</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {Array.from({ length: 5 }).map((_, index) => (
+            <TableRow key={index}>
+              <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+              <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+              <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+              <TableCell><Skeleton className="h-5 w-16 rounded-full" /></TableCell>
+              <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
+              <TableCell className="text-right"><Skeleton className="h-8 w-8 rounded-md ml-auto" /></TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
+export default InvoiceListTable;

@@ -1,44 +1,55 @@
 
-import { Invoice } from "@/types/invoice";
+import { InvoiceItem } from "@/types/invoice";
 
 /**
- * Format an API invoice response to our Invoice type
+ * Calculate the subtotal of an invoice based on its items
+ * @param items Array of invoice items
+ * @returns Subtotal amount
  */
-export const formatApiInvoice = (data: any): Invoice => {
-  if (!data) return {} as Invoice;
+export const calculateSubtotal = (items: InvoiceItem[]): number => {
+  if (!items || !items.length) return 0;
   
-  const invoice: Invoice = {
-    ...data,
-    // Map any missing fields
-    dueDate: data.due_date,
-    paymentMethod: data.payment_method,
-    createdBy: data.created_by,
-    shop_id: data.shop_id || "" // Ensure shop_id is never undefined
-  };
-  
-  return invoice;
+  return items.reduce((acc, item) => {
+    const itemTotal = item.quantity * item.price;
+    return acc + itemTotal;
+  }, 0);
 };
 
 /**
- * Get color class based on invoice status
+ * Calculate tax amount based on subtotal and tax rate
+ * @param subtotal Subtotal amount
+ * @param taxRate Tax rate as decimal (e.g., 0.07 for 7%)
+ * @returns Tax amount
  */
-export const getInvoiceStatusColor = (status: string): string => {
-  switch (status) {
-    case 'paid':
-      return 'bg-green-100 text-green-800';
-    case 'overdue':
-      return 'bg-red-100 text-red-800';
-    case 'pending':
-      return 'bg-yellow-100 text-yellow-800';
-    case 'draft':
-      return 'bg-gray-100 text-gray-800';
-    case 'void':
-      return 'bg-slate-100 text-slate-800';
-    case 'cancelled':
-      return 'bg-rose-100 text-rose-800';
-    case 'sent':
-      return 'bg-blue-100 text-blue-800';
-    default:
-      return 'bg-blue-100 text-blue-800';
+export const calculateTax = (subtotal: number, taxRate: number): number => {
+  return subtotal * taxRate;
+};
+
+/**
+ * Calculate the total amount of an invoice
+ * @param subtotal Subtotal amount
+ * @param tax Tax amount
+ * @returns Total amount
+ */
+export const calculateTotal = (subtotal: number, tax: number): number => {
+  return subtotal + tax;
+};
+
+/**
+ * Format invoice number with proper padding
+ * @param id Base ID for the invoice
+ * @returns Formatted invoice number
+ */
+export const formatInvoiceNumber = (id: string): string => {
+  if (!id) return '';
+  
+  // Extract just the numeric portion if it exists
+  const numericPart = id.match(/\d+/);
+  if (numericPart) {
+    const number = parseInt(numericPart[0], 10);
+    return `INV-${String(number).padStart(6, '0')}`;
   }
+  
+  // If no numeric part, use the whole ID
+  return `INV-${id}`;
 };

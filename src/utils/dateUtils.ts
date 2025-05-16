@@ -1,13 +1,8 @@
 
 /**
- * Date formatting utilities for the application
- */
-
-/**
- * Format date for display
+ * Format a date for display
  */
 export const formatDate = (dateString: string): string => {
-  if (!dateString) return '';
   const date = new Date(dateString);
   return date.toLocaleDateString();
 };
@@ -16,7 +11,6 @@ export const formatDate = (dateString: string): string => {
  * Format time for display
  */
 export const formatTime = (dateString: string): string => {
-  if (!dateString) return '';
   const date = new Date(dateString);
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
@@ -25,8 +19,6 @@ export const formatTime = (dateString: string): string => {
  * Format duration in minutes to a human-readable string
  */
 export const formatTimeInHoursAndMinutes = (minutes: number): string => {
-  if (!minutes && minutes !== 0) return '';
-  
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;
   
@@ -37,4 +29,14 @@ export const formatTimeInHoursAndMinutes = (minutes: number): string => {
   } else {
     return `${hours} ${hours === 1 ? 'hour' : 'hours'} ${mins} mins`;
   }
+};
+
+/**
+ * Convert date and time inputs to a date string
+ */
+export const combineDateAndTime = (date: Date, timeString: string): Date => {
+  const result = new Date(date);
+  const [hours, minutes] = timeString.split(':').map(Number);
+  result.setHours(hours, minutes);
+  return result;
 };

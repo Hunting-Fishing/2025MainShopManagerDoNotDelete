@@ -1,63 +1,88 @@
-import React, { useState } from 'react';
-import { InvoiceListHeader } from './InvoiceListHeader';
-import { InvoiceListTable } from './InvoiceListTable';
-import { InvoiceListExportMenu } from './InvoiceListExportMenu';
-import { InvoiceFilters } from './filters/InvoiceFilters';
-import { InvoiceFilters as InvoiceFiltersType } from '@/types/invoice';
-import { DateRange } from 'react-day-picker';
 
-export const InvoiceList = () => {
+import React, { useState } from "react";
+import { 
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle 
+} from "@/components/ui/card";
+import { InvoiceFilters } from "./InvoiceFilters";
+import { InvoiceListTable } from "./InvoiceListTable";
+import { InvoiceListExportMenu } from "./InvoiceListExportMenu";
+import { Invoice, InvoiceFilters as InvoiceFiltersType } from "@/types/invoice";
+import { filterInvoices } from "@/utils/invoiceFilters";
+
+interface InvoiceListProps {
+  invoices: Invoice[];
+  isLoading?: boolean;
+}
+
+export function InvoiceList({ invoices, isLoading = false }: InvoiceListProps) {
   const [filters, setFilters] = useState<InvoiceFiltersType>({
     status: [],
-    customerName: '',
+    customerName: "",
+    dateRange: { from: null, to: null },
     minAmount: undefined,
-    maxAmount: undefined,
-    dateRange: { from: null, to: null }
+    maxAmount: undefined
   });
 
-  const handleFilterChange = (field: keyof InvoiceFiltersType, value: any) => {
-    setFilters(prevFilters => ({
-      ...prevFilters,
-      [field]: value
-    }));
+  // Apply filters to invoices
+  const filteredInvoices = filterInvoices(invoices, filters);
+
+  // Handle filter changes
+  const handleFilterChange = <K extends keyof InvoiceFiltersType>(
+    field: K, 
+    value: InvoiceFiltersType[K]
+  ) => {
+    setFilters(prev => ({ ...prev, [field]: value }));
   };
 
-  const resetFilters = () => {
+  // Reset all filters
+  const handleResetFilters = () => {
     setFilters({
       status: [],
-      customerName: '',
+      customerName: "",
+      dateRange: { from: null, to: null },
       minAmount: undefined,
-      maxAmount: undefined,
-      dateRange: { from: null, to: null }
+      maxAmount: undefined
     });
   };
-  
-  // Placeholder for actual data
-  const invoices = [];
-  const isLoading = false;
-  
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between">
-        <InvoiceListHeader />
-        <InvoiceListExportMenu />
-      </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-1">
-          <InvoiceFilters 
-            filters={filters} 
+    <Card>
+      <CardHeader>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <CardTitle>Invoices</CardTitle>
+            <CardDescription>
+              {isLoading
+                ? "Loading invoices..."
+                : `${filteredInvoices.length} total invoices`}
+            </CardDescription>
+          </div>
+          {/* Pass invoices prop to InvoiceListExportMenu */}
+          {filteredInvoices.length > 0 && (
+            <InvoiceListExportMenu invoices={filteredInvoices} />
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-6 p-0">
+        <div className="border-b">
+          <InvoiceFilters
+            filters={filters}
             onFilterChange={handleFilterChange}
-            onResetFilters={resetFilters}
+            onResetFilters={handleResetFilters}
+            setFilters={setFilters}
+            resetFilters={handleResetFilters}
           />
         </div>
-        <div className="lg:col-span-3">
-          <InvoiceListTable 
-            invoices={invoices}
-            isLoading={isLoading}
-          />
-        </div>
-      </div>
-    </div>
+        {/* Pass necessary props to InvoiceListTable */}
+        <InvoiceListTable 
+          invoices={filteredInvoices} 
+          isLoading={isLoading} 
+        />
+      </CardContent>
+    </Card>
   );
-};
+}

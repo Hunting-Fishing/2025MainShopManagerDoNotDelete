@@ -1,9 +1,20 @@
 
-import { useState } from 'react';
+import React, { useState } from "react";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { 
+  Form, 
+  FormControl, 
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormMessage 
+} from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+import { DatePicker } from "@/components/ui/date-picker";
 import { 
   Select,
   SelectContent,
@@ -11,178 +22,275 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { WorkOrderInventoryItem } from '@/types/workOrder';
-import { DatePicker } from '@/components/ui/date-picker';
+import { WorkOrderInventoryItem } from "@/types/workOrder";
 
-interface SpecialOrderItemFormProps {
-  onSave: (item: Partial<WorkOrderInventoryItem>) => void;
+const formSchema = z.object({
+  name: z.string().min(1, { message: "Name is required" }),
+  sku: z.string().optional(),
+  category: z.string().optional(),
+  quantity: z.number().min(1, { message: "Quantity must be at least 1" }),
+  unitPrice: z.number().min(0, { message: "Unit price must be zero or positive" }),
+  notes: z.string().optional(),
+  estimatedArrivalDate: z.date().optional(),
+  supplierName: z.string().optional(),
+  itemStatus: z.enum(["in-stock", "ordered", "backordered", "out-of-stock", "special-order"]),
+  supplierOrderRef: z.string().optional()
+});
+
+type FormValues = z.infer<typeof formSchema>;
+
+export interface SpecialOrderItemFormProps {
+  initialData?: Partial<WorkOrderInventoryItem>;
+  suppliers?: string[];
+  onSubmit?: (item: Partial<WorkOrderInventoryItem>) => void;
+  onAdd?: (item: Partial<WorkOrderInventoryItem>) => void;
   onCancel: () => void;
 }
 
-export function SpecialOrderItemForm({ onSave, onCancel }: SpecialOrderItemFormProps) {
-  const [itemName, setItemName] = useState('');
-  const [quantity, setQuantity] = useState(1);
-  const [unitPrice, setUnitPrice] = useState(0);
-  const [notes, setNotes] = useState('');
-  const [category, setCategory] = useState('Parts');
-  const [sku, setSku] = useState('');
-  const [estimatedArrival, setEstimatedArrival] = useState<Date | undefined>();
-  const [supplierName, setSupplierName] = useState('');
-  const [supplierOrderRef, setSupplierOrderRef] = useState('');
-  
-  // Form validation
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  
-  const validate = (): boolean => {
-    const newErrors: Record<string, string> = {};
-    
-    if (!itemName.trim()) newErrors.itemName = 'Item name is required';
-    if (quantity < 1) newErrors.quantity = 'Quantity must be at least 1';
-    if (unitPrice < 0) newErrors.unitPrice = 'Unit price cannot be negative';
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-  
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validate()) return;
-    
-    const newItem: Partial<WorkOrderInventoryItem> = {
-      name: itemName,
-      quantity,
-      unitPrice,
-      notes,
-      category,
-      sku,
-      itemStatus: 'ordered',
-      supplierName,
-      estimatedArrivalDate: estimatedArrival ? estimatedArrival.toISOString() : undefined,
-      supplierOrderRef
+export function SpecialOrderItemForm({
+  initialData,
+  suppliers = [],
+  onSubmit,
+  onAdd,
+  onCancel
+}: SpecialOrderItemFormProps) {
+  const [estimatedArrivalDate, setEstimatedArrivalDate] = useState<Date | undefined>(
+    initialData?.estimatedArrivalDate ? new Date(initialData.estimatedArrivalDate) : undefined
+  );
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: initialData?.name || "",
+      sku: initialData?.sku || "",
+      category: initialData?.category || "",
+      quantity: initialData?.quantity || 1,
+      unitPrice: initialData?.unitPrice || 0,
+      notes: initialData?.notes || "",
+      supplierName: initialData?.supplierName || "",
+      itemStatus: initialData?.itemStatus || "special-order",
+      supplierOrderRef: initialData?.supplierOrderRef || ""
+    }
+  });
+
+  const handleSubmit = (values: FormValues) => {
+    const item: Partial<WorkOrderInventoryItem> = {
+      ...values,
+      estimatedArrivalDate: estimatedArrivalDate?.toISOString(),
+      unitPrice: values.unitPrice
     };
     
-    onSave(newItem);
+    // Use the appropriate callback
+    if (onSubmit) {
+      onSubmit(item);
+    } else if (onAdd) {
+      onAdd(item);
+    }
+  };
+
+  const handleSelectSupplier = (value: string) => {
+    form.setValue("supplierName", value);
+  };
+
+  const handleSelectStatus = (value: string) => {
+    form.setValue("itemStatus", value as "in-stock" | "ordered" | "backordered" | "out-of-stock" | "special-order");
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 p-4">
-      <h3 className="text-lg font-semibold mb-4">Add Special Order Item</h3>
-      
-      <div className="space-y-2">
-        <Label htmlFor="itemName">Item Name*</Label>
-        <Input
-          id="itemName"
-          value={itemName}
-          onChange={(e) => setItemName(e.target.value)}
-          className={errors.itemName ? 'border-red-500' : ''}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Item Name</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="Enter item name" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-        {errors.itemName && <p className="text-sm text-red-500">{errors.itemName}</p>}
-      </div>
-      
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="quantity">Quantity*</Label>
-          <Input
-            id="quantity"
-            type="number"
-            min={1}
-            value={quantity}
-            onChange={(e) => setQuantity(parseInt(e.target.value))}
-            className={errors.quantity ? 'border-red-500' : ''}
-          />
-          {errors.quantity && <p className="text-sm text-red-500">{errors.quantity}</p>}
-        </div>
         
-        <div className="space-y-2">
-          <Label htmlFor="unitPrice">Unit Price ($)*</Label>
-          <Input
-            id="unitPrice"
-            type="number"
-            step="0.01"
-            min={0}
-            value={unitPrice}
-            onChange={(e) => setUnitPrice(parseFloat(e.target.value))}
-            className={errors.unitPrice ? 'border-red-500' : ''}
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="sku"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>SKU</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Enter SKU" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-          {errors.unitPrice && <p className="text-sm text-red-500">{errors.unitPrice}</p>}
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="category">Category</Label>
-          <Select value={category} onValueChange={value => setCategory(value)}>
-            <SelectTrigger id="category">
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Parts">Parts</SelectItem>
-              <SelectItem value="Accessories">Accessories</SelectItem>
-              <SelectItem value="Fluids">Fluids</SelectItem>
-              <SelectItem value="Materials">Materials</SelectItem>
-              <SelectItem value="Other">Other</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="sku">SKU/Part Number</Label>
-          <Input
-            id="sku"
-            value={sku}
-            onChange={(e) => setSku(e.target.value)}
-          />
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="supplier">Supplier Name</Label>
-          <Input
-            id="supplier"
-            value={supplierName}
-            onChange={(e) => setSupplierName(e.target.value)}
+          
+          <FormField
+            control={form.control}
+            name="category"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Category</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Enter category" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
         </div>
         
-        <div className="space-y-2">
-          <Label htmlFor="supplierOrderRef">Order Reference #</Label>
-          <Input
-            id="supplierOrderRef"
-            value={supplierOrderRef}
-            onChange={(e) => setSupplierOrderRef(e.target.value)}
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="quantity"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Quantity</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    {...field} 
+                    onChange={e => field.onChange(parseInt(e.target.value) || 0)}
+                    value={field.value}
+                    min={1}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="unitPrice"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Unit Price</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    step="0.01"
+                    {...field} 
+                    onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                    value={field.value}
+                    min={0}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
         </div>
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="estimatedArrival">Estimated Arrival Date</Label>
-        <DatePicker
-          date={estimatedArrival}
-          onDateChange={setEstimatedArrival}
-          className="w-full"
+        
+        <div>
+          <FormLabel>Estimated Arrival Date</FormLabel>
+          <DatePicker 
+            date={estimatedArrivalDate} 
+            onSelect={setEstimatedArrivalDate}
+          />
+        </div>
+        
+        <FormField
+          control={form.control}
+          name="supplierName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Supplier</FormLabel>
+              <Select
+                value={field.value}
+                onValueChange={handleSelectSupplier}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select supplier" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {suppliers.map(supplier => (
+                    <SelectItem key={supplier} value={supplier}>
+                      {supplier}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="notes">Notes</Label>
-        <Textarea
-          id="notes"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          rows={3}
+        
+        <FormField
+          control={form.control}
+          name="itemStatus"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Status</FormLabel>
+              <Select
+                value={field.value}
+                onValueChange={handleSelectStatus}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="in-stock">In Stock</SelectItem>
+                  <SelectItem value="ordered">Ordered</SelectItem>
+                  <SelectItem value="backordered">Backordered</SelectItem>
+                  <SelectItem value="out-of-stock">Out of Stock</SelectItem>
+                  <SelectItem value="special-order">Special Order</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
-      
-      <div className="flex justify-end space-x-3 pt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit">
-          Add Item
-        </Button>
-      </div>
-    </form>
+        
+        <FormField
+          control={form.control}
+          name="supplierOrderRef"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Supplier Order Reference</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="Order reference number" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="notes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Notes</FormLabel>
+              <FormControl>
+                <Textarea 
+                  {...field} 
+                  placeholder="Enter any additional notes about this item"
+                  rows={3}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit">
+            {initialData?.id ? "Update" : "Add"} Item
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 }
