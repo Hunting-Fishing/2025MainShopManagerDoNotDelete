@@ -1,114 +1,24 @@
 
-// Basic inventory item interface
-export interface InventoryItem {
-  id: string;
-  name: string;
-  sku: string;
-  quantity: number;
-  unit_price: number;
-  price?: number; // For compatibility with invoice components
-  category: string;
-  supplier: string;
-  location?: string;
-  status: string;
-  description?: string;
-  
-  // Additional fields that match what the components are expecting
-  partNumber?: string;
-  barcode?: string;
-  subcategory?: string;
-  manufacturer?: string;
-  vehicleCompatibility?: string;
-  onHold?: number;
-  onOrder?: number;
-  reorder_point?: number;
-  reorderPoint?: number; // Alias for component compatibility
-  minimumOrder?: number;
-  maximumOrder?: number;
-  cost?: number;
-  marginMarkup?: number;
-  retailPrice?: number;
-  wholesalePrice?: number;
-  specialTax?: number;
-  coreCharge?: number;
-  environmentalFee?: number;
-  freightFee?: number;
-  otherFee?: number;
-  otherFeeDescription?: string;
-  totalQtySold?: number;
-  dateBought?: string;
-  dateLast?: string;
-  serialNumbers?: string[];
-  itemCondition?: string;
-  warrantyPeriod?: string;
-  notes?: string;
-  unitPrice?: number; // Alias for unit_price to maintain compatibility
-}
-
-// Extended inventory item with additional fields
-export interface InventoryItemExtended extends InventoryItem {
-  reorder_point: number;
-  reorderPoint?: number; // Alias for component compatibility
-  created_at: string;
-  updated_at: string;
-  shop_id?: string;
-  unitPrice?: number; // Alias for unit_price to maintain compatibility
-}
-
-// Auto reorder settings
+// Add or update missing type definitions for inventory components
 export interface AutoReorderSettings {
   enabled: boolean;
   threshold: number;
   quantity: number;
 }
 
-// For backward compatibility
-export type ReorderSettings = AutoReorderSettings;
-
-// Legacy types needed by the namespace in inventory/index.ts
-export interface InventoryTransaction {
-  id: string;
-  inventory_item_id: string;
-  quantity: number;
-  transaction_type: string;
-  transaction_date: string;
-  reference_id?: string;
-  reference_type?: string;
-  notes?: string;
-  performed_by?: string;
-}
-
-export interface InventoryLocation {
+export interface InventoryItemExtended {
   id: string;
   name: string;
-  type?: string;
+  sku: string;
+  quantity: number;
+  reorder_point: number;
+  unit_price: number;
+  category: string;
+  supplier: string;
+  location?: string;
+  status: string;
+  shop_id?: string;
+  created_at: string;
+  updated_at: string;
   description?: string;
-  parent_id?: string;
-  is_active: boolean;
 }
-
-export interface InventoryCategory {
-  id: string;
-  name: string;
-}
-
-export interface InventorySupplier {
-  id: string;
-  name: string;
-}
-
-export interface InventoryAdjustment {
-  id: string;
-  inventory_item_id: string;
-  quantity: number;
-  adjustment_type: string;
-  notes?: string;
-}
-
-export interface InventoryValuation {
-  total_value: number;
-  average_cost: number;
-  items_count: number;
-}
-
-export type InventoryItemStatus = 'In Stock' | 'Low Stock' | 'Out of Stock' | 'Discontinued' | 'On Order';

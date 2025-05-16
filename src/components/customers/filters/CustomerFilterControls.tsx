@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { DateRange } from 'react-day-picker';
-import { CustomerFilters } from './CustomerFilterControls';
 import { CustomerFilterPanel } from './components/CustomerFilterPanel';
 
 export interface CustomerFilters {

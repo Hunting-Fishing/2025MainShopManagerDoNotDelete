@@ -1,10 +1,3 @@
 
-import { DateRange } from "react-day-picker";
-
-export interface CustomerFilters {
-  searchQuery?: string;
-  tags?: string[];
-  vehicleType?: string;
-  hasVehicles?: string;
-  dateRange?: DateRange;
-}
+// This file reexports items from the CustomerFilterControls.tsx file
+export * from './CustomerFilterControls.tsx';
