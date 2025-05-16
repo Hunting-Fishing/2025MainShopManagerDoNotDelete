@@ -1,161 +1,71 @@
-import React, { createContext, useState, useEffect, useCallback } from 'react';
-import { Notification, NotificationPreferences } from '@/types/notification';
-import { notificationService } from '@/services/notificationService';
-import { NotificationsContextProps } from './types';
-import { defaultPreferences } from './defaultData';
-import {
-  createAddNotificationHandler,
-  createMarkAsReadHandler,
-  createMarkAllAsReadHandler,
-  createClearNotificationHandler,
-  createClearAllNotificationsHandler,
-  createHandleNewNotificationHandler,
-} from './notificationHandlers';
-import {
-  createUpdatePreferencesHandler,
-  createUpdateSubscriptionHandler,
-} from './preferenceHandlers';
-import { supabase } from '@/lib/supabase';
-import { preloadNotificationSounds } from '@/utils/notificationSounds';
 
-export const NotificationsContext = createContext<NotificationsContextProps | undefined>(undefined);
+import React, { createContext, useState, ReactNode } from 'react';
 
-export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  read: boolean;
+  timestamp: Date;
+}
+
+interface NotificationContextType {
+  notifications: Notification[];
+  unreadCount: number;
+  markAsRead: (id: string) => void;
+  markAllAsRead: () => void;
+  addNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void;
+}
+
+export const NotificationsContext = createContext<NotificationContextType>({
+  notifications: [],
+  unreadCount: 0,
+  markAsRead: () => {},
+  markAllAsRead: () => {},
+  addNotification: () => {},
+});
+
+interface NotificationsProviderProps {
+  children: ReactNode;
+}
+
+export const NotificationsProvider: React.FC<NotificationsProviderProps> = ({ children }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [connectionStatus, setConnectionStatus] = useState<boolean>(false);
-  const [preferences, setPreferences] = useState<NotificationPreferences>(defaultPreferences);
-  const [userId, setUserId] = useState<string | null>(null);
-  
-  const unreadCount = notifications.filter(notification => !notification.read).length;
 
-  // Get current user ID on mount
-  useEffect(() => {
-    const getCurrentUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      const currentUserId = data?.user?.id;
-      setUserId(currentUserId);
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  const markAsRead = (id: string) => {
+    setNotifications(prev => 
+      prev.map(notification => 
+        notification.id === id ? { ...notification, read: true } : notification
+      )
+    );
+  };
+
+  const markAllAsRead = () => {
+    setNotifications(prev => 
+      prev.map(notification => ({ ...notification, read: true }))
+    );
+  };
+
+  const addNotification = (newNotification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
+    const notification: Notification = {
+      ...newNotification,
+      id: `notification-${Date.now()}`,
+      timestamp: new Date(),
+      read: false,
     };
-    
-    getCurrentUser();
-    
-    // Listen for authentication changes
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      setUserId(session?.user?.id || null);
-    });
-    
-    // Preload notification sounds
-    preloadNotificationSounds();
-    
-    return () => {
-      authListener?.subscription.unsubscribe();
-    };
-  }, []);
-
-  // Create handlers
-  const handleNewNotification = useCallback(
-    createHandleNewNotificationHandler(preferences, setNotifications),
-    [preferences]
-  );
-  
-  const addNotification = useCallback(
-    async (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
-      const handler = createAddNotificationHandler(setNotifications, preferences);
-      handler(notification);
-      await notificationService.addNotification(notification);
-    },
-    [preferences]
-  );
-  
-  const markAsRead = useCallback(
-    async (id: string) => {
-      await notificationService.markAsRead(id);
-      createMarkAsReadHandler(setNotifications)(id);
-    },
-    []
-  );
-  
-  const markAllAsRead = useCallback(
-    async () => {
-      await notificationService.markAllAsRead();
-      createMarkAllAsReadHandler(setNotifications)();
-    },
-    []
-  );
-  
-  const clearNotification = useCallback(
-    async (id: string) => {
-      await notificationService.clearNotification(id);
-      createClearNotificationHandler(setNotifications)(id);
-    },
-    []
-  );
-  
-  const clearAllNotifications = useCallback(
-    async () => {
-      await notificationService.clearAllNotifications();
-      createClearAllNotificationsHandler(setNotifications)();
-    },
-    []
-  );
-  
-  const updatePreferences = useCallback(
-    createUpdatePreferencesHandler(setPreferences),
-    []
-  );
-  
-  const updateSubscription = useCallback(
-    createUpdateSubscriptionHandler(setPreferences),
-    []
-  );
-
-  // Initialize notification service and set up listeners when user ID changes
-  useEffect(() => {
-    if (!userId) {
-      setNotifications([]);
-      setConnectionStatus(false);
-      return;
-    }
-
-    // Connect to the notification service
-    notificationService.connect(userId);
-    
-    // Set up listener for connection status
-    const unsubscribeStatus = notificationService.onConnectionStatus((status) => {
-      setConnectionStatus(status);
-    });
-    
-    // Set up listener for new notifications
-    const unsubscribeNotifications = notificationService.onNotification((notification) => {
-      handleNewNotification(notification);
-    });
-    
-    // Clean up on unmount or userId change
-    return () => {
-      unsubscribeStatus();
-      unsubscribeNotifications();
-      notificationService.disconnect();
-    };
-  }, [userId, handleNewNotification]);
-
-  const triggerTestNotification = useCallback(() => {
-    notificationService.triggerDemoNotification();
-  }, []);
+    setNotifications(prev => [notification, ...prev]);
+  };
 
   return (
     <NotificationsContext.Provider 
       value={{ 
         notifications, 
-        unreadCount,
-        connectionStatus,
-        preferences,
-        addNotification, 
+        unreadCount, 
         markAsRead, 
-        markAllAsRead,
-        clearNotification,
-        clearAllNotifications,
-        updatePreferences,
-        updateSubscription,
-        triggerTestNotification
+        markAllAsRead, 
+        addNotification 
       }}
     >
       {children}

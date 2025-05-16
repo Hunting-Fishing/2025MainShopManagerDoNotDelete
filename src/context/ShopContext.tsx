@@ -1,27 +1,36 @@
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
-interface ShopContextType {
-  shopId: string | null;
-  setShopId: (id: string) => void;
+interface Shop {
+  id: string;
+  name: string;
 }
 
-const ShopContext = createContext<ShopContextType | undefined>(undefined);
+interface ShopContextProps {
+  currentShop: Shop | null;
+  setCurrentShop: (shop: Shop | null) => void;
+}
 
-export function ShopProvider({ children }: { children: React.ReactNode }) {
-  const [shopId, setShopId] = useState<string | null>(null);
+const ShopContext = createContext<ShopContextProps>({
+  currentShop: null,
+  setCurrentShop: () => {},
+});
+
+export const useShop = () => useContext(ShopContext);
+
+interface ShopProviderProps {
+  children: ReactNode;
+}
+
+export const ShopProvider: React.FC<ShopProviderProps> = ({ children }) => {
+  const [currentShop, setCurrentShop] = useState<Shop | null>({
+    id: '1',
+    name: 'Demo Shop'
+  });
 
   return (
-    <ShopContext.Provider value={{ shopId, setShopId }}>
+    <ShopContext.Provider value={{ currentShop, setCurrentShop }}>
       {children}
     </ShopContext.Provider>
   );
-}
-
-export function useShop() {
-  const context = useContext(ShopContext);
-  if (context === undefined) {
-    throw new Error('useShop must be used within a ShopProvider');
-  }
-  return context;
-}
+};
