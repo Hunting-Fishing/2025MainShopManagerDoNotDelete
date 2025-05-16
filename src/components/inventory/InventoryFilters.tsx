@@ -1,235 +1,247 @@
 
-import React from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Search, SlidersHorizontal, X } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Filter, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface InventoryFiltersProps {
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
+  categories: string[];
+  statuses: string[];
+  suppliers: string[];
+  locations: string[];
   categoryFilter: string[];
-  setCategoryFilter: (categories: string[]) => void;
   statusFilter: string[];
-  setStatusFilter: (statuses: string[]) => void;
   supplierFilter: string;
+  locationFilter: string;
+  setCategoryFilter: (categories: string[]) => void;
+  setStatusFilter: (statuses: string[]) => void;
   setSupplierFilter: (supplier: string) => void;
+  setLocationFilter: (location: string) => void;
 }
 
 export function InventoryFilters({
-  searchQuery,
-  setSearchQuery,
+  categories,
+  statuses,
+  suppliers,
+  locations,
   categoryFilter,
-  setCategoryFilter,
   statusFilter,
-  setStatusFilter,
   supplierFilter,
+  locationFilter,
+  setCategoryFilter,
+  setStatusFilter,
   setSupplierFilter,
+  setLocationFilter
 }: InventoryFiltersProps) {
-  const [filtersVisible, setFiltersVisible] = React.useState(false);
+  const [open, setOpen] = useState(false);
 
-  // Function to remove a category from the filter
-  const removeCategory = (category: string) => {
-    setCategoryFilter(categoryFilter.filter((c) => c !== category));
+  const handleCategoryChange = (category: string) => {
+    if (categoryFilter.includes(category)) {
+      setCategoryFilter(categoryFilter.filter(c => c !== category));
+    } else {
+      setCategoryFilter([...categoryFilter, category]);
+    }
   };
 
-  // Function to remove a status from the filter
-  const removeStatus = (status: string) => {
-    setStatusFilter(statusFilter.filter((s) => s !== status));
+  const handleStatusChange = (status: string) => {
+    if (statusFilter.includes(status)) {
+      setStatusFilter(statusFilter.filter(s => s !== status));
+    } else {
+      setStatusFilter([...statusFilter, status]);
+    }
   };
 
-  // Function to clear all filters
-  const clearAllFilters = () => {
-    setSearchQuery('');
+  const clearFilters = () => {
     setCategoryFilter([]);
     setStatusFilter([]);
-    setSupplierFilter('all');
+    setSupplierFilter('');
+    setLocationFilter('');
   };
 
-  // Check if any filters are active
-  const hasActiveFilters =
-    searchQuery !== '' ||
-    categoryFilter.length > 0 ||
-    statusFilter.length > 0 ||
-    supplierFilter !== 'all';
+  const hasFilters = categoryFilter.length > 0 || statusFilter.length > 0 || supplierFilter || locationFilter;
 
   return (
-    <div className="space-y-4">
-      {/* Search and filter buttons */}
-      <div className="flex flex-col sm:flex-row gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search inventory items..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8"
-          />
-          {searchQuery && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 p-0"
-              onClick={() => setSearchQuery('')}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-        <Button
-          variant={filtersVisible ? 'secondary' : 'outline'}
-          onClick={() => setFiltersVisible(!filtersVisible)}
-          className="gap-1"
-        >
-          <SlidersHorizontal className="h-4 w-4" />
-          Filters
-          {hasActiveFilters && (
-            <Badge variant="secondary" className="ml-1">
-              {categoryFilter.length + statusFilter.length + (supplierFilter !== 'all' ? 1 : 0)}
-            </Badge>
-          )}
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between p-4">
+        <CardTitle className="text-sm font-medium">Filters</CardTitle>
+        <Button variant="ghost" size="sm" onClick={() => setOpen(!open)}>
+          <Filter className="h-4 w-4 mr-2" />
+          {open ? 'Hide' : 'Show'}
         </Button>
-        {hasActiveFilters && (
-          <Button variant="ghost" onClick={clearAllFilters} size="sm">
-            Clear all
-          </Button>
-        )}
-      </div>
+      </CardHeader>
 
-      {/* Filter options */}
-      {filtersVisible && (
-        <div className="bg-muted/40 border rounded-md p-4 grid gap-4 md:grid-cols-3">
-          <div>
-            <label className="text-sm font-medium mb-1.5 block">Category</label>
-            <Select
-              value="placeholder"
-              onValueChange={(value) => {
-                if (value !== 'placeholder' && !categoryFilter.includes(value)) {
-                  setCategoryFilter([...categoryFilter, value]);
-                }
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="placeholder" disabled>
-                  Select category
-                </SelectItem>
-                <SelectItem value="Brakes">Brakes</SelectItem>
-                <SelectItem value="Engine">Engine</SelectItem>
-                <SelectItem value="Suspension">Suspension</SelectItem>
-                <SelectItem value="Electrical">Electrical</SelectItem>
-                <SelectItem value="Body">Body</SelectItem>
-              </SelectContent>
-            </Select>
+      {open && (
+        <CardContent className="p-4 pt-0">
+          {/* Categories */}
+          <div className="space-y-2 mb-4">
+            <Label className="font-medium">Categories</Label>
+            <div className="flex flex-wrap gap-2">
+              {categories.map((category) => (
+                <div key={category} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`category-${category}`}
+                    checked={categoryFilter.includes(category)}
+                    onCheckedChange={() => handleCategoryChange(category)}
+                  />
+                  <Label
+                    htmlFor={`category-${category}`}
+                    className="text-sm font-normal cursor-pointer"
+                  >
+                    {category}
+                  </Label>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div>
-            <label className="text-sm font-medium mb-1.5 block">Status</label>
-            <Select
-              value="placeholder"
-              onValueChange={(value) => {
-                if (value !== 'placeholder' && !statusFilter.includes(value)) {
-                  setStatusFilter([...statusFilter, value]);
-                }
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="placeholder" disabled>
-                  Select status
-                </SelectItem>
-                <SelectItem value="In Stock">In Stock</SelectItem>
-                <SelectItem value="Low Stock">Low Stock</SelectItem>
-                <SelectItem value="Out of Stock">Out of Stock</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* Statuses */}
+          <div className="space-y-2 mb-4">
+            <Label className="font-medium">Status</Label>
+            <div className="flex flex-wrap gap-2">
+              {statuses.map((status) => (
+                <div key={status} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`status-${status}`}
+                    checked={statusFilter.includes(status)}
+                    onCheckedChange={() => handleStatusChange(status)}
+                  />
+                  <Label
+                    htmlFor={`status-${status}`}
+                    className="text-sm font-normal cursor-pointer"
+                  >
+                    {status}
+                  </Label>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div>
-            <label className="text-sm font-medium mb-1.5 block">Supplier</label>
+          {/* Supplier */}
+          <div className="space-y-2 mb-4">
+            <Label htmlFor="supplier" className="font-medium">Supplier</Label>
             <Select
               value={supplierFilter}
-              onValueChange={(value) => setSupplierFilter(value)}
+              onValueChange={setSupplierFilter}
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Select supplier" />
+              <SelectTrigger id="supplier">
+                <SelectValue placeholder="All suppliers" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Suppliers</SelectItem>
-                <SelectItem value="AutoZone">AutoZone</SelectItem>
-                <SelectItem value="NAPA">NAPA</SelectItem>
-                <SelectItem value="O'Reilly">O'Reilly</SelectItem>
-                <SelectItem value="Advance Auto">Advance Auto</SelectItem>
+                <SelectItem value="">All suppliers</SelectItem>
+                {suppliers.map((supplier) => (
+                  <SelectItem key={supplier} value={supplier}>
+                    {supplier}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
-        </div>
+
+          {/* Location */}
+          <div className="space-y-2 mb-4">
+            <Label htmlFor="location" className="font-medium">Location</Label>
+            <Select
+              value={locationFilter}
+              onValueChange={setLocationFilter}
+            >
+              <SelectTrigger id="location">
+                <SelectValue placeholder="All locations" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All locations</SelectItem>
+                {locations.map((location) => (
+                  <SelectItem key={location} value={location}>
+                    {location}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {hasFilters && (
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearFilters}
+              >
+                <X className="h-4 w-4 mr-2" />
+                Clear Filters
+              </Button>
+            </div>
+          )}
+        </CardContent>
       )}
 
-      {/* Active filters display */}
-      {hasActiveFilters && (
-        <div className="flex flex-wrap gap-2">
-          {categoryFilter.map((category) => (
-            <Badge key={category} variant="outline" className="flex items-center gap-1">
-              {category}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => removeCategory(category)}
-                className="h-4 w-4 p-0 ml-1"
+      {/* Active filters preview */}
+      {hasFilters && !open && (
+        <CardContent className="p-4 pt-0">
+          <div className="flex flex-wrap gap-2">
+            {categoryFilter.map((category) => (
+              <Badge
+                key={category}
+                variant="secondary"
+                className="flex items-center gap-1"
               >
-                <X className="h-3 w-3" />
-              </Button>
-            </Badge>
-          ))}
-          {statusFilter.map((status) => (
-            <Badge
-              key={status}
-              variant="outline"
-              className={cn("flex items-center gap-1", {
-                "border-green-200 bg-green-100 text-green-800": status === "In Stock",
-                "border-yellow-200 bg-yellow-100 text-yellow-800": status === "Low Stock",
-                "border-red-200 bg-red-100 text-red-800": status === "Out of Stock",
-              })}
-            >
-              {status}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => removeStatus(status)}
-                className="h-4 w-4 p-0 ml-1"
+                {category}
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => handleCategoryChange(category)}
+                />
+              </Badge>
+            ))}
+            {statusFilter.map((status) => (
+              <Badge
+                key={status}
+                variant="secondary"
+                className="flex items-center gap-1"
               >
-                <X className="h-3 w-3" />
-              </Button>
-            </Badge>
-          ))}
-          {supplierFilter !== 'all' && (
-            <Badge variant="outline" className="flex items-center gap-1">
-              Supplier: {supplierFilter}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSupplierFilter('all')}
-                className="h-4 w-4 p-0 ml-1"
+                {status}
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => handleStatusChange(status)}
+                />
+              </Badge>
+            ))}
+            {supplierFilter && (
+              <Badge
+                variant="secondary"
+                className="flex items-center gap-1"
               >
-                <X className="h-3 w-3" />
-              </Button>
-            </Badge>
-          )}
-        </div>
+                {supplierFilter}
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => setSupplierFilter('')}
+                />
+              </Badge>
+            )}
+            {locationFilter && (
+              <Badge
+                variant="secondary"
+                className="flex items-center gap-1"
+              >
+                {locationFilter}
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => setLocationFilter('')}
+                />
+              </Badge>
+            )}
+          </div>
+        </CardContent>
       )}
-    </div>
+    </Card>
   );
 }

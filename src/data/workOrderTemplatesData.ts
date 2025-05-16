@@ -33,6 +33,9 @@ export const createTemplate = async () => {
     location: '',
     created_at: new Date().toISOString(), // Use snake_case for API compatibility
     usage_count: 0,
-    inventory_items: []
+    inventory_items: [],
+    // Add createdAt for TypeScript compatibility, but don't use in API
+    createdAt: new Date().toISOString(),
+    usageCount: 0
   } as WorkOrderTemplate;
 };

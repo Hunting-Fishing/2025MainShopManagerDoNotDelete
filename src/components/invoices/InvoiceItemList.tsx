@@ -1,101 +1,96 @@
 
-import React from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Trash2 } from 'lucide-react';
-import { InvoiceItem } from '@/types/invoice';
-import { formatCurrency } from '@/utils/formatters';
+import { InvoiceItem } from "@/types/invoice";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Trash } from "lucide-react";
 
 interface InvoiceItemListProps {
   items: InvoiceItem[];
-  onRemoveItem: (id: string) => void;
-  onUpdateQuantity: (id: string, quantity: number) => void;
-  onUpdatePrice: (id: string, price: number) => void;
-  onUpdateDescription: (id: string, description: string) => void;
+  onRemove: (id: string) => void;
+  onQuantityChange: (id: string, quantity: number) => void;
+  onDescriptionChange: (id: string, description: string) => void;
+  onPriceChange: (id: string, price: number) => void;
 }
 
 export function InvoiceItemList({
   items,
-  onRemoveItem,
-  onUpdateQuantity,
-  onUpdatePrice,
-  onUpdateDescription
+  onRemove,
+  onQuantityChange,
+  onDescriptionChange,
+  onPriceChange,
 }: InvoiceItemListProps) {
-  if (!items || items.length === 0) {
-    return (
-      <div className="text-center py-8 border rounded-md bg-slate-50">
-        <p className="text-muted-foreground">No items added yet.</p>
-        <p className="text-sm text-muted-foreground mt-1">
-          Add items from inventory or create a labor entry.
-        </p>
-      </div>
-    );
-  }
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(amount);
+  };
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Item</TableHead>
-          <TableHead className="w-24 text-right">Qty</TableHead>
-          <TableHead className="w-32 text-right">Price</TableHead>
-          <TableHead className="w-32 text-right">Total</TableHead>
-          <TableHead className="w-10"></TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {items.map((item) => (
-          <TableRow key={item.id}>
-            <TableCell>
-              <div>
-                <div className="font-medium">{item.name}</div>
-                <Textarea
-                  className="mt-1 text-sm text-muted-foreground resize-none min-h-[60px]"
-                  value={item.description || ''}
-                  onChange={(e) => onUpdateDescription(item.id, e.target.value)}
-                  placeholder="Add description..."
-                />
-              </div>
-            </TableCell>
-            <TableCell className="text-right">
+    <div className="space-y-4">
+      {items.map((item) => (
+        <div
+          key={item.id}
+          className="border rounded-lg p-4 space-y-3 bg-white dark:bg-slate-900"
+        >
+          <div className="flex justify-between items-start">
+            <div className="font-medium">{item.name}</div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onRemove(item.id)}
+              className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
+            >
+              <Trash className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <Textarea
+            value={item.description || ""}
+            onChange={(e) => onDescriptionChange(item.id, e.target.value)}
+            placeholder="Description..."
+            className="text-sm"
+          />
+          
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-1">
+              <div className="text-xs text-muted-foreground">Quantity</div>
               <Input
                 type="number"
                 min="1"
-                className="w-16 text-right ml-auto"
                 value={item.quantity}
-                onChange={(e) => onUpdateQuantity(item.id, parseInt(e.target.value) || 1)}
+                onChange={(e) => onQuantityChange(item.id, parseInt(e.target.value, 10) || 1)}
+                className="h-8"
               />
-            </TableCell>
-            <TableCell className="text-right">
+            </div>
+            <div className="space-y-1">
+              <div className="text-xs text-muted-foreground">Price</div>
               <Input
                 type="number"
                 min="0"
                 step="0.01"
-                className="w-24 text-right ml-auto"
                 value={item.price}
-                onChange={(e) => onUpdatePrice(item.id, parseFloat(e.target.value) || 0)}
+                onChange={(e) => onPriceChange(item.id, parseFloat(e.target.value) || 0)}
+                className="h-8"
               />
-            </TableCell>
-            <TableCell className="text-right font-medium">
-              {formatCurrency(item.total)}
-            </TableCell>
-            <TableCell>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-destructive"
-                onClick={() => onRemoveItem(item.id)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+            </div>
+            <div className="space-y-1">
+              <div className="text-xs text-muted-foreground">Total</div>
+              <div className="font-medium">
+                {formatCurrency(item.total || item.price * item.quantity)}
+              </div>
+            </div>
+          </div>
+          
+          {item.sku && (
+            <div className="text-xs text-muted-foreground">
+              SKU: {item.sku}
+              {item.category && ` • ${item.category}`}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
   );
 }
-
-export default InvoiceItemList;

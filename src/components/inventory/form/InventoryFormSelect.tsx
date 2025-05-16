@@ -1,21 +1,15 @@
 
-import React from 'react';
-import { Label } from '@/components/ui/label';
-
-export interface SelectOption {
-  value: string;
-  label: string;
-}
+import React from "react";
+import { SelectOption } from "./InventoryFormProps";
 
 interface InventoryFormSelectProps {
   label: string;
   name: string;
   value: string;
   onChange: (name: string, value: string) => void;
-  error?: string;
   options: SelectOption[];
   required?: boolean;
-  placeholder?: string;
+  error?: string;
 }
 
 export const InventoryFormSelect: React.FC<InventoryFormSelectProps> = ({
@@ -23,28 +17,28 @@ export const InventoryFormSelect: React.FC<InventoryFormSelectProps> = ({
   name,
   value,
   onChange,
-  error,
   options,
   required = false,
-  placeholder = "Select an option"
+  error,
 }) => {
-  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    onChange(name, e.target.value);
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    onChange(e.target.name, e.target.value);
   };
 
   return (
     <div className="space-y-2">
-      <Label htmlFor={name} className="text-sm font-medium">
+      <label htmlFor={name} className="text-sm font-medium">
         {label} {required && <span className="text-red-500">*</span>}
-      </Label>
+      </label>
       <select
         id={name}
         name={name}
         value={value}
-        onChange={handleChange}
+        onChange={handleSelectChange}
         className={`w-full border rounded p-2 ${error ? "border-red-500" : "border-gray-300"}`}
+        required={required}
       >
-        <option value="">{placeholder}</option>
+        <option value="">Select {label}</option>
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}

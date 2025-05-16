@@ -7,7 +7,7 @@ import { WorkOrderFormSchemaValues, workOrderFormSchema } from "@/schemas/workOr
 import { toast } from "sonner";
 import { WorkOrder, TimeEntry } from "@/types/workOrder";
 import { updateWorkOrder } from "@/utils/workOrders/crud";
-import { normalizeWorkOrderStatus } from "@/utils/typeAdapters";
+import { normalizeWorkOrderStatus, normalizeWorkOrderData } from "@/utils/workOrders/typeAdapters";
 
 export function useWorkOrderEditForm(workOrder: WorkOrder) {
   const navigate = useNavigate();
@@ -17,6 +17,9 @@ export function useWorkOrderEditForm(workOrder: WorkOrder) {
 
   // Use the normalizer to ensure status is a valid type
   const normalizedStatus = normalizeWorkOrderStatus(workOrder?.status || "pending");
+  
+  // Normalize work order data to handle inconsistent field naming
+  const normalizedWorkOrder = normalizeWorkOrderData(workOrder);
 
   const form = useForm<WorkOrderFormSchemaValues>({
     resolver: zodResolver(workOrderFormSchema),
@@ -30,10 +33,10 @@ export function useWorkOrderEditForm(workOrder: WorkOrder) {
       // Convert string date to Date object for form
       dueDate: workOrder?.dueDate ? new Date(workOrder.dueDate) : new Date(),
       notes: workOrder?.notes || "",
-      // Handle vehicle details with optional chaining
-      vehicleMake: workOrder?.vehicle_make || workOrder?.vehicleMake || "",
-      vehicleModel: workOrder?.vehicle_model || workOrder?.vehicleModel || "",
-      vehicleYear: workOrder?.vehicle_year || "",
+      // Handle vehicle details with proper field normalization
+      vehicleMake: normalizedWorkOrder.vehicleMake || normalizedWorkOrder.vehicle_make || "",
+      vehicleModel: normalizedWorkOrder.vehicleModel || normalizedWorkOrder.vehicle_model || "",
+      vehicleYear: normalizedWorkOrder.vehicleYear || "",
       odometer: workOrder?.odometer || "",
       licensePlate: workOrder?.licensePlate || "",
       vin: workOrder?.vin || "",
@@ -46,7 +49,7 @@ export function useWorkOrderEditForm(workOrder: WorkOrder) {
 
     try {
       // Prepare the data for updating the work order
-      const updatedWorkOrderData: Partial<WorkOrder> = {
+      const updatedWorkOrderData: Partial<WorkOrder> = normalizeWorkOrderData({
         id: workOrder.id,
         customer: data.customer,
         description: data.description,
@@ -58,15 +61,16 @@ export function useWorkOrderEditForm(workOrder: WorkOrder) {
         dueDate: data.dueDate.toISOString().split('T')[0],
         notes: data.notes,
         // Use both snake_case and camelCase for compatibility
-        vehicle_make: data.vehicleMake,
-        vehicle_model: data.vehicleModel,
-        vehicle_year: data.vehicleYear,
         vehicleMake: data.vehicleMake,
+        vehicle_make: data.vehicleMake,
         vehicleModel: data.vehicleModel,
+        vehicle_model: data.vehicleModel,
+        vehicleYear: data.vehicleYear,
+        vehicle_year: data.vehicleYear,
         odometer: data.odometer,
         licensePlate: data.licensePlate,
         vin: data.vin,
-      };
+      });
 
       // Call the updateWorkOrder function
       const updatedWorkOrder = await updateWorkOrder(updatedWorkOrderData);

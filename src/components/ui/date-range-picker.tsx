@@ -7,7 +7,7 @@ import { DateRange } from 'react-day-picker';
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 
-interface DateRangePickerProps {
+export interface DateRangePickerProps {
   value: DateRange;
   onChange: (value: DateRange) => void;
 }
@@ -50,3 +50,6 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
     </div>
   );
 }
+
+// Add DatePickerWithRange for backward compatibility
+export const DatePickerWithRange = DateRangePicker;

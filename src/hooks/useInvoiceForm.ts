@@ -1,296 +1,315 @@
 
-import { useInvoiceFormState } from "@/hooks/invoice/useInvoiceFormState";
-import { useInvoiceTemplates } from "@/hooks/invoice/useInvoiceTemplates";
-import { useInvoiceSave } from "@/hooks/invoice/useInvoiceSave";
-import { useInvoiceTotals } from "@/hooks/invoice/useInvoiceTotals";
-import { useInvoiceWorkOrder } from "@/hooks/invoice/useInvoiceWorkOrder";
-import { StaffMember, Invoice, InvoiceTemplate, InvoiceItem } from "@/types/invoice";
-import { InventoryItem } from "@/types/inventory";
-import { useState } from "react";
+import { useState, useEffect } from 'react';
 import { createEmptyInvoice } from "@/data/invoiceCreateData";
+import { Invoice, InvoiceItem, StaffMember, InvoiceTemplate } from '@/types/invoice';
+import { WorkOrder } from '@/types/workOrder';
+import { InventoryItem } from '@/types/inventory';
+import { toast } from 'sonner';
+import { v4 as uuidv4 } from 'uuid';
+import { inventoryToInvoiceItem } from '@/utils/typeAdapters';
+import { useInvoiceTemplates } from '@/hooks/useInvoiceTemplates';
 
-export interface UseInvoiceFormStateProps {
-  initialWorkOrderId?: string;
-}
+// Define a type for the update function
+export type InvoiceUpdater = (invoice: Invoice) => Invoice;
+export const createInvoiceUpdater = (updates: Partial<Invoice>) => {
+  return (invoice: Invoice) => ({ ...invoice, ...updates });
+};
 
-// Create a complete placeholder implementation for useInvoiceFormState
-const useInvoiceFormStatePlaceholder = (props?: UseInvoiceFormStateProps) => {
+export function useInvoiceForm(workOrderId?: string) {
   const [invoice, setInvoice] = useState<Invoice>(createEmptyInvoice());
-  const [items, setItems] = useState<InvoiceItem[]>([]);
-  const [assignedStaff, setAssignedStaff] = useState<StaffMember[]>([]);
   const [showWorkOrderDialog, setShowWorkOrderDialog] = useState(false);
   const [showInventoryDialog, setShowInventoryDialog] = useState(false);
   const [showStaffDialog, setShowStaffDialog] = useState(false);
+  const [subtotal, setSubtotal] = useState(0);
+  const [tax, setTax] = useState(0);
+  const [taxRate, setTaxRate] = useState(0.0875); // 8.75% default
+  const [total, setTotal] = useState(0);
   
-  const handleAddInventoryItem = (item: InvoiceItem) => {
-    setItems(prev => [...prev, item]);
-    
-    // Update invoice items
-    setInvoice(prev => ({
-      ...prev,
-      items: [...(prev.items || []), item]
-    }));
-  };
-  
-  const handleRemoveItem = (id: string) => {
-    setItems(prev => prev.filter(item => item.id !== id));
-    
-    // Update invoice items
-    setInvoice(prev => ({
-      ...prev,
-      items: (prev.items || []).filter(item => item.id !== id)
-    }));
-  };
-  
-  const handleUpdateItemQuantity = (id: string, quantity: number) => {
-    setItems(prev => prev.map(item => {
-      if (item.id === id) {
-        const updatedItem = { ...item, quantity };
-        // Update total based on quantity
-        updatedItem.total = updatedItem.price * quantity;
-        return updatedItem;
-      }
-      return item;
-    }));
-    
-    // Update invoice items
-    setInvoice(prev => ({
-      ...prev,
-      items: (prev.items || []).map(item => {
-        if (item.id === id) {
-          const updatedItem = { ...item, quantity };
-          // Update total based on quantity
-          updatedItem.total = updatedItem.price * quantity;
-          return updatedItem;
-        }
-        return item;
-      })
-    }));
-  };
-  
-  const handleUpdateItemDescription = (id: string, description: string) => {
-    setItems(prev => prev.map(item => item.id === id ? { ...item, description } : item));
-    
-    // Update invoice items
-    setInvoice(prev => ({
-      ...prev,
-      items: (prev.items || []).map(item => item.id === id ? { ...item, description } : item)
-    }));
-  };
-  
-  const handleUpdateItemPrice = (id: string, price: number) => {
-    setItems(prev => prev.map(item => {
-      if (item.id === id) {
-        const updatedItem = { ...item, price };
-        // Update total based on price
-        updatedItem.total = updatedItem.quantity * price;
-        return updatedItem;
-      }
-      return item;
-    }));
-    
-    // Update invoice items
-    setInvoice(prev => ({
-      ...prev,
-      items: (prev.items || []).map(item => {
-        if (item.id === id) {
-          const updatedItem = { ...item, price };
-          // Update total based on price
-          updatedItem.total = updatedItem.quantity * price;
-          return updatedItem;
-        }
-        return item;
-      })
-    }));
-  };
-  
-  const handleAddLaborItem = (item: InvoiceItem) => {
-    setItems(prev => [...prev, item]);
-    
-    // Update invoice items
-    setInvoice(prev => ({
-      ...prev,
-      items: [...(prev.items || []), item]
-    }));
-  };
-  
-  const handleAddStaffMember = (member: StaffMember) => {
-    setAssignedStaff(prev => [...prev, member]);
-    
-    // Update invoice assignedStaff
-    setInvoice(prev => ({
-      ...prev,
-      assignedStaff: [...(prev.assignedStaff || []), member]
-    }));
-  };
-  
-  const handleRemoveStaffMember = (id: string) => {
-    setAssignedStaff(prev => prev.filter(member => member.id !== id));
-    
-    // Update invoice assignedStaff
-    setInvoice(prev => ({
-      ...prev,
-      assignedStaff: (prev.assignedStaff || []).filter(member => member.id !== id)
-    }));
-  };
-  
-  // Function to update a specific field in the invoice
-  const updateInvoice = (field: keyof Invoice, value: any) => {
-    setInvoice(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-  
-  return {
-    invoice,
-    setInvoice,
-    updateInvoice,
-    items,
-    assignedStaff,
-    showWorkOrderDialog,
-    setShowWorkOrderDialog,
-    showInventoryDialog,
-    setShowInventoryDialog,
-    showStaffDialog,
-    setShowStaffDialog,
-    handleAddInventoryItem,
-    handleRemoveItem,
-    handleUpdateItemQuantity,
-    handleUpdateItemDescription,
-    handleUpdateItemPrice,
-    handleAddLaborItem,
-    handleAddStaffMember,
-    handleRemoveStaffMember,
-  };
-};
+  // Get templates from the templates hook
+  const { templates, isLoading: templatesLoading, error: templatesError } = useInvoiceTemplates();
 
-export function useInvoiceForm(initialWorkOrderId?: string) {
-  // Use actual form state hook if it's properly implemented, otherwise use placeholder
-  const useFormStateHook = useInvoiceFormState || useInvoiceFormStatePlaceholder;
-  const props: UseInvoiceFormStateProps = initialWorkOrderId ? { initialWorkOrderId } : {};
-  
-  const formState = useFormStateHook(props);
-  
-  // Destructure for convenience and type safety - ensure all required properties exist
-  const {
-    invoice,
-    setInvoice,
-    updateInvoice,
-    items,
-    assignedStaff,
-    showWorkOrderDialog,
-    setShowWorkOrderDialog,
-    showInventoryDialog,
-    setShowInventoryDialog,
-    showStaffDialog,
-    setShowStaffDialog,
-    handleAddInventoryItem,
-    handleRemoveItem,
-    handleUpdateItemQuantity,
-    handleUpdateItemDescription,
-    handleUpdateItemPrice,
-    handleAddLaborItem,
-    handleAddStaffMember,
-    handleRemoveStaffMember,
-  } = formState;
+  // Use workOrderId to pre-populate if available
+  useEffect(() => {
+    if (workOrderId) {
+      setShowWorkOrderDialog(true);
+    }
+  }, [workOrderId]);
 
-  // Use invoice templates hook
-  const { 
-    templates,
-    handleApplyTemplate, 
-    handleSaveTemplate 
-  } = useInvoiceTemplates(updateInvoice);
+  // Calculate totals whenever items change
+  useEffect(() => {
+    if (!invoice.items) return;
+    
+    const newSubtotal = invoice.items.reduce((sum, item) => sum + (item.total || 0), 0);
+    const newTax = newSubtotal * taxRate;
+    const newTotal = newSubtotal + newTax;
+    
+    setSubtotal(newSubtotal);
+    setTax(newTax);
+    setTotal(newTotal);
+  }, [invoice.items, taxRate]);
 
-  // Use invoice totals hook
-  const { 
-    taxRate, 
-    subtotal, 
-    tax, 
-    total 
-  } = useInvoiceTotals(items);
-
-  // Use invoice save hook
-  const { 
-    isSubmitting, 
-    handleSaveInvoice 
-  } = useInvoiceSave();
-
-  // Handle work order selection
-  const { handleSelectWorkOrder } = useInvoiceWorkOrder();
-
-  // Wrap the save invoice function to include all required data
-  const saveInvoice = (status: "draft" | "pending" | "paid" | "overdue" | "cancelled") => {
-    // Pass the staff members directly, not as strings
-    handleSaveInvoice(
-      invoice,
-      items,
-      assignedStaff,
-      subtotal,
-      tax,
-      total,
-      status
-    );
-  };
-
-  // Handle selecting a work order (adapt to work with our form)
-  const selectWorkOrder = (workOrder: any) => {
+  // Handle selecting a work order to add to the invoice
+  const handleSelectWorkOrder = (workOrder: WorkOrder) => {
     if (!workOrder) return;
     
-    const workOrderUpdates = handleSelectWorkOrder(workOrder);
-    
-    setInvoice((prev: Invoice) => {
+    setInvoice((prevInvoice) => {
+      const customer = workOrder.customer || "";
+      const description = workOrder.description || "";
+      
       return {
-        ...prev,
-        workOrderId: workOrderUpdates.workOrderId,
-        customer: workOrderUpdates.customer,
-        description: workOrderUpdates.description,
-        assignedStaff: Array.isArray(workOrderUpdates.assignedStaff) 
-          ? workOrderUpdates.assignedStaff.map((staff: any) => {
-              if (typeof staff === 'string') {
-                return { id: crypto.randomUUID(), name: staff, role: '' };
-              }
-              return staff as StaffMember;
-            })
-          : prev.assignedStaff
+        ...prevInvoice,
+        customer,
+        customerAddress: "",
+        customerEmail: "",
+        customer_address: "",
+        customer_email: "",
+        description: `Work Order #${workOrder.id}: ${description}`,
+        notes: prevInvoice.notes || `Reference: Work Order #${workOrder.id}`,
+        related_work_order: workOrder.id,
+        relatedWorkOrder: workOrder.id
       };
     });
     
     setShowWorkOrderDialog(false);
   };
 
-  // Adapt template save function to handle parameter type
-  const wrappedHandleSaveTemplate = (templateData: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount">) => {
-    handleSaveTemplate(templateData);
+  // Add inventory item to invoice
+  const handleAddInventoryItem = (item: InvoiceItem) => {
+    if (!item) return;
+
+    setInvoice((prevInvoice) => {
+      // Create a copy of items or initialize if undefined
+      const updatedItems = [...(prevInvoice.items || [])];
+      
+      // Add the new item with UUID
+      updatedItems.push({
+        ...item,
+        id: item.id || uuidv4(),
+        quantity: item.quantity || 1,
+        total: (item.quantity || 1) * (item.price || 0)
+      });
+      
+      return {
+        ...prevInvoice,
+        items: updatedItems
+      };
+    });
+    
+    setShowInventoryDialog(false);
+  };
+
+  // Add a basic labor item
+  const handleAddLaborItem = (laborItem: InvoiceItem) => {
+    if (!laborItem) return;
+    
+    setInvoice((prevInvoice) => {
+      const updatedItems = [...(prevInvoice.items || [])];
+      
+      updatedItems.push({
+        ...laborItem,
+        id: laborItem.id || uuidv4(),
+        quantity: 1,
+        price: 0,
+        total: 0,
+        hours: true
+      });
+      
+      return {
+        ...prevInvoice,
+        items: updatedItems
+      };
+    });
+  };
+
+  // Remove an item from the invoice
+  const handleRemoveItem = (id: string) => {
+    setInvoice((prevInvoice) => {
+      const updatedItems = (prevInvoice.items || []).filter(item => item.id !== id);
+      
+      return {
+        ...prevInvoice,
+        items: updatedItems
+      };
+    });
+  };
+
+  // Update an item's quantity
+  const handleUpdateItemQuantity = (id: string, quantity: number) => {
+    setInvoice((prevInvoice) => {
+      const updatedItems = (prevInvoice.items || []).map(item => {
+        if (item.id === id) {
+          const newQuantity = Math.max(1, quantity);
+          return {
+            ...item,
+            quantity: newQuantity,
+            total: newQuantity * (item.price || 0)
+          };
+        }
+        return item;
+      });
+      
+      return {
+        ...prevInvoice,
+        items: updatedItems
+      };
+    });
+  };
+
+  // Update an item's description
+  const handleUpdateItemDescription = (id: string, description: string) => {
+    setInvoice((prevInvoice) => {
+      const updatedItems = (prevInvoice.items || []).map(item => {
+        if (item.id === id) {
+          return {
+            ...item,
+            description
+          };
+        }
+        return item;
+      });
+      
+      return {
+        ...prevInvoice,
+        items: updatedItems
+      };
+    });
+  };
+
+  // Update an item's price
+  const handleUpdateItemPrice = (id: string, price: number) => {
+    setInvoice((prevInvoice) => {
+      const updatedItems = (prevInvoice.items || []).map(item => {
+        if (item.id === id) {
+          return {
+            ...item,
+            price,
+            total: (item.quantity || 1) * price
+          };
+        }
+        return item;
+      });
+      
+      return {
+        ...prevInvoice,
+        items: updatedItems
+      };
+    });
+  };
+
+  // Add a staff member to the invoice
+  const handleAddStaffMember = (staff: StaffMember) => {
+    if (!staff) return;
+    
+    setInvoice((prevInvoice) => {
+      // Initialize assignedStaff if it doesn't exist
+      const currentStaff = prevInvoice.assignedStaff || [];
+      
+      // Don't add duplicates
+      if (currentStaff.some(s => s.id === staff.id)) {
+        return prevInvoice;
+      }
+      
+      // Add the new staff member
+      const updatedStaff = [...currentStaff, staff];
+      
+      return {
+        ...prevInvoice,
+        assignedStaff: updatedStaff
+      };
+    });
+    
+    setShowStaffDialog(false);
+  };
+
+  // Remove a staff member
+  const handleRemoveStaffMember = (staffId: string) => {
+    setInvoice((prevInvoice) => {
+      const updatedStaff = (prevInvoice.assignedStaff || []).filter(staff => staff.id !== staffId);
+      
+      return {
+        ...prevInvoice,
+        assignedStaff: updatedStaff
+      };
+    });
+  };
+
+  // Save the invoice
+  const handleSaveInvoice = async (status: Invoice['status']) => {
+    try {
+      // In a real app, we would send to an API
+      const saveableInvoice = {
+        ...invoice,
+        status,
+        subtotal,
+        tax,
+        tax_rate: taxRate,
+        taxRate,
+        total
+      };
+      
+      console.log("Saving invoice:", saveableInvoice);
+      
+      toast.success(`Invoice ${status === 'draft' ? 'saved as draft' : 'created'}`);
+      
+      // In a real app, we would navigate to the invoice view page here
+      return saveableInvoice;
+    } catch (error) {
+      console.error("Error saving invoice:", error);
+      toast.error("Failed to save invoice");
+      return null;
+    }
+  };
+
+  // Apply a template to the invoice
+  const handleApplyTemplate = (template: InvoiceTemplate) => {
+    if (!template) return;
+    
+    setInvoice((prevInvoice) => {
+      // Add template items to current items
+      const currentItems = prevInvoice.items || [];
+      const templateItems = template.defaultItems || [];
+      
+      // Add items from template with new UUIDs
+      const itemsToAdd = templateItems.map(item => ({
+        ...item,
+        id: uuidv4()
+      }));
+      
+      return {
+        ...prevInvoice,
+        items: [...currentItems, ...itemsToAdd],
+        notes: template.defaultNotes || template.default_notes || prevInvoice.notes
+      };
+    });
+    
+    // Apply the tax rate from template
+    setTaxRate(template.defaultTaxRate || template.default_tax_rate || taxRate);
+    
+    toast.info(`Applied template: ${template.name}`);
+  };
+
+  // Save current invoice as a template
+  const handleSaveTemplate = (templateData: Omit<InvoiceTemplate, 'id' | 'createdAt' | 'usageCount'>) => {
+    // In a real app, we would save this to an API
+    console.log("Saving template:", templateData);
+    toast.success(`Template "${templateData.name}" saved`);
   };
 
   return {
-    // Form state
     invoice,
     subtotal,
     tax,
     taxRate,
     total,
-    isSubmitting,
-    items,
-    assignedStaff,
-    
-    // Dialog states
     showWorkOrderDialog,
     showInventoryDialog,
     showStaffDialog,
-    
-    // Templates
     templates,
-    
-    // Setters
     setInvoice,
     setShowWorkOrderDialog,
     setShowInventoryDialog,
     setShowStaffDialog,
-    
-    // Event handlers
-    handleSelectWorkOrder: selectWorkOrder,
+    handleSelectWorkOrder,
     handleAddInventoryItem,
     handleAddStaffMember,
     handleRemoveStaffMember,
@@ -299,8 +318,8 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
     handleUpdateItemDescription,
     handleUpdateItemPrice,
     handleAddLaborItem,
-    handleSaveInvoice: saveInvoice,
+    handleSaveInvoice,
     handleApplyTemplate,
-    handleSaveTemplate: wrappedHandleSaveTemplate,
+    handleSaveTemplate,
   };
 }

@@ -1,129 +1,117 @@
 
-import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { InvoiceFilters as InvoiceFiltersType, InvoiceFiltersProps } from '@/types/invoice';
-import { DatePickerWithRange } from '@/components/ui/date-range-picker';
-import { Checkbox } from '@/components/ui/checkbox';
+import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { DateRange } from "react-day-picker";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-export const InvoiceFilters: React.FC<InvoiceFiltersProps> = ({
-  filters,
-  onFilterChange,
-  onResetFilters
-}) => {
-  const handleStatusChange = (status: string) => {
-    const currentStatuses = [...filters.status];
-    const index = currentStatuses.indexOf(status);
+interface InvoiceFiltersProps {
+  onFilterChange: (filters: any) => void;
+}
+
+export function InvoiceFilters({ onFilterChange }: InvoiceFiltersProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: undefined,
+    to: undefined,
+  });
+  const [status, setStatus] = useState('all');
+  const [customerFilter, setCustomerFilter] = useState('');
+
+  const handleFilterApply = () => {
+    onFilterChange({
+      search: searchQuery,
+      dateRange,
+      status: status === 'all' ? undefined : status,
+      customer: customerFilter || undefined,
+    });
+  };
+
+  const handleReset = () => {
+    setSearchQuery('');
+    setDateRange({ from: undefined, to: undefined });
+    setStatus('all');
+    setCustomerFilter('');
     
-    if (index === -1) {
-      // Add the status
-      currentStatuses.push(status);
-    } else {
-      // Remove the status
-      currentStatuses.splice(index, 1);
-    }
-    
-    onFilterChange('status', currentStatuses);
-  };
-
-  const handleCustomerNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onFilterChange('customerName', e.target.value);
-  };
-
-  const handleMinAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value ? Number(e.target.value) : undefined;
-    onFilterChange('minAmount', value);
-  };
-
-  const handleMaxAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value ? Number(e.target.value) : undefined;
-    onFilterChange('maxAmount', value);
-  };
-
-  const handleDateRangeChange = (range: { from?: Date; to?: Date }) => {
-    onFilterChange('dateRange', range);
+    onFilterChange({});
   };
 
   return (
-    <Card>
+    <Card className="mb-6">
       <CardContent className="pt-6">
-        <div className="space-y-6">
-          <div>
-            <Label className="mb-2 block">Status</Label>
-            <div className="flex flex-wrap gap-2">
-              {['draft', 'sent', 'paid', 'overdue', 'void', 'pending', 'cancelled'].map((status) => (
-                <div key={status} className="flex items-center space-x-2">
-                  <Checkbox 
-                    id={`status-${status}`} 
-                    checked={filters.status.includes(status)}
-                    onCheckedChange={() => handleStatusChange(status)}
-                  />
-                  <label 
-                    htmlFor={`status-${status}`}
-                    className="text-sm capitalize cursor-pointer"
-                  >
-                    {status}
-                  </label>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <Label className="mb-2 block">Date Range</Label>
-            <DatePickerWithRange 
-              date={{
-                from: filters.dateRange.from,
-                to: filters.dateRange.to
-              }}
-              setDate={handleDateRangeChange}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="customerName" className="mb-2 block">Customer Name</Label>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="space-y-2">
+            <Label htmlFor="search">Search</Label>
             <Input
-              id="customerName"
-              value={filters.customerName}
-              onChange={handleCustomerNameChange}
-              placeholder="Search by customer name"
+              id="search"
+              placeholder="Search invoices..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="minAmount" className="mb-2 block">Min Amount</Label>
-              <Input
-                id="minAmount"
-                type="number"
-                value={filters.minAmount || ''}
-                onChange={handleMinAmountChange}
-                placeholder="Min"
-              />
-            </div>
-            <div>
-              <Label htmlFor="maxAmount" className="mb-2 block">Max Amount</Label>
-              <Input
-                id="maxAmount"
-                type="number"
-                value={filters.maxAmount || ''}
-                onChange={handleMaxAmountChange}
-                placeholder="Max"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label>Date Range</Label>
+            <DateRangePicker
+              value={dateRange}
+              onChange={setDateRange}
+            />
           </div>
 
-          <Button 
-            onClick={onResetFilters} 
-            variant="outline" 
-            className="w-full"
-          >
-            Reset Filters
+          <div className="space-y-2">
+            <Label htmlFor="status">Status</Label>
+            <Select
+              value={status}
+              onValueChange={setStatus}
+            >
+              <SelectTrigger id="status">
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Status</SelectLabel>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="overdue">Overdue</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="customer">Customer</Label>
+            <Input
+              id="customer"
+              placeholder="Filter by customer..."
+              value={customerFilter}
+              onChange={(e) => setCustomerFilter(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end mt-4 space-x-2">
+          <Button variant="outline" onClick={handleReset}>
+            Reset
+          </Button>
+          <Button onClick={handleFilterApply}>
+            Apply Filters
           </Button>
         </div>
       </CardContent>
     </Card>
   );
-};
+}
