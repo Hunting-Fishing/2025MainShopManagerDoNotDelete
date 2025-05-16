@@ -1,5 +1,5 @@
 
-import { WorkOrder } from './workOrder';
+import { Customer } from "./customer";
 
 export interface Invoice {
   id: string;
@@ -10,20 +10,17 @@ export interface Invoice {
   description?: string;
   notes?: string;
   date: string;
-  due_date: string; // Snake case for consistency
-  status: 'pending' | 'cancelled' | 'draft' | 'paid' | 'overdue';
+  due_date: string;
+  status: string;
   subtotal?: number;
   tax?: number;
   total?: number;
-  work_order_id?: string; // ID reference to related work order
+  work_order_id?: string;
   created_by?: string;
   payment_method?: string;
-  last_updated_by?: string;
-  last_updated_at?: string;
+  items: InvoiceItem[];
+  customerData?: Customer;
   created_at?: string;
-  items?: InvoiceItem[]; // Added items array 
-  assignedStaff?: StaffMember[]; // Staff assigned to the invoice
-  relatedWorkOrder?: WorkOrder; // For accessing full work order details
 }
 
 export interface InvoiceItem {
@@ -32,49 +29,21 @@ export interface InvoiceItem {
   description?: string;
   quantity: number;
   price: number;
-  total?: number;
+  total: number;
   hours?: boolean;
-  sku?: string; // Make SKU optional for invoice items
+  sku?: string;
+  category?: string;
 }
 
 export interface InvoiceTemplate {
   id: string;
   name: string;
   description?: string;
-  default_notes?: string;
   default_tax_rate?: number;
   default_due_date_days?: number;
+  default_notes?: string;
+  default_items?: InvoiceItem[];
   created_at?: string;
-  last_used?: string;
+  last_used?: string; 
   usage_count?: number;
 }
-
-export interface StaffMember {
-  id: string;
-  name: string;
-  role?: string;
-}
-
-// Create invoice updater type
-export const createInvoiceUpdater = (update: Partial<Invoice>) => 
-  (invoice: Invoice): Invoice => ({
-    ...invoice,
-    ...update
-  });
-
-// Invoice filters type
-export interface InvoiceFiltersProps {
-  filters: {
-    status: string;
-    customer: string;
-    dateRange: {
-      from: Date | null;
-      to: Date | null;
-    }
-  };
-  setFilters: (filters: any) => void;
-  resetFilters: () => void;
-}
-
-// Export the types
-export { StaffMember, InvoiceFiltersProps };

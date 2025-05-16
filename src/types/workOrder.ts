@@ -21,6 +21,7 @@ export interface WorkOrder {
   customer_id?: string;
   vehicle_id?: string;
   description?: string;
+  service_type?: string;
   status: WorkOrderStatusType;
   priority: WorkOrderPriorityType;
   date?: string;
@@ -45,6 +46,8 @@ export interface WorkOrder {
   inventoryItems?: WorkOrderInventoryItem[];
   customerData?: Customer;
   vehicleData?: Vehicle;
+  vehicle_make?: string;
+  vehicle_model?: string;
 }
 
 export interface TimeEntry {
@@ -53,7 +56,9 @@ export interface TimeEntry {
   employee_id: string;
   employee_name: string;
   start_time: string;
+  startTime?: string; // Alias for compatibility
   end_time?: string;
+  endTime?: string; // Alias for compatibility
   duration: number;
   billable: boolean;
   notes?: string;
@@ -65,6 +70,7 @@ export interface WorkOrderInventoryItem {
   sku: string;
   quantity: number;
   unit_price: number;
+  unitPrice?: number; // Alias for compatibility
   category?: string;
 }
 
@@ -79,10 +85,20 @@ export interface WorkOrderTemplate {
   location?: string;
   created_at?: string;
   last_used?: string;
+  lastUsed?: string; // Alias for compatibility
   usage_count?: number;
   items?: WorkOrderInventoryItem[];
   inventory_items?: WorkOrderInventoryItem[];
 }
+
+// Define Work Order Types
+export const WorkOrderTypes = {
+  REPAIR: "repair",
+  MAINTENANCE: "maintenance",
+  INSPECTION: "inspection",
+  DIAGNOSTICS: "diagnostics",
+  OTHER: "other"
+};
 
 export interface WorkOrderFormSchemaValues {
   customer: string;

@@ -55,6 +55,32 @@ export const InventoryTableRow = ({
     onRowClick(item.id);
   };
 
+  const renderCellValue = (col: Column) => {
+    const key = col.id;
+    
+    if (key === 'status') {
+      return renderStatusBadge(item.status);
+    } 
+    
+    if (key === 'reorder_point') {
+      return item.reorder_point || 0;
+    } 
+    
+    if (key === 'quantity') {
+      return item.quantity || 0;
+    } 
+    
+    if (key === 'unit_price') {
+      return formatPrice(item.unit_price || 0);
+    } 
+    
+    if (key === 'created_at' || key === 'updated_at') {
+      return formatDate(item[key as keyof InventoryItemExtended] as string);
+    }
+    
+    return item[key as keyof InventoryItemExtended] || "N/A";
+  };
+
   return (
     <UITableRow 
       onClick={handleClick}
@@ -62,19 +88,7 @@ export const InventoryTableRow = ({
     >
       {visibleColumns.map((col) => (
         <TableCell key={col.id}>
-          {col.id === 'status' ? (
-            renderStatusBadge(item.status)
-          ) : col.id === 'reorder_point' ? (
-            item.reorder_point || 0
-          ) : col.id === 'quantity' ? (
-            item.quantity || 0
-          ) : col.id === 'unit_price' ? (
-            formatPrice(item.unit_price || 0)
-          ) : col.id === 'created_at' || col.id === 'updated_at' ? (
-            formatDate(item[col.id])
-          ) : (
-            item[col.id as keyof InventoryItemExtended] || "N/A"
-          )}
+          {renderCellValue(col)}
         </TableCell>
       ))}
     </UITableRow>

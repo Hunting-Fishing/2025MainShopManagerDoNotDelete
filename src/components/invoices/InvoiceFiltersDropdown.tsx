@@ -1,126 +1,63 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DatePicker } from "@/components/ui/date-picker";
-import { ChevronDown, Filter } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Filter } from "lucide-react";
 
 export interface InvoiceFiltersDropdownProps {
-  onApplyFilters: (filters: any) => void;
+  // Properties specific to the component
 }
 
-export const InvoiceFiltersDropdown: React.FC<InvoiceFiltersDropdownProps> = ({ onApplyFilters }) => {
-  const [filters, setFilters] = useState({
-    status: 'all',
-    searchTerm: '',
-    dateRange: {
-      from: null,
-      to: null,
-    },
-    created_by: '',
-  });
-
-  const handleFilterChange = (key: string, value: any) => {
-    setFilters(prev => ({
-      ...prev,
-      [key]: value
-    }));
-  };
-
-  const handleDateChange = (key: 'from' | 'to', value: Date | null) => {
-    setFilters(prev => ({
-      ...prev,
-      dateRange: {
-        ...prev.dateRange,
-        [key]: value
-      }
-    }));
-  };
-
-  const handleApply = () => {
-    onApplyFilters(filters);
-  };
-
-  const handleReset = () => {
-    const resetFilters = {
-      status: 'all',
-      searchTerm: '',
-      dateRange: {
-        from: null,
-        to: null,
-      },
-      created_by: '',
-    };
-    setFilters(resetFilters);
-    onApplyFilters(resetFilters);
-  };
+export const InvoiceFiltersDropdown: React.FC<InvoiceFiltersDropdownProps> = () => {
+  const [open, setOpen] = useState(false);
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" className="flex items-center gap-2">
-          <Filter className="h-4 w-4" />
-          Filter
-          <ChevronDown className="h-4 w-4" />
+        <Button variant="outline" size="sm" className="flex items-center">
+          <Filter className="h-4 w-4 mr-2" />
+          Filters
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80">
-        <div className="grid gap-4">
-          <h4 className="font-semibold">Filter Invoices</h4>
+      <PopoverContent className="w-80 p-4">
+        <div className="space-y-4">
+          <h3 className="text-sm font-medium">Filter Invoices</h3>
           
-          <div className="grid gap-2">
-            <label htmlFor="status" className="text-sm">Status</label>
-            <Select 
-              value={filters.status} 
-              onValueChange={(value) => handleFilterChange('status', value)}
+          <div className="space-y-2">
+            <Label htmlFor="customerName">Customer Name</Label>
+            <Input id="customerName" placeholder="Search by customer name" />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="invoiceStatus">Status</Label>
+            <select 
+              id="invoiceStatus"
+              className="w-full border border-input bg-background rounded-md p-2"
+              defaultValue=""
             >
-              <SelectTrigger id="status">
-                <SelectValue placeholder="All Statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="paid">Paid</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="overdue">Overdue</SelectItem>
-              </SelectContent>
-            </Select>
+              <option value="">All Statuses</option>
+              <option value="paid">Paid</option>
+              <option value="unpaid">Unpaid</option>
+              <option value="overdue">Overdue</option>
+              <option value="draft">Draft</option>
+            </select>
           </div>
           
-          <div className="grid gap-2">
-            <label htmlFor="search" className="text-sm">Search</label>
-            <Input 
-              id="search"
-              placeholder="Search by invoice #, customer..."
-              value={filters.searchTerm}
-              onChange={(e) => handleFilterChange('searchTerm', e.target.value)}
-            />
+          <div className="space-y-2">
+            <Label>Date Range</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <Input type="date" placeholder="From" />
+              <Input type="date" placeholder="To" />
+            </div>
           </div>
           
-          <div className="grid gap-2">
-            <label htmlFor="from" className="text-sm">From Date</label>
-            <DatePicker
-              id="from"
-              selected={filters.dateRange.from}
-              onSelect={(date) => handleDateChange('from', date)}
-            />
-          </div>
-          
-          <div className="grid gap-2">
-            <label htmlFor="to" className="text-sm">To Date</label>
-            <DatePicker
-              id="to" 
-              selected={filters.dateRange.to}
-              onSelect={(date) => handleDateChange('to', date)}
-            />
-          </div>
-          
-          <div className="flex justify-between">
-            <Button variant="outline" size="sm" onClick={handleReset}>
-              Reset
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button variant="outline" size="sm" onClick={() => setOpen(false)}>
+              Clear
             </Button>
-            <Button size="sm" onClick={handleApply}>
+            <Button size="sm" onClick={() => setOpen(false)}>
               Apply Filters
             </Button>
           </div>

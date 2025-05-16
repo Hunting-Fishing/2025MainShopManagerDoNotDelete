@@ -31,6 +31,6 @@ export interface InvoiceItemsTableProps {
   items: InvoiceItem[];
   onRemoveItem: (id: string) => void;
   onUpdateItemQuantity: (id: string, quantity: number) => void;
-  onUpdateDescription: (id: string, description: string) => void;
-  onUpdatePrice: (id: string, price: number) => void;
+  onUpdateItemDescription: (id: string, description: string) => void;
+  onUpdateItemPrice: (id: string, price: number) => void;
 }
