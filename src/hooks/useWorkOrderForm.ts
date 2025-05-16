@@ -1,96 +1,56 @@
 
-import { useState } from 'react';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { toast } from '@/components/ui/use-toast';
+import { useState } from "react";
+import { WorkOrderFormValues, WorkOrder, WorkOrderStatusType } from "@/types/workOrder";
+import { supabase } from "@/lib/supabase";
+import { useForm } from "react-hook-form";
 
-// Define the form values type
-export interface WorkOrderFormValues {
-  customer: string;
-  customer_id?: string;
-  description: string;
-  status: string;
-  priority: string;
-  technician: string;
-  technician_id?: string;
-  location?: string;
-  dueDate?: string;
-  notes?: string;
-  vehicleMake?: string;
-  vehicleModel?: string;
-  vehicleYear?: string;
-  odometer?: string;
-  licensePlate?: string;
-  vin?: string;
-  inventoryItems?: any[];
-}
+// Default values for a new work order
+const defaultValues: WorkOrderFormValues = {
+  estimated_hours: 0,
+  status: "pending" as WorkOrderStatusType,
+  description: "",
+  service_type: "",
+  customer: "",
+  location: "",
+  notes: "",
+  priority: "medium",
+  dueDate: "",
+  technician: "",
+  technician_id: "",
+  inventoryItems: []
+};
 
-// Create the schema
-const workOrderFormSchema = z.object({
-  customer: z.string().min(1, { message: "Customer is required" }),
-  customer_id: z.string().optional(),
-  description: z.string().min(1, { message: "Description is required" }),
-  status: z.string().min(1, { message: "Status is required" }),
-  priority: z.string().min(1, { message: "Priority is required" }),
-  technician: z.string().optional(),
-  technician_id: z.string().optional(),
-  location: z.string().optional(),
-  dueDate: z.string().optional(),
-  notes: z.string().optional(),
-  vehicleMake: z.string().optional(),
-  vehicleModel: z.string().optional(),
-  vehicleYear: z.string().optional(),
-  odometer: z.string().optional(),
-  licensePlate: z.string().optional(),
-  vin: z.string().optional(),
-  inventoryItems: z.array(z.any()).optional()
-});
-
-export const useWorkOrderForm = (initialData?: Partial<WorkOrderFormValues>) => {
+export function useWorkOrderForm(initialData: Partial<WorkOrder> = {}) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const form = useForm<WorkOrderFormValues>({
-    resolver: zodResolver(workOrderFormSchema),
-    defaultValues: initialData || {
-      customer: '',
-      description: '',
-      status: 'pending',
-      priority: 'medium',
-      technician: '',
-      location: '',
-      notes: '',
-      vehicleMake: '',
-      vehicleModel: '',
-      vehicleYear: '',
-      odometer: '',
-      licensePlate: '',
-      vin: '',
-      inventoryItems: []
-    }
+    defaultValues: {
+      ...defaultValues,
+      ...initialData,
+    },
   });
 
-  const handleSubmit = async (values: WorkOrderFormValues) => {
+  // For backward compatibility
+  const workOrder = form.watch();
+  const loading = isSubmitting;
+
+  const updateField = (field: keyof WorkOrderFormValues, value: any) => {
+    form.setValue(field, value);
+  };
+
+  const handleSubmit = async (values?: WorkOrderFormValues): Promise<WorkOrderFormValues> => {
+    const data = values || form.getValues();
     setIsSubmitting(true);
+
     try {
-      console.log("Submitting work order:", values);
+      // In a real implementation, this would save to the database
+      console.log("Submitting work order:", data);
       
-      // Here you would normally send the data to your API
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulated API request
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      toast({
-        title: "Work order created",
-        description: "The work order has been created successfully",
-      });
-      
-      return values;
+      return data;
     } catch (error) {
-      console.error("Error creating work order:", error);
-      toast({
-        title: "Error",
-        description: "There was a problem creating the work order",
-        variant: "destructive",
-      });
+      console.error("Error submitting work order:", error);
       throw error;
     } finally {
       setIsSubmitting(false);
@@ -101,7 +61,9 @@ export const useWorkOrderForm = (initialData?: Partial<WorkOrderFormValues>) => 
     form,
     isSubmitting,
     handleSubmit,
+    // For backwards compatibility
+    workOrder,
+    updateField,
+    loading
   };
-};
-
-export default useWorkOrderForm;
+}

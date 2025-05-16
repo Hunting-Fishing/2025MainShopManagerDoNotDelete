@@ -2,47 +2,73 @@
 import { InventoryItemExtended } from "@/types/inventory";
 
 /**
- * Calculate the total value of inventory items
+ * Map API response to our InventoryItemExtended type
  */
-export const calculateTotalValue = (items: InventoryItemExtended[]): number => {
-  return items.reduce((total, item) => {
-    const itemValue = (item.quantity || 0) * (item.unit_price || 0);
-    return total + itemValue;
-  }, 0);
-};
+export function mapApiToInventoryItem(apiItem: any): InventoryItemExtended {
+  return {
+    id: apiItem.id,
+    name: apiItem.name,
+    sku: apiItem.sku,
+    category: apiItem.category,
+    supplier: apiItem.supplier,
+    quantity: apiItem.quantity,
+    reorder_point: apiItem.reorder_point,
+    unit_price: apiItem.unit_price,
+    location: apiItem.location,
+    status: apiItem.status,
+    description: apiItem.description,
+    price: apiItem.unit_price || 0, // Ensure price is set from unit_price
+    partNumber: apiItem.partNumber,
+    barcode: apiItem.barcode,
+    subcategory: apiItem.subcategory,
+    manufacturer: apiItem.manufacturer,
+    vehicleCompatibility: apiItem.vehicleCompatibility,
+    onHold: apiItem.onHold,
+    onOrder: apiItem.onOrder,
+    cost: apiItem.cost,
+    marginMarkup: apiItem.marginMarkup,
+    warrantyPeriod: apiItem.warrantyPeriod,
+    dateBought: apiItem.dateBought,
+    dateLast: apiItem.dateLast,
+    notes: apiItem.notes
+  };
+}
+
+// Alias for backward compatibility
+export const formatInventoryItem = mapApiToInventoryItem;
+export const mapDbItemToInventoryItem = mapApiToInventoryItem;
 
 /**
- * Count items that are below their reorder level but not completely out of stock
+ * Get status text based on quantity and reorder_point
  */
-export const countLowStockItems = (items: InventoryItemExtended[]): number => {
-  return items.filter(item => {
-    const quantity = item.quantity || 0;
-    const reorderPoint = item.reorder_point || 0;
-    return quantity > 0 && quantity <= reorderPoint;
-  }).length;
-};
+export function getInventoryStatus(item: InventoryItemExtended): string {
+  if (item.quantity <= 0) {
+    return 'Out of Stock';
+  } else if (item.quantity <= item.reorder_point) {
+    return 'Low Stock';
+  } else {
+    return 'In Stock';
+  }
+}
 
 /**
- * Count items that are completely out of stock (quantity is 0)
+ * Format inventory item for compatibility with the API
  */
-export const countOutOfStockItems = (items: InventoryItemExtended[]): number => {
-  return items.filter(item => (item.quantity || 0) === 0).length;
-};
-
-/**
- * Calculate available quantity (total - reserved)
- */
-export const calculateAvailableQuantity = (item: InventoryItemExtended): number => {
-  const totalQuantity = item.quantity || 0;
-  const reservedQuantity = item.quantity_reserved || 0;
-  return Math.max(0, totalQuantity - reservedQuantity);
-};
-
-/**
- * Check if an item needs reordering
- */
-export const needsReordering = (item: InventoryItemExtended): boolean => {
-  const availableQuantity = calculateAvailableQuantity(item);
-  const reorderPoint = item.reorder_point || 0;
-  return availableQuantity <= reorderPoint;
-};
+export function formatInventoryForApi(item: Partial<InventoryItemExtended>): any {
+  // Calculate quantity available without including reserved items
+  const quantityAvailable = item.quantity || 0; 
+  // Reserved quantity is not in our InventoryItemExtended type yet
+  
+  return {
+    name: item.name,
+    sku: item.sku,
+    category: item.category,
+    supplier: item.supplier,
+    quantity: item.quantity,
+    reorder_point: item.reorder_point || item.reorderPoint, // Support both property names
+    unit_price: item.unit_price || item.price,          // Support both property names
+    location: item.location,
+    status: item.status,
+    description: item.description
+  };
+}

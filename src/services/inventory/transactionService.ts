@@ -1,87 +1,74 @@
 
-import { supabase } from "@/lib/supabase";
-import { InventoryTransaction, CreateInventoryTransactionDto } from "@/types/inventory/transactions";
-import { handleApiError } from "@/utils/errorHandling";
-import { updateInventoryQuantity } from "./crudService";
+import { supabase } from '@/lib/supabase';
+import { InventoryItemExtended } from '@/types/inventory';
+import { updateInventoryQuantity } from './crudService';
 
-export async function getInventoryTransactions(): Promise<InventoryTransaction[]> {
+// Record an inventory transaction and update quantity
+export const recordInventoryTransaction = async (
+  itemId: string,
+  quantity: number, 
+  type: 'addition' | 'reduction' | 'adjustment', 
+  referenceId?: string, 
+  notes?: string
+): Promise<boolean> => {
+  // Start a transaction
   try {
-    const { data, error } = await supabase
-      .from("inventory_transactions")
-      .select("*, inventory_items(name, sku)")
-      .order("transaction_date", { ascending: false });
-
-    if (error) throw error;
-    return data || [];
-  } catch (error) {
-    handleApiError(error, "Failed to fetch inventory transactions");
-    return [];
-  }
-}
-
-export async function getTransactionsForItem(itemId: string): Promise<InventoryTransaction[]> {
-  try {
-    const { data, error } = await supabase
-      .from("inventory_transactions")
-      .select("*")
-      .eq("inventory_item_id", itemId)
-      .order("transaction_date", { ascending: false });
-
-    if (error) throw error;
-    return data || [];
-  } catch (error) {
-    handleApiError(error, `Failed to fetch transactions for item ${itemId}`);
-    return [];
-  }
-}
-
-export async function createInventoryTransaction(
-  transaction: CreateInventoryTransactionDto
-): Promise<InventoryTransaction | null> {
-  try {
-    // First, update the inventory item quantity
-    let quantityChange = transaction.quantity;
+    // 1. Record the transaction
+    const { error: transactionError } = await supabase
+      .from('inventory_transactions')
+      .insert({
+        inventory_item_id: itemId,
+        quantity: quantity,
+        transaction_date: new Date().toISOString(),
+        transaction_type: type,
+        reference_id: referenceId || null,
+        reference_type: referenceId ? 'work_order' : null,
+        notes: notes || null
+      });
+      
+    if (transactionError) throw transactionError;
     
-    // For outgoing transactions like sales, make the quantity negative
-    if (
-      transaction.transaction_type === "sale" || 
-      transaction.transaction_type === "write-off" ||
-      (transaction.transaction_type === "adjustment" && transaction.quantity < 0)
-    ) {
-      quantityChange = -Math.abs(quantityChange);
+    // 2. Get current quantity
+    const { data: currentItem, error: fetchError } = await supabase
+      .from('inventory_items')
+      .select('quantity')
+      .eq('id', itemId)
+      .single();
+      
+    if (fetchError) throw fetchError;
+    
+    // 3. Calculate new quantity
+    let newQuantity = currentItem.quantity;
+    if (type === 'addition') {
+      newQuantity += quantity;
+    } else if (type === 'reduction') {
+      newQuantity -= quantity;
+    } else if (type === 'adjustment') {
+      newQuantity = quantity; // Direct set for adjustments
     }
     
-    // Update the inventory quantity
-    await updateInventoryQuantity(transaction.inventory_item_id, quantityChange);
-
-    // Create the transaction record
-    const { data, error } = await supabase
-      .from("inventory_transactions")
-      .insert(transaction)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
+    // 4. Update the inventory quantity
+    await updateInventoryQuantity(itemId, newQuantity);
+    
+    return true;
   } catch (error) {
-    handleApiError(error, "Failed to create inventory transaction");
-    return null;
+    console.error('Error in inventory transaction:', error);
+    return false;
   }
-}
+};
 
-export async function getInventoryItemHistory(itemId: string, limit = 10): Promise<InventoryTransaction[]> {
-  try {
-    const { data, error } = await supabase
-      .from("inventory_transactions")
-      .select("*")
-      .eq("inventory_item_id", itemId)
-      .order("transaction_date", { ascending: false })
-      .limit(limit);
-
-    if (error) throw error;
-    return data || [];
-  } catch (error) {
-    handleApiError(error, `Failed to fetch history for item ${itemId}`);
-    return [];
+// Get all transactions for an item
+export const getItemTransactions = async (itemId: string) => {
+  const { data, error } = await supabase
+    .from('inventory_transactions')
+    .select('*')
+    .eq('inventory_item_id', itemId)
+    .order('transaction_date', { ascending: false });
+    
+  if (error) {
+    console.error('Error fetching item transactions:', error);
+    throw error;
   }
-}
+  
+  return data;
+};

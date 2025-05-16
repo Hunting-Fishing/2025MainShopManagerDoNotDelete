@@ -1,63 +1,47 @@
 
-import { Invoice, InvoiceItem } from "@/types/invoice";
+import { Invoice } from '@/types/invoice';
 
 /**
- * Calculate the subtotal of invoice items
+ * Formats API response to match our Invoice type
  */
-export const calculateSubtotal = (items: InvoiceItem[]): number => {
-  return items.reduce((total, item) => {
-    const itemTotal = (item.quantity || 0) * (item.price || 0);
-    return total + itemTotal;
-  }, 0);
-};
-
-/**
- * Calculate tax amount based on subtotal and tax rate
- */
-export const calculateTax = (subtotal: number, taxRate: number): number => {
-  return subtotal * (taxRate / 100);
-};
-
-/**
- * Calculate total amount (subtotal + tax)
- */
-export const calculateTotal = (subtotal: number, tax: number): number => {
-  return subtotal + tax;
-};
-
-/**
- * Get color for invoice status
- */
-export const getInvoiceStatusColor = (status: string): string => {
-  const statusColors: Record<string, string> = {
-    paid: "bg-green-100 text-green-800 border border-green-300",
-    pending: "bg-yellow-100 text-yellow-800 border border-yellow-300",
-    overdue: "bg-red-100 text-red-800 border border-red-300",
-    draft: "bg-slate-100 text-slate-800 border border-slate-300",
-    cancelled: "bg-gray-100 text-gray-800 border border-gray-300"
+export const formatApiInvoice = (apiInvoice: any): Invoice => {
+  return {
+    id: apiInvoice.id || '',
+    number: apiInvoice.number || apiInvoice.id || '',
+    customer: apiInvoice.customer || '',
+    customer_id: apiInvoice.customer_id,
+    customer_address: apiInvoice.customer_address || '',
+    customer_email: apiInvoice.customer_email || '',
+    status: apiInvoice.status || 'draft',
+    issue_date: apiInvoice.issue_date || apiInvoice.date || new Date().toISOString().split('T')[0],
+    due_date: apiInvoice.due_date || '',
+    date: apiInvoice.date || apiInvoice.issue_date || new Date().toISOString().split('T')[0],
+    description: apiInvoice.description || '',
+    payment_method: apiInvoice.payment_method || '',
+    subtotal: Number(apiInvoice.subtotal) || 0,
+    tax: Number(apiInvoice.tax) || 0,
+    tax_rate: Number(apiInvoice.tax_rate) || 0,
+    total: Number(apiInvoice.total) || 0,
+    notes: apiInvoice.notes || '',
+    work_order_id: apiInvoice.work_order_id || '',
+    created_by: apiInvoice.created_by || '',
+    created_at: apiInvoice.created_at || new Date().toISOString(),
+    updated_at: apiInvoice.updated_at || new Date().toISOString(),
+    assignedStaff: apiInvoice.assignedStaff || [],
+    items: apiInvoice.items || []
   };
-  
-  return statusColors[status] || statusColors.pending;
 };
 
 /**
- * Format the invoice number with a prefix
+ * Formats our Invoice object for API submission
  */
-export const formatInvoiceNumber = (invoiceId: string): string => {
-  if (!invoiceId) return '';
-  
-  // Check if the invoice ID already has the INV- prefix
-  if (invoiceId.startsWith('INV-')) {
-    return invoiceId;
-  }
-  
-  // Extract any numerical portion to work with
-  const matches = invoiceId.match(/(\d+)/);
-  if (matches && matches[1]) {
-    const numericPart = matches[1].padStart(5, '0');
-    return `INV-${numericPart}`;
-  }
-  
-  // If no numeric portion, just add the prefix
-  return `INV-${invoiceId}`;
+export const formatInvoiceForApi = (invoice: Invoice): any => {
+  return {
+    ...invoice,
+    // Ensure numeric fields are properly formatted
+    subtotal: Number(invoice.subtotal),
+    tax: Number(invoice.tax),
+    tax_rate: Number(invoice.tax_rate),
+    total: Number(invoice.total)
+  };
 };

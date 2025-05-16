@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from "react";
-import { fetchInvoiceById } from "@/services/invoiceService";
+import { getInvoiceById } from "@/services/invoiceService";
 import { Invoice } from "@/types/invoice";
 
 export const useInvoiceData = () => {
@@ -9,7 +10,7 @@ export const useInvoiceData = () => {
 
   const getInvoiceData = async (id: string): Promise<Invoice | null> => {
     try {
-      const invoice = await fetchInvoiceById(id);
+      const invoice = await getInvoiceById(id);
       if (!invoice) return null;
       
       // Fix customer type mismatch
