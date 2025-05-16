@@ -11,7 +11,7 @@ import { NotesField } from "./form-fields/NotesField";
 export type WorkOrderFormFieldValues = {
   customer: string;
   description: string;
-  status: "pending" | "in-progress" | "completed" | "cancelled";
+  status: "pending" | "in-progress" | "on-hold" | "completed" | "cancelled";
   priority: "low" | "medium" | "high";
   technician: string;
   location: string;

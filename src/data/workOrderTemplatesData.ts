@@ -1,6 +1,6 @@
 
 // For backwards compatibility with any code that imports directly
-import { WorkOrderTemplate } from "@/types/workOrder";
+import { WorkOrder, WorkOrderStatusType, WorkOrderTemplate } from "@/types/workOrder";
 
 export const workOrderTemplates: WorkOrderTemplate[] = [];
 export const updateTemplateUsage = async (templateId: string) => {
@@ -13,7 +13,7 @@ export const createTemplate = async () => {
   return { 
     id: '', 
     name: '',
-    status: 'active',
+    status: 'pending' as WorkOrderStatusType,
     created_at: '', 
     usage_count: 0 
   } as WorkOrderTemplate;

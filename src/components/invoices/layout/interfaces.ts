@@ -12,14 +12,14 @@ export interface InvoiceTemplateActionsProps {
 }
 
 export interface WorkOrderSelectorProps {
-  isOpen: boolean; // Updated from 'open' to 'isOpen'
+  isOpen: boolean;
   onClose: () => void;
   onSelectWorkOrder: (workOrder: WorkOrder) => void;
   workOrders: WorkOrder[];
 }
 
 export interface InventoryItemSelectorProps {
-  isOpen: boolean; // Updated from 'open' to 'isOpen'
+  isOpen: boolean;
   onClose: () => void;
   onSelect: (item: InventoryItem) => void;
   inventoryItems: InventoryItem[];
@@ -36,7 +36,7 @@ export interface InvoiceItemsTableProps {
 }
 
 export interface InvoiceRightColumnProps {
-  created_by: string; // Changed from camelCase to snake_case
+  created_by: string;
   assignedStaff: any[];
   staffMembers: any[];
   subtotal: number;
@@ -48,4 +48,27 @@ export interface InvoiceRightColumnProps {
   onCreatedByChange: (value: any) => void;
   onAddStaffMember: (staff: any) => void;
   onRemoveStaffMember: (staffId: string) => void;
+}
+
+export interface InvoiceLeftColumnProps {
+  invoice: Invoice;
+  workOrders: WorkOrder[];
+  inventoryItems: InventoryItem[];
+  templates: InvoiceTemplate[];
+  showWorkOrderDialog: boolean;
+  showInventoryDialog: boolean;
+  showStaffDialog: boolean;
+  setShowStaffDialog: (show: boolean) => void;
+  setInvoice: (invoice: Invoice | ((prev: Invoice) => Invoice)) => void;
+  setShowWorkOrderDialog: (show: boolean) => void;
+  setShowInventoryDialog: (show: boolean) => void;
+  handleSelectWorkOrder: (workOrder: WorkOrder) => void;
+  handleAddInventoryItem: (item: InvoiceItem) => void;
+  handleRemoveItem: (id: string) => void;
+  handleUpdateItemQuantity: (id: string, quantity: number) => void;
+  handleUpdateItemDescription: (id: string, description: string) => void;
+  handleUpdateItemPrice: (id: string, price: number) => void;
+  handleAddLaborItem: () => void;
+  handleApplyTemplate: (template: InvoiceTemplate) => void;
+  handleSaveTemplate: (template: Omit<InvoiceTemplate, "id" | "created_at" | "usage_count">) => Promise<void>;
 }

@@ -1,100 +1,49 @@
-
 import React from "react";
-import { TableRow as UITableRow, TableCell } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { InventoryItemExtended } from "@/types/inventory";
-import { Column } from "./SortableColumnHeader";
-import { format } from "date-fns"; // Fixed missing import
+import { formatCurrency } from "@/utils/formatters";
+import { format } from "date-fns"; // Add this import
 
 interface TableRowProps {
-  item: InventoryItemExtended;
-  visibleColumns: Column[];
-  onRowClick: (itemId: string) => void;
+  item: any;
+  columns: string[];
 }
 
-export const InventoryTableRow = ({ 
-  item, 
-  visibleColumns, 
-  onRowClick 
-}: TableRowProps) => {
-  const formatDate = (date: string | undefined) => {
-    if (!date) return "N/A";
-    try {
-      return format(new Date(date), "MMM d, yyyy");
-    } catch {
-      return "Invalid Date";
-    }
-  };
-  
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(price);
-  };
-  
-  const renderStatusBadge = (status: string) => {
-    let color = "bg-slate-100 text-slate-800";
-    
-    if (status === "Out of Stock") {
-      color = "bg-red-100 text-red-800 border border-red-200";
-    } else if (status === "Low Stock") {
-      color = "bg-yellow-100 text-yellow-800 border border-yellow-200";
-    } else if (status === "In Stock") {
-      color = "bg-green-100 text-green-800 border border-green-200";
+export function TableRow({ item, columns }: TableRowProps) {
+  // Function to format the cell content based on the column
+  const renderCellContent = (item: any, field: string) => {
+    if (field === "reorderPoint" && item["reorder_point"] !== undefined) {
+      return item["reorder_point"];
     }
     
-    return (
-      <Badge variant="outline" className={`${color} font-medium`}>
-        {status}
-      </Badge>
-    );
-  };
+    if (field === "unitPrice" && item["unit_price"] !== undefined) {
+      return formatCurrency(item["unit_price"]);
+    }
+    
+    if (field === "createdAt" && item["created_at"] !== undefined) {
+      return format(new Date(item["created_at"]), "MMM d, yyyy");
+    }
+    
+    if (field === "updatedAt" && item["updated_at"] !== undefined) {
+      return format(new Date(item["updated_at"]), "MMM d, yyyy");
+    }
+    
+    if (typeof item[field] === 'number') {
+      return item[field];
+    }
 
-  const handleClick = () => {
-    onRowClick(item.id);
-  };
-
-  const renderCellValue = (col: Column) => {
-    const key = col.id;
-    
-    if (key === 'status') {
-      return renderStatusBadge(item.status);
-    } 
-    
-    if (key === "reorder_point") {
-      return item.reorder_point || 0;
-    } 
-    
-    if (key === "quantity") {
-      return item.quantity || 0;
-    } 
-    
-    if (key === "unit_price") {
-      return formatPrice(item.unit_price || 0);
-    } 
-    
-    if (key === "created_at" || key === "updated_at") {
-      // Use type assertion to access these properties
-      const dateValue = item[key as keyof typeof item] as string | undefined;
-      return formatDate(dateValue);
+    if (typeof item[field] === 'boolean') {
+      return item[field] ? 'Yes' : 'No';
     }
-    
-    // Access properties using type assertion
-    const value = item[key as keyof typeof item];
-    return value !== undefined ? value : "N/A";
+
+    return item[field] || '—';
   };
 
   return (
-    <UITableRow 
-      onClick={handleClick}
-      className="cursor-pointer hover:bg-slate-50"
-    >
-      {visibleColumns.map((col) => (
-        <TableCell key={col.id}>
-          {renderCellValue(col)}
-        </TableCell>
+    <tr>
+      {columns.map((column) => (
+        <td key={column} className="py-2 px-4 border-b text-sm">
+          {renderCellContent(item, column)}
+        </td>
       ))}
-    </UITableRow>
+    </tr>
   );
-};
+}

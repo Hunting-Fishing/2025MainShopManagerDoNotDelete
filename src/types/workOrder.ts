@@ -1,4 +1,3 @@
-
 import { Customer } from "./customer";
 import { Vehicle } from "./vehicle";
 import { InventoryItem } from "./inventory";
@@ -56,22 +55,26 @@ export interface TimeEntry {
   employee_id: string;
   employee_name: string;
   start_time: string;
-  startTime?: string; // Alias for compatibility
   end_time?: string;
-  endTime?: string; // Alias for compatibility
   duration: number;
   billable: boolean;
   notes?: string;
+  created_at?: string;
 }
 
 export interface WorkOrderInventoryItem {
   id: string;
   name: string;
   sku: string;
+  category: string;
+  workOrderId?: string; // Added camelCase version
   quantity: number;
   unit_price: number;
-  unitPrice?: number; // Alias for compatibility
-  category?: string;
+  total: number;
+  notes?: string;
+  itemStatus?: string;
+  estimatedArrivalDate?: string;
+  supplierName?: string;
 }
 
 export interface WorkOrderTemplate {

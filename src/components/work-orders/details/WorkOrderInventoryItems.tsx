@@ -1,144 +1,142 @@
-import React, { useState } from 'react';
-import { WorkOrder } from '@/types/workOrder';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ExtendedWorkOrderInventoryItem } from '../inventory/WorkOrderInventoryItem';
-import { format } from "date-fns";
-import { Clock, Package, Tag, Truck } from "lucide-react";
 
-interface WorkOrderInventoryItemsProps {
-  workOrderId: string; // Changed from 'workOrder' to 'workOrderId'
-  inventoryItems: ExtendedWorkOrderInventoryItem[];
-  onUpdateItems?: (items: ExtendedWorkOrderInventoryItem[]) => void;
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatCurrency } from "@/utils/formatters";
+import { formatDate } from "@/utils/dateUtils";
+import { Badge } from "@/components/ui/badge";
+import { WorkOrderInventoryItem } from '@/types/workOrder';
+
+export interface WorkOrderInventoryItemsProps {
+  workOrderId: string;
+  inventoryItems: WorkOrderInventoryItem[];
 }
 
-export function WorkOrderInventoryItems({ 
-  workOrderId, // Use workOrderId instead of workOrder
-  inventoryItems,
-  onUpdateItems 
-}: WorkOrderInventoryItemsProps) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
-
+export const WorkOrderInventoryItems: React.FC<WorkOrderInventoryItemsProps> = ({
+  workOrderId,
+  inventoryItems
+}) => {
   if (!inventoryItems || inventoryItems.length === 0) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Parts & Materials</CardTitle>
+          <CardTitle>Inventory</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center p-4 text-gray-500">
-            No parts or materials added to this work order.
+          <div className="text-center py-8 text-slate-500">
+            <p>No inventory items have been added to this work order.</p>
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  // Group items by status
-  const groupedItems: Record<string, ExtendedWorkOrderInventoryItem[]> = {};
-  
-  inventoryItems.forEach(item => {
-    const status = item.itemStatus || 'In Stock';
-    if (!groupedItems[status]) {
-      groupedItems[status] = [];
+  // Render inventory status badge with appropriate color
+  const renderStatusBadge = (status?: string) => {
+    if (!status) return null;
+    
+    let badgeClass = "bg-slate-100 text-slate-800";
+    
+    switch (status.toLowerCase()) {
+      case 'in stock':
+        badgeClass = "bg-green-100 text-green-800";
+        break;
+      case 'ordered':
+        badgeClass = "bg-blue-100 text-blue-800";
+        break;
+      case 'backorder':
+        badgeClass = "bg-amber-100 text-amber-800";
+        break;
+      case 'special order':
+        badgeClass = "bg-purple-100 text-purple-800";
+        break;
+      case 'discontinued':
+        badgeClass = "bg-red-100 text-red-800";
+        break;
     }
-    groupedItems[status].push(item);
-  });
+    
+    return (
+      <Badge className={badgeClass}>
+        {status}
+      </Badge>
+    );
+  };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Parts & Materials</CardTitle>
+        <CardTitle>Inventory</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {Object.entries(groupedItems).map(([status, statusItems]) => (
-          <div key={status}>
-            <h3 className="font-medium mb-3 flex items-center">
-              <Tag className="h-4 w-4 mr-2" />
-              {status === 'special-order' ? 'Special Order Parts' : 
-               status === 'ordered' ? 'Ordered Parts' : 'In-Stock Parts'}
-            </h3>
-            
-            <div className="space-y-4">
-              {statusItems.map(item => (
-                <div key={item.id} className="border rounded-md p-4">
-                  <div className="flex flex-col sm:flex-row sm:justify-between gap-2">
-                    <div>
-                      <h4 className="font-medium">{item.name}</h4>
-                      <div className="text-sm text-gray-500">SKU: {item.sku}</div>
-                      
-                      {item.notes && (
-                        <div className="mt-2">
-                          <div className="text-xs font-medium text-gray-500">Notes</div>
-                          <div className="text-sm">{item.notes}</div>
-                        </div>
-                      )}
-                      
-                      {status !== 'In Stock' && (
-                        <>
-                          {item.estimatedArrivalDate && (
-                            <div className="mt-2 flex items-center text-sm text-gray-600">
-                              <Clock className="h-3 w-3 mr-1" />
-                              <span>Expected: {format(new Date(item.estimatedArrivalDate), 'MMM d, yyyy')}</span>
-                            </div>
-                          )}
-                          
-                          {item.supplierName && (
-                            <div className="mt-1 flex items-center text-sm text-gray-600">
-                              <Truck className="h-3 w-3 mr-1" />
-                              <span>Supplier: {item.supplierName}</span>
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </div>
-                    
-                    <div className="flex sm:flex-col items-end justify-between sm:justify-start gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">Quantity:</span>
-                        <span>{item.quantity}</span>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">Price:</span>
-                        <span>{formatCurrency(item.unit_price)}</span>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 font-medium">
-                        <span className="text-sm">Total:</span>
-                        <span>{formatCurrency(item.quantity * item.unit_price)}</span>
-                      </div>
-                      
-                      {onUpdateItems && (
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="mt-2"
-                          onClick={() => onUpdateItems(inventoryItems)}
-                        >
-                          Update Status
-                        </Button>
-                      )}
-                    </div>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Item</TableHead>
+              <TableHead>SKU</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Quantity</TableHead>
+              <TableHead className="text-right">Price</TableHead>
+              <TableHead className="text-right">Total</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {inventoryItems.map((item) => (
+              <TableRow key={item.id}>
+                <TableCell className="font-medium">
+                  <div>
+                    {item.name}
+                    {item.category && (
+                      <div className="text-xs text-slate-500">{item.category}</div>
+                    )}
                   </div>
+                </TableCell>
+                <TableCell>{item.sku}</TableCell>
+                <TableCell>{renderStatusBadge(item.itemStatus)}</TableCell>
+                <TableCell className="text-right">{item.quantity}</TableCell>
+                <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
+                <TableCell className="text-right">{formatCurrency(item.total)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        
+        {/* Additional details section */}
+        <div className="mt-6 space-y-4">
+          {inventoryItems.some(item => item.notes) && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">Notes</h3>
+              {inventoryItems.map(item => item.notes && (
+                <div key={`note-${item.id}`} className="text-sm bg-slate-50 p-3 rounded-md">
+                  <div className="font-medium">{item.name}</div>
+                  <div className="text-slate-600">{item.notes}</div>
                 </div>
               ))}
             </div>
-          </div>
-        ))}
-        
-        <div className="border-t pt-4 flex justify-between">
-          <span className="font-medium">Total Parts & Materials:</span>
-          <span className="font-bold">
-            {formatCurrency(inventoryItems.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0))}
-          </span>
+          )}
+          
+          {inventoryItems.some(item => item.estimatedArrivalDate) && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">Estimated Arrival Dates</h3>
+              {inventoryItems.map(item => item.estimatedArrivalDate && (
+                <div key={`arrival-${item.id}`} className="text-sm">
+                  <span className="font-medium">{item.name}:</span> {formatDate(item.estimatedArrivalDate)}
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {inventoryItems.some(item => item.supplierName) && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">Suppliers</h3>
+              {inventoryItems.map(item => item.supplierName && (
+                <div key={`supplier-${item.id}`} className="text-sm">
+                  <span className="font-medium">{item.name}:</span> {item.supplierName}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
   );
-}
+};

@@ -1,84 +1,114 @@
 
 import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import { TimeEntry } from "@/types/workOrder";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TimeEntriesList } from "./TimeEntriesList";
-import { TimeEntryDialog } from "./TimeEntryDialog";
+import { useTimeEntryForm } from "./hooks/useTimeEntryForm";
+import { TimeEntryForm } from "./TimeEntryForm";
 
-export interface TimeTrackingSectionProps {
+interface TimeTrackingSectionProps {
   work_order_id: string;
   timeEntries: TimeEntry[];
   onUpdateTimeEntries: (updatedEntries: TimeEntry[]) => void;
 }
 
-export function TimeTrackingSection({ 
-  work_order_id, 
-  timeEntries, 
-  onUpdateTimeEntries 
-}: TimeTrackingSectionProps) {
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
+export const TimeTrackingSection: React.FC<TimeTrackingSectionProps> = ({
+  work_order_id,
+  timeEntries,
+  onUpdateTimeEntries
+}) => {
+  const [showForm, setShowForm] = useState(false);
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
   
-  const handleAdd = () => {
-    setEditingEntry(null);
-    setShowAddDialog(true);
+  const {
+    formData,
+    errors,
+    handleChange,
+    calculateDuration,
+    handleSubmit: submitTimeEntry,
+    resetForm,
+    setFormData
+  } = useTimeEntryForm(work_order_id);
+
+  const handleAddClick = () => {
+    resetForm();
+    setEditingEntryId(null);
+    setShowForm(true);
   };
-  
-  const handleEdit = (entry: TimeEntry) => {
-    setEditingEntry(entry);
-    setShowAddDialog(true);
+
+  const handleEditEntry = (entryId: string) => {
+    const entry = timeEntries.find(e => e.id === entryId);
+    if (entry) {
+      setFormData({
+        ...entry
+      });
+      setEditingEntryId(entryId);
+      setShowForm(true);
+    }
   };
-  
-  const handleDelete = (entryId: string) => {
+
+  const handleDeleteEntry = (entryId: string) => {
     const updatedEntries = timeEntries.filter(entry => entry.id !== entryId);
     onUpdateTimeEntries(updatedEntries);
   };
-  
-  const handleSave = (entry: TimeEntry) => {
-    let updatedEntries;
-    
-    if (editingEntry) {
+
+  const handleSubmit = () => {
+    if (editingEntryId) {
       // Update existing entry
-      updatedEntries = timeEntries.map(item => 
-        item.id === entry.id ? entry : item
+      const updatedEntries = timeEntries.map(entry => 
+        entry.id === editingEntryId ? { ...formData, id: editingEntryId } : entry
       );
+      onUpdateTimeEntries(updatedEntries);
     } else {
-      // Add new entry with generated ID if needed
-      const newEntry = {
-        ...entry,
-        id: entry.id || crypto.randomUUID(),
-        work_order_id
+      // Add new entry
+      const newEntry: TimeEntry = {
+        id: `te-${Date.now()}`,
+        work_order_id,
+        employee_id: formData.employee_id || '',
+        employee_name: formData.employee_name || '',
+        start_time: formData.start_time || '',
+        end_time: formData.end_time || '',
+        duration: formData.duration || 0,
+        billable: formData.billable || true,
+        notes: formData.notes || '',
+        created_at: new Date().toISOString()
       };
-      updatedEntries = [...timeEntries, newEntry];
+      
+      onUpdateTimeEntries([...timeEntries, newEntry]);
     }
-    
-    onUpdateTimeEntries(updatedEntries);
-    setShowAddDialog(false);
+    setShowForm(false);
   };
-  
+
+  const handleCancel = () => {
+    setShowForm(false);
+  };
+
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-lg font-medium">Time Tracking</h2>
-        <Button onClick={handleAdd} size="sm" className="flex items-center gap-1">
-          <Plus className="h-4 w-4" /> Add Time Entry
-        </Button>
-      </div>
-      
-      <TimeEntriesList 
-        entries={timeEntries} 
-        onEdit={handleEdit} 
-        onDelete={handleDelete} 
-      />
-      
-      <TimeEntryDialog 
-        isOpen={showAddDialog}
-        onClose={() => setShowAddDialog(false)}
-        workOrderId={work_order_id}
-        timeEntry={editingEntry}
-        onSave={handleSave}
-      />
-    </div>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>Time Tracking</CardTitle>
+        <Button onClick={handleAddClick}>Add Time Entry</Button>
+      </CardHeader>
+      <CardContent>
+        {showForm ? (
+          <TimeEntryForm 
+            formData={formData}
+            errors={errors}
+            handleChange={handleChange}
+            calculateDuration={calculateDuration}
+            handleSubmit={handleSubmit}
+            handleCancel={handleCancel}
+            isEditing={!!editingEntryId}
+          />
+        ) : (
+          <TimeEntriesList 
+            entries={timeEntries} 
+            onEdit={handleEditEntry} 
+            onDelete={handleDeleteEntry} 
+          />
+        )}
+      </CardContent>
+    </Card>
   );
 }

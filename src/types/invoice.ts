@@ -1,4 +1,3 @@
-
 import { Customer } from "./customer";
 
 export interface Invoice {
@@ -51,7 +50,7 @@ export interface InvoiceTemplate {
   usage_count?: number;
 }
 
-// Define the StaffMember interface
+// Add StaffMember interface
 export interface StaffMember {
   id: string;
   name: string;
