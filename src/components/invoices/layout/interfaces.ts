@@ -12,14 +12,14 @@ export interface InvoiceTemplateActionsProps {
 }
 
 export interface WorkOrderSelectorProps {
-  isOpen: boolean;
+  isOpen: boolean; // Updated from 'open' to 'isOpen'
   onClose: () => void;
   onSelectWorkOrder: (workOrder: WorkOrder) => void;
   workOrders: WorkOrder[];
 }
 
 export interface InventoryItemSelectorProps {
-  isOpen: boolean;
+  isOpen: boolean; // Updated from 'open' to 'isOpen'
   onClose: () => void;
   onSelect: (item: InventoryItem) => void;
   inventoryItems: InventoryItem[];

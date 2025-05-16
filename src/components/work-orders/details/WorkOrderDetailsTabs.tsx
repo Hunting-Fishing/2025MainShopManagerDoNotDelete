@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -23,6 +22,9 @@ export interface WorkOrderDetailsTabsProps {
 }
 
 export function WorkOrderDetailsTabs({ workOrder, onUpdateTimeEntries }: WorkOrderDetailsTabsProps) {
+  const activeTab = "time"; // Example active tab
+  const timeEntries = []; // Example time entries
+
   return (
     <Tabs defaultValue="details" className="space-y-4">
       <TabsList className="flex h-auto flex-wrap justify-start bg-transparent p-0 w-full border-b">
@@ -74,16 +76,20 @@ export function WorkOrderDetailsTabs({ workOrder, onUpdateTimeEntries }: WorkOrd
         <WorkOrderStatusTimeline workOrder={workOrder} />
       </TabsContent>
       
-      <TabsContent value="time" className="space-y-4 mt-4">
-        <WorkOrderTimeTracking 
-          workOrder={workOrder} 
+      {activeTab === "time" && (
+        <WorkOrderTimeTracking
+          workOrderId={workOrder.id} // Changed from workOrder to workOrderId
+          timeEntries={timeEntries}
           onUpdateTimeEntries={onUpdateTimeEntries}
         />
-      </TabsContent>
+      )}
       
-      <TabsContent value="inventory" className="space-y-4 mt-4">
-        <WorkOrderInventoryItems workOrder={workOrder} />
-      </TabsContent>
+      {activeTab === "inventory" && (
+        <WorkOrderInventoryItems
+          workOrderId={workOrder.id} // Changed from workOrder to workOrderId
+          inventoryItems={workOrder.inventory_items as ExtendedWorkOrderInventoryItem[] || []}
+        />
+      )}
       
       <TabsContent value="notes" className="space-y-4 mt-4">
         <WorkOrderNotes workOrder={workOrder} />

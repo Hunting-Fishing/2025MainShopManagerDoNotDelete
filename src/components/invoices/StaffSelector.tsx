@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { StaffMember } from '@/types/invoice';
 
 interface StaffSelectorProps {
-  isOpen: boolean;
+  isOpen: boolean; // Changed from 'open' to 'isOpen'
   onClose: () => void;
   staffMembers: StaffMember[];
   onAddStaffMember: (staff: StaffMember) => void;

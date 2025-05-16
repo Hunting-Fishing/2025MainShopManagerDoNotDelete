@@ -1,104 +1,153 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TimeEntry } from "@/types/workOrder";
+import { differenceInMinutes, parse } from "date-fns";
 
-export const useTimeEntryForm = (
-  initialEntry: Partial<TimeEntry> | null,
-  onSubmit: (entry: TimeEntry) => void,
-  onCancel: () => void
-) => {
-  const [formData, setFormData] = useState<Partial<TimeEntry>>({
-    employee_id: initialEntry?.employee_id || "",
-    employee_name: initialEntry?.employee_name || "",
-    start_time: initialEntry?.start_time || "",
-    end_time: initialEntry?.end_time || "",
-    duration: initialEntry?.duration || 0,
-    billable: initialEntry?.billable ?? true,
-    notes: initialEntry?.notes || "",
-    work_order_id: initialEntry?.work_order_id || ""
-  });
+interface UseTimeEntryFormProps {
+  workOrderId: string;
+  timeEntry: TimeEntry | null;
+  onSave: (timeEntry: TimeEntry) => void;
+  onCancel: () => void;
+}
 
+export const useTimeEntryForm = ({
+  workOrderId,
+  timeEntry,
+  onSave,
+  onCancel
+}: UseTimeEntryFormProps) => {
+  // Form state
+  const [employee, setEmployee] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [duration, setDuration] = useState(0);
+  const [notes, setNotes] = useState("");
+  const [billable, setBillable] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const isEditing = !!timeEntry;
 
-  const handleChange = (field: keyof TimeEntry, value: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value
-    }));
-    
-    // Clear any error for this field
-    if (errors[field]) {
-      setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
-    }
-  };
-
-  const calculateDuration = () => {
-    if (!formData.start_time || !formData.end_time) return;
-    
-    try {
-      const start = new Date(formData.start_time);
-      const end = new Date(formData.end_time);
-      const diffMs = end.getTime() - start.getTime();
-      const diffMins = Math.round(diffMs / 60000);
+  // Initialize form with existing time entry data if provided
+  useEffect(() => {
+    if (timeEntry) {
+      setEmployee(timeEntry.employee_name);
       
-      if (diffMins > 0) {
-        handleChange("duration", diffMins);
-      } else {
-        setErrors(prev => ({
-          ...prev,
-          end_time: "End time must be after start time"
-        }));
+      if (timeEntry.start_time) {
+        const startDateTime = new Date(timeEntry.start_time);
+        setStartDate(startDateTime.toISOString().split('T')[0]);
+        setStartTime(startDateTime.toTimeString().slice(0, 5));
       }
-    } catch (error) {
-      console.error("Error calculating duration:", error);
+      
+      if (timeEntry.end_time) {
+        const endDateTime = new Date(timeEntry.end_time);
+        setEndDate(endDateTime.toISOString().split('T')[0]);
+        setEndTime(endDateTime.toTimeString().slice(0, 5));
+      }
+      
+      setDuration(timeEntry.duration);
+      setNotes(timeEntry.notes || "");
+      setBillable(timeEntry.billable);
+    }
+  }, [timeEntry]);
+
+  // Calculate duration based on start and end times
+  const calculateDuration = () => {
+    if (startDate && startTime && endDate && endTime) {
+      try {
+        const startDateTime = parse(
+          `${startDate} ${startTime}`,
+          'yyyy-MM-dd HH:mm',
+          new Date()
+        );
+        const endDateTime = parse(
+          `${endDate} ${endTime}`,
+          'yyyy-MM-dd HH:mm',
+          new Date()
+        );
+        
+        if (endDateTime > startDateTime) {
+          const durationInMinutes = differenceInMinutes(endDateTime, startDateTime);
+          setDuration(durationInMinutes);
+          setErrors(prev => ({ ...prev, duration: "" }));
+        } else {
+          setErrors(prev => ({ ...prev, endTime: "End time must be after start time" }));
+        }
+      } catch (error) {
+        console.error("Error calculating duration:", error);
+      }
     }
   };
 
-  const validateForm = (): boolean => {
+  // Validate form fields
+  const validateForm = () => {
     const newErrors: Record<string, string> = {};
     
-    if (!formData.employee_id) {
-      newErrors.employee_id = "Staff member is required";
+    if (!employee) {
+      newErrors.employee = "Employee name is required";
     }
     
-    if (!formData.start_time) {
-      newErrors.start_time = "Start time is required";
+    if (!startDate) {
+      newErrors.startDate = "Start date is required";
     }
     
-    if (formData.duration <= 0) {
-      newErrors.duration = "Duration must be positive";
+    if (!startTime) {
+      newErrors.startTime = "Start time is required";
+    }
+    
+    if (duration <= 0) {
+      newErrors.duration = "Duration must be greater than 0";
     }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
-    if (validateForm()) {
-      onSubmit({
-        id: initialEntry?.id || crypto.randomUUID(),
-        employee_id: formData.employee_id!,
-        employee_name: formData.employee_name!,
-        start_time: formData.start_time!,
-        end_time: formData.end_time,
-        duration: formData.duration || 0,
-        billable: formData.billable || false,
-        notes: formData.notes,
-        work_order_id: formData.work_order_id!
-      });
+  // Handle form submission
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
     }
+    
+    // Create the time entry object
+    const timeEntryData: TimeEntry = {
+      id: timeEntry?.id || crypto.randomUUID(),
+      work_order_id: workOrderId,
+      employee_id: timeEntry?.employee_id || crypto.randomUUID().substring(0, 8),
+      employee_name: employee,
+      start_time: `${startDate}T${startTime}:00`,
+      end_time: endTime ? `${endDate}T${endTime}:00` : undefined,
+      duration,
+      billable,
+      notes: notes || undefined,
+    };
+    
+    onSave(timeEntryData);
   };
 
   return {
-    formData,
+    employee,
+    setEmployee,
+    startDate,
+    setStartDate,
+    startTime,
+    setStartTime,
+    endDate,
+    setEndDate,
+    endTime,
+    setEndTime,
+    duration,
+    setDuration,
+    notes,
+    setNotes,
+    billable,
+    setBillable,
     errors,
-    handleChange,
+    isEditing,
     calculateDuration,
     handleSubmit,
-    handleCancel: onCancel
+    onCancel
   };
 };

@@ -13,6 +13,7 @@ export { formatDate, formatTime, formatTimeInHoursAndMinutes, normalizeWorkOrder
 export const statusMap = {
   "pending": "Pending",
   "in-progress": "In Progress",
+  "on-hold": "On Hold", // Added missing "on-hold" status
   "completed": "Completed",
   "cancelled": "Cancelled"
 };

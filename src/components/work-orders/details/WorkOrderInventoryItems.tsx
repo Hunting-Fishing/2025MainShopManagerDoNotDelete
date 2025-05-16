@@ -1,19 +1,21 @@
-
-import React from "react";
+import React, { useState } from 'react';
+import { WorkOrder } from '@/types/workOrder';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { ExtendedWorkOrderInventoryItem } from '../inventory/WorkOrderInventoryItem';
 import { format } from "date-fns";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ExtendedWorkOrderInventoryItem } from "@/components/work-orders/inventory/WorkOrderInventoryItem";
 import { Clock, Package, Tag, Truck } from "lucide-react";
 
 interface WorkOrderInventoryItemsProps {
-  items: ExtendedWorkOrderInventoryItem[];
-  onUpdateItem?: (item: ExtendedWorkOrderInventoryItem) => void;
+  workOrderId: string; // Changed from 'workOrder' to 'workOrderId'
+  inventoryItems: ExtendedWorkOrderInventoryItem[];
+  onUpdateItems?: (items: ExtendedWorkOrderInventoryItem[]) => void;
 }
 
 export function WorkOrderInventoryItems({ 
-  items, 
-  onUpdateItem 
+  workOrderId, // Use workOrderId instead of workOrder
+  inventoryItems,
+  onUpdateItems 
 }: WorkOrderInventoryItemsProps) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -22,7 +24,7 @@ export function WorkOrderInventoryItems({
     }).format(amount);
   };
 
-  if (!items || items.length === 0) {
+  if (!inventoryItems || inventoryItems.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -40,7 +42,7 @@ export function WorkOrderInventoryItems({
   // Group items by status
   const groupedItems: Record<string, ExtendedWorkOrderInventoryItem[]> = {};
   
-  items.forEach(item => {
+  inventoryItems.forEach(item => {
     const status = item.itemStatus || 'In Stock';
     if (!groupedItems[status]) {
       groupedItems[status] = [];
@@ -112,12 +114,12 @@ export function WorkOrderInventoryItems({
                         <span>{formatCurrency(item.quantity * item.unit_price)}</span>
                       </div>
                       
-                      {onUpdateItem && (
+                      {onUpdateItems && (
                         <Button 
                           variant="outline" 
                           size="sm" 
                           className="mt-2"
-                          onClick={() => onUpdateItem(item)}
+                          onClick={() => onUpdateItems(inventoryItems)}
                         >
                           Update Status
                         </Button>
@@ -133,7 +135,7 @@ export function WorkOrderInventoryItems({
         <div className="border-t pt-4 flex justify-between">
           <span className="font-medium">Total Parts & Materials:</span>
           <span className="font-bold">
-            {formatCurrency(items.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0))}
+            {formatCurrency(inventoryItems.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0))}
           </span>
         </div>
       </CardContent>

@@ -4,6 +4,7 @@ import { TableRow as UITableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { InventoryItemExtended } from "@/types/inventory";
 import { Column } from "./SortableColumnHeader";
+import { format } from "date-fns"; // Added missing import
 
 interface TableRowProps {
   item: InventoryItemExtended;
@@ -74,12 +75,12 @@ export const InventoryTableRow = ({
     } 
     
     if (key === 'created_at' || key === 'updated_at') {
-      // Make a safe type assertion to access these properties
+      // Use type assertion to access these properties
       const dateValue = item[key as keyof typeof item] as string | undefined;
       return formatDate(dateValue);
     }
     
-    // Safe access to any property
+    // Access properties using type assertion
     const value = item[key as keyof typeof item];
     return value !== undefined ? value : "N/A";
   };

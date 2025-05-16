@@ -1,4 +1,3 @@
-
 import React from "react";
 import { InvoiceHeader } from "@/components/invoices/InvoiceHeader";
 import { InvoiceLeftColumn } from "@/components/invoices/layout/InvoiceLeftColumn";
@@ -74,6 +73,11 @@ export function InvoiceCreateLayout({
   handleApplyTemplate,
   handleSaveTemplate,
 }: InvoiceCreateLayoutProps) {
+  // Update the handleSaveTemplate function to return a Promise
+  const handleSaveTemplate = async (templateData: Omit<InvoiceTemplate, 'id' | 'created_at' | 'usage_count'>) => {
+    return handleSaveTemplateAsync(templateData);
+  };
+
   return (
     <div className="space-y-6">
       <InvoiceHeader 
