@@ -22,7 +22,7 @@ export const InventoryFormSelect: React.FC<InventoryFormSelectProps> = ({
   error,
 }) => {
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    onChange(e.target.name, e.target.value);
+    onChange(name, e.target.value);
   };
 
   return (

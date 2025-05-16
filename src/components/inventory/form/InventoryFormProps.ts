@@ -1,18 +1,15 @@
 
-import { InventoryItemExtended } from "@/types/inventory";
-import { SelectOption } from "./InventoryFormSelect";
+// Types for inventory form components
+export interface SelectOption {
+  value: string;
+  label: string;
+}
 
-export interface InventoryFormProps {
-  formData: Omit<InventoryItemExtended, "id">;
-  handleChange: (field: keyof Omit<InventoryItemExtended, "id">, value: any) => void;
-  handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleTextAreaChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  handleSelectChange: (name: string, value: string) => void;
-  handleRadioChange: (name: string, value: string) => void;
-  formErrors: Record<string, string>;
-  categories: string[] | SelectOption[];
-  suppliers: string[] | SelectOption[];
-  onSubmit: (formData: Omit<InventoryItemExtended, "id">) => void;
-  loading: boolean;
-  onCancel: () => void;
+export interface InventoryFormFieldProps {
+  label: string;
+  name: string;
+  value: any;
+  onChange: (name: string, value: any) => void;
+  required?: boolean;
+  error?: string;
 }
