@@ -1,102 +1,105 @@
 
-import { jsPDF } from "jspdf";
-import 'jspdf-autotable';
-import { Invoice } from "@/types/invoice";
-import { configurePdf, addFooter } from "./pdfConfig";
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { Invoice } from '@/types/invoice';
+import { formatCurrency, formatDate } from '@/utils/formatters';
 
 /**
- * Generate a detailed invoice PDF with better formatting
+ * Generate invoice PDF
  */
-export const generateInvoicePdf = (
-  invoice: Invoice & { 
-    subtotal: number;
-    tax: number;
-    total: number;
-    paymentMethod?: string;
-  }
-) => {
+export const generateInvoicePdf = (invoice: Invoice & { 
+  subtotal: number; 
+  tax: number; 
+  total: number; 
+  paymentMethod?: string;
+}) => {
   // Create new PDF document
   const doc = new jsPDF();
   
-  // Configure document with branding
-  configurePdf(doc, `Invoice #${invoice.id}`);
+  // Set font
+  doc.setFont('helvetica', 'normal');
   
-  // Add customer information
-  doc.setFontSize(11);
-  doc.setTextColor(0, 0, 0);
-  doc.text("Bill To:", 14, 50);
+  // Add header
+  doc.setFontSize(20);
+  doc.text('INVOICE', 14, 20);
+  
   doc.setFontSize(10);
-  doc.text(invoice.customer, 14, 55);
-  doc.text(invoice.customerAddress || "", 14, 60);
-  doc.text(invoice.customerEmail || "", 14, 65);
+  doc.text(`Invoice #${invoice.id || ''}`, 14, 30);
+  doc.text(`Date: ${formatDate(invoice.date)}`, 14, 35);
   
-  // Add invoice details
-  doc.setFontSize(11);
-  doc.text("Invoice Details:", 120, 50);
+  // Customer info
+  doc.setFontSize(12);
+  doc.text('Bill To:', 14, 45);
   doc.setFontSize(10);
-  doc.text(`Invoice Date: ${invoice.date}`, 120, 55);
-  doc.text(`Due Date: ${invoice.dueDate}`, 120, 60);
-  doc.text(`Status: ${invoice.status.toUpperCase()}`, 120, 65);
+  doc.text(`${invoice.customer || ''}`, 14, 50);
+  doc.text(`${invoice.customer_address || ''}`, 14, 55);
+  doc.text(`${invoice.customer_email || ''}`, 14, 60);
   
-  if (invoice.workOrderId) {
-    doc.text(`Work Order: ${invoice.workOrderId}`, 120, 70);
+  // Invoice details
+  doc.setFontSize(10);
+  doc.text('Invoice Details', 140, 45);
+  doc.text(`Issue Date: ${formatDate(invoice.date)}`, 140, 50);
+  doc.text(`Due Date: ${formatDate(invoice.due_date)}`, 140, 55);
+  doc.text(`Payment Method: ${invoice.payment_method || 'Not specified'}`, 140, 60);
+  
+  if (invoice.work_order_id) {
+    doc.text('Work Order Reference:', 140, 65);
+    doc.text(`${invoice.work_order_id}`, 140, 70);
   }
   
-  // Add invoice items table
-  doc.autoTable({
-    startY: 75,
-    head: [['Item', 'Description', 'Quantity', 'Price', 'Total']],
-    body: invoice.items.map(item => [
-      item.name,
-      item.description || "",
-      item.quantity.toString(),
-      `$${item.price.toFixed(2)}`,
-      `$${item.total.toFixed(2)}`
-    ]),
-    styles: { fontSize: 9, cellPadding: 3 },
-    headStyles: { fillColor: [66, 139, 202] },
-    footStyles: { fillColor: [245, 245, 245] },
-    alternateRowStyles: { fillColor: [249, 249, 249] },
-    margin: { top: 75 },
+  // Table header
+  const tableColumn = ['Item', 'Description', 'Quantity', 'Price', 'Total'];
+  
+  // Table rows
+  const tableRows = invoice.items?.map(item => {
+    return [
+      item.name || '',
+      item.description || '',
+      item.hours ? `${item.quantity} hr` : item.quantity.toString(),
+      formatCurrency(item.price),
+      formatCurrency(item.total || item.price * item.quantity)
+    ];
+  }) || [];
+  
+  // Add items table
+  doc.setFontSize(12);
+  doc.text('Invoice Items', 14, 75);
+  
+  autoTable(doc, {
+    head: [tableColumn],
+    body: tableRows,
+    startY: 80,
+    theme: 'striped',
+    headStyles: {
+      fillColor: [100, 100, 100],
+      textColor: [255, 255, 255]
+    },
+    styles: {
+      lineColor: [220, 220, 220]
+    }
   });
   
-  // Calculate where the table ended
-  const finalY = (doc as any).lastAutoTable.finalY || 120;
+  // Get the y position after the table
+  const finalY = (doc as any).lastAutoTable.finalY + 10;
   
   // Add totals
   doc.setFontSize(10);
-  doc.text(`Subtotal: $${invoice.subtotal.toFixed(2)}`, 150, finalY + 10);
-  doc.text(`Tax: $${invoice.tax.toFixed(2)}`, 150, finalY + 15);
-  doc.setFontSize(11);
-  doc.setFont(undefined, 'bold');
-  doc.text(`Total: $${invoice.total.toFixed(2)}`, 150, finalY + 20);
-  doc.setFont(undefined, 'normal');
+  doc.text('Subtotal:', 140, finalY);
+  doc.text(formatCurrency(invoice.subtotal), 170, finalY, { align: 'right' });
+  
+  doc.text('Tax:', 140, finalY + 5);
+  doc.text(formatCurrency(invoice.tax), 170, finalY + 5, { align: 'right' });
+  
+  doc.setFontSize(12);
+  doc.text('Total:', 140, finalY + 15);
+  doc.text(formatCurrency(invoice.total), 170, finalY + 15, { align: 'right' });
   
   // Add notes
   if (invoice.notes) {
     doc.setFontSize(10);
-    doc.text("Notes:", 14, finalY + 35);
-    doc.setFontSize(9);
-    
-    // Wrap the notes text to ensure it fits within the page
-    const splitNotes = doc.splitTextToSize(invoice.notes, 180);
-    doc.text(splitNotes, 14, finalY + 40);
+    doc.text('Notes:', 14, finalY + 25);
+    doc.text(invoice.notes, 14, finalY + 30);
   }
-  
-  // Add payment information if available
-  if (invoice.paymentMethod) {
-    doc.setFontSize(10);
-    doc.text(`Payment Method: ${invoice.paymentMethod}`, 14, finalY + 20);
-  }
-  
-  // Add terms and conditions
-  doc.setFontSize(8);
-  const termsY = invoice.notes ? finalY + 60 : finalY + 40;
-  doc.text("Terms & Conditions:", 14, termsY);
-  doc.text("Payment is due by the due date. Late payments may incur additional fees.", 14, termsY + 5);
-  
-  // Add footer
-  addFooter(doc);
   
   return doc;
 };

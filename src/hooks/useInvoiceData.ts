@@ -17,7 +17,9 @@ export const useInvoiceData = () => {
       return {
         ...invoice,
         // Ensure that customer is handled as a string as required by the Invoice type
-        customer: typeof invoice.customer === 'object' ? invoice.customer.name : invoice.customer,
+        customer: typeof invoice.customer === 'object' && invoice.customer ? 
+          invoice.customer.name || String(invoice.customer) : 
+          (invoice.customer || ''),
         // Add any other necessary conversions
       };
     } catch (error) {

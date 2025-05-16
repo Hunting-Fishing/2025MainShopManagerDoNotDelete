@@ -6,10 +6,9 @@ import { ArrowLeft, Save } from "lucide-react";
 import { Link } from "react-router-dom";
 import { WorkOrderForm } from "@/components/work-orders/WorkOrderForm";
 import { WorkOrderFormHeader } from "@/components/work-orders/WorkOrderFormHeader";
-import { WorkOrder, WorkOrderTemplate } from "@/types/workOrder";
+import { WorkOrder, WorkOrderTemplate, WorkOrderStatusType } from "@/types/workOrder";
 import { useWorkOrderForm } from "@/hooks/useWorkOrderForm";
 import { WorkOrderSelector } from "@/components/work-orders/templates/WorkOrderTemplateSelector";
-import { useWorkOrderTemplates } from "@/hooks/useWorkOrderTemplates";
 
 const defaultWorkOrder: Partial<WorkOrder> = {
   status: "pending",
@@ -18,25 +17,31 @@ const defaultWorkOrder: Partial<WorkOrder> = {
 
 export default function WorkOrderCreate() {
   const navigate = useNavigate();
-  const { workOrder, updateField, handleSubmit, loading } = useWorkOrderForm(defaultWorkOrder);
-  const { templates, handleApplyTemplate } = useWorkOrderTemplates();
+  const { form, isSubmitting, handleSubmit } = useWorkOrderForm(defaultWorkOrder);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+
+  const workOrder = form.watch();
+  
+  const updateField = (field: any, value: any) => {
+    form.setValue(field, value);
+  };
 
   const handleSelectTemplate = (template: WorkOrderTemplate) => {
     // Apply the selected template
     updateField("description", template.description || "");
     updateField("status", template.status || "pending");
-    updateField("service_type", template.technician || "");
+    updateField("technician", template.technician || "");
     
     setShowTemplateSelector(false);
   };
 
-  const availableTemplates = [
+  // Templates need to be converted to match the WorkOrderTemplate type
+  const availableTemplates: WorkOrderTemplate[] = [
     {
       id: "template-1",
       name: "Oil Change",
       description: "Standard oil change service",
-      status: "pending",
+      status: "pending" as WorkOrderStatusType,
       technician: "John Smith",
       notes: "Check all fluid levels and tire pressure",
       usage_count: 45,
@@ -46,7 +51,7 @@ export default function WorkOrderCreate() {
       id: "template-2",
       name: "Brake Inspection",
       description: "Complete brake system inspection",
-      status: "pending",
+      status: "pending" as WorkOrderStatusType,
       technician: "Jane Doe",
       notes: "Check brake pads, rotors, and fluid",
       usage_count: 28,
@@ -56,7 +61,7 @@ export default function WorkOrderCreate() {
       id: "template-3",
       name: "Full Service",
       description: "Complete vehicle service",
-      status: "pending",
+      status: "pending" as WorkOrderStatusType,
       technician: "Mike Johnson",
       notes: "Full inspection and maintenance service",
       usage_count: 19,
@@ -85,7 +90,7 @@ export default function WorkOrderCreate() {
           </Button>
           <Button
             onClick={() => handleSubmit()}
-            disabled={loading}
+            disabled={isSubmitting}
           >
             <Save className="mr-2 h-4 w-4" />
             Save Work Order
@@ -94,10 +99,9 @@ export default function WorkOrderCreate() {
       </div>
 
       <WorkOrderForm
-        workOrder={workOrder}
-        updateField={updateField}
+        form={form}
         onSubmit={handleSubmit}
-        isLoading={loading}
+        isLoading={isSubmitting}
       />
 
       <WorkOrderSelector

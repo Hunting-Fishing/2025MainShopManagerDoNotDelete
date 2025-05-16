@@ -45,3 +45,23 @@ export const formatInvoiceForApi = (invoice: Invoice): any => {
     total: Number(invoice.total)
   };
 };
+
+/**
+ * Returns Tailwind CSS class for invoice status
+ */
+export const getInvoiceStatusColor = (status: string): string => {
+  switch (status.toLowerCase()) {
+    case 'paid':
+      return 'bg-green-100 text-green-800 border border-green-300';
+    case 'pending':
+      return 'bg-yellow-100 text-yellow-800 border border-yellow-300';
+    case 'overdue':
+      return 'bg-red-100 text-red-800 border border-red-300';
+    case 'draft':
+      return 'bg-gray-100 text-gray-800 border border-gray-300';
+    case 'cancelled':
+      return 'bg-slate-100 text-slate-800 border border-slate-300';
+    default:
+      return 'bg-gray-100 text-gray-800 border border-gray-300';
+  }
+};

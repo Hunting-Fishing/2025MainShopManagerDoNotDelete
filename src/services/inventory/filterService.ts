@@ -1,138 +1,190 @@
 
-import { supabase } from '@/lib/supabase';
-import { InventoryItemExtended } from '@/types/inventory';
-import { formatInventoryItem } from './utils';
+import { supabase } from "@/lib/supabase";
+import { InventoryItemExtended } from "@/types/inventory";
+import { mapApiToInventoryItem } from "./utils";
 
-export type FilterOptions = {
-  category?: string;
-  supplier?: string;
-  location?: string;
-  status?: string;
-  search?: string;
-  minQuantity?: number;
-  maxQuantity?: number;
-  lowStock?: boolean;
-  orderBy?: string;
-  direction?: 'asc' | 'desc';
+/**
+ * Filter inventory items based on search criteria
+ */
+export const filterInventoryItems = async (searchQuery: string, filters: any = {}) => {
+  try {
+    let query = supabase.from("inventory_items").select("*");
+
+    if (searchQuery) {
+      query = query.or(`name.ilike.%${searchQuery}%,sku.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
+    }
+
+    if (filters.category) {
+      if (Array.isArray(filters.category) && filters.category.length > 0) {
+        query = query.in('category', filters.category);
+      } else if (typeof filters.category === 'string' && filters.category) {
+        query = query.eq('category', filters.category);
+      }
+    }
+
+    if (filters.status) {
+      if (Array.isArray(filters.status) && filters.status.length > 0) {
+        query = query.in('status', filters.status);
+      } else if (typeof filters.status === 'string' && filters.status) {
+        query = query.eq('status', filters.status);
+      }
+    }
+
+    if (filters.supplier) {
+      query = query.eq('supplier', filters.supplier);
+    }
+
+    if (filters.location) {
+      query = query.eq('location', filters.location);
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    // Map data to inventory items
+    return (data || []).map(mapApiToInventoryItem);
+  } catch (error) {
+    console.error("Error filtering inventory items:", error);
+    return [];
+  }
 };
 
-export const filterInventoryItems = async (options: FilterOptions = {}): Promise<InventoryItemExtended[]> => {
-  let query = supabase.from('inventory_items').select('*');
-
-  // Apply filters
-  if (options.category) {
-    query = query.eq('category', options.category);
-  }
-  
-  if (options.supplier) {
-    query = query.eq('supplier', options.supplier);
-  }
-  
-  if (options.location) {
-    query = query.eq('location', options.location);
-  }
-  
-  if (options.status) {
-    query = query.eq('status', options.status);
-  }
-  
-  if (options.search) {
-    query = query.or(`name.ilike.%${options.search}%,sku.ilike.%${options.search}%,description.ilike.%${options.search}%`);
-  }
-  
-  if (options.minQuantity !== undefined) {
-    query = query.gte('quantity', options.minQuantity);
-  }
-  
-  if (options.maxQuantity !== undefined) {
-    query = query.lte('quantity', options.maxQuantity);
-  }
-  
-  if (options.lowStock) {
-    query = query.lte('quantity', supabase.rpc('get_reorder_point'));
-  }
-  
-  // Apply sorting
-  if (options.orderBy) {
-    query = query.order(options.orderBy, { ascending: options.direction === 'asc' });
-  } else {
-    query = query.order('name', { ascending: true });
-  }
-  
-  const { data, error } = await query;
-  
-  if (error) {
-    console.error('Error filtering inventory items:', error);
-    throw error;
-  }
-  
-  return data.map(formatInventoryItem);
-};
-
+/**
+ * Get all inventory categories
+ */
 export const getInventoryCategories = async (): Promise<string[]> => {
-  const { data, error } = await supabase
-    .from('inventory_items')
-    .select('category')
-    .not('category', 'is', null);
+  try {
+    const { data, error } = await supabase
+      .from("inventory_items")
+      .select("category")
+      .not("category", "is", null);
+
+    if (error) throw error;
     
-  if (error) {
-    console.error('Error fetching inventory categories:', error);
-    throw error;
+    const categories = data
+      .map((item) => item.category)
+      .filter(Boolean)
+      .filter((value, index, self) => self.indexOf(value) === index)
+      .sort();
+      
+    return categories;
+  } catch (error) {
+    console.error("Error fetching inventory categories:", error);
+    return [];
   }
-  
-  // Extract unique categories
-  const categories = [...new Set(data.map(item => item.category).filter(Boolean))];
-  
-  return categories;
 };
 
+/**
+ * Get all inventory suppliers
+ */
 export const getInventorySuppliers = async (): Promise<string[]> => {
-  const { data, error } = await supabase
-    .from('inventory_items')
-    .select('supplier')
-    .not('supplier', 'is', null);
+  try {
+    const { data, error } = await supabase
+      .from("inventory_items")
+      .select("supplier")
+      .not("supplier", "is", null);
+
+    if (error) throw error;
     
-  if (error) {
-    console.error('Error fetching inventory suppliers:', error);
-    throw error;
+    const suppliers = data
+      .map((item) => item.supplier)
+      .filter(Boolean)
+      .filter((value, index, self) => self.indexOf(value) === index)
+      .sort();
+      
+    return suppliers;
+  } catch (error) {
+    console.error("Error fetching inventory suppliers:", error);
+    return [];
   }
-  
-  // Extract unique suppliers
-  const suppliers = [...new Set(data.map(item => item.supplier).filter(Boolean))];
-  
-  return suppliers;
 };
 
+/**
+ * Get all inventory locations
+ */
 export const getInventoryLocations = async (): Promise<string[]> => {
-  const { data, error } = await supabase
-    .from('inventory_items')
-    .select('location')
-    .not('location', 'is', null);
+  try {
+    const { data, error } = await supabase
+      .from("inventory_items")
+      .select("location")
+      .not("location", "is", null);
+
+    if (error) throw error;
     
-  if (error) {
-    console.error('Error fetching inventory locations:', error);
-    throw error;
+    const locations = data
+      .map((item) => item.location)
+      .filter(Boolean)
+      .filter((value, index, self) => self.indexOf(value) === index)
+      .sort();
+      
+    return locations;
+  } catch (error) {
+    console.error("Error fetching inventory locations:", error);
+    return [];
   }
-  
-  // Extract unique locations
-  const locations = [...new Set(data.map(item => item.location).filter(Boolean))];
-  
-  return locations;
 };
 
+/**
+ * Get all inventory statuses
+ */
 export const getInventoryStatuses = async (): Promise<string[]> => {
-  const { data, error } = await supabase
-    .from('inventory_items')
-    .select('status')
-    .not('status', 'is', null);
+  try {
+    const { data, error } = await supabase
+      .from("inventory_items")
+      .select("status")
+      .not("status", "is", null);
+
+    if (error) throw error;
     
-  if (error) {
-    console.error('Error fetching inventory statuses:', error);
-    throw error;
+    const statuses = data
+      .map((item) => item.status)
+      .filter(Boolean)
+      .filter((value, index, self) => self.indexOf(value) === index)
+      .sort();
+      
+    return statuses;
+  } catch (error) {
+    console.error("Error fetching inventory statuses:", error);
+    return [];
   }
-  
-  // Extract unique statuses
-  const statuses = [...new Set(data.map(item => item.status).filter(Boolean))];
-  
-  return statuses;
+};
+
+/**
+ * Get low stock items
+ */
+export const getLowStockItems = async () => {
+  try {
+    const { data, error } = await supabase
+      .from("inventory_items")
+      .select("*")
+      .gt("quantity", 0) // Greater than 0
+      .lte("quantity", supabase.raw("reorder_point")); // Less than or equal to reorder_point
+
+    if (error) throw error;
+    
+    return (data || []).map(mapApiToInventoryItem);
+  } catch (error) {
+    console.error("Error fetching low stock items:", error);
+    return [];
+  }
+};
+
+/**
+ * Get out of stock items
+ */
+export const getOutOfStockItems = async () => {
+  try {
+    const { data, error } = await supabase
+      .from("inventory_items")
+      .select("*")
+      .lte("quantity", 0); // Less than or equal to 0
+
+    if (error) throw error;
+    
+    return (data || []).map(mapApiToInventoryItem);
+  } catch (error) {
+    console.error("Error fetching out of stock items:", error);
+    return [];
+  }
 };

@@ -1,7 +1,8 @@
+
 import { useParams } from "react-router-dom";
 import { useInvoiceForm } from "@/hooks/useInvoiceForm";
 import { InvoiceCreateLayout } from "@/components/invoices/InvoiceCreateLayout";
-import { useWorkOrderSelector } from "@/components/invoices/WorkOrderSelector";
+import { WorkOrderSelector } from "@/components/invoices/WorkOrderSelector";
 import { supabase } from "@/lib/supabase"; 
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
@@ -124,14 +125,12 @@ export default function InvoiceCreate() {
     handleSaveInvoice,
     handleApplyTemplate,
     handleSaveTemplate,
-  } = useInvoiceForm(workOrderId);
+    onTaxRateChange,
+    items,
+    assignedStaff
+  } = useInvoiceForm();
 
-  const workOrderSelector = useWorkOrderSelector({
-    invoice,
-    setInvoice,
-    handleSelectWorkOrder,
-  });
-
+  // Get staff name helper function
   const getStaffName = (staff: any) => {
     if (staff && staff.first_name && staff.last_name) {
       return `${staff.first_name} ${staff.last_name}`;
@@ -139,14 +138,15 @@ export default function InvoiceCreate() {
     return "Unknown Staff";
   };
 
+  // Adapter functions for type compatibility
   const handleAddInventoryItemAdapter = (item: InventoryItem) => {
     const invoiceItem: InvoiceItem = {
       id: item.id,
-      name: item.name,
+      name: item.name || "",
       description: item.description || "",
       quantity: 1,
-      price: item.price,
-      total: item.price,
+      price: item.price || 0,
+      total: item.price || 0,
       sku: item.sku || "",
       category: item.category || ""
     };
@@ -170,18 +170,11 @@ export default function InvoiceCreate() {
   };
 
   const handleAddLaborItemAdapter = () => {
-    const laborItem: InvoiceItem = {
-      id: crypto.randomUUID(),
-      name: "Labor",
-      description: "Service labor",
-      quantity: 1,
-      price: 0,
-      total: 0,
-      hours: true,
-      sku: "LABOR",
-      category: "Services"
-    };
-    handleAddLaborItem(laborItem);
+    handleAddLaborItem();
+  };
+
+  const handleSaveTemplateAdapter = async (template: Omit<InvoiceTemplate, "id" | "created_at" | "usage_count">) => {
+    await handleSaveTemplate(template);
   };
 
   return (
@@ -191,6 +184,7 @@ export default function InvoiceCreate() {
       tax={tax}
       taxRate={taxRate}
       total={total}
+      items={items || []}
       showWorkOrderDialog={showWorkOrderDialog}
       showInventoryDialog={showInventoryDialog}
       showStaffDialog={showStaffDialog}
@@ -202,7 +196,7 @@ export default function InvoiceCreate() {
       setShowWorkOrderDialog={setShowWorkOrderDialog}
       setShowInventoryDialog={setShowInventoryDialog}
       setShowStaffDialog={setShowStaffDialog}
-      handleSelectWorkOrder={workOrderSelector.handleSelectWorkOrderWithTime}
+      handleSelectWorkOrder={handleSelectWorkOrder}
       handleAddInventoryItem={handleAddInventoryItemAdapter}
       handleAddStaffMember={handleAddStaffMember}
       handleRemoveStaffMember={handleRemoveStaffMember}
@@ -213,7 +207,8 @@ export default function InvoiceCreate() {
       handleAddLaborItem={handleAddLaborItemAdapter}
       handleSaveInvoice={handleSaveInvoice}
       handleApplyTemplate={handleApplyTemplate}
-      handleSaveTemplate={handleSaveTemplate}
+      handleSaveTemplate={handleSaveTemplateAdapter}
+      onTaxRateChange={onTaxRateChange}
     />
   );
 }

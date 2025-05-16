@@ -2,65 +2,71 @@
 import { InventoryItemExtended } from "@/types/inventory";
 
 /**
- * Map API response to our InventoryItemExtended type
+ * Get inventory status based on quantity and reorder point
  */
-export function mapApiToInventoryItem(apiItem: any): InventoryItemExtended {
-  return {
-    id: apiItem.id,
-    name: apiItem.name,
-    sku: apiItem.sku,
-    category: apiItem.category,
-    supplier: apiItem.supplier,
-    quantity: apiItem.quantity,
-    reorder_point: apiItem.reorder_point,
-    unit_price: apiItem.unit_price,
-    location: apiItem.location,
-    status: apiItem.status,
-    description: apiItem.description,
-    price: apiItem.unit_price || 0, // Ensure price is set from unit_price
-    partNumber: apiItem.partNumber,
-    barcode: apiItem.barcode,
-    subcategory: apiItem.subcategory,
-    manufacturer: apiItem.manufacturer,
-    vehicleCompatibility: apiItem.vehicleCompatibility,
-    onHold: apiItem.onHold,
-    onOrder: apiItem.onOrder,
-    cost: apiItem.cost,
-    marginMarkup: apiItem.marginMarkup,
-    warrantyPeriod: apiItem.warrantyPeriod,
-    dateBought: apiItem.dateBought,
-    dateLast: apiItem.dateLast,
-    notes: apiItem.notes
-  };
-}
+export const getInventoryStatus = (item: InventoryItemExtended): string => {
+  const quantity = Number(item.quantity) || 0;
+  const reorderPoint = Number(item.reorder_point) || 0;
 
-/**
- * Get status text based on quantity and reorder_point
- */
-export function getInventoryStatus(item: InventoryItemExtended): string {
-  if (item.quantity <= 0) {
-    return 'Out of Stock';
-  } else if (item.quantity <= item.reorder_point) {
-    return 'Low Stock';
+  if (quantity <= 0) {
+    return "Out of Stock";
+  } else if (quantity <= reorderPoint) {
+    return "Low Stock";
   } else {
-    return 'In Stock';
+    return "In Stock";
   }
-}
+};
 
 /**
- * Format inventory item for compatibility with the API
+ * Count low stock items in inventory
  */
-export function formatInventoryForApi(item: Partial<InventoryItemExtended>): any {
+export const countLowStockItems = (items: InventoryItemExtended[]): number => {
+  return items.filter(item => {
+    const quantity = Number(item.quantity) || 0;
+    const reorderPoint = Number(item.reorder_point) || 0;
+    return quantity > 0 && quantity <= reorderPoint;
+  }).length;
+};
+
+/**
+ * Count out of stock items in inventory
+ */
+export const countOutOfStockItems = (items: InventoryItemExtended[]): number => {
+  return items.filter(item => {
+    const quantity = Number(item.quantity) || 0;
+    return quantity <= 0;
+  }).length;
+};
+
+/**
+ * Format inventory item from API
+ */
+export const formatInventoryItem = (item: Partial<InventoryItemExtended>): InventoryItemExtended => {
   return {
-    name: item.name,
-    sku: item.sku,
-    category: item.category,
-    supplier: item.supplier,
-    quantity: item.quantity,
-    reorder_point: item.reorder_point || item.reorderPoint, // Support both property names
-    unit_price: item.unit_price || item.unitPrice,          // Support both property names
-    location: item.location,
-    status: item.status,
-    description: item.description
+    id: item.id || crypto.randomUUID(),
+    name: item.name || '',
+    sku: item.sku || '',
+    category: item.category || '',
+    description: item.description || '',
+    quantity: Number(item.quantity) || 0,
+    reorder_point: Number(item.reorder_point) || 10,
+    unit_price: Number(item.unit_price) || 0,
+    supplier: item.supplier || '',
+    location: item.location || '',
+    status: item.status || 'In Stock',
+    created_at: item.created_at || new Date().toISOString(),
+    updated_at: item.updated_at || new Date().toISOString()
   };
-}
+};
+
+/**
+ * Format inventory item for API submission
+ */
+export const formatInventoryForApi = (item: Partial<InventoryItemExtended>): any => {
+  return {
+    ...item,
+    quantity: Number(item.quantity),
+    reorder_point: Number(item.reorder_point),
+    unit_price: Number(item.unit_price),
+  };
+};

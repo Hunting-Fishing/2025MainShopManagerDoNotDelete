@@ -1,95 +1,38 @@
 
-import { useState, useEffect } from "react";
-import { InventoryItemExtended } from "@/types/inventory";
-import { getLowStockItems, getOutOfStockItems } from "@/services/inventory/filterService";
-import { useNotifications } from "@/context/NotificationsContext";
+import { useState, useEffect } from 'react';
+import { InventoryItemExtended } from '@/types/inventory';
+import { getInventoryItems } from '@/services/inventory/crudService';
+import { countLowStockItems, countOutOfStockItems } from '@/services/inventory/utils';
 
 export function useInventoryAlerts() {
-  const [lowStockItems, setLowStockItems] = useState<InventoryItemExtended[]>([]);
-  const [outOfStockItems, setOutOfStockItems] = useState<InventoryItemExtended[]>([]);
+  const [lowStockCount, setLowStockCount] = useState(0);
+  const [outOfStockCount, setOutOfStockCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const { addNotification } = useNotifications();
-
-  // Load low stock and out of stock items
+  const [inventoryItems, setInventoryItems] = useState<InventoryItemExtended[]>([]);
+  
   useEffect(() => {
-    async function loadAlertItems() {
+    const fetchInventoryAlerts = async () => {
+      setLoading(true);
       try {
-        const [lowItems, outItems] = await Promise.all([
-          getLowStockItems(),
-          getOutOfStockItems()
-        ]);
+        const items = await getInventoryItems();
         
-        setLowStockItems(lowItems);
-        setOutOfStockItems(outItems);
+        setInventoryItems(items);
+        setLowStockCount(countLowStockItems(items));
+        setOutOfStockCount(countOutOfStockItems(items));
       } catch (error) {
-        console.error("Error loading inventory alerts:", error);
+        console.error("Error fetching inventory alerts:", error);
       } finally {
         setLoading(false);
       }
-    }
+    };
     
-    loadAlertItems();
+    fetchInventoryAlerts();
   }, []);
-
-  // Function to check inventory and create alerts
-  const checkInventoryAlerts = async (
-    placeAutomaticOrder: (itemId: string) => void, 
-    autoReorderSettings: Record<string, { enabled: boolean; threshold: number; quantity: number }>
-  ) => {
-    try {
-      // Reload the data
-      const [lowItems, outItems] = await Promise.all([
-        getLowStockItems(),
-        getOutOfStockItems()
-      ]);
-      
-      setLowStockItems(lowItems);
-      setOutOfStockItems(outItems);
-      
-      // Create notifications for low stock items
-      lowItems.forEach(item => {
-        addNotification({
-          title: "Low Stock Alert",
-          message: `${item.name} is running low (${item.quantity} remaining)`,
-          type: "warning",
-          link: "/inventory",
-          duration: 8000
-        });
-        
-        // Check if auto-reorder is enabled and threshold is met
-        if (
-          autoReorderSettings[item.id] && 
-          autoReorderSettings[item.id].enabled && 
-          item.quantity <= autoReorderSettings[item.id].threshold
-        ) {
-          placeAutomaticOrder(item.id);
-        }
-      });
-
-      // Create notifications for out of stock items
-      outItems.forEach(item => {
-        addNotification({
-          title: "Out of Stock Alert",
-          message: `${item.name} is out of stock and needs to be reordered`,
-          type: "error",
-          link: "/inventory",
-          duration: 10000
-        });
-        
-        // Auto-reorder if enabled
-        if (autoReorderSettings[item.id] && autoReorderSettings[item.id].enabled) {
-          placeAutomaticOrder(item.id);
-        }
-      });
-    } catch (error) {
-      console.error("Error checking inventory alerts:", error);
-    }
-  };
-
+  
   return {
-    lowStockItems,
-    outOfStockItems,
+    lowStockCount,
+    outOfStockCount,
     loading,
-    checkInventoryAlerts,
+    inventoryItems
   };
 }

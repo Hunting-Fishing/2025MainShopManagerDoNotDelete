@@ -1,99 +1,75 @@
 
-import { useState } from "react";
+import { useState, useEffect } from 'react';
 import { 
   getInventoryTransactions, 
-  getTransactionsForItem,
-  createInventoryTransaction
-} from "@/services/inventory/transactionService";
-import { InventoryTransaction, CreateInventoryTransactionDto } from "@/types/inventory/transactions";
-import { toast } from "@/hooks/use-toast";
+  getItemTransactions, 
+  recordInventoryTransaction 
+} from '@/services/inventory/transactionService';
 
-export function useInventoryTransactions() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [transactions, setTransactions] = useState<InventoryTransaction[]>([]);
-  const [itemTransactions, setItemTransactions] = useState<InventoryTransaction[]>([]);
-
-  // Load all transactions
-  const loadTransactions = async (): Promise<InventoryTransaction[]> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getInventoryTransactions();
-      setTransactions(data);
-      return data;
-    } catch (err) {
-      const errorMessage = "Failed to load inventory transactions";
-      setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Load transactions for a specific item
-  const loadItemTransactions = async (itemId: string): Promise<InventoryTransaction[]> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getTransactionsForItem(itemId);
-      setItemTransactions(data);
-      return data;
-    } catch (err) {
-      const errorMessage = `Failed to load transactions for item ${itemId}`;
-      setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Create a new transaction
-  const createTransaction = async (transaction: CreateInventoryTransactionDto): Promise<boolean> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await createInventoryTransaction(transaction);
-      if (result) {
-        toast({
-          title: "Success",
-          description: "Inventory transaction created successfully",
-          variant: "default",
-        });
-        return true;
+export function useInventoryTransactions(itemId?: string) {
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        let data;
+        if (itemId) {
+          data = await getItemTransactions(itemId);
+        } else {
+          data = await getInventoryTransactions();
+        }
+        
+        setTransactions(data);
+      } catch (err: any) {
+        setError(err instanceof Error ? err : new Error(String(err)));
+        console.error('Error fetching inventory transactions:', err);
+      } finally {
+        setLoading(false);
       }
+    };
+    
+    fetchTransactions();
+  }, [itemId]);
+  
+  const createTransaction = async (
+    inventoryItemId: string, 
+    quantity: number, 
+    transactionType: string, 
+    notes?: string
+  ) => {
+    setError(null);
+    try {
+      await recordInventoryTransaction(
+        inventoryItemId,
+        quantity,
+        transactionType,
+        notes
+      );
+      
+      // Refresh transactions
+      const updatedTransactions = itemId 
+        ? await getItemTransactions(itemId)
+        : await getInventoryTransactions();
+        
+      setTransactions(updatedTransactions);
+      
+      return true;
+    } catch (err: any) {
+      setError(err instanceof Error ? err : new Error(String(err)));
+      console.error('Error creating inventory transaction:', err);
       return false;
-    } catch (err) {
-      const errorMessage = "Failed to create inventory transaction";
-      setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      return false;
-    } finally {
-      setLoading(false);
     }
   };
-
+  
   return {
+    transactions,
     loading,
     error,
-    transactions,
-    itemTransactions,
-    loadTransactions,
-    loadItemTransactions,
-    createTransaction,
+    createTransaction
   };
 }

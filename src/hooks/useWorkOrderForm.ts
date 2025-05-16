@@ -4,6 +4,9 @@ import { WorkOrderFormValues, WorkOrder, WorkOrderStatusType } from "@/types/wor
 import { supabase } from "@/lib/supabase";
 import { useForm } from "react-hook-form";
 
+// Export the type so other components can use it
+export type { WorkOrderFormValues };
+
 // Default values for a new work order
 const defaultValues: WorkOrderFormValues = {
   estimated_hours: 0,
