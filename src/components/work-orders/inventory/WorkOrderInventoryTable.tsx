@@ -8,12 +8,14 @@ import { ExtendedWorkOrderInventoryItem } from "./WorkOrderInventoryItem";
 interface WorkOrderInventoryTableProps {
   items: ExtendedWorkOrderInventoryItem[];
   onRemoveItem?: (id: string) => void;
+  onUpdateQuantity?: (id: string, quantity: number) => void;
   readonly?: boolean;
 }
 
 export const WorkOrderInventoryTable: React.FC<WorkOrderInventoryTableProps> = ({ 
   items, 
   onRemoveItem,
+  onUpdateQuantity,
   readonly = false
 }) => {
   if (items.length === 0) {

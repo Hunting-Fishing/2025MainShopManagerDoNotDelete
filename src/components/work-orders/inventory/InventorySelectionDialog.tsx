@@ -1,26 +1,19 @@
 
-import React, { useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
+import React, { useState } from "react";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
   DialogTitle,
-  DialogDescription
+  DialogFooter
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Search } from "lucide-react";
 import { InventoryItemExtended } from "@/types/inventory";
-import { supabase } from "@/lib/supabase";
+import { getStatusColorClass } from "@/utils/inventory/inventoryCalculations";
+import { Loader2, Package, Plus, Search } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface InventorySelectionDialogProps {
   open: boolean;
@@ -31,146 +24,107 @@ interface InventorySelectionDialogProps {
 export const InventorySelectionDialog: React.FC<InventorySelectionDialogProps> = ({
   open,
   onOpenChange,
-  onAddItem,
+  onAddItem
 }) => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [items, setItems] = useState<InventoryItemExtended[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  // Load inventory items when the dialog opens
-  useEffect(() => {
-    if (open) {
-      fetchInventoryItems();
-    }
-  }, [open]);
-
-  const fetchInventoryItems = async () => {
-    setLoading(true);
-    try {
+  const [searchTerm, setSearchTerm] = useState("");
+  
+  // Fetch inventory items
+  const { data: inventoryItems, isLoading } = useQuery({
+    queryKey: ['inventory-items'],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('inventory_items')
         .select('*')
         .order('name');
         
       if (error) throw error;
-      
-      if (data) {
-        // Transform to match the InventoryItemExtended type
-        const mappedItems = data.map(item => ({
-          id: item.id,
-          name: item.name,
-          sku: item.sku,
-          description: item.description || "",
-          price: item.unit_price, // Map unit_price to price
-          unit_price: item.unit_price,
-          category: item.category || "",
-          supplier: item.supplier || "",
-          quantity: item.quantity || 0,
-          reorder_point: item.reorder_point || 0,
-          status: item.status || "In Stock",
-          location: item.location || "",
-          created_at: item.created_at,
-          updated_at: item.updated_at,
-        }));
-        setItems(mappedItems);
-      }
-    } catch (error) {
-      console.error("Error fetching inventory:", error);
-      // Fallback to empty items
-      setItems([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filteredItems = items.filter(
-    (item) =>
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const handleAddItem = (item: InventoryItemExtended) => {
-    onAddItem(item);
-  };
+      return data || [];
+    },
+    enabled: open // Only fetch when dialog is open
+  });
+  
+  // Filter items based on search term
+  const filteredItems = searchTerm 
+    ? inventoryItems?.filter(item => 
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        (item.sku && item.sku.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (item.category && item.category.toLowerCase().includes(searchTerm.toLowerCase()))
+      )
+    : inventoryItems;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Select Inventory Item</DialogTitle>
-          <DialogDescription>
-            Select items to add to this work order
-          </DialogDescription>
+          <DialogTitle className="flex items-center">
+            <Package className="h-5 w-5 mr-2" /> 
+            Select Inventory Item
+          </DialogTitle>
         </DialogHeader>
-
-        <div className="relative mb-4">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by name, SKU, or category..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8"
-          />
+        
+        <div className="mb-4">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by name, SKU, or category..."
+              className="pl-9"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </div>
 
-        <div className="overflow-auto flex-grow">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>SKU</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead className="text-right">Stock</TableHead>
-                <TableHead className="text-right">Price</TableHead>
-                <TableHead></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
-                    Loading inventory items...
-                  </TableCell>
-                </TableRow>
-              ) : filteredItems.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
-                    No inventory items found.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredItems.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="font-medium">{item.name}</TableCell>
-                    <TableCell>{item.sku}</TableCell>
-                    <TableCell>{item.category}</TableCell>
-                    <TableCell className="text-right">
-                      <Badge
-                        variant={item.quantity <= 0 ? "destructive" : item.quantity <= item.reorder_point ? "outline" : "secondary"}
-                      >
-                        {item.quantity}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      ${item.unit_price ? item.unit_price.toFixed(2) : "0.00"}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleAddItem(item)}
-                        disabled={item.quantity <= 0}
-                      >
-                        Add
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+        <div className="max-h-[400px] overflow-y-auto border rounded-md">
+          {isLoading ? (
+            <div className="flex justify-center items-center p-8">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : filteredItems?.length ? (
+            <div className="divide-y">
+              {filteredItems.map((item) => (
+                <div 
+                  key={item.id} 
+                  className="flex justify-between items-center p-3 hover:bg-slate-50 cursor-pointer"
+                >
+                  <div className="flex-1">
+                    <div className="font-medium">{item.name}</div>
+                    <div className="text-sm text-slate-500">
+                      {item.sku} - ${item.unit_price?.toFixed(2)}
+                    </div>
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${getStatusColorClass(item.status || "In Stock")}`}>
+                        {item.status || "In Stock"}
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        {item.quantity || 0} in stock
+                      </span>
+                    </div>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => onAddItem(item as InventoryItemExtended)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              No matching inventory items found.
+            </div>
+          )}
         </div>
+
+        <DialogFooter>
+          <Button 
+            variant="outline" 
+            onClick={() => onOpenChange(false)}
+          >
+            Close
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

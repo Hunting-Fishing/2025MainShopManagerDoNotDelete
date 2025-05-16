@@ -10,6 +10,7 @@ import { useWorkOrderInventory } from "@/hooks/inventory/workOrder/useWorkOrderI
 import { supabase } from "@/integrations/supabase/client";
 import { WorkOrderFormValues } from "@/types/workOrder";
 import { WorkOrderInventoryItem, ExtendedWorkOrderInventoryItem } from "./WorkOrderInventoryItem";
+import { toExtendedWorkOrderItem } from "@/utils/inventory/adapters";
 
 interface WorkOrderInventoryFieldProps {
   form: UseFormReturn<WorkOrderFormValues>;
@@ -72,6 +73,9 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
     form.setValue("inventoryItems", [...currentItems, newItem], { shouldValidate: true });
   };
 
+  // Convert items to extended format for display
+  const extendedItems = items.map(item => toExtendedWorkOrderItem(item));
+
   return (
     <FormField
       name="inventoryItems"
@@ -87,7 +91,7 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
             />
             
             <WorkOrderInventoryTable 
-              items={items as ExtendedWorkOrderInventoryItem[]} 
+              items={extendedItems} 
               onUpdateQuantity={handleUpdateQuantity}
               onRemoveItem={handleRemoveItem}
             />
@@ -111,4 +115,4 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
       )}
     />
   );
-}
+};

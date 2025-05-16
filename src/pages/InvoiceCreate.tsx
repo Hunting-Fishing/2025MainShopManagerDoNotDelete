@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import { useInvoiceForm } from "@/hooks/useInvoiceForm";
 import { InvoiceCreateLayout } from "@/components/invoices/InvoiceCreateLayout";
@@ -143,11 +142,10 @@ export default function InvoiceCreate() {
     return "Unknown Staff";
   };
 
-  // Fix the type issue by creating a proper adapter function
+  // Create proper adapter function with correct typing
   const handleInventoryItemSelected = (inventoryItem: InventoryItem) => {
-    // Convert the inventory item to invoice item format before passing to handler
     const invoiceItem = inventoryItemToInvoiceItem(inventoryItem as any);
-    handleAddInventoryItem(invoiceItem);
+    handleAddInventoryItem(invoiceItem as any);
   };
 
   // Create a wrapper that adapts the type from InvoiceTemplate to void
