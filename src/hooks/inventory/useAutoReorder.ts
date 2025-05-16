@@ -1,6 +1,7 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useNotifications } from '@/context/notifications';
+import { AutoReorderSettings } from '@/types/inventory';
 
 // Mock function to simulate an API call to reorder inventory
 const makeReorderApiCall = (items: any[]): Promise<any> => {
@@ -19,6 +20,7 @@ const makeReorderApiCall = (items: any[]): Promise<any> => {
 export function useAutoReorder() {
   const [isReordering, setIsReordering] = useState(false);
   const [lastReorderResult, setLastReorderResult] = useState<any>(null);
+  const [autoReorderSettings, setAutoReorderSettings] = useState<Record<string, AutoReorderSettings>>({});
   const { addNotification } = useNotifications();
 
   /**
@@ -71,9 +73,48 @@ export function useAutoReorder() {
     }
   };
 
+  // Function to enable auto-reorder for an item
+  const enableAutoReorder = useCallback((itemId: string, threshold: number, quantity: number) => {
+    setAutoReorderSettings(prev => ({
+      ...prev,
+      [itemId]: {
+        enabled: true,
+        threshold,
+        quantity
+      }
+    }));
+    // In a real app, this would make an API call to update settings in the database
+  }, []);
+
+  // Function to disable auto-reorder for an item
+  const disableAutoReorder = useCallback((itemId: string) => {
+    setAutoReorderSettings(prev => {
+      if (prev[itemId]) {
+        return {
+          ...prev,
+          [itemId]: {
+            ...prev[itemId],
+            enabled: false
+          }
+        };
+      }
+      return prev;
+    });
+    // In a real app, this would make an API call to update settings in the database
+  }, []);
+
+  // Function to place automatic order
+  const placeAutomaticOrder = useCallback(async (items: any[]) => {
+    return reorderItems(items);
+  }, [reorderItems]);
+
   return {
     reorderItems,
     isReordering,
-    lastReorderResult
+    lastReorderResult,
+    autoReorderSettings,
+    enableAutoReorder,
+    disableAutoReorder,
+    placeAutomaticOrder
   };
 }
