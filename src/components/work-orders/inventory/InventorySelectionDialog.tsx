@@ -1,127 +1,159 @@
 
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Search } from "lucide-react";
 import { InventoryItemExtended } from "@/types/inventory";
-import { getAllInventoryItems } from "@/utils/inventory/inventoryUtils";
+import { supabase } from "@/integrations/supabase/client";
 
-interface InventorySelectionDialogProps {
+export interface InventorySelectionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelectItem: (item: InventoryItemExtended) => void;
+  onAddItem: (item: InventoryItemExtended) => void;
 }
 
 export const InventorySelectionDialog: React.FC<InventorySelectionDialogProps> = ({
   open,
   onOpenChange,
-  onSelectItem
+  onAddItem
 }) => {
-  const [items, setItems] = useState<InventoryItemExtended[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const [inventoryItems, setInventoryItems] = useState<InventoryItemExtended[]>([]);
+  const [filteredItems, setFilteredItems] = useState<InventoryItemExtended[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   
+  // Fetch inventory items
   useEffect(() => {
-    const fetchItems = async () => {
-      try {
-        setLoading(true);
-        const inventoryItems = await getAllInventoryItems();
-        setItems(inventoryItems);
-      } catch (error) {
-        console.error("Failed to fetch inventory items:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     if (open) {
-      fetchItems();
+      fetchInventoryItems();
     }
   }, [open]);
   
-  const filteredItems = items.filter(item => {
-    const searchLower = search.toLowerCase();
-    return (
-      item.name.toLowerCase().includes(searchLower) ||
-      item.sku.toLowerCase().includes(searchLower) ||
-      item.category.toLowerCase().includes(searchLower) ||
-      (item.description && item.description.toLowerCase().includes(searchLower))
-    );
-  });
+  // Filter items based on search query
+  useEffect(() => {
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      setFilteredItems(
+        inventoryItems.filter(
+          item => 
+            item.name.toLowerCase().includes(query) ||
+            item.sku.toLowerCase().includes(query) ||
+            (item.category && item.category.toLowerCase().includes(query))
+        )
+      );
+    } else {
+      setFilteredItems(inventoryItems);
+    }
+  }, [searchQuery, inventoryItems]);
   
-  // Sort items: first show in stock items, then low stock, and finally out of stock
-  const sortedItems = [...filteredItems].sort((a, b) => {
-    if (a.status === "Out of Stock" && b.status !== "Out of Stock") return 1;
-    if (a.status !== "Out of Stock" && b.status === "Out of Stock") return -1;
-    if (a.status === "Low Stock" && b.status === "In Stock") return 1;
-    if (a.status === "In Stock" && b.status === "Low Stock") return -1;
-    return a.name.localeCompare(b.name);
-  });
-  
-  const getStatusClass = (status: string) => {
-    switch (status) {
-      case "In Stock":
-        return "border-green-300 bg-green-100 text-green-800";
-      case "Low Stock":
-        return "border-amber-300 bg-amber-100 text-amber-800";
-      case "Out of Stock":
-        return "border-red-300 bg-red-100 text-red-800";
-      default:
-        return "border-gray-300 bg-gray-100 text-gray-800";
+  const fetchInventoryItems = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('inventory_items')
+        .select('*')
+        .filter('quantity', 'gt', 0) // Only show items in stock
+        .order('name');
+        
+      if (error) throw error;
+      
+      if (data) {
+        const formattedItems = data.map(item => ({
+          id: item.id,
+          name: item.name,
+          sku: item.sku || '',
+          description: item.description || '',
+          category: item.category || '',
+          supplier: item.supplier || '',
+          quantity: item.quantity || 0,
+          reorder_point: item.reorder_point || 0,
+          unit_price: item.unit_price || 0,
+          price: item.unit_price || 0,
+          location: item.location || '',
+          status: item.status || 'In Stock'
+        }));
+        setInventoryItems(formattedItems);
+        setFilteredItems(formattedItems);
+      }
+    } catch (error) {
+      console.error("Error fetching inventory items:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
-
+  
+  const handleAddItem = (item: InventoryItemExtended) => {
+    onAddItem(item);
+    // Don't close the dialog to allow adding multiple items
+  };
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-[800px]">
         <DialogHeader>
-          <DialogTitle>Select Inventory Item</DialogTitle>
+          <DialogTitle>Select Inventory Items</DialogTitle>
         </DialogHeader>
         
         <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by name, SKU, or category..."
+            placeholder="Search items by name, SKU, or category..."
             className="pl-10"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         
-        <div className="max-h-80 overflow-y-auto">
-          {loading ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          ) : sortedItems.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              No inventory items found matching your search.
-            </div>
-          ) : (
-            <div className="grid gap-2">
-              {sortedItems.map(item => (
-                <div
-                  key={item.id}
-                  className="border rounded-lg p-3 hover:bg-gray-50 cursor-pointer flex justify-between items-center"
-                  onClick={() => onSelectItem(item)}
-                >
-                  <div className="flex-1">
-                    <div className="font-medium">{item.name}</div>
-                    <div className="text-sm text-gray-500">
-                      SKU: {item.sku} | ${item.unit_price.toFixed(2)} | {item.category}
-                    </div>
-                  </div>
-                  <div className="flex gap-3 items-center">
-                    <span className="text-sm">{item.quantity} in stock</span>
-                    <span className={`px-2 py-1 text-xs rounded-full border ${getStatusClass(item.status)}`}>
-                      {item.status}
-                    </span>
-                  </div>
-                </div>
+        {isLoading ? (
+          <div className="flex justify-center py-8">Loading inventory items...</div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>SKU</TableHead>
+                <TableHead>Item</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Available</TableHead>
+                <TableHead>Price</TableHead>
+                <TableHead className="text-right">Action</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredItems.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center">
+                    No inventory items found
+                  </TableCell>
+                </TableRow>
+              )}
+              {filteredItems.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell>{item.sku}</TableCell>
+                  <TableCell>{item.name}</TableCell>
+                  <TableCell>{item.category}</TableCell>
+                  <TableCell>{item.quantity}</TableCell>
+                  <TableCell>${item.unit_price.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      size="sm"
+                      onClick={() => handleAddItem(item)}
+                      disabled={item.quantity <= 0}
+                    >
+                      Add
+                    </Button>
+                  </TableCell>
+                </TableRow>
               ))}
-            </div>
-          )}
+            </TableBody>
+          </Table>
+        )}
+        
+        <div className="flex justify-end">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Close
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

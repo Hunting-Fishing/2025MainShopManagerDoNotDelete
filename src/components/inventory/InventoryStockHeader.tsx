@@ -1,78 +1,56 @@
 
-import React from 'react';
-import { Card, CardContent } from "@/components/ui/card";
+// Add the showControls property to the component props
+import React from "react";
 import { Button } from "@/components/ui/button";
-import { Download, RefreshCw } from "lucide-react";
+import { Download, Upload, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
-export interface InventoryStockHeaderProps {
-  lowStockCount: number;
-  outOfStockCount: number;
-  totalValue: number;
-  onExport: () => void;
-  onRefresh: () => void;
-  title?: string;
+interface InventoryStockHeaderProps {
+  title: string;
   description?: string;
+  showControls?: boolean;
+  onExport?: () => void;
+  onImport?: () => void;
 }
 
-export function InventoryStockHeader({ 
-  lowStockCount, 
-  outOfStockCount, 
-  totalValue, 
+export function InventoryStockHeader({
+  title,
+  description,
+  showControls = false,
   onExport,
-  onRefresh,
-  title = "Inventory Overview",
-  description = "Track your inventory levels and stock value"
+  onImport
 }: InventoryStockHeaderProps) {
-  
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      maximumFractionDigits: 2
-    }).format(amount);
-  };
-
   return (
-    <div className="mb-6">
-      <div className="flex flex-col md:flex-row justify-between mb-4">
-        <div>
-          <h1 className="text-2xl font-bold">{title}</h1>
-          <p className="text-gray-500">{description}</p>
-        </div>
-        <div className="flex gap-2 mt-2 md:mt-0">
-          <Button variant="outline" onClick={onRefresh}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-          <Button variant="outline" onClick={onExport}>
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-        </div>
+    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">{title}</h2>
+        {description && <p className="text-muted-foreground mt-1">{description}</p>}
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-muted-foreground text-sm">Total Value</div>
-            <div className="text-2xl font-bold">{formatCurrency(totalValue)}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-muted-foreground text-sm">Low Stock Items</div>
-            <div className="text-2xl font-bold text-amber-600">{lowStockCount}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-muted-foreground text-sm">Out of Stock Items</div>
-            <div className="text-2xl font-bold text-red-600">{outOfStockCount}</div>
-          </CardContent>
-        </Card>
-      </div>
+
+      {showControls && (
+        <div className="flex items-center gap-2">
+          {onImport && (
+            <Button variant="outline" size="sm" onClick={onImport}>
+              <Upload className="mr-2 h-4 w-4" />
+              Import
+            </Button>
+          )}
+          
+          {onExport && (
+            <Button variant="outline" size="sm" onClick={onExport}>
+              <Download className="mr-2 h-4 w-4" />
+              Export
+            </Button>
+          )}
+          
+          <Button className="ml-2" asChild>
+            <Link to="/inventory/add">
+              Add Item
+              <ArrowRight className="ml-1 h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

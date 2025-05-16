@@ -2,16 +2,16 @@
 import React, { useState, useEffect } from "react";
 import { FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { UseFormReturn } from "react-hook-form";
-import { WorkOrderFormFieldValues } from "../WorkOrderFormFields";
 import { WorkOrderInventoryTable } from "./WorkOrderInventoryTable";
 import { InventorySelectionDialog } from "./InventorySelectionDialog";
 import { InventorySectionHeader } from "./InventorySectionHeader";
 import { SpecialOrderDialog } from "./SpecialOrderDialog";
 import { useWorkOrderInventory } from "@/hooks/inventory/workOrder/useWorkOrderInventory";
 import { supabase } from "@/integrations/supabase/client";
+import { WorkOrderFormValues } from "@/types/workOrder";
 
 interface WorkOrderInventoryFieldProps {
-  form: UseFormReturn<WorkOrderFormFieldValues>;
+  form: UseFormReturn<WorkOrderFormValues>;
 }
 
 export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = ({
@@ -23,7 +23,7 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
   const {
     showInventoryDialog,
     setShowInventoryDialog,
-    selectedItems,
+    items,
     handleAddItem,
     handleRemoveItem,
     handleUpdateQuantity
@@ -59,11 +59,12 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
     
     const newItem = {
       id: tempId,
-      ...item
+      ...item,
+      total: item.quantity * (item.unit_price || 0) // Ensure total is calculated
     };
     
     const currentItems = form.getValues("inventoryItems") || [];
-    form.setValue("inventoryItems", [...currentItems, newItem]);
+    form.setValue("inventoryItems", [...currentItems, newItem], { shouldValidate: true });
   };
 
   return (
@@ -77,11 +78,11 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
             <InventorySectionHeader 
               onShowDialog={() => setShowInventoryDialog(true)}
               onShowSpecialOrderDialog={() => setShowSpecialOrderDialog(true)}
-              totalItems={selectedItems.length}
+              totalItems={items.length}
             />
             
             <WorkOrderInventoryTable 
-              items={selectedItems} 
+              items={items} 
               onUpdateQuantity={handleUpdateQuantity}
               onRemoveItem={handleRemoveItem}
             />

@@ -15,6 +15,17 @@ export function LowStockAlerts() {
     autoReorderSettings
   } = useInventoryManager();
   
+  // Wrapper functions to adapt the return types to void
+  const handleReorderItem = async (itemId: string, quantity: number) => {
+    await reorderItem(itemId, quantity);
+    return; // Ensure it returns void
+  };
+  
+  const handleEnableAutoReorder = async (itemId: string, threshold: number, quantity: number) => {
+    await enableAutoReorder(itemId, threshold, quantity);
+    return; // Ensure it returns void
+  };
+  
   const allAlertItems = [...lowStockItems, ...outOfStockItems];
   
   if (allAlertItems.length === 0) {
@@ -47,8 +58,8 @@ export function LowStockAlerts() {
                 key={item.id}
                 item={item}
                 autoReorderSettings={autoReorderSettings}
-                reorderItem={reorderItem}
-                enableAutoReorder={enableAutoReorder}
+                reorderItem={handleReorderItem}
+                enableAutoReorder={handleEnableAutoReorder}
               />
             ))}
           </TableBody>

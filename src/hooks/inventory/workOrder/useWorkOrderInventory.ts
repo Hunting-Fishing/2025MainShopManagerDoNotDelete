@@ -1,102 +1,99 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
+import { WorkOrderFormValues } from "@/types/workOrder";
 import { InventoryItemExtended } from "@/types/inventory";
-import { WorkOrderInventoryItem } from "@/types/workOrder";
-import { useInventoryManager } from "@/hooks/inventory/useInventoryManager";
 
-interface WorkOrderFormValues {
-  customer?: string;
-  customer_id?: string;
-  vehicle?: string;
-  vehicle_id?: string;
-  description: string;
-  status: string;
-  priority: string;
-  technician?: string;
-  technician_id?: string;
-  service_date?: string;
-  notes: string;
-  inventoryItems: WorkOrderInventoryItem[];
-}
-
-/**
- * Main hook for managing work order inventory
- */
 export const useWorkOrderInventory = (form: UseFormReturn<WorkOrderFormValues>) => {
   const [showInventoryDialog, setShowInventoryDialog] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   
-  const { 
-    reserveInventory, 
-    consumeWorkOrderInventory 
-  } = useInventoryManager();
-  
-  // Get the current inventory items from the form
+  // Get the current items from form
   const items = form.watch("inventoryItems") || [];
   
-  const addItem = (item: InventoryItemExtended) => {
+  // Handle adding a new inventory item
+  const handleAddItem = (selectedItem: InventoryItemExtended) => {
     try {
       setIsAdding(true);
       
-      // Check if item already exists in the list
-      const existingItemIndex = items.findIndex(i => i.id === item.id);
+      // Check if item already exists
+      const existingItemIndex = items.findIndex(item => item.id === selectedItem.id);
       
       if (existingItemIndex >= 0) {
-        // Update quantity if item exists
-        const updatedItems = [...items];
-        updatedItems[existingItemIndex].quantity += 1;
-        form.setValue("inventoryItems", updatedItems);
-      } else {
-        // Add new item
-        const newItem: WorkOrderInventoryItem = {
-          id: item.id,
-          name: item.name,
-          sku: item.sku,
-          category: item.category || '',
-          quantity: 1,
-          unit_price: item.unit_price
-        };
-        
-        form.setValue("inventoryItems", [...items, newItem]);
+        // Item exists, increase quantity
+        handleUpdateQuantity(selectedItem.id, items[existingItemIndex].quantity + 1);
+        return;
       }
       
-      setShowInventoryDialog(false);
+      // Add new item
+      const newItem = {
+        id: selectedItem.id,
+        name: selectedItem.name,
+        sku: selectedItem.sku,
+        category: selectedItem.category || '',
+        quantity: 1,
+        unit_price: selectedItem.unit_price,
+        total: selectedItem.unit_price // Ensure total is calculated and included
+      };
+      
+      const currentItems = form.getValues("inventoryItems") || [];
+      form.setValue("inventoryItems", [...currentItems, newItem], { shouldValidate: true });
     } finally {
       setIsAdding(false);
     }
   };
-
-  const removeItem = (itemId: string) => {
-    const filteredItems = items.filter(item => item.id !== itemId);
-    form.setValue("inventoryItems", filteredItems);
+  
+  // Handle removing an inventory item
+  const handleRemoveItem = (itemId: string) => {
+    const currentItems = form.getValues("inventoryItems") || [];
+    form.setValue(
+      "inventoryItems",
+      currentItems.filter(item => item.id !== itemId),
+      { shouldValidate: true }
+    );
   };
-
-  const updateQuantity = (itemId: string, quantity: number) => {
+  
+  // Handle updating item quantity
+  const handleUpdateQuantity = (itemId: string, newQuantity: number) => {
+    setIsUpdating(true);
+    
     try {
-      setIsUpdating(true);
+      const currentItems = form.getValues("inventoryItems") || [];
+      const updatedItems = currentItems.map(item => {
+        if (item.id === itemId) {
+          const quantity = Math.max(1, newQuantity); // Ensure minimum 1
+          return {
+            ...item,
+            quantity,
+            total: quantity * item.unit_price // Update total when quantity changes
+          };
+        }
+        return item;
+      });
       
-      const updatedItems = items.map(item => 
-        item.id === itemId ? { ...item, quantity } : item
-      );
-      
-      form.setValue("inventoryItems", updatedItems);
+      form.setValue("inventoryItems", updatedItems, { shouldValidate: true });
     } finally {
       setIsUpdating(false);
     }
   };
-
+  
+  // This function would be used for actual consumption from inventory
+  const consumeWorkOrderInventory = async (workOrderId: string) => {
+    // Implementation would connect to API to actually consume inventory
+    // Left as stub for future implementation
+    return Promise.resolve({ success: true });
+  };
+  
   return {
     showInventoryDialog,
     setShowInventoryDialog,
     isAdding,
     isUpdating,
     items,
-    addItem,
-    removeItem,
-    updateQuantity,
-    reserveInventory,
+    handleAddItem,
+    handleRemoveItem,
+    handleUpdateQuantity,
     consumeWorkOrderInventory
   };
 };

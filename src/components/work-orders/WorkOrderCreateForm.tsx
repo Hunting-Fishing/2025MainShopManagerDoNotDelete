@@ -11,26 +11,11 @@ import { AssignmentSection } from "./AssignmentSection";
 import { NotesSection } from "./NotesSection";
 import { TimeEntrySection } from "./TimeEntrySection";
 import { InventorySectionWrapper } from "./inventory/InventorySectionWrapper";
-
-interface WorkOrderFormValues {
-  customer: string;
-  customer_id?: string;
-  vehicle?: string;
-  vehicle_id?: string;
-  description: string;
-  status: string;
-  priority: string;
-  technician?: string;
-  technician_id?: string;
-  service_date?: string;
-  notes: string;
-  timeEntries: any[];
-  inventoryItems: any[];
-}
+import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
 
 interface WorkOrderCreateFormProps {
-  form: UseFormReturn<WorkOrderFormValues>;
-  onSubmit: (values: WorkOrderFormValues) => Promise<any>;
+  form: UseFormReturn<WorkOrderFormSchemaValues>;
+  onSubmit: (values: WorkOrderFormSchemaValues) => Promise<any>;
   isLoading: boolean;
 }
 
