@@ -1,205 +1,291 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { workOrderFormSchema, WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Form } from "@/components/ui/form";
-import { toast } from "sonner";
-import { CustomerInfo } from "@/components/work-orders/fields/CustomerInfo";
-import { VehicleInfo } from "@/components/work-orders/fields/VehicleInfo";
-import { ScheduleSection } from "@/components/work-orders/fields/ScheduleSection";
-import { PartsAndServicesTable } from "@/components/work-orders/fields/PartsAndServicesTable";
-import { WorkOrderFormHeader } from "@/components/work-orders/WorkOrderFormHeader";
-import { WorkOrderSummary } from "@/components/work-orders/fields/WorkOrderSummary";
-import { Separator } from "@/components/ui/separator";
-import { Card } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/hooks/use-toast";
+import { WorkOrderTemplateSelector } from "./templates/WorkOrderTemplateSelector";
+import {
+  createWorkOrderTemplate,
+  getWorkOrderTemplateById,
+  updateWorkOrderTemplate,
+} from "@/services/workOrderTemplateService";
 import { WorkOrderTemplate } from "@/types/workOrder";
-import { ServicesSection } from "@/components/work-orders/fields/ServicesSection";
-import { ServiceItem } from "@/types/services";
+import { useParams, useNavigate } from "react-router-dom";
+import { WorkOrderStatusType, WorkOrderPriorityType } from '@/types/workOrder';
+
+import {
+  WorkOrderFormSchema,
+  WorkOrderFormSchemaValues,
+} from "@/schemas/workOrderSchema";
 
 interface WorkOrderFormProps {
-  technicians: string[];
-  isLoadingTechnicians: boolean;
-  initialTemplate?: WorkOrderTemplate | null;
+  workOrder?: WorkOrderFormSchemaValues;
+  onSubmit: (values: WorkOrderFormSchemaValues) => Promise<void>;
 }
 
-export function WorkOrderForm({
-  technicians,
-  isLoadingTechnicians,
-  initialTemplate,
-}: WorkOrderFormProps) {
+export function WorkOrderForm({ workOrder, onSubmit }: WorkOrderFormProps) {
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+  const { toast } = useToast();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [selectedItems, setSelectedItems] = useState<any[]>([]);
-  const [selectedServices, setSelectedServices] = useState<ServiceItem[]>([]);
-  
-  // Get pre-filled info if coming from a vehicle page
-  const customerId = searchParams.get('customerId');
-  const vehicleId = searchParams.get('vehicleId');
-  const customerName = searchParams.get('customerName');
-  
-  // Initialize the form with React Hook Form + zod validation
+
   const form = useForm<WorkOrderFormSchemaValues>({
-    resolver: zodResolver(workOrderFormSchema),
+    resolver: zodResolver(WorkOrderFormSchema),
     defaultValues: {
-      customer: customerName || "",
       description: "",
       status: "pending",
       priority: "medium",
-      technician: "",
+      technician_id: "",
       location: "",
-      dueDate: new Date(),
       notes: "",
-      vehicleMake: "",
-      vehicleModel: "",
-      vehicleYear: "",
-      odometer: "",
-      licensePlate: "",
-      vin: "", // Add the default value for VIN
+      customer_id: "",
     },
   });
-  
-  // Apply template if provided
+
   useEffect(() => {
-    if (initialTemplate) {
-      handleUseTemplate();
+    if (workOrder) {
+      form.reset(workOrder);
     }
-  }, [initialTemplate, form]);
-  
-  // Function to calculate the total amount from selected items
-  const calculateTotal = () => {
-    const itemsTotal = selectedItems.reduce((acc, item) => {
-      return acc + (item.quantity * item.unitPrice);
-    }, 0);
+  }, [workOrder, form]);
+
+  const { setValue } = form;
+
+  const handleTemplateSelect = (template: WorkOrderTemplate) => {
+    // Set values from the template
+    setValue("description", template.description || "");
+    setValue("status", template.status as WorkOrderStatusType || "pending");
+    setValue("priority", template.priority as WorkOrderPriorityType || "medium");
+    setValue("technician_id", template.technician_id || "");
     
-    const servicesTotal = selectedServices.reduce((acc, service) => {
-      // Make sure to handle potentially undefined values
-      const price = service.price || 0;
-      const quantity = service.quantity || 1;
-      return acc + (price * quantity);
-    }, 0);
+    // Set location if it exists in the template
+    if (template.location) {
+      setValue("location", template.location);
+    }
     
-    return itemsTotal + servicesTotal;
+    // Set customer if it exists in the template (this is fixed now)
+    if (template.customer) {
+      setValue("customer_id", template.customer_id || "");
+    }
+    
+    // Set notes if they exist in the template
+    if (template.notes) {
+      setValue("notes", template.notes);
+    }
+
+    setShowTemplateSelector(false);
   };
 
-  const onSubmit = async (data: WorkOrderFormSchemaValues) => {
-    setIsSubmitting(true);
-    setFormError(null);
-    
+  const handleSaveTemplate = async (data: WorkOrderFormSchemaValues) => {
     try {
-      // Here we would normally send the data to the backend
-      console.log("Submitting work order data:", data);
-      console.log("Selected items:", selectedItems);
-      console.log("Selected services:", selectedServices);
-      
-      // Simulate a successful submission
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast.success("Work order created successfully");
+      const templateData = {
+        name: "New Template",
+        description: data.description,
+        status: data.status,
+        priority: data.priority,
+        technician_id: data.technician_id,
+        location: data.location,
+        notes: data.notes,
+        customer: data.customer_id,
+        customer_id: data.customer_id,
+      };
+
+      if (id) {
+        // Update existing template
+        await updateWorkOrderTemplate({ ...templateData, id });
+        toast({
+          title: "Success",
+          description: "Work order template updated successfully.",
+        });
+      } else {
+        // Create new template
+        await createWorkOrderTemplate(templateData);
+        toast({
+          title: "Success",
+          description: "Work order template created successfully.",
+        });
+      }
+
       navigate("/work-orders");
     } catch (error) {
-      console.error("Error creating work order:", error);
-      setFormError("There was a problem creating the work order. Please try again.");
-      toast.error("Failed to create work order");
-    } finally {
-      setIsSubmitting(false);
+      console.error("Error saving work order template:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save work order template.",
+        variant: "destructive",
+      });
     }
-  };
-
-  const handleUseTemplate = () => {
-    if (!initialTemplate) return;
-    
-    form.setValue("customer", initialTemplate.customer || "");
-    form.setValue("description", initialTemplate.description || "");
-    // Convert string to WorkOrderStatusType
-    form.setValue("status", initialTemplate.status as WorkOrderStatusType || "pending");
-    // Convert string to WorkOrderPriorityType
-    form.setValue("priority", initialTemplate.priority as WorkOrderPriorityType || "medium");
-    form.setValue("technician", initialTemplate.technician || "");
-    
-    // Check if location exists before setting it
-    if (initialTemplate.location) {
-      form.setValue("location", initialTemplate.location);
-    }
-    
-    form.setValue("notes", initialTemplate.notes || "");
-    
-    toast({
-      title: "Template Applied",
-      description: `Applied "${initialTemplate.name}" template to this work order.`,
-    });
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <WorkOrderFormHeader 
-          isSubmitting={isSubmitting} 
-          error={formError}
-          title="Work Order #1000" 
-          description="Create a new work order for your customer's vehicle"
-        />
-        
-        <div className="grid grid-cols-1 gap-6">
-          {/* Customer and Vehicle Info Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-6">
-              <Card className="border-l-4 border-l-blue-600">
-                <CustomerInfo form={form} />
-              </Card>
-              
-              <Card className="border-l-4 border-l-green-600">
-                <VehicleInfo form={form} />
-              </Card>
-            </div>
-            
-            <Card className="border-l-4 border-l-amber-600">
-              <ScheduleSection 
-                form={form} 
-                technicians={technicians}
-                isLoadingTechnicians={isLoadingTechnicians}
-              />
-            </Card>
-          </div>
-          
-          <Separator className="my-4" />
-          
-          {/* Services Section */}
-          <ServicesSection 
-            services={selectedServices} 
-            setServices={setSelectedServices} 
-          />
-          
-          {/* Parts and Services Section */}
-          <Card className="border-t-4 border-t-slate-700">
-            <PartsAndServicesTable 
-              items={selectedItems}
-              setItems={setSelectedItems}
-            />
-          </Card>
-          
-          {/* Work Order Summary Section */}
-          <Card className="border-t-4 border-t-purple-600">
-            <WorkOrderSummary 
-              form={form}
-              total={calculateTotal()}
-            />
-          </Card>
-        </div>
-        
-        <div className="flex justify-end">
-          <Button 
-            type="submit" 
-            disabled={isSubmitting}
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+    <Card>
+      <CardHeader>
+        {workOrder ? "Edit Work Order" : "Create Work Order"}
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(async (values) => {
+              await onSubmit(values);
+              handleSaveTemplate(values);
+            })}
+            className="space-y-6"
           >
-            {isSubmitting ? "Creating Work Order..." : "Create Work Order"}
-          </Button>
-        </div>
-      </form>
-    </Form>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Detailed description of the work order"
+                      {...form.register("description")}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              </div>
+
+              <div>
+                <FormItem>
+                  <FormLabel>Status</FormLabel>
+                  <Select {...form.register("status")} defaultValue="pending">
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="in-progress">In Progress</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <FormItem>
+                  <FormLabel>Priority</FormLabel>
+                  <Select {...form.register("priority")} defaultValue="medium">
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select priority" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              </div>
+
+              <div>
+                <FormItem>
+                  <FormLabel>Technician ID</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="text"
+                      placeholder="Enter technician ID"
+                      {...form.register("technician_id")}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <FormItem>
+                  <FormLabel>Location</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="text"
+                      placeholder="Enter location"
+                      {...form.register("location")}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              </div>
+
+              <div>
+                <FormItem>
+                  <FormLabel>Customer ID</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="text"
+                      placeholder="Enter customer ID"
+                      {...form.register("customer_id")}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              </div>
+            </div>
+
+            <div>
+              <FormItem>
+                <FormLabel>Notes</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Additional notes"
+                    {...form.register("notes")}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </div>
+
+            <CardFooter className="flex justify-between">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowTemplateSelector(true)}
+              >
+                Use Template
+              </Button>
+              <Button type="submit">
+                {workOrder ? "Update Work Order" : "Create Work Order"}
+              </Button>
+            </CardFooter>
+          </form>
+        </Form>
+      </CardContent>
+
+      <WorkOrderTemplateSelector
+        open={showTemplateSelector}
+        onClose={() => setShowTemplateSelector(false)}
+        onSelect={handleTemplateSelect}
+      />
+    </Card>
   );
 }

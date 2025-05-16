@@ -1,105 +1,129 @@
 
 import React from 'react';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { DateRangePicker } from '@/components/ui/date-range-picker';
-import { Search, FilterX } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { InvoiceFilters, InvoiceFiltersProps } from '@/types/invoice';
+import { DatePickerWithRange } from '@/components/ui/date-range-picker';
+import { Checkbox } from '@/components/ui/checkbox';
 
-interface InvoiceFiltersProps {
-  filters: {
-    status: string;
-    customer: string;
-    dateRange: {
-      from: Date | null;
-      to: Date | null;
-    };
+export const InvoiceFilters: React.FC<InvoiceFiltersProps> = ({
+  filters,
+  onFilterChange,
+  onResetFilters
+}) => {
+  const handleStatusChange = (status: string) => {
+    const currentStatuses = [...filters.status];
+    const index = currentStatuses.indexOf(status);
+    
+    if (index === -1) {
+      // Add the status
+      currentStatuses.push(status);
+    } else {
+      // Remove the status
+      currentStatuses.splice(index, 1);
+    }
+    
+    onFilterChange('status', currentStatuses);
   };
-  setFilters: React.Dispatch<React.SetStateAction<{
-    status: string;
-    customer: string;
-    dateRange: {
-      from: Date | null;
-      to: Date | null;
-    };
-  }>>;
-  resetFilters: () => void;
-}
 
-export function InvoiceFilters({ 
-  filters, 
-  setFilters, 
-  resetFilters 
-}: InvoiceFiltersProps) {
+  const handleCustomerNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onFilterChange('customerName', e.target.value);
+  };
+
+  const handleMinAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value ? Number(e.target.value) : undefined;
+    onFilterChange('minAmount', value);
+  };
+
+  const handleMaxAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value ? Number(e.target.value) : undefined;
+    onFilterChange('maxAmount', value);
+  };
+
+  const handleDateRangeChange = (range: { from?: Date; to?: Date }) => {
+    onFilterChange('dateRange', range);
+  };
+
   return (
-    <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow space-y-4">
-      <div className="flex flex-wrap gap-4">
-        {/* Status Filter */}
-        <div className="w-full sm:w-auto">
-          <Select 
-            value={filters.status} 
-            onValueChange={(value) => setFilters({...filters, status: value})}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">All Statuses</SelectItem>
-              <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="sent">Sent</SelectItem>
-              <SelectItem value="paid">Paid</SelectItem>
-              <SelectItem value="overdue">Overdue</SelectItem>
-              <SelectItem value="void">Void</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+    <Card>
+      <CardContent className="pt-6">
+        <div className="space-y-6">
+          <div>
+            <Label className="mb-2 block">Status</Label>
+            <div className="flex flex-wrap gap-2">
+              {['draft', 'sent', 'paid', 'overdue', 'void', 'pending', 'cancelled'].map((status) => (
+                <div key={status} className="flex items-center space-x-2">
+                  <Checkbox 
+                    id={`status-${status}`} 
+                    checked={filters.status.includes(status)}
+                    onCheckedChange={() => handleStatusChange(status)}
+                  />
+                  <label 
+                    htmlFor={`status-${status}`}
+                    className="text-sm capitalize cursor-pointer"
+                  >
+                    {status}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
 
-        {/* Customer Filter */}
-        <div className="relative w-full sm:w-auto">
-          <Input
-            placeholder="Search by customer"
-            value={filters.customer}
-            onChange={(e) => setFilters({...filters, customer: e.target.value})}
-            className="w-full sm:w-[250px] pl-9"
-          />
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-        </div>
+          <div>
+            <Label className="mb-2 block">Date Range</Label>
+            <DatePickerWithRange 
+              date={{
+                from: filters.dateRange.from,
+                to: filters.dateRange.to
+              }}
+              setDate={handleDateRangeChange}
+            />
+          </div>
 
-        {/* Date Range Filter */}
-        <div className="w-full sm:w-auto">
-          <DateRangePicker
-            value={{
-              from: filters.dateRange.from,
-              to: filters.dateRange.to
-            }}
-            onChange={(range) => setFilters({
-              ...filters,
-              dateRange: {
-                from: range.from,
-                to: range.to
-              }
-            })}
-          />
-        </div>
+          <div>
+            <Label htmlFor="customerName" className="mb-2 block">Customer Name</Label>
+            <Input
+              id="customerName"
+              value={filters.customerName}
+              onChange={handleCustomerNameChange}
+              placeholder="Search by customer name"
+            />
+          </div>
 
-        {/* Reset Filters Button */}
-        <div className="w-full sm:w-auto ml-auto">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="minAmount" className="mb-2 block">Min Amount</Label>
+              <Input
+                id="minAmount"
+                type="number"
+                value={filters.minAmount || ''}
+                onChange={handleMinAmountChange}
+                placeholder="Min"
+              />
+            </div>
+            <div>
+              <Label htmlFor="maxAmount" className="mb-2 block">Max Amount</Label>
+              <Input
+                id="maxAmount"
+                type="number"
+                value={filters.maxAmount || ''}
+                onChange={handleMaxAmountChange}
+                placeholder="Max"
+              />
+            </div>
+          </div>
+
           <Button 
+            onClick={onResetFilters} 
             variant="outline" 
-            onClick={resetFilters}
-            className="w-full sm:w-auto"
+            className="w-full"
           >
-            <FilterX className="mr-2 h-4 w-4" />
             Reset Filters
           </Button>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
-}
+};

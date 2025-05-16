@@ -16,7 +16,7 @@ export interface InvoiceItem {
 
 export interface Invoice {
   id: string;
-  shop_id?: string;
+  shop_id: string;
   customer: string;
   customer_id?: string;
   customerEmail?: string;
@@ -37,7 +37,13 @@ export interface Invoice {
   payment_method?: string;
   last_updated_by?: string;
   items?: InvoiceItem[];
-  assignedStaff?: any[];
+  assignedStaff?: StaffMember[];
+  
+  // Added properties that are used in the codebase
+  dueDate?: string;      // Alias for due_date
+  paymentMethod?: string; // Alias for payment_method
+  createdBy?: string;    // Alias for created_by
+  invoice_number?: string;
 }
 
 export interface InvoiceTemplate {
@@ -51,9 +57,19 @@ export interface InvoiceTemplate {
   last_used?: string;
   usage_count?: number;
   items?: InvoiceItem[];
+  defaultItems?: InvoiceItem[]; // Alias for items
+  usageCount?: number;        // Alias for usage_count
+  lastUsed?: string;          // Alias for last_used
 }
 
-// Add the InventoryItem type that was previously missing
+// Add the StaffMember interface that was missing
+export interface StaffMember {
+  id: string;
+  name: string;
+  role?: string;
+}
+
+// Add the InventoryItem interface
 export interface InventoryItem {
   id: string;
   name: string;
@@ -70,4 +86,34 @@ export interface InventoryItem {
 export interface InvoiceUpdater {
   id: string;
   [key: string]: any;
+}
+
+// Helper function to create an invoice updater
+export function createInvoiceUpdater(updates: Partial<Invoice>): InvoiceUpdater {
+  if (!updates.id) {
+    throw new Error("Invoice updater requires an id");
+  }
+  
+  return {
+    id: updates.id,
+    ...updates
+  };
+}
+
+// Add InvoiceFiltersProps interface
+export interface InvoiceFiltersProps {
+  filters: InvoiceFilters;
+  onFilterChange: (key: keyof InvoiceFilters, value: any) => void;
+  onResetFilters: () => void;
+}
+
+export interface InvoiceFilters {
+  status: string[];
+  dateRange: {
+    from: Date | undefined;
+    to: Date | undefined;
+  };
+  customerName: string;
+  minAmount: number | undefined;
+  maxAmount: number | undefined;
 }

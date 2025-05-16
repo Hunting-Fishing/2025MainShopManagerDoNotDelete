@@ -1,59 +1,79 @@
-import { Calendar, Clock, Package } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { WorkOrderTemplate } from "@/types/workOrder";
-import { format } from "date-fns";
 
-interface WorkOrderTemplateItemProps {
+import React from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { formatDistanceToNow } from "date-fns";
+import { WorkOrderTemplate } from "@/types/workOrder";
+
+export interface WorkOrderTemplateItemProps {
   template: WorkOrderTemplate;
   onSelect: () => void;
-  onDelete: () => void;
+  onDelete?: () => void;
 }
 
 export const WorkOrderTemplateItem: React.FC<WorkOrderTemplateItemProps> = ({
   template,
   onSelect,
-  onDelete
+  onDelete,
 }) => {
-  // Format the template last used date if it exists
-  const formattedLastUsed = template.lastUsed 
-    ? new Date(template.lastUsed).toLocaleDateString() 
-    : 'Never used';
+  const lastUsed = template.last_used
+    ? formatDistanceToNow(new Date(template.last_used), { addSuffix: true })
+    : "Never used";
 
-  // Count inventory items if they exist
-  const itemCount = template.inventoryItems && Array.isArray(template.inventoryItems) 
-    ? template.inventoryItems.length 
-    : 0;
+  const inventoryItemsCount = template.inventoryItems ? template.inventoryItems.length : 0;
 
   return (
-    <Card className="hover:bg-gray-50">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <h4 className="font-medium">{template.name}</h4>
-            <p className="text-sm text-gray-500">{template.description}</p>
-            
-            <div className="mt-2 flex flex-wrap gap-3 text-xs text-gray-500">
-              <div className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                <span>Used {template.usageCount} times</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
-                <span>Last used: {formattedLastUsed}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Package className="h-3 w-3" />
-                <span>{itemCount} items</span>
-              </div>
-            </div>
-          </div>
-          
-          <Button size="sm" onClick={onSelect}>
-            Use
-          </Button>
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle className="text-lg font-bold">{template.name}</CardTitle>
+        <CardDescription>{template.description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="text-sm text-muted-foreground space-y-1">
+          {template.technician && (
+            <p>Technician: {template.technician}</p>
+          )}
+          {template.location && (
+            <p>Location: {template.location}</p>
+          )}
+          {template.usage_count !== undefined && (
+            <p>
+              Used {template.usage_count} time{template.usage_count !== 1 ? "s" : ""}
+            </p>
+          )}
+          <p>Last used: {lastUsed}</p>
+          {inventoryItemsCount > 0 && (
+            <p>Parts: {inventoryItemsCount} item{inventoryItemsCount !== 1 ? "s" : ""}</p>
+          )}
         </div>
       </CardContent>
+      <CardFooter className="flex justify-between">
+        <Button
+          onClick={onSelect}
+          variant="default"
+          size="sm"
+          className="w-full"
+        >
+          Use Template
+        </Button>
+        {onDelete && (
+          <Button 
+            onClick={onDelete} 
+            variant="outline" 
+            size="sm"
+            className="ml-2"
+          >
+            Delete
+          </Button>
+        )}
+      </CardFooter>
     </Card>
   );
-}
+};

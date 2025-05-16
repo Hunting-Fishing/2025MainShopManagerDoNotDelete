@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export interface SelectOption {
   value: string;
@@ -12,7 +11,7 @@ interface InventoryFormSelectProps {
   label: string;
   name: string;
   value: string;
-  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  onChange: (name: string, value: string) => void;
   error?: string;
   options: SelectOption[];
   required?: boolean;
@@ -29,6 +28,10 @@ export const InventoryFormSelect: React.FC<InventoryFormSelectProps> = ({
   required = false,
   placeholder = "Select an option"
 }) => {
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    onChange(name, e.target.value);
+  };
+
   return (
     <div className="space-y-2">
       <Label htmlFor={name} className="text-sm font-medium">
@@ -38,7 +41,7 @@ export const InventoryFormSelect: React.FC<InventoryFormSelectProps> = ({
         id={name}
         name={name}
         value={value}
-        onChange={onChange}
+        onChange={handleChange}
         className={`w-full border rounded p-2 ${error ? "border-red-500" : "border-gray-300"}`}
       >
         <option value="">{placeholder}</option>

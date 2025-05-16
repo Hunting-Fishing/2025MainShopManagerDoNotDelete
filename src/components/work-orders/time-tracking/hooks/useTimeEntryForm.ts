@@ -1,46 +1,47 @@
-import { useState, useEffect } from "react";
-import { TimeEntry } from "@/types/workOrder";
+import { useState, useEffect } from 'react';
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
 
 interface TimeEntryFormProps {
   workOrderId: string;
-  timeEntry?: TimeEntry;
-  onSave: (entry: TimeEntry) => void;
-  onCancel: () => void;
+  entry?: any;
+  onClose: () => void;
+  onTimeEntryUpdated: () => void;
 }
 
 export const useTimeEntryForm = ({
   workOrderId,
-  timeEntry,
-  onSave,
-  onCancel
+  entry,
+  onClose,
+  onTimeEntryUpdated
 }: TimeEntryFormProps) => {
+  const { toast } = useToast();
   const [values, setValues] = useState({
-    employeeId: timeEntry?.employeeId || '',
-    employeeName: timeEntry?.employeeName || '',
-    startTime: timeEntry?.startTime || new Date().toISOString(),
-    endTime: timeEntry?.endTime || new Date().toISOString(),
-    duration: timeEntry?.duration || 0,
-    billable: timeEntry?.billable || true,
-    notes: timeEntry?.notes || ''
+    employeeId: '',
+    employeeName: '',
+    startTime: '',
+    endTime: '',
+    duration: 0,
+    billable: true,
+    notes: '',
   });
-  
-  const [error, setError] = useState<string | null>(null);
-  
+  const [error, setError] = useState('');
+
   useEffect(() => {
-    if (timeEntry) {
+    if (entry) {
       setValues({
-        employeeId: timeEntry.employeeId || '',
-        employeeName: timeEntry.employeeName,
-        startTime: timeEntry.startTime,
-        endTime: timeEntry.endTime || new Date().toISOString(),
-        duration: timeEntry.duration,
-        billable: timeEntry.billable,
-        notes: timeEntry.notes || ''
+        employeeId: entry.employee_id || '',
+        employeeName: entry.employee_name || '',
+        startTime: entry.start_time || '',
+        endTime: entry.end_time || '',
+        duration: entry.duration || 0,
+        billable: entry.billable || true,
+        notes: entry.notes || '',
       });
     }
-  }, [timeEntry]);
+  }, [entry]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type, checked } = e.target;
     
     setValues(prevValues => ({
@@ -48,34 +49,114 @@ export const useTimeEntryForm = ({
       [name]: type === 'checkbox' ? checked : value
     }));
   };
-  
-  const handleSave = () => {
-    // Add validation here
-    if (!values.employeeName) {
-      setError('Please enter a technician name');
-      return;
+
+  const createTimeEntry = async () => {
+    if (!workOrderId) return;
+
+    try {
+      const newEntry = {
+        work_order_id: workOrderId,
+        employee_id: values.employeeId,
+        employee_name: values.employeeName,
+        start_time: values.startTime,
+        end_time: values.endTime,
+        duration: values.duration,
+        billable: values.billable,
+        notes: values.notes,
+      };
+
+      const { data, error } = await supabase
+        .from('work_order_time_entries')
+        .insert([newEntry])
+        .select();
+
+      if (error) {
+        console.error("Error creating time entry:", error);
+        setError(error.message);
+        toast({
+          title: "Error",
+          description: "Failed to create time entry",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: "Time entry created successfully",
+      });
+      onTimeEntryUpdated();
+      onClose();
+    } catch (error: any) {
+      console.error("Unexpected error creating time entry:", error);
+      setError(error.message);
+      toast({
+        title: "Error",
+        description: "Unexpected error creating time entry",
+        variant: "destructive"
+      });
     }
-    
-    // Create new time entry
-    const newTimeEntry: TimeEntry = {
-      id: timeEntry ? timeEntry.id : `te-${Date.now()}`,
-      employeeId: values.employeeId || timeEntry?.employeeId || '',
-      employeeName: values.employeeName,
-      startTime: values.startTime,
-      endTime: values.endTime,
-      duration: values.duration || 0,
-      billable: values.billable,
-      notes: values.notes
-    };
-    
-    onSave(newTimeEntry);
   };
 
-  return {
-    values,
-    error,
-    handleChange,
-    handleSave,
-    onCancel
+  const updateTimeEntry = async () => {
+    if (!entry.id) return;
+    
+    try {
+      const updatedEntry = {
+        id: entry.id,
+        employee_id: values.employeeId,
+        employee_name: values.employeeName,
+        start_time: values.startTime,
+        end_time: values.endTime,
+        duration: values.duration,
+        billable: values.billable,
+        notes: values.notes,
+      };
+
+      const { data, error } = await supabase
+        .from('work_order_time_entries')
+        .update(updatedEntry)
+        .eq('id', entry.id)
+        .select();
+
+      if (error) {
+        console.error("Error updating time entry:", error);
+        setError(error.message);
+        toast({
+          title: "Error",
+          description: "Failed to update time entry",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: "Time entry updated successfully",
+      });
+      onTimeEntryUpdated();
+      onClose();
+    } catch (error: any) {
+      console.error("Unexpected error updating time entry:", error);
+      setError(error.message);
+      toast({
+        title: "Error",
+        description: "Unexpected error updating time entry",
+        variant: "destructive"
+      });
+    }
   };
+
+  const handleSave = () => {
+    setError('');
+    if (entry) {
+      // Update existing entry
+      updateTimeEntry();
+    } else {
+      // Create new entry
+      createTimeEntry();
+    }
+  };
+
+  return { values, error, handleChange, handleSave, onClose };
 };

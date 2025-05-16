@@ -3,7 +3,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { InventoryFormProps } from "./InventoryFormProps";
 import { InventoryFormField } from "./InventoryFormField";
-import { InventoryFormSelect } from "./InventoryFormSelect";
+import { InventoryFormSelect, SelectOption } from "./InventoryFormSelect";
+import { InventoryItemExtended } from "@/types/inventory";
 
 export const InventoryFormComponent: React.FC<InventoryFormProps> = ({
   formData,
@@ -23,6 +24,15 @@ export const InventoryFormComponent: React.FC<InventoryFormProps> = ({
     e.preventDefault();
     onSubmit(formData);
   };
+
+  // Convert string arrays to SelectOption arrays if needed
+  const categoryOptions: SelectOption[] = Array.isArray(categories) && categories.length > 0 && typeof categories[0] === 'string' 
+    ? categories.map(cat => ({ value: cat, label: cat }))
+    : categories as SelectOption[];
+    
+  const supplierOptions: SelectOption[] = Array.isArray(suppliers) && suppliers.length > 0 && typeof suppliers[0] === 'string' 
+    ? suppliers.map(sup => ({ value: sup, label: sup }))
+    : suppliers as SelectOption[];
 
   return (
     <form onSubmit={handleFormSubmit} className="space-y-6">
@@ -85,18 +95,18 @@ export const InventoryFormComponent: React.FC<InventoryFormProps> = ({
           label="Category"
           name="category"
           value={formData.category}
-          onChange={(e) => handleSelectChange("category", e.target.value)}
+          onChange={handleSelectChange}
           error={formErrors.category}
-          options={categories.map(cat => ({ value: cat, label: cat }))}
+          options={categoryOptions}
           required
         />
         <InventoryFormSelect
           label="Supplier"
           name="supplier"
           value={formData.supplier}
-          onChange={(e) => handleSelectChange("supplier", e.target.value)}
+          onChange={handleSelectChange}
           error={formErrors.supplier}
-          options={suppliers.map(sup => ({ value: sup, label: sup }))}
+          options={supplierOptions}
           required
         />
       </div>
@@ -117,7 +127,7 @@ export const InventoryFormComponent: React.FC<InventoryFormProps> = ({
           label="Status"
           name="status"
           value={formData.status}
-          onChange={(e) => handleSelectChange("status", e.target.value)}
+          onChange={handleSelectChange}
           error={formErrors.status}
           options={[
             { value: "In Stock", label: "In Stock" },
@@ -129,14 +139,18 @@ export const InventoryFormComponent: React.FC<InventoryFormProps> = ({
       </div>
 
       <div>
-        <InventoryFormField
-          label="Description"
-          name="description"
-          type="textarea"
-          value={formData.description || ""}
-          onChange={handleTextAreaChange}
-          error={formErrors.description}
-        />
+        <div className="space-y-2">
+          <label htmlFor="description" className="text-sm font-medium">Description</label>
+          <textarea
+            id="description"
+            name="description"
+            value={formData.description || ""}
+            onChange={handleTextAreaChange}
+            className={`w-full border rounded p-2 ${formErrors.description ? "border-red-500" : "border-gray-300"}`}
+            rows={4}
+          />
+          {formErrors.description && <p className="text-sm text-red-500">{formErrors.description}</p>}
+        </div>
       </div>
 
       <div className="flex justify-end space-x-4">
@@ -181,6 +195,7 @@ export const InventoryForm: React.FC<{
     }
   };
 
+  // Correct the props to match the expected types
   const combinedProps: InventoryFormProps = {
     formData,
     handleChange,
@@ -200,4 +215,3 @@ export const InventoryForm: React.FC<{
 };
 
 import { useInventoryForm } from "@/hooks/inventory/useInventoryForm";
-import { InventoryItemExtended } from "@/types/inventory";
