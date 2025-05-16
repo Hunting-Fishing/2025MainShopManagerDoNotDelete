@@ -61,7 +61,7 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
       description: "Labor",
       quantity: 1,
       price: 0,
-      type: "labor"
+      hours: true
     };
     setItems(prev => [...prev, newItem]);
   };
@@ -93,8 +93,7 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
 
   // Use invoice totals hook
   const totalsResult = useInvoiceTotals(items);
-  const { subtotal, tax, total } = totalsResult;
-  const taxRate = totalsResult.taxRate || 0;
+  const { subtotal, tax, total, taxRate } = totalsResult;
   
   const onTaxRateChange = (newRate: number) => {
     // This would typically update taxRate in state
@@ -104,20 +103,21 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
   // Use invoice save hook
   const { 
     saveInvoice,
-    isSaving: isSubmitting
+    isSaving
   } = useInvoiceSave();
 
   // Wrap the save invoice function to include all required data
   const handleSaveInvoice = (status: "draft" | "pending" | "paid" | "overdue" | "cancelled") => {
-    // Pass the staff members directly, not as strings
-    saveInvoice(
-      {
-        ...invoice,
-        items,
-        assignedStaff
-      },
-      status
-    );
+    // Create a complete invoice object with items and staff
+    const completeInvoice: Invoice = {
+      ...invoice,
+      items: items,
+      assignedStaff: assignedStaff,
+      status: status
+    };
+    
+    // Pass the complete invoice to the save function
+    saveInvoice(completeInvoice, status);
   };
 
   // Handle selecting a work order
@@ -134,7 +134,7 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
         ...prev,
         work_order_id: workOrderUpdates.workOrderId,
         customer: workOrderUpdates.customer,
-        description: workOrderUpdates.description,
+        customer_address: workOrderUpdates.customerAddress,
       };
     });
     
@@ -160,7 +160,7 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
     tax,
     taxRate,
     total,
-    isSubmitting,
+    isSubmitting: isSaving,
     items,
     assignedStaff,
     

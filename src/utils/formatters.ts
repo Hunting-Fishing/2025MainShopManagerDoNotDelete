@@ -63,3 +63,17 @@ export const truncateString = (str: string, maxLength: number): string => {
 export const formatNumber = (num: number): string => {
   return new Intl.NumberFormat('en-US').format(num);
 };
+
+/**
+ * Format a date string into a standardized format
+ */
+export const formatDate = (dateString: string): string => {
+  if (!dateString) return '';
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString();
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return dateString;
+  }
+};

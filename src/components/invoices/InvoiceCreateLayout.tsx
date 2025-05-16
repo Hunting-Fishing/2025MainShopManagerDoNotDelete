@@ -93,8 +93,10 @@ export function InvoiceCreateLayout({
           templates={templates}
           showWorkOrderDialog={showWorkOrderDialog}
           showInventoryDialog={showInventoryDialog}
+          showStaffDialog={showStaffDialog}
           setShowWorkOrderDialog={setShowWorkOrderDialog}
           setShowInventoryDialog={setShowInventoryDialog}
+          setShowStaffDialog={setShowStaffDialog}
           setInvoice={setInvoice}
           handleSelectWorkOrder={handleSelectWorkOrder}
           handleAddInventoryItem={handleAddInventoryItem}
@@ -109,7 +111,7 @@ export function InvoiceCreateLayout({
         
         <InvoiceRightColumn 
           createdBy={invoice.created_by || ""}
-          assignedStaff={invoice.assigned_staff || []}
+          assignedStaff={invoice.assignedStaff || []}
           staffMembers={staffMembers}
           subtotal={subtotal}
           taxRate={taxRate}

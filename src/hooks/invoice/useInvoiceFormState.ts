@@ -9,12 +9,7 @@ export interface UseInvoiceFormStateProps {
 const createEmptyInvoice = (workOrderId?: string): Invoice => ({
   id: crypto.randomUUID(),
   number: '',
-  customer: {
-    id: '',
-    name: '',
-    email: '',
-    address: ''
-  },
+  customer: '',
   status: 'draft',
   issue_date: new Date().toISOString(),
   due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
@@ -27,7 +22,7 @@ const createEmptyInvoice = (workOrderId?: string): Invoice => ({
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
   work_order_id: workOrderId || '',
-  assigned_staff: []
+  assignedStaff: []
 });
 
 export const useInvoiceFormState = (props?: UseInvoiceFormStateProps) => {

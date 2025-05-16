@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,8 +37,10 @@ export function InvoiceLeftColumn({
   templates,
   showWorkOrderDialog,
   showInventoryDialog,
+  showStaffDialog,
   setShowWorkOrderDialog,
   setShowInventoryDialog,
+  setShowStaffDialog,
   setInvoice,
   handleSelectWorkOrder,
   handleAddInventoryItem,
@@ -74,8 +77,6 @@ export function InvoiceLeftColumn({
       console.error('Error saving template', error);
     }
   };
-
-  
   
   return (
     <div className="col-span-2 space-y-6">

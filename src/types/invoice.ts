@@ -1,82 +1,61 @@
-import { Customer } from "./customer";
 
 export interface Invoice {
   id: string;
+  number: string;
   customer: string;
   customer_id?: string;
   customer_address?: string;
   customer_email?: string;
-  description?: string;
-  notes?: string;
-  date: string;
+  status: 'draft' | 'pending' | 'paid' | 'overdue' | 'cancelled';
+  issue_date: string;
   due_date: string;
-  status: string;
-  subtotal?: number;
-  tax?: number;
-  total?: number;
-  work_order_id?: string;
-  created_by?: string;
-  payment_method?: string;
-  items: InvoiceItem[];
-  customerData?: Customer;
-  created_at?: string;
+  subtotal: number;
+  tax: number;
+  tax_rate: number;
+  total: number;
+  notes: string;
+  work_order_id: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
   assignedStaff: StaffMember[];
-  last_updated_by?: string;
-  last_updated_at?: string;
+  items?: InvoiceItem[];
 }
 
 export interface InvoiceItem {
   id: string;
-  name: string;
-  description?: string;
+  description: string;
   quantity: number;
   price: number;
-  total: number;
   hours?: boolean;
-  sku?: string;
   category?: string;
+  sku?: string;
+  name?: string;
+  total?: number;
 }
 
-export interface InvoiceTemplate {
-  id: string;
-  name: string;
-  description?: string;
-  default_tax_rate?: number;
-  default_due_date_days?: number;
-  default_notes?: string;
-  default_items?: InvoiceItem[];
-  created_at?: string;
-  last_used?: string; 
-  usage_count?: number;
-}
-
-// Add StaffMember interface
 export interface StaffMember {
   id: string;
   name: string;
   role?: string;
 }
 
-// Helper function to create an invoice updater
-export interface InvoiceUpdater {
-  (prev: Invoice): Invoice;
+export interface InvoiceTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  default_items?: InvoiceItem[];
+  default_tax_rate?: number;
+  default_notes?: string;
+  default_due_date_days?: number;
+  created_at?: string;
+  last_used?: string;
+  usage_count?: number;
 }
 
 export const createInvoiceUpdater = (updates: Partial<Invoice>) => {
-  return (prev: Invoice) => ({
-    ...prev,
+  return (prevInvoice: Invoice): Invoice => ({
+    ...prevInvoice,
     ...updates
   });
 };
-
-// Define InvoiceFiltersProps
-export interface InvoiceFiltersProps {
-  onApplyFilters: (filters: any) => void;
-  filters?: any;
-  setFilters?: (filters: any) => void;
-  resetFilters?: () => void;
-}
-
-export interface InvoiceFiltersDropdownProps {
-  onApplyFilters: (filters: any) => void;
-}

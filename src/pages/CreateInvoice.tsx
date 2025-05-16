@@ -2,7 +2,7 @@
 import { useParams } from "react-router-dom";
 import { useInvoiceForm } from "@/hooks/useInvoiceForm";
 import { InvoiceCreateLayout } from "@/components/invoices/InvoiceCreateLayout";
-import { useWorkOrderSelector } from "@/components/invoices/WorkOrderSelector";
+import { WorkOrderSelector } from "@/components/invoices/WorkOrderSelector";
 import { supabase } from "@/lib/supabase"; 
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
@@ -125,13 +125,8 @@ export default function InvoiceCreate() {
     handleSaveInvoice,
     handleApplyTemplate,
     handleSaveTemplate,
+    items
   } = useInvoiceForm(workOrderId);
-
-  const workOrderSelector = useWorkOrderSelector({
-    invoice,
-    setInvoice,
-    handleSelectWorkOrder,
-  });
 
   const getStaffName = (staff: any) => {
     if (staff && staff.first_name && staff.last_name) {
@@ -140,33 +135,19 @@ export default function InvoiceCreate() {
     return "Unknown Staff";
   };
 
-  const handleAddInventoryItemAdapter = (item: InventoryItem) => {
+  const handleAddInventoryItemAdapter = (inventoryItem: InventoryItem) => {
+    // Convert InventoryItem to InvoiceItem
     const invoiceItem: InvoiceItem = {
-      id: item.id,
-      name: item.name,
-      description: item.description || "",
+      id: inventoryItem.id,
+      description: inventoryItem.description || inventoryItem.name,
       quantity: 1,
-      price: item.price,
-      total: item.price,
-      sku: item.sku || "",
-      category: item.category || ""
+      price: inventoryItem.price,
+      name: inventoryItem.name,
+      sku: inventoryItem.sku,
+      category: inventoryItem.category
     };
+    
     handleAddInventoryItem(invoiceItem);
-  };
-
-  const handleAddLaborItemAdapter = () => {
-    const laborItem: InvoiceItem = {
-      id: crypto.randomUUID(),
-      name: "Labor",
-      description: "Service labor",
-      quantity: 1,
-      price: 0,
-      total: 0,
-      hours: true,
-      sku: "LABOR",
-      category: "Services"
-    };
-    handleAddLaborItem(laborItem);
   };
 
   return (
@@ -176,6 +157,7 @@ export default function InvoiceCreate() {
       tax={tax}
       taxRate={taxRate}
       total={total}
+      items={items}
       showWorkOrderDialog={showWorkOrderDialog}
       showInventoryDialog={showInventoryDialog}
       showStaffDialog={showStaffDialog}
@@ -187,18 +169,19 @@ export default function InvoiceCreate() {
       setShowWorkOrderDialog={setShowWorkOrderDialog}
       setShowInventoryDialog={setShowInventoryDialog}
       setShowStaffDialog={setShowStaffDialog}
-      handleSelectWorkOrder={workOrderSelector.handleSelectWorkOrderWithTime}
-      handleAddInventoryItem={handleAddInventoryItemAdapter}
+      handleSelectWorkOrder={handleSelectWorkOrder}
+      handleAddInventoryItem={handleAddInventoryItem}
       handleAddStaffMember={handleAddStaffMember}
       handleRemoveStaffMember={handleRemoveStaffMember}
       handleRemoveItem={handleRemoveItem}
       handleUpdateItemQuantity={handleUpdateItemQuantity}
       handleUpdateItemDescription={handleUpdateItemDescription}
       handleUpdateItemPrice={handleUpdateItemPrice}
-      handleAddLaborItem={handleAddLaborItemAdapter}
+      handleAddLaborItem={handleAddLaborItem}
       handleSaveInvoice={handleSaveInvoice}
       handleApplyTemplate={handleApplyTemplate}
       handleSaveTemplate={handleSaveTemplate}
+      onTaxRateChange={(rate) => console.log("Tax rate changed:", rate)}
     />
   );
 }

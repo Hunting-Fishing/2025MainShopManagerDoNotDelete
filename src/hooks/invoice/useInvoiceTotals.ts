@@ -1,19 +1,30 @@
 
-import { useMemo } from "react";
-import { Invoice } from "@/types/invoice";
-import { calculateSubtotal, calculateTax, calculateTotal } from "@/utils/invoiceUtils";
+import { useMemo } from 'react';
+import { InvoiceItem } from '@/types/invoice';
 
-export function useInvoiceTotals(invoice: Invoice, taxRate: number = 0) {
-  // Calculate invoice totals
-  const subtotal = useMemo(() => calculateSubtotal(invoice.items), [invoice.items]);
-  
-  const tax = useMemo(() => calculateTax(subtotal, taxRate), [subtotal, taxRate]);
-  
-  const total = useMemo(() => calculateTotal(subtotal, tax), [subtotal, tax]);
+export const useInvoiceTotals = (items: InvoiceItem[] = []) => {
+  const [subtotal, tax, taxRate, total] = useMemo(() => {
+    // Calculate subtotal
+    const calculatedSubtotal = items.reduce((sum, item) => {
+      return sum + (item.price || 0) * (item.quantity || 0);
+    }, 0);
+    
+    // Use a default tax rate or get from context/settings
+    const calculatedTaxRate = 7.5; // Default 7.5%
+    
+    // Calculate tax
+    const calculatedTax = (calculatedSubtotal * calculatedTaxRate) / 100;
+    
+    // Calculate total
+    const calculatedTotal = calculatedSubtotal + calculatedTax;
+    
+    return [calculatedSubtotal, calculatedTax, calculatedTaxRate, calculatedTotal];
+  }, [items]);
 
   return {
     subtotal,
     tax,
+    taxRate,
     total
   };
-}
+};

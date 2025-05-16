@@ -1,84 +1,66 @@
 
-import { useState } from "react";
-import { Invoice } from "@/types/invoice";
+import { useState, useCallback } from 'react';
+import { Invoice } from '@/types/invoice';
 
-interface InvoiceFilters {
-  status: string;
-  workOrderId: string;
-  createdBy: string;
-  dateRange: {
-    from?: Date;
-    to?: Date;
-  };
-}
+export const useInvoiceFilters = (initialInvoices: Invoice[] = []) => {
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [dateFilter, setDateFilter] = useState<string>('all');
+  const [createdByFilter, setCreatedByFilter] = useState<string>('all');
+  const [search, setSearch] = useState<string>('');
 
-export const useInvoiceFilters = (invoices: Invoice[]) => {
-  const [filters, setFilters] = useState<InvoiceFilters>({
-    status: "all",
-    workOrderId: "",
-    createdBy: "",
-    dateRange: {},
-  });
-
-  const filteredInvoices = invoices.filter((invoice) => {
-    // Status filter
-    if (filters.status !== "all" && invoice.status !== filters.status) {
-      return false;
-    }
-
-    // Work order filter
-    if (filters.workOrderId && invoice.work_order_id !== filters.workOrderId) {
-      return false;
-    }
-
-    // Created by filter
-    if (filters.createdBy && invoice.created_by !== filters.createdBy) {
-      return false;
-    }
-
-    // Date range filter
-    if (filters.dateRange.from || filters.dateRange.to) {
-      const invoiceDate = new Date(invoice.issue_date);
-
-      if (filters.dateRange.from && invoiceDate < filters.dateRange.from) {
+  const filteredInvoices = useCallback(() => {
+    return initialInvoices.filter(invoice => {
+      // Filter by status
+      if (statusFilter !== 'all' && invoice.status !== statusFilter) {
         return false;
       }
 
-      if (filters.dateRange.to) {
-        const endDate = new Date(filters.dateRange.to);
-        endDate.setHours(23, 59, 59, 999); // End of day
-        if (invoiceDate > endDate) {
-          return false;
-        }
+      // Filter by search term (check invoice ID or customer name)
+      if (search && !invoice.id.toLowerCase().includes(search.toLowerCase()) && 
+          !invoice.customer.toLowerCase().includes(search.toLowerCase()) &&
+          !(invoice.created_by && invoice.created_by.toLowerCase().includes(search.toLowerCase()))) {
+        return false;
       }
-    }
 
-    return true;
-  });
+      // Filter by work order id if applicable
+      if (invoice.work_order_id && invoice.work_order_id.includes(search)) {
+        return true;
+      }
 
-  const updateFilter = <K extends keyof InvoiceFilters>(
-    key: K,
-    value: InvoiceFilters[K]
-  ) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-  };
+      // Filter by created by
+      if (createdByFilter !== 'all' && invoice.created_by !== createdByFilter) {
+        return false;
+      }
 
-  const resetFilters = () => {
-    setFilters({
-      status: "all",
-      workOrderId: "",
-      createdBy: "",
-      dateRange: {},
+      // Filter by date (this would need date range processing logic)
+      if (dateFilter !== 'all') {
+        // Example date filter implementation
+        const due_date = new Date(invoice.due_date);
+        const currentDate = new Date();
+        
+        if (dateFilter === 'thisWeek') {
+          const startOfWeek = new Date();
+          startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+          const endOfWeek = new Date();
+          endOfWeek.setDate(startOfWeek.getDate() + 6);
+          return due_date >= startOfWeek && due_date <= endOfWeek;
+        }
+        // Add other date filter conditions as needed
+      }
+
+      return true;
     });
-  };
+  }, [initialInvoices, statusFilter, search, dateFilter, createdByFilter]);
 
   return {
-    filters,
-    updateFilter,
-    resetFilters,
-    filteredInvoices,
+    filteredInvoices: filteredInvoices(),
+    statusFilter,
+    setStatusFilter,
+    dateFilter, 
+    setDateFilter,
+    search,
+    setSearch,
+    createdByFilter,
+    setCreatedByFilter
   };
 };
