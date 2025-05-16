@@ -1,3 +1,4 @@
+
 import { Customer } from "./customer";
 import { Vehicle } from "./vehicle";
 import { InventoryItem } from "./inventory";
@@ -14,6 +15,7 @@ export type WorkOrderPriorityType =
   | "medium" 
   | "high";
 
+// Main WorkOrder interface with consistent property naming
 export interface WorkOrder {
   id: string;
   customer: string;
@@ -24,16 +26,16 @@ export interface WorkOrder {
   status: WorkOrderStatusType;
   priority: WorkOrderPriorityType;
   date?: string;
-  dueDate?: string;
-  due_date?: string; 
+  dueDate?: string; // Keep this legacy camelCase property
+  due_date?: string; // And the snake_case version for consistency
   technician?: string;
   technician_id?: string;
   location?: string;
   notes?: string;
-  createdAt?: string;
-  created_at?: string;
-  updatedAt?: string;
-  updated_at?: string;
+  createdAt?: string; // Legacy camelCase property 
+  created_at?: string; // Snake_case version
+  updatedAt?: string; // Legacy camelCase property
+  updated_at?: string; // Snake_case version
   invoice_id?: string;
   total_cost?: number;
   estimated_hours?: number;
@@ -47,6 +49,7 @@ export interface WorkOrder {
   vehicleData?: Vehicle;
   vehicle_make?: string;
   vehicle_model?: string;
+  service_category?: string; // Add missing service_category property
 }
 
 export interface TimeEntry {

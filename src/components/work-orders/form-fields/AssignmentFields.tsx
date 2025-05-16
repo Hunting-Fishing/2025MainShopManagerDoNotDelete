@@ -1,97 +1,133 @@
 
 import React from "react";
+import { UseFormReturn } from "react-hook-form";
+import {
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
-import { UseFormReturn } from "react-hook-form";
-import { WorkOrderFormFieldValues } from "../WorkOrderFormFields";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
 
 interface AssignmentFieldsProps {
-  form: UseFormReturn<WorkOrderFormFieldValues>;
-  technicians: string[];
+  form: UseFormReturn<WorkOrderFormSchemaValues>;
+  technicians?: string[];
 }
 
 export const AssignmentFields: React.FC<AssignmentFieldsProps> = ({
   form,
-  technicians
+  technicians = []
 }) => {
   return (
-    <>
-      {/* Technician Field */}
-      <FormField
-        control={form.control}
-        name="technician"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Assigned Technician</FormLabel>
-            <Select
-              onValueChange={field.onChange}
-              defaultValue={field.value}
-            >
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Assign technician" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                <SelectItem value="_unassigned">Unassigned</SelectItem>
-                {technicians.map((tech) => (
-                  <SelectItem key={tech} value={tech}>
-                    {tech}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      {/* Due Date Field */}
-      <FormField
-        control={form.control}
-        name="dueDate"
-        render={({ field }) => (
-          <FormItem className="flex flex-col">
-            <FormLabel>Due Date</FormLabel>
-            <Popover>
-              <PopoverTrigger asChild>
+    <div className="bg-white p-4 rounded-lg border border-gray-200 space-y-4">
+      <h3 className="text-lg font-semibold mb-4">Assignment Details</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Technician Field */}
+        <FormField
+          control={form.control}
+          name="technician"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Technician</FormLabel>
+              <Select
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+              >
                 <FormControl>
-                  <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-full pl-3 text-left font-normal",
-                      !field.value && "text-muted-foreground"
-                    )}
-                  >
-                    {field.value ? (
-                      format(field.value, "PPP")
-                    ) : (
-                      <span>Select a date</span>
-                    )}
-                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                  </Button>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a technician" />
+                  </SelectTrigger>
                 </FormControl>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={field.value}
-                  onSelect={field.onChange}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </PopoverContent>
-            </Popover>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-    </>
+                <SelectContent>
+                  <SelectItem value="" disabled>
+                    Select a technician
+                  </SelectItem>
+                  {technicians.map((tech) => (
+                    <SelectItem key={tech} value={tech}>
+                      {tech}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Location Field */}
+        <FormField
+          control={form.control}
+          name="location"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Location</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter service location" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Due Date Field */}
+        <FormField
+          control={form.control}
+          name="dueDate"
+          render={({ field }) => (
+            <FormItem className="flex flex-col">
+              <FormLabel>Due Date</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full pl-3 text-left font-normal",
+                        !field.value && "text-muted-foreground"
+                      )}
+                    >
+                      {field.value ? (
+                        field.value instanceof Date 
+                          ? format(field.value, "PPP")
+                          : typeof field.value === 'string' 
+                            ? field.value 
+                            : "Pick a date"
+                      ) : (
+                        "Pick a date"
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={field.value instanceof Date ? field.value : new Date(field.value || Date.now())}
+                    onSelect={(date) => field.onChange(date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+    </div>
   );
 };

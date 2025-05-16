@@ -1,6 +1,5 @@
-
 import { supabase } from "@/lib/supabase";
-import { Invoice, InvoiceItem, InvoiceTemplate } from "@/types/invoice";
+import { Invoice, InvoiceItem, StaffMember } from "@/types/invoice";
 
 // Helper function to format an API invoice object
 export const formatApiInvoice = (invoice: any): Invoice => {
@@ -355,6 +354,97 @@ export const saveInvoiceTemplate = async (
     };
   } catch (error) {
     console.error("Error saving invoice template:", error);
+    throw error;
+  }
+};
+
+export const saveInvoice = async (invoiceData: Invoice) => {
+  try {
+    // Create normalized invoice object for database
+    const invoiceForDb = {
+      id: invoiceData.id,
+      number: invoiceData.number,
+      customer: invoiceData.customer,
+      customer_id: invoiceData.customer_id,
+      customer_email: invoiceData.customer_email,
+      customer_address: invoiceData.customer_address,
+      date: invoiceData.date,
+      due_date: invoiceData.due_date,
+      issue_date: invoiceData.issue_date || invoiceData.date || new Date().toISOString(), // Add required issue_date
+      status: invoiceData.status,
+      subtotal: invoiceData.subtotal,
+      tax_rate: invoiceData.tax_rate,
+      tax: invoiceData.tax,
+      total: invoiceData.total,
+      notes: invoiceData.notes,
+      work_order_id: invoiceData.work_order_id,
+      created_by: invoiceData.created_by,
+      payment_method: invoiceData.payment_method
+    };
+
+    // Insert invoice to database
+    const { error: invoiceError } = await supabase
+      .from('invoices')
+      .upsert(invoiceForDb);
+
+    if (invoiceError) {
+      throw invoiceError;
+    }
+
+    // Save invoice items if they exist
+    if (invoiceData.items && invoiceData.items.length > 0) {
+      const itemsForDb = invoiceData.items.map(item => ({
+        invoice_id: invoiceData.id,
+        name: item.name,
+        description: item.description,
+        quantity: item.quantity,
+        price: item.price,
+        hours: item.hours || false,
+        total: item.quantity * item.price,
+      }));
+
+      // First delete existing items
+      await supabase
+        .from('invoice_items')
+        .delete()
+        .eq('invoice_id', invoiceData.id);
+
+      // Then insert new items
+      const { error: itemsError } = await supabase
+        .from('invoice_items')
+        .insert(itemsForDb);
+
+      if (itemsError) {
+        throw itemsError;
+      }
+    }
+
+    // Save staff assignments if they exist
+    if (invoiceData.assignedStaff && invoiceData.assignedStaff.length > 0) {
+      const staffForDb = invoiceData.assignedStaff.map(staff => ({
+        invoice_id: invoiceData.id,
+        staff_name: staff.name,
+      }));
+
+      // First delete existing staff
+      await supabase
+        .from('invoice_staff')
+        .delete()
+        .eq('invoice_id', invoiceData.id);
+
+      // Then insert new staff
+      const { error: staffError } = await supabase
+        .from('invoice_staff')
+        .insert(staffForDb);
+
+      if (staffError) {
+        throw staffError;
+      }
+    }
+
+    return invoiceData;
+  } catch (error) {
+    console.error("Error saving invoice:", error);
     throw error;
   }
 };

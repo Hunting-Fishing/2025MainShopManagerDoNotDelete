@@ -1,4 +1,3 @@
-
 import { Customer } from "@/types/customer";
 
 interface DateRange {
@@ -125,3 +124,11 @@ export const convertDateRange = (range: DateRange): { startDate: string, endDate
     endDate: range.to ? range.to.toISOString().split('T')[0] : ''
   };
 };
+
+interface CustomerVehicle {
+  id: string;
+  make: string;
+  model: string;
+  year: number | string;
+  type?: string;
+}

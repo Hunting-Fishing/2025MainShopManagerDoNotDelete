@@ -1,119 +1,144 @@
-
-import React from "react";
-import { InventoryHeader } from "@/components/inventory/InventoryHeader";
-import { InventorySearch } from "@/components/inventory/InventorySearch";
-import { InventoryFilters } from "@/components/inventory/InventoryFilters";
+import React, { useState, useEffect } from 'react';
+import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
+import { InventoryItem } from "@/types/inventory";
 import { InventoryStockHeader } from "@/components/inventory/InventoryStockHeader";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
-import { EmptyInventory } from "@/components/inventory/EmptyInventory";
-import { useInventory } from "@/hooks/useInventory";
-import { useInventoryFilters } from "@/hooks/inventory/useInventoryFilters";
+import { InventoryFilter } from "@/components/inventory/InventoryFilter";
+import { InventoryPagination } from "@/components/inventory/InventoryPagination";
+import { generateInventoryReport } from "@/utils/inventory/reportGenerator";
 
 export default function InventoryStock() {
-  // Use inventory filters hook
-  const filters = useInventoryFilters();
-  
-  // Pass the filters to the useInventory hook
-  const inventory = useInventory({
-    searchQuery: filters.searchQuery,
-    categoryFilter: filters.categoryFilter.join(','),
-    statusFilter: filters.statusFilter.join(','),
-    supplierFilter: filters.supplierFilter,
-    locationFilter: filters.locationFilter,
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [supplierFilter, setSupplierFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+
+  useEffect(() => {
+    fetchInventoryData();
+  }, []);
+
+  const fetchInventoryData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error } = await supabase
+        .from('inventory_items')
+        .select('*')
+        .order('name', { ascending: true });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (data) {
+        setInventory(data);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch inventory data');
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch inventory data',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredInventory = inventory.filter(item => {
+    const searchMatch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        (item.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
+                        item.sku.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const categoryMatch = categoryFilter.length === 0 || categoryFilter.includes(item.category || '');
+    const statusMatch = statusFilter.length === 0 || statusFilter.includes(item.status || '');
+    const supplierMatch = supplierFilter === '' || item.supplier === supplierFilter;
+
+    return searchMatch && categoryMatch && statusMatch && supplierMatch;
   });
-  
-  const {
-    filteredItems,
-    refreshItems,
-    lowStockCount,
-    outOfStockCount,
-    totalValue,
-    handleExport,
-    error
-  } = inventory;
 
-  // Loading state
-  if (filters.loading) {
-    return (
-      <div className="container mx-auto p-6 space-y-8">
-        <InventoryHeader />
-        <div className="flex justify-center items-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        </div>
-      </div>
-    );
-  }
+  const totalItems = filteredInventory.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const paginatedInventory = filteredInventory.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  // Error state
-  if (error) {
-    return (
-      <div className="container mx-auto p-6 space-y-8">
-        <InventoryHeader />
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-          <strong className="font-bold">Error:</strong>
-          <span className="block sm:inline"> {error}</span>
-        </div>
-      </div>
-    );
-  }
+  const handleExport = async () => {
+    try {
+      const reportData = inventory.map(item => ({
+        Name: item.name,
+        SKU: item.sku,
+        Description: item.description,
+        Price: item.price,
+        Category: item.category,
+        Supplier: item.supplier,
+        Status: item.status,
+        Quantity: item.quantity,
+        ReorderPoint: item.reorder_point,
+      }));
+
+      await generateInventoryReport(reportData);
+      toast({
+        title: 'Success',
+        description: 'Inventory report generated successfully',
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Error',
+        description: err.message || 'Failed to generate inventory report',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const lowStockCount = inventory.filter(item => item.quantity !== undefined && item.reorder_point !== undefined && item.quantity <= item.reorder_point).length;
+  const outOfStockCount = inventory.filter(item => item.quantity === 0).length;
+  const totalInventoryValue = inventory.reduce((acc, item) => acc + (item.price * (item.quantity || 0)), 0);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-6">
-      <InventoryHeader />
-      
+    <div className="container mx-auto p-4 space-y-6">
       <InventoryStockHeader 
+        title="Inventory Stock" // Add missing title prop
         lowStockCount={lowStockCount}
         outOfStockCount={outOfStockCount}
-        totalValue={totalValue}
+        totalValue={totalInventoryValue}
         onExport={handleExport}
-        onRefresh={refreshItems}
+        onRefresh={fetchInventoryData}
       />
       
-      <div className="flex flex-col lg:flex-row gap-6">
-        <div className="lg:w-1/4 space-y-4">
-          <div className="bg-white rounded-lg shadow p-4">
-            <InventorySearch 
-              searchQuery={filters.searchQuery}
-              setSearchQuery={filters.setSearchQuery}
-            />
-          </div>
-          
-          <InventoryFilters 
-            categories={inventory.categories || []}
-            statuses={inventory.statuses || []}
-            suppliers={inventory.suppliers || []}
-            locations={inventory.locations || []}
-            categoryFilter={filters.categoryFilter}
-            setCategoryFilter={filters.setCategoryFilter}
-            statusFilter={filters.statusFilter}
-            setStatusFilter={filters.setStatusFilter}
-            supplierFilter={filters.supplierFilter}
-            setSupplierFilter={filters.setSupplierFilter}
-            locationFilter={filters.locationFilter}
-            setLocationFilter={filters.setLocationFilter}
-            onReset={filters.resetFilters}
+      <InventoryFilter
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        categoryFilter={categoryFilter}
+        setCategoryFilter={setCategoryFilter}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        supplierFilter={supplierFilter}
+        setSupplierFilter={setSupplierFilter}
+      />
+
+      {loading ? (
+        <div className="text-center">Loading inventory data...</div>
+      ) : error ? (
+        <div className="text-red-500 text-center">{error}</div>
+      ) : (
+        <>
+          <InventoryTable inventory={paginatedInventory} />
+          <InventoryPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
           />
-        </div>
-        
-        <div className="lg:w-3/4">
-          {filteredItems.length === 0 ? (
-            <EmptyInventory 
-              searchQuery={filters.searchQuery}
-              filtersActive={
-                filters.categoryFilter.length > 0 || 
-                filters.statusFilter.length > 0 || 
-                filters.supplierFilter !== '' || 
-                filters.locationFilter !== ''
-              }
-              onReset={filters.resetFilters}
-            />
-          ) : (
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-              <InventoryTable items={filteredItems} />
-            </div>
-          )}
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }

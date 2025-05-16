@@ -12,6 +12,7 @@ import { NotesSection } from "./NotesSection";
 import { TimeEntrySection } from "./TimeEntrySection";
 import { InventorySectionWrapper } from "./inventory/InventorySectionWrapper";
 import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
+import { WorkOrderFormValues } from "@/types/workOrder";
 
 interface WorkOrderCreateFormProps {
   form: UseFormReturn<WorkOrderFormSchemaValues>;
@@ -42,7 +43,10 @@ export const WorkOrderCreateForm: React.FC<WorkOrderCreateFormProps> = ({
         
         <TimeEntrySection form={form} />
         
-        <InventorySectionWrapper form={form} />
+        {/* Cast the form to WorkOrderFormValues for inventory section */}
+        <InventorySectionWrapper 
+          form={form as unknown as UseFormReturn<WorkOrderFormValues>} 
+        />
         
         <div className="flex justify-end">
           <Button 

@@ -1,16 +1,17 @@
-import { WorkOrder, TimeEntry, DbTimeEntry, WorkOrderStatusType, WorkOrderPriorityType } from "@/types/workOrder";
-import { normalizeWorkOrder } from "./formatters";
+
+import { WorkOrder, TimeEntry, WorkOrderStatusType, WorkOrderPriorityType } from "@/types/workOrder";
 
 // Map time entry from DB format to app format
 export const mapTimeEntryFromDb = (entry: any): TimeEntry => ({
   id: entry.id,
-  employeeId: entry.employee_id,
-  employeeName: entry.employee_name,
-  startTime: entry.start_time,
-  endTime: entry.end_time,
+  employee_id: entry.employee_id,
+  employee_name: entry.employee_name,
+  start_time: entry.start_time,
+  end_time: entry.end_time,
   duration: entry.duration,
   notes: entry.notes || '',
-  billable: entry.billable || false
+  billable: entry.billable || false,
+  work_order_id: entry.work_order_id
 });
 
 // Database to app model mapping
@@ -45,46 +46,39 @@ export const mapDatabaseToAppModel = (data: any): WorkOrder => {
     id: data.id,
     date: data.created_at,
     customer: customerName,
-    customerId: data.customer_id,
     customer_id: data.customer_id,
     description: data.description || '',
     status: typedStatus,
     priority: determinePriority(data) as WorkOrderPriorityType,
     technician: technicianName || 'Unassigned',
-    technicianId: data.technician_id,
     technician_id: data.technician_id,
     location: data.location || '',
     dueDate: data.end_time || data.created_at || '',
+    due_date: data.end_time || data.created_at || '',
     notes: data.notes || '',
     timeEntries: timeEntries,
+    time_entries: timeEntries,
     totalBillableTime: timeEntries.reduce((sum, entry) => 
       sum + (entry.billable ? (entry.duration || 0) : 0), 0) || 0,
-    createdBy: data.created_by || 'System',
-    createdAt: data.created_at,
+    total_billable_time: timeEntries.reduce((sum, entry) => 
+      sum + (entry.billable ? (entry.duration || 0) : 0), 0) || 0,
     created_at: data.created_at,
-    lastUpdatedBy: data.updated_by || '',
-    updatedAt: data.updated_at,
+    createdAt: data.created_at,
     updated_at: data.updated_at,
-    lastUpdatedAt: data.updated_at,
+    updatedAt: data.updated_at,
     vehicle_id: data.vehicle_id,
-    vehicleId: data.vehicle_id,
     vehicle_make: data.vehicle_make,
-    vehicleMake: data.vehicle_make,
     vehicle_model: data.vehicle_model,
-    vehicleModel: data.vehicle_model,
-    serviceType: data.service_type,
     service_type: data.service_type,
-    totalCost: data.total_cost,
     total_cost: data.total_cost,
   };
   
   // Handle service category safely
   if (data.service_category !== undefined) {
-    workOrder.serviceCategory = data.service_category;
     workOrder.service_category = data.service_category;
   }
   
-  return normalizeWorkOrder(workOrder);
+  return workOrder;
 };
 
 // Helper function to convert camelCase to snake_case for database storage
@@ -94,17 +88,21 @@ export const mapAppModelToDatabase = (workOrder: Partial<WorkOrder>) => {
   // Standard fields
   result.description = workOrder.description;
   result.status = workOrder.status;
-  result.customer_id = typeof workOrder.customerId !== 'string' ? workOrder.customerId : workOrder.customer_id;
-  result.technician_id = typeof workOrder.technicianId !== 'string' ? workOrder.technicianId : workOrder.technician_id;
-  result.vehicle_id = workOrder.vehicleId || workOrder.vehicle_id;
+  result.customer_id = workOrder.customer_id;
+  result.technician_id = workOrder.technician_id;
+  result.vehicle_id = workOrder.vehicle_id;
   result.location = workOrder.location;
   result.notes = workOrder.notes || '';
-  result.end_time = workOrder.dueDate; // Map dueDate to end_time for database
+  result.end_time = workOrder.due_date || workOrder.dueDate; // Map dueDate to end_time for database
   result.priority = workOrder.priority;
-  result.total_cost = workOrder.totalCost || workOrder.total_cost || 0;
-  result.service_type = workOrder.serviceType || workOrder.service_type;
-  result.service_category = workOrder.serviceCategory || workOrder.service_category;
-  result.estimated_hours = workOrder.estimatedHours || workOrder.estimated_hours || null;
+  result.total_cost = workOrder.total_cost || 0;
+  result.service_type = workOrder.service_type;
+  
+  if (workOrder.service_category !== undefined) {
+    result.service_category = workOrder.service_category;
+  }
+  
+  result.estimated_hours = workOrder.estimated_hours || null;
 
   return result;
 };

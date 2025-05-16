@@ -3,10 +3,14 @@ import { supabase } from "@/lib/supabase";
 import { 
   InventoryPurchaseOrder, 
   InventoryPurchaseOrderItem 
-} from "@/types/inventory";
+} from "@/types/inventory/purchaseOrders";
 import { recordInventoryTransaction } from "./transactionService";
 
-export const createPurchaseOrder = async (order: Omit<InventoryPurchaseOrder, 'id'>): Promise<InventoryPurchaseOrder> => {
+interface OrderWithItems extends InventoryPurchaseOrder {
+  items?: InventoryPurchaseOrderItem[];
+}
+
+export const createPurchaseOrder = async (order: Omit<OrderWithItems, 'id'>): Promise<InventoryPurchaseOrder> => {
   try {
     const { data, error } = await supabase
       .from('inventory_purchase_orders')
@@ -203,7 +207,7 @@ export const receivePurchaseOrder = async (
         throw updateError;
       }
       
-      // Record inventory transaction
+      // Record inventory transaction with proper parameters
       await recordInventoryTransaction({
         inventory_item_id: item.inventory_item_id,
         quantity: item.quantity_received,

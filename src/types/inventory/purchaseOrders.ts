@@ -11,6 +11,7 @@ export interface InventoryPurchaseOrder {
   updated_at: string;
   status: string;
   notes?: string;
+  items?: InventoryPurchaseOrderItem[]; // Add items array for convenience
 }
 
 export interface InventoryPurchaseOrderItem {
@@ -24,3 +25,7 @@ export interface InventoryPurchaseOrderItem {
   created_at: string;
   updated_at: string;
 }
+
+// Add these type aliases for backward compatibility
+export type PurchaseOrder = InventoryPurchaseOrder;
+export type PurchaseOrderItem = InventoryPurchaseOrderItem;

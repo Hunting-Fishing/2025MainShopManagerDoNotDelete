@@ -1,16 +1,24 @@
-
 import { useState, useCallback } from "react";
-import { PurchaseOrder, PurchaseOrderItem } from "@/types/inventory/purchaseOrders";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
+import { 
+  InventoryPurchaseOrder, 
+  InventoryPurchaseOrderItem 
+} from "@/types/inventory/purchaseOrders";
+
+// Define a complete Purchase Order type that includes items array
+interface CompletePurchaseOrder extends InventoryPurchaseOrder {
+  items: InventoryPurchaseOrderItem[];
+}
 
 export const usePurchaseOrders = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isReceiving, setIsReceiving] = useState(false);
-  
-  const createPurchaseOrder = async (order: Omit<PurchaseOrder, 'id'>) => {
+
+  // Modified to accept a complete order with items
+  const createPurchaseOrder = async (order: Omit<CompletePurchaseOrder, 'id'>) => {
     try {
       setIsCreating(true);
       
@@ -32,20 +40,22 @@ export const usePurchaseOrders = () => {
       if (poError) throw poError;
       
       // Create purchase order items
-      const poItems = order.items.map(item => ({
-        purchase_order_id: poData.id,
-        inventory_item_id: item.item.id,
-        quantity: item.quantity,
-        quantity_received: 0,
-        unit_price: item.unit_price,
-        total_price: item.total_price
-      }));
-      
-      const { error: itemsError } = await supabase
-        .from('inventory_purchase_order_items')
-        .insert(poItems);
-      
-      if (itemsError) throw itemsError;
+      if (order.items && order.items.length > 0) {
+        const poItems = order.items.map(item => ({
+          purchase_order_id: poData.id,
+          inventory_item_id: item.inventory_item_id,
+          quantity: item.quantity,
+          quantity_received: 0,
+          unit_price: item.unit_price,
+          total_price: item.total_price
+        }));
+        
+        const { error: itemsError } = await supabase
+          .from('inventory_purchase_order_items')
+          .insert(poItems);
+        
+        if (itemsError) throw itemsError;
+      }
       
       toast({
         title: "Purchase Order Created",
