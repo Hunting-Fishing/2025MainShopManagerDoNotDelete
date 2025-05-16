@@ -1,90 +1,82 @@
-
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { WorkOrderFormSchemaValues, workOrderFormSchema } from "@/schemas/workOrderSchema";
+import { useState, useEffect, useCallback } from "react";
+import { WorkOrder, WorkOrderStatusType } from "@/types/workOrder";
 import { toast } from "sonner";
-import { WorkOrder, TimeEntry } from "@/types/workOrder";
-import { updateWorkOrder } from "@/utils/workOrders/crud";
+import { getWorkOrderById, updateWorkOrder } from "@/services/workOrderService";
+import { useNavigate } from "react-router-dom";
 
-export function useWorkOrderEditForm(workOrder: WorkOrder) {
+export const useWorkOrderEditForm = (workOrderId: string) => {
+  const [workOrder, setWorkOrder] = useState<Partial<WorkOrder>>({});
+  const [originalWorkOrder, setOriginalWorkOrder] = useState<Partial<WorkOrder>>({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>(workOrder?.timeEntries || []);
-
-  const form = useForm<WorkOrderFormSchemaValues>({
-    resolver: zodResolver(workOrderFormSchema),
-    defaultValues: {
-      customer: workOrder?.customer || "",
-      description: workOrder?.description || "",
-      status: workOrder?.status || "pending",
-      priority: workOrder?.priority || "medium",
-      technician: workOrder?.technician || "",
-      location: workOrder?.location || "",
-      // Convert string date to Date object for form
-      dueDate: workOrder?.dueDate ? new Date(workOrder.dueDate) : new Date(),
-      notes: workOrder?.notes || "",
-      vehicleMake: workOrder?.vehicleMake || "",
-      vehicleModel: workOrder?.vehicleModel || "",
-      vehicleYear: workOrder?.vehicleYear || "",
-      odometer: workOrder?.odometer || "",
-      licensePlate: workOrder?.licensePlate || "",
-      vin: workOrder?.vin || "",
-    },
-  });
-
-  const onSubmit = async (data: WorkOrderFormSchemaValues) => {
-    setIsSubmitting(true);
-    setFormError(null);
-
-    try {
-      // Prepare the data for updating the work order
-      const updatedWorkOrderData: Partial<WorkOrder> = {
-        id: workOrder.id, // Ensure you have the ID of the work order
-        customer: data.customer,
-        description: data.description,
-        status: data.status,
-        priority: data.priority as WorkOrder['priority'],
-        technician: data.technician,
-        location: data.location,
-        // Convert Date to string
-        dueDate: data.dueDate.toISOString().split('T')[0],
-        notes: data.notes,
-        vehicleMake: data.vehicleMake,
-        vehicleModel: data.vehicleModel,
-        vehicleYear: data.vehicleYear,
-        odometer: data.odometer,
-        licensePlate: data.licensePlate,
-        vin: data.vin,
-      };
-
-      // Call the updateWorkOrder function
-      const updatedWorkOrder = await updateWorkOrder(updatedWorkOrderData);
-
-      if (updatedWorkOrder) {
-        toast.success("Work order updated successfully");
-        navigate(`/work-orders/${workOrder.id}`); // Navigate to the updated work order
-      } else {
-        setFormError("Failed to update work order. Please try again.");
-        toast.error("Failed to update work order");
+  
+  // Fetch work order data
+  useEffect(() => {
+    const fetchWorkOrder = async () => {
+      try {
+        const data = await getWorkOrderById(workOrderId);
+        setWorkOrder(data);
+        setOriginalWorkOrder(data);
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching work order:", err);
+        const errorMessage = err instanceof Error ? err.message : "Failed to fetch work order";
+        setError(errorMessage);
+        setLoading(false);
+        toast.error(errorMessage);
       }
-    } catch (error) {
-      console.error("Error updating work order:", error);
-      setFormError("There was a problem updating the work order. Please try again.");
-      toast.error("Failed to update work order");
+    };
+    
+    fetchWorkOrder();
+  }, [workOrderId]);
+  
+  // Function to update a single field
+  const updateField = useCallback((field: keyof WorkOrder, value: any) => {
+    setWorkOrder((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  }, []);
+  
+  // Function to handle form submission
+  const handleSubmit = useCallback(async (status?: WorkOrderStatusType) => {
+    setSaving(true);
+    setError(null);
+    
+    try {
+      // If status is provided in the call, use it
+      const workOrderToSave = {
+        ...workOrder,
+        status: status || workOrder.status,
+      };
+      
+      // Handle vehicle_year field if it exists
+      if ('vehicle_year' in workOrderToSave) {
+        // Keep it as is, type system will handle it
+      }
+      
+      const result = await updateWorkOrder(workOrderId, workOrderToSave);
+      toast.success("Work order updated successfully");
+      return result;
+    } catch (err) {
+      console.error("Error updating work order:", err);
+      const errorMessage = err instanceof Error ? err.message : "Failed to update work order";
+      setError(errorMessage);
+      toast.error(errorMessage);
+      return null;
     } finally {
-      setIsSubmitting(false);
+      setSaving(false);
     }
-  };
-
+  }, [workOrder, workOrderId]);
+  
   return {
-    form,
-    onSubmit,
-    isSubmitting,
-    formError,
-    timeEntries,
-    setTimeEntries,
+    workOrder,
+    updateField,
+    handleSubmit,
+    loading,
+    saving,
+    error,
   };
-}
+};

@@ -1,129 +1,111 @@
 
-import { useEffect, useState } from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Save } from "lucide-react";
+import { Link } from "react-router-dom";
 import { WorkOrderForm } from "@/components/work-orders/WorkOrderForm";
-import { WorkOrderTemplateSelector } from "@/components/work-orders/templates/WorkOrderTemplateSelector";
-import { WorkOrderTemplate } from "@/types/workOrder";
-import { useSearchParams } from "react-router-dom";
-import { toast } from "sonner";
-import { WorkOrderPageLayout } from "@/components/work-orders/WorkOrderPageLayout";
-import { getUniqueTechnicians } from "@/utils/workOrders/crud";
+import { WorkOrderFormHeader } from "@/components/work-orders/WorkOrderFormHeader";
+import { WorkOrder, WorkOrderTemplate } from "@/types/workOrder";
+import { useWorkOrderForm } from "@/hooks/useWorkOrderForm";
+import { WorkOrderSelector } from "@/components/work-orders/templates/WorkOrderTemplateSelector";
+import { useWorkOrderTemplates } from "@/hooks/useWorkOrderTemplates";
+
+const defaultWorkOrder: Partial<WorkOrder> = {
+  status: "pending",
+  description: "",
+};
 
 export default function WorkOrderCreate() {
-  // State for templates and technicians
-  const [workOrderTemplates, setWorkOrderTemplates] = useState<WorkOrderTemplate[]>([]);
-  const [selectedTemplate, setSelectedTemplate] = useState<WorkOrderTemplate | null>(null);
-  const [technicians, setTechnicians] = useState<string[]>([]);
-  const [isLoadingTechnicians, setIsLoadingTechnicians] = useState(true);
-  
-  // URL parameters
-  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { workOrder, updateField, handleSubmit, loading } = useWorkOrderForm(defaultWorkOrder);
+  const { templates, handleApplyTemplate } = useWorkOrderTemplates();
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
 
-  // Check if coming from vehicle details with pre-filled info
-  const hasPreFilledInfo = searchParams.has('customerId') && searchParams.has('vehicleId');
-  const vehicleInfo = searchParams.get('vehicleInfo');
-  const customerName = searchParams.get('customerName');
-
-  // Set a more descriptive title when coming from a vehicle page
-  const pageTitle = hasPreFilledInfo 
-    ? `Create Work Order for ${customerName || 'Customer'}`
-    : "Create Work Order";
-    
-  const pageDescription = hasPreFilledInfo && vehicleInfo
-    ? `Creating a new work order for ${vehicleInfo}`
-    : "Create a new work order for your customer's vehicle";
-
-  // Load technicians from database
-  useEffect(() => {
-    const loadTechnicians = async () => {
-      setIsLoadingTechnicians(true);
-      try {
-        const technicianList = await getUniqueTechnicians();
-        setTechnicians(technicianList);
-      } catch (error) {
-        console.error("Error loading technicians:", error);
-        toast.error("Failed to load technicians");
-      } finally {
-        setIsLoadingTechnicians(false);
-      }
-    };
-
-    loadTechnicians();
-  }, []);
-
-  // Handle template selection
   const handleSelectTemplate = (template: WorkOrderTemplate) => {
-    setSelectedTemplate(template);
-    toast.success(`Template "${template.name}" selected`);
+    // Apply the selected template
+    updateField("description", template.description || "");
+    updateField("status", template.status || "pending");
+    updateField("service_type", template.technician || "");
+    
+    setShowTemplateSelector(false);
   };
 
-  // Load templates
-  useEffect(() => {
-    const currentDate = new Date().toISOString();
-    // Mock templates - in a real app, these would come from the database
-    setWorkOrderTemplates([
-      {
-        id: "1",
-        name: "Basic Service",
-        description: "Regular maintenance service",
-        status: "pending",
-        priority: "medium",
-        notes: "Perform oil change, filter replacement, and basic inspection",
-        createdAt: currentDate,
-        usageCount: 3,
-        technician: "John Doe"
-      },
-      {
-        id: "2",
-        name: "Major Repair",
-        description: "Complex repair work",
-        status: "pending",
-        priority: "high",
-        notes: "Detailed diagnosis required before proceeding with repairs",
-        createdAt: currentDate,
-        usageCount: 1,
-        technician: "Jane Smith"
-      },
-      {
-        id: "3",
-        name: "Diagnostic",
-        description: "Diagnostic service",
-        status: "pending",
-        priority: "low",
-        notes: "Perform comprehensive diagnostic scan and inspection",
-        createdAt: currentDate,
-        usageCount: 5,
-        technician: "Bob Johnson"
-      }
-    ]);
-  }, []);
+  const availableTemplates = [
+    {
+      id: "template-1",
+      name: "Oil Change",
+      description: "Standard oil change service",
+      status: "pending",
+      technician: "John Smith",
+      notes: "Check all fluid levels and tire pressure",
+      usage_count: 45,
+      last_used: "2023-10-10",
+    },
+    {
+      id: "template-2",
+      name: "Brake Inspection",
+      description: "Complete brake system inspection",
+      status: "pending",
+      technician: "Jane Doe",
+      notes: "Check brake pads, rotors, and fluid",
+      usage_count: 28,
+      last_used: "2023-09-25",
+    },
+    {
+      id: "template-3",
+      name: "Full Service",
+      description: "Complete vehicle service",
+      status: "pending",
+      technician: "Mike Johnson",
+      notes: "Full inspection and maintenance service",
+      usage_count: 19,
+      last_used: "2023-10-05",
+    },
+  ];
 
   return (
-    <WorkOrderPageLayout
-      title={pageTitle}
-      description={pageDescription}
-      backLink="/work-orders"
-      backLinkText="Back to Work Orders"
-    >
-      <div className="space-y-6">
-        {/* Template selector */}
-        {!hasPreFilledInfo && (
-          <div className="flex justify-end mb-4">
-            <WorkOrderTemplateSelector
-              templates={workOrderTemplates}
-              onSelectTemplate={handleSelectTemplate}
-            />
-          </div>
-        )}
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="icon" asChild>
+            <Link to="/work-orders">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+          <h1 className="text-2xl font-bold">Create Work Order</h1>
+        </div>
 
-        {/* Work Order Form */}
-        <div className="bg-white dark:bg-slate-800/50 rounded-lg shadow">
-          <WorkOrderForm 
-            technicians={technicians} 
-            isLoadingTechnicians={isLoadingTechnicians}
-            initialTemplate={selectedTemplate}
-          />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setShowTemplateSelector(true)}
+          >
+            Use Template
+          </Button>
+          <Button
+            onClick={() => handleSubmit()}
+            disabled={loading}
+          >
+            <Save className="mr-2 h-4 w-4" />
+            Save Work Order
+          </Button>
         </div>
       </div>
-    </WorkOrderPageLayout>
+
+      <WorkOrderForm
+        workOrder={workOrder}
+        updateField={updateField}
+        onSubmit={handleSubmit}
+        isLoading={loading}
+      />
+
+      <WorkOrderSelector
+        templates={availableTemplates} 
+        onTemplateSelect={handleSelectTemplate}
+        open={showTemplateSelector}
+        onClose={() => setShowTemplateSelector(false)}
+      />
+    </div>
   );
 }

@@ -1,267 +1,228 @@
 
+import { Invoice, InvoiceItem, InvoiceTemplate } from "@/types/invoice";
 import { supabase } from "@/integrations/supabase/client";
-import { Invoice, InvoiceItem, StaffMember } from "@/types/invoice";
-import { toast } from "@/hooks/use-toast";
+import { formatApiInvoice, formatInvoiceForApi } from "@/utils/invoiceUtils";
 
-/**
- * Fetches all invoices for the current user/organization
- */
-export async function fetchInvoices() {
-  try {
-    const { data, error } = await supabase
-      .from('invoices')
-      .select('*, invoice_items(*)')
-      .order('created_at', { ascending: false });
-    
-    if (error) {
-      console.error('Error fetching invoices:', error);
-      throw error;
-    }
-    
-    return data || [];
-  } catch (err) {
-    toast({
-      title: "Error loading invoices",
-      description: "Failed to load invoices. Please try again.",
-      variant: "destructive",
-    });
-    throw err;
-  }
-}
+// Helper to generate a unique invoice ID
+const generateInvoiceId = () => {
+  const prefix = 'INV';
+  const timestamp = Date.now().toString().slice(-6);
+  const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+  return `${prefix}-${timestamp}-${random}`;
+};
 
-/**
- * Fetches a single invoice by ID
- */
-export async function fetchInvoiceById(invoiceId: string) {
-  try {
-    const { data, error } = await supabase
-      .from('invoices')
-      .select(`
-        *,
-        items:invoice_items(*),
-        invoice_staff(*),
-        payments(*)
-      `)
-      .eq('id', invoiceId)
-      .maybeSingle();
-    
-    if (error) {
-      console.error('Error fetching invoice:', error);
-      throw error;
-    }
-    
-    return data;
-  } catch (err) {
-    toast({
-      title: "Error loading invoice",
-      description: "Failed to load invoice details. Please try again.",
-      variant: "destructive",
-    });
-    throw err;
-  }
-}
+// Get all invoices
+export const getInvoices = async (): Promise<Invoice[]> => {
+  const { data, error } = await supabase
+    .from('invoices')
+    .select('*')
+    .order('created_at', { ascending: false });
 
-/**
- * Creates or updates an invoice with transaction support
- */
-export async function saveInvoice(invoice: Invoice, items: any[]) {
-  // Start a transaction by creating a Supabase client
-  // with explicit RPC call for transactions
-  try {
-    // If customer_id is not set in invoice but we have customer information,
-    // try to look up the customer by name or create a new customer
-    if (!invoice.customer_id && invoice.customer) {
-      // Try to find the customer by name
-      const { data: existingCustomer } = await supabase
-        .from('customers')
-        .select('id')
-        .or(`first_name.ilike.%${invoice.customer}%,last_name.ilike.%${invoice.customer}%`)
-        .limit(1)
-        .maybeSingle();
-        
-      if (existingCustomer) {
-        invoice.customer_id = existingCustomer.id;
-      }
-    }
-    
-    // First save or update the invoice
-    const { data: invoiceData, error: invoiceError } = await supabase
-      .from('invoices')
-      .upsert({
-        id: invoice.id,
-        customer: invoice.customer,
-        customer_address: invoice.customerAddress,
-        customer_email: invoice.customerEmail,
-        customer_id: invoice.customer_id,
-        description: invoice.description, 
-        notes: invoice.notes,
-        date: invoice.date,
-        due_date: invoice.dueDate,
-        status: invoice.status,
-        work_order_id: invoice.workOrderId,
-        created_by: invoice.createdBy,
-        subtotal: invoice.subtotal,
-        tax: invoice.tax,
-        total: invoice.total,
-        payment_method: invoice.paymentMethod,
-        last_updated_by: invoice.lastUpdatedBy || null,
-        last_updated_at: invoice.lastUpdatedAt || new Date().toISOString(),
-      })
-      .select()
-      .single();
-    
-    if (invoiceError) {
-      throw invoiceError;
-    }
-    
-    // Delete existing items for this invoice
-    const { error: deleteError } = await supabase
-      .from('invoice_items')
-      .delete()
-      .eq('invoice_id', invoice.id);
-      
-    if (deleteError) {
-      throw deleteError;
-    }
-    
-    // Then insert all items with the invoice ID
-    if (items && items.length > 0) {
-      const { error: itemsError } = await supabase
-        .from('invoice_items')
-        .insert(
-          items.map(item => ({
-            invoice_id: invoice.id,
-            name: item.name,
-            description: item.description,
-            quantity: item.quantity,
-            price: item.price,
-            total: item.total,
-            hours: item.hours || false
-          }))
-        );
-        
-      if (itemsError) {
-        throw itemsError;
-      }
-    }
-    
-    // Finally, save the staff assignments
-    if (invoice.assignedStaff && invoice.assignedStaff.length > 0) {
-      // First delete existing assignments
-      await supabase
-        .from('invoice_staff')
-        .delete()
-        .eq('invoice_id', invoice.id);
-      
-      // Then insert new ones, making sure to extract just the string name from the StaffMember objects
-      const staffData = invoice.assignedStaff.map(staff => ({
-        invoice_id: invoice.id,
-        staff_name: typeof staff === 'string' ? staff : staff.name
-      }));
-      
-      const { error: staffError } = await supabase
-        .from('invoice_staff')
-        .insert(staffData);
-        
-      if (staffError) {
-        throw staffError;
-      }
-    }
-    
-    return invoiceData;
-  } catch (error) {
-    console.error('Error saving invoice:', error);
+  if (error) {
+    console.error("Error fetching invoices:", error);
     throw error;
   }
-}
 
-/**
- * Deletes an invoice and its related items
- */
-export async function deleteInvoice(invoiceId: string) {
-  try {
-    // Delete invoice (cascade should handle items and staff assignments)
-    const { error } = await supabase
-      .from('invoices')
-      .delete()
-      .eq('id', invoiceId);
-    
-    if (error) {
-      throw error;
-    }
-    
-    toast({
-      title: "Invoice deleted",
-      description: "Invoice has been deleted successfully.",
-    });
-    
-    return true;
-  } catch (err) {
-    console.error("Error deleting invoice:", err);
-    toast({
-      title: "Error deleting invoice",
-      description: "Failed to delete invoice. Please try again.",
-      variant: "destructive",
-    });
-    throw err;
+  return (data || []).map(formatApiInvoice);
+};
+
+// Get a single invoice by ID
+export const getInvoiceById = async (id: string): Promise<Invoice> => {
+  const { data, error } = await supabase
+    .from('invoices')
+    .select('*, related_work_order:work_order_id(*)')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    console.error(`Error fetching invoice ${id}:`, error);
+    throw error;
   }
-}
 
-/**
- * Updates invoice status
- */
-export async function updateInvoiceStatus(invoiceId: string, status: string) {
-  try {
-    const { data, error } = await supabase
-      .from('invoices')
-      .update({ status })
-      .eq('id', invoiceId)
-      .select()
-      .single();
-    
-    if (error) {
-      throw error;
-    }
-    
-    toast({
-      title: "Status updated",
-      description: `Invoice status has been updated to ${status}.`,
-    });
-    
-    return data;
-  } catch (err) {
-    console.error("Error updating invoice status:", err);
-    toast({
-      title: "Error updating status",
-      description: "Failed to update invoice status. Please try again.",
-      variant: "destructive",
-    });
-    throw err;
+  return formatApiInvoice(data);
+};
+
+// Get invoice items by invoice ID
+export const getInvoiceItems = async (invoiceId: string): Promise<InvoiceItem[]> => {
+  const { data, error } = await supabase
+    .from('invoice_items')
+    .select('*')
+    .eq('invoice_id', invoiceId);
+
+  if (error) {
+    console.error(`Error fetching invoice items for invoice ${invoiceId}:`, error);
+    throw error;
   }
-}
 
-/**
- * Sets up real-time subscription for invoices
- */
-export function subscribeToInvoices(callback: (payload: any) => void) {
-  const channel = supabase
-    .channel('invoice_changes')
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'invoices'
-      },
-      (payload) => {
-        console.log('Invoice change received:', payload);
-        callback(payload);
-      }
-    )
-    .subscribe();
+  return data || [];
+};
+
+// Create a new invoice
+export const createInvoice = async (invoice: Partial<Invoice>, items?: InvoiceItem[]): Promise<Invoice> => {
+  // Generate a unique invoice ID if not provided
+  const id = invoice.id || generateInvoiceId();
   
-  // Return unsubscribe function
-  return () => {
-    supabase.removeChannel(channel);
+  // Prepare invoice data for API
+  const invoiceData = {
+    ...formatInvoiceForApi(invoice as Invoice),
+    id,
+    created_at: new Date().toISOString(),
   };
-}
+
+  // Insert invoice
+  const { data, error } = await supabase
+    .from('invoices')
+    .insert(invoiceData)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating invoice:", error);
+    throw error;
+  }
+
+  // Insert items if provided
+  if (items && items.length > 0) {
+    const itemsWithInvoiceId = items.map(item => ({
+      ...item,
+      invoice_id: id
+    }));
+
+    const { error: itemsError } = await supabase
+      .from('invoice_items')
+      .insert(itemsWithInvoiceId);
+
+    if (itemsError) {
+      console.error("Error creating invoice items:", itemsError);
+      throw itemsError;
+    }
+  }
+
+  return formatApiInvoice(data);
+};
+
+// Update an existing invoice
+export const updateInvoice = async (id: string, invoice: Partial<Invoice>): Promise<Invoice> => {
+  // Prepare update data with proper field names
+  const updateData = {
+    ...formatInvoiceForApi(invoice as Invoice),
+    last_updated_by: invoice.lastUpdatedBy,
+    last_updated_at: invoice.lastUpdatedAt || new Date().toISOString(),
+  };
+
+  const { data, error } = await supabase
+    .from('invoices')
+    .update(updateData)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error(`Error updating invoice ${id}:`, error);
+    throw error;
+  }
+
+  return formatApiInvoice(data);
+};
+
+// Delete an invoice
+export const deleteInvoice = async (id: string): Promise<void> => {
+  // First delete associated items
+  const { error: itemsError } = await supabase
+    .from('invoice_items')
+    .delete()
+    .eq('invoice_id', id);
+
+  if (itemsError) {
+    console.error(`Error deleting invoice items for invoice ${id}:`, itemsError);
+    throw itemsError;
+  }
+
+  // Then delete the invoice
+  const { error } = await supabase
+    .from('invoices')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error(`Error deleting invoice ${id}:`, error);
+    throw error;
+  }
+};
+
+// Get all invoice templates
+export const getInvoiceTemplates = async (): Promise<InvoiceTemplate[]> => {
+  const { data, error } = await supabase
+    .from('invoice_templates')
+    .select('*')
+    .order('name');
+
+  if (error) {
+    console.error("Error fetching invoice templates:", error);
+    throw error;
+  }
+
+  return data || [];
+};
+
+// Create a new invoice template
+export const createInvoiceTemplate = async (template: Omit<InvoiceTemplate, 'id' | 'created_at' | 'usageCount'>): Promise<InvoiceTemplate> => {
+  const templateData = {
+    name: template.name,
+    description: template.description,
+    default_tax_rate: template.default_tax_rate,
+    default_notes: template.default_notes,
+    default_due_date_days: template.default_due_date_days,
+    usage_count: 0,
+    created_at: new Date().toISOString()
+  };
+
+  const { data, error } = await supabase
+    .from('invoice_templates')
+    .insert(templateData)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating invoice template:", error);
+    throw error;
+  }
+
+  // Insert template items if provided
+  if (template.items && template.items.length > 0) {
+    const itemsWithTemplateId = template.items.map(item => ({
+      name: item.name,
+      description: item.description,
+      quantity: item.quantity,
+      price: item.price,
+      total: item.total,
+      hours: item.hours,
+      template_id: data.id,
+    }));
+
+    const { error: itemsError } = await supabase
+      .from('invoice_template_items')
+      .insert(itemsWithTemplateId);
+
+    if (itemsError) {
+      console.error("Error creating template items:", itemsError);
+      throw itemsError;
+    }
+  }
+
+  return data;
+};
+
+// Update invoice template usage count
+export const updateInvoiceTemplateUsage = async (templateId: string): Promise<void> => {
+  const { error } = await supabase
+    .rpc('increment_template_usage', {
+      template_id: templateId,
+      update_timestamp: new Date().toISOString()
+    });
+
+  if (error) {
+    console.error(`Error updating template usage for ${templateId}:`, error);
+    throw error;
+  }
+};
