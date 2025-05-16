@@ -3,6 +3,7 @@ import { useState } from "react";
 import { WorkOrderFormValues, WorkOrder, WorkOrderStatusType } from "@/types/workOrder";
 import { supabase } from "@/lib/supabase";
 import { useForm } from "react-hook-form";
+import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
 
 // Export the type so other components can use it
 export type { WorkOrderFormValues };
@@ -21,6 +22,24 @@ const defaultValues: WorkOrderFormValues = {
   technician: "",
   technician_id: "",
   inventoryItems: []
+};
+
+// Add SchemaValuesToFormValues adapter - converts WorkOrderFormSchemaValues to WorkOrderFormValues
+export const schemaToFormValues = (values: WorkOrderFormSchemaValues): WorkOrderFormValues => {
+  return {
+    estimated_hours: 0, // Default value
+    status: values.status as WorkOrderStatusType,
+    description: values.description || "",
+    service_type: values.serviceCategory || "",
+    customer: values.customer || "",
+    location: values.location || "",
+    notes: values.notes || "",
+    priority: values.priority as any,
+    dueDate: values.dueDate ? values.dueDate.toString() : "",
+    technician: values.technician || "",
+    technician_id: "", // Default value
+    inventoryItems: values.inventoryItems || []
+  };
 };
 
 export function useWorkOrderForm(initialData: Partial<WorkOrder> = {}) {

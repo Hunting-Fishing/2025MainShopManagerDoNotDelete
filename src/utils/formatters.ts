@@ -58,6 +58,14 @@ export const formatDateTime = (date: Date | string | undefined): string => {
 };
 
 /**
+ * Clean a phone number by removing all non-numeric characters
+ */
+export const cleanPhoneNumber = (phone: string | undefined): string => {
+  if (!phone) return '';
+  return phone.replace(/\D/g, '');
+};
+
+/**
  * Format a phone number to (XXX) XXX-XXXX format
  */
 export const formatPhoneNumber = (phone: string | undefined): string => {

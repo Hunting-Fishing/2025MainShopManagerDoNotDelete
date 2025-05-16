@@ -43,7 +43,7 @@ export const WorkOrderCreateForm: React.FC<WorkOrderCreateFormProps> = ({
         <TimeEntrySection form={form} />
         
         <InventorySectionWrapper 
-          form={form as any} 
+          form={form} 
         />
         
         <div className="flex justify-end">

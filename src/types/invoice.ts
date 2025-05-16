@@ -1,75 +1,41 @@
+
+// Basic type definitions for invoices
+export interface InvoiceItem {
+  id: string;
+  name: string;
+  description: string;
+  sku?: string;
+  price: number;
+  quantity: number;
+  total: number;
+  tax_rate?: number;
+  tax_amount?: number;
+  discount_amount?: number;
+  discount_rate?: number;
+  unit?: string;
+}
+
 export interface Invoice {
   id: string;
   number: string;
   customer: string;
-  customer_id?: string;
-  customer_address?: string;
+  customer_id: string;
   customer_email?: string;
-  status: 'draft' | 'pending' | 'paid' | 'overdue' | 'cancelled';
+  customer_address?: string;
   issue_date: string;
+  date?: string;
   due_date: string;
-  date?: string; // Added date field
-  description?: string; // Added description field
-  payment_method?: string; // Added payment_method field
+  status: string;
   subtotal: number;
-  tax: number;
   tax_rate: number;
+  tax: number;
   total: number;
-  notes: string;
-  work_order_id: string;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-  assignedStaff: StaffMember[];
-  items?: InvoiceItem[];
-}
-
-export interface InvoiceItem {
-  id: string;
-  description: string;
-  quantity: number;
-  price: number;
-  hours?: boolean;
-  category?: string;
-  sku?: string;
-  name?: string;
-  total?: number;
-}
-
-export interface StaffMember {
-  id: string;
-  name: string;
-  role?: string;
-}
-
-export interface InvoiceTemplate {
-  id: string;
-  name: string;
-  description?: string;
-  default_items?: InvoiceItem[];
-  default_tax_rate?: number;
-  default_notes?: string;
-  default_due_date_days?: number;
+  notes?: string;
+  work_order_id?: string;
+  created_by?: string;
+  payment_method?: string;
   created_at?: string;
-  last_used?: string;
-  usage_count?: number;
-}
-
-export const createInvoiceUpdater = (updates: Partial<Invoice>) => {
-  return (prevInvoice: Invoice): Invoice => ({
-    ...prevInvoice,
-    ...updates
-  });
-};
-
-// Adding the export for filter props interfaces
-export interface InvoiceFiltersProps {
-  onApplyFilters: (filters: any) => void;
-  filters?: any;
-  setFilters?: (filters: any) => void;
-  resetFilters?: () => void;
-}
-
-export interface InvoiceFiltersDropdownProps {
-  onApplyFilters: (filters: any) => void;
+  updated_at?: string;
+  items: InvoiceItem[];
+  assignedStaff?: any[];
 }

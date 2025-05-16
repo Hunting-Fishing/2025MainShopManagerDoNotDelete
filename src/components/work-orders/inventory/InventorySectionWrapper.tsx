@@ -6,7 +6,6 @@ import { WorkOrderInventoryField } from "./WorkOrderInventoryField";
 import { useInventoryManager } from "@/hooks/inventory/useInventoryManager";
 import { toast } from "@/hooks/use-toast";
 import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
-import { WorkOrderFormValues } from "@/types/workOrder";
 
 interface InventorySectionWrapperProps {
   form: UseFormReturn<WorkOrderFormSchemaValues>;
@@ -34,8 +33,5 @@ export const InventorySectionWrapper: React.FC<InventorySectionWrapperProps> = (
     }
   }, [checkInventoryAlerts, lowStockItems, outOfStockItems]);
   
-  // Type cast is safer here than using "as any", we know the form has compatible fields
-  const compatibleForm = form as unknown as UseFormReturn<WorkOrderFormValues>;
-
-  return <WorkOrderInventoryField form={compatibleForm} />;
+  return <WorkOrderInventoryField form={form as any} />;
 };

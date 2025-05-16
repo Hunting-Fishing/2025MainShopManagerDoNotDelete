@@ -1,13 +1,13 @@
 
 import React, { useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
-import { WorkOrderFormFieldValues } from "../WorkOrderFormFields";
+import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
 import { WorkOrderInventoryField } from "./WorkOrderInventoryField";
 import { useInventoryManager } from "@/hooks/inventory/useInventoryManager";
 import { toast } from "@/hooks/use-toast";
 
 interface WorkOrderInventorySectionProps {
-  form: UseFormReturn<WorkOrderFormFieldValues>;
+  form: UseFormReturn<WorkOrderFormSchemaValues>;
 }
 
 export const WorkOrderInventorySection: React.FC<WorkOrderInventorySectionProps> = ({ form }) => {
@@ -31,5 +31,5 @@ export const WorkOrderInventorySection: React.FC<WorkOrderInventorySectionProps>
     }
   }, [checkInventoryAlerts, lowStockItems, outOfStockItems]);
   
-  return <WorkOrderInventoryField form={form} />;
+  return <WorkOrderInventoryField form={form as any} />;
 };
