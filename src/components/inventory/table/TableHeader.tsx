@@ -1,12 +1,10 @@
 
 import React, { useState } from "react";
 import { TableHead, TableHeader as UITableHeader, TableRow } from "@/components/ui/table";
-import { Column, SortableColumnHeader, ColumnId } from "./SortableColumnHeader";
+import { Column, SortableColumnHeader } from "./SortableColumnHeader";
 import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 interface TableHeaderProps {
@@ -17,14 +15,14 @@ interface TableHeaderProps {
 export const TableHeader = ({ columns, setColumns }: TableHeaderProps) => {
   const visibleColumns = columns.filter(col => col.visible);
   const [showAddColumnDialog, setShowAddColumnDialog] = useState(false);
-  const [selectedColumnId, setSelectedColumnId] = useState<ColumnId | "">("");
+  const [selectedColumnId, setSelectedColumnId] = useState<string>("");
   
   const availableColumns = columns.filter(col => !col.visible);
   
-  const handleHideColumn = (columnId: ColumnId) => {
+  const handleToggleVisibility = (columnId: string) => {
     setColumns(prev => 
       prev.map(col => 
-        col.id === columnId ? { ...col, visible: false } : col
+        col.id === columnId ? { ...col, visible: !col.visible } : col
       )
     );
   };
@@ -54,8 +52,7 @@ export const TableHeader = ({ columns, setColumns }: TableHeaderProps) => {
               <SortableColumnHeader 
                 key={column.id} 
                 column={column} 
-                onHideColumn={handleHideColumn}
-                onAddColumn={availableColumns.length > 0 ? handleAddColumn : undefined}
+                onToggleVisibility={handleToggleVisibility}
               />
             ))}
             <TableHead className="w-[80px]">Actions</TableHead>
@@ -70,10 +67,9 @@ export const TableHeader = ({ columns, setColumns }: TableHeaderProps) => {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label htmlFor="columnSelect">Select a column to add</Label>
               <Select 
                 value={selectedColumnId} 
-                onValueChange={(value) => setSelectedColumnId(value as ColumnId)}
+                onValueChange={setSelectedColumnId}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select column" />

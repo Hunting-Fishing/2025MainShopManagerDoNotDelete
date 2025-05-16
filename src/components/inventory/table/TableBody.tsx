@@ -3,13 +3,7 @@ import React from "react";
 import { TableBody as UITableBody } from "@/components/ui/table";
 import { InventoryItemExtended } from "@/types/inventory";
 import { TableRow } from "./TableRow";
-
-export interface Column {
-  id: string;
-  name: string;
-  label?: string;
-  visible?: boolean;
-}
+import { Column } from "./SortableColumnHeader";
 
 interface TableBodyProps {
   items: InventoryItemExtended[];

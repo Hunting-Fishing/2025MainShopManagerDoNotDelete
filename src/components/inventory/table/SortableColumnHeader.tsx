@@ -7,10 +7,12 @@ import { GripVertical, Eye, EyeOff } from "lucide-react";
 
 export interface Column {
   id: string;
-  name: string; // Added to match TableBody.Column interface
+  name: string; // This is needed for compatibility
   label: string;
   visible: boolean;
 }
+
+export type ColumnId = string;
 
 interface SortableColumnHeaderProps {
   column: Column;

@@ -28,3 +28,10 @@ export const formatTime = (timeString: string): string => {
     return timeString;
   }
 };
+
+// Add color styling for different priority levels
+export const priorityColorMap = {
+  "low": "bg-green-100 text-green-800 border border-green-300",
+  "medium": "bg-yellow-100 text-yellow-800 border border-yellow-300",
+  "high": "bg-red-100 text-red-800 border border-red-300"
+};
