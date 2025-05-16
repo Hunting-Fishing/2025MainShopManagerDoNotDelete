@@ -9,6 +9,20 @@ interface InvoiceListTableProps {
 }
 
 export function InvoiceListTable({ invoices }: InvoiceListTableProps) {
+  // Helper function to get customer name whether customer is a string or object
+  const getCustomerName = (customer: any) => {
+    if (typeof customer === 'string') {
+      return customer;
+    } else if (customer && typeof customer === 'object') {
+      if (customer.first_name && customer.last_name) {
+        return `${customer.first_name} ${customer.last_name}`;
+      } else if (customer.company) {
+        return customer.company;
+      }
+    }
+    return "Unknown Customer";
+  };
+
   return (
     <div className="overflow-x-auto rounded-lg border border-slate-200">
       <table className="min-w-full divide-y divide-slate-200">
@@ -53,14 +67,14 @@ export function InvoiceListTable({ invoices }: InvoiceListTableProps) {
                   {invoice.id}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {invoice.workOrderId && (
-                    <Link to={`/work-orders/${invoice.workOrderId}`} className="text-esm-blue-600 hover:text-esm-blue-800">
-                      {invoice.workOrderId}
+                  {(invoice.work_order_id || invoice.workOrderId) && (
+                    <Link to={`/work-orders/${invoice.work_order_id || invoice.workOrderId}`} className="text-esm-blue-600 hover:text-esm-blue-800">
+                      {invoice.work_order_id || invoice.workOrderId}
                     </Link>
                   )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {invoice.customer}
+                  {getCustomerName(invoice.customer)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {invoice.description}
@@ -72,7 +86,7 @@ export function InvoiceListTable({ invoices }: InvoiceListTableProps) {
                   <InvoiceStatusBadge status={invoice.status} />
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {invoice.dueDate}
+                  {invoice.due_date || invoice.dueDate}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {invoice.createdBy}

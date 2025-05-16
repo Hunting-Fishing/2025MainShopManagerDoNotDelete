@@ -49,11 +49,16 @@ export const filterCustomers = (customers: Customer[], filters: CustomerFilters)
     }
     
     // Filter by has vehicles
-    if (filters.hasVehicles) {
+    if (filters.hasVehicles && filters.hasVehicles !== 'all') {
       const hasVehicles = customer.vehicles && Array.isArray(customer.vehicles) && customer.vehicles.length > 0;
       
       if (filters.hasVehicles === 'yes' && !hasVehicles) return false;
       if (filters.hasVehicles === 'no' && hasVehicles) return false;
+    }
+    
+    // Filter by date range
+    if (filters.dateRange && (filters.dateRange.from || filters.dateRange.to)) {
+      // Implementation for date range filtering would go here
     }
     
     // If we get here, the customer passed all filters

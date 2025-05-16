@@ -23,7 +23,7 @@ export function AlertItemRow({
     <TableRow>
       <TableCell className="font-medium">{item.name}</TableCell>
       <TableCell>{item.quantity}</TableCell>
-      <TableCell>{item.reorderPoint}</TableCell>
+      <TableCell>{item.reorder_point}</TableCell>
       <TableCell>
         <Badge variant={item.quantity === 0 ? "destructive" : "outline"} className={
           item.quantity === 0 

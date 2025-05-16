@@ -53,4 +53,4 @@ export const CustomersList = ({
       </div>
     </Card>
   );
-};
+}

@@ -6,6 +6,7 @@ export interface InventoryItem {
   sku: string;
   quantity: number;
   unit_price: number;
+  price?: number; // For compatibility with invoice components
   category: string;
   supplier: string;
   location?: string;
@@ -21,6 +22,7 @@ export interface InventoryItem {
   onHold?: number;
   onOrder?: number;
   reorder_point?: number;
+  reorderPoint?: number; // Alias for component compatibility
   minimumOrder?: number;
   maximumOrder?: number;
   cost?: number;
@@ -38,14 +40,19 @@ export interface InventoryItem {
   dateLast?: string;
   serialNumbers?: string[];
   itemCondition?: string;
+  warrantyPeriod?: string;
+  notes?: string;
+  unitPrice?: number; // Alias for unit_price to maintain compatibility
 }
 
 // Extended inventory item with additional fields
 export interface InventoryItemExtended extends InventoryItem {
   reorder_point: number;
+  reorderPoint?: number; // Alias for component compatibility
   created_at: string;
   updated_at: string;
   shop_id?: string;
+  unitPrice?: number; // Alias for unit_price to maintain compatibility
 }
 
 // Auto reorder settings

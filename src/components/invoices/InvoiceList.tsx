@@ -31,7 +31,7 @@ export function InvoiceList() {
         new Set(
           invoices
             .filter((inv) => inv.createdBy)
-            .map((inv) => inv.createdBy)
+            .map((inv) => inv.createdBy as string)
         )
       );
       setCreators(creatorsList);
@@ -58,7 +58,17 @@ export function InvoiceList() {
     // Filter by customer name
     if (
       filters.customer &&
+      typeof invoice.customer === 'string' &&
       !invoice.customer
+        .toLowerCase()
+        .includes(filters.customer.toLowerCase())
+    ) {
+      return false;
+    } else if (
+      filters.customer && 
+      typeof invoice.customer === 'object' &&
+      invoice.customer &&
+      !`${invoice.customer.first_name} ${invoice.customer.last_name}`
         .toLowerCase()
         .includes(filters.customer.toLowerCase())
     ) {
@@ -67,20 +77,23 @@ export function InvoiceList() {
 
     // Filter by date range
     if (filters.dateRange.from || filters.dateRange.to) {
-      const invoiceDate = new Date(invoice.date);
+      const invoiceDate = invoice.invoice_date ? new Date(invoice.invoice_date) : 
+                          invoice.date ? new Date(invoice.date) : null;
       
-      if (
-        filters.dateRange.from &&
-        invoiceDate < filters.dateRange.from
-      ) {
-        return false;
-      }
-      
-      if (
-        filters.dateRange.to &&
-        invoiceDate > filters.dateRange.to
-      ) {
-        return false;
+      if (invoiceDate) {
+        if (
+          filters.dateRange.from &&
+          invoiceDate < filters.dateRange.from
+        ) {
+          return false;
+        }
+        
+        if (
+          filters.dateRange.to &&
+          invoiceDate > filters.dateRange.to
+        ) {
+          return false;
+        }
       }
     }
 
