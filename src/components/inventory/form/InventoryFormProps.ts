@@ -28,3 +28,6 @@ export interface SelectOption {
   value: string;
   label: string;
 }
+
+// Export SelectOption to make it available to other modules
+export { SelectOption as SelectOption };

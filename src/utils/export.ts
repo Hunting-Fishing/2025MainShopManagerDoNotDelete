@@ -65,7 +65,9 @@ export function exportMultiSheetExcel(
 }
 
 /**
- * Export data to PDF file (basic implementation)
+ * Export data to PDF file
+ * @param data Data to export
+ * @param filename Name for the exported file (without extension)
  */
 export function exportToPDF(data: any[], filename: string) {
   try {

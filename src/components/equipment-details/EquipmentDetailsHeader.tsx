@@ -26,6 +26,8 @@ export function EquipmentDetailsHeader({ equipmentItem, isMaintenanceOverdue }: 
         </div>
         <EquipmentActionButtons 
           equipment={equipmentItem}
+          onScheduleMaintenance={() => console.log('Schedule maintenance for', equipmentItem.id)}
+          onCreateWorkOrder={(type, priority) => console.log('Create work order', type, priority, 'for', equipmentItem.id)}
         />
       </div>
     </div>

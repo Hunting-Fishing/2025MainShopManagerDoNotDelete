@@ -18,7 +18,7 @@ export default function InvoicePDF({ invoice }: InvoicePDFProps) {
           <h1 className="text-2xl font-bold">INVOICE</h1>
           <p>Invoice #{invoice.id}</p>
           <p>Date: {invoice.date}</p>
-          <p>Due Date: {invoice.dueDate}</p>
+          <p>Due Date: {invoice.due_date}</p>
         </div>
         <div className="text-right">
           <h2 className="font-bold">ESM Auto Shop</h2>
@@ -31,8 +31,8 @@ export default function InvoicePDF({ invoice }: InvoicePDFProps) {
       <div className="mb-8">
         <h2 className="font-bold mb-2">Bill To:</h2>
         <p>{invoice.customer}</p>
-        {invoice.customerEmail && <p>{invoice.customerEmail}</p>}
-        {invoice.customerAddress && <p>{invoice.customerAddress}</p>}
+        {invoice.customer_email && <p>{invoice.customer_email}</p>}
+        {invoice.customer_address && <p>{invoice.customer_address}</p>}
       </div>
       
       <table className="w-full mb-8">

@@ -24,26 +24,14 @@ export function InvoiceListExportMenu({ invoices }: InvoiceListExportMenuProps) 
     // Prepare invoice data for export
     const exportData = invoices.map(invoice => ({
       id: invoice.id,
-      workOrderId: invoice.workOrderId || "N/A",
+      workOrderId: invoice.work_order_id || "N/A",
       customer: invoice.customer,
       description: invoice.description,
       total: invoice.total ? `$${invoice.total.toFixed(2)}` : "$0.00",
       status: invoice.status,
-      dueDate: invoice.dueDate,
-      createdBy: invoice.createdBy,
+      dueDate: invoice.due_date,
+      createdBy: invoice.created_by,
     }));
-
-    // Define columns for PDF export
-    const columns = [
-      { header: "Invoice #", dataKey: "id" },
-      { header: "Work Order", dataKey: "workOrderId" },
-      { header: "Customer", dataKey: "customer" },
-      { header: "Description", dataKey: "description" },
-      { header: "Total", dataKey: "total" },
-      { header: "Status", dataKey: "status" },
-      { header: "Due Date", dataKey: "dueDate" },
-      { header: "Created By", dataKey: "createdBy" },
-    ];
 
     try {
       switch (format) {
@@ -54,7 +42,8 @@ export function InvoiceListExportMenu({ invoices }: InvoiceListExportMenuProps) 
           exportToExcel(exportData, "Invoices_List");
           break;
         case "pdf":
-          exportToPDF(exportData, "Invoices_List", columns);
+          // Only pass the two required arguments
+          exportToPDF(exportData, "Invoices_List");
           break;
       }
 

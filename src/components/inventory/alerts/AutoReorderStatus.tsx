@@ -12,7 +12,7 @@ interface AutoReorderStatusProps {
 }
 
 export function AutoReorderStatus({ items, autoReorderSettings }: AutoReorderStatusProps) {
-  const itemsNeedingReorder = items.filter(item => item.quantity <= item.reorderPoint);
+  const itemsNeedingReorder = items.filter(item => item.quantity <= item.reorder_point);
   
   // Check if autoReorderSettings is a Record or a single AutoReorderSettings object
   const isGlobalSetting = !('enabled' in autoReorderSettings);

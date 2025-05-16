@@ -31,7 +31,7 @@ interface InvoiceCreateLayoutProps {
   setShowInventoryDialog: (show: boolean) => void;
   setShowStaffDialog: (show: boolean) => void;
   handleSelectWorkOrder: (workOrder: WorkOrder) => void;
-  handleAddInventoryItem: (item: InventoryItem) => void;
+  handleAddInventoryItem: (item: InvoiceItem) => void;
   handleAddStaffMember: (staff: StaffMember) => void;
   handleRemoveStaffMember: (staffId: string) => void;
   handleRemoveItem: (id: string) => void;
@@ -41,7 +41,7 @@ interface InvoiceCreateLayoutProps {
   handleAddLaborItem: () => void;
   handleSaveInvoice: (status: "draft" | "pending" | "paid" | "overdue" | "cancelled") => void;
   handleApplyTemplate: (template: InvoiceTemplate) => void;
-  handleSaveTemplate: (template: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount">) => void;
+  handleSaveTemplate: (template: Omit<InvoiceTemplate, "id" | "created_at" | "usage_count">) => void;
 }
 
 export function InvoiceCreateLayout({
@@ -89,6 +89,8 @@ export function InvoiceCreateLayout({
           templates={templates}
           showWorkOrderDialog={showWorkOrderDialog}
           showInventoryDialog={showInventoryDialog}
+          showStaffDialog={showStaffDialog}
+          setShowStaffDialog={setShowStaffDialog}
           setInvoice={setInvoice}
           setShowWorkOrderDialog={setShowWorkOrderDialog}
           setShowInventoryDialog={setShowInventoryDialog}
@@ -104,7 +106,7 @@ export function InvoiceCreateLayout({
         />
         
         <InvoiceRightColumn 
-          createdBy={invoice.createdBy}
+          createdBy={invoice.created_by}
           assignedStaff={invoice.assignedStaff}
           staffMembers={staffMembers}
           subtotal={subtotal}
@@ -113,7 +115,7 @@ export function InvoiceCreateLayout({
           total={total}
           showStaffDialog={showStaffDialog}
           setShowStaffDialog={setShowStaffDialog}
-          onCreatedByChange={(value) => setInvoice(createInvoiceUpdater({ createdBy: value }))}
+          onCreatedByChange={(value) => setInvoice(createInvoiceUpdater({ created_by: value }))}
           onAddStaffMember={handleAddStaffMember}
           onRemoveStaffMember={handleRemoveStaffMember}
         />

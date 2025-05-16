@@ -27,8 +27,8 @@ export default function InvoiceView({ invoice }: InvoiceViewProps) {
           <div>
             <h3 className="text-sm font-medium text-muted-foreground">Customer</h3>
             <p className="text-base font-semibold">{invoice.customer}</p>
-            <p className="text-sm">{invoice.customerEmail}</p>
-            <p className="text-sm whitespace-pre-line">{invoice.customerAddress}</p>
+            <p className="text-sm">{invoice.customer_email}</p>
+            <p className="text-sm whitespace-pre-line">{invoice.customer_address}</p>
           </div>
           <div className="space-y-1">
             <div className="flex justify-between">
@@ -37,11 +37,11 @@ export default function InvoiceView({ invoice }: InvoiceViewProps) {
             </div>
             <div className="flex justify-between">
               <h3 className="text-sm font-medium text-muted-foreground">Due Date</h3>
-              <p className="text-sm">{invoice.dueDate}</p>
+              <p className="text-sm">{invoice.due_date}</p>
             </div>
             <div className="flex justify-between">
               <h3 className="text-sm font-medium text-muted-foreground">Payment Method</h3>
-              <p className="text-sm">{invoice.paymentMethod}</p>
+              <p className="text-sm">{invoice.payment_method}</p>
             </div>
           </div>
         </div>

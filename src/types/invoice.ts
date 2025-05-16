@@ -75,3 +75,6 @@ export interface InvoiceFiltersProps {
   setFilters: (filters: any) => void;
   resetFilters: () => void;
 }
+
+// Export the types
+export { StaffMember, InvoiceFiltersProps };

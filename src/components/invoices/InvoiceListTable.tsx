@@ -53,9 +53,9 @@ export function InvoiceListTable({ invoices }: InvoiceListTableProps) {
                   {invoice.id}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {invoice.workOrderId && (
-                    <Link to={`/work-orders/${invoice.workOrderId}`} className="text-esm-blue-600 hover:text-esm-blue-800">
-                      {invoice.workOrderId}
+                  {invoice.work_order_id && (
+                    <Link to={`/work-orders/${invoice.work_order_id}`} className="text-esm-blue-600 hover:text-esm-blue-800">
+                      {invoice.work_order_id}
                     </Link>
                   )}
                 </td>
@@ -72,10 +72,10 @@ export function InvoiceListTable({ invoices }: InvoiceListTableProps) {
                   <InvoiceStatusBadge status={invoice.status} />
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {invoice.dueDate}
+                  {invoice.due_date}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {invoice.createdBy}
+                  {invoice.created_by}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <Link to={`/invoices/${invoice.id}`} className="text-esm-blue-600 hover:text-esm-blue-800 mr-4">

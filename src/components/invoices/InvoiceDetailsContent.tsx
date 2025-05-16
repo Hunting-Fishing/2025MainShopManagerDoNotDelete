@@ -42,7 +42,7 @@ export function InvoiceDetailsContent({
           <p className="text-slate-500">{invoice.id}</p>
           <div className="mt-4">
             <p className="font-medium">Date Issued: {invoice.date}</p>
-            <p className="font-medium">Due Date: {invoice.dueDate}</p>
+            <p className="font-medium">Due Date: {invoice.due_date}</p>
           </div>
         </div>
         
@@ -60,15 +60,15 @@ export function InvoiceDetailsContent({
       {/* Customer info and work order reference */}
       <InvoiceDetailsCustomerInfo 
         customer={invoice.customer}
-        customerAddress={invoice.customerAddress}
-        customerEmail={invoice.customerEmail}
-        workOrderId={invoice.workOrderId}
+        customerAddress={invoice.customer_address}
+        customerEmail={invoice.customer_email}
+        workOrderId={invoice.work_order_id}
         description={invoice.description}
       />
       
       {/* Items table */}
       <InvoiceDetailsItemsTable 
-        items={invoice.items}
+        items={invoice.items || []}
         subtotal={invoice.subtotal}
         tax={invoice.tax}
         total={invoice.total}
@@ -79,10 +79,10 @@ export function InvoiceDetailsContent({
       
       {/* Payment information */}
       <InvoiceDetailsPaymentInfo 
-        paymentMethod={invoice.paymentMethod || "N/A"}
+        paymentMethod={invoice.payment_method || "N/A"}
         status={invoice.status}
         statusLabel={statusStyles[invoice.status as keyof typeof statusStyles].label}
-        createdBy={invoice.createdBy || ""}
+        createdBy={invoice.created_by || ""}
         customerId={invoice.customer_id}
       />
       

@@ -44,7 +44,40 @@ export function formatApiInvoice(apiInvoice: any): Invoice {
     created_by: apiInvoice.created_by,
     created_at: apiInvoice.created_at,
     items: apiInvoice.items || [],
-    assignedStaff: apiInvoice.assigned_staff || []
+    assignedStaff: apiInvoice.assigned_staff || [],
+    last_updated_by: apiInvoice.last_updated_by,
+    last_updated_at: apiInvoice.last_updated_at,
+    relatedWorkOrder: apiInvoice.related_work_order
+  };
+}
+
+/**
+ * Convert UI Invoice properties from camelCase to snake_case for API
+ */
+export function formatInvoiceForApi(invoice: Invoice): any {
+  return {
+    id: invoice.id,
+    customer: invoice.customer,
+    customer_id: invoice.customer_id,
+    customer_address: invoice.customer_address,
+    customer_email: invoice.customer_email,
+    description: invoice.description,
+    notes: invoice.notes,
+    date: invoice.date,
+    due_date: invoice.due_date,
+    status: invoice.status,
+    subtotal: invoice.subtotal,
+    tax: invoice.tax,
+    total: invoice.total,
+    work_order_id: invoice.work_order_id,
+    payment_method: invoice.payment_method,
+    created_by: invoice.created_by,
+    created_at: invoice.created_at,
+    items: invoice.items,
+    assigned_staff: invoice.assignedStaff,
+    last_updated_by: invoice.last_updated_by,
+    last_updated_at: invoice.last_updated_at,
+    related_work_order: invoice.relatedWorkOrder
   };
 }
 

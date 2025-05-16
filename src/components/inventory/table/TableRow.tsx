@@ -1,102 +1,65 @@
 
-import React from "react";
+import React from 'react';
 import { TableCell, TableRow as UITableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
-import { InventoryItemExtended } from "@/types/inventory";
-import { Column, ColumnId } from "./SortableColumnHeader";
+import { InventoryItemExtended } from '@/types/inventory';
+import { Badge } from '@/components/ui/badge';
+import { formatCurrency } from '@/utils/formatters';
 
-interface InventoryTableRowProps {
+interface TableRowProps {
   item: InventoryItemExtended;
-  visibleColumns: Column[];
-  onRowClick: (itemId: string) => void;
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
 }
 
-export const InventoryTableRow = ({ 
-  item, 
-  visibleColumns, 
-  onRowClick 
-}: InventoryTableRowProps) => {
-  const navigate = useNavigate();
-  
-  const getColumnValue = (item: InventoryItemExtended, columnId: ColumnId) => {
-    switch (columnId) {
-      case "name":
-        return item.name;
-      case "sku":
-        return item.sku;
-      case "partNumber":
-        return item.partNumber || "-";
-      case "barcode":
-        return item.barcode || "-";
-      case "category":
-        return item.category;
-      case "subcategory":
-        return item.subcategory || "-";
-      case "manufacturer":
-        return item.manufacturer || "-";
-      case "vehicleCompatibility":
-        return item.vehicleCompatibility || "-";
-      case "location":
-        return item.location;
-      case "quantity":
-        return item.quantity;
-      case "quantityReserved":
-        return item.onHold || 0;
-      case "quantityAvailable":
-        return (item.quantity - (item.onHold || 0));
-      case "onOrder":
-        return item.onOrder || 0;
-      case "reorderPoint":
-        return item.reorderPoint;
-      case "cost":
-        return item.cost ? `$${item.cost.toFixed(2)}` : "-";
-      case "unitPrice":
-        return `$${item.unitPrice.toFixed(2)}`;
-      case "marginMarkup":
-        return item.marginMarkup ? `${item.marginMarkup.toFixed(2)}%` : "-";
-      case "totalValue":
-        return item.cost ? `$${(item.cost * item.quantity).toFixed(2)}` : "-";
-      case "warrantyPeriod":
-        return item.warrantyPeriod || "-";
-      case "status":
-        return item.status;
-      case "supplier":
-        return item.supplier;
-      case "dateBought":
-        return item.dateBought || "-";
-      case "dateLast":
-        return item.dateLast || "-";
-      case "notes":
-        return item.notes || "-";
-      default:
-        return "-";
+export function TableRow({ item, onEdit, onDelete }: TableRowProps) {
+  const getStatusBadge = (quantity: number, reorderPoint: number) => {
+    if (quantity <= 0) {
+      return (
+        <Badge variant="destructive" className="bg-red-100 text-red-800 border border-red-300">
+          Out of Stock
+        </Badge>
+      );
+    } else if (quantity <= reorderPoint) {
+      return (
+        <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border border-yellow-300">
+          Low Stock
+        </Badge>
+      );
+    } else {
+      return (
+        <Badge variant="outline" className="bg-green-100 text-green-800 border border-green-300">
+          In Stock
+        </Badge>
+      );
     }
   };
 
   return (
-    <UITableRow 
-      key={item.id} 
-      className="cursor-pointer hover:bg-gray-50" 
-      onClick={() => onRowClick(item.id)}
-    >
-      {visibleColumns.map((column) => (
-        <TableCell key={`${item.id}-${column.id}`}>
-          {getColumnValue(item, column.id)}
-        </TableCell>
-      ))}
-      <TableCell>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate(`/inventory/item/${item.id}/edit`);
-          }}
-        >
-          Edit
-        </Button>
+    <UITableRow>
+      <TableCell className="font-medium">{item.name}</TableCell>
+      <TableCell>{item.sku}</TableCell>
+      <TableCell>{item.quantity}</TableCell>
+      <TableCell>{item.reorder_point}</TableCell>
+      <TableCell>{getStatusBadge(item.quantity, item.reorder_point)}</TableCell>
+      <TableCell>{formatCurrency(item.unit_price)}</TableCell>
+      <TableCell>{item.category}</TableCell>
+      <TableCell>{item.supplier}</TableCell>
+      <TableCell className="text-right">
+        <div className="flex justify-end space-x-2">
+          <button
+            onClick={() => onEdit(item.id)}
+            className="text-blue-600 hover:text-blue-800"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => onDelete(item.id)}
+            className="text-red-600 hover:text-red-800"
+          >
+            Delete
+          </button>
+        </div>
       </TableCell>
     </UITableRow>
   );
-};
+}
