@@ -1,73 +1,75 @@
 
-import { Invoice, InvoiceItem } from "@/types/invoice";
+import { Invoice } from '@/types/invoice';
 
 /**
- * Format API response invoice to match frontend Invoice type
+ * Get the color for a specific invoice status
  */
-export const formatApiInvoice = (apiInvoice: any): Invoice => {
-  // Convert snake_case properties to camelCase
+export function getInvoiceStatusColor(status: string): string {
+  switch (status.toLowerCase()) {
+    case 'paid':
+      return 'bg-green-100 text-green-800 border-green-300';
+    case 'pending':
+      return 'bg-blue-100 text-blue-800 border-blue-300';
+    case 'overdue':
+      return 'bg-red-100 text-red-800 border-red-300';
+    case 'draft':
+      return 'bg-gray-100 text-gray-800 border-gray-300';
+    case 'cancelled':
+      return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+    default:
+      return 'bg-gray-100 text-gray-800 border-gray-300';
+  }
+}
+
+/**
+ * Format a raw API invoice object to match our Invoice type
+ */
+export function formatApiInvoice(apiInvoice: any): Invoice {
   return {
-    ...apiInvoice,
-    workOrderId: apiInvoice.work_order_id,
-    relatedWorkOrder: apiInvoice.related_work_order,
-    customerAddress: apiInvoice.customer_address,
-    customerEmail: apiInvoice.customer_email,
-    createdBy: apiInvoice.created_by,
-    lastUpdatedBy: apiInvoice.last_updated_by,
-    lastUpdatedAt: apiInvoice.last_updated_at,
-    paymentMethod: apiInvoice.payment_method,
+    id: apiInvoice.id,
+    customer: apiInvoice.customer || '',
+    customer_id: apiInvoice.customer_id,
+    customer_address: apiInvoice.customer_address,
+    customer_email: apiInvoice.customer_email,
+    description: apiInvoice.description,
+    notes: apiInvoice.notes,
+    date: apiInvoice.date,
+    due_date: apiInvoice.due_date,
+    status: apiInvoice.status || 'draft',
+    subtotal: apiInvoice.subtotal ? Number(apiInvoice.subtotal) : 0,
+    tax: apiInvoice.tax ? Number(apiInvoice.tax) : 0,
+    total: apiInvoice.total ? Number(apiInvoice.total) : 0,
+    work_order_id: apiInvoice.work_order_id,
+    payment_method: apiInvoice.payment_method,
+    created_by: apiInvoice.created_by,
+    created_at: apiInvoice.created_at,
+    items: apiInvoice.items || [],
+    assignedStaff: apiInvoice.assigned_staff || []
   };
-};
+}
 
 /**
- * Format frontend invoice to match API expectations
+ * Calculate totals for an invoice
  */
-export const formatInvoiceForApi = (invoice: Invoice): any => {
+export function calculateInvoiceTotals(invoice: Invoice, taxRate: number = 0.08) {
+  if (!invoice.items || invoice.items.length === 0) {
+    return {
+      subtotal: 0,
+      tax: 0,
+      total: 0
+    };
+  }
+
+  const subtotal = invoice.items.reduce((sum, item) => {
+    return sum + (item.quantity * item.price);
+  }, 0);
+
+  const tax = subtotal * taxRate;
+  const total = subtotal + tax;
+
   return {
-    ...invoice,
-    work_order_id: invoice.workOrderId,
-    related_work_order: invoice.relatedWorkOrder,
-    customer_address: invoice.customerAddress,
-    customer_email: invoice.customerEmail,
-    created_by: invoice.createdBy,
-    last_updated_by: invoice.lastUpdatedBy,
-    last_updated_at: invoice.lastUpdatedAt,
-    payment_method: invoice.paymentMethod,
+    subtotal,
+    tax,
+    total
   };
-};
-
-/**
- * Calculate subtotal from invoice items
- */
-export const calculateSubtotal = (items: InvoiceItem[]): number => {
-  return items.reduce((sum, item) => sum + item.total, 0);
-};
-
-/**
- * Calculate tax from subtotal and tax rate
- */
-export const calculateTax = (subtotal: number, taxRate: number): number => {
-  return subtotal * taxRate;
-};
-
-/**
- * Calculate total from subtotal and tax
- */
-export const calculateTotal = (subtotal: number, tax: number): number => {
-  return subtotal + tax;
-};
-
-/**
- * Get color for invoice status
- */
-export const getInvoiceStatusColor = (status: string): string => {
-  const statusColors: Record<string, string> = {
-    "paid": "text-green-800 bg-green-100",
-    "pending": "text-yellow-800 bg-yellow-100",
-    "overdue": "text-red-800 bg-red-100",
-    "draft": "text-gray-800 bg-gray-100",
-    "cancelled": "text-red-800 bg-red-100",
-  };
-  
-  return statusColors[status] || "text-gray-800 bg-gray-100";
-};
+}

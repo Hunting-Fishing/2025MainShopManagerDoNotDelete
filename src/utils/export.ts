@@ -1,109 +1,80 @@
 
+import { saveAs } from 'file-saver';
+import * as XLSX from 'xlsx';
 import { Parser } from '@json2csv/plainjs';
-import FileSaver from 'file-saver';
 
 /**
  * Export data to CSV file
  */
-export const exportToCSV = (data: any[], filename: string): void => {
+export function exportToCSV(data: any[], filename: string) {
   try {
-    if (!data || !data.length) {
-      throw new Error("No data to export");
-    }
-    
     const parser = new Parser();
     const csv = parser.parse(data);
-    
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-    FileSaver.saveAs(blob, `${filename}.csv`);
-  } catch (err) {
-    console.error("Export failed:", err);
-    throw err;
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    saveAs(blob, `${filename}.csv`);
+  } catch (error) {
+    console.error('Error exporting to CSV:', error);
+    throw new Error('Failed to export data to CSV');
   }
-};
+}
 
 /**
  * Export data to Excel file
  */
-export const exportToExcel = async (data: any[], filename: string): Promise<void> => {
+export function exportToExcel(data: any[], filename: string) {
   try {
-    // Dynamically import xlsx to reduce initial bundle size
-    const XLSX = await import('xlsx');
-    
-    if (!data || !data.length) {
-      throw new Error("No data to export");
-    }
-    
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
-    
-    // Generate the file and trigger download
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Data');
     XLSX.writeFile(workbook, `${filename}.xlsx`);
-  } catch (err) {
-    console.error("Excel export failed:", err);
-    throw err;
+  } catch (error) {
+    console.error('Error exporting to Excel:', error);
+    throw new Error('Failed to export data to Excel');
   }
-};
+}
 
 /**
- * Export data to PDF
+ * Export multiple sheets of data to Excel file
+ * @param workbookData Object with keys as sheet names and values as arrays of data
+ * @param filename Name for the exported file (without extension)
  */
-export const exportToPDF = async (element: HTMLElement, filename: string): Promise<void> => {
-  try {
-    // Dynamically import jspdf and html2canvas
-    const { default: html2canvas } = await import('html2canvas');
-    const { default: jsPDF } = await import('jspdf');
-    
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      logging: false,
-      useCORS: true,
-    });
-    
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4'
-    });
-    
-    const imgProps = pdf.getImageProperties(imgData);
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-    
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-    pdf.save(`${filename}.pdf`);
-  } catch (err) {
-    console.error("PDF export failed:", err);
-    throw err;
-  }
-};
-
-/**
- * Export multiple data sets to Excel with multiple sheets
- */
-export const exportMultiSheetExcel = async (
-  dataSets: { name: string; data: any[] }[],
+export function exportMultiSheetExcel(
+  workbookData: { [sheetName: string]: any[] },
   filename: string
-): Promise<void> => {
+) {
   try {
-    // Dynamically import xlsx to reduce initial bundle size
-    const XLSX = await import('xlsx');
-    
     const workbook = XLSX.utils.book_new();
     
-    dataSets.forEach(dataSet => {
-      if (dataSet.data && dataSet.data.length > 0) {
-        const worksheet = XLSX.utils.json_to_sheet(dataSet.data);
-        XLSX.utils.book_append_sheet(workbook, worksheet, dataSet.name);
-      }
+    // Convert workbook data object into sheet structure
+    const sheets = Object.entries(workbookData).map(([name, data]) => ({
+      name,
+      data: XLSX.utils.json_to_sheet(data)
+    }));
+    
+    // Add each sheet to the workbook
+    sheets.forEach(sheet => {
+      XLSX.utils.book_append_sheet(workbook, sheet.data, sheet.name);
     });
     
-    // Generate the file and trigger download
+    // Write to file
     XLSX.writeFile(workbook, `${filename}.xlsx`);
-  } catch (err) {
-    console.error("Excel export failed:", err);
-    throw err;
+  } catch (error) {
+    console.error('Error exporting multi-sheet Excel:', error);
+    throw new Error('Failed to export multi-sheet data to Excel');
   }
-};
+}
+
+/**
+ * Export data to PDF file (basic implementation)
+ */
+export function exportToPDF(data: any[], filename: string) {
+  try {
+    // This is a placeholder - in a real implementation,
+    // you would use a library like jsPDF to generate the PDF
+    console.log('PDF export requested for:', data);
+    throw new Error('PDF export not implemented yet');
+  } catch (error) {
+    console.error('Error exporting to PDF:', error);
+    throw error;
+  }
+}

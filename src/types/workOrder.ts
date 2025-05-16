@@ -63,4 +63,10 @@ export type WorkOrderUpdater = (workOrder: Partial<WorkOrder>) => Partial<WorkOr
 
 // Define types needed by equipment components
 export type WorkOrderPriorityType = 'low' | 'medium' | 'high' | 'critical';
-export type WorkOrderTypes = 'repair' | 'maintenance' | 'inspection' | 'diagnostic' | 'other';
+export enum WorkOrderTypes {
+  REPAIR = 'repair',
+  MAINTENANCE = 'maintenance',
+  INSPECTION = 'inspection',
+  DIAGNOSTIC = 'diagnostic',
+  OTHER = 'other'
+}

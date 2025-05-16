@@ -21,7 +21,7 @@ export interface InventoryFormFieldProps {
   type?: string;
   min?: string;
   step?: string;
-  as?: string;
+  as?: string; // Added the 'as' property
 }
 
 export interface SelectOption {

@@ -1,44 +1,29 @@
 
-import { Customer } from './customer';
 import { WorkOrder } from './workOrder';
-
-// Export StaffMember so it can be used by other components
-export interface StaffMember {
-  id: string;
-  name: string;
-  role?: string;
-}
 
 export interface Invoice {
   id: string;
   customer: string;
-  customerAddress?: string;
-  customerEmail?: string;
   customer_id?: string;
-  date: string;
-  due_date: string;
+  customer_address?: string;
+  customer_email?: string;
   description?: string;
   notes?: string;
-  status: 'draft' | 'pending' | 'paid' | 'overdue' | 'cancelled';
+  date: string;
+  due_date: string; // Snake case for consistency
+  status: 'pending' | 'cancelled' | 'draft' | 'paid' | 'overdue';
   subtotal?: number;
   tax?: number;
   total?: number;
-  workOrderId?: string;
-  work_order_id?: string; // Database field name
-  createdBy?: string;
-  created_by?: string; // Database field name
-  lastUpdatedBy?: string;
-  last_updated_by?: string; // Database field name
-  lastUpdatedAt?: string;
-  last_updated_at?: string; // Database field name
-  paymentMethod?: string;
-  payment_method?: string; // Database field name
-  relatedWorkOrder?: WorkOrder; // For joined data
-  related_work_order?: WorkOrder; // For database joined data
+  work_order_id?: string; // ID reference to related work order
+  created_by?: string;
+  payment_method?: string;
+  last_updated_by?: string;
+  last_updated_at?: string;
   created_at?: string;
-  // Adding missing fields
-  items?: InvoiceItem[];
-  assignedStaff?: StaffMember[];
+  items?: InvoiceItem[]; // Added items array 
+  assignedStaff?: StaffMember[]; // Staff assigned to the invoice
+  relatedWorkOrder?: WorkOrder; // For accessing full work order details
 }
 
 export interface InvoiceItem {
@@ -47,44 +32,46 @@ export interface InvoiceItem {
   description?: string;
   quantity: number;
   price: number;
-  total: number;
+  total?: number;
   hours?: boolean;
-  sku?: string;
-  category?: string;
-  invoice_id: string;
+  sku?: string; // Make SKU optional for invoice items
 }
 
 export interface InvoiceTemplate {
   id: string;
   name: string;
   description?: string;
-  created_at: string;
-  last_used?: string;
-  usage_count: number;
-  default_tax_rate?: number;
   default_notes?: string;
+  default_tax_rate?: number;
   default_due_date_days?: number;
-  items?: InvoiceItem[];
-  // Adding fields used in components
-  defaultItems?: InvoiceItem[];
-  defaultTaxRate?: number;
-  defaultDueDateDays?: number;
-  defaultNotes?: string;
+  created_at?: string;
+  last_used?: string;
+  usage_count?: number;
 }
 
-export type InvoiceUpdater = (field: keyof Invoice, value: any) => void;
+export interface StaffMember {
+  id: string;
+  name: string;
+  role?: string;
+}
 
-export const createInvoiceUpdater = (updater: (invoice: Invoice) => Invoice) =>
-  (prev: Invoice) => updater(prev);
+// Create invoice updater type
+export const createInvoiceUpdater = (update: Partial<Invoice>) => 
+  (invoice: Invoice): Invoice => ({
+    ...invoice,
+    ...update
+  });
 
-// Add the InvoiceFiltersProps interface
+// Invoice filters type
 export interface InvoiceFiltersProps {
-  onFilterChange: (filters: any) => void;
   filters: {
-    status: string[];
-    dateRange: [Date | null, Date | null];
-    minAmount: number;
-    maxAmount: number;
+    status: string;
     customer: string;
+    dateRange: {
+      from: Date | null;
+      to: Date | null;
+    }
   };
+  setFilters: (filters: any) => void;
+  resetFilters: () => void;
 }

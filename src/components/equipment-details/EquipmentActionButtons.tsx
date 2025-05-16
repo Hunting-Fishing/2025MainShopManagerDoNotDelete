@@ -1,88 +1,79 @@
 
 import React, { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Wrench } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Equipment } from '@/types';
-import { toast } from "@/hooks/use-toast";
-import { WorkOrderStatusType, WorkOrderPriorityType, WorkOrderTypes } from '@/types';
+import { ChevronDown, RotateCw, Wrench, FileText, Calendar } from 'lucide-react';
+import { Equipment } from '@/types/equipment';
+import { WorkOrderPriorityType, WorkOrderTypes } from '@/types/workOrder';
 
 interface EquipmentActionButtonsProps {
   equipment: Equipment;
+  onScheduleMaintenance: () => void;
+  onCreateWorkOrder: (type: string, priority: string) => void;
 }
 
-export function EquipmentActionButtons({ equipment }: EquipmentActionButtonsProps) {
+export const EquipmentActionButtons: React.FC<EquipmentActionButtonsProps> = ({
+  equipment,
+  onScheduleMaintenance,
+  onCreateWorkOrder,
+}) => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
-  const createWorkOrder = async () => {
-    try {
-      setLoading(true);
-      
-      // Create work order object with required properties
-      const newWorkOrder: Partial<WorkOrderTypes.WorkOrder> = {
-        customer: equipment.customer,
-        customerId: "",
-        description: `Service for ${equipment.name} (${equipment.model})`,
-        status: "pending" as WorkOrderStatusType,
-        priority: "medium" as WorkOrderPriorityType,
-        technician: "",
-        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        notes: `Equipment details:\nManufacturer: ${equipment.manufacturer}\nSerial Number: ${equipment.serialNumber}\nCategory: ${equipment.category}\n\nMaintenance History: ${equipment.maintenanceHistory ? JSON.stringify(equipment.maintenanceHistory, null, 2) : 'None'}`,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        location: equipment.location
-      };
-
-      // Create work order
-      const workOrder = await createWorkOrderInSystem();
-
-      toast({
-        title: "Work Order Created",
-        description: `Successfully created a work order for ${equipment.name}.`,
-        variant: "success",
-      });
-
-      navigate('/work-orders');
-    } catch (error) {
-      console.error("Error creating work order:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create work order. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Add this helper function to handle the work order creation
-  const createWorkOrderInSystem = async () => {
-    // This would normally call an API endpoint or service to create the work order
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return { id: `WO-${Math.floor(Math.random() * 10000)}` };
+  const handleCreateWorkOrder = (type: string, priority: string) => {
+    onCreateWorkOrder(type, priority);
+    setIsOpen(false);
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="h-8 w-8 p-0">
-          <MoreHorizontal className="h-4 w-4" />
-          <span className="sr-only">Open menu</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={createWorkOrder} disabled={loading}>
-          <Wrench className="h-4 w-4 mr-2" />
-          Create Work Order
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div className="flex gap-2 items-center">
+      <Button 
+        variant="outline"
+        size="sm" 
+        onClick={() => navigate(`/equipment/${equipment.id}/maintenance-history`)}
+        className="flex items-center gap-1"
+      >
+        <RotateCw className="h-4 w-4" />
+        <span>View History</span>
+      </Button>
+      
+      <Button
+        size="sm"
+        onClick={onScheduleMaintenance}
+        className="flex items-center gap-1"
+      >
+        <Calendar className="h-4 w-4" />
+        <span>Schedule Maintenance</span>
+      </Button>
+      
+      <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button 
+            variant="default" 
+            size="sm"
+            className="flex items-center gap-1"
+          >
+            <Wrench className="h-4 w-4" />
+            <span>Create Work Order</span>
+            <ChevronDown className="h-3 w-3 opacity-50" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => handleCreateWorkOrder(WorkOrderTypes.REPAIR, 'medium')}>
+            <Wrench className="h-4 w-4 mr-2" />
+            <span>Repair Order</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleCreateWorkOrder(WorkOrderTypes.MAINTENANCE, 'low')}>
+            <RotateCw className="h-4 w-4 mr-2" />
+            <span>Maintenance Order</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleCreateWorkOrder(WorkOrderTypes.INSPECTION, 'medium')}>
+            <FileText className="h-4 w-4 mr-2" />
+            <span>Inspection Order</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
-}
+};
