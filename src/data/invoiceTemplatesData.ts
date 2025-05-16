@@ -13,5 +13,11 @@ export const updateTemplateUsage = async (templateId: string) => {
 };
 export const createTemplate = async () => {
   console.warn('Using deprecated function. Please use useInvoiceTemplates hook instead.');
-  return { id: '', createdAt: '', usageCount: 0 } as InvoiceTemplate;
+  // Return a valid InvoiceTemplate object for backward compatibility
+  return { 
+    id: '', 
+    name: '',
+    created_at: '', 
+    usage_count: 0 
+  } as InvoiceTemplate;
 };

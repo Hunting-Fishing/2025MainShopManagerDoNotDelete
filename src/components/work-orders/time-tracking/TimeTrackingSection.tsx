@@ -1,91 +1,84 @@
 
 import React, { useState } from "react";
-import { TimeEntry } from "@/types/workOrder";
-import { TimeEntriesList } from "./TimeEntriesList";
-import { TimeEntryForm } from "./TimeEntryForm";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { TimeEntry } from "@/types/workOrder";
+import { TimeEntriesList } from "./TimeEntriesList";
+import { TimeEntryDialog } from "./TimeEntryDialog";
 
-interface TimeTrackingSectionProps {
-  workOrder_id: string; // Changed from workOrder to workOrder_id
+export interface TimeTrackingSectionProps {
+  work_order_id: string;
   timeEntries: TimeEntry[];
   onUpdateTimeEntries: (updatedEntries: TimeEntry[]) => void;
 }
 
 export function TimeTrackingSection({ 
-  workOrder_id, 
+  work_order_id, 
   timeEntries, 
   onUpdateTimeEntries 
 }: TimeTrackingSectionProps) {
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
-
-  const handleAddEntry = () => {
+  
+  const handleAdd = () => {
     setEditingEntry(null);
-    setShowAddForm(true);
+    setShowAddDialog(true);
   };
-
-  const handleEditEntry = (entry: TimeEntry) => {
+  
+  const handleEdit = (entry: TimeEntry) => {
     setEditingEntry(entry);
-    setShowAddForm(true);
+    setShowAddDialog(true);
   };
-
-  const handleDeleteEntry = (entryId: string) => {
-    // Filter out the deleted entry
+  
+  const handleDelete = (entryId: string) => {
     const updatedEntries = timeEntries.filter(entry => entry.id !== entryId);
     onUpdateTimeEntries(updatedEntries);
   };
-
-  const handleSaveEntry = (entry: TimeEntry) => {
-    let updatedEntries: TimeEntry[];
+  
+  const handleSave = (entry: TimeEntry) => {
+    let updatedEntries;
     
     if (editingEntry) {
       // Update existing entry
-      updatedEntries = timeEntries.map(e => 
-        e.id === entry.id ? entry : e
+      updatedEntries = timeEntries.map(item => 
+        item.id === entry.id ? entry : item
       );
     } else {
-      // Add new entry
-      updatedEntries = [...timeEntries, entry];
+      // Add new entry with generated ID if needed
+      const newEntry = {
+        ...entry,
+        id: entry.id || crypto.randomUUID(),
+        work_order_id
+      };
+      updatedEntries = [...timeEntries, newEntry];
     }
     
     onUpdateTimeEntries(updatedEntries);
-    setShowAddForm(false);
-    setEditingEntry(null);
+    setShowAddDialog(false);
   };
-
-  const handleCancelForm = () => {
-    setShowAddForm(false);
-    setEditingEntry(null);
-  };
-
+  
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Time Tracking</h2>
-        <Button 
-          onClick={handleAddEntry} 
-          size="sm" 
-          className="flex items-center gap-1"
-        >
+        <h2 className="text-lg font-medium">Time Tracking</h2>
+        <Button onClick={handleAdd} size="sm" className="flex items-center gap-1">
           <Plus className="h-4 w-4" /> Add Time Entry
         </Button>
       </div>
-
-      {showAddForm ? (
-        <TimeEntryForm
-          workOrderId={workOrder_id}
-          timeEntry={editingEntry}
-          onSave={handleSaveEntry}
-          onCancel={handleCancelForm}
-        />
-      ) : (
-        <TimeEntriesList
-          entries={timeEntries}
-          onDelete={handleDeleteEntry}
-          onEdit={handleEditEntry}
-        />
-      )}
+      
+      <TimeEntriesList 
+        entries={timeEntries} 
+        onEdit={handleEdit} 
+        onDelete={handleDelete} 
+      />
+      
+      <TimeEntryDialog 
+        isOpen={showAddDialog}
+        onClose={() => setShowAddDialog(false)}
+        workOrderId={work_order_id}
+        timeEntry={editingEntry}
+        onSave={handleSave}
+      />
     </div>
   );
 }

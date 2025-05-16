@@ -59,6 +59,10 @@ export interface StaffMember {
 }
 
 // Helper function to create an invoice updater
+export interface InvoiceUpdater {
+  (prev: Invoice): Invoice;
+}
+
 export const createInvoiceUpdater = (updates: Partial<Invoice>) => {
   return (prev: Invoice) => ({
     ...prev,
@@ -77,4 +81,3 @@ export interface InvoiceFiltersProps {
 export interface InvoiceFiltersDropdownProps {
   onApplyFilters: (filters: any) => void;
 }
-

@@ -1,173 +1,139 @@
 
-import { useState, useEffect, useCallback } from "react";
-import { UseFormReturn } from "react-hook-form";
-import { WorkOrderFormFieldValues } from "@/components/work-orders/WorkOrderFormFields";
-import { InventoryItemExtended } from "@/types/inventory";
-import { useInventoryManager } from "@/hooks/inventory/useInventoryManager";
-import { toast } from "@/hooks/use-toast";
-import { WorkOrderInventoryItem } from "@/types/workOrder";
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { InventoryItemExtended } from '@/types/inventory';
+import { WorkOrderInventoryItem } from '@/components/work-orders/inventory/WorkOrderInventoryItem';
+import { 
+  addInventoryToWorkOrder, 
+  removeInventoryFromWorkOrder,
+  updateWorkOrderInventoryQuantity
+} from '@/services/workOrderService';
 
-/**
- * Hook to manage inventory item operations in work orders
- */
-export const useInventoryItemOperations = (
-  form: UseFormReturn<WorkOrderFormFieldValues>
-) => {
-  const [showInventoryDialog, setShowInventoryDialog] = useState(false);
-  const { checkItemAvailability } = useInventoryManager();
+export const useInventoryItemOperations = (workOrderId: string) => {
+  const [items, setItems] = useState<WorkOrderInventoryItem[]>([]);
+  const [isAdding, setIsAdding] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
   
-  // Get current inventory items
-  const selectedItems = form.watch("inventoryItems") || [];
-
-  // Check inventory availability for the current items
-  useEffect(() => {
-    // Skip if no items or not mounted yet
-    if (!selectedItems.length) return;
-    
-    // Check each item's availability but only for regular inventory items
-    selectedItems.forEach(item => {
-      // Skip special order items and other non-inventory items
-      if (item.itemStatus && item.itemStatus !== "in-stock") return;
+  const addInventoryItem = async (item: InventoryItemExtended, quantity = 1) => {
+    setIsAdding(true);
+    try {
+      // Check if we have enough stock
+      if (item.quantity && item.quantity < quantity) {
+        toast.warning(`Not enough stock available. Only ${item.quantity} items in inventory.`);
+        return false;
+      }
       
-      checkItemAvailability(item.id, item.quantity).then(availability => {
-        if (!availability.available) {
-          toast({
-            title: "Inventory Issue",
-            description: availability.message,
-            variant: "destructive"
-          });
-        }
-      });
-    });
-  }, [selectedItems, checkItemAvailability]);
-
-  // Handle adding inventory item
-  const handleAddItem = (item: InventoryItemExtended) => {
-    const currentItems = form.getValues("inventoryItems") || [];
-    
-    // Check if item already exists
-    const existingItemIndex = currentItems.findIndex(i => i.id === item.id);
-    
-    if (existingItemIndex >= 0) {
-      // Update quantity if item already exists
-      const updatedItems = [...currentItems];
-      const newQuantity = updatedItems[existingItemIndex].quantity + 1;
+      // Check if item already exists in work order
+      const existingItem = items.find(i => i.id === item.id);
+      if (existingItem) {
+        // Update quantity instead of adding new
+        const newQuantity = existingItem.quantity + quantity;
+        await updateInventoryQuantity(existingItem.id, newQuantity);
+        return true;
+      }
       
-      // Check if new quantity is available
-      checkItemAvailability(item.id, newQuantity).then(availability => {
-        if (!availability.available) {
-          toast({
-            title: "Insufficient Inventory",
-            description: availability.message,
-            variant: "destructive"
-          });
-          if (availability.availableQuantity !== undefined) {
-            updatedItems[existingItemIndex] = {
-              ...updatedItems[existingItemIndex],
-              quantity: availability.availableQuantity
-            };
-            form.setValue("inventoryItems", updatedItems);
-          }
-          setShowInventoryDialog(false);
-          return;
-        }
-        
-        updatedItems[existingItemIndex] = {
-          ...updatedItems[existingItemIndex],
-          quantity: newQuantity,
-          itemStatus: "in-stock" // Ensure correct status
-        };
-        form.setValue("inventoryItems", updatedItems);
-        setShowInventoryDialog(false);
-      });
-    } else {
-      // Check if new item is available
-      checkItemAvailability(item.id, 1).then(availability => {
-        if (!availability.available) {
-          toast({
-            title: "Item Unavailable",
-            description: availability.message,
-            variant: "destructive"
-          });
-          setShowInventoryDialog(false);
-          return;
-        }
-        
-        // Add new item with required properties to satisfy WorkOrderInventoryItem type
-        const newItem: WorkOrderInventoryItem = {
-          id: item.id,
-          name: item.name,
-          sku: item.sku,
-          category: item.category,
-          quantity: 1,
-          unitPrice: item.unitPrice,
-          itemStatus: "in-stock" // Set default status for inventory items
-        };
-        
-        form.setValue("inventoryItems", [...currentItems, newItem]);
-        setShowInventoryDialog(false);
-      });
+      // Create new work order inventory item
+      const newItem: WorkOrderInventoryItem = {
+        id: crypto.randomUUID(),
+        work_order_id: workOrderId,
+        name: item.name,
+        sku: item.sku,
+        category: item.category || '',
+        quantity,
+        unit_price: item.unit_price || 0,
+      };
+      
+      const addedItem = await addInventoryToWorkOrder(workOrderId, newItem);
+      
+      setItems(current => [...current, addedItem]);
+      toast.success(`Added ${item.name} to work order`);
+      return true;
+    } catch (error) {
+      console.error('Error adding inventory to work order:', error);
+      toast.error('Failed to add inventory item');
+      return false;
+    } finally {
+      setIsAdding(false);
     }
   };
-
-  // Handle removing inventory item
-  const handleRemoveItem = (id: string) => {
-    const currentItems = form.getValues("inventoryItems") || [];
-    form.setValue("inventoryItems", currentItems.filter(item => item.id !== id));
+  
+  const addSpecialOrderItem = async (specialOrderItem: Partial<WorkOrderInventoryItem>) => {
+    setIsAdding(true);
+    try {
+      const newItem: WorkOrderInventoryItem = {
+        id: crypto.randomUUID(),
+        work_order_id: workOrderId,
+        name: specialOrderItem.name || 'Special Order Item',
+        sku: specialOrderItem.sku || 'SPECIAL-ORDER',
+        category: specialOrderItem.category || 'Special Order',
+        quantity: specialOrderItem.quantity || 1,
+        unit_price: specialOrderItem.unit_price || 0,
+      };
+      
+      const addedItem = await addInventoryToWorkOrder(workOrderId, newItem);
+      
+      setItems(current => [...current, addedItem]);
+      toast.success(`Added special order item to work order`);
+      return true;
+    } catch (error) {
+      console.error('Error adding special order item:', error);
+      toast.error('Failed to add special order item');
+      return false;
+    } finally {
+      setIsAdding(false);
+    }
   };
-
-  // Handle updating item quantity
-  const handleUpdateQuantity = (id: string, quantity: number) => {
-    if (quantity < 1) return;
-    
-    const currentItems = form.getValues("inventoryItems") || [];
-    const itemIndex = currentItems.findIndex(item => item.id === id);
-    
-    if (itemIndex === -1) return;
-    
-    const item = currentItems[itemIndex];
-    
-    // Only check availability for regular inventory items
-    if (!item.itemStatus || item.itemStatus === "in-stock") {
-      // Check if the new quantity is available in inventory
-      checkItemAvailability(id, quantity).then(availability => {
-        if (!availability.available) {
-          toast({
-            title: "Insufficient Inventory",
-            description: availability.message,
-            variant: "warning"
-          });
-          
-          // If there's some available, use that quantity
-          if (availability.availableQuantity !== undefined) {
-            quantity = availability.availableQuantity;
-          } else {
-            return; // Don't update if no inventory is available
-          }
-        }
-        
-        const updatedItems = currentItems.map(item => 
-          item.id === id ? { ...item, quantity } : item
-        );
-        
-        form.setValue("inventoryItems", updatedItems);
-      });
-    } else {
-      // For special order items and others, no need to check availability
-      const updatedItems = currentItems.map(item => 
-        item.id === id ? { ...item, quantity } : item
+  
+  const removeInventoryItem = async (itemId: string) => {
+    setIsRemoving(true);
+    try {
+      await removeInventoryFromWorkOrder(workOrderId, itemId);
+      setItems(current => current.filter(item => item.id !== itemId));
+      toast.success('Item removed from work order');
+      return true;
+    } catch (error) {
+      console.error('Error removing inventory item:', error);
+      toast.error('Failed to remove item');
+      return false;
+    } finally {
+      setIsRemoving(false);
+    }
+  };
+  
+  const updateInventoryQuantity = async (itemId: string, newQuantity: number) => {
+    try {
+      if (newQuantity <= 0) {
+        await removeInventoryItem(itemId);
+        return true;
+      }
+      
+      await updateWorkOrderInventoryQuantity(workOrderId, itemId, newQuantity);
+      
+      setItems(current => 
+        current.map(item => 
+          item.id === itemId 
+            ? { ...item, quantity: newQuantity }
+            : item
+        )
       );
       
-      form.setValue("inventoryItems", updatedItems);
+      toast.success('Quantity updated');
+      return true;
+    } catch (error) {
+      console.error('Error updating inventory quantity:', error);
+      toast.error('Failed to update quantity');
+      return false;
     }
   };
-
+  
   return {
-    showInventoryDialog,
-    setShowInventoryDialog,
-    selectedItems,
-    handleAddItem,
-    handleRemoveItem,
-    handleUpdateQuantity
+    items,
+    setItems,
+    isAdding,
+    isRemoving,
+    addInventoryItem,
+    addSpecialOrderItem,
+    removeInventoryItem,
+    updateInventoryQuantity
   };
 };

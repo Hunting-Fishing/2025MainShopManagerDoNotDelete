@@ -1,3 +1,4 @@
+
 import React from "react";
 import { InvoiceHeader } from "@/components/invoices/InvoiceHeader";
 import { InvoiceLeftColumn } from "@/components/invoices/layout/InvoiceLeftColumn";
@@ -40,7 +41,7 @@ interface InvoiceCreateLayoutProps {
   handleAddLaborItem: () => void;
   handleSaveInvoice: (status: "draft" | "pending" | "paid" | "overdue" | "cancelled") => void;
   handleApplyTemplate: (template: InvoiceTemplate) => void;
-  handleSaveTemplate: (template: Omit<InvoiceTemplate, "id" | "created_at" | "usage_count">) => void;
+  handleSaveTemplate: (template: Omit<InvoiceTemplate, "id" | "created_at" | "usage_count">) => Promise<void>;
 }
 
 export function InvoiceCreateLayout({
@@ -73,11 +74,6 @@ export function InvoiceCreateLayout({
   handleApplyTemplate,
   handleSaveTemplate,
 }: InvoiceCreateLayoutProps) {
-  // Update the handleSaveTemplate function to return a Promise
-  const handleSaveTemplate = async (templateData: Omit<InvoiceTemplate, 'id' | 'created_at' | 'usage_count'>) => {
-    return handleSaveTemplateAsync(templateData);
-  };
-
   return (
     <div className="space-y-6">
       <InvoiceHeader 
@@ -110,7 +106,7 @@ export function InvoiceCreateLayout({
         />
         
         <InvoiceRightColumn 
-          createdBy={invoice.created_by}
+          created_by={invoice.created_by || ""}
           assignedStaff={invoice.assignedStaff}
           staffMembers={staffMembers}
           subtotal={subtotal}

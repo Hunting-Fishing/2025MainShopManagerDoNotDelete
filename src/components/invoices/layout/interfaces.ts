@@ -34,3 +34,18 @@ export interface InvoiceItemsTableProps {
   onUpdateItemDescription: (id: string, description: string) => void;
   onUpdateItemPrice: (id: string, price: number) => void;
 }
+
+export interface InvoiceRightColumnProps {
+  created_by: string; // Changed from camelCase to snake_case
+  assignedStaff: any[];
+  staffMembers: any[];
+  subtotal: number;
+  taxRate: number;
+  tax: number;
+  total: number;
+  showStaffDialog: boolean;
+  setShowStaffDialog: (show: boolean) => void;
+  onCreatedByChange: (value: any) => void;
+  onAddStaffMember: (staff: any) => void;
+  onRemoveStaffMember: (staffId: string) => void;
+}

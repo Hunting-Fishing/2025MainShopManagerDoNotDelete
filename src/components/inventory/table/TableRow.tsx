@@ -4,7 +4,7 @@ import { TableRow as UITableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { InventoryItemExtended } from "@/types/inventory";
 import { Column } from "./SortableColumnHeader";
-import { format } from "date-fns"; // Added missing import
+import { format } from "date-fns"; // Fixed missing import
 
 interface TableRowProps {
   item: InventoryItemExtended;
@@ -62,19 +62,19 @@ export const InventoryTableRow = ({
       return renderStatusBadge(item.status);
     } 
     
-    if (key === 'reorder_point') {
+    if (key === "reorder_point") {
       return item.reorder_point || 0;
     } 
     
-    if (key === 'quantity') {
+    if (key === "quantity") {
       return item.quantity || 0;
     } 
     
-    if (key === 'unit_price') {
+    if (key === "unit_price") {
       return formatPrice(item.unit_price || 0);
     } 
     
-    if (key === 'created_at' || key === 'updated_at') {
+    if (key === "created_at" || key === "updated_at") {
       // Use type assertion to access these properties
       const dateValue = item[key as keyof typeof item] as string | undefined;
       return formatDate(dateValue);

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { WorkOrder, TimeEntry } from "@/types/workOrder";
 import { EditFormHeader } from "./edit/EditFormHeader";
@@ -49,7 +50,7 @@ export default function WorkOrderEditForm({ workOrder }: WorkOrderEditFormProps)
 
       {/* Time Tracking Section */}
       <TimeTrackingSection 
-        workOrder_id={workOrder.id}
+        work_order_id={workOrder.id}
         timeEntries={timeEntries}
         onUpdateTimeEntries={handleUpdateTimeEntries}
       />

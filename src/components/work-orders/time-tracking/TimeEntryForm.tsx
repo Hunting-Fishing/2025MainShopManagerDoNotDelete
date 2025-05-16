@@ -19,25 +19,13 @@ export function TimeEntryForm({
   onCancel 
 }: TimeEntryFormProps) {
   const {
-    employee,
-    setEmployee,
-    startDate,
-    setStartDate,
-    startTime,
-    setStartTime,
-    endDate,
-    setEndDate,
-    endTime,
-    setEndTime,
-    duration,
-    setDuration,
-    notes,
-    setNotes,
-    billable,
-    setBillable,
+    formData,
+    errors,
+    handleChange,
+    calculateDuration,
     handleSubmit,
-    isEditing,
-    onCancel: handleCancel
+    handleCancel,
+    isEditing
   } = useTimeEntryForm({
     workOrderId,
     timeEntry,
@@ -48,22 +36,22 @@ export function TimeEntryForm({
   return (
     <form onSubmit={handleSubmit}>
       <TimeEntryFormFields
-        employee={employee}
-        setEmployee={setEmployee}
-        startDate={startDate}
-        setStartDate={setStartDate}
-        startTime={startTime}
-        setStartTime={setStartTime}
-        endDate={endDate}
-        setEndDate={setEndDate}
-        endTime={endTime}
-        setEndTime={setEndTime}
-        duration={duration}
-        setDuration={setDuration}
-        notes={notes}
-        setNotes={setNotes}
-        billable={billable}
-        setBillable={setBillable}
+        employee={formData.employee_id || ""}
+        setEmployee={(value) => handleChange('employee_id', value)}
+        startDate={formData.start_date || ""}
+        setStartDate={(value) => handleChange('start_date', value)}
+        startTime={formData.start_time || ""}
+        setStartTime={(value) => handleChange('start_time', value)}
+        endDate={formData.end_date || ""}
+        setEndDate={(value) => handleChange('end_date', value)}
+        endTime={formData.end_time || ""}
+        setEndTime={(value) => handleChange('end_time', value)}
+        duration={String(formData.duration || "0")}
+        setDuration={(value) => handleChange('duration', parseInt(value) || 0)}
+        notes={formData.notes || ""}
+        setNotes={(value) => handleChange('notes', value)}
+        billable={formData.billable || true}
+        setBillable={(value) => handleChange('billable', value)}
       />
       
       <TimeEntryFormActions

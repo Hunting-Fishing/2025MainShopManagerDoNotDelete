@@ -1,162 +1,91 @@
 
 import { useState } from "react";
-import { InventoryItemExtended } from "@/types/inventory";
+import { toast } from "sonner";
 import { 
-  getAllInventoryItems, 
-  getInventoryItemById, 
+  getInventoryItems, 
   createInventoryItem, 
   updateInventoryItem, 
-  deleteInventoryItem,
-  updateInventoryQuantity
+  deleteInventoryItem 
 } from "@/services/inventory/crudService";
-import { toast } from "@/hooks/use-toast";
+import { InventoryItemExtended } from "@/types/inventory";
 
 export function useInventoryCrud() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Load all inventory items
-  const loadInventoryItems = async (): Promise<InventoryItemExtended[]> => {
-    setLoading(true);
-    setError(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [items, setItems] = useState<InventoryItemExtended[]>([]);
+  
+  const fetchItems = async () => {
+    setIsLoading(true);
     try {
-      const items = await getAllInventoryItems();
-      return items;
-    } catch (err) {
-      setError("Failed to load inventory items");
+      const data = await getInventoryItems();
+      setItems(data);
+      return data;
+    } catch (error) {
+      console.error('Error fetching inventory items:', error);
+      toast.error('Failed to load inventory items');
       return [];
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
-
-  // Get a single inventory item
-  const getItem = async (id: string): Promise<InventoryItemExtended | null> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const item = await getInventoryItemById(id);
-      return item;
-    } catch (err) {
-      setError(`Failed to load inventory item ${id}`);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Create a new inventory item
-  const createItem = async (item: Omit<InventoryItemExtended, "id">): Promise<InventoryItemExtended | null> => {
-    setLoading(true);
-    setError(null);
+  
+  const addItem = async (item: Partial<InventoryItemExtended>) => {
+    setIsLoading(true);
     try {
       const newItem = await createInventoryItem(item);
-      toast({
-        title: "Item created",
-        description: `${newItem.name} has been added to inventory`,
-        variant: "success"
-      });
+      setItems(prev => [...prev, newItem]);
+      toast.success('Item added successfully');
       return newItem;
-    } catch (err) {
-      setError("Failed to create inventory item");
-      return null;
+    } catch (error) {
+      console.error('Error adding inventory item:', error);
+      toast.error('Failed to add item');
+      throw error;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
-
-  // Update an inventory item
-  const updateItem = async (id: string, updates: Partial<InventoryItemExtended>): Promise<InventoryItemExtended | null> => {
-    setLoading(true);
-    setError(null);
+  
+  const updateItem = async (id: string, updates: Partial<InventoryItemExtended>) => {
+    setIsLoading(true);
     try {
       const updatedItem = await updateInventoryItem(id, updates);
-      toast({
-        title: "Item updated",
-        description: `${updatedItem.name} has been updated`,
-        variant: "success"
-      });
+      setItems(prev => prev.map(item => item.id === id ? updatedItem : item));
+      toast.success('Item updated successfully');
       return updatedItem;
-    } catch (err) {
-      setError(`Failed to update inventory item ${id}`);
-      return null;
+    } catch (error) {
+      console.error('Error updating inventory item:', error);
+      toast.error('Failed to update item');
+      throw error;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
-
-  // Delete an inventory item
-  const deleteItem = async (id: string, itemName: string): Promise<boolean> => {
-    setLoading(true);
-    setError(null);
+  
+  const updateQuantity = async (id: string, newQuantity: number) => {
+    return updateItem(id, { quantity: newQuantity });
+  };
+  
+  const removeItem = async (id: string) => {
+    setIsLoading(true);
     try {
       await deleteInventoryItem(id);
-      toast({
-        title: "Item deleted",
-        description: `${itemName} has been removed from inventory`,
-        variant: "success"
-      });
-      return true;
-    } catch (err) {
-      setError(`Failed to delete inventory item ${id}`);
-      return false;
+      setItems(prev => prev.filter(item => item.id !== id));
+      toast.success('Item removed successfully');
+    } catch (error) {
+      console.error('Error removing inventory item:', error);
+      toast.error('Failed to remove item');
+      throw error;
     } finally {
-      setLoading(false);
-    }
-  };
-
-  // Update inventory quantities when consumed by work orders
-  const consumeInventory = async (items: { id: string, quantity: number }[]): Promise<boolean> => {
-    setLoading(true);
-    setError(null);
-    try {
-      // Process each item one by one
-      const results = await Promise.all(
-        items.map(async (item) => {
-          try {
-            // Negative quantity because we're consuming
-            await updateInventoryQuantity(item.id, -item.quantity);
-            return true;
-          } catch (itemError: any) {
-            // Log individual item errors but continue with others
-            console.error(`Error updating item ${item.id}:`, itemError);
-            return false;
-          }
-        })
-      );
-
-      // If any item failed, show a warning
-      if (results.some(result => !result)) {
-        toast({
-          title: "Partial inventory update",
-          description: "Some items could not be updated. Check inventory levels.",
-          variant: "warning"
-        });
-        return false;
-      }
-
-      toast({
-        title: "Inventory updated",
-        description: "Inventory quantities have been updated",
-        variant: "success"
-      });
-      return true;
-    } catch (err) {
-      setError("Failed to update inventory quantities");
-      return false;
-    } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   return {
-    loading,
-    error,
-    loadInventoryItems,
-    getItem,
-    createItem,
+    isLoading,
+    items,
+    fetchItems,
+    addItem,
     updateItem,
-    deleteItem,
-    consumeInventory
+    updateQuantity,
+    removeItem
   };
 }

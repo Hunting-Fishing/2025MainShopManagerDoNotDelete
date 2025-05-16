@@ -1,69 +1,91 @@
-import React from "react";
+
+import { Button } from "@/components/ui/button";
+import { PencilIcon, TrashIcon } from "lucide-react";
 import { TimeEntry } from "@/types/workOrder";
-import { format } from "date-fns";
+import { formatTimeInHoursAndMinutes } from "@/utils/workOrders";
+import { TimeEntryRow } from "./components/TimeEntryRow";
 
 interface TimeEntriesListProps {
   entries: TimeEntry[];
-  onDelete: (id: string) => void;
   onEdit: (entry: TimeEntry) => void;
+  onDelete: (id: string) => void;
 }
 
-export function TimeEntriesList({ entries, onDelete, onEdit }: TimeEntriesListProps) {
-  if (!entries || entries.length === 0) {
+export function TimeEntriesList({ entries, onEdit, onDelete }: TimeEntriesListProps) {
+  const getTotalDuration = () => {
+    return entries.reduce((total, entry) => total + (entry.duration || 0), 0);
+  };
+  
+  const getBillableDuration = () => {
+    return entries
+      .filter(entry => entry.billable)
+      .reduce((total, entry) => total + (entry.duration || 0), 0);
+  };
+  
+  if (entries.length === 0) {
     return (
-      <div className="text-center p-6 border border-dashed rounded-md text-slate-500">
-        No time entries recorded yet.
+      <div className="text-center py-8 border rounded-md bg-slate-50">
+        <p className="text-slate-500">No time entries recorded</p>
+        <p className="text-sm text-slate-400">Add time entries to track work performed</p>
       </div>
     );
   }
-
+  
   return (
-    <div className="border rounded-md overflow-hidden">
-      <table className="min-w-full divide-y divide-slate-200">
-        <thead className="bg-slate-50">
-          <tr>
-            <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Staff</th>
-            <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Time</th>
-            <th scope="col" className="px-4 py-2 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">Duration</th>
-            <th scope="col" className="px-4 py-2 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">Billable</th>
-            <th scope="col" className="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-slate-200">
-          {entries.map((entry) => (
-            <tr key={entry.id}>
-              <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900">
-                {entry.employee_name}
-              </td>
-              <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                {entry.start_time ? format(new Date(entry.start_time), "MMM d, yyyy h:mm a") : "N/A"}
-              </td>
-              <td className="px-4 py-3 whitespace-nowrap text-center text-sm text-slate-900">
-                {entry.duration} mins
-              </td>
-              <td className="px-4 py-3 whitespace-nowrap text-center text-sm">
-                {entry.billable ? "Yes" : "No"}
-              </td>
-              <td className="px-4 py-3 whitespace-nowrap text-right text-sm">
-                <button
-                  type="button"
-                  className="text-blue-600 hover:text-blue-800 mr-3"
-                  onClick={() => onEdit(entry)}
-                >
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  className="text-red-600 hover:text-red-800"
-                  onClick={() => onDelete(entry.id)}
-                >
-                  Delete
-                </button>
-              </td>
+    <div className="space-y-4">
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="bg-slate-100">
+              <th className="text-left py-2 px-4">Technician</th>
+              <th className="text-left py-2 px-4">Date</th>
+              <th className="text-left py-2 px-4">Duration</th>
+              <th className="text-left py-2 px-4">Billable</th>
+              <th className="text-left py-2 px-4">Notes</th>
+              <th className="text-right py-2 px-4">Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {entries.map((entry) => (
+              <tr key={entry.id} className="border-t hover:bg-slate-50">
+                <td className="py-3 px-4">{entry.employee_name}</td>
+                <td className="py-3 px-4">{entry.start_time}</td>
+                <td className="py-3 px-4">{formatTimeInHoursAndMinutes(entry.duration)}</td>
+                <td className="py-3 px-4">{entry.billable ? "Yes" : "No"}</td>
+                <td className="py-3 px-4">{entry.notes}</td>
+                <td className="py-3 px-4 text-right space-x-2">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => onEdit(entry)}
+                  >
+                    <PencilIcon className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => onDelete(entry.id)}
+                  >
+                    <TrashIcon className="h-4 w-4" />
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className="border-t bg-slate-50 font-medium">
+              <td colSpan={2} className="py-2 px-4 text-right">Total:</td>
+              <td className="py-2 px-4">{formatTimeInHoursAndMinutes(getTotalDuration())}</td>
+              <td colSpan={3}></td>
+            </tr>
+            <tr className="border-t bg-slate-50 font-medium">
+              <td colSpan={2} className="py-2 px-4 text-right">Billable:</td>
+              <td className="py-2 px-4">{formatTimeInHoursAndMinutes(getBillableDuration())}</td>
+              <td colSpan={3}></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
     </div>
   );
 }
