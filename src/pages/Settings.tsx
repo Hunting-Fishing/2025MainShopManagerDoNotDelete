@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Cog, User, Building, Shield, Bell, Database, Globe2, Gift, Package, Users, Mail, Brush, MailPlus, Link as LinkIcon, ShieldCheck, Briefcase, Percent } from "lucide-react";
+import { Cog, User, Building, Shield, Bell, Database, Globe2, Gift, Package, Users, Mail, Brush, MailPlus, Link as LinkIcon, ShieldCheck, Briefcase, Percent, UserCog } from "lucide-react";
 import { SettingsCard } from "@/components/settings/SettingsCard";
 import { Link } from "react-router-dom";
 import { CustomerRequestButton } from "@/components/settings/CustomerRequestButton";
@@ -19,6 +19,14 @@ const Settings = () => {
   const [activeTab, setActiveTab] = useState("grid");
 
   const settingsCategories = [
+    {
+      id: "customer",
+      title: "Customer Settings",
+      description: "Manage customer information, loyalty, and communications",
+      icon: UserCog,
+      path: "/settings/customer",
+      color: "purple"
+    },
     {
       id: "account",
       title: "Account Settings",
@@ -92,14 +100,6 @@ const Settings = () => {
       color: "yellow"
     },
     {
-      id: "loyalty",
-      title: "Customer Loyalty",
-      description: "Set up your loyalty program",
-      icon: Gift,
-      path: "/settings/loyalty",
-      color: "purple"
-    },
-    {
       id: "inventory",
       title: "Inventory Settings",
       description: "Configure inventory preferences",
@@ -140,6 +140,9 @@ const Settings = () => {
       color: "green"
     },
   ];
+
+  // Remove the loyalty card as it's now part of customer settings
+  const filteredSettingsCategories = settingsCategories.filter(category => category.id !== 'loyalty');
 
   const toggleView = (view: string) => {
     setActiveTab(view);
@@ -186,7 +189,7 @@ const Settings = () => {
 
       {activeTab === "grid" ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {settingsCategories.map((category) => (
+          {filteredSettingsCategories.map((category) => (
             <SettingsCard
               key={category.id}
               title={category.title}
@@ -201,7 +204,7 @@ const Settings = () => {
         <Card>
           <CardContent className="p-0">
             <div className="divide-y">
-              {settingsCategories.map((category) => (
+              {filteredSettingsCategories.map((category) => (
                 <Link 
                   to={category.path}
                   key={category.id} 
