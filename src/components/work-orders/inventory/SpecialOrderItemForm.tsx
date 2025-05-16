@@ -12,6 +12,11 @@ import { cn } from "@/lib/utils";
 import { InventoryFormSelect } from "@/components/inventory/form/InventoryFormSelect";
 import { WorkOrderInventoryItem } from "@/types/workOrder";
 
+interface SelectOption {
+  value: string;
+  label: string;
+}
+
 interface SpecialOrderItemFormProps {
   onAdd: (item: Partial<WorkOrderInventoryItem>) => void;
   onCancel: () => void;
@@ -29,6 +34,13 @@ export function SpecialOrderItemForm({ onAdd, onCancel, suppliers }: SpecialOrde
   const [notes, setNotes] = useState("");
   const [estimatedDate, setEstimatedDate] = useState<Date | undefined>(undefined);
   const [itemStatus, setItemStatus] = useState<"special-order" | "ordered">("special-order");
+
+  // Convert string arrays to SelectOption arrays
+  const supplierOptions: SelectOption[] = suppliers.map(supplier => ({ value: supplier, label: supplier }));
+  const statusOptions: SelectOption[] = [
+    { value: "special-order", label: "Special Order" },
+    { value: "ordered", label: "Ordered" }
+  ];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,22 +121,22 @@ export function SpecialOrderItemForm({ onAdd, onCancel, suppliers }: SpecialOrde
         <div>
           <Label htmlFor="itemStatus">Item Status</Label>
           <InventoryFormSelect
-            id="itemStatus"
             label=""
+            name="itemStatus"
             value={itemStatus}
-            onValueChange={(value) => setItemStatus(value as "special-order" | "ordered")}
-            options={["special-order", "ordered"]}
+            onChange={(e) => setItemStatus(e.target.value as "special-order" | "ordered")}
+            options={statusOptions}
           />
         </div>
         
         <div>
           <Label htmlFor="supplier">Supplier</Label>
           <InventoryFormSelect
-            id="supplier"
             label=""
+            name="supplier"
             value={supplier}
-            onValueChange={setSupplier}
-            options={suppliers}
+            onChange={(e) => setSupplier(e.target.value)}
+            options={supplierOptions}
           />
         </div>
         

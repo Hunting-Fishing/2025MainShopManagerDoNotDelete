@@ -63,3 +63,58 @@ export interface InventoryItem {
   status?: string;
   quantity?: number;
 }
+
+// Additional interfaces for inventory system
+export interface ReorderSettings {
+  id: string;
+  item_id: string;
+  threshold: number;
+  reorder_quantity: number;
+  auto_reorder: boolean;
+}
+
+export interface InventoryTransaction {
+  id: string;
+  inventory_item_id: string;
+  quantity: number;
+  transaction_type: string;
+  transaction_date: string;
+  reference_id?: string;
+  reference_type?: string;
+  notes?: string;
+}
+
+export interface InventoryLocation {
+  id: string;
+  name: string;
+  type?: string;
+  description?: string;
+  parent_id?: string;
+}
+
+export interface InventoryCategory {
+  id: string;
+  name: string;
+}
+
+export interface InventorySupplier {
+  id: string;
+  name: string;
+}
+
+export interface InventoryAdjustment {
+  id: string;
+  inventory_item_id: string;
+  quantity: number;
+  adjustment_type: string;
+  notes?: string;
+  performed_by?: string;
+}
+
+export interface InventoryValuation {
+  total_cost: number;
+  total_items: number;
+  valuation_date: string;
+}
+
+export type InventoryItemStatus = 'In Stock' | 'Low Stock' | 'Out of Stock' | 'Discontinued';

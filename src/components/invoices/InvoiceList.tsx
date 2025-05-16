@@ -1,175 +1,85 @@
 
-import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { InvoiceFilters } from "@/components/invoices/InvoiceFilters";
-import { InvoiceTable } from "@/components/invoices/InvoiceTable";
-import { useInvoiceData } from "@/hooks/useInvoiceData";
-import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
-import { Link } from "react-router-dom";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { InvoiceListHeader } from "./InvoiceListHeader";
+import React, { useState, useEffect } from 'react';
+import { Invoice } from '@/types/invoice';
+import { InvoiceListTable } from './InvoiceListTable';
+import { InvoiceFilters } from './filters/InvoiceFilters';
 
-export function InvoiceList() {
-  const [activeTab, setActiveTab] = useState<string>("all");
-  const { invoices, isLoading, error } = useInvoiceData();
-  const [creators, setCreators] = useState<string[]>([]);
+interface InvoiceListProps {
+  invoices: Invoice[];
+}
 
+export const InvoiceList: React.FC<InvoiceListProps> = ({ invoices }) => {
+  const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>(invoices);
   const [filters, setFilters] = useState({
-    status: "all",
-    customer: "",
+    status: '',
+    customer: '',
     dateRange: {
       from: null as Date | null,
-      to: null as Date | null,
-    },
+      to: null as Date | null
+    }
   });
 
-  // Extract list of invoice creators
+  // Apply filters whenever filters or invoices change
   useEffect(() => {
-    if (invoices?.length) {
-      const creatorsList = Array.from(
-        new Set(
-          invoices
-            .filter((inv) => inv.createdBy)
-            .map((inv) => inv.createdBy as string)
-        )
-      );
-      setCreators(creatorsList);
+    let result = [...invoices];
+    
+    // Filter by status
+    if (filters.status) {
+      result = result.filter(invoice => invoice.status === filters.status);
     }
-  }, [invoices]);
+    
+    // Filter by customer name
+    if (filters.customer) {
+      result = result.filter(invoice => {
+        // Handle customer as a string type
+        const customerName = invoice.customer.toLowerCase();
+        return customerName.includes(filters.customer.toLowerCase());
+      });
+    }
+    
+    // Filter by date range
+    if (filters.dateRange.from || filters.dateRange.to) {
+      result = result.filter(invoice => {
+        const invoiceDate = new Date(invoice.date || '');
+        
+        if (filters.dateRange.from && filters.dateRange.to) {
+          return invoiceDate >= filters.dateRange.from && invoiceDate <= filters.dateRange.to;
+        }
+        
+        if (filters.dateRange.from) {
+          return invoiceDate >= filters.dateRange.from;
+        }
+        
+        if (filters.dateRange.to) {
+          return invoiceDate <= filters.dateRange.to;
+        }
+        
+        return true;
+      });
+    }
+    
+    setFilteredInvoices(result);
+  }, [filters, invoices]);
 
   const resetFilters = () => {
     setFilters({
-      status: "all",
-      customer: "",
+      status: '',
+      customer: '',
       dateRange: {
         from: null,
-        to: null,
-      },
+        to: null
+      }
     });
   };
 
-  const filteredInvoices = invoices?.filter((invoice) => {
-    // Filter by status
-    if (filters.status !== "all" && invoice.status !== filters.status) {
-      return false;
-    }
-
-    // Filter by customer name
-    if (
-      filters.customer &&
-      typeof invoice.customer === 'string' &&
-      !invoice.customer
-        .toLowerCase()
-        .includes(filters.customer.toLowerCase())
-    ) {
-      return false;
-    } else if (
-      filters.customer && 
-      typeof invoice.customer === 'object' &&
-      invoice.customer &&
-      !`${invoice.customer.first_name} ${invoice.customer.last_name}`
-        .toLowerCase()
-        .includes(filters.customer.toLowerCase())
-    ) {
-      return false;
-    }
-
-    // Filter by date range
-    if (filters.dateRange.from || filters.dateRange.to) {
-      const invoiceDate = invoice.invoice_date ? new Date(invoice.invoice_date) : 
-                          invoice.date ? new Date(invoice.date) : null;
-      
-      if (invoiceDate) {
-        if (
-          filters.dateRange.from &&
-          invoiceDate < filters.dateRange.from
-        ) {
-          return false;
-        }
-        
-        if (
-          filters.dateRange.to &&
-          invoiceDate > filters.dateRange.to
-        ) {
-          return false;
-        }
-      }
-    }
-
-    return true;
-  });
-
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Invoices</h1>
-        <Link to="/invoices/create">
-          <Button>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            New Invoice
-          </Button>
-        </Link>
-      </div>
-
       <InvoiceFilters 
-        filters={filters}
-        setFilters={setFilters}
-        resetFilters={resetFilters}
+        filters={filters} 
+        setFilters={setFilters} 
+        resetFilters={resetFilters} 
       />
-
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle>Invoice List</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="mb-4">
-              <TabsTrigger value="all">All Invoices</TabsTrigger>
-              <TabsTrigger value="draft">Draft</TabsTrigger>
-              <TabsTrigger value="pending">Pending</TabsTrigger>
-              <TabsTrigger value="paid">Paid</TabsTrigger>
-              <TabsTrigger value="overdue">Overdue</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="all">
-              <InvoiceTable invoices={filteredInvoices} isLoading={isLoading} error={error} />
-            </TabsContent>
-            
-            <TabsContent value="draft">
-              <InvoiceTable
-                invoices={filteredInvoices?.filter((inv) => inv.status === "draft")}
-                isLoading={isLoading}
-                error={error}
-              />
-            </TabsContent>
-            
-            <TabsContent value="pending">
-              <InvoiceTable
-                invoices={filteredInvoices?.filter((inv) => inv.status === "pending")}
-                isLoading={isLoading}
-                error={error}
-              />
-            </TabsContent>
-            
-            <TabsContent value="paid">
-              <InvoiceTable
-                invoices={filteredInvoices?.filter((inv) => inv.status === "paid")}
-                isLoading={isLoading}
-                error={error}
-              />
-            </TabsContent>
-            
-            <TabsContent value="overdue">
-              <InvoiceTable
-                invoices={filteredInvoices?.filter((inv) => inv.status === "overdue")}
-                isLoading={isLoading}
-                error={error}
-              />
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+      <InvoiceListTable invoices={filteredInvoices} />
     </div>
   );
-}
+};

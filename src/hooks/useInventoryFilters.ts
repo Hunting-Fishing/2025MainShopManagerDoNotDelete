@@ -1,64 +1,36 @@
 
-import { useState, useMemo } from 'react';
-import { InventoryItemExtended } from '@/types/inventory';
+import { useState, useMemo, useEffect } from "react";
+import { InventoryItemExtended } from "@/types/inventory";
 
 export interface InventoryFilters {
   search: string;
   category: string;
   status: string;
   supplier: string;
-  minPrice: number | '';
-  maxPrice: number | '';
-  inStockOnly: boolean;
-  lowStockOnly: boolean;
   sortBy: string;
-  sortOrder: 'asc' | 'desc';
+  sortDirection: 'asc' | 'desc';
 }
 
-export function useInventoryFilters(items: InventoryItemExtended[] = []) {
+export function useInventoryFilters() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItemExtended[]>([]);
+  
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [supplierFilter, setSupplierFilter] = useState("");
+  
   const [filters, setFilters] = useState<InventoryFilters>({
-    search: '',
-    category: '',
-    status: '',
-    supplier: '',
-    minPrice: '',
-    maxPrice: '',
-    inStockOnly: false,
-    lowStockOnly: false,
-    sortBy: 'name',
-    sortOrder: 'asc',
+    search: "",
+    category: "",
+    status: "",
+    supplier: "",
+    sortBy: "name",
+    sortDirection: "asc"
   });
 
-  const categories = useMemo(() => {
-    const categorySet = new Set<string>();
-    items.forEach(item => {
-      if (item.category) {
-        categorySet.add(item.category);
-      }
-    });
-    return Array.from(categorySet).sort();
-  }, [items]);
-
-  const suppliers = useMemo(() => {
-    const supplierSet = new Set<string>();
-    items.forEach(item => {
-      if (item.supplier) {
-        supplierSet.add(item.supplier);
-      }
-    });
-    return Array.from(supplierSet).sort();
-  }, [items]);
-
-  const statuses = useMemo(() => {
-    const statusSet = new Set<string>();
-    items.forEach(item => {
-      if (item.status) {
-        statusSet.add(item.status);
-      }
-    });
-    return Array.from(statusSet).sort();
-  }, [items]);
-
+  // Function to update a specific filter
   const updateFilter = (key: keyof InventoryFilters, value: any) => {
     setFilters(prev => ({
       ...prev,
@@ -66,126 +38,159 @@ export function useInventoryFilters(items: InventoryItemExtended[] = []) {
     }));
   };
 
+  // Function to reset all filters
   const resetFilters = () => {
     setFilters({
-      search: '',
-      category: '',
-      status: '',
-      supplier: '',
-      minPrice: '',
-      maxPrice: '',
-      inStockOnly: false,
-      lowStockOnly: false,
-      sortBy: 'name',
-      sortOrder: 'asc',
+      search: "",
+      category: "",
+      status: "",
+      supplier: "",
+      sortBy: "name",
+      sortDirection: "asc"
     });
+    setSearchQuery("");
+    setCategoryFilter("");
+    setStatusFilter("");
+    setSupplierFilter("");
   };
 
-  const sortItems = (a: InventoryItemExtended, b: InventoryItemExtended) => {
-    const { sortBy, sortOrder } = filters;
+  // Fetch inventory items
+  useEffect(() => {
+    const fetchInventoryData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        // Simulate API call for now
+        // In a real app, you would fetch from API or database
+        const data = generateMockInventoryItems(50);
+        setInventoryItems(data);
+      } catch (err) {
+        console.error("Error fetching inventory data:", err);
+        setError("Failed to load inventory data. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
     
-    // Handle different sort fields
-    let valueA, valueB;
-    
-    switch (sortBy) {
-      case 'name':
-        valueA = a.name.toLowerCase();
-        valueB = b.name.toLowerCase();
-        break;
-      case 'sku':
-        valueA = a.sku.toLowerCase();
-        valueB = b.sku.toLowerCase();
-        break;
-      case 'quantity':
-        valueA = a.quantity;
-        valueB = b.quantity;
-        break;
-      case 'price':
-        valueA = a.unit_price;
-        valueB = b.unit_price;
-        break;
-      case 'category':
-        valueA = a.category?.toLowerCase() || '';
-        valueB = b.category?.toLowerCase() || '';
-        break;
-      case 'supplier':
-        valueA = a.supplier?.toLowerCase() || '';
-        valueB = b.supplier?.toLowerCase() || '';
-        break;
-      default:
-        valueA = a.name.toLowerCase();
-        valueB = b.name.toLowerCase();
-    }
-    
-    // Apply sort direction
-    if (sortOrder === 'asc') {
-      return valueA > valueB ? 1 : valueA < valueB ? -1 : 0;
-    } else {
-      return valueA < valueB ? 1 : valueA > valueB ? -1 : 0;
-    }
-  };
+    fetchInventoryData();
+  }, []);
 
+  // Sync individual filter states with the combined filters object
+  useEffect(() => {
+    setFilters(prev => ({
+      ...prev,
+      search: searchQuery,
+      category: categoryFilter,
+      status: statusFilter,
+      supplier: supplierFilter
+    }));
+  }, [searchQuery, categoryFilter, statusFilter, supplierFilter]);
+
+  // Apply filters to inventory items
   const filteredItems = useMemo(() => {
-    return items
-      .filter(item => {
-        // Search filter
-        if (
-          filters.search &&
-          !item.name.toLowerCase().includes(filters.search.toLowerCase()) &&
+    return inventoryItems.filter(item => {
+      // Apply search filter
+      if (filters.search && 
+          !item.name.toLowerCase().includes(filters.search.toLowerCase()) && 
           !item.sku.toLowerCase().includes(filters.search.toLowerCase()) &&
-          !(item.description?.toLowerCase() || '').includes(filters.search.toLowerCase())
-        ) {
-          return false;
-        }
-        
-        // Category filter
-        if (filters.category && item.category !== filters.category) {
-          return false;
-        }
-        
-        // Status filter
-        if (filters.status && item.status !== filters.status) {
-          return false;
-        }
-        
-        // Supplier filter
-        if (filters.supplier && item.supplier !== filters.supplier) {
-          return false;
-        }
-        
-        // Price range filters
-        if (filters.minPrice !== '' && item.unit_price < filters.minPrice) {
-          return false;
-        }
-        
-        if (filters.maxPrice !== '' && item.unit_price > filters.maxPrice) {
-          return false;
-        }
-        
-        // In-stock only filter
-        if (filters.inStockOnly && item.quantity <= 0) {
-          return false;
-        }
-        
-        // Low-stock only filter
-        if (filters.lowStockOnly && item.quantity > item.reorder_point) {
-          return false;
-        }
-        
-        return true;
-      })
-      .sort(sortItems);
-  }, [items, filters]);
+          !item.description?.toLowerCase().includes(filters.search.toLowerCase())) {
+        return false;
+      }
+      
+      // Apply category filter
+      if (filters.category && item.category !== filters.category) {
+        return false;
+      }
+      
+      // Apply status filter
+      if (filters.status && item.status !== filters.status) {
+        return false;
+      }
+      
+      // Apply supplier filter
+      if (filters.supplier && item.supplier !== filters.supplier) {
+        return false;
+      }
+      
+      return true;
+    }).sort((a, b) => {
+      // Apply sorting
+      const sortField = filters.sortBy as keyof InventoryItemExtended;
+      const direction = filters.sortDirection === 'asc' ? 1 : -1;
+      
+      if (sortField === 'unit_price') {
+        return (a.unit_price - b.unit_price) * direction;
+      }
+      
+      if (typeof a[sortField] === 'string' && typeof b[sortField] === 'string') {
+        return (a[sortField] as string).localeCompare(b[sortField] as string) * direction;
+      }
+      
+      return 0;
+    });
+  }, [inventoryItems, filters]);
+
+  // Extract unique categories, statuses, and suppliers for filter options
+  const categories = useMemo(() => {
+    const uniqueCategories = [...new Set(inventoryItems.map(item => item.category))];
+    return uniqueCategories.sort();
+  }, [inventoryItems]);
+  
+  const statuses = useMemo(() => {
+    const uniqueStatuses = [...new Set(inventoryItems.map(item => item.status))];
+    return uniqueStatuses.sort();
+  }, [inventoryItems]);
+  
+  const suppliers = useMemo(() => {
+    const uniqueSuppliers = [...new Set(inventoryItems.map(item => item.supplier))];
+    return uniqueSuppliers.sort();
+  }, [inventoryItems]);
+  
+  const filteredItemsCount = filteredItems.length;
 
   return {
+    loading,
+    searchQuery,
+    setSearchQuery,
+    categoryFilter,
+    setCategoryFilter,
+    statusFilter,
+    setStatusFilter,
+    supplierFilter,
+    setSupplierFilter,
+    filteredItems,
+    error,
+    categories,
+    statuses,
+    suppliers,
     filters,
     updateFilter,
     resetFilters,
-    filteredItems,
-    categories,
-    suppliers,
-    statuses,
-    totalItems: items.length,
-    filteredItemsCount: filteredItems.length
+    filteredItemsCount
   };
+}
+
+// Helper function to generate mock inventory data
+function generateMockInventoryItems(count: number): InventoryItemExtended[] {
+  const categories = ["Electronics", "Automotive", "Tools", "Office Supplies", "Plumbing"];
+  const suppliers = ["Acme Corp", "Tech Distributors", "Auto Parts Inc", "Office Depot", "Hardware World"];
+  const statuses = ["In Stock", "Low Stock", "Out of Stock", "Discontinued"];
+  
+  return Array.from({ length: count }, (_, i) => ({
+    id: `inv-${i+1}`,
+    name: `Item ${i+1}`,
+    sku: `SKU-${1000 + i}`,
+    quantity: Math.floor(Math.random() * 100),
+    reorder_point: 10,
+    unit_price: parseFloat((Math.random() * 100 + 10).toFixed(2)),
+    category: categories[Math.floor(Math.random() * categories.length)],
+    supplier: suppliers[Math.floor(Math.random() * suppliers.length)],
+    location: `Shelf ${String.fromCharCode(65 + Math.floor(Math.random() * 26))}-${Math.floor(Math.random() * 10)}`,
+    status: statuses[Math.floor(Math.random() * statuses.length)],
+    created_at: new Date(Date.now() - Math.floor(Math.random() * 10000000000)).toISOString(),
+    updated_at: new Date().toISOString(),
+    description: `Description for item ${i+1}`,
+    cost: parseFloat((Math.random() * 80 + 5).toFixed(2)),
+    marginMarkup: Math.floor(Math.random() * 20 + 10)
+  }));
 }

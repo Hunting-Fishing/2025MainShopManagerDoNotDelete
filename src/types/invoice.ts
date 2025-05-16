@@ -14,7 +14,7 @@ export interface InvoiceItem {
   category?: string;
 }
 
-// Define Customer as string instead of complex object for simpler usage
+// Define Customer as a string type for simpler usage
 export type Customer = string;
 
 export interface Invoice {
@@ -116,5 +116,5 @@ export const createInvoiceUpdater = (updates: Partial<Invoice>) => {
   });
 };
 
-// Add this for useInvoiceTemplates
+// InvoiceUpdater type definition
 export type InvoiceUpdater = (prevState: Invoice) => Invoice;

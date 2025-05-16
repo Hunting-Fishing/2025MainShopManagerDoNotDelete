@@ -1,5 +1,40 @@
 
-// Define the inventory item interface for work orders
+export type WorkOrderStatusType = 'pending' | 'in-progress' | 'completed' | 'cancelled' | 'on-hold' | 'waiting-parts' | 'waiting-approval';
+export type WorkOrderPriorityType = 'high' | 'medium' | 'low';
+
+export interface WorkOrderTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  status: string;
+  priority?: string;
+  technician?: string;
+  notes?: string;
+}
+
+export interface TimeEntry {
+  id: string;
+  employeeName: string;
+  startTime: string;
+  endTime?: string;
+  duration: number; // in minutes
+  billable: boolean;
+  notes?: string;
+}
+
+export interface DbTimeEntry {
+  id: string;
+  work_order_id: string;
+  employee_id: string;
+  employee_name: string;
+  start_time: string;
+  end_time?: string;
+  duration: number; // in minutes
+  billable: boolean;
+  notes?: string;
+  created_at?: string;
+}
+
 export interface WorkOrderInventoryItem {
   id: string;
   name: string;
@@ -7,169 +42,50 @@ export interface WorkOrderInventoryItem {
   category: string;
   quantity: number;
   unitPrice: number;
-  itemStatus?: 'in-stock' | 'ordered' | 'special-order' | 'used-part' | 'misc';
+  itemStatus?: string;
   estimatedArrivalDate?: string;
   supplierName?: string;
   supplierOrderRef?: string;
   notes?: string;
 }
 
-// Define the time entry interface for work order time tracking
-export interface TimeEntry {
-  id: string;
-  employeeId: string;
-  employeeName: string;
-  startTime: string; // ISO string
-  endTime: string | null; // ISO string, null if ongoing
-  duration: number; // in minutes
-  notes?: string;
-  billable: boolean;
-}
-
-// Database version of TimeEntry (snake_case)
-export interface DbTimeEntry {
-  id: string;
-  employee_id: string;
-  employee_name: string;
-  start_time: string;
-  end_time: string | null;
-  duration: number;
-  notes?: string;
-  billable: boolean;
-  work_order_id: string;
-  created_at?: string;
-}
-
-// Define work order template interface
-export interface WorkOrderTemplate {
-  id: string;
-  name: string;
-  description: string;
-  createdAt: string;
-  lastUsed?: string;
-  usageCount: number;
-  customer?: string;
-  location?: string;
-  status: WorkOrderStatusType;
-  priority: WorkOrderPriorityType;
-  technician: string;
-  notes?: string;
-  inventoryItems?: WorkOrderInventoryItem[];
-}
-
-// Define a comprehensive WorkOrder interface that works for both UI and API
 export interface WorkOrder {
   id: string;
-  // Customer info
-  customerId?: string;
+  customer?: string;
   customer_id?: string;
-  customer: string; // Display name
-  
-  // Basic info
-  description: string;
+  vehicle_id?: string;
+  technician_id?: string;
+  advisor_id?: string;
   status: WorkOrderStatusType;
   priority: WorkOrderPriorityType;
-  
-  // Personnel
-  technician: string;
-  technicianId?: string;
-  technician_id?: string;
-  
-  // Dates
-  date: string;
-  createdAt?: string;
-  created_at?: string;
-  dueDate: string;
-  updatedAt?: string;
-  lastUpdatedAt?: string; // For backward compatibility
-  updated_at?: string;
-  
-  // Location
-  location: string;
-  
-  // Notes
-  notes?: string;
-  
-  // Items and entries
-  inventoryItems?: WorkOrderInventoryItem[];
-  timeEntries?: TimeEntry[];
-  totalBillableTime?: number;
-  
-  // Meta information
-  createdBy?: string;
-  lastUpdatedBy?: string;
-  
-  // Vehicle information
-  vehicleId?: string;
-  vehicle_id?: string;
-  vehicleMake?: string;
-  vehicle_make?: string;
-  vehicleModel?: string;
-  vehicle_model?: string;
-  vehicleYear?: string;
-  vehicle_year?: string;
-  
-  // Financial info
-  totalCost?: number;
-  total_cost?: number;
-  estimated_hours?: number;
-  estimatedHours?: number;
-  
-  // Service info
-  serviceType?: string;
+  description?: string;
   service_type?: string;
-  serviceCategory?: string;
-  service_category?: string;
-  
-  // Added vehicle-related fields for form consistency
-  odometer?: string;
-  licensePlate?: string;
-  vin?: string;
-  
-  // Additional vehicle fields from VIN decoding
-  driveType?: string;
-  transmission?: string;
-  fuelType?: string;
-  engine?: string;
-  bodyStyle?: string;
-  country?: string;
-  
-  // Vehicle details as an object
-  vehicleDetails?: {
-    make?: string;
-    model?: string;
-    year?: string;
-    odometer?: string;
-    licensePlate?: string;
-  };
+  created_at: string;
+  updated_at: string;
+  start_time?: string;
+  end_time?: string;
+  estimated_hours?: number;
+  total_cost?: number;
+  service_category_id?: string;
+  invoiced_at?: string;
+  invoice_id?: string;
+  created_by?: string;
 }
 
-// Define status types
-export type WorkOrderStatusType = "pending" | "in-progress" | "completed" | "cancelled";
-
-// Define priority types
-export type WorkOrderPriorityType = "low" | "medium" | "high";
-
-// Export status map for UI display
-export const statusMap: Record<WorkOrderStatusType, string> = {
-  "pending": "Pending",
-  "in-progress": "In Progress",
-  "completed": "Completed",
-  "cancelled": "Cancelled"
+// Map status values to human-readable labels
+export const statusMap = {
+  'pending': 'Pending',
+  'in-progress': 'In Progress',
+  'completed': 'Completed',
+  'cancelled': 'Cancelled',
+  'on-hold': 'On Hold',
+  'waiting-parts': 'Waiting for Parts',
+  'waiting-approval': 'Waiting for Approval'
 };
 
-// Export priority map for UI display
-export const priorityMap: Record<WorkOrderPriorityType, { label: string; classes: string; }> = {
-  "low": {
-    label: "Low",
-    classes: "bg-slate-100 text-slate-700"
-  },
-  "medium": {
-    label: "Medium",
-    classes: "bg-blue-100 text-blue-700"
-  },
-  "high": {
-    label: "High", 
-    classes: "bg-red-100 text-red-700"
-  }
+// Map priority values to human-readable labels
+export const priorityMap = {
+  'high': 'High',
+  'medium': 'Medium',
+  'low': 'Low'
 };

@@ -1,130 +1,112 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { UseFormReturn } from 'react-hook-form';
+import { WorkOrderFormFieldValues } from '@/components/work-orders/WorkOrderFormFields';
 import { InventoryItemExtended } from '@/types/inventory';
-import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase';
+import { getAllInventoryItems } from '@/services/inventoryService';
 
-export function useInventoryItemOperations(workOrderId: string) {
+export function useInventoryItemOperations(form: UseFormReturn<WorkOrderFormFieldValues>) {
   const [isLoading, setIsLoading] = useState(false);
   const [inventoryItems, setInventoryItems] = useState<InventoryItemExtended[]>([]);
-  const [selectedItems, setSelectedItems] = useState<{
-    item: InventoryItemExtended;
-    quantity: number;
-  }[]>([]);
-  
+  const [selectedItems, setSelectedItems] = useState<{ item: InventoryItemExtended, quantity: number }[]>([]);
+
   // Fetch inventory items
-  const fetchInventoryItems = useCallback(async () => {
+  const fetchInventoryItems = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('inventory_items')
-        .select('*');
-        
-      if (error) throw error;
-      
-      setInventoryItems(data as InventoryItemExtended[]);
+      const items = await getAllInventoryItems();
+      setInventoryItems(items);
     } catch (error) {
-      console.error('Error fetching inventory items:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch inventory items',
-        variant: 'destructive',
-      });
+      console.error("Error fetching inventory items:", error);
     } finally {
       setIsLoading(false);
     }
-  }, []);
-  
-  // Add item to selected items
-  const addItemToSelection = useCallback((item: InventoryItemExtended) => {
-    setSelectedItems(prev => {
-      // Check if item already exists
-      const existingItemIndex = prev.findIndex(i => i.item.id === item.id);
-      
-      if (existingItemIndex >= 0) {
-        // Update quantity if already exists
-        const newItems = [...prev];
-        newItems[existingItemIndex] = {
-          ...newItems[existingItemIndex],
-          quantity: newItems[existingItemIndex].quantity + 1
-        };
-        return newItems;
-      }
-      
-      // Add new item with quantity 1
-      return [...prev, { item, quantity: 1 }];
-    });
+  };
+
+  // Initialize from form data
+  useEffect(() => {
+    const existingItems = form.getValues('inventoryItems') || [];
+    if (existingItems.length > 0) {
+      // Convert form items to selected items structure
+      fetchInventoryItems().then(() => {
+        const itemsWithDetails = existingItems.map((item: any) => {
+          const matchingItem = inventoryItems.find(i => i.id === item.id) || {
+            id: item.id,
+            name: item.name,
+            sku: item.sku,
+            category: item.category,
+            supplier: '',
+            quantity: 0,
+            unit_price: item.unitPrice,
+            reorder_point: 0,
+            status: 'Unknown',
+            created_at: '',
+            updated_at: ''
+          };
+          
+          return {
+            item: matchingItem,
+            quantity: item.quantity || 1
+          };
+        });
+        
+        setSelectedItems(itemsWithDetails);
+      });
+    }
+  }, [form, inventoryItems.length]);
+
+  // Add item to selection
+  const addItemToSelection = (item: InventoryItemExtended) => {
+    // Check if item already exists
+    const existingItemIndex = selectedItems.findIndex(i => i.item.id === item.id);
     
-    toast({
-      title: 'Item Added',
-      description: `${item.name} added to work order`,
-    });
-  }, []);
-  
-  // Update quantity for selected item
-  const updateItemQuantity = useCallback((itemId: string, quantity: number) => {
+    if (existingItemIndex !== -1) {
+      // Update quantity if item already exists
+      const updatedItems = [...selectedItems];
+      updatedItems[existingItemIndex].quantity += 1;
+      setSelectedItems(updatedItems);
+    } else {
+      // Add new item
+      setSelectedItems([...selectedItems, { item, quantity: 1 }]);
+    }
+    
+    // Update form value
+    updateFormValue();
+  };
+
+  // Update item quantity
+  const updateItemQuantity = (itemId: string, quantity: number) => {
     if (quantity < 1) return;
     
-    setSelectedItems(prev => 
-      prev.map(selection => 
-        selection.item.id === itemId 
-          ? { ...selection, quantity } 
-          : selection
-      )
+    const updatedItems = selectedItems.map(i => 
+      i.item.id === itemId ? { ...i, quantity } : i
     );
-  }, []);
-  
-  // Remove item from selection
-  const removeItem = useCallback((itemId: string) => {
-    setSelectedItems(prev => prev.filter(selection => selection.item.id !== itemId));
     
-    toast({
-      title: 'Item Removed',
-      description: 'Item removed from work order',
-    });
-  }, []);
-  
-  // Add all selected items to work order
-  const addItemsToWorkOrder = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      // Map selected items to work order items format
-      const workOrderItems = selectedItems.map(selection => ({
-        work_order_id: workOrderId,
-        name: selection.item.name,
-        sku: selection.item.sku,
-        quantity: selection.quantity,
-        unit_price: selection.item.unit_price,
-        category: selection.item.category,
-      }));
-      
-      // Insert items into work_order_inventory_items table
-      const { error } = await supabase
-        .from('work_order_inventory_items')
-        .insert(workOrderItems);
-        
-      if (error) throw error;
-      
-      toast({
-        title: 'Success',
-        description: `${selectedItems.length} items added to work order`,
-      });
-      
-      // Clear selection after adding to work order
-      setSelectedItems([]);
-      
-    } catch (error) {
-      console.error('Error adding items to work order:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to add items to work order',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [workOrderId, selectedItems]);
-  
+    setSelectedItems(updatedItems);
+    updateFormValue(updatedItems);
+  };
+
+  // Remove item from selection
+  const removeItem = (itemId: string) => {
+    const updatedItems = selectedItems.filter(i => i.item.id !== itemId);
+    setSelectedItems(updatedItems);
+    updateFormValue(updatedItems);
+  };
+
+  // Update form value based on selected items
+  const updateFormValue = (items = selectedItems) => {
+    const formItems = items.map(i => ({
+      id: i.item.id,
+      name: i.item.name,
+      sku: i.item.sku,
+      category: i.item.category,
+      quantity: i.quantity,
+      unitPrice: i.item.unit_price
+    }));
+    
+    form.setValue('inventoryItems', formItems, { shouldDirty: true });
+  };
+
   return {
     isLoading,
     inventoryItems,
@@ -132,7 +114,6 @@ export function useInventoryItemOperations(workOrderId: string) {
     fetchInventoryItems,
     addItemToSelection,
     updateItemQuantity,
-    removeItem,
-    addItemsToWorkOrder
+    removeItem
   };
 }

@@ -1,83 +1,77 @@
 
 import React from "react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, ShoppingCart, Truck, AlertCircle, CheckCircle } from "lucide-react";
-import { formatCurrency } from "@/utils/formatters";
+import { Card, CardContent } from "@/components/ui/card";
 import { InventoryItemExtended } from "@/types/inventory";
-import { Badge } from "@/components/ui/badge";
+import { Tag } from "lucide-react";
 
-interface InventoryItemCardProps {
+export interface InventoryItemCardProps {
   item: InventoryItemExtended;
-  onAddToOrder: (item: InventoryItemExtended) => void;
+  onAddItem?: (item: InventoryItemExtended) => void;
 }
 
-export const InventoryItemCard: React.FC<InventoryItemCardProps> = ({ item, onAddToOrder }) => {
-  // Function to determine stock status and appropriate styling
-  const getStockStatus = () => {
-    if (item.quantity <= 0) {
-      return { 
-        label: "Out of Stock", 
-        icon: <AlertCircle className="h-4 w-4 text-red-500" />,
-        color: "bg-red-100 text-red-800 border-red-300" 
-      };
-    } else if (item.quantity <= item.reorder_point) {
-      return { 
-        label: "Low Stock", 
-        icon: <AlertCircle className="h-4 w-4 text-amber-500" />,
-        color: "bg-amber-100 text-amber-800 border-amber-300" 
-      };
-    } else {
-      return { 
-        label: "In Stock", 
-        icon: <CheckCircle className="h-4 w-4 text-green-500" />,
-        color: "bg-green-100 text-green-800 border-green-300" 
-      };
+export const InventoryItemCard: React.FC<InventoryItemCardProps> = ({
+  item,
+  onAddItem
+}) => {
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "in stock":
+        return "bg-green-100 text-green-800 border-green-300";
+      case "low stock":
+        return "bg-yellow-100 text-yellow-800 border-yellow-300";
+      case "out of stock":
+        return "bg-red-100 text-red-800 border-red-300";
+      case "discontinued":
+        return "bg-gray-100 text-gray-800 border-gray-300";
+      default:
+        return "bg-blue-100 text-blue-800 border-blue-300";
     }
   };
 
-  const stockStatus = getStockStatus();
+  const handleAdd = () => {
+    if (onAddItem) {
+      onAddItem(item);
+    }
+  };
 
   return (
-    <Card className="overflow-hidden transition-all hover:shadow-md">
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-start">
-          <CardTitle className="text-md font-semibold">{item.name}</CardTitle>
-          <Badge className={stockStatus.color} variant="outline">
-            <span className="flex items-center gap-1">
-              {stockStatus.icon}
-              {stockStatus.label}
+    <Card className="hover:shadow-md transition-shadow duration-200">
+      <CardContent className="flex justify-between items-center p-4">
+        <div className="flex flex-col">
+          <div className="flex items-center">
+            <h3 className="font-semibold text-base">{item.name}</h3>
+            <span className="ml-2 text-sm text-gray-500">#{item.sku}</span>
+          </div>
+          <div className="flex items-center mt-1">
+            <span className="text-sm text-gray-600">${item.unit_price.toFixed(2)}</span>
+            <span className="mx-2 text-gray-300">|</span>
+            <span className="text-sm text-gray-600">
+              <Tag className="h-3 w-3 inline mr-1" />
+              {item.category}
             </span>
-          </Badge>
-        </div>
-        <CardDescription className="flex justify-between mt-1">
-          <span>SKU: {item.sku}</span>
-          <span className="font-semibold">{formatCurrency(item.unit_price)}</span>
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="pb-2">
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          <div>
-            <span className="block text-muted-foreground">Stock</span>
-            <span>{item.quantity} units</span>
           </div>
-          <div>
-            <span className="block text-muted-foreground">Category</span>
-            <span>{item.category}</span>
+          <div className="flex items-center mt-1 space-x-2">
+            <span className={`text-xs px-2 py-0.5 rounded-full border ${getStatusColor(item.status)}`}>
+              {item.status}
+            </span>
+            <span className="text-xs">
+              {item.quantity} in stock
+            </span>
           </div>
         </div>
+        
+        {onAddItem && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleAdd}
+            className="h-8 px-2"
+          >
+            Add
+          </Button>
+        )}
       </CardContent>
-      <CardFooter className="pt-2">
-        <Button 
-          size="sm" 
-          className="w-full flex items-center gap-1"
-          disabled={item.quantity <= 0}
-          onClick={() => onAddToOrder(item)}
-        >
-          <Plus className="h-4 w-4" />
-          Add to Work Order
-        </Button>
-      </CardFooter>
     </Card>
   );
 };
