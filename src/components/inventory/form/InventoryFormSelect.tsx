@@ -1,55 +1,53 @@
 
-import React from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
+import React from 'react';
+import { Label } from '@/components/ui/label';
+
+interface SelectOption {
+  value: string;
+  label: string;
+}
 
 interface InventoryFormSelectProps {
-  id: string;
   label: string;
+  name: string;
   value: string;
-  onValueChange: (value: string) => void;
-  options: string[];
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   error?: string;
+  options: SelectOption[];
   required?: boolean;
+  placeholder?: string;
 }
 
-export function InventoryFormSelect({
-  id,
+export const InventoryFormSelect: React.FC<InventoryFormSelectProps> = ({
   label,
+  name,
   value,
-  onValueChange,
-  options,
+  onChange,
   error,
-  required,
-}: InventoryFormSelectProps) {
+  options,
+  required = false,
+  placeholder = "Select an option"
+}) => {
   return (
     <div className="space-y-2">
-      <Label htmlFor={id} className="flex items-center">
-        {label}
+      <Label htmlFor={name} className="text-sm font-medium">
+        {label} {required && <span className="text-red-500">*</span>}
       </Label>
-      
-      <Select value={value} onValueChange={onValueChange}>
-        <SelectTrigger id={id} className={error ? "border-red-500" : ""}>
-          <SelectValue placeholder={`Select ${label.toLowerCase()}`} />
-        </SelectTrigger>
-        <SelectContent>
-          {options.map((option) => (
-            <SelectItem key={option} value={option}>
-              {option}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      
-      {error && (
-        <p className="text-sm text-red-500">{error}</p>
-      )}
+      <select
+        id={name}
+        name={name}
+        value={value}
+        onChange={onChange}
+        className={`w-full border rounded p-2 ${error ? "border-red-500" : "border-gray-300"}`}
+      >
+        <option value="">{placeholder}</option>
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+      {error && <p className="text-sm text-red-500">{error}</p>}
     </div>
   );
-}
+};

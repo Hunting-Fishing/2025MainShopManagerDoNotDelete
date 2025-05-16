@@ -1,209 +1,191 @@
-import { useState, useEffect, useCallback } from "react";
-import { useInventoryCrud } from "@/hooks/inventory/useInventoryCrud";
-import { InventoryItemExtended } from "@/types/inventory";
-import { getInventoryCategories } from "@/services/inventory/categoryService";
-import { getInventorySuppliers } from "@/services/inventory/supplierService";
-import { toast } from "@/hooks/use-toast";
 
-export function useInventoryFilters() {
-  const { loadInventoryItems } = useInventoryCrud();
-  const [inventoryItems, setInventoryItems] = useState<InventoryItemExtended[]>([]);
-  const [filteredItems, setFilteredItems] = useState<InventoryItemExtended[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [dataFetchAttempted, setDataFetchAttempted] = useState(false);
+import { useState, useMemo } from 'react';
+import { InventoryItemExtended } from '@/types/inventory';
 
-  // Filters
-  const [searchQuery, setSearchQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
-  const [statusFilter, setStatusFilter] = useState<string[]>([]);
-  const [supplierFilter, setSupplierFilter] = useState("all");
-  const [locationFilter, setLocationFilter] = useState("all");
+export interface InventoryFilters {
+  search: string;
+  category: string;
+  status: string;
+  supplier: string;
+  minPrice: number | '';
+  maxPrice: number | '';
+  inStockOnly: boolean;
+  lowStockOnly: boolean;
+  sortBy: string;
+  sortOrder: 'asc' | 'desc';
+}
 
-  // Filter options
-  const [categories, setCategories] = useState<string[]>([]);
-  const [statuses, setStatuses] = useState<string[]>([]);
-  const [suppliers, setSuppliers] = useState<string[]>([]);
-  const [locations, setLocations] = useState<string[]>([]);
+export function useInventoryFilters(items: InventoryItemExtended[] = []) {
+  const [filters, setFilters] = useState<InventoryFilters>({
+    search: '',
+    category: '',
+    status: '',
+    supplier: '',
+    minPrice: '',
+    maxPrice: '',
+    inStockOnly: false,
+    lowStockOnly: false,
+    sortBy: 'name',
+    sortOrder: 'asc',
+  });
 
-  // Load inventory items
-  useEffect(() => {
-    async function fetchData() {
-      if (dataFetchAttempted) return; // Only try to fetch once to prevent infinite loops
-      
-      setDataFetchAttempted(true);
-      setLoading(true);
-      
-      try {
-        // First load the inventory items
-        const items = await loadInventoryItems();
-        setInventoryItems(items);
-        setFilteredItems(items);
-        
-        // Extract unique filter values from items
-        const uniqueCategories = Array.from(new Set(items.map(item => item.category))).filter(Boolean) as string[];
-        const uniqueStatuses = Array.from(new Set(items.map(item => item.status))).filter(Boolean) as string[];
-        const uniqueSuppliers = Array.from(new Set(items.map(item => item.supplier))).filter(Boolean) as string[];
-        const uniqueLocations = Array.from(new Set(items.map(item => item.location))).filter(Boolean) as string[];
-        
-        // Set these as fallbacks
-        setStatuses(uniqueStatuses);
-        setLocations(uniqueLocations);
-        
-        // Get additional categories and suppliers from database
-        try {
-          const dbCategories = await getInventoryCategories();
-          const dbSuppliers = await getInventorySuppliers();
-          
-          // Merge with unique values from items
-          setCategories([...new Set([...uniqueCategories, ...dbCategories])]);
-          setSuppliers([...new Set([...uniqueSuppliers, ...dbSuppliers])]);
-        } catch (err) {
-          console.error("Error fetching categories or suppliers:", err);
-          // Fall back to unique values from items
-          setCategories(uniqueCategories);
-          setSuppliers(uniqueSuppliers);
-        }
-      } catch (err) {
-        console.error("Failed to load inventory items:", err);
-        setError("Failed to load inventory items");
-        toast({
-          title: "Error",
-          description: "Could not load inventory items",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
+  const categories = useMemo(() => {
+    const categorySet = new Set<string>();
+    items.forEach(item => {
+      if (item.category) {
+        categorySet.add(item.category);
       }
-    }
-
-    fetchData();
-  }, [loadInventoryItems, dataFetchAttempted]);
-
-  // Apply filters
-  useEffect(() => {
-    let result = [...inventoryItems];
-
-    // Apply search filter
-    if (searchQuery) {
-      const lowerSearch = searchQuery.toLowerCase();
-      result = result.filter(
-        (item) =>
-          item.name.toLowerCase().includes(lowerSearch) ||
-          (item.sku && item.sku.toLowerCase().includes(lowerSearch)) ||
-          (item.partNumber && item.partNumber.toLowerCase().includes(lowerSearch)) ||
-          (item.description && item.description.toLowerCase().includes(lowerSearch)) ||
-          (item.barcode && item.barcode.toLowerCase().includes(lowerSearch))
-      );
-    }
-
-    // Apply category filter
-    if (categoryFilter.length > 0) {
-      result = result.filter((item) => categoryFilter.includes(item.category));
-    }
-
-    // Apply status filter
-    if (statusFilter.length > 0) {
-      result = result.filter((item) => statusFilter.includes(item.status));
-    }
-
-    // Apply supplier filter
-    if (supplierFilter && supplierFilter !== "all") {
-      result = result.filter((item) => item.supplier === supplierFilter);
-    }
-
-    // Apply location filter
-    if (locationFilter && locationFilter !== "all") {
-      result = result.filter((item) => item.location === locationFilter);
-    }
-
-    setFilteredItems(result);
-  }, [inventoryItems, searchQuery, categoryFilter, statusFilter, supplierFilter, locationFilter]);
-
-  // CSV export handler
-  const handleExport = useCallback(() => {
-    try {
-      // Create CSV content
-      const headers = [
-        "Part Number", "Name", "SKU", "Category", "Quantity", 
-        "Status", "Cost", "Price", "Supplier", "Location", "Description"
-      ];
-      
-      const rows = filteredItems.map(item => [
-        item.partNumber || "",
-        item.name,
-        item.sku,
-        item.category,
-        item.quantity,
-        item.status,
-        item.cost?.toFixed(2) || "",
-        item.unitPrice.toFixed(2),
-        item.supplier,
-        item.location || "",
-        item.description || ""
-      ]);
-      
-      const csvContent = [
-        headers.join(","),
-        ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
-      ].join("\n");
-      
-      // Create download link
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement("a");
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute("download", `inventory_export_${new Date().toISOString().slice(0,10)}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      toast({
-        title: "Export successful",
-        description: `Exported ${filteredItems.length} inventory items to CSV`,
-        variant: "default",
-      });
-    } catch (err) {
-      console.error("Export error:", err);
-      toast({
-        title: "Export failed",
-        description: "Could not export inventory items",
-        variant: "destructive",
-      });
-    }
-  }, [filteredItems]);
-  
-  // CSV import handler - just a stub for now
-  const handleImport = useCallback(() => {
-    // This would open a dialog to select a file and then process it
-    toast({
-      title: "Import",
-      description: "CSV import functionality will be added soon",
-      variant: "default",
     });
-  }, []);
+    return Array.from(categorySet).sort();
+  }, [items]);
+
+  const suppliers = useMemo(() => {
+    const supplierSet = new Set<string>();
+    items.forEach(item => {
+      if (item.supplier) {
+        supplierSet.add(item.supplier);
+      }
+    });
+    return Array.from(supplierSet).sort();
+  }, [items]);
+
+  const statuses = useMemo(() => {
+    const statusSet = new Set<string>();
+    items.forEach(item => {
+      if (item.status) {
+        statusSet.add(item.status);
+      }
+    });
+    return Array.from(statusSet).sort();
+  }, [items]);
+
+  const updateFilter = (key: keyof InventoryFilters, value: any) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  const resetFilters = () => {
+    setFilters({
+      search: '',
+      category: '',
+      status: '',
+      supplier: '',
+      minPrice: '',
+      maxPrice: '',
+      inStockOnly: false,
+      lowStockOnly: false,
+      sortBy: 'name',
+      sortOrder: 'asc',
+    });
+  };
+
+  const sortItems = (a: InventoryItemExtended, b: InventoryItemExtended) => {
+    const { sortBy, sortOrder } = filters;
+    
+    // Handle different sort fields
+    let valueA, valueB;
+    
+    switch (sortBy) {
+      case 'name':
+        valueA = a.name.toLowerCase();
+        valueB = b.name.toLowerCase();
+        break;
+      case 'sku':
+        valueA = a.sku.toLowerCase();
+        valueB = b.sku.toLowerCase();
+        break;
+      case 'quantity':
+        valueA = a.quantity;
+        valueB = b.quantity;
+        break;
+      case 'price':
+        valueA = a.unit_price;
+        valueB = b.unit_price;
+        break;
+      case 'category':
+        valueA = a.category?.toLowerCase() || '';
+        valueB = b.category?.toLowerCase() || '';
+        break;
+      case 'supplier':
+        valueA = a.supplier?.toLowerCase() || '';
+        valueB = b.supplier?.toLowerCase() || '';
+        break;
+      default:
+        valueA = a.name.toLowerCase();
+        valueB = b.name.toLowerCase();
+    }
+    
+    // Apply sort direction
+    if (sortOrder === 'asc') {
+      return valueA > valueB ? 1 : valueA < valueB ? -1 : 0;
+    } else {
+      return valueA < valueB ? 1 : valueA > valueB ? -1 : 0;
+    }
+  };
+
+  const filteredItems = useMemo(() => {
+    return items
+      .filter(item => {
+        // Search filter
+        if (
+          filters.search &&
+          !item.name.toLowerCase().includes(filters.search.toLowerCase()) &&
+          !item.sku.toLowerCase().includes(filters.search.toLowerCase()) &&
+          !(item.description?.toLowerCase() || '').includes(filters.search.toLowerCase())
+        ) {
+          return false;
+        }
+        
+        // Category filter
+        if (filters.category && item.category !== filters.category) {
+          return false;
+        }
+        
+        // Status filter
+        if (filters.status && item.status !== filters.status) {
+          return false;
+        }
+        
+        // Supplier filter
+        if (filters.supplier && item.supplier !== filters.supplier) {
+          return false;
+        }
+        
+        // Price range filters
+        if (filters.minPrice !== '' && item.unit_price < filters.minPrice) {
+          return false;
+        }
+        
+        if (filters.maxPrice !== '' && item.unit_price > filters.maxPrice) {
+          return false;
+        }
+        
+        // In-stock only filter
+        if (filters.inStockOnly && item.quantity <= 0) {
+          return false;
+        }
+        
+        // Low-stock only filter
+        if (filters.lowStockOnly && item.quantity > item.reorder_point) {
+          return false;
+        }
+        
+        return true;
+      })
+      .sort(sortItems);
+  }, [items, filters]);
 
   return {
-    inventoryItems,
-    loading,
-    error,
-    searchQuery,
-    setSearchQuery,
-    categoryFilter,
-    setCategoryFilter,
-    statusFilter,
-    setStatusFilter,
-    supplierFilter,
-    setSupplierFilter,
-    locationFilter,
-    setLocationFilter,
+    filters,
+    updateFilter,
+    resetFilters,
     filteredItems,
     categories,
-    statuses,
     suppliers,
-    locations,
-    handleExport,
-    handleImport
+    statuses,
+    totalItems: items.length,
+    filteredItemsCount: filteredItems.length
   };
 }

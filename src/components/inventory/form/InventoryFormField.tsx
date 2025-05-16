@@ -15,6 +15,7 @@ interface InventoryFormFieldProps {
   required?: boolean;
   min?: number;
   step?: number;
+  readOnly?: boolean;
 }
 
 export const InventoryFormField: React.FC<InventoryFormFieldProps> = ({
@@ -27,7 +28,8 @@ export const InventoryFormField: React.FC<InventoryFormFieldProps> = ({
   placeholder,
   required = false,
   min,
-  step
+  step,
+  readOnly
 }) => {
   return (
     <div className="space-y-2">
@@ -44,6 +46,7 @@ export const InventoryFormField: React.FC<InventoryFormFieldProps> = ({
         className={error ? "border-red-500" : ""}
         min={min}
         step={step}
+        readOnly={readOnly}
       />
       {error && <p className="text-sm text-red-500">{error}</p>}
     </div>

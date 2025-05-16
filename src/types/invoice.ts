@@ -1,11 +1,9 @@
 
-import { Customer } from './customer';
 import { WorkOrder } from './workOrder';
-import { InventoryItem } from './inventory';
 
 export interface InvoiceItem {
   id: string;
-  invoice_id: string;
+  invoice_id?: string; // Make this optional to allow creation of new items
   name: string;
   description?: string;
   quantity: number;
@@ -15,6 +13,9 @@ export interface InvoiceItem {
   sku?: string;
   category?: string;
 }
+
+// Define Customer as string instead of complex object for simpler usage
+export type Customer = string;
 
 export interface Invoice {
   id: string;
@@ -27,9 +28,9 @@ export interface Invoice {
   dueDate?: string;
   work_order?: WorkOrder;
   workOrderId?: string;
-  invoice_number: string;
-  invoice_date: string;
-  due_date: string;
+  invoice_number?: string;
+  invoice_date?: string;
+  due_date?: string;
   status: 'draft' | 'sent' | 'paid' | 'overdue' | 'void' | 'pending' | 'cancelled';
   notes?: string;
   terms?: string;
@@ -41,8 +42,8 @@ export interface Invoice {
   discount_rate?: number;
   discount_amount?: number;
   total: number;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
   description?: string;
   createdBy?: string;
   paymentMethod?: string;
@@ -71,7 +72,7 @@ export interface ApiInvoice {
   total: number;
   created_at: string;
   updated_at: string;
-  customer: Customer;
+  customer: string;
   work_order?: WorkOrder;
 }
 
@@ -114,3 +115,6 @@ export const createInvoiceUpdater = (updates: Partial<Invoice>) => {
     ...updates
   });
 };
+
+// Add this for useInvoiceTemplates
+export type InvoiceUpdater = (prevState: Invoice) => Invoice;

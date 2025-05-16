@@ -1,173 +1,138 @@
 
-import { useState, useEffect, useCallback } from "react";
-import { UseFormReturn } from "react-hook-form";
-import { WorkOrderFormFieldValues } from "@/components/work-orders/WorkOrderFormFields";
-import { InventoryItemExtended } from "@/types/inventory";
-import { useInventoryManager } from "@/hooks/inventory/useInventoryManager";
-import { toast } from "@/hooks/use-toast";
-import { WorkOrderInventoryItem } from "@/types/workOrder";
+import { useState, useCallback } from 'react';
+import { InventoryItemExtended } from '@/types/inventory';
+import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
 
-/**
- * Hook to manage inventory item operations in work orders
- */
-export const useInventoryItemOperations = (
-  form: UseFormReturn<WorkOrderFormFieldValues>
-) => {
-  const [showInventoryDialog, setShowInventoryDialog] = useState(false);
-  const { checkItemAvailability } = useInventoryManager();
+export function useInventoryItemOperations(workOrderId: string) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItemExtended[]>([]);
+  const [selectedItems, setSelectedItems] = useState<{
+    item: InventoryItemExtended;
+    quantity: number;
+  }[]>([]);
   
-  // Get current inventory items
-  const selectedItems = form.watch("inventoryItems") || [];
-
-  // Check inventory availability for the current items
-  useEffect(() => {
-    // Skip if no items or not mounted yet
-    if (!selectedItems.length) return;
-    
-    // Check each item's availability but only for regular inventory items
-    selectedItems.forEach(item => {
-      // Skip special order items and other non-inventory items
-      if (item.itemStatus && item.itemStatus !== "in-stock") return;
+  // Fetch inventory items
+  const fetchInventoryItems = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('inventory_items')
+        .select('*');
+        
+      if (error) throw error;
       
-      checkItemAvailability(item.id, item.quantity).then(availability => {
-        if (!availability.available) {
-          toast({
-            title: "Inventory Issue",
-            description: availability.message,
-            variant: "destructive"
-          });
-        }
+      setInventoryItems(data as InventoryItemExtended[]);
+    } catch (error) {
+      console.error('Error fetching inventory items:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch inventory items',
+        variant: 'destructive',
       });
-    });
-  }, [selectedItems, checkItemAvailability]);
-
-  // Handle adding inventory item
-  const handleAddItem = (item: InventoryItemExtended) => {
-    const currentItems = form.getValues("inventoryItems") || [];
-    
-    // Check if item already exists
-    const existingItemIndex = currentItems.findIndex(i => i.id === item.id);
-    
-    if (existingItemIndex >= 0) {
-      // Update quantity if item already exists
-      const updatedItems = [...currentItems];
-      const newQuantity = updatedItems[existingItemIndex].quantity + 1;
-      
-      // Check if new quantity is available
-      checkItemAvailability(item.id, newQuantity).then(availability => {
-        if (!availability.available) {
-          toast({
-            title: "Insufficient Inventory",
-            description: availability.message,
-            variant: "destructive"
-          });
-          if (availability.availableQuantity !== undefined) {
-            updatedItems[existingItemIndex] = {
-              ...updatedItems[existingItemIndex],
-              quantity: availability.availableQuantity
-            };
-            form.setValue("inventoryItems", updatedItems);
-          }
-          setShowInventoryDialog(false);
-          return;
-        }
-        
-        updatedItems[existingItemIndex] = {
-          ...updatedItems[existingItemIndex],
-          quantity: newQuantity,
-          itemStatus: "in-stock" // Ensure correct status
-        };
-        form.setValue("inventoryItems", updatedItems);
-        setShowInventoryDialog(false);
-      });
-    } else {
-      // Check if new item is available
-      checkItemAvailability(item.id, 1).then(availability => {
-        if (!availability.available) {
-          toast({
-            title: "Item Unavailable",
-            description: availability.message,
-            variant: "destructive"
-          });
-          setShowInventoryDialog(false);
-          return;
-        }
-        
-        // Add new item with required properties to satisfy WorkOrderInventoryItem type
-        const newItem: WorkOrderInventoryItem = {
-          id: item.id,
-          name: item.name,
-          sku: item.sku,
-          category: item.category,
-          quantity: 1,
-          unitPrice: item.unitPrice,
-          itemStatus: "in-stock" // Set default status for inventory items
-        };
-        
-        form.setValue("inventoryItems", [...currentItems, newItem]);
-        setShowInventoryDialog(false);
-      });
+    } finally {
+      setIsLoading(false);
     }
-  };
-
-  // Handle removing inventory item
-  const handleRemoveItem = (id: string) => {
-    const currentItems = form.getValues("inventoryItems") || [];
-    form.setValue("inventoryItems", currentItems.filter(item => item.id !== id));
-  };
-
-  // Handle updating item quantity
-  const handleUpdateQuantity = (id: string, quantity: number) => {
+  }, []);
+  
+  // Add item to selected items
+  const addItemToSelection = useCallback((item: InventoryItemExtended) => {
+    setSelectedItems(prev => {
+      // Check if item already exists
+      const existingItemIndex = prev.findIndex(i => i.item.id === item.id);
+      
+      if (existingItemIndex >= 0) {
+        // Update quantity if already exists
+        const newItems = [...prev];
+        newItems[existingItemIndex] = {
+          ...newItems[existingItemIndex],
+          quantity: newItems[existingItemIndex].quantity + 1
+        };
+        return newItems;
+      }
+      
+      // Add new item with quantity 1
+      return [...prev, { item, quantity: 1 }];
+    });
+    
+    toast({
+      title: 'Item Added',
+      description: `${item.name} added to work order`,
+    });
+  }, []);
+  
+  // Update quantity for selected item
+  const updateItemQuantity = useCallback((itemId: string, quantity: number) => {
     if (quantity < 1) return;
     
-    const currentItems = form.getValues("inventoryItems") || [];
-    const itemIndex = currentItems.findIndex(item => item.id === id);
+    setSelectedItems(prev => 
+      prev.map(selection => 
+        selection.item.id === itemId 
+          ? { ...selection, quantity } 
+          : selection
+      )
+    );
+  }, []);
+  
+  // Remove item from selection
+  const removeItem = useCallback((itemId: string) => {
+    setSelectedItems(prev => prev.filter(selection => selection.item.id !== itemId));
     
-    if (itemIndex === -1) return;
-    
-    const item = currentItems[itemIndex];
-    
-    // Only check availability for regular inventory items
-    if (!item.itemStatus || item.itemStatus === "in-stock") {
-      // Check if the new quantity is available in inventory
-      checkItemAvailability(id, quantity).then(availability => {
-        if (!availability.available) {
-          toast({
-            title: "Insufficient Inventory",
-            description: availability.message,
-            variant: "warning"
-          });
-          
-          // If there's some available, use that quantity
-          if (availability.availableQuantity !== undefined) {
-            quantity = availability.availableQuantity;
-          } else {
-            return; // Don't update if no inventory is available
-          }
-        }
-        
-        const updatedItems = currentItems.map(item => 
-          item.id === id ? { ...item, quantity } : item
-        );
-        
-        form.setValue("inventoryItems", updatedItems);
-      });
-    } else {
-      // For special order items and others, no need to check availability
-      const updatedItems = currentItems.map(item => 
-        item.id === id ? { ...item, quantity } : item
-      );
+    toast({
+      title: 'Item Removed',
+      description: 'Item removed from work order',
+    });
+  }, []);
+  
+  // Add all selected items to work order
+  const addItemsToWorkOrder = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      // Map selected items to work order items format
+      const workOrderItems = selectedItems.map(selection => ({
+        work_order_id: workOrderId,
+        name: selection.item.name,
+        sku: selection.item.sku,
+        quantity: selection.quantity,
+        unit_price: selection.item.unit_price,
+        category: selection.item.category,
+      }));
       
-      form.setValue("inventoryItems", updatedItems);
+      // Insert items into work_order_inventory_items table
+      const { error } = await supabase
+        .from('work_order_inventory_items')
+        .insert(workOrderItems);
+        
+      if (error) throw error;
+      
+      toast({
+        title: 'Success',
+        description: `${selectedItems.length} items added to work order`,
+      });
+      
+      // Clear selection after adding to work order
+      setSelectedItems([]);
+      
+    } catch (error) {
+      console.error('Error adding items to work order:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to add items to work order',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
     }
-  };
-
+  }, [workOrderId, selectedItems]);
+  
   return {
-    showInventoryDialog,
-    setShowInventoryDialog,
+    isLoading,
+    inventoryItems,
     selectedItems,
-    handleAddItem,
-    handleRemoveItem,
-    handleUpdateQuantity
+    fetchInventoryItems,
+    addItemToSelection,
+    updateItemQuantity,
+    removeItem,
+    addItemsToWorkOrder
   };
-};
+}

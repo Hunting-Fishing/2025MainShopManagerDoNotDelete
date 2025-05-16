@@ -1,107 +1,93 @@
 
+import React from "react";
 import { Link } from "react-router-dom";
-import { InvoiceStatusBadge } from "./InvoiceStatusBadge";
 import { Invoice } from "@/types/invoice";
-import { InvoiceListEmptyState } from "./InvoiceListEmptyState";
+import { InvoiceStatusBadge } from "./InvoiceStatusBadge";
+import { formatCurrency } from "@/utils/formatters";
+import { CheckCircle2, AlertCircle, Clock } from "lucide-react";
+import { format } from "date-fns";
 
 interface InvoiceListTableProps {
   invoices: Invoice[];
+  onSelectInvoice?: (invoice: Invoice) => void;
 }
 
-export function InvoiceListTable({ invoices }: InvoiceListTableProps) {
-  // Helper function to get customer name whether customer is a string or object
-  const getCustomerName = (customer: any) => {
-    if (typeof customer === 'string') {
-      return customer;
-    } else if (customer && typeof customer === 'object') {
-      if (customer.first_name && customer.last_name) {
-        return `${customer.first_name} ${customer.last_name}`;
-      } else if (customer.company) {
-        return customer.company;
-      }
-    }
-    return "Unknown Customer";
-  };
+export function InvoiceListTable({ 
+  invoices,
+  onSelectInvoice
+}: InvoiceListTableProps) {
+  if (invoices.length === 0) {
+    return (
+      <div className="text-center p-8">
+        <div className="text-muted-foreground">No invoices found</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-slate-200">
-      <table className="min-w-full divide-y divide-slate-200">
-        <thead className="bg-slate-50">
-          <tr>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-              Invoice #
-            </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-              Work Order
-            </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-              Customer
-            </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-              Description
-            </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-              Total
-            </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-              Status
-            </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-              Due Date
-            </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-              Created By
-            </th>
-            <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
-              Actions
-            </th>
+    <div className="overflow-x-auto">
+      <table className="w-full border-collapse">
+        <thead>
+          <tr className="bg-muted/50">
+            <th className="p-2 text-left font-medium text-muted-foreground">Invoice #</th>
+            <th className="p-2 text-left font-medium text-muted-foreground">Customer</th>
+            <th className="p-2 text-left font-medium text-muted-foreground">Date</th>
+            <th className="p-2 text-left font-medium text-muted-foreground">Due Date</th>
+            <th className="p-2 text-left font-medium text-muted-foreground">Amount</th>
+            <th className="p-2 text-left font-medium text-muted-foreground">Status</th>
+            <th className="p-2 text-left font-medium text-muted-foreground">Action</th>
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-slate-200">
-          {invoices.length === 0 ? (
-            <InvoiceListEmptyState />
-          ) : (
-            invoices.map((invoice) => (
-              <tr key={invoice.id} className="hover:bg-slate-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                  {invoice.id}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {(invoice.work_order_id || invoice.workOrderId) && (
-                    <Link to={`/work-orders/${invoice.work_order_id || invoice.workOrderId}`} className="text-esm-blue-600 hover:text-esm-blue-800">
-                      {invoice.work_order_id || invoice.workOrderId}
-                    </Link>
+        <tbody>
+          {invoices.map((invoice) => (
+            <tr 
+              key={invoice.id} 
+              className="border-b border-border hover:bg-muted/30 cursor-pointer"
+              onClick={() => onSelectInvoice && onSelectInvoice(invoice)}
+            >
+              <td className="p-2 font-medium">
+                <div className="flex items-center">
+                  {invoice.workOrderId && (
+                    <span className="mr-2 px-1.5 py-0.5 rounded text-xs bg-amber-100 text-amber-800 border border-amber-300">
+                      WO
+                    </span>
                   )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {getCustomerName(invoice.customer)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {invoice.description}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  ${invoice.total ? invoice.total.toFixed(2) : '0.00'}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <InvoiceStatusBadge status={invoice.status} />
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {invoice.due_date || invoice.dueDate}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {invoice.createdBy}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <Link to={`/invoices/${invoice.id}`} className="text-esm-blue-600 hover:text-esm-blue-800 mr-4">
+                  {invoice.id}
+                </div>
+              </td>
+              <td className="p-2">{invoice.customer}</td>
+              <td className="p-2">
+                {invoice.date ? format(new Date(invoice.date), "MMM d, yyyy") : "—"}
+              </td>
+              <td className="p-2">
+                {invoice.dueDate ? format(new Date(invoice.dueDate), "MMM d, yyyy") : "—"}
+              </td>
+              <td className="p-2 font-mono">
+                {formatCurrency(invoice.total)}
+              </td>
+              <td className="p-2">
+                <InvoiceStatusBadge status={invoice.status} />
+              </td>
+              <td className="p-2">
+                <div className="flex space-x-2">
+                  <Link 
+                    to={`/invoices/${invoice.id}`}
+                    className="text-primary hover:text-primary/80"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     View
                   </Link>
-                  <Link to={`/invoices/${invoice.id}/edit`} className="text-esm-blue-600 hover:text-esm-blue-800">
+                  <Link 
+                    to={`/invoices/${invoice.id}/edit`}
+                    className="text-muted-foreground hover:text-foreground"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     Edit
                   </Link>
-                </td>
-              </tr>
-            ))
-          )}
+                </div>
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>

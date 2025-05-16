@@ -50,3 +50,16 @@ export interface InventoryItemExtended {
   warrantyPeriod?: string;
   notes?: string;
 }
+
+// Export a simplified InventoryItem interface for use in invoices and other components
+export interface InventoryItem {
+  id: string;
+  name: string;
+  sku: string;
+  description?: string;
+  price: number;
+  category?: string;
+  supplier?: string;
+  status?: string;
+  quantity?: number;
+}
