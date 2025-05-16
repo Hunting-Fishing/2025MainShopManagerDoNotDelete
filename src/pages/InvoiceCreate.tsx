@@ -1,158 +1,278 @@
-import { useParams } from "react-router-dom";
-import { useInvoiceForm } from "@/hooks/useInvoiceForm";
+import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from 'react-router-dom';
+import { v4 as uuidv4 } from 'uuid';
 import { InvoiceCreateLayout } from "@/components/invoices/InvoiceCreateLayout";
-import { useWorkOrderSelector } from "@/hooks/invoices/useWorkOrderSelector";
-import { supabase } from "@/lib/supabase"; 
-import { useQuery } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
-import { WorkOrder } from "@/types/workOrder";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
+  getWorkOrders,
+  WorkOrder
+} from "@/services/work-orders";
+import { 
+  getInventoryItems,
+  InventoryItem
+} from "@/services/inventory";
+import { 
+  getStaffMembers,
+  StaffMember
+} from "@/services/staff";
+import { 
+  getInvoiceTemplates,
+  createInvoice,
+  updateInvoice,
+  saveInvoiceTemplate
+} from "@/services/invoices";
+import { 
+  Invoice, 
   InvoiceItem, 
-  StaffMember, 
-  InvoiceTemplate 
+  InvoiceTemplate,
+  createInvoiceUpdater
 } from "@/types/invoice";
-import { InventoryItem } from "@/types/inventory";
-import { inventoryItemToInvoiceItem } from "@/utils/inventory/inventoryCalculations";
+import { generateInvoiceId } from "@/utils/invoices";
 
 export default function InvoiceCreate() {
-  const { workOrderId } = useParams<{ workOrderId?: string }>();
-  const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
-  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   
-  const { data: workOrdersData } = useQuery({
-    queryKey: ['workOrders'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('work_orders')
-        .select('*');
-      if (error) throw error;
-      return data;
-    }
+  // State variables
+  const [invoice, setInvoice] = useState<Invoice>({
+    id: generateInvoiceId(),
+    customer: '',
+    date: new Date().toISOString().split('T')[0],
+    issue_date: new Date().toISOString().split('T')[0],
+    due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    status: 'draft',
+    items: [],
+    notes: '',
+    terms: '',
+    tax_rate: 0,
+    tax: 0,
+    subtotal: 0,
+    total: 0,
+    created_by: '',
+    assignedStaff: [],
+    template_id: null
   });
-
-  const { data: inventoryData } = useQuery({
-    queryKey: ['inventoryItems'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('inventory_items')
-        .select('*');
-      if (error) throw error;
-      return data;
-    }
+  const [items, setItems] = useState<InvoiceItem[]>([]);
+  const [subtotal, setSubtotal] = useState(0);
+  const [taxRate, setTaxRate] = useState(0);
+  const [tax, setTax] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [showWorkOrderDialog, setShowWorkOrderDialog] = useState(false);
+  const [showInventoryDialog, setShowInventoryDialog] = useState(false);
+  const [showStaffDialog, setShowStaffDialog] = useState(false);
+  
+  // Data fetching queries
+  const { data: workOrders, isLoading: isLoadingWorkOrders } = useQuery<WorkOrder[]>('workOrders', getWorkOrders);
+  const { data: inventoryItems, isLoading: isLoadingInventoryItems } = useQuery<InventoryItem[]>('inventoryItems', getInventoryItems);
+  const { data: staffMembers, isLoading: isLoadingStaffMembers } = useQuery<StaffMember[]>('staffMembers', getStaffMembers);
+  const { data: templates, isLoading: isLoadingTemplates } = useQuery<InvoiceTemplate[]>('invoiceTemplates', getInvoiceTemplates);
+  
+  // Mutations
+  const createInvoiceMutation = useMutation(createInvoice, {
+    onSuccess: () => {
+      toast({
+        title: "Invoice created",
+        description: "Your invoice has been successfully created.",
+      });
+      queryClient.invalidateQueries('invoices');
+      navigate('/invoices');
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create invoice.",
+        variant: "destructive",
+      });
+    },
   });
-
-  const { data: staffData } = useQuery({
-    queryKey: ['staffMembers'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name, job_title');
-      if (error) throw error;
-      return data;
-    }
+  
+  const updateInvoiceMutation = useMutation(updateInvoice, {
+    onSuccess: () => {
+      toast({
+        title: "Invoice updated",
+        description: "Your invoice has been successfully updated.",
+      });
+      queryClient.invalidateQueries('invoices');
+      navigate('/invoices');
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update invoice.",
+        variant: "destructive",
+      });
+    },
   });
-
+  
+  const saveTemplateMutation = useMutation(saveInvoiceTemplate, {
+    onSuccess: () => {
+      toast({
+        title: "Template saved",
+        description: "Your invoice template has been successfully saved.",
+      });
+      queryClient.invalidateQueries('invoiceTemplates');
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save invoice template.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Recalculate totals whenever items or tax rate changes
+  const recalculateTotals = useCallback(() => {
+    let newSubtotal = 0;
+    items.forEach(item => {
+      newSubtotal += item.price * item.quantity;
+    });
+    setSubtotal(newSubtotal);
+    
+    const newTax = newSubtotal * (taxRate / 100);
+    setTax(newTax);
+    
+    setTotal(newSubtotal + newTax);
+  }, [items, taxRate]);
+  
   useEffect(() => {
-    if (workOrdersData) {
-      const formattedWorkOrders = workOrdersData.map((wo: any) => ({
-        id: wo.id,
-        customer: wo.customer || "",
-        description: wo.description || "No description",
-        status: wo.status || "",
-        date: wo.created_at || "",
-        dueDate: wo.due_date || "",
-        priority: wo.priority || "medium",
-        technician: wo.technician || "Unassigned",
-        location: wo.location || "",
-        notes: wo.notes,
-        customer_id: wo.customer_id,
-        vehicle_id: wo.vehicle_id,
-        created_at: wo.created_at,
-        updated_at: wo.updated_at,
-        technician_id: wo.technician_id,
-        total_cost: wo.total_cost,
-        estimated_hours: wo.estimated_hours,
-      }));
-      setWorkOrders(formattedWorkOrders);
-    }
-    if (inventoryData) {
-      const formattedInventory = inventoryData.map((item: any) => ({
-        id: item.id,
-        name: item.name,
-        sku: item.sku || "",
-        description: item.description || "",
-        price: Number(item.unit_price) || 0,
-        unit_price: Number(item.unit_price) || 0,
-        category: item.category || "",
-        supplier: item.supplier || "",
-        status: item.status || "",
-        quantity: Number(item.quantity) || 0
-      }));
-      setInventoryItems(formattedInventory);
-    }
-    if (staffData) {
-      const formattedStaff = staffData.map((staff: any) => ({
-        id: staff.id || "",
-        name: getStaffName(staff)
-      }));
-      setStaffMembers(formattedStaff);
-    }
-  }, [workOrdersData, inventoryData, staffData]);
-
-  const {
-    invoice,
-    subtotal,
-    tax,
-    taxRate,
-    total,
-    showWorkOrderDialog,
-    showInventoryDialog,
-    showStaffDialog,
-    templates,
-    setInvoice,
-    setShowWorkOrderDialog,
-    setShowInventoryDialog,
-    setShowStaffDialog,
-    handleSelectWorkOrder,
-    handleAddInventoryItem,
-    handleAddStaffMember,
-    handleRemoveStaffMember,
-    handleRemoveItem,
-    handleUpdateItemQuantity,
-    handleUpdateItemDescription,
-    handleUpdateItemPrice,
-    handleAddLaborItem,
-    handleSaveInvoice,
-    handleApplyTemplate,
-    handleSaveTemplate,
-    items
-  } = useInvoiceForm(workOrderId);
-
-  const workOrderSelector = useWorkOrderSelector({
-    invoice,
-    setInvoice,
-    handleSelectWorkOrder,
-  });
-
-  const getStaffName = (staff: any) => {
-    if (staff && staff.first_name && staff.last_name) {
-      return `${staff.first_name} ${staff.last_name}`;
-    }
-    return "Unknown Staff";
+    recalculateTotals();
+  }, [recalculateTotals]);
+  
+  // Handlers
+  const handleSelectWorkOrder = (workOrder: WorkOrder) => {
+    setInvoice(createInvoiceUpdater({
+      customer: workOrder.customer,
+      notes: workOrder.description,
+    }));
+    setShowWorkOrderDialog(false);
   };
 
-  // Create proper adapter function with correct typing
-  const handleInventoryItemSelected = (inventoryItem: InventoryItem) => {
-    const invoiceItem = inventoryItemToInvoiceItem(inventoryItem as any);
-    handleAddInventoryItem(invoiceItem as any);
-  };
+  // Inside the InvoiceCreate component
+  // Modify the handleAddInventoryItem function:
 
-  // Create a wrapper that adapts the type from InvoiceTemplate to void
-  const handleSaveTemplateAdapter = async (
-    templateData: Omit<InvoiceTemplate, "id" | "created_at" | "usage_count">
-  ): Promise<void> => {
-    await handleSaveTemplate(templateData);
+  const handleAddInventoryItem = (inventoryItem: InventoryItem) => {
+    // Convert inventory item to invoice item
+    const invoiceItem: InvoiceItem = {
+      id: inventoryItem.id,
+      name: inventoryItem.name,
+      description: inventoryItem.description || inventoryItem.name,
+      sku: inventoryItem.sku || '',
+      quantity: 1,
+      price: inventoryItem.price || 0,
+      total: inventoryItem.price || 0,
+      category: inventoryItem.category || ''
+    };
+    
+    setItems((prevItems) => [...prevItems, invoiceItem]);
+  };
+  
+  const handleAddLaborItem = () => {
+    const newLaborItem: InvoiceItem = {
+      id: uuidv4(),
+      name: 'Labor',
+      description: 'Hourly labor',
+      sku: 'LABOR',
+      quantity: 1,
+      price: 50,
+      total: 50,
+      category: 'Services'
+    };
+    setItems(prevItems => [...prevItems, newLaborItem]);
+  };
+  
+  const handleRemoveItem = (id: string) => {
+    setItems(prevItems => prevItems.filter(item => item.id !== id));
+  };
+  
+  const handleUpdateItemQuantity = (id: string, quantity: number) => {
+    setItems(prevItems =>
+      prevItems.map(item =>
+        item.id === id ? { ...item, quantity, total: item.price * quantity } : item
+      )
+    );
+  };
+  
+  const handleUpdateItemDescription = (id: string, description: string) => {
+    setItems(prevItems =>
+      prevItems.map(item =>
+        item.id === id ? { ...item, description } : item
+      )
+    );
+  };
+  
+  const handleUpdateItemPrice = (id: string, price: number) => {
+    setItems(prevItems =>
+      prevItems.map(item =>
+        item.id === id ? { ...item, price, total: price * item.quantity } : item
+      )
+    );
+  };
+  
+  const handleAddStaffMember = (staff: StaffMember) => {
+    setInvoice(prevInvoice => ({
+      ...prevInvoice,
+      assignedStaff: [...(prevInvoice.assignedStaff || []), staff]
+    }));
+    setShowStaffDialog(false);
+  };
+  
+  const handleRemoveStaffMember = (staffId: string) => {
+    setInvoice(prevInvoice => ({
+      ...prevInvoice,
+      assignedStaff: (prevInvoice.assignedStaff || []).filter(staff => staff.id !== staffId)
+    }));
+  };
+  
+  const handleSaveInvoice = async (status: "draft" | "pending" | "paid" | "overdue" | "cancelled") => {
+    const invoiceData = {
+      ...invoice,
+      status: status,
+      items: items,
+      subtotal: subtotal,
+      tax_rate: taxRate,
+      tax: tax,
+      total: total
+    };
+    
+    try {
+      if (invoice.id) {
+        await updateInvoiceMutation.mutateAsync(invoiceData);
+      } else {
+        await createInvoiceMutation.mutateAsync(invoiceData);
+      }
+    } catch (error) {
+      console.error("Error saving invoice:", error);
+    }
+  };
+  
+  const handleApplyTemplate = (template: InvoiceTemplate) => {
+    setInvoice(createInvoiceUpdater({
+      template_id: template.id,
+      notes: template.notes,
+      terms: template.terms
+    }));
+    setTaxRate(template.tax_rate);
+    setItems(template.items);
+  };
+  
+  const handleSaveTemplate = async (template: Omit<InvoiceTemplate, "id" | "created_at" | "usage_count">) => {
+    try {
+      await saveTemplateMutation.mutateAsync({
+        ...template,
+        items: items,
+        tax_rate: taxRate
+      });
+    } catch (error) {
+      console.error("Error saving template:", error);
+    }
+  };
+  
+  const onTaxRateChange = (value: number) => {
+    setTaxRate(value);
   };
 
   return (
@@ -166,16 +286,16 @@ export default function InvoiceCreate() {
       showWorkOrderDialog={showWorkOrderDialog}
       showInventoryDialog={showInventoryDialog}
       showStaffDialog={showStaffDialog}
-      workOrders={workOrders}
-      inventoryItems={inventoryItems}
-      staffMembers={staffMembers}
-      templates={templates}
+      workOrders={workOrders || []}
+      inventoryItems={inventoryItems || []}
+      staffMembers={staffMembers || []}
+      templates={templates || []}
       setInvoice={setInvoice}
       setShowWorkOrderDialog={setShowWorkOrderDialog}
       setShowInventoryDialog={setShowInventoryDialog}
       setShowStaffDialog={setShowStaffDialog}
-      handleSelectWorkOrder={workOrderSelector.handleSelectWorkOrderWithTime}
-      handleAddInventoryItem={handleInventoryItemSelected}
+      handleSelectWorkOrder={handleSelectWorkOrder}
+      handleAddInventoryItem={handleAddInventoryItem}
       handleAddStaffMember={handleAddStaffMember}
       handleRemoveStaffMember={handleRemoveStaffMember}
       handleRemoveItem={handleRemoveItem}
@@ -185,8 +305,8 @@ export default function InvoiceCreate() {
       handleAddLaborItem={handleAddLaborItem}
       handleSaveInvoice={handleSaveInvoice}
       handleApplyTemplate={handleApplyTemplate}
-      handleSaveTemplate={handleSaveTemplateAdapter}
-      onTaxRateChange={(rate) => console.log("Tax rate changed:", rate)}
+      handleSaveTemplate={handleSaveTemplate}
+      onTaxRateChange={onTaxRateChange}
     />
   );
 }

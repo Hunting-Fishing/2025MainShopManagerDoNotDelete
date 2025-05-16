@@ -10,8 +10,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { InventoryItemExtended } from '@/types/inventory';
-import { AutoReorderSettings } from '@/hooks/inventory/useInventoryManager';
+import { InventoryItemExtended, AutoReorderSettings } from '@/types/inventory';
 
 interface AutoReorderDialogProps {
   open: boolean;

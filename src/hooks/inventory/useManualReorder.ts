@@ -1,42 +1,52 @@
 
 import { useState } from 'react';
-import { toast } from '@/hooks/use-toast';
-import { getInventoryItemById } from '@/utils/inventory/inventoryUtils';
-import { useNotifications } from '@/context/notifications';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useManualReorder = () => {
   const [isReordering, setIsReordering] = useState(false);
-  const { addNotification } = useNotifications();
 
   const reorderItem = async (itemId: string, quantity: number) => {
     try {
       setIsReordering(true);
       
       // Get the item details
-      const item = await getInventoryItemById(itemId);
+      const { data: item, error: itemError } = await supabase
+        .from('inventory_items')
+        .select('*')
+        .eq('id', itemId)
+        .single();
+      
+      if (itemError) {
+        throw itemError;
+      }
       
       if (!item) {
         toast({
           title: "Error",
           description: "Item not found",
-          variant: "destructive",
         });
-        return;
+        return false;
       }
       
-      // In a real app, this would connect to a purchasing API
-      // For now, we'll just show a toast and notification
+      // Create a new order
+      const { data, error } = await supabase
+        .from('inventory_orders')
+        .insert({
+          item_id: itemId,
+          supplier: item.supplier,
+          quantity_ordered: quantity,
+          expected_arrival: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days from now
+          status: 'ordered'
+        });
+      
+      if (error) {
+        throw error;
+      }
       
       toast({
         title: "Order Placed",
-        description: `Manually ordered ${quantity} units of ${item.name}`,
-      });
-      
-      addNotification({
-        title: "Order Placed",
-        message: `Manually ordered ${quantity} units of ${item.name}`,
-        type: "success",
-        link: "/inventory"
+        description: `Ordered ${quantity} units of ${item.name}`,
       });
       
       return true;
@@ -45,7 +55,6 @@ export const useManualReorder = () => {
       toast({
         title: "Error",
         description: "Failed to place order",
-        variant: "destructive",
       });
       return false;
     } finally {

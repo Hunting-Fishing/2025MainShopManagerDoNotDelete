@@ -50,8 +50,8 @@ export const standardizeInventoryItem = (item: any): InventoryItemExtended => {
     description: item.description || '',
     quantity: Number(item.quantity) || 0,
     reorder_point: Number(item.reorder_point) || 10,
-    unit_price: Number(item.unit_price) || Number(item.price) || 0,
-    price: Number(item.unit_price) || Number(item.price) || 0,
+    unit_price: Number(item.unit_price) || 0,
+    price: Number(item.unit_price) || 0, // Ensure price property exists
     supplier: item.supplier || '',
     location: item.location || '',
     status: item.status || 'In Stock',

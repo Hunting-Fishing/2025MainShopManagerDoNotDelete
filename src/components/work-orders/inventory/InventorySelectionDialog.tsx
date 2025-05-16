@@ -14,6 +14,7 @@ import { getStatusColorClass } from "@/utils/inventory/inventoryCalculations";
 import { Loader2, Package, Plus, Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { standardizeInventoryItem } from "@/utils/inventory/adapters";
 
 interface InventorySelectionDialogProps {
   open: boolean;
@@ -38,7 +39,7 @@ export const InventorySelectionDialog: React.FC<InventorySelectionDialogProps> =
         .order('name');
         
       if (error) throw error;
-      return data || [];
+      return (data || []).map(item => standardizeInventoryItem(item));
     },
     enabled: open // Only fetch when dialog is open
   });
@@ -103,7 +104,7 @@ export const InventorySelectionDialog: React.FC<InventorySelectionDialogProps> =
                   <Button 
                     variant="ghost" 
                     size="sm"
-                    onClick={() => onAddItem(item as InventoryItemExtended)}
+                    onClick={() => onAddItem(item)}
                   >
                     <Plus className="h-4 w-4" />
                   </Button>

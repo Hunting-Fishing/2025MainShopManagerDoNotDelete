@@ -32,13 +32,21 @@ export const formatDate = (
 };
 
 /**
+ * Clean phone number by removing non-numeric characters
+ */
+export const cleanPhoneNumber = (phoneNumber: string): string => {
+  if (!phoneNumber) return '';
+  return phoneNumber.replace(/\D/g, '');
+};
+
+/**
  * Format a phone number in standard US format
  */
 export const formatPhoneNumber = (phoneNumber: string): string => {
   if (!phoneNumber) return '';
   
   // Remove all non-numeric characters
-  const cleaned = phoneNumber.replace(/\D/g, '');
+  const cleaned = cleanPhoneNumber(phoneNumber);
   
   // Format the number based on length
   if (cleaned.length === 10) {
