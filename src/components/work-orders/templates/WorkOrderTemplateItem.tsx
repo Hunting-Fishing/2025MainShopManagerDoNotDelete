@@ -1,4 +1,3 @@
-
 import { Calendar, Clock, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,14 +7,23 @@ import { format } from "date-fns";
 interface WorkOrderTemplateItemProps {
   template: WorkOrderTemplate;
   onSelect: () => void;
+  onDelete: () => void;
 }
 
-export function WorkOrderTemplateItem({ template, onSelect }: WorkOrderTemplateItemProps) {
-  const lastUsedFormatted = template.lastUsed 
-    ? format(new Date(template.lastUsed), "MMM d, yyyy") 
-    : "Never";
-  
-  const itemCount = template.inventoryItems?.length || 0;
+export const WorkOrderTemplateItem: React.FC<WorkOrderTemplateItemProps> = ({
+  template,
+  onSelect,
+  onDelete
+}) => {
+  // Format the template last used date if it exists
+  const formattedLastUsed = template.lastUsed 
+    ? new Date(template.lastUsed).toLocaleDateString() 
+    : 'Never used';
+
+  // Count inventory items if they exist
+  const itemCount = template.inventoryItems && Array.isArray(template.inventoryItems) 
+    ? template.inventoryItems.length 
+    : 0;
 
   return (
     <Card className="hover:bg-gray-50">
@@ -32,7 +40,7 @@ export function WorkOrderTemplateItem({ template, onSelect }: WorkOrderTemplateI
               </div>
               <div className="flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
-                <span>Last used: {lastUsedFormatted}</span>
+                <span>Last used: {formattedLastUsed}</span>
               </div>
               <div className="flex items-center gap-1">
                 <Package className="h-3 w-3" />

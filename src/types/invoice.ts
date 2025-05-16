@@ -1,120 +1,73 @@
 
-import { WorkOrder } from './workOrder';
+export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'void' | 'pending' | 'cancelled';
 
 export interface InvoiceItem {
   id: string;
-  invoice_id?: string; // Make this optional to allow creation of new items
+  invoice_id?: string;
   name: string;
   description?: string;
   quantity: number;
   price: number;
-  total: number;
   hours?: boolean;
+  total: number;
   sku?: string;
   category?: string;
 }
 
-// Define Customer as a string type for simpler usage
-export type Customer = string;
-
 export interface Invoice {
   id: string;
-  shop_id: string;
-  customer: Customer;
+  shop_id?: string;
+  customer: string;
   customer_id?: string;
   customerEmail?: string;
   customerAddress?: string;
-  date?: string;
-  dueDate?: string;
-  work_order?: WorkOrder;
-  workOrderId?: string;
-  invoice_number?: string;
-  invoice_date?: string;
-  due_date?: string;
-  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'void' | 'pending' | 'cancelled';
-  notes?: string;
-  terms?: string;
-  items: InvoiceItem[];
-  subtotal: number;
-  tax_rate?: number;
-  tax_amount?: number;
-  tax?: number;
-  discount_rate?: number;
-  discount_amount?: number;
-  total: number;
-  created_at?: string;
-  updated_at?: string;
   description?: string;
-  createdBy?: string;
-  paymentMethod?: string;
-  assignedStaff?: StaffMember[];
-  lastUpdatedBy?: string;
-  lastUpdatedAt?: string;
-}
-
-export interface ApiInvoice {
-  id: string;
-  shop_id: string;
-  customer_id: string;
-  work_order_id?: string;
-  invoice_number: string;
-  invoice_date: string;
-  due_date: string;
-  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'void' | 'pending' | 'cancelled';
   notes?: string;
-  terms?: string;
-  items: InvoiceItem[];
-  subtotal: number;
-  tax_rate?: number;
-  tax_amount?: number;
-  discount_rate?: number;
-  discount_amount?: number;
-  total: number;
-  created_at: string;
-  updated_at: string;
-  customer: string;
-  work_order?: WorkOrder;
-}
-
-export interface StaffMember {
-  id: string;
-  name: string;
-  role?: string;
+  date: string;
+  due_date: string;
+  status: InvoiceStatus;
+  subtotal?: number;
+  tax?: number;
+  total?: number;
+  workOrderId?: string;
+  work_order_id?: string;
+  created_at?: string;
+  last_updated_at?: string;
+  created_by?: string;
+  payment_method?: string;
+  last_updated_by?: string;
+  items?: InvoiceItem[];
+  assignedStaff?: any[];
 }
 
 export interface InvoiceTemplate {
   id: string;
   name: string;
-  description: string;
-  createdAt: string;
-  lastUsed: string | null;
-  usageCount: number;
-  defaultTaxRate: number;
-  defaultDueDateDays: number;
-  defaultNotes: string;
-  defaultItems: InvoiceItem[];
+  description?: string;
+  default_tax_rate?: number;
+  default_due_date_days?: number;
+  default_notes?: string;
+  created_at?: string;
+  last_used?: string;
+  usage_count?: number;
+  items?: InvoiceItem[];
 }
 
-export interface InvoiceFiltersProps {
-  filters: {
-    status: string;
-    customer: string;
-    dateRange: {
-      from: Date | null;
-      to: Date | null;
-    };
-  };
-  setFilters: (filters: any) => void;
-  resetFilters: () => void;
+// Add the InventoryItem type that was previously missing
+export interface InventoryItem {
+  id: string;
+  name: string;
+  sku: string;
+  description?: string;
+  price: number;
+  category?: string;
+  supplier?: string;
+  status?: string;
+  quantity?: number;
 }
 
-// Helper function to create an invoice updater
-export const createInvoiceUpdater = (updates: Partial<Invoice>) => {
-  return (prev: Invoice) => ({
-    ...prev,
-    ...updates
-  });
-};
-
-// InvoiceUpdater type definition
-export type InvoiceUpdater = (prevState: Invoice) => Invoice;
+// Add InvoiceUpdater interface
+export interface InvoiceUpdater {
+  id: string;
+  [key: string]: any;
+}

@@ -1,8 +1,9 @@
 
 import React from 'react';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-interface SelectOption {
+export interface SelectOption {
   value: string;
   label: string;
 }

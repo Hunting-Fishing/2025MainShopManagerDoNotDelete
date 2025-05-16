@@ -1,4 +1,3 @@
-
 export type WorkOrderStatusType = 'pending' | 'in-progress' | 'completed' | 'cancelled' | 'on-hold' | 'waiting-parts' | 'waiting-approval';
 export type WorkOrderPriorityType = 'high' | 'medium' | 'low';
 
@@ -18,6 +17,7 @@ export interface WorkOrderTemplate {
 
 export interface TimeEntry {
   id: string;
+  employeeId: string; // Add employeeId field
   employeeName: string;
   startTime: string;
   endTime?: string;
@@ -91,6 +91,13 @@ export interface WorkOrder {
   vehicleModel?: string;
   vehicleYear?: string;
   serviceCategory?: string;
+  odometer?: string;
+  licensePlate?: string;
+  vin?: string;
+  vehicleDetails?: {
+    year?: string;
+    [key: string]: any;
+  };
 }
 
 // Map status values to human-readable labels

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { TimeEntry } from "@/types/workOrder";
@@ -88,7 +87,7 @@ export function TimeTrackingSection({
       employeeId,
       employeeName,
       startTime: new Date().toISOString(),
-      endTime: null,
+      endTime: undefined,
       duration: 0,
       billable: true
     };
