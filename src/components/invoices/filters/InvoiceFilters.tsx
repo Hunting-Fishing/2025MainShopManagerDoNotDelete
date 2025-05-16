@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { InvoiceFilters, InvoiceFiltersProps } from '@/types/invoice';
+import { InvoiceFilters as InvoiceFiltersType, InvoiceFiltersProps } from '@/types/invoice';
 import { DatePickerWithRange } from '@/components/ui/date-range-picker';
 import { Checkbox } from '@/components/ui/checkbox';
 

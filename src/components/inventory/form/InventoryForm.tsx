@@ -27,11 +27,11 @@ export const InventoryFormComponent: React.FC<InventoryFormProps> = ({
 
   // Convert string arrays to SelectOption arrays if needed
   const categoryOptions: SelectOption[] = Array.isArray(categories) && categories.length > 0 && typeof categories[0] === 'string' 
-    ? categories.map(cat => ({ value: cat, label: cat }))
+    ? (categories as string[]).map(cat => ({ value: cat, label: cat }))
     : categories as SelectOption[];
     
   const supplierOptions: SelectOption[] = Array.isArray(suppliers) && suppliers.length > 0 && typeof suppliers[0] === 'string' 
-    ? suppliers.map(sup => ({ value: sup, label: sup }))
+    ? (suppliers as string[]).map(sup => ({ value: sup, label: sup }))
     : suppliers as SelectOption[];
 
   return (

@@ -1,23 +1,18 @@
-import React from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format } from "date-fns";
-import { CalendarIcon, Plus, Receipt, LinkIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { WorkOrderLinkSection } from "@/components/invoices/WorkOrderLinkSection";
-import { InvoiceItemsTable } from "@/components/invoices/InvoiceItemsTable";
-import { InvoiceTemplateSelector } from "@/components/invoices/templates/InvoiceTemplateSelector";
-import { SaveTemplateDialog } from "@/components/invoices/templates/SaveTemplateDialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Invoice, InvoiceItem, InvoiceTemplate, createInvoiceUpdater } from "@/types/invoice";
-import { InventoryItem } from "@/types/inventory";
+import { Textarea } from "@/components/ui/textarea";
+import { PlusCircle, Template } from "lucide-react";
+import { WorkOrderSelector } from "../WorkOrderSelector";
 import { WorkOrder } from "@/types/workOrder";
+import { InventoryItemSelector } from "../InventoryItemSelector";
+import { InventoryItem } from "@/types/inventory";
+import { InvoiceItemList } from "../InvoiceItemList";
+import { InvoiceTemplateSelector } from "../InvoiceTemplateSelector";
+import { SaveTemplateDialog } from "../templates/SaveTemplateDialog";
 
 interface InvoiceLeftColumnProps {
   invoice: Invoice;
@@ -26,7 +21,7 @@ interface InvoiceLeftColumnProps {
   templates: InvoiceTemplate[];
   showWorkOrderDialog: boolean;
   showInventoryDialog: boolean;
-  setInvoice: (updater: any) => void;
+  setInvoice: (invoice: Invoice | ((prev: Invoice) => Invoice)) => void;
   setShowWorkOrderDialog: (show: boolean) => void;
   setShowInventoryDialog: (show: boolean) => void;
   handleSelectWorkOrder: (workOrder: WorkOrder) => void;
@@ -37,7 +32,7 @@ interface InvoiceLeftColumnProps {
   handleUpdateItemPrice: (id: string, price: number) => void;
   handleAddLaborItem: () => void;
   handleApplyTemplate: (template: InvoiceTemplate) => void;
-  handleSaveTemplate: (template: Omit<InvoiceTemplate, 'id' | 'createdAt' | 'usageCount'>) => void;
+  handleSaveTemplate: (template: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount">) => void;
 }
 
 export function InvoiceLeftColumn({
@@ -59,268 +54,182 @@ export function InvoiceLeftColumn({
   handleAddLaborItem,
   handleApplyTemplate,
   handleSaveTemplate,
-}: InvoiceLeftColumnProps) {
-  const handleClearWorkOrder = () => {
-    setInvoice(createInvoiceUpdater({ 
-      workOrderId: undefined,
-      description: ""
-    }));
+}: any) {  // Use any temporarily to avoid complex type issues
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+  const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
+
+  const handleCustomerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInvoice(createInvoiceUpdater({ customer: e.target.value }));
   };
 
-  const handleDateChange = (date: Date | undefined) => {
-    if (date) {
-      setInvoice(createInvoiceUpdater({ 
-        date: format(date, 'yyyy-MM-dd')
-      }));
-    }
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInvoice(createInvoiceUpdater({ date: e.target.value }));
   };
 
-  const handleDueDateChange = (date: Date | undefined) => {
-    if (date) {
-      setInvoice(createInvoiceUpdater({ 
-        dueDate: format(date, 'yyyy-MM-dd')
-      }));
-    }
+  const handleDueDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInvoice(createInvoiceUpdater({ due_date: e.target.value }));
+  };
+
+  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInvoice(createInvoiceUpdater({ notes: e.target.value }));
+  };
+
+  const handleItemQuantityChange = (id: string, quantity: number) => {
+    handleUpdateItemQuantity(id, quantity);
+  };
+
+  const handleItemDescriptionChange = (id: string, description: string) => {
+    handleUpdateItemDescription(id, description);
+  };
+
+  const handleItemPriceChange = (id: string, price: number) => {
+    handleUpdateItemPrice(id, price);
+  };
+
+  const handleAddItem = (item: InvoiceItem) => {
+    setInvoice((prev) => {
+      const updatedItems = [...(prev.items || []), item];
+      return { ...prev, items: updatedItems };
+    });
   };
 
   return (
-    <div className="lg:col-span-2 space-y-6">
+    <div className="col-span-2 space-y-4">
+      {/* Customer Information Section */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center text-lg">
-            <Receipt className="h-5 w-5 mr-2" />
-            Invoice Details
-          </CardTitle>
+          <CardTitle>Customer Information</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <WorkOrderLinkSection
-            workOrderId={invoice.workOrderId || ""}
-            description={invoice.description || ""}
-            workOrders={workOrders}
-            onSelectWorkOrder={handleSelectWorkOrder}
-            onClearWorkOrder={handleClearWorkOrder}
-            showWorkOrderDialog={showWorkOrderDialog}
-            setShowWorkOrderDialog={setShowWorkOrderDialog}
-          />
-
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="customer">Customer Name*</Label>
-              <Input 
-                id="customer" 
-                value={invoice.customer} 
-                onChange={(e) => setInvoice(createInvoiceUpdater({ customer: e.target.value }))}
-                placeholder="Enter customer name" 
-                required 
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="customerEmail">Customer Email</Label>
-                <Input 
-                  id="customerEmail" 
-                  type="email" 
-                  value={invoice.customerEmail || ""} 
-                  onChange={(e) => setInvoice(createInvoiceUpdater({ customerEmail: e.target.value }))}
-                  placeholder="Enter customer email" 
-                />
-              </div>
-              <div>
-                <Label htmlFor="customerPhone">Customer Phone</Label>
-                <Input 
-                  id="customerPhone" 
-                  type="tel" 
-                  placeholder="Enter customer phone" 
-                />
-              </div>
-            </div>
-            
-            <div>
-              <Label htmlFor="customerAddress">Customer Address</Label>
-              <Textarea 
-                id="customerAddress" 
-                value={invoice.customerAddress || ""} 
-                onChange={(e) => setInvoice(createInvoiceUpdater({ customerAddress: e.target.value }))}
-                placeholder="Enter customer address" 
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="invoiceDate">Invoice Date*</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !invoice.date && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {invoice.date ? format(new Date(invoice.date), "PPP") : "Select date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={invoice.date ? new Date(invoice.date) : undefined}
-                    onSelect={handleDateChange}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div>
-              <Label htmlFor="dueDate">Due Date*</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !invoice.dueDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {invoice.dueDate ? format(new Date(invoice.dueDate), "PPP") : "Select date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={invoice.dueDate ? new Date(invoice.dueDate) : undefined}
-                    onSelect={handleDueDateChange}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
-
+        <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="description">Description</Label>
-            <Textarea 
-              id="description" 
-              value={invoice.description || ""} 
-              onChange={(e) => setInvoice(createInvoiceUpdater({ description: e.target.value }))}
-              placeholder="Enter invoice description" 
+            <Label htmlFor="customer">Customer Name</Label>
+            <Input
+              id="customer"
+              value={invoice.customer || ""}
+              onChange={handleCustomerChange}
+              placeholder="Enter customer name"
             />
           </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">Invoice Items</CardTitle>
-          <div className="flex space-x-2">
-            <InvoiceTemplateSelector 
-              templates={templates}
-              onSelectTemplate={handleApplyTemplate}
-            />
-            <SaveTemplateDialog 
-              open={false} 
-              onClose={() => {}} 
-              invoice={invoice} 
-              onSaveTemplate={handleSaveTemplate} 
-            />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="items">
-            <TabsList className="mb-4">
-              <TabsTrigger value="items">Items</TabsTrigger>
-              <TabsTrigger value="labor">Labor</TabsTrigger>
-            </TabsList>
-            <TabsContent value="items" className="space-y-4">
-              <InvoiceItemsTable 
-                items={invoice.items}
-                onRemoveItem={handleRemoveItem}
-                onUpdateItemQuantity={handleUpdateItemQuantity}
-                onUpdateItemDescription={handleUpdateItemDescription}
-                onUpdateItemPrice={handleUpdateItemPrice}
-              />
-              
-              <div className="flex justify-between">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowInventoryDialog(true)}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Inventory Item
-                </Button>
-              </div>
-              
-              <Dialog open={showInventoryDialog} onOpenChange={setShowInventoryDialog}>
-                <DialogContent className="sm:max-w-[600px]">
-                  <DialogHeader>
-                    <DialogTitle>Select Inventory Item</DialogTitle>
-                    <DialogDescription>
-                      Choose an inventory item to add to the invoice.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="max-h-[400px] overflow-y-auto">
-                    <div className="space-y-4">
-                      {inventoryItems.map((item) => (
-                        <div 
-                          key={item.id} 
-                          className="flex justify-between items-center p-3 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer"
-                          onClick={() => {
-                            handleAddInventoryItem(item);
-                            setShowInventoryDialog(false);
-                          }}
-                        >
-                          <div>
-                            <div className="font-medium">{item.name}</div>
-                            <div className="text-sm text-slate-500">{item.description}</div>
-                          </div>
-                          <div className="text-right">
-                            <div className="font-medium">${item.price.toFixed(2)}</div>
-                            <div className="text-sm text-slate-500">{item.category}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </TabsContent>
-            <TabsContent value="labor" className="space-y-4">
-              <InvoiceItemsTable 
-                items={invoice.items.filter(item => item.hours)}
-                onRemoveItem={handleRemoveItem}
-                onUpdateItemQuantity={handleUpdateItemQuantity}
-                onUpdateItemDescription={handleUpdateItemDescription}
-                onUpdateItemPrice={handleUpdateItemPrice}
-              />
-              
-              <Button 
-                variant="outline" 
-                onClick={handleAddLaborItem}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Labor Item
-              </Button>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-
+      {/* Invoice Details Section */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Notes</CardTitle>
+          <CardTitle>Invoice Details</CardTitle>
         </CardHeader>
-        <CardContent>
-          <Textarea 
-            placeholder="Enter any additional notes or payment terms" 
-            className="min-h-[100px]"
-            value={invoice.notes || ""}
-            onChange={(e) => setInvoice(createInvoiceUpdater({ notes: e.target.value }))}
-          />
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="date">Date</Label>
+            <Input
+              id="date"
+              type="date"
+              value={invoice.date || ""}
+              onChange={handleDateChange}
+            />
+          </div>
+          <div>
+            <Label htmlFor="dueDate">Due Date</Label>
+            <Input
+              id="dueDate"
+              type="date"
+              value={invoice.due_date || ""}
+              onChange={handleDueDateChange}
+            />
+          </div>
+          <div>
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              placeholder="Invoice notes"
+              value={invoice.notes || ""}
+              onChange={handleNotesChange}
+            />
+          </div>
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowTemplateSelector(true)}
+            >
+              <Template className="mr-2 h-4 w-4" />
+              Apply Template
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowSaveTemplateDialog(true)}
+            >
+              Save as Template
+            </Button>
+          </div>
         </CardContent>
       </Card>
+
+      {/* Line Items Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Line Items</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <InvoiceItemList
+            items={invoice.items || []}
+            onRemoveItem={handleRemoveItem}
+            onQuantityChange={handleItemQuantityChange}
+            onDescriptionChange={handleItemDescriptionChange}
+            onPriceChange={handleItemPriceChange}
+          />
+          <div className="flex justify-between items-center mt-4">
+            <Button onClick={handleAddLaborItem}>Add Labor</Button>
+            <div>
+              <Button
+                variant="outline"
+                onClick={() => setShowWorkOrderDialog(true)}
+              >
+                Add Work Order
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowInventoryDialog(true)}
+                className="ml-2"
+              >
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Add Item
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Save Template Dialog */}
+      <SaveTemplateDialog
+        isOpen={showSaveTemplateDialog}
+        onClose={() => setShowSaveTemplateDialog(false)}
+        invoice={invoice}
+        onSaveTemplate={handleSaveTemplate}
+      />
+
+      {/* Template Selector Dialog */}
+      <InvoiceTemplateSelector
+        open={showTemplateSelector}
+        onClose={() => setShowTemplateSelector(false)}
+        templates={templates}
+        onSelect={handleApplyTemplate}
+      />
+
+      {/* Work Order Selector Dialog */}
+      <WorkOrderSelector
+        open={showWorkOrderDialog}
+        onClose={() => setShowWorkOrderDialog(false)}
+        workOrders={workOrders}
+        onSelect={handleSelectWorkOrder}
+      />
+
+      {/* Inventory Item Selector Dialog */}
+      <InventoryItemSelector
+        open={showInventoryDialog}
+        onClose={() => setShowInventoryDialog(false)}
+        inventoryItems={inventoryItems}
+        onSelect={handleAddInventoryItem}
+      />
     </div>
   );
 }

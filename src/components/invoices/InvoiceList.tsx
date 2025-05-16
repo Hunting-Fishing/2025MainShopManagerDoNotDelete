@@ -1,85 +1,63 @@
-
-import React, { useState, useEffect } from 'react';
-import { Invoice } from '@/types/invoice';
+import React, { useState } from 'react';
+import { InvoiceListHeader } from './InvoiceListHeader';
 import { InvoiceListTable } from './InvoiceListTable';
+import { InvoiceListExportMenu } from './InvoiceListExportMenu';
 import { InvoiceFilters } from './filters/InvoiceFilters';
+import { InvoiceFilters as InvoiceFiltersType } from '@/types/invoice';
+import { DateRange } from 'react-day-picker';
 
-interface InvoiceListProps {
-  invoices: Invoice[];
-}
-
-export const InvoiceList: React.FC<InvoiceListProps> = ({ invoices }) => {
-  const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>(invoices);
-  const [filters, setFilters] = useState({
-    status: '',
-    customer: '',
-    dateRange: {
-      from: null as Date | null,
-      to: null as Date | null
-    }
+export const InvoiceList = () => {
+  const [filters, setFilters] = useState<InvoiceFiltersType>({
+    status: [],
+    customerName: '',
+    minAmount: undefined,
+    maxAmount: undefined,
+    dateRange: { from: null, to: null }
   });
 
-  // Apply filters whenever filters or invoices change
-  useEffect(() => {
-    let result = [...invoices];
-    
-    // Filter by status
-    if (filters.status) {
-      result = result.filter(invoice => invoice.status === filters.status);
-    }
-    
-    // Filter by customer name
-    if (filters.customer) {
-      result = result.filter(invoice => {
-        // Handle customer as a string type
-        const customerName = invoice.customer.toLowerCase();
-        return customerName.includes(filters.customer.toLowerCase());
-      });
-    }
-    
-    // Filter by date range
-    if (filters.dateRange.from || filters.dateRange.to) {
-      result = result.filter(invoice => {
-        const invoiceDate = new Date(invoice.date || '');
-        
-        if (filters.dateRange.from && filters.dateRange.to) {
-          return invoiceDate >= filters.dateRange.from && invoiceDate <= filters.dateRange.to;
-        }
-        
-        if (filters.dateRange.from) {
-          return invoiceDate >= filters.dateRange.from;
-        }
-        
-        if (filters.dateRange.to) {
-          return invoiceDate <= filters.dateRange.to;
-        }
-        
-        return true;
-      });
-    }
-    
-    setFilteredInvoices(result);
-  }, [filters, invoices]);
+  const handleFilterChange = (field: keyof InvoiceFiltersType, value: any) => {
+    setFilters(prevFilters => ({
+      ...prevFilters,
+      [field]: value
+    }));
+  };
 
   const resetFilters = () => {
     setFilters({
-      status: '',
-      customer: '',
-      dateRange: {
-        from: null,
-        to: null
-      }
+      status: [],
+      customerName: '',
+      minAmount: undefined,
+      maxAmount: undefined,
+      dateRange: { from: null, to: null }
     });
   };
-
+  
+  // Placeholder for actual data
+  const invoices = [];
+  const isLoading = false;
+  
   return (
     <div className="space-y-6">
-      <InvoiceFilters 
-        filters={filters} 
-        setFilters={setFilters} 
-        resetFilters={resetFilters} 
-      />
-      <InvoiceListTable invoices={filteredInvoices} />
+      <div className="flex justify-between">
+        <InvoiceListHeader />
+        <InvoiceListExportMenu />
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="lg:col-span-1">
+          <InvoiceFilters 
+            filters={filters} 
+            onFilterChange={handleFilterChange}
+            onResetFilters={resetFilters}
+          />
+        </div>
+        <div className="lg:col-span-3">
+          <InvoiceListTable 
+            invoices={invoices}
+            isLoading={isLoading}
+          />
+        </div>
+      </div>
     </div>
   );
 };

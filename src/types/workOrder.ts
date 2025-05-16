@@ -64,8 +64,8 @@ export interface WorkOrderTemplate {
   id: string;
   name: string;
   description?: string;
-  status?: string;
-  priority?: string;
+  status?: WorkOrderStatusType;
+  priority?: WorkOrderPriorityType;
   technician?: string;
   technician_id?: string;
   notes?: string;
@@ -75,4 +75,8 @@ export interface WorkOrderTemplate {
   customer?: string;
   customer_id?: string;
   inventoryItems?: WorkOrderInventoryItem[];
+  
+  // Aliases for convenience
+  lastUsed?: string;
+  usageCount?: number;
 }

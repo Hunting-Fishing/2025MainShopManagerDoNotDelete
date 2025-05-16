@@ -1,90 +1,82 @@
 
 import React from "react";
-import { Button } from "@/components/ui/button";
-import {
+import { 
   Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 import { WorkOrderTemplate } from "@/types/workOrder";
 import { WorkOrderTemplateItem } from "./WorkOrderTemplateItem";
 
 interface WorkOrderTemplateSelectorProps {
+  open: boolean;
+  onClose: () => void;
   templates: WorkOrderTemplate[];
-  onSelectTemplate: (template: WorkOrderTemplate) => void;
+  onSelect: (template: WorkOrderTemplate) => void;
+  onDelete?: (templateId: string) => void;
 }
 
 export function WorkOrderTemplateSelector({
+  open,
+  onClose,
   templates,
-  onSelectTemplate,
+  onSelect,
+  onDelete
 }: WorkOrderTemplateSelectorProps) {
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [open, setOpen] = React.useState(false);
-
-  const filteredTemplates = templates.filter(
-    (template) =>
-      template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      template.description.toLowerCase().includes(searchQuery.toLowerCase())
+  
+  const filteredTemplates = templates.filter(template => 
+    template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (template.description && template.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
-
+  
   const handleSelect = (template: WorkOrderTemplate) => {
-    onSelectTemplate(template);
-    setOpen(false);
+    onSelect(template);
+    onClose();
   };
 
+  const handleDelete = (templateId: string) => {
+    if (onDelete) {
+      onDelete(templateId);
+    }
+  };
+  
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline">Use Template</Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]">
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[650px] max-h-[80vh] overflow-auto">
         <DialogHeader>
-          <DialogTitle>Work Order Templates</DialogTitle>
-          <DialogDescription>
-            Select a template to use for this work order.
-          </DialogDescription>
+          <DialogTitle>Select Work Order Template</DialogTitle>
         </DialogHeader>
-
-        <div className="relative my-2">
-          <Search className="absolute left-2 top-3 h-4 w-4 text-gray-400" />
+        
+        <div className="mt-4 relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
           <Input
             placeholder="Search templates..."
-            className="pl-8"
+            className="pl-10"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={e => setSearchQuery(e.target.value)}
           />
         </div>
-
-        <ScrollArea className="h-[300px] rounded-md border p-2">
-          {filteredTemplates.length > 0 ? (
-            <div className="space-y-2">
-              {filteredTemplates.map((template) => (
-                <WorkOrderTemplateItem
-                  key={template.id}
-                  template={template}
-                  onSelect={() => handleSelect(template)}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="flex h-full items-center justify-center">
-              <p className="text-gray-500">No templates found</p>
-            </div>
-          )}
-        </ScrollArea>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
-          </Button>
-        </DialogFooter>
+        
+        {filteredTemplates.length === 0 ? (
+          <div className="py-8 text-center text-gray-500">
+            No templates found. Try a different search term.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 py-4">
+            {filteredTemplates.map(template => (
+              <WorkOrderTemplateItem
+                key={template.id}
+                template={template}
+                onSelect={() => handleSelect(template)}
+                onDelete={onDelete ? () => handleDelete(template.id) : undefined}
+              />
+            ))}
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

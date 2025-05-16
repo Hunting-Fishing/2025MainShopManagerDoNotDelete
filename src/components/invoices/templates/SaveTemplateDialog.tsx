@@ -1,183 +1,85 @@
-import { useState } from "react";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+
+import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { InvoiceItem, Invoice, InvoiceTemplate } from "@/types/invoice";
-import { Save } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { InvoiceTemplate } from "@/types/invoice";
 
-const formSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  description: z.string().optional(),
-  defaultNotes: z.string().optional(),
-  defaultDueDateDays: z.coerce.number().int().min(0).default(30),
-  defaultTaxRate: z.coerce.number().min(0).max(100).default(0),
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
-interface SaveTemplateDialogProps {
-  currentInvoice: Invoice;
-  taxRate: number;
-  onSaveTemplate: (template: Omit<InvoiceTemplate, 'id' | 'createdAt' | 'usageCount'>) => void;
+export interface SaveTemplateDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  invoice: any;
+  onSaveTemplate: (template: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount">) => void;
 }
 
-export function SaveTemplateDialog({ currentInvoice, taxRate, onSaveTemplate }: SaveTemplateDialogProps) {
-  const [open, setOpen] = useState(false);
+export const SaveTemplateDialog: React.FC<SaveTemplateDialogProps> = ({
+  isOpen,
+  onClose,
+  invoice,
+  onSaveTemplate,
+}) => {
+  const [templateName, setTemplateName] = useState("");
+  const [templateDescription, setTemplateDescription] = useState("");
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      defaultNotes: currentInvoice.notes || "",
-      defaultDueDateDays: 30,
-      defaultTaxRate: taxRate,
-    },
-  });
+  const handleSave = () => {
+    if (!templateName.trim()) return;
 
-  const onSubmit = (values: FormValues) => {
-    // Convert the items to template format
-    const templateItems = currentInvoice.items.map(item => ({
-      ...item,
-    }));
-
-    const template = {
-      name: values.name,
-      description: values.description || "",
-      default_notes: values.defaultNotes || "",
-      default_due_date_days: values.defaultDueDateDays,
-      default_tax_rate: values.defaultTaxRate,
-      last_used: null,
-      items: templateItems,
+    const template: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount"> = {
+      name: templateName.trim(),
+      description: templateDescription.trim() || undefined,
+      default_tax_rate: invoice.tax ? invoice.tax / invoice.subtotal : 0,
+      default_due_date_days: 30, // Default value
+      default_notes: invoice.notes,
     };
 
     onSaveTemplate(template);
-    setOpen(false);
-    form.reset();
+    resetForm();
+    onClose();
+  };
+
+  const resetForm = () => {
+    setTemplateName("");
+    setTemplateDescription("");
   };
 
   return (
-    <>
-      <Button
-        variant="outline"
-        onClick={() => setOpen(true)}
-        className="flex items-center gap-2"
-      >
-        <Save size={16} />
-        Save as Template
-      </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Save as Template</DialogTitle>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Template Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Standard Service Invoice" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Brief description of this template"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="defaultDueDateDays"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Default Due Days</FormLabel>
-                      <FormControl>
-                        <Input type="number" min={0} {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Days until payment is due
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="defaultTaxRate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Default Tax Rate (%)</FormLabel>
-                      <FormControl>
-                        <Input type="number" min={0} max={100} step={0.1} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="defaultNotes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Default Notes</FormLabel>
-                    <FormControl>
-                      <Textarea {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="pt-2 flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit">Save Template</Button>
-              </div>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-    </>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Save as Template</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="template-name">Template Name</Label>
+            <Input
+              id="template-name"
+              value={templateName}
+              onChange={(e) => setTemplateName(e.target.value)}
+              placeholder="Enter template name"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="template-description">Description (Optional)</Label>
+            <Textarea
+              id="template-description"
+              value={templateDescription}
+              onChange={(e) => setTemplateDescription(e.target.value)}
+              placeholder="Enter template description"
+              rows={3}
+            />
+          </div>
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={!templateName.trim()}>
+            Save Template
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
-}
+};

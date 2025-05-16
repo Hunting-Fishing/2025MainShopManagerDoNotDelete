@@ -1,5 +1,6 @@
 
-import { WorkOrder } from '@/types/workOrder';
+import { WorkOrder, WorkOrderPriorityType } from '@/types/workOrder';
+import { format } from 'date-fns';
 
 /**
  * Normalizes a work order object to ensure consistent property access
@@ -81,4 +82,21 @@ export const normalizeWorkOrder = (workOrder: any): WorkOrder => {
   }
   
   return normalized as WorkOrder;
+};
+
+// Add the missing priority map
+export const priorityMap: Record<WorkOrderPriorityType, { label: string; color: string }> = {
+  'high': { label: 'High', color: 'bg-red-100 text-red-800 border border-red-300' },
+  'medium': { label: 'Medium', color: 'bg-amber-100 text-amber-800 border border-amber-300' },
+  'low': { label: 'Low', color: 'bg-blue-100 text-blue-800 border border-blue-300' },
+};
+
+// Add the missing formatDate function
+export const formatDate = (dateString?: string | null): string => {
+  if (!dateString) return 'N/A';
+  try {
+    return format(new Date(dateString), 'MMM dd, yyyy');
+  } catch (error) {
+    return 'Invalid Date';
+  }
 };
