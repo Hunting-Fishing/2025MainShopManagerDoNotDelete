@@ -1,6 +1,7 @@
+
 import { Customer } from './customer';
 import { WorkOrder } from './workOrder';
-import type { InventoryItem } from './inventory';
+import { InventoryItem } from './inventory';
 
 export interface InvoiceItem {
   id: string;

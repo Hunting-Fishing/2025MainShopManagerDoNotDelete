@@ -2,8 +2,7 @@
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card } from "@/components/ui/card";
 import { Customer } from "@/types/customer";
-import { CustomerFilters } from "@/components/customers/filters/CustomerFilterControls";
-import { CustomerFilterControls } from "@/components/customers/filters/CustomerFilterControls";
+import { CustomerFilters, CustomerFilterControls } from "@/components/customers/filters/CustomerFilterControls";
 import { CustomerTable } from "./CustomerTable";
 
 interface CustomersListProps {

@@ -11,6 +11,33 @@ export interface InventoryItem {
   location?: string;
   status: string;
   description?: string;
+  
+  // Additional fields that match what the components are expecting
+  partNumber?: string;
+  barcode?: string;
+  subcategory?: string;
+  manufacturer?: string;
+  vehicleCompatibility?: string;
+  onHold?: number;
+  onOrder?: number;
+  reorder_point?: number;
+  minimumOrder?: number;
+  maximumOrder?: number;
+  cost?: number;
+  marginMarkup?: number;
+  retailPrice?: number;
+  wholesalePrice?: number;
+  specialTax?: number;
+  coreCharge?: number;
+  environmentalFee?: number;
+  freightFee?: number;
+  otherFee?: number;
+  otherFeeDescription?: string;
+  totalQtySold?: number;
+  dateBought?: string;
+  dateLast?: string;
+  serialNumbers?: string[];
+  itemCondition?: string;
 }
 
 // Extended inventory item with additional fields
@@ -29,7 +56,7 @@ export interface AutoReorderSettings {
 }
 
 // For backward compatibility
-export interface ReorderSettings extends AutoReorderSettings {}
+export type ReorderSettings = AutoReorderSettings;
 
 // Legacy types needed by the namespace in inventory/index.ts
 export interface InventoryTransaction {

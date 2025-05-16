@@ -32,6 +32,30 @@ export const filterCustomers = (customers: Customer[], filters: CustomerFilters)
       if (!hasMatchingTag) return false;
     }
     
+    // Filter by vehicle type
+    if (filters.vehicleType && filters.vehicleType !== 'all') {
+      // Skip if customer has no vehicles
+      if (!customer.vehicles || !Array.isArray(customer.vehicles) || customer.vehicles.length === 0) {
+        return false;
+      }
+      
+      // Check if customer has any vehicle of the selected type
+      const hasVehicleType = customer.vehicles.some(vehicle => 
+        vehicle.type === filters.vehicleType || 
+        vehicle.make === filters.vehicleType
+      );
+      
+      if (!hasVehicleType) return false;
+    }
+    
+    // Filter by has vehicles
+    if (filters.hasVehicles) {
+      const hasVehicles = customer.vehicles && Array.isArray(customer.vehicles) && customer.vehicles.length > 0;
+      
+      if (filters.hasVehicles === 'yes' && !hasVehicles) return false;
+      if (filters.hasVehicles === 'no' && hasVehicles) return false;
+    }
+    
     // If we get here, the customer passed all filters
     return true;
   });

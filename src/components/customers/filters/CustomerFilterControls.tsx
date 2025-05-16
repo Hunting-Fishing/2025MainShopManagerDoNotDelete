@@ -92,7 +92,6 @@ export const CustomerFilterControls: React.FC<CustomerFilterControlsProps> = ({
           onVehicleTypeChange={handleVehicleTypeChange}
           onDateRangeChange={handleDateRangeChange}
           onHasVehiclesChange={handleHasVehiclesChange}
-          onApplySearch={onFilterChange}
         />
       )}
     </div>
