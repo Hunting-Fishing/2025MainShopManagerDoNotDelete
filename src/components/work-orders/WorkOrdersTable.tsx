@@ -20,7 +20,7 @@ interface WorkOrdersTableProps {
   isLoading?: boolean;
 }
 
-export const WorkOrdersTable: React.FC<WorkOrdersTableProps> = ({ 
+const WorkOrdersTable: React.FC<WorkOrdersTableProps> = ({ 
   workOrders,
   isLoading = false
 }) => {
@@ -104,3 +104,6 @@ export const WorkOrdersTable: React.FC<WorkOrdersTableProps> = ({
     </Table>
   );
 };
+
+export { WorkOrdersTable };
+export default WorkOrdersTable;

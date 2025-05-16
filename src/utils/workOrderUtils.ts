@@ -56,3 +56,18 @@ export const formatDuration = (minutes: number): string => {
   
   return mins === 0 ? `${hours}h` : `${hours}h ${mins}m`;
 };
+
+// Add the normalize function needed by some components
+export const normalizeWorkOrder = (workOrder: any): any => {
+  return {
+    ...workOrder,
+    customer: workOrder.customer_name || workOrder.customer || 
+      (workOrder.customers ? 
+        `${workOrder.customers.first_name || ''} ${workOrder.customers.last_name || ''}`.trim() : 
+        'N/A'),
+    technician: workOrder.technician_name || workOrder.technician || 
+      (workOrder.profiles ? 
+        `${workOrder.profiles.first_name || ''} ${workOrder.profiles.last_name || ''}`.trim() : 
+        'Unassigned')
+  };
+};

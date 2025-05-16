@@ -5,7 +5,7 @@ import { PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import WorkOrdersHeader from "@/components/work-orders/WorkOrdersHeader";
 import WorkOrderFilters from "@/components/work-orders/WorkOrderFilters";
-import WorkOrdersTable from "@/components/work-orders/WorkOrdersTable";
+import WorkOrdersTable from "@/components/work-orders/WorkOrdersTable"; // Import as default
 import WorkOrdersPagination from "@/components/work-orders/WorkOrdersPagination";
 import { WorkOrder } from "@/types/workOrder";
 import { supabase } from "@/lib/supabase";
