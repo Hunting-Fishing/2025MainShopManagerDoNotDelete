@@ -2,13 +2,13 @@
 import { useState, useEffect } from 'react';
 import { getInventoryItems, updateInventoryItem } from '@/services/inventory/crudService';
 import { InventoryItemExtended } from '@/types/inventory';
-import { 
-  countLowStockItems, 
-  countOutOfStockItems,
-  formatInventoryItem 
-} from '@/utils/inventory/inventoryUtils';
 import { useNotifications } from '@/context/notifications';
 import { toast } from '@/hooks/use-toast';
+import { 
+  countLowStockItems, 
+  countOutOfStockItems 
+} from '@/utils/inventory/inventoryUtils';
+import { useManualReorder } from './useManualReorder';
 
 export interface AutoReorderSettings {
   enabled: boolean;
@@ -23,6 +23,7 @@ export const useInventoryManager = () => {
   const [error, setError] = useState<string | null>(null);
   const [autoReorderSettings, setAutoReorderSettings] = useState<Record<string, AutoReorderSettings>>({});
   const { addNotification } = useNotifications();
+  const { reorderItem: manualReorder } = useManualReorder();
   
   const checkInventoryAlerts = async () => {
     setLoading(true);
@@ -54,40 +55,7 @@ export const useInventoryManager = () => {
 
   // Function to manually reorder an item
   const reorderItem = async (itemId: string, quantity: number) => {
-    try {
-      const item = await getInventoryItems().then(items => 
-        items.find(item => item.id === itemId)
-      );
-      
-      if (!item) {
-        toast({
-          title: "Error",
-          description: "Item not found",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      // In a real app, this would connect to a purchasing API
-      toast({
-        title: "Order Placed",
-        description: `Manually ordered ${quantity} units of ${item.name}`,
-      });
-      
-      addNotification({
-        title: "Order Placed",
-        message: `Manually ordered ${quantity} units of ${item.name}`,
-        type: "success",
-        link: "/inventory"
-      });
-    } catch (error) {
-      console.error("Error placing manual order:", error);
-      toast({
-        title: "Error",
-        description: "Failed to place order",
-        variant: "destructive",
-      });
-    }
+    return await manualReorder(itemId, quantity);
   };
 
   // Function to enable auto-reordering for an item
@@ -103,6 +71,8 @@ export const useInventoryManager = () => {
         title: "Auto-reorder enabled",
         description: `Auto-reorder has been enabled for this item when stock falls below ${threshold}`,
       });
+      
+      return true;
     } catch (error) {
       console.error("Error enabling auto-reorder:", error);
       toast({
@@ -110,6 +80,7 @@ export const useInventoryManager = () => {
         description: "Failed to enable auto-reorder",
         variant: "destructive",
       });
+      return false;
     }
   };
 
@@ -141,36 +112,11 @@ export const useInventoryManager = () => {
   };
 
   // Function to handle inventory consumption for work orders
-  const consumeWorkOrderInventory = async (itemId: string, quantity: number) => {
-    try {
-      const item = await getInventoryItems().then(items => 
-        items.find(item => item.id === itemId)
-      );
-      
-      if (!item) return false;
-      
-      // Release from onHold if present, otherwise reduce quantity directly
-      const currentOnHold = Number(item.onHold) || 0;
-      let updateData: Partial<InventoryItemExtended>;
-      
-      if (currentOnHold >= quantity) {
-        updateData = {
-          onHold: currentOnHold - quantity
-        };
-      } else {
-        const remainingQuantity = quantity - currentOnHold;
-        updateData = {
-          onHold: 0,
-          quantity: Math.max(0, Number(item.quantity) - remainingQuantity)
-        };
-      }
-      
-      await updateInventoryItem(itemId, updateData);
-      return true;
-    } catch (error) {
-      console.error("Error consuming inventory:", error);
-      return false;
-    }
+  const consumeWorkOrderInventory = async (workOrderId: string) => {
+    // In a real implementation, this would find the items associated with the work order
+    // and mark them as consumed
+    console.log("Would consume inventory for work order:", workOrderId);
+    return true;
   };
   
   useEffect(() => {

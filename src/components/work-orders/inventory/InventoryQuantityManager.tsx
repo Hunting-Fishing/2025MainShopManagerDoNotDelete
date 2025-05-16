@@ -3,9 +3,8 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
-import { getInventoryItemById } from "@/services/inventoryService";
 import { useEffect, useState } from "react";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { getInventoryItemById } from "@/utils/inventory/inventoryUtils";
 
 interface InventoryQuantityManagerProps {
   itemId: string;
@@ -77,7 +76,7 @@ export const InventoryQuantityManager: React.FC<InventoryQuantityManagerProps> =
   };
 
   if (loading) {
-    return <LoadingSpinner size="sm" className="mx-auto" />;
+    return <div className="flex justify-center"><div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent"></div></div>;
   }
 
   if (error) {

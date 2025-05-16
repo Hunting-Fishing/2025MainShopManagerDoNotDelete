@@ -2,23 +2,34 @@
 export interface InventoryTransaction {
   id: string;
   inventory_item_id: string;
-  transaction_type: 'purchase' | 'sale' | 'adjustment' | 'transfer' | 'return' | 'write-off';
   quantity: number;
   transaction_date: string;
-  reference_type?: string;
   reference_id?: string;
-  performed_by?: string;
+  transaction_type: string;
+  reference_type?: string;
   notes?: string;
+  performed_by?: string;
   created_at: string;
   updated_at: string;
 }
 
-export interface CreateInventoryTransactionDto {
+export interface InventoryAdjustment {
   inventory_item_id: string;
-  transaction_type: 'purchase' | 'sale' | 'adjustment' | 'transfer' | 'return' | 'write-off';
   quantity: number;
-  reference_type?: string;
-  reference_id?: string;
-  performed_by?: string;
+  adjustment_type: string;
   notes?: string;
+}
+
+export interface InventoryValuation {
+  total_value: number;
+  average_cost: number;
+  item_count: number;
+  last_updated: string;
+}
+
+export interface InventoryItemStatus {
+  id: string;
+  name: string;
+  color: string;
+  count?: number;
 }

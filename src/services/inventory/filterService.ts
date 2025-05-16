@@ -1,7 +1,7 @@
 
 import { InventoryItemExtended } from "@/types/inventory";
 import { supabase } from "@/lib/supabase";
-import { formatInventoryItem } from "./utils";
+import { formatInventoryItem } from "@/utils/inventory/inventoryUtils";
 
 export const filterInventoryItems = async (filters: any = {}): Promise<InventoryItemExtended[]> => {
   try {
@@ -28,7 +28,10 @@ export const filterInventoryItems = async (filters: any = {}): Promise<Inventory
     }
     
     if (filters.stockLevel === 'low') {
-      query = query.gt('quantity', 0).lte('quantity', query.select('reorder_point').eq('id', query.select('id')));
+      // For low stock, get items where quantity > 0 and <= reorder_point
+      query = query.gt('quantity', 0);
+      // Note: We can't directly compare quantity to reorder_point in a single query
+      // This is a simplification - in a real app we'd use a more sophisticated approach
     } else if (filters.stockLevel === 'out') {
       query = query.lte('quantity', 0);
     } else if (filters.stockLevel === 'in') {
@@ -49,7 +52,14 @@ export const filterInventoryItems = async (filters: any = {}): Promise<Inventory
       throw error;
     }
     
-    return data.map(item => formatInventoryItem(item));
+    let result = data.map(item => formatInventoryItem(item));
+    
+    // For low stock filter, apply the reorder point comparison client-side
+    if (filters.stockLevel === 'low') {
+      result = result.filter(item => item.quantity <= item.reorder_point);
+    }
+    
+    return result;
   } catch (error) {
     console.error("Error filtering inventory items:", error);
     return [];
@@ -133,15 +143,19 @@ export const getLowStockItems = async (): Promise<InventoryItemExtended[]> => {
   try {
     const { data, error } = await supabase
       .from('inventory_items')
-      .select('*')
-      .gt('quantity', 0)
-      .lte('quantity', supabase.rpc('get_reorder_point', { item_id: 'id' }));
+      .select('*');
     
     if (error) {
       throw error;
     }
     
-    return data.map(formatInventoryItem);
+    return data
+      .filter(item => {
+        const quantity = Number(item.quantity) || 0;
+        const reorderPoint = Number(item.reorder_point) || 0;
+        return quantity > 0 && quantity <= reorderPoint;
+      })
+      .map(formatInventoryItem);
   } catch (error) {
     console.error("Error fetching low stock items:", error);
     return [];
@@ -166,24 +180,9 @@ export const getOutOfStockItems = async (): Promise<InventoryItemExtended[]> => 
   }
 };
 
-// SQL function for getting stock alerts - this is a mock implementation
-const getStockQuery = (condition: string): string => {
-  return `
-    SELECT * 
-    FROM inventory_items
-    WHERE ${condition}
-    ORDER BY name
-  `;
-};
-
-// There are migration issues with supabase.raw, so we'll use a different approach without .raw
-export const executeCustomQuery = async (sql: string): Promise<InventoryItemExtended[]> => {
+// Custom query functionality without using raw SQL
+export const executeCustomQuery = async (stockLevel: 'low' | 'out' | 'all'): Promise<InventoryItemExtended[]> => {
   try {
-    // This is a mock implementation since we can't use .raw directly
-    // In a real implementation, you would use stored procedures or RPC calls
-    console.log("Would execute SQL:", sql);
-    
-    // Instead we'll use the filter approach
     const { data, error } = await supabase
       .from('inventory_items')
       .select('*');
@@ -192,18 +191,18 @@ export const executeCustomQuery = async (sql: string): Promise<InventoryItemExte
       throw error;
     }
     
-    // Do client-side filtering based on what the SQL would do
-    // This is just a fallback and not efficient for large datasets
-    return data
-      .filter(item => {
-        if (sql.includes("quantity <= 0")) {
-          return item.quantity <= 0;
-        } else if (sql.includes("quantity > 0 AND quantity <= reorder_point")) {
-          return item.quantity > 0 && item.quantity <= item.reorder_point;
-        }
-        return true;
-      })
-      .map(formatInventoryItem);
+    // Do client-side filtering
+    let filteredData = data;
+    
+    if (stockLevel === 'out') {
+      filteredData = data.filter(item => item.quantity <= 0);
+    } else if (stockLevel === 'low') {
+      filteredData = data.filter(item => 
+        item.quantity > 0 && item.quantity <= item.reorder_point
+      );
+    }
+    
+    return filteredData.map(formatInventoryItem);
   } catch (error) {
     console.error("Error executing custom query:", error);
     return [];

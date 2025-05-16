@@ -1,15 +1,20 @@
 
-import { getInventoryItemById } from "@/services/inventoryService";
-import { useNotifications } from "@/context/notifications";
-import { toast } from "@/hooks/use-toast";
+import { useState } from 'react';
+import { toast } from '@/hooks/use-toast';
+import { getInventoryItemById } from '@/utils/inventory/inventoryUtils';
+import { useNotifications } from '@/context/notifications';
 
-export function useManualReorder() {
+export const useManualReorder = () => {
+  const [isReordering, setIsReordering] = useState(false);
   const { addNotification } = useNotifications();
 
-  // Function to manually reorder an item
   const reorderItem = async (itemId: string, quantity: number) => {
     try {
+      setIsReordering(true);
+      
+      // Get the item details
       const item = await getInventoryItemById(itemId);
+      
       if (!item) {
         toast({
           title: "Error",
@@ -20,7 +25,8 @@ export function useManualReorder() {
       }
       
       // In a real app, this would connect to a purchasing API
-      // For now, we'll just show a toast notification
+      // For now, we'll just show a toast and notification
+      
       toast({
         title: "Order Placed",
         description: `Manually ordered ${quantity} units of ${item.name}`,
@@ -32,6 +38,8 @@ export function useManualReorder() {
         type: "success",
         link: "/inventory"
       });
+      
+      return true;
     } catch (error) {
       console.error("Error placing manual order:", error);
       toast({
@@ -39,10 +47,14 @@ export function useManualReorder() {
         description: "Failed to place order",
         variant: "destructive",
       });
+      return false;
+    } finally {
+      setIsReordering(false);
     }
   };
 
   return {
-    reorderItem
+    reorderItem,
+    isReordering
   };
-}
+};

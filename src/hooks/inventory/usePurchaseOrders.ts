@@ -1,207 +1,223 @@
 
-import { useState } from "react";
-import { 
-  getPurchaseOrders,
-  getPurchaseOrderById,
-  createPurchaseOrder,
-  updatePurchaseOrder,
-  receivePurchaseOrderItems,
-  cancelPurchaseOrder
-} from "@/services/inventory/purchaseOrderService";
-import { 
-  PurchaseOrder, 
-  CreatePurchaseOrderDto, 
-  UpdatePurchaseOrderDto 
-} from "@/types/inventory/purchaseOrders";
+import { useState, useCallback } from "react";
+import { PurchaseOrder, PurchaseOrderItem } from "@/types/inventory/purchaseOrders";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
 
-export function usePurchaseOrders() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
-  const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null);
-
-  // Load all purchase orders
-  const loadPurchaseOrders = async (): Promise<PurchaseOrder[]> => {
-    setLoading(true);
-    setError(null);
+export const usePurchaseOrders = () => {
+  const [isCreating, setIsCreating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isReceiving, setIsReceiving] = useState(false);
+  
+  const createPurchaseOrder = async (order: Omit<PurchaseOrder, 'id'>) => {
     try {
-      const data = await getPurchaseOrders();
-      setPurchaseOrders(data);
+      setIsCreating(true);
+      
+      // Create purchase order record
+      const { data: poData, error: poError } = await supabase
+        .from('inventory_purchase_orders')
+        .insert({
+          vendor_id: order.vendor_id,
+          order_date: order.order_date,
+          expected_delivery_date: order.expected_delivery_date,
+          total_amount: order.total_amount,
+          status: order.status,
+          notes: order.notes,
+          created_by: order.created_by
+        })
+        .select()
+        .single();
+      
+      if (poError) throw poError;
+      
+      // Create purchase order items
+      const poItems = order.items.map(item => ({
+        purchase_order_id: poData.id,
+        inventory_item_id: item.item.id,
+        quantity: item.quantity,
+        quantity_received: 0,
+        unit_price: item.unit_price,
+        total_price: item.total_price
+      }));
+      
+      const { error: itemsError } = await supabase
+        .from('inventory_purchase_order_items')
+        .insert(poItems);
+      
+      if (itemsError) throw itemsError;
+      
+      toast({
+        title: "Purchase Order Created",
+        description: `Purchase order #${poData.id} has been created successfully.`,
+      });
+      
+      return poData;
+    } catch (error) {
+      console.error("Error creating purchase order:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create purchase order",
+        variant: "destructive"
+      });
+      throw error;
+    } finally {
+      setIsCreating(false);
+    }
+  };
+  
+  const updatePurchaseOrder = async (id: string, updates: Partial<PurchaseOrder>) => {
+    try {
+      setIsUpdating(true);
+      
+      const { data, error } = await supabase
+        .from('inventory_purchase_orders')
+        .update({
+          vendor_id: updates.vendor_id,
+          expected_delivery_date: updates.expected_delivery_date,
+          status: updates.status,
+          notes: updates.notes
+        })
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Purchase Order Updated",
+        description: `Purchase order #${id} has been updated successfully.`,
+      });
+      
       return data;
-    } catch (err) {
-      const errorMessage = "Failed to load purchase orders";
-      setError(errorMessage);
+    } catch (error) {
+      console.error("Error updating purchase order:", error);
       toast({
         title: "Error",
-        description: errorMessage,
-        variant: "destructive",
+        description: "Failed to update purchase order",
+        variant: "destructive"
       });
-      return [];
+      throw error;
     } finally {
-      setLoading(false);
+      setIsUpdating(false);
     }
   };
-
-  // Load a specific purchase order
-  const loadPurchaseOrder = async (id: string): Promise<PurchaseOrder | null> => {
-    setLoading(true);
-    setError(null);
+  
+  const deletePurchaseOrder = async (id: string) => {
     try {
-      const data = await getPurchaseOrderById(id);
-      setSelectedOrder(data);
-      return data;
-    } catch (err) {
-      const errorMessage = `Failed to load purchase order ${id}`;
-      setError(errorMessage);
+      setIsDeleting(true);
+      
+      // Delete items first due to foreign key constraints
+      const { error: itemsError } = await supabase
+        .from('inventory_purchase_order_items')
+        .delete()
+        .eq('purchase_order_id', id);
+      
+      if (itemsError) throw itemsError;
+      
+      // Then delete the purchase order
+      const { error } = await supabase
+        .from('inventory_purchase_orders')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Purchase Order Deleted",
+        description: `Purchase order #${id} has been deleted successfully.`,
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("Error deleting purchase order:", error);
       toast({
         title: "Error",
-        description: errorMessage,
-        variant: "destructive",
+        description: "Failed to delete purchase order",
+        variant: "destructive"
       });
-      return null;
+      throw error;
     } finally {
-      setLoading(false);
+      setIsDeleting(false);
     }
   };
-
-  // Create a new purchase order
-  const addPurchaseOrder = async (order: CreatePurchaseOrderDto): Promise<PurchaseOrder | null> => {
-    setLoading(true);
-    setError(null);
+  
+  const receivePurchaseOrder = async (orderId: string) => {
     try {
-      const result = await createPurchaseOrder(order);
-      if (result) {
-        toast({
-          title: "Success",
-          description: "Purchase order created successfully",
-          variant: "default",
-        });
-        await loadPurchaseOrders(); // Refresh the purchase orders list
-        return result;
+      setIsReceiving(true);
+      
+      // 1. Get the purchase order and items
+      const { data: poItems, error: poItemsError } = await supabase
+        .from('inventory_purchase_order_items')
+        .select('*, inventory_item:inventory_item_id(id, quantity)')
+        .eq('purchase_order_id', orderId);
+      
+      if (poItemsError) throw poItemsError;
+      
+      // 2. Update inventory quantities
+      for (const item of poItems) {
+        // Update inventory item quantity
+        const { error: updateError } = await supabase
+          .from('inventory_items')
+          .update({
+            quantity: item.inventory_item.quantity + (item.quantity - item.quantity_received),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', item.inventory_item_id);
+        
+        if (updateError) throw updateError;
+        
+        // Update item to fully received
+        const { error: receiveError } = await supabase
+          .from('inventory_purchase_order_items')
+          .update({
+            quantity_received: item.quantity,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', item.id);
+        
+        if (receiveError) throw receiveError;
       }
-      return null;
-    } catch (err) {
-      const errorMessage = "Failed to create purchase order";
-      setError(errorMessage);
+      
+      // 3. Update purchase order status
+      const { error: poUpdateError } = await supabase
+        .from('inventory_purchase_orders')
+        .update({
+          status: 'received',
+          received_date: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', orderId);
+      
+      if (poUpdateError) throw poUpdateError;
+      
+      toast({
+        title: "Purchase Order Received",
+        description: `Purchase order #${orderId} has been received successfully.`,
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("Error receiving purchase order:", error);
       toast({
         title: "Error",
-        description: errorMessage,
-        variant: "destructive",
+        description: "Failed to receive purchase order",
+        variant: "destructive"
       });
-      return null;
+      throw error;
     } finally {
-      setLoading(false);
+      setIsReceiving(false);
     }
   };
-
-  // Update an existing purchase order
-  const editPurchaseOrder = async (
-    id: string, 
-    updates: UpdatePurchaseOrderDto
-  ): Promise<PurchaseOrder | null> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await updatePurchaseOrder(id, updates);
-      if (result) {
-        toast({
-          title: "Success",
-          description: "Purchase order updated successfully",
-          variant: "default",
-        });
-        await loadPurchaseOrders(); // Refresh the purchase orders list
-        return result;
-      }
-      return null;
-    } catch (err) {
-      const errorMessage = `Failed to update purchase order ${id}`;
-      setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Receive items from a purchase order
-  const receiveItems = async (
-    orderId: string, 
-    items: Array<{ id: string; quantity_received: number }>
-  ): Promise<boolean> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await receivePurchaseOrderItems(orderId, items);
-      if (result) {
-        toast({
-          title: "Success",
-          description: "Items received successfully",
-          variant: "default",
-        });
-        await loadPurchaseOrder(orderId); // Refresh the current purchase order
-        await loadPurchaseOrders(); // Refresh the purchase orders list
-        return true;
-      }
-      return false;
-    } catch (err) {
-      const errorMessage = "Failed to receive purchase order items";
-      setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Cancel a purchase order
-  const cancelOrder = async (id: string): Promise<boolean> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await cancelPurchaseOrder(id);
-      if (result) {
-        toast({
-          title: "Success",
-          description: "Purchase order cancelled successfully",
-          variant: "default",
-        });
-        await loadPurchaseOrders(); // Refresh the purchase orders list
-        return true;
-      }
-      return false;
-    } catch (err) {
-      const errorMessage = `Failed to cancel purchase order ${id}`;
-      setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  
   return {
-    loading,
-    error,
-    purchaseOrders,
-    selectedOrder,
-    loadPurchaseOrders,
-    loadPurchaseOrder,
-    addPurchaseOrder,
-    editPurchaseOrder,
-    receiveItems,
-    cancelOrder,
+    isCreating,
+    isUpdating,
+    isDeleting,
+    isReceiving,
+    createPurchaseOrder,
+    updatePurchaseOrder,
+    deletePurchaseOrder,
+    receivePurchaseOrder
   };
-}
+};

@@ -11,12 +11,8 @@ import {
   calculateTotalValue
 } from "./inventory/index";
 
-import { 
-  InventoryItemExtended, 
-  InventoryFilter 
-} from "@/types/inventory";
-
 import { supabase } from "@/lib/supabase";
+import { InventoryItemExtended } from "@/types/inventory";
 
 export { 
   getInventoryItems,

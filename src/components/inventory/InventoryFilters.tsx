@@ -1,11 +1,10 @@
 
-import React from "react";
-import { Dispatch, SetStateAction } from "react";
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { MultiSelect } from "@/components/ui/multi-select";
-import { Filter } from "lucide-react";
 
 export interface InventoryFiltersProps {
   categories: string[];
@@ -16,14 +15,14 @@ export interface InventoryFiltersProps {
   statusFilter: string[];
   supplierFilter: string;
   locationFilter: string;
-  setCategoryFilter: Dispatch<SetStateAction<string[]>>;
-  setStatusFilter: Dispatch<SetStateAction<string[]>>;
-  setSupplierFilter: Dispatch<SetStateAction<string>>;
-  setLocationFilter: Dispatch<SetStateAction<string>>;
+  setCategoryFilter: React.Dispatch<React.SetStateAction<string[]>>;
+  setStatusFilter: React.Dispatch<React.SetStateAction<string[]>>;
+  setSupplierFilter: React.Dispatch<React.SetStateAction<string>>;
+  setLocationFilter: React.Dispatch<React.SetStateAction<string>>;
   onReset: () => void;
 }
 
-export const InventoryFilters: React.FC<InventoryFiltersProps> = ({
+export function InventoryFilters({
   categories,
   statuses,
   suppliers,
@@ -37,77 +36,102 @@ export const InventoryFilters: React.FC<InventoryFiltersProps> = ({
   setSupplierFilter,
   setLocationFilter,
   onReset
-}) => {
+}: InventoryFiltersProps) {
+  const categoryOptions = categories.map(category => ({
+    value: category,
+    label: category
+  }));
+
+  const statusOptions = statuses.map(status => ({
+    value: status,
+    label: status
+  }));
+
+  const supplierOptions = suppliers.map(supplier => ({
+    value: supplier,
+    label: supplier
+  }));
+
+  const locationOptions = locations.map(location => ({
+    value: location,
+    label: location
+  }));
+
+  const isFilterActive = categoryFilter.length > 0 || 
+    statusFilter.length > 0 || 
+    supplierFilter !== '' || 
+    locationFilter !== '';
+
   return (
-    <div className="bg-white rounded-lg shadow p-4">
-      <div className="flex items-center mb-4">
-        <Filter className="w-5 h-5 mr-2 text-gray-500" />
-        <h2 className="text-lg font-medium">Filters</h2>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={onReset}
-          className="ml-auto text-sm"
-        >
-          Reset
-        </Button>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Categories</label>
-          <MultiSelect 
-            options={categories.map(cat => ({ label: cat, value: cat }))}
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Filters</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="category">Category</Label>
+          <MultiSelect
+            options={categoryOptions}
             selected={categoryFilter}
             onChange={setCategoryFilter}
-            placeholder="Select categories"
+            placeholder="All categories"
           />
         </div>
         
-        <div>
-          <label className="block text-sm font-medium mb-1">Status</label>
-          <MultiSelect 
-            options={statuses.map(status => ({ label: status, value: status }))}
+        <div className="space-y-2">
+          <Label htmlFor="status">Status</Label>
+          <MultiSelect
+            options={statusOptions}
             selected={statusFilter}
             onChange={setStatusFilter}
-            placeholder="Select status"
+            placeholder="All statuses"
           />
         </div>
         
-        <div>
-          <label className="block text-sm font-medium mb-1">Supplier</label>
-          <Select value={supplierFilter} onValueChange={setSupplierFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="All suppliers" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">All suppliers</SelectItem>
-              {suppliers.map((supplier) => (
-                <SelectItem key={supplier} value={supplier}>
-                  {supplier}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="space-y-2">
+          <Label htmlFor="supplier">Supplier</Label>
+          <select
+            id="supplier"
+            className="w-full p-2 border rounded"
+            value={supplierFilter}
+            onChange={(e) => setSupplierFilter(e.target.value)}
+          >
+            <option value="">All suppliers</option>
+            {suppliers.map((supplier) => (
+              <option key={supplier} value={supplier}>
+                {supplier}
+              </option>
+            ))}
+          </select>
         </div>
         
-        <div>
-          <label className="block text-sm font-medium mb-1">Location</label>
-          <Select value={locationFilter} onValueChange={setLocationFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="All locations" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">All locations</SelectItem>
-              {locations.map((location) => (
-                <SelectItem key={location} value={location}>
-                  {location}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="space-y-2">
+          <Label htmlFor="location">Location</Label>
+          <select
+            id="location"
+            className="w-full p-2 border rounded"
+            value={locationFilter}
+            onChange={(e) => setLocationFilter(e.target.value)}
+          >
+            <option value="">All locations</option>
+            {locations.map((location) => (
+              <option key={location} value={location}>
+                {location}
+              </option>
+            ))}
+          </select>
         </div>
-      </div>
-    </div>
+        
+        {isFilterActive && (
+          <Button 
+            onClick={onReset}
+            variant="outline" 
+            className="w-full"
+          >
+            Reset Filters
+          </Button>
+        )}
+      </CardContent>
+    </Card>
   );
-};
+}
