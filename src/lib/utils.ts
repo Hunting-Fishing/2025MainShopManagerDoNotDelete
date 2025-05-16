@@ -1,4 +1,3 @@
-
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -14,3 +13,15 @@ export function formatCurrency(value: number, currency = "USD", locale = "en-US"
     maximumFractionDigits: 2,
   }).format(value);
 }
+
+// Format a date string to a localized format
+export const formatDate = (date: string | undefined): string => {
+  if (!date) return '';
+  
+  try {
+    return new Date(date).toLocaleDateString();
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return '';
+  }
+};

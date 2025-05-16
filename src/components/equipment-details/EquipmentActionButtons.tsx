@@ -28,15 +28,15 @@ export function EquipmentActionButtons({ equipment }: EquipmentActionButtonsProp
       // Create work order object with required properties
       const newWorkOrder: Partial<WorkOrderTypes.WorkOrder> = {
         customer: equipment.customer,
-        customerId: "",
+        customer_id: "",
         description: `Service for ${equipment.name} (${equipment.model})`,
         status: "pending" as WorkOrderStatusType,
         priority: "medium" as WorkOrderPriorityType,
         technician: "",
         dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         notes: `Equipment details:\nManufacturer: ${equipment.manufacturer}\nSerial Number: ${equipment.serialNumber}\nCategory: ${equipment.category}\n\nMaintenance History: ${equipment.maintenanceHistory ? JSON.stringify(equipment.maintenanceHistory, null, 2) : 'None'}`,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
         location: equipment.location
       };
 

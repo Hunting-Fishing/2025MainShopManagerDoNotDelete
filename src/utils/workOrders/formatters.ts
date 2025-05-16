@@ -37,85 +37,79 @@ export const formatTime = (time: string | undefined): string => {
  * This handles both camelCase and snake_case properties
  */
 export const normalizeWorkOrder = (workOrder: any): any => {
+  if (!workOrder) return {};
+  
   const normalized = { ...workOrder };
   
-  // Ensure both camelCase and snake_case versions of keys exist
-  if (workOrder.customerId && !workOrder.customer_id) {
-    normalized.customer_id = workOrder.customerId;
-  } else if (workOrder.customer_id && !workOrder.customerId) {
-    normalized.customerId = workOrder.customer_id;
+  // Ensure we have both date and created_at/createdAt
+  if (!normalized.date && normalized.created_at) {
+    normalized.date = normalized.created_at;
+  }
+  if (!normalized.date && normalized.createdAt) {
+    normalized.date = normalized.createdAt;
+  }
+  if (!normalized.created_at && normalized.date) {
+    normalized.created_at = normalized.date;
+  }
+  if (!normalized.createdAt && normalized.date) {
+    normalized.createdAt = normalized.date;
   }
   
-  if (workOrder.technicianId && !workOrder.technician_id) {
-    normalized.technician_id = workOrder.technicianId;
-  } else if (workOrder.technician_id && !workOrder.technicianId) {
-    normalized.technicianId = workOrder.technician_id;
+  // Handle technician and technician_id
+  if (!normalized.technician && normalized.technician_id) {
+    normalized.technician = normalized.technician_id;
+  }
+  if (!normalized.technician_id && normalized.technician) {
+    normalized.technician_id = normalized.technician;
   }
   
-  if (workOrder.vehicleId && !workOrder.vehicle_id) {
-    normalized.vehicle_id = workOrder.vehicleId;
-  } else if (workOrder.vehicle_id && !workOrder.vehicleId) {
-    normalized.vehicleId = workOrder.vehicle_id;
+  // Handle location (there's no snake_case equivalent for this)
+  if (!normalized.location) {
+    normalized.location = ""; // Provide a default value
   }
   
-  if (workOrder.createdAt && !workOrder.created_at) {
-    normalized.created_at = workOrder.createdAt;
-  } else if (workOrder.created_at && !workOrder.createdAt) {
-    normalized.createdAt = workOrder.created_at;
+  // Handle notes (there's no snake_case equivalent for this)
+  if (!normalized.notes) {
+    normalized.notes = ""; // Provide a default value
   }
   
-  if (workOrder.updatedAt && !workOrder.updated_at) {
-    normalized.updated_at = workOrder.updatedAt;
-  } else if (workOrder.updated_at && !workOrder.updatedAt) {
-    normalized.updatedAt = workOrder.updated_at;
+  // Handle dueDate
+  if (!normalized.dueDate && normalized.due_date) {
+    normalized.dueDate = normalized.due_date;
+  }
+  if (!normalized.due_date && normalized.dueDate) {
+    normalized.due_date = normalized.dueDate;
   }
   
-  if (workOrder.lastUpdatedAt && !workOrder.updated_at) {
-    normalized.updated_at = workOrder.lastUpdatedAt;
-  } else if (workOrder.updated_at && !workOrder.lastUpdatedAt) {
-    normalized.lastUpdatedAt = workOrder.updated_at;
+  // Handle vehicle info
+  if (normalized.vehicle_make && !normalized.vehicleMake) {
+    normalized.vehicleMake = normalized.vehicle_make;
+  }
+  if (normalized.vehicleMake && !normalized.vehicle_make) {
+    normalized.vehicle_make = normalized.vehicleMake;
   }
   
-  // Handle vehicle make/model properties
-  if (workOrder.vehicleMake && !workOrder.vehicle_make) {
-    normalized.vehicle_make = workOrder.vehicleMake;
-  } else if (workOrder.vehicle_make && !workOrder.vehicleMake) {
-    normalized.vehicleMake = workOrder.vehicle_make;
+  if (normalized.vehicle_model && !normalized.vehicleModel) {
+    normalized.vehicleModel = normalized.vehicle_model;
+  }
+  if (normalized.vehicleModel && !normalized.vehicle_model) {
+    normalized.vehicle_model = normalized.vehicleModel;
   }
   
-  if (workOrder.vehicleModel && !workOrder.vehicle_model) {
-    normalized.vehicle_model = workOrder.vehicleModel;
-  } else if (workOrder.vehicle_model && !workOrder.vehicleModel) {
-    normalized.vehicleModel = workOrder.vehicle_model;
+  // Ensure timeEntries exists
+  if (!normalized.timeEntries) {
+    normalized.timeEntries = [];
   }
   
-  // Handle financial info
-  if (workOrder.totalCost !== undefined && workOrder.total_cost === undefined) {
-    normalized.total_cost = workOrder.totalCost;
-  } else if (workOrder.total_cost !== undefined && workOrder.totalCost === undefined) {
-    normalized.totalCost = workOrder.total_cost;
+  // Ensure inventoryItems exists
+  if (!normalized.inventoryItems) {
+    normalized.inventoryItems = [];
   }
   
-  // Handle service info
-  if (workOrder.serviceType && !workOrder.service_type) {
-    normalized.service_type = workOrder.serviceType;
-  } else if (workOrder.service_type && !workOrder.serviceType) {
-    normalized.serviceType = workOrder.service_type;
-  }
-  
-  if (workOrder.serviceCategory && !workOrder.service_category) {
-    normalized.service_category = workOrder.serviceCategory;
-  } else if (workOrder.service_category && !workOrder.serviceCategory) {
-    normalized.serviceCategory = workOrder.service_category;
-  }
-  
-  if (workOrder.estimatedHours !== undefined && workOrder.estimated_hours === undefined) {
-    normalized.estimated_hours = workOrder.estimatedHours;
-  } else if (workOrder.estimated_hours !== undefined && workOrder.estimatedHours === undefined) {
-    normalized.estimatedHours = workOrder.estimated_hours;
+  // Ensure totalBillableTime exists
+  if (!normalized.totalBillableTime) {
+    normalized.totalBillableTime = 0;
   }
   
   return normalized;
 };
-
-// Removed the duplicate export here that was causing the issue

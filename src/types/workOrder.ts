@@ -10,6 +10,10 @@ export interface WorkOrderTemplate {
   priority?: string;
   technician?: string;
   notes?: string;
+  location?: string;
+  createdAt?: string;
+  usageCount?: number;
+  lastUsed?: string;
 }
 
 export interface TimeEntry {
@@ -70,6 +74,23 @@ export interface WorkOrder {
   invoiced_at?: string;
   invoice_id?: string;
   created_by?: string;
+  
+  // Additional fields to match component usage
+  date?: string;
+  dueDate?: string;
+  createdAt?: string;
+  technician?: string;
+  location?: string;
+  notes?: string;
+  totalBillableTime?: number;
+  timeEntries?: TimeEntry[];
+  inventoryItems?: WorkOrderInventoryItem[];
+  vehicle_make?: string;
+  vehicle_model?: string;
+  vehicleMake?: string;
+  vehicleModel?: string;
+  vehicleYear?: string;
+  serviceCategory?: string;
 }
 
 // Map status values to human-readable labels
@@ -85,7 +106,16 @@ export const statusMap = {
 
 // Map priority values to human-readable labels
 export const priorityMap = {
-  'high': 'High',
-  'medium': 'Medium',
-  'low': 'Low'
+  'high': {
+    label: 'High',
+    classes: 'bg-red-100 text-red-800 border border-red-200'
+  },
+  'medium': {
+    label: 'Medium',
+    classes: 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+  },
+  'low': {
+    label: 'Low',
+    classes: 'bg-green-100 text-green-800 border border-green-200'
+  }
 };

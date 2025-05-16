@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -66,16 +65,7 @@ export function WorkOrderForm({
   // Apply template if provided
   useEffect(() => {
     if (initialTemplate) {
-      form.setValue("description", initialTemplate.description || "");
-      form.setValue("status", initialTemplate.status);
-      form.setValue("priority", initialTemplate.priority);
-      form.setValue("notes", initialTemplate.notes || "");
-      form.setValue("technician", initialTemplate.technician || "");
-      
-      // Set any other template values if available
-      if (initialTemplate.location) form.setValue("location", initialTemplate.location);
-      
-      toast.success(`Template "${initialTemplate.name}" applied`);
+      handleUseTemplate();
     }
   }, [initialTemplate, form]);
   
@@ -117,6 +107,30 @@ export function WorkOrderForm({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleUseTemplate = () => {
+    if (!initialTemplate) return;
+    
+    form.setValue("customer", initialTemplate.customer || "");
+    form.setValue("description", initialTemplate.description || "");
+    // Convert string to WorkOrderStatusType
+    form.setValue("status", initialTemplate.status as WorkOrderStatusType || "pending");
+    // Convert string to WorkOrderPriorityType
+    form.setValue("priority", initialTemplate.priority as WorkOrderPriorityType || "medium");
+    form.setValue("technician", initialTemplate.technician || "");
+    
+    // Check if location exists before setting it
+    if (initialTemplate.location) {
+      form.setValue("location", initialTemplate.location);
+    }
+    
+    form.setValue("notes", initialTemplate.notes || "");
+    
+    toast({
+      title: "Template Applied",
+      description: `Applied "${initialTemplate.name}" template to this work order.`,
+    });
   };
 
   return (
