@@ -24,7 +24,12 @@ export const createTemplate = async () => {
     name: '',
     description: '',
     status: status,
+    priority: 'medium',
+    technician: '',
+    notes: '',
+    location: '',
     createdAt: new Date().toISOString(),
-    usageCount: 0
+    usageCount: 0,
+    inventoryItems: []
   } as WorkOrderTemplate;
 };

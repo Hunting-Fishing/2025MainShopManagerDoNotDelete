@@ -27,17 +27,21 @@ export function useInvoiceTemplates(updateInvoice?: (updater: InvoiceUpdater) =>
       if (error) throw error;
       
       if (data && data.length > 0) {
-        const formattedTemplates = data.map(template => {
-          const templateItem: InvoiceTemplate = {
+        const formattedTemplates: InvoiceTemplate[] = data.map(template => {
+          return {
             id: template.id,
             name: template.name,
             description: template.description || "",
-            createdAt: template.created_at,
-            lastUsed: template.last_used || null,
-            usageCount: template.usage_count || 0,
+            default_tax_rate: template.default_tax_rate || 0.08,
+            default_due_date_days: template.default_due_date_days || 30,
+            default_notes: template.default_notes || "",
+            // Add the alias properties that match the required type
             defaultTaxRate: template.default_tax_rate || 0.08,
             defaultDueDateDays: template.default_due_date_days || 30,
             defaultNotes: template.default_notes || "",
+            createdAt: template.created_at,
+            lastUsed: template.last_used || null,
+            usageCount: template.usage_count || 0,
             defaultItems: Array.isArray(template.default_items) 
               ? template.default_items.map((item: any) => ({
                   id: item.id,
@@ -50,14 +54,8 @@ export function useInvoiceTemplates(updateInvoice?: (updater: InvoiceUpdater) =>
                   sku: item.sku || "",
                   category: item.category || ""
                 }))
-              : [],
-            // These are required by the type but may be obtained from the aliases
-            default_tax_rate: template.default_tax_rate || 0.08,
-            default_due_date_days: template.default_due_date_days || 30,
-            default_notes: template.default_notes || "",
+              : []
           };
-          
-          return templateItem;
         });
         
         setTemplates(formattedTemplates);
@@ -138,7 +136,7 @@ export function useInvoiceTemplates(updateInvoice?: (updater: InvoiceUpdater) =>
     try {
       const templateId = uuidv4();
       
-      // Insert new template into the database
+      // Insert new template into the database - use snake_case property names for the database
       const { error: templateError } = await supabase
         .from('invoice_templates')
         .insert({
@@ -181,15 +179,11 @@ export function useInvoiceTemplates(updateInvoice?: (updater: InvoiceUpdater) =>
         id: templateId,
         createdAt: new Date().toISOString(),
         usageCount: 0,
-        lastUsed: null,
-        // Make sure to add the required properties that match the aliases
-        default_tax_rate: newTemplate.default_tax_rate,
-        default_due_date_days: newTemplate.default_due_date_days,
-        default_notes: newTemplate.default_notes || "",
+        lastUsed: null
       };
       
       // Add to templates list in state
-      setTemplates([...templates, template]);
+      setTemplates(prev => [...prev, template]);
       
       toast({
         title: "Template Saved",

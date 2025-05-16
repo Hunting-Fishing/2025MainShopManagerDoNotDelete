@@ -16,7 +16,7 @@ export const createEmptyInvoice = (): Invoice => {
     items: [],
     created_by: "",
     created_at: new Date().toISOString(),
-    shop_id: "default-shop" // Add default shop_id
+    shop_id: "default-shop" // Added required shop_id property
   };
 };
 

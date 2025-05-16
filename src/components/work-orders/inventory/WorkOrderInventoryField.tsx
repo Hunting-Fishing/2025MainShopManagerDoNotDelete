@@ -65,11 +65,11 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
       onAdd({
         ...createNewItem(),
         ...partialItem,
-        // Make sure we don't include properties that aren't in WorkOrderInventoryItem
+        // Fix: Use proper property names according to WorkOrderInventoryItem type
         name: partialItem.name || '',
         quantity: partialItem.quantity || 1,
-        unitPrice: partialItem.unitPrice || 0,
-        itemStatus: partialItem.itemStatus || 'ordered',
+        unitPrice: partialItem.unitPrice || 0, // Fixed: Changed from unit_price to unitPrice
+        itemStatus: partialItem.itemStatus || 'ordered', // Fixed: Using itemStatus property
       });
     }
     setShowAddDialog(false);

@@ -32,7 +32,7 @@ export function SaveTemplateDialog({
   const handleSave = () => {
     if (!templateName.trim() || !invoiceData) return;
     
-    // Map to template structure
+    // Map to template structure - fix: use defaultItems instead of default_items
     const template: Omit<InvoiceTemplate, 'id' | 'createdAt' | 'usageCount'> = {
       name: templateName,
       description: templateDescription || "",

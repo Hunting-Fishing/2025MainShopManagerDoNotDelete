@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { InventoryFormProps } from "./InventoryFormProps";
@@ -34,8 +33,7 @@ export const InventoryFormComponent: React.FC<InventoryFormProps> = ({
     ? (suppliers as string[]).map(sup => ({ value: sup, label: sup }))
     : suppliers as SelectOption[];
 
-  // Handle select change properly - this function should already exist in the component
-  // but we're fixing it to match the expected type signature
+  // Fix: Handle select change properly - create a wrapper that converts the event to name/value
   const handleSelectChangeWrapper = (name: string, value: string) => {
     handleSelectChange(name, value);
   };

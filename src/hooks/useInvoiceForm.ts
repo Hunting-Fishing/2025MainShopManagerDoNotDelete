@@ -7,29 +7,15 @@ import { useInvoiceWorkOrder } from "@/hooks/invoice/useInvoiceWorkOrder";
 import { StaffMember, Invoice, InvoiceTemplate, InvoiceItem } from "@/types/invoice";
 import { InventoryItem } from "@/types/inventory";
 import { useState } from "react";
+import { createEmptyInvoice } from "@/data/invoiceCreateData";
 
 export interface UseInvoiceFormStateProps {
   initialWorkOrderId?: string;
 }
 
-// Create a placeholder implementation for useInvoiceFormState if needed
+// Create a complete placeholder implementation for useInvoiceFormState
 const useInvoiceFormStatePlaceholder = (props?: UseInvoiceFormStateProps) => {
-  const [invoice, setInvoice] = useState<Invoice>({
-    id: crypto.randomUUID(),
-    customer: "",
-    customer_address: "",
-    customer_email: "",
-    description: "",
-    notes: "",
-    date: new Date().toISOString().split('T')[0],
-    due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    status: "draft",
-    items: [],
-    created_by: "",
-    created_at: new Date().toISOString(),
-    shop_id: "default-shop" // Make sure this property exists
-  });
-  
+  const [invoice, setInvoice] = useState<Invoice>(createEmptyInvoice());
   const [items, setItems] = useState<InvoiceItem[]>([]);
   const [assignedStaff, setAssignedStaff] = useState<StaffMember[]>([]);
   const [showWorkOrderDialog, setShowWorkOrderDialog] = useState(false);
@@ -38,39 +24,128 @@ const useInvoiceFormStatePlaceholder = (props?: UseInvoiceFormStateProps) => {
   
   const handleAddInventoryItem = (item: InvoiceItem) => {
     setItems(prev => [...prev, item]);
+    
+    // Update invoice items
+    setInvoice(prev => ({
+      ...prev,
+      items: [...(prev.items || []), item]
+    }));
   };
   
   const handleRemoveItem = (id: string) => {
     setItems(prev => prev.filter(item => item.id !== id));
+    
+    // Update invoice items
+    setInvoice(prev => ({
+      ...prev,
+      items: (prev.items || []).filter(item => item.id !== id)
+    }));
   };
   
   const handleUpdateItemQuantity = (id: string, quantity: number) => {
-    setItems(prev => prev.map(item => item.id === id ? { ...item, quantity } : item));
+    setItems(prev => prev.map(item => {
+      if (item.id === id) {
+        const updatedItem = { ...item, quantity };
+        // Update total based on quantity
+        updatedItem.total = updatedItem.price * quantity;
+        return updatedItem;
+      }
+      return item;
+    }));
+    
+    // Update invoice items
+    setInvoice(prev => ({
+      ...prev,
+      items: (prev.items || []).map(item => {
+        if (item.id === id) {
+          const updatedItem = { ...item, quantity };
+          // Update total based on quantity
+          updatedItem.total = updatedItem.price * quantity;
+          return updatedItem;
+        }
+        return item;
+      })
+    }));
   };
   
   const handleUpdateItemDescription = (id: string, description: string) => {
     setItems(prev => prev.map(item => item.id === id ? { ...item, description } : item));
+    
+    // Update invoice items
+    setInvoice(prev => ({
+      ...prev,
+      items: (prev.items || []).map(item => item.id === id ? { ...item, description } : item)
+    }));
   };
   
   const handleUpdateItemPrice = (id: string, price: number) => {
-    setItems(prev => prev.map(item => item.id === id ? { ...item, price } : item));
+    setItems(prev => prev.map(item => {
+      if (item.id === id) {
+        const updatedItem = { ...item, price };
+        // Update total based on price
+        updatedItem.total = updatedItem.quantity * price;
+        return updatedItem;
+      }
+      return item;
+    }));
+    
+    // Update invoice items
+    setInvoice(prev => ({
+      ...prev,
+      items: (prev.items || []).map(item => {
+        if (item.id === id) {
+          const updatedItem = { ...item, price };
+          // Update total based on price
+          updatedItem.total = updatedItem.quantity * price;
+          return updatedItem;
+        }
+        return item;
+      })
+    }));
   };
   
   const handleAddLaborItem = (item: InvoiceItem) => {
     setItems(prev => [...prev, item]);
+    
+    // Update invoice items
+    setInvoice(prev => ({
+      ...prev,
+      items: [...(prev.items || []), item]
+    }));
   };
   
   const handleAddStaffMember = (member: StaffMember) => {
     setAssignedStaff(prev => [...prev, member]);
+    
+    // Update invoice assignedStaff
+    setInvoice(prev => ({
+      ...prev,
+      assignedStaff: [...(prev.assignedStaff || []), member]
+    }));
   };
   
   const handleRemoveStaffMember = (id: string) => {
     setAssignedStaff(prev => prev.filter(member => member.id !== id));
+    
+    // Update invoice assignedStaff
+    setInvoice(prev => ({
+      ...prev,
+      assignedStaff: (prev.assignedStaff || []).filter(member => member.id !== id)
+    }));
+  };
+  
+  // Function to update a specific field in the invoice
+  const updateInvoice = (field: keyof Invoice, value: any) => {
+    setInvoice(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
   
   return {
     invoice,
     setInvoice,
+    updateInvoice,
     items,
     assignedStaff,
     showWorkOrderDialog,
@@ -97,10 +172,11 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
   
   const formState = useFormStateHook(props);
   
-  // Destructure for convenience and type safety
+  // Destructure for convenience and type safety - ensure all required properties exist
   const {
     invoice,
     setInvoice,
+    updateInvoice,
     items,
     assignedStaff,
     showWorkOrderDialog,
@@ -124,7 +200,7 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
     templates,
     handleApplyTemplate, 
     handleSaveTemplate 
-  } = useInvoiceTemplates(setInvoice);
+  } = useInvoiceTemplates(updateInvoice);
 
   // Use invoice totals hook
   const { 
