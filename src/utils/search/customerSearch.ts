@@ -1,3 +1,4 @@
+
 import { Customer } from "@/types/customer";
 
 interface DateRange {
@@ -88,7 +89,7 @@ export const filterCustomers = (customers: Customer[], filters: FilterOptions): 
     if (filters.vehicleType && filters.vehicleType !== '_any') {
       const vehicles = customer.vehicles || [];
       const hasVehicleType = vehicles.some(vehicle => 
-        vehicle.type?.toLowerCase() === filters.vehicleType?.toLowerCase()
+        vehicle.body_style?.toLowerCase() === filters.vehicleType?.toLowerCase()
       );
       if (!hasVehicleType) return false;
     }
@@ -125,10 +126,14 @@ export const convertDateRange = (range: DateRange): { startDate: string, endDate
   };
 };
 
+/**
+ * Interface for vehicle types used in customer data
+ */
 interface CustomerVehicle {
   id: string;
   make: string;
   model: string;
   year: number | string;
+  body_style?: string;
   type?: string;
 }

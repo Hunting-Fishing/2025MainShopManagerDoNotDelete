@@ -5,13 +5,13 @@ import { CustomerFields } from "./form-fields/CustomerFields";
 import { StatusFields } from "./form-fields/StatusFields";
 import { AssignmentFields } from "./form-fields/AssignmentFields";
 import { NotesField } from "./form-fields/NotesField";
-import { WorkOrderFormValues } from "@/types/workOrder";
+import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
 
-// Updated to extend from WorkOrderFormValues for compatibility
-export type WorkOrderFormFieldValues = WorkOrderFormValues;
+// Updated to use the WorkOrderFormSchemaValues for compatibility
+export type WorkOrderFormFieldValues = WorkOrderFormSchemaValues;
 
 interface WorkOrderFormFieldsProps {
-  form: UseFormReturn<WorkOrderFormFieldValues>;
+  form: UseFormReturn<WorkOrderFormSchemaValues>;
   technicians: string[];
 }
 

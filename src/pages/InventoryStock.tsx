@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
@@ -73,7 +74,7 @@ export default function InventoryStock() {
         Name: item.name,
         SKU: item.sku,
         Description: item.description,
-        Price: item.price,
+        Price: item.unit_price,
         Category: item.category,
         Supplier: item.supplier,
         Status: item.status,
@@ -97,7 +98,7 @@ export default function InventoryStock() {
 
   const lowStockCount = inventory.filter(item => item.quantity !== undefined && item.reorder_point !== undefined && item.quantity <= item.reorder_point).length;
   const outOfStockCount = inventory.filter(item => item.quantity === 0).length;
-  const totalInventoryValue = inventory.reduce((acc, item) => acc + (item.price * (item.quantity || 0)), 0);
+  const totalInventoryValue = inventory.reduce((acc, item) => acc + (item.unit_price * (item.quantity || 0)), 0);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -106,7 +107,7 @@ export default function InventoryStock() {
   return (
     <div className="container mx-auto p-4 space-y-6">
       <InventoryStockHeader 
-        title="Inventory Stock" // Add missing title prop
+        title="Inventory Stock"
         lowStockCount={lowStockCount}
         outOfStockCount={outOfStockCount}
         totalValue={totalInventoryValue}
@@ -131,7 +132,7 @@ export default function InventoryStock() {
         <div className="text-red-500 text-center">{error}</div>
       ) : (
         <>
-          <InventoryTable inventory={paginatedInventory} />
+          <InventoryTable items={paginatedInventory} />
           <InventoryPagination
             currentPage={currentPage}
             totalPages={totalPages}

@@ -1,62 +1,94 @@
 
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { InventoryItemExtended } from "@/types/inventory";
+import { InventoryItem } from "@/types/inventory";
+import { formatCurrency } from "@/utils/formatters";
+import { Badge } from "@/components/ui/badge";
 
-export interface InventoryTableProps {
-  items: InventoryItemExtended[];
-  onUpdateItem?: (id: string, updates: Partial<InventoryItemExtended>) => Promise<InventoryItemExtended>;
+interface InventoryTableProps {
+  items: InventoryItem[];
 }
 
-export function InventoryTable({ items, onUpdateItem }: InventoryTableProps) {
-  const getStatusClass = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'in stock':
-        return 'text-green-700 bg-green-100 border border-green-200';
-      case 'low stock':
-        return 'text-amber-700 bg-amber-100 border border-amber-200';
-      case 'out of stock':
-        return 'text-red-700 bg-red-100 border border-red-200';
-      default:
-        return 'text-gray-700 bg-gray-100 border border-gray-200';
-    }
-  };
+export function InventoryTable({ items }: InventoryTableProps) {
+  if (items.length === 0) {
+    return (
+      <div className="text-center p-8 border rounded-md bg-gray-50">
+        <p className="text-gray-500">No inventory items found matching your criteria.</p>
+      </div>
+    );
+  }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
+  // Function to render status badge with appropriate color
+  const renderStatusBadge = (status: string) => {
+    let className = "";
+    
+    switch (status.toLowerCase()) {
+      case "in stock":
+        className = "bg-green-100 text-green-800 border-green-300";
+        break;
+      case "low stock":
+        className = "bg-yellow-100 text-yellow-800 border-yellow-300";
+        break;
+      case "out of stock":
+        className = "bg-red-100 text-red-800 border-red-300";
+        break;
+      case "discontinued":
+        className = "bg-gray-100 text-gray-800 border-gray-300";
+        break;
+      case "on order":
+        className = "bg-blue-100 text-blue-800 border-blue-300";
+        break;
+      default:
+        className = "bg-purple-100 text-purple-800 border-purple-300";
+    }
+    
+    return (
+      <Badge variant="outline" className={className}>
+        {status}
+      </Badge>
+    );
   };
 
   return (
-    <div className="overflow-auto">
+    <div className="border rounded-md overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>SKU</TableHead>
-            <TableHead>Category</TableHead>
-            <TableHead className="text-right">Quantity</TableHead>
-            <TableHead className="text-right">Price</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Location</TableHead>
+            <TableHead className="w-[240px]">Item</TableHead>
+            <TableHead className="w-[100px]">SKU</TableHead>
+            <TableHead className="w-[100px]">Category</TableHead>
+            <TableHead className="w-[120px]">Supplier</TableHead>
+            <TableHead className="w-[100px] text-right">Qty</TableHead>
+            <TableHead className="w-[100px] text-right">Price</TableHead>
+            <TableHead className="w-[120px] text-center">Status</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {items.map((item) => (
-            <TableRow key={item.id}>
-              <TableCell className="font-medium">{item.name}</TableCell>
+            <TableRow key={item.id} className="hover:bg-gray-50 cursor-pointer">
+              <TableCell className="font-medium">
+                <div>
+                  {item.name}
+                  {item.description && (
+                    <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
+                      {item.description}
+                    </p>
+                  )}
+                </div>
+              </TableCell>
               <TableCell>{item.sku}</TableCell>
               <TableCell>{item.category}</TableCell>
-              <TableCell className="text-right">{item.quantity}</TableCell>
-              <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
-              <TableCell>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(item.status)}`}>
-                  {item.status}
-                </span>
+              <TableCell>{item.supplier || "—"}</TableCell>
+              <TableCell className="text-right">
+                {item.quantity}
+                {item.reorder_point && item.quantity <= item.reorder_point && (
+                  <p className="text-xs text-red-600">Low Stock</p>
+                )}
               </TableCell>
-              <TableCell>{item.location}</TableCell>
+              <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
+              <TableCell className="text-center">
+                {renderStatusBadge(item.status)}
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>

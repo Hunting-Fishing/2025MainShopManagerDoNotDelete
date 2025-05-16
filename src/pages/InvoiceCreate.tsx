@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import { useInvoiceForm } from "@/hooks/useInvoiceForm";
 import { InvoiceCreateLayout } from "@/components/invoices/InvoiceCreateLayout";
@@ -141,15 +140,14 @@ export default function InvoiceCreate() {
     return "Unknown Staff";
   };
 
-  // Handle inventory item conversion to invoice item
+  // Create a modified handleAddInventoryItem function that converts InventoryItem to InvoiceItem
   const handleAddInventoryItemAdapter = (inventoryItem: InventoryItem) => {
-    // Convert inventory item to invoice item format
     const invoiceItem: InvoiceItem = {
       id: inventoryItem.id,
       name: inventoryItem.name,
       description: inventoryItem.description || inventoryItem.name,
       quantity: 1,
-      price: inventoryItem.price || inventoryItem.unit_price || 0
+      price: inventoryItem.unit_price || 0
     };
     
     handleAddInventoryItem(invoiceItem);
