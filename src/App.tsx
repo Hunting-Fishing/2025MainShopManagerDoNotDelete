@@ -1,6 +1,6 @@
 
-import React, { Suspense, useEffect } from 'react';
-import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
+import React from 'react';
+import { Routes, Route } from "react-router-dom";
 import Layout from "./components/layout/Layout";
 import Settings from "./pages/Settings";
 import CustomerSettings from "./pages/CustomerSettings";
@@ -44,24 +44,8 @@ import PublicRoute from './components/auth/PublicRoute';
 import EmailVerificationPage from './pages/auth/EmailVerificationPage';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { SettingsPageLayout } from './components/settings/SettingsPageLayout';
-import { AccountTab } from './components/settings/AccountTab';
-import { CompanyTab } from './components/settings/CompanyTab';
-import { SecurityTab } from './components/settings/SecurityTab';
-import { NotificationsTab } from './components/settings/NotificationsTab';
-import { BrandingTab } from './components/settings/BrandingTab';
-import { AppearanceTab } from './components/settings/AppearanceTab';
-import { EmailSettingsTab } from './components/settings/EmailSettingsTab';
-import { IntegrationsTab } from './components/settings/IntegrationsTab';
-import { LoyaltyTab } from './components/settings/LoyaltyTab';
-import { InventorySettingsTab } from './components/settings/InventorySettingsTab';
-import { TeamHistoryTab } from './components/settings/TeamHistoryTab';
-import { EmailSchedulingTab } from './components/settings/EmailSchedulingTab';
-import { DataExportTab } from './components/settings/DataExportTab';
-import { LanguageTab } from './components/settings/LanguageTab';
-import { SettingsLayout } from './components/settings/SettingsLayout';
 
-// Create a simple loading component since we can't import useLoading
+// Create a simple loading component since we don't have useLoading
 function Loading() {
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-white bg-opacity-50 z-50">
@@ -90,42 +74,42 @@ function App() {
                     <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
                     <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
                     <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
-                    <Route path="/reset-password/:token" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
-                    <Route path="/verify-email/:token" element={<PublicRoute><EmailVerificationPage /></PublicRoute>} />
-
-                    <Route path="/" element={<RequireAuth><Layout /></RequireAuth>}>
+                    <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
+                    <Route path="/verify-email" element={<PublicRoute><EmailVerificationPage /></PublicRoute>} />
+                    <Route
+                      path="/"
+                      element={
+                        <RequireAuth>
+                          <Layout />
+                        </RequireAuth>
+                      }
+                    >
                       <Route index element={<Dashboard />} />
-                      <Route path="/dashboard" element={<Dashboard />} />
-                      <Route path="/work-orders" element={<WorkOrders />} />
-                      <Route path="/invoices" element={<Invoices />} />
-                      <Route path="/customers" element={<Customers />} />
-                      <Route path="/equipment" element={<Equipment />} />
-                      <Route path="/inventory" element={<Inventory />} />
-                      <Route path="/tools" element={<ToolsShop />} />
-                      <Route path="/forms" element={<Forms />} />
-                      <Route path="/shopping" element={<Shopping />} />
-                      <Route path="/maintenance" element={<Maintenance />} />
-                      <Route path="/calendar" element={<CalendarPage />} />
-                      <Route path="/reminders" element={<Reminders />} />
-                      <Route path="/chat" element={<Chat />} />
-                      <Route path="/reports" element={<Reports />} />
-                      <Route path="/team" element={<Team />} />
-                      
-                      {/* Marketing Routes */}
-                      <Route path="/marketing" element={<Marketing />} />
-                      <Route path="/email-templates" element={<EmailTemplates />} />
-                      <Route path="/email-campaigns" element={<EmailCampaigns />} />
-                      <Route path="/email-sequences" element={<EmailSequences />} />
-                      <Route path="/sms-templates" element={<SMSTemplates />} />
-                      
-                      {/* Developer Portal Routes */}
-                      <Route path="/developer" element={<DeveloperPortal />} />
-                      <Route path="/developer/shopping-controls" element={<ShoppingControls />} />
-                      <Route path="/developer/service-management" element={<ServiceManagement />} />
-
-                      {/* Settings Routes */}
-                      <Route path="/settings" element={<Settings />} />
-                      <Route path="/settings/customer" element={<CustomerSettings />} />
+                      <Route path="dashboard" element={<Dashboard />} />
+                      <Route path="work-orders" element={<WorkOrders />} />
+                      <Route path="invoices" element={<Invoices />} />
+                      <Route path="customers" element={<Customers />} />
+                      <Route path="equipment" element={<Equipment />} />
+                      <Route path="inventory" element={<Inventory />} />
+                      <Route path="tools" element={<ToolsShop />} />
+                      <Route path="forms" element={<Forms />} />
+                      <Route path="shopping" element={<Shopping />} />
+                      <Route path="maintenance" element={<Maintenance />} />
+                      <Route path="calendar" element={<CalendarPage />} />
+                      <Route path="reminders" element={<Reminders />} />
+                      <Route path="chat" element={<Chat />} />
+                      <Route path="reports" element={<Reports />} />
+                      <Route path="team" element={<Team />} />
+                      <Route path="marketing" element={<Marketing />} />
+                      <Route path="email-templates" element={<EmailTemplates />} />
+                      <Route path="email-campaigns" element={<EmailCampaigns />} />
+                      <Route path="email-sequences" element={<EmailSequences />} />
+                      <Route path="sms-templates" element={<SMSTemplates />} />
+                      <Route path="developer" element={<DeveloperPortal />} />
+                      <Route path="developer/shopping-controls" element={<ShoppingControls />} />
+                      <Route path="developer/service-management" element={<ServiceManagement />} />
+                      <Route path="settings" element={<Settings />} />
+                      <Route path="settings/customer" element={<CustomerSettings />} />
                     </Route>
                   </Routes>
                 </div>
@@ -134,7 +118,6 @@ function App() {
           </I18nextProvider>
         </LanguageProvider>
       </ThemeProvider>
-      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );
 }
