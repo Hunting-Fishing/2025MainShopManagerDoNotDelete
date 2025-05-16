@@ -21,20 +21,60 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { InvoiceFiltersProps } from "@/types/invoice";
 
-export function InvoiceFilters({ filters, setFilters, resetFilters }: InvoiceFiltersProps) {
+export function InvoiceFilters({ onApplyFilters, filters, setFilters, resetFilters }: InvoiceFiltersProps) {
+  // If filters and setFilters aren't provided, create local state
+  const [localFilters, setLocalFilters] = React.useState(filters || {
+    status: "all",
+    customer: "",
+    dateRange: {
+      from: null,
+      to: null
+    }
+  });
+
+  // Use either provided setFilters or local state
+  const handleFiltersChange = (updatedFilters: any) => {
+    if (setFilters) {
+      setFilters(updatedFilters);
+    } else {
+      setLocalFilters(updatedFilters);
+      onApplyFilters(updatedFilters);
+    }
+  };
+
+  // Use either provided resetFilters or reset local state
+  const handleResetFilters = () => {
+    if (resetFilters) {
+      resetFilters();
+    } else {
+      const defaultFilters = {
+        status: "all",
+        customer: "",
+        dateRange: {
+          from: null,
+          to: null
+        }
+      };
+      setLocalFilters(defaultFilters);
+      onApplyFilters(defaultFilters);
+    }
+  };
+
+  const activeFilters = filters || localFilters;
+  
   const handleStatusChange = (value: string) => {
-    setFilters({ ...filters, status: value });
+    handleFiltersChange({ ...activeFilters, status: value });
   };
   
   const handleCustomerChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setFilters({ ...filters, customer: event.target.value });
+    handleFiltersChange({ ...activeFilters, customer: event.target.value });
   };
   
   const handleDateRangeChange = (field: "from" | "to", value: Date | null) => {
-    setFilters({
-      ...filters,
+    handleFiltersChange({
+      ...activeFilters,
       dateRange: {
-        ...filters.dateRange,
+        ...activeFilters.dateRange,
         [field]: value
       }
     });
@@ -44,7 +84,7 @@ export function InvoiceFilters({ filters, setFilters, resetFilters }: InvoiceFil
     <div className="bg-white border rounded-lg p-4 mb-6 grid gap-4 md:grid-cols-4">
       <div className="space-y-2">
         <Label htmlFor="status">Status</Label>
-        <Select value={filters.status} onValueChange={handleStatusChange}>
+        <Select value={activeFilters.status} onValueChange={handleStatusChange}>
           <SelectTrigger id="status">
             <SelectValue placeholder="All statuses" />
           </SelectTrigger>
@@ -64,7 +104,7 @@ export function InvoiceFilters({ filters, setFilters, resetFilters }: InvoiceFil
         <Input
           id="customer"
           placeholder="Search by customer name"
-          value={filters.customer}
+          value={activeFilters.customer}
           onChange={handleCustomerChange}
         />
       </div>
@@ -78,12 +118,12 @@ export function InvoiceFilters({ filters, setFilters, resetFilters }: InvoiceFil
                 variant="outline"
                 className={cn(
                   "w-full justify-start text-left font-normal",
-                  !filters.dateRange.from && "text-muted-foreground"
+                  !activeFilters.dateRange.from && "text-muted-foreground"
                 )}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {filters.dateRange.from ? (
-                  format(filters.dateRange.from, "PPP")
+                {activeFilters.dateRange.from ? (
+                  format(activeFilters.dateRange.from, "PPP")
                 ) : (
                   <span>Start date</span>
                 )}
@@ -92,7 +132,7 @@ export function InvoiceFilters({ filters, setFilters, resetFilters }: InvoiceFil
             <PopoverContent className="w-auto p-0" align="start">
               <Calendar
                 mode="single"
-                selected={filters.dateRange.from || undefined}
+                selected={activeFilters.dateRange.from || undefined}
                 onSelect={(date) => handleDateRangeChange("from", date)}
                 initialFocus
               />
@@ -105,12 +145,12 @@ export function InvoiceFilters({ filters, setFilters, resetFilters }: InvoiceFil
                 variant="outline"
                 className={cn(
                   "w-full justify-start text-left font-normal",
-                  !filters.dateRange.to && "text-muted-foreground"
+                  !activeFilters.dateRange.to && "text-muted-foreground"
                 )}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {filters.dateRange.to ? (
-                  format(filters.dateRange.to, "PPP")
+                {activeFilters.dateRange.to ? (
+                  format(activeFilters.dateRange.to, "PPP")
                 ) : (
                   <span>End date</span>
                 )}
@@ -119,7 +159,7 @@ export function InvoiceFilters({ filters, setFilters, resetFilters }: InvoiceFil
             <PopoverContent className="w-auto p-0" align="start">
               <Calendar
                 mode="single"
-                selected={filters.dateRange.to || undefined}
+                selected={activeFilters.dateRange.to || undefined}
                 onSelect={(date) => handleDateRangeChange("to", date)}
                 initialFocus
               />
@@ -129,7 +169,7 @@ export function InvoiceFilters({ filters, setFilters, resetFilters }: InvoiceFil
       </div>
       
       <div className="flex items-end">
-        <Button variant="outline" onClick={resetFilters} className="w-full">
+        <Button variant="outline" onClick={handleResetFilters} className="w-full">
           <FilterX className="mr-2 h-4 w-4" />
           Reset Filters
         </Button>

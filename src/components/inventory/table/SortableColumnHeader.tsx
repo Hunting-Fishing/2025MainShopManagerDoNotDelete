@@ -13,9 +13,11 @@ export interface Column {
 export interface SortableColumnHeaderProps {
   column: Column;
   onSort?: () => void;
+  onToggleVisibility?: (columnId: string) => void;
+  key?: string;
 }
 
-export function SortableColumnHeader({ column, onSort }: SortableColumnHeaderProps) {
+export function SortableColumnHeader({ column, onSort, onToggleVisibility }: SortableColumnHeaderProps) {
   return (
     <div className="flex items-center">
       <Button 
@@ -26,6 +28,17 @@ export function SortableColumnHeader({ column, onSort }: SortableColumnHeaderPro
         {column.label}
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
+      {onToggleVisibility && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onToggleVisibility(column.id)}
+          className="ml-2 h-6 w-6 p-0"
+        >
+          <span className="sr-only">Toggle column visibility</span>
+          <EyeOff className="h-4 w-4" />
+        </Button>
+      )}
     </div>
   );
 }

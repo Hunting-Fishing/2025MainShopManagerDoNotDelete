@@ -9,7 +9,7 @@ export const useInvoiceWorkOrder = () => {
     return {
       workOrderId: workOrder.id,
       customer: workOrder.customer || '',
-      customerAddress: workOrder.customer_address || '',
+      customerAddress: workOrder.customer_address || workOrder.address || '', // Handle both property names
       description: workOrder.description || '',
       assignedStaff: workOrder.technician ? [workOrder.technician] : []
     };

@@ -65,6 +65,9 @@ export const createInvoiceUpdater = (updates: Partial<Invoice>) => {
 // Adding the export for filter props interfaces
 export interface InvoiceFiltersProps {
   onApplyFilters: (filters: any) => void;
+  filters?: any;
+  setFilters?: (filters: any) => void;
+  resetFilters?: () => void;
 }
 
 export interface InvoiceFiltersDropdownProps {
