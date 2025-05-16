@@ -1,3 +1,4 @@
+
 import { useParams } from "react-router-dom";
 import { useInvoiceForm } from "@/hooks/useInvoiceForm";
 import { InvoiceCreateLayout } from "@/components/invoices/InvoiceCreateLayout";
@@ -13,9 +14,6 @@ import {
 } from "@/types/invoice";
 import { InventoryItem } from "@/types/inventory";
 import { inventoryItemToInvoiceItem } from "@/utils/inventory/inventoryCalculations";
-
-// Use the utility function to create an adapter
-export const createInventoryItemAdapter = inventoryItemToInvoiceItem;
 
 export default function InvoiceCreate() {
   const { workOrderId } = useParams<{ workOrderId?: string }>();
@@ -145,9 +143,10 @@ export default function InvoiceCreate() {
     return "Unknown Staff";
   };
 
-  // Fix the adapter by explicitly converting types
+  // Fix the type issue by creating a proper adapter function
   const handleInventoryItemSelected = (inventoryItem: InventoryItem) => {
-    const invoiceItem = createInventoryItemAdapter(inventoryItem as any);
+    // Convert the inventory item to invoice item format before passing to handler
+    const invoiceItem = inventoryItemToInvoiceItem(inventoryItem as any);
     handleAddInventoryItem(invoiceItem);
   };
 

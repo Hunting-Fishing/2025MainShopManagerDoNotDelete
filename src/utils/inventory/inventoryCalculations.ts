@@ -1,4 +1,3 @@
-
 import { InventoryItemExtended } from "@/types/inventory";
 import { WorkOrderInventoryItem, ExtendedWorkOrderInventoryItem } from "@/components/work-orders/inventory/WorkOrderInventoryItem";
 import { InvoiceItem } from "@/types/invoice";
@@ -92,11 +91,11 @@ export const inventoryItemToInvoiceItem = (item: InventoryItemExtended): Invoice
     id: item.id,
     name: item.name,
     description: item.description || item.name,
-    sku: item.sku,
+    sku: item.sku || '',
     quantity: quantity,
     price: price,
     total: price * quantity,
-    category: item.category
+    category: item.category || ''
   };
 };
 
@@ -108,11 +107,11 @@ export const workOrderInventoryItemToInvoiceItem = (item: WorkOrderInventoryItem
     id: item.id,
     name: item.name,
     description: item.name,
-    sku: item.sku,
+    sku: item.sku || '',
     quantity: item.quantity,
     price: item.unit_price,
     total: item.total,
-    category: item.category
+    category: item.category || ''
   };
 };
 
@@ -133,4 +132,43 @@ export const getStatusColorClass = (status: string): string => {
     default:
       return 'bg-gray-100 text-gray-800 border-gray-300';
   }
+};
+
+/**
+ * Extended utility for converting inventory items to display-ready format
+ * with consistent property access
+ */
+export const prepareInventoryItemForDisplay = (item: any): ExtendedWorkOrderInventoryItem => {
+  return {
+    id: item.id || `temp-${Date.now()}`,
+    name: item.name || 'Unnamed Item',
+    sku: item.sku || '',
+    category: item.category || 'Uncategorized',
+    quantity: Number(item.quantity) || 1,
+    unit_price: Number(item.unit_price) || Number(item.price) || 0,
+    total: (Number(item.quantity) || 1) * (Number(item.unit_price) || Number(item.price) || 0),
+    itemStatus: determineItemStatus(item),
+    estimatedArrivalDate: item.estimatedArrivalDate || item.expected_arrival || undefined,
+    supplierName: item.supplierName || item.supplier || undefined,
+    notes: item.notes || undefined
+  };
+};
+
+/**
+ * Determine the item status based on available data
+ */
+const determineItemStatus = (item: any): "special-order" | "ordered" | "in-stock" => {
+  if (item.itemStatus) {
+    // If itemStatus is already set and valid, use it
+    if (["special-order", "ordered", "in-stock"].includes(item.itemStatus)) {
+      return item.itemStatus as any;
+    }
+  }
+  
+  // Otherwise determine based on quantity
+  const quantity = Number(item.quantity) || 0;
+  if (quantity <= 0) {
+    return "special-order";
+  }
+  return "in-stock";
 };

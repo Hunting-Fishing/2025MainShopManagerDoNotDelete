@@ -9,7 +9,7 @@ import { SpecialOrderDialog } from "./SpecialOrderDialog";
 import { useWorkOrderInventory } from "@/hooks/inventory/workOrder/useWorkOrderInventory";
 import { supabase } from "@/integrations/supabase/client";
 import { WorkOrderFormValues } from "@/types/workOrder";
-import { WorkOrderInventoryItem } from "./WorkOrderInventoryItem";
+import { WorkOrderInventoryItem, ExtendedWorkOrderInventoryItem } from "./WorkOrderInventoryItem";
 
 interface WorkOrderInventoryFieldProps {
   form: UseFormReturn<WorkOrderFormValues>;
@@ -87,7 +87,7 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
             />
             
             <WorkOrderInventoryTable 
-              items={items} 
+              items={items as ExtendedWorkOrderInventoryItem[]} 
               onUpdateQuantity={handleUpdateQuantity}
               onRemoveItem={handleRemoveItem}
             />
