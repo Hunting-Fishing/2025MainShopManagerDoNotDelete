@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { WorkOrderTemplate } from '@/types/workOrder';
 import { v4 as uuidv4 } from 'uuid';
@@ -40,7 +41,6 @@ export function useWorkOrderTemplates() {
             priority: template.priority,
             technician: template.technician,
             notes: template.notes,
-            location: template.location,
             inventoryItems: Array.isArray(template.inventory_items) 
               ? template.inventory_items.map(item => ({
                   id: item.id,
@@ -109,7 +109,6 @@ export function useWorkOrderTemplates() {
           priority: template.priority,
           technician: template.technician,
           notes: template.notes,
-          location: template.location,
           created_at: new Date().toISOString(),
           usage_count: 0
         });

@@ -42,7 +42,7 @@ export function InvoiceDetailsContent({
           <p className="text-slate-500">{invoice.id}</p>
           <div className="mt-4">
             <p className="font-medium">Date Issued: {invoice.date}</p>
-            <p className="font-medium">Due Date: {invoice.due_date || invoice.dueDate}</p>
+            <p className="font-medium">Due Date: {invoice.dueDate}</p>
           </div>
         </div>
         
@@ -60,18 +60,18 @@ export function InvoiceDetailsContent({
       {/* Customer info and work order reference */}
       <InvoiceDetailsCustomerInfo 
         customer={invoice.customer}
-        customerAddress={invoice.customer_address || invoice.customerAddress || ''}
-        customerEmail={invoice.customer_email || invoice.customerEmail || ''}
-        workOrderId={invoice.work_order_id || invoice.workOrderId}
+        customerAddress={invoice.customerAddress}
+        customerEmail={invoice.customerEmail}
+        workOrderId={invoice.workOrderId}
         description={invoice.description}
       />
       
       {/* Items table */}
       <InvoiceDetailsItemsTable 
-        items={invoice.items || []}
-        subtotal={invoice.subtotal || 0}
-        tax={invoice.tax || 0}
-        total={invoice.total || 0}
+        items={invoice.items}
+        subtotal={invoice.subtotal}
+        tax={invoice.tax}
+        total={invoice.total}
       />
       
       {/* Notes */}
@@ -79,10 +79,10 @@ export function InvoiceDetailsContent({
       
       {/* Payment information */}
       <InvoiceDetailsPaymentInfo 
-        paymentMethod={invoice.paymentMethod || invoice.payment_method || "N/A"}
+        paymentMethod={invoice.paymentMethod || "N/A"}
         status={invoice.status}
         statusLabel={statusStyles[invoice.status as keyof typeof statusStyles].label}
-        createdBy={invoice.created_by || invoice.createdBy || ""}
+        createdBy={invoice.createdBy || ""}
         customerId={invoice.customer_id}
       />
       

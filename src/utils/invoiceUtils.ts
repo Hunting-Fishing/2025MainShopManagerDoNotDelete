@@ -1,77 +1,104 @@
 
-import { InvoiceItem } from "@/types/invoice";
+import { Invoice, InvoiceItem } from "@/types/invoice";
+import { v4 as uuidv4 } from 'uuid';
 
 /**
- * Calculate the subtotal of an invoice based on its items
- * @param items Array of invoice items
- * @returns Subtotal amount
+ * Calculates the subtotal for an invoice based on item prices and quantities
  */
-export const calculateSubtotal = (items: InvoiceItem[]): number => {
-  if (!items || !items.length) return 0;
-  
-  return items.reduce((acc, item) => {
-    const itemTotal = item.quantity * item.price;
-    return acc + itemTotal;
-  }, 0);
-};
+export function calculateSubtotal(items: InvoiceItem[]): number {
+  return items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+}
 
 /**
- * Calculate tax amount based on subtotal and tax rate
- * @param subtotal Subtotal amount
- * @param taxRate Tax rate as decimal (e.g., 0.07 for 7%)
- * @returns Tax amount
+ * Calculates tax for an invoice based on subtotal and tax rate
  */
-export const calculateTax = (subtotal: number, taxRate: number): number => {
+export function calculateTax(subtotal: number, taxRate: number): number {
   return subtotal * taxRate;
-};
+}
 
 /**
- * Calculate the total amount of an invoice
- * @param subtotal Subtotal amount
- * @param tax Tax amount
- * @returns Total amount
+ * Calculates total for an invoice including tax
  */
-export const calculateTotal = (subtotal: number, tax: number): number => {
+export function calculateTotal(subtotal: number, tax: number): number {
   return subtotal + tax;
-};
+}
 
 /**
- * Format invoice number with proper padding
- * @param id Base ID for the invoice
- * @returns Formatted invoice number
+ * Creates a default invoice object with empty/default values
  */
-export const formatInvoiceNumber = (id: string): string => {
-  if (!id) return '';
+export function createDefaultInvoice(workOrderId?: string): Invoice {
+  const today = new Date().toISOString().split('T')[0];
+  const dueDate = new Date();
+  dueDate.setDate(dueDate.getDate() + 30); // Due in 30 days by default
   
-  // Extract just the numeric portion if it exists
-  const numericPart = id.match(/\d+/);
-  if (numericPart) {
-    const number = parseInt(numericPart[0], 10);
-    return `INV-${String(number).padStart(6, '0')}`;
-  }
-  
-  // If no numeric part, use the whole ID
-  return `INV-${id}`;
-};
+  return {
+    id: uuidv4(),
+    customer: '',
+    customerEmail: '',
+    customerAddress: '',
+    date: today,
+    dueDate: dueDate.toISOString().split('T')[0],
+    subtotal: 0,
+    tax: 0,
+    total: 0,
+    status: 'draft',
+    items: [],
+    notes: '',
+    description: '',
+    paymentMethod: '',
+    workOrderId: workOrderId || '',
+    assignedStaff: [],
+    createdBy: '',
+  };
+}
 
 /**
- * Get appropriate color for invoice status
- * @param status Invoice status
- * @returns CSS color class for the status
+ * Formats invoice data from API response to match our Invoice type
  */
-export const getInvoiceStatusColor = (status: string): string => {
-  switch (status?.toLowerCase()) {
-    case 'draft':
-      return 'text-slate-500 bg-slate-100';
-    case 'pending':
-      return 'text-amber-700 bg-amber-100';
-    case 'paid':
-      return 'text-green-700 bg-green-100';
-    case 'overdue':
-      return 'text-red-700 bg-red-100';
-    case 'cancelled':
-      return 'text-gray-700 bg-gray-100';
-    default:
-      return 'text-slate-500 bg-slate-100';
-  }
-};
+export function formatApiInvoice(apiInvoice: any): Invoice {
+  return {
+    id: apiInvoice.id,
+    customer: apiInvoice.customer,
+    customerEmail: apiInvoice.customer_email,
+    customerAddress: apiInvoice.customer_address,
+    date: apiInvoice.date,
+    dueDate: apiInvoice.due_date,
+    subtotal: Number(apiInvoice.subtotal) || 0,
+    tax: Number(apiInvoice.tax) || 0,
+    total: Number(apiInvoice.total) || 0,
+    status: apiInvoice.status as Invoice['status'],
+    items: apiInvoice.items?.map((item: any) => ({
+      id: item.id,
+      name: item.name,
+      description: item.description || '',
+      quantity: Number(item.quantity),
+      price: Number(item.price),
+      total: Number(item.total),
+      hours: item.hours || false
+    })) || [],
+    notes: apiInvoice.notes || '',
+    description: apiInvoice.description || '',
+    paymentMethod: apiInvoice.payment_method || '',
+    workOrderId: apiInvoice.work_order_id || '',
+    assignedStaff: apiInvoice.invoice_staff?.map((staff: any) => ({
+      id: staff.id || '',
+      name: staff.staff_name || '',
+    })) || [],
+    createdBy: apiInvoice.created_by || '',
+  };
+}
+
+/**
+ * Gets the appropriate color class for an invoice status
+ */
+export function getInvoiceStatusColor(status: string): string {
+  const statusColors = {
+    draft: 'bg-slate-200 text-slate-800',
+    pending: 'bg-yellow-100 text-yellow-800',
+    paid: 'bg-green-100 text-green-800',
+    overdue: 'bg-red-100 text-red-800',
+    cancelled: 'bg-slate-100 text-slate-800'
+  };
+  
+  return statusColors[status as keyof typeof statusColors] || statusColors.draft;
+}

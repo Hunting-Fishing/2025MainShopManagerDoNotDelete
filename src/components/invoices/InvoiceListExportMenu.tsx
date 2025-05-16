@@ -1,107 +1,71 @@
 
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { saveAs } from "file-saver";
-import { utils, write } from "xlsx";
-import { Invoice } from "@/types/invoice";
+import { exportToCSV, exportToExcel, exportToPDF } from "@/utils/export";
 import { toast } from "@/components/ui/use-toast";
+import { Invoice } from "@/types/invoice";
+import { ExportMenuBase } from "./ExportMenuBase";
 
-export interface InvoiceListExportMenuProps {
+interface InvoiceListExportMenuProps {
   invoices: Invoice[];
 }
 
 export function InvoiceListExportMenu({ invoices }: InvoiceListExportMenuProps) {
-  const handleExportCSV = () => {
-    const csvContent = convertToCSV(invoices);
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
-    saveAs(blob, `invoices_${formatDate()}.csv`);
-    toast({ title: "Export successful", description: "Invoices exported as CSV" });
+  const handleExportAll = (format: "csv" | "excel" | "pdf") => {
+    console.log(`Exporting all invoices as ${format}`);
+    
+    if (invoices.length === 0) {
+      toast({
+        title: "No data to export",
+        description: "There are no invoices to export",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Prepare invoice data for export
+    const exportData = invoices.map(invoice => ({
+      id: invoice.id,
+      workOrderId: invoice.workOrderId || "N/A",
+      customer: invoice.customer,
+      description: invoice.description,
+      total: invoice.total ? `$${invoice.total.toFixed(2)}` : "$0.00",
+      status: invoice.status,
+      dueDate: invoice.dueDate,
+      createdBy: invoice.createdBy,
+    }));
+
+    // Define columns for PDF export
+    const columns = [
+      { header: "Invoice #", dataKey: "id" },
+      { header: "Work Order", dataKey: "workOrderId" },
+      { header: "Customer", dataKey: "customer" },
+      { header: "Description", dataKey: "description" },
+      { header: "Total", dataKey: "total" },
+      { header: "Status", dataKey: "status" },
+      { header: "Due Date", dataKey: "dueDate" },
+      { header: "Created By", dataKey: "createdBy" },
+    ];
+
+    try {
+      switch (format) {
+        case "csv":
+          exportToCSV(exportData, "Invoices_List");
+          break;
+        case "excel":
+          exportToExcel(exportData, "Invoices_List");
+          break;
+        case "pdf":
+          exportToPDF(exportData, "Invoices_List", columns);
+          break;
+      }
+
+      toast({
+        title: "Export successful",
+        description: `Invoices exported as ${format.toUpperCase()}`,
+      });
+    } catch (error) {
+      throw error; // Let base component handle the error
+    }
   };
 
-  const handleExportExcel = () => {
-    const worksheet = utils.json_to_sheet(formatInvoicesForExport(invoices));
-    const workbook = utils.book_new();
-    utils.book_append_sheet(workbook, worksheet, "Invoices");
-    const excelBuffer = write(workbook, { bookType: "xlsx", type: "array" });
-    const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
-    saveAs(blob, `invoices_${formatDate()}.xlsx`);
-    toast({ title: "Export successful", description: "Invoices exported as Excel" });
-  };
-
-  const handleExportPDF = () => {
-    // Simplified version - in a real app this would generate a PDF
-    toast({ 
-      title: "PDF Export", 
-      description: "PDF export functionality would be implemented here",
-      variant: "default"
-    });
-  };
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Download className="mr-2 h-4 w-4" />
-          Export
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={handleExportCSV}>Export as CSV</DropdownMenuItem>
-        <DropdownMenuItem onClick={handleExportExcel}>Export as Excel</DropdownMenuItem>
-        <DropdownMenuItem onClick={handleExportPDF}>Export as PDF</DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-// Helper functions
-function formatInvoicesForExport(invoices: Invoice[]) {
-  return invoices.map((invoice) => ({
-    "Invoice #": invoice.invoice_number || invoice.id,
-    Customer: invoice.customer,
-    Date: formatDateForSheet(invoice.date),
-    "Due Date": formatDateForSheet(invoice.due_date),
-    Status: invoice.status,
-    Amount: invoice.total || 0,
-    "Created By": invoice.created_by || "",
-  }));
-}
-
-function convertToCSV(invoices: Invoice[]): string {
-  const formattedInvoices = formatInvoicesForExport(invoices);
-  
-  if (formattedInvoices.length === 0) {
-    return '';
-  }
-  
-  const headers = Object.keys(formattedInvoices[0]).join(',');
-  const rows = formattedInvoices.map(obj => 
-    Object.values(obj).map(value => 
-      typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value
-    ).join(',')
-  );
-  
-  return [headers, ...rows].join('\n');
-}
-
-function formatDate(): string {
-  const now = new Date();
-  return now.toISOString().split('T')[0];
-}
-
-function formatDateForSheet(dateStr?: string): string {
-  if (!dateStr) return '';
-  try {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString();
-  } catch (e) {
-    return dateStr;
-  }
+  return <ExportMenuBase onExport={handleExportAll} buttonText="Export All" />;
 }

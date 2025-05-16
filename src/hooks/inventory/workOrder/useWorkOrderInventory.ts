@@ -12,7 +12,6 @@ import { useInventoryItemOperations } from "./useInventoryItemOperations";
  * Main hook for managing work order inventory
  */
 export const useWorkOrderInventory = (form: UseFormReturn<WorkOrderFormFieldValues>) => {
-  const [showInventoryDialog, setShowInventoryDialog] = useState(false);
   const { 
     reserveInventory, 
     consumeWorkOrderInventory 
@@ -23,25 +22,13 @@ export const useWorkOrderInventory = (form: UseFormReturn<WorkOrderFormFieldValu
   
   // Use the inventory item operations hook
   const {
+    showInventoryDialog,
+    setShowInventoryDialog,
     selectedItems,
-    addItemToSelection,
-    updateItemQuantity,
-    removeItem
+    handleAddItem,
+    handleRemoveItem,
+    handleUpdateQuantity
   } = useInventoryItemOperations(form);
-
-  // Map operations to more descriptive names
-  const handleAddItem = (item: InventoryItemExtended) => {
-    addItemToSelection(item);
-    setShowInventoryDialog(false);
-  };
-
-  const handleRemoveItem = (itemId: string) => {
-    removeItem(itemId);
-  };
-
-  const handleUpdateQuantity = (itemId: string, quantity: number) => {
-    updateItemQuantity(itemId, quantity);
-  };
 
   return {
     showInventoryDialog,

@@ -1,151 +1,108 @@
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { 
-  Table, 
-  TableHeader, 
-  TableRow, 
-  TableHead, 
-  TableBody, 
-  TableCell 
-} from '@/components/ui/table';
-import { Plus, Trash } from 'lucide-react';
-import { UseFormReturn } from 'react-hook-form';
-import { WorkOrderInventoryItem } from '@/types/workOrder';
+import React, { useState, useEffect } from "react";
+import { FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { UseFormReturn } from "react-hook-form";
+import { WorkOrderFormFieldValues } from "../WorkOrderFormFields";
+import { WorkOrderInventoryTable } from "./WorkOrderInventoryTable";
+import { InventorySelectionDialog } from "./InventorySelectionDialog";
+import { InventorySectionHeader } from "./InventorySectionHeader";
+import { SpecialOrderDialog } from "./SpecialOrderDialog";
+import { useWorkOrderInventory } from "@/hooks/inventory/workOrder/useWorkOrderInventory";
+import { supabase } from "@/integrations/supabase/client";
 
-export interface WorkOrderInventoryFieldProps {
-  inventoryItems?: WorkOrderInventoryItem[];
-  onAdd?: (item: WorkOrderInventoryItem) => void;
-  onRemove?: (id: string) => void;
-  form?: any; // Allow form to be passed in
+interface WorkOrderInventoryFieldProps {
+  form: UseFormReturn<WorkOrderFormFieldValues>;
 }
 
 export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = ({
-  inventoryItems = [],
-  onAdd,
-  onRemove,
   form
 }) => {
-  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showSpecialOrderDialog, setShowSpecialOrderDialog] = useState(false);
+  const [suppliers, setSuppliers] = useState<string[]>([]);
+  
+  const {
+    showInventoryDialog,
+    setShowInventoryDialog,
+    selectedItems,
+    handleAddItem,
+    handleRemoveItem,
+    handleUpdateQuantity
+  } = useWorkOrderInventory(form);
 
-  const handleAddItem = () => {
-    setShowAddDialog(true);
-  };
-
-  const handleRemoveItem = (id: string) => {
-    if (onRemove) {
-      onRemove(id);
-    }
-  };
-
-  // Helper to format currency
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(value);
-  };
-
-  // Create a new item with default values
-  const createNewItem = (): WorkOrderInventoryItem => {
-    return {
-      id: crypto.randomUUID(),
-      name: '',
-      sku: '',
-      category: 'Parts',
-      quantity: 1,
-      unitPrice: 0,
-      itemStatus: 'in-stock',
+  // Fetch suppliers for special order dialog
+  useEffect(() => {
+    const fetchSuppliers = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('inventory_suppliers')
+          .select('name')
+          .order('name');
+          
+        if (error) throw error;
+        if (data) {
+          setSuppliers(data.map(s => s.name));
+        }
+      } catch (error) {
+        console.error("Error fetching suppliers:", error);
+        // Fallback to default suppliers
+        setSuppliers(["General Supplier", "Parts Warehouse", "Manufacturer"]);
+      }
     };
-  };
+    
+    fetchSuppliers();
+  }, []);
 
-  const handleAddSpecialOrder = (partialItem: Partial<WorkOrderInventoryItem>) => {
-    if (onAdd) {
-      onAdd({
-        ...createNewItem(),
-        ...partialItem,
-        name: partialItem.name || '',
-        quantity: partialItem.quantity || 1,
-        unitPrice: partialItem.unitPrice || 0,
-        itemStatus: partialItem.itemStatus || 'ordered',
-      });
-    }
-    setShowAddDialog(false);
+  // Handle adding a special order item
+  const handleAddSpecialOrder = (item: any) => {
+    // Generate a temporary ID for the item
+    const tempId = `temp-${Date.now()}`;
+    
+    const newItem = {
+      id: tempId,
+      ...item
+    };
+    
+    const currentItems = form.getValues("inventoryItems") || [];
+    form.setValue("inventoryItems", [...currentItems, newItem]);
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-base font-medium">Parts & Materials</h3>
-        <Button variant="outline" size="sm" onClick={handleAddItem}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Item
-        </Button>
-      </div>
-
-      <div className="border rounded-md">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Item</TableHead>
-              <TableHead>Quantity</TableHead>
-              <TableHead>Unit Price</TableHead>
-              <TableHead>Total</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {inventoryItems.length > 0 ? (
-              inventoryItems.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">
-                    {item.name}
-                    {item.notes && (
-                      <p className="text-xs text-muted-foreground">{item.notes}</p>
-                    )}
-                  </TableCell>
-                  <TableCell>{item.quantity}</TableCell>
-                  <TableCell>{formatCurrency(item.unitPrice)}</TableCell>
-                  <TableCell>{formatCurrency(item.quantity * item.unitPrice)}</TableCell>
-                  <TableCell>
-                    <span className="text-xs bg-blue-100 text-blue-800 rounded-full px-2 py-1">
-                      {item.itemStatus || 'in-stock'}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveItem(item.id)}
-                    >
-                      <Trash className="h-4 w-4 text-red-500" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
-                  No parts or materials added
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      {showAddDialog && (
-        <div className="border rounded-md p-4 mt-4 bg-muted/50">
-          <h4 className="font-medium mb-4">Add Special Order Item</h4>
-          {/* Special order form would go here */}
-          <div className="flex justify-end mt-4 space-x-2">
-            <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
-            <Button onClick={() => handleAddSpecialOrder({ name: 'New Special Order' })}>Add Item</Button>
+    <FormField
+      name="inventoryItems"
+      render={() => (
+        <FormItem className="col-span-1 md:col-span-2">
+          <FormLabel>Parts & Materials</FormLabel>
+          
+          <div className="space-y-4">
+            <InventorySectionHeader 
+              onShowDialog={() => setShowInventoryDialog(true)}
+              onShowSpecialOrderDialog={() => setShowSpecialOrderDialog(true)}
+              totalItems={selectedItems.length}
+            />
+            
+            <WorkOrderInventoryTable 
+              items={selectedItems} 
+              onUpdateQuantity={handleUpdateQuantity}
+              onRemoveItem={handleRemoveItem}
+            />
           </div>
-        </div>
+
+          {/* Standard Inventory Selection Dialog */}
+          <InventorySelectionDialog
+            open={showInventoryDialog}
+            onOpenChange={setShowInventoryDialog}
+            onAddItem={handleAddItem}
+          />
+          
+          {/* Special Order Dialog */}
+          <SpecialOrderDialog
+            open={showSpecialOrderDialog}
+            onOpenChange={setShowSpecialOrderDialog}
+            onAddItem={handleAddSpecialOrder}
+            suppliers={suppliers}
+          />
+        </FormItem>
       )}
-    </div>
+    />
   );
-};
+}

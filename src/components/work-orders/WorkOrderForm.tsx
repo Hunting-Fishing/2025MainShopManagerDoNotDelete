@@ -1,275 +1,191 @@
 
-import React from 'react';
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import * as z from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { workOrderFormSchema, WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { WorkOrderTemplate, WorkOrderPriorityType, WorkOrderStatusType } from "@/types/workOrder";
-
-const formSchema = z.object({
-  customer_id: z.string().min(1, { message: "Customer is required" }),
-  vehicle_id: z.string().optional(),
-  description: z.string().min(1, { message: "Description is required" }),
-  status: z.string().min(1, { message: "Status is required" }),
-  priority: z.string().min(1, { message: "Priority is required" }),
-  technician_id: z.string().optional(),
-  location: z.string().optional(),
-  notes: z.string().optional(),
-});
-
-export type WorkOrderFormData = z.infer<typeof formSchema>;
+import { Form } from "@/components/ui/form";
+import { toast } from "sonner";
+import { CustomerInfo } from "@/components/work-orders/fields/CustomerInfo";
+import { VehicleInfo } from "@/components/work-orders/fields/VehicleInfo";
+import { ScheduleSection } from "@/components/work-orders/fields/ScheduleSection";
+import { PartsAndServicesTable } from "@/components/work-orders/fields/PartsAndServicesTable";
+import { WorkOrderFormHeader } from "@/components/work-orders/WorkOrderFormHeader";
+import { WorkOrderSummary } from "@/components/work-orders/fields/WorkOrderSummary";
+import { Separator } from "@/components/ui/separator";
+import { Card } from "@/components/ui/card";
+import { WorkOrderTemplate } from "@/types/workOrder";
+import { ServicesSection } from "@/components/work-orders/fields/ServicesSection";
+import { ServiceItem } from "@/types/services";
 
 interface WorkOrderFormProps {
-  onSubmit: (data: WorkOrderFormData) => void;
-  selectedTemplate: WorkOrderTemplate | null;
-  customers: { id: string; name: string }[];
-  vehicles: { id: string; name: string }[];
-  technicians: { id: string; name: string }[];
-  locations: string[];
-  isSubmitting?: boolean;
+  technicians: string[];
+  isLoadingTechnicians: boolean;
+  initialTemplate?: WorkOrderTemplate | null;
 }
 
-export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
-  onSubmit,
-  selectedTemplate,
-  customers,
-  vehicles,
+export function WorkOrderForm({
   technicians,
-  locations,
-  isSubmitting = false,
-}) => {
-  const form = useForm<WorkOrderFormData>({
-    resolver: zodResolver(formSchema),
+  isLoadingTechnicians,
+  initialTemplate,
+}: WorkOrderFormProps) {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [selectedItems, setSelectedItems] = useState<any[]>([]);
+  const [selectedServices, setSelectedServices] = useState<ServiceItem[]>([]);
+  
+  // Get pre-filled info if coming from a vehicle page
+  const customerId = searchParams.get('customerId');
+  const vehicleId = searchParams.get('vehicleId');
+  const customerName = searchParams.get('customerName');
+  
+  // Initialize the form with React Hook Form + zod validation
+  const form = useForm<WorkOrderFormSchemaValues>({
+    resolver: zodResolver(workOrderFormSchema),
     defaultValues: {
-      customer_id: selectedTemplate?.customer_id || "",
-      vehicle_id: "",
-      description: selectedTemplate?.description || "",
-      status: selectedTemplate?.status as WorkOrderStatusType || "pending",
-      priority: selectedTemplate?.priority as WorkOrderPriorityType || "medium",
-      technician_id: selectedTemplate?.technician_id || "",
-      location: selectedTemplate?.location || "",
-      notes: selectedTemplate?.notes || "",
+      customer: customerName || "",
+      description: "",
+      status: "pending",
+      priority: "medium",
+      technician: "",
+      location: "",
+      dueDate: new Date(),
+      notes: "",
+      vehicleMake: "",
+      vehicleModel: "",
+      vehicleYear: "",
+      odometer: "",
+      licensePlate: "",
+      vin: "", // Add the default value for VIN
     },
   });
+  
+  // Apply template if provided
+  useEffect(() => {
+    if (initialTemplate) {
+      form.setValue("description", initialTemplate.description || "");
+      form.setValue("status", initialTemplate.status);
+      form.setValue("priority", initialTemplate.priority);
+      form.setValue("notes", initialTemplate.notes || "");
+      form.setValue("technician", initialTemplate.technician || "");
+      
+      // Set any other template values if available
+      if (initialTemplate.location) form.setValue("location", initialTemplate.location);
+      
+      toast.success(`Template "${initialTemplate.name}" applied`);
+    }
+  }, [initialTemplate, form]);
+  
+  // Function to calculate the total amount from selected items
+  const calculateTotal = () => {
+    const itemsTotal = selectedItems.reduce((acc, item) => {
+      return acc + (item.quantity * item.unitPrice);
+    }, 0);
+    
+    const servicesTotal = selectedServices.reduce((acc, service) => {
+      // Make sure to handle potentially undefined values
+      const price = service.price || 0;
+      const quantity = service.quantity || 1;
+      return acc + (price * quantity);
+    }, 0);
+    
+    return itemsTotal + servicesTotal;
+  };
+
+  const onSubmit = async (data: WorkOrderFormSchemaValues) => {
+    setIsSubmitting(true);
+    setFormError(null);
+    
+    try {
+      // Here we would normally send the data to the backend
+      console.log("Submitting work order data:", data);
+      console.log("Selected items:", selectedItems);
+      console.log("Selected services:", selectedServices);
+      
+      // Simulate a successful submission
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast.success("Work order created successfully");
+      navigate("/work-orders");
+    } catch (error) {
+      console.error("Error creating work order:", error);
+      setFormError("There was a problem creating the work order. Please try again.");
+      toast.error("Failed to create work order");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Customer */}
-          <FormField
-            control={form.control}
-            name="customer_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Customer*</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a customer" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {customers.map((customer) => (
-                      <SelectItem key={customer.id} value={customer.id}>
-                        {customer.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Vehicle */}
-          <FormField
-            control={form.control}
-            name="vehicle_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Vehicle</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a vehicle" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {vehicles.map((vehicle) => (
-                      <SelectItem key={vehicle.id} value={vehicle.id}>
-                        {vehicle.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        {/* Description */}
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description*</FormLabel>
-              <FormControl>
-                <Textarea placeholder="Enter service description" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+        <WorkOrderFormHeader 
+          isSubmitting={isSubmitting} 
+          error={formError}
+          title="Work Order #1000" 
+          description="Create a new work order for your customer's vehicle"
         />
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Status */}
-          <FormField
-            control={form.control}
-            name="status"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Status*</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="in-progress">In Progress</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                    <SelectItem value="on-hold">On Hold</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
+        
+        <div className="grid grid-cols-1 gap-6">
+          {/* Customer and Vehicle Info Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-6">
+              <Card className="border-l-4 border-l-blue-600">
+                <CustomerInfo form={form} />
+              </Card>
+              
+              <Card className="border-l-4 border-l-green-600">
+                <VehicleInfo form={form} />
+              </Card>
+            </div>
+            
+            <Card className="border-l-4 border-l-amber-600">
+              <ScheduleSection 
+                form={form} 
+                technicians={technicians}
+                isLoadingTechnicians={isLoadingTechnicians}
+              />
+            </Card>
+          </div>
+          
+          <Separator className="my-4" />
+          
+          {/* Services Section */}
+          <ServicesSection 
+            services={selectedServices} 
+            setServices={setSelectedServices} 
           />
-
-          {/* Priority */}
-          <FormField
-            control={form.control}
-            name="priority"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Priority*</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select priority" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Technician */}
-          <FormField
-            control={form.control}
-            name="technician_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Technician</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select technician" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="">Unassigned</SelectItem>
-                    {technicians.map((tech) => (
-                      <SelectItem key={tech.id} value={tech.id}>
-                        {tech.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          
+          {/* Parts and Services Section */}
+          <Card className="border-t-4 border-t-slate-700">
+            <PartsAndServicesTable 
+              items={selectedItems}
+              setItems={setSelectedItems}
+            />
+          </Card>
+          
+          {/* Work Order Summary Section */}
+          <Card className="border-t-4 border-t-purple-600">
+            <WorkOrderSummary 
+              form={form}
+              total={calculateTotal()}
+            />
+          </Card>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Location */}
-          <FormField
-            control={form.control}
-            name="location"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Location</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select location" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="">Not specified</SelectItem>
-                    {locations.map((loc) => (
-                      <SelectItem key={loc} value={loc}>
-                        {loc}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        {/* Notes */}
-        <FormField
-          control={form.control}
-          name="notes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Additional Notes</FormLabel>
-              <FormControl>
-                <Textarea placeholder="Enter any additional notes or instructions" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="flex justify-end mt-6">
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Creating..." : "Create Work Order"}
+        
+        <div className="flex justify-end">
+          <Button 
+            type="submit" 
+            disabled={isSubmitting}
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+          >
+            {isSubmitting ? "Creating Work Order..." : "Create Work Order"}
           </Button>
         </div>
       </form>
     </Form>
   );
-};
+}

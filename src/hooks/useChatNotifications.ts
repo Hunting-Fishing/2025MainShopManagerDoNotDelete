@@ -34,8 +34,7 @@ export const useChatNotifications = ({ userId }: UseChatNotificationsProps) => {
           : message.content,
         type: 'info',
         category: 'chat',
-        priority: 'medium',
-        link: `/chat/${message.room_id}`
+        link: `/chat/${message.room_id}`,
       });
     }
   }, [userId, addNotification]);

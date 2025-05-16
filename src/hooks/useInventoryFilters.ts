@@ -1,155 +1,193 @@
-
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useInventoryCrud } from "@/hooks/inventory/useInventoryCrud";
 import { InventoryItemExtended } from "@/types/inventory";
-
-export interface InventoryFilters {
-  search: string;
-  category: string;
-  status: string;
-  supplier: string;
-  sortBy: string;
-  sortDirection: 'asc' | 'desc';
-}
+import { getInventoryCategories } from "@/services/inventory/categoryService";
+import { getInventorySuppliers } from "@/services/inventory/supplierService";
+import { toast } from "@/hooks/use-toast";
 
 export function useInventoryFilters() {
+  const { loadInventoryItems } = useInventoryCrud();
+  const [inventoryItems, setInventoryItems] = useState<InventoryItemExtended[]>([]);
+  const [filteredItems, setFilteredItems] = useState<InventoryItemExtended[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [inventoryItems, setInventoryItems] = useState<InventoryItemExtended[]>([]);
-  
+  const [dataFetchAttempted, setDataFetchAttempted] = useState(false);
+
+  // Filters
   const [searchQuery, setSearchQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [supplierFilter, setSupplierFilter] = useState("");
-  
-  const [filters, setFilters] = useState<InventoryFilters>({
-    search: "",
-    category: "",
-    status: "",
-    supplier: "",
-    sortBy: "name",
-    sortDirection: "asc"
-  });
+  const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [supplierFilter, setSupplierFilter] = useState("all");
+  const [locationFilter, setLocationFilter] = useState("all");
 
-  // Function to update a specific filter
-  const updateFilter = (key: keyof InventoryFilters, value: any) => {
-    setFilters(prev => ({
-      ...prev,
-      [key]: value
-    }));
-  };
+  // Filter options
+  const [categories, setCategories] = useState<string[]>([]);
+  const [statuses, setStatuses] = useState<string[]>([]);
+  const [suppliers, setSuppliers] = useState<string[]>([]);
+  const [locations, setLocations] = useState<string[]>([]);
 
-  // Function to reset all filters
-  const resetFilters = () => {
-    setFilters({
-      search: "",
-      category: "",
-      status: "",
-      supplier: "",
-      sortBy: "name",
-      sortDirection: "asc"
-    });
-    setSearchQuery("");
-    setCategoryFilter("");
-    setStatusFilter("");
-    setSupplierFilter("");
-  };
-
-  // Fetch inventory items
+  // Load inventory items
   useEffect(() => {
-    const fetchInventoryData = async () => {
+    async function fetchData() {
+      if (dataFetchAttempted) return; // Only try to fetch once to prevent infinite loops
+      
+      setDataFetchAttempted(true);
       setLoading(true);
-      setError(null);
+      
       try {
-        // Simulate API call for now
-        // In a real app, you would fetch from API or database
-        const data = generateMockInventoryItems(50);
-        setInventoryItems(data);
+        // First load the inventory items
+        const items = await loadInventoryItems();
+        setInventoryItems(items);
+        setFilteredItems(items);
+        
+        // Extract unique filter values from items
+        const uniqueCategories = Array.from(new Set(items.map(item => item.category))).filter(Boolean) as string[];
+        const uniqueStatuses = Array.from(new Set(items.map(item => item.status))).filter(Boolean) as string[];
+        const uniqueSuppliers = Array.from(new Set(items.map(item => item.supplier))).filter(Boolean) as string[];
+        const uniqueLocations = Array.from(new Set(items.map(item => item.location))).filter(Boolean) as string[];
+        
+        // Set these as fallbacks
+        setStatuses(uniqueStatuses);
+        setLocations(uniqueLocations);
+        
+        // Get additional categories and suppliers from database
+        try {
+          const dbCategories = await getInventoryCategories();
+          const dbSuppliers = await getInventorySuppliers();
+          
+          // Merge with unique values from items
+          setCategories([...new Set([...uniqueCategories, ...dbCategories])]);
+          setSuppliers([...new Set([...uniqueSuppliers, ...dbSuppliers])]);
+        } catch (err) {
+          console.error("Error fetching categories or suppliers:", err);
+          // Fall back to unique values from items
+          setCategories(uniqueCategories);
+          setSuppliers(uniqueSuppliers);
+        }
       } catch (err) {
-        console.error("Error fetching inventory data:", err);
-        setError("Failed to load inventory data. Please try again.");
+        console.error("Failed to load inventory items:", err);
+        setError("Failed to load inventory items");
+        toast({
+          title: "Error",
+          description: "Could not load inventory items",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
-    };
-    
-    fetchInventoryData();
+    }
+
+    fetchData();
+  }, [loadInventoryItems, dataFetchAttempted]);
+
+  // Apply filters
+  useEffect(() => {
+    let result = [...inventoryItems];
+
+    // Apply search filter
+    if (searchQuery) {
+      const lowerSearch = searchQuery.toLowerCase();
+      result = result.filter(
+        (item) =>
+          item.name.toLowerCase().includes(lowerSearch) ||
+          (item.sku && item.sku.toLowerCase().includes(lowerSearch)) ||
+          (item.partNumber && item.partNumber.toLowerCase().includes(lowerSearch)) ||
+          (item.description && item.description.toLowerCase().includes(lowerSearch)) ||
+          (item.barcode && item.barcode.toLowerCase().includes(lowerSearch))
+      );
+    }
+
+    // Apply category filter
+    if (categoryFilter.length > 0) {
+      result = result.filter((item) => categoryFilter.includes(item.category));
+    }
+
+    // Apply status filter
+    if (statusFilter.length > 0) {
+      result = result.filter((item) => statusFilter.includes(item.status));
+    }
+
+    // Apply supplier filter
+    if (supplierFilter && supplierFilter !== "all") {
+      result = result.filter((item) => item.supplier === supplierFilter);
+    }
+
+    // Apply location filter
+    if (locationFilter && locationFilter !== "all") {
+      result = result.filter((item) => item.location === locationFilter);
+    }
+
+    setFilteredItems(result);
+  }, [inventoryItems, searchQuery, categoryFilter, statusFilter, supplierFilter, locationFilter]);
+
+  // CSV export handler
+  const handleExport = useCallback(() => {
+    try {
+      // Create CSV content
+      const headers = [
+        "Part Number", "Name", "SKU", "Category", "Quantity", 
+        "Status", "Cost", "Price", "Supplier", "Location", "Description"
+      ];
+      
+      const rows = filteredItems.map(item => [
+        item.partNumber || "",
+        item.name,
+        item.sku,
+        item.category,
+        item.quantity,
+        item.status,
+        item.cost?.toFixed(2) || "",
+        item.unitPrice.toFixed(2),
+        item.supplier,
+        item.location || "",
+        item.description || ""
+      ]);
+      
+      const csvContent = [
+        headers.join(","),
+        ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      ].join("\n");
+      
+      // Create download link
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `inventory_export_${new Date().toISOString().slice(0,10)}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast({
+        title: "Export successful",
+        description: `Exported ${filteredItems.length} inventory items to CSV`,
+        variant: "default",
+      });
+    } catch (err) {
+      console.error("Export error:", err);
+      toast({
+        title: "Export failed",
+        description: "Could not export inventory items",
+        variant: "destructive",
+      });
+    }
+  }, [filteredItems]);
+  
+  // CSV import handler - just a stub for now
+  const handleImport = useCallback(() => {
+    // This would open a dialog to select a file and then process it
+    toast({
+      title: "Import",
+      description: "CSV import functionality will be added soon",
+      variant: "default",
+    });
   }, []);
 
-  // Sync individual filter states with the combined filters object
-  useEffect(() => {
-    setFilters(prev => ({
-      ...prev,
-      search: searchQuery,
-      category: categoryFilter,
-      status: statusFilter,
-      supplier: supplierFilter
-    }));
-  }, [searchQuery, categoryFilter, statusFilter, supplierFilter]);
-
-  // Apply filters to inventory items
-  const filteredItems = useMemo(() => {
-    return inventoryItems.filter(item => {
-      // Apply search filter
-      if (filters.search && 
-          !item.name.toLowerCase().includes(filters.search.toLowerCase()) && 
-          !item.sku.toLowerCase().includes(filters.search.toLowerCase()) &&
-          !item.description?.toLowerCase().includes(filters.search.toLowerCase())) {
-        return false;
-      }
-      
-      // Apply category filter
-      if (filters.category && item.category !== filters.category) {
-        return false;
-      }
-      
-      // Apply status filter
-      if (filters.status && item.status !== filters.status) {
-        return false;
-      }
-      
-      // Apply supplier filter
-      if (filters.supplier && item.supplier !== filters.supplier) {
-        return false;
-      }
-      
-      return true;
-    }).sort((a, b) => {
-      // Apply sorting
-      const sortField = filters.sortBy as keyof InventoryItemExtended;
-      const direction = filters.sortDirection === 'asc' ? 1 : -1;
-      
-      if (sortField === 'unit_price') {
-        return (a.unit_price - b.unit_price) * direction;
-      }
-      
-      if (typeof a[sortField] === 'string' && typeof b[sortField] === 'string') {
-        return (a[sortField] as string).localeCompare(b[sortField] as string) * direction;
-      }
-      
-      return 0;
-    });
-  }, [inventoryItems, filters]);
-
-  // Extract unique categories, statuses, and suppliers for filter options
-  const categories = useMemo(() => {
-    const uniqueCategories = [...new Set(inventoryItems.map(item => item.category))];
-    return uniqueCategories.sort();
-  }, [inventoryItems]);
-  
-  const statuses = useMemo(() => {
-    const uniqueStatuses = [...new Set(inventoryItems.map(item => item.status))];
-    return uniqueStatuses.sort();
-  }, [inventoryItems]);
-  
-  const suppliers = useMemo(() => {
-    const uniqueSuppliers = [...new Set(inventoryItems.map(item => item.supplier))];
-    return uniqueSuppliers.sort();
-  }, [inventoryItems]);
-  
-  const filteredItemsCount = filteredItems.length;
-
   return {
+    inventoryItems,
     loading,
+    error,
     searchQuery,
     setSearchQuery,
     categoryFilter,
@@ -158,39 +196,14 @@ export function useInventoryFilters() {
     setStatusFilter,
     supplierFilter,
     setSupplierFilter,
+    locationFilter,
+    setLocationFilter,
     filteredItems,
-    error,
     categories,
     statuses,
     suppliers,
-    filters,
-    updateFilter,
-    resetFilters,
-    filteredItemsCount
+    locations,
+    handleExport,
+    handleImport
   };
-}
-
-// Helper function to generate mock inventory data
-function generateMockInventoryItems(count: number): InventoryItemExtended[] {
-  const categories = ["Electronics", "Automotive", "Tools", "Office Supplies", "Plumbing"];
-  const suppliers = ["Acme Corp", "Tech Distributors", "Auto Parts Inc", "Office Depot", "Hardware World"];
-  const statuses = ["In Stock", "Low Stock", "Out of Stock", "Discontinued"];
-  
-  return Array.from({ length: count }, (_, i) => ({
-    id: `inv-${i+1}`,
-    name: `Item ${i+1}`,
-    sku: `SKU-${1000 + i}`,
-    quantity: Math.floor(Math.random() * 100),
-    reorder_point: 10,
-    unit_price: parseFloat((Math.random() * 100 + 10).toFixed(2)),
-    category: categories[Math.floor(Math.random() * categories.length)],
-    supplier: suppliers[Math.floor(Math.random() * suppliers.length)],
-    location: `Shelf ${String.fromCharCode(65 + Math.floor(Math.random() * 26))}-${Math.floor(Math.random() * 10)}`,
-    status: statuses[Math.floor(Math.random() * statuses.length)],
-    created_at: new Date(Date.now() - Math.floor(Math.random() * 10000000000)).toISOString(),
-    updated_at: new Date().toISOString(),
-    description: `Description for item ${i+1}`,
-    cost: parseFloat((Math.random() * 80 + 5).toFixed(2)),
-    marginMarkup: Math.floor(Math.random() * 20 + 10)
-  }));
 }

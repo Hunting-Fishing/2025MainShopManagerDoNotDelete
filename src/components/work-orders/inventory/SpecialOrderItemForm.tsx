@@ -1,296 +1,187 @@
 
 import React, { useState } from "react";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  Form, 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { DatePicker } from "@/components/ui/date-picker";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { InventoryFormSelect } from "@/components/inventory/form/InventoryFormSelect";
 import { WorkOrderInventoryItem } from "@/types/workOrder";
 
-const formSchema = z.object({
-  name: z.string().min(1, { message: "Name is required" }),
-  sku: z.string().optional(),
-  category: z.string().optional(),
-  quantity: z.number().min(1, { message: "Quantity must be at least 1" }),
-  unitPrice: z.number().min(0, { message: "Unit price must be zero or positive" }),
-  notes: z.string().optional(),
-  estimatedArrivalDate: z.date().optional(),
-  supplierName: z.string().optional(),
-  itemStatus: z.enum(["in-stock", "ordered", "backordered", "out-of-stock", "special-order"]),
-  supplierOrderRef: z.string().optional()
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
-export interface SpecialOrderItemFormProps {
-  initialData?: Partial<WorkOrderInventoryItem>;
-  suppliers?: string[];
-  onSubmit?: (item: Partial<WorkOrderInventoryItem>) => void;
-  onAdd?: (item: Partial<WorkOrderInventoryItem>) => void;
+interface SpecialOrderItemFormProps {
+  onAdd: (item: Partial<WorkOrderInventoryItem>) => void;
   onCancel: () => void;
+  suppliers: string[];
 }
 
-export function SpecialOrderItemForm({
-  initialData,
-  suppliers = [],
-  onSubmit,
-  onAdd,
-  onCancel
-}: SpecialOrderItemFormProps) {
-  const [estimatedArrivalDate, setEstimatedArrivalDate] = useState<Date | undefined>(
-    initialData?.estimatedArrivalDate ? new Date(initialData.estimatedArrivalDate) : undefined
-  );
+export function SpecialOrderItemForm({ onAdd, onCancel, suppliers }: SpecialOrderItemFormProps) {
+  const [name, setName] = useState("");
+  const [sku, setSku] = useState("");
+  const [category, setCategory] = useState("Special Order");
+  const [quantity, setQuantity] = useState(1);
+  const [unitPrice, setUnitPrice] = useState(0);
+  const [supplier, setSupplier] = useState(suppliers.length > 0 ? suppliers[0] : "");
+  const [orderRef, setOrderRef] = useState("");
+  const [notes, setNotes] = useState("");
+  const [estimatedDate, setEstimatedDate] = useState<Date | undefined>(undefined);
+  const [itemStatus, setItemStatus] = useState<"special-order" | "ordered">("special-order");
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: initialData?.name || "",
-      sku: initialData?.sku || "",
-      category: initialData?.category || "",
-      quantity: initialData?.quantity || 1,
-      unitPrice: initialData?.unitPrice || 0,
-      notes: initialData?.notes || "",
-      supplierName: initialData?.supplierName || "",
-      itemStatus: initialData?.itemStatus || "special-order",
-      supplierOrderRef: initialData?.supplierOrderRef || ""
-    }
-  });
-
-  const handleSubmit = (values: FormValues) => {
-    const item: Partial<WorkOrderInventoryItem> = {
-      ...values,
-      estimatedArrivalDate: estimatedArrivalDate?.toISOString(),
-      unitPrice: values.unitPrice
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const newItem: Partial<WorkOrderInventoryItem> = {
+      name,
+      sku: sku || `SO-${Date.now().toString(36)}`,
+      category,
+      quantity,
+      unitPrice,
+      itemStatus,
+      estimatedArrivalDate: estimatedDate ? format(estimatedDate, 'yyyy-MM-dd') : undefined,
+      supplierName: supplier,
+      supplierOrderRef: orderRef,
+      notes
     };
     
-    // Use the appropriate callback
-    if (onSubmit) {
-      onSubmit(item);
-    } else if (onAdd) {
-      onAdd(item);
-    }
-  };
-
-  const handleSelectSupplier = (value: string) => {
-    form.setValue("supplierName", value);
-  };
-
-  const handleSelectStatus = (value: string) => {
-    form.setValue("itemStatus", value as "in-stock" | "ordered" | "backordered" | "out-of-stock" | "special-order");
+    onAdd(newItem);
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Item Name</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="Enter item name" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="sku"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>SKU</FormLabel>
-                <FormControl>
-                  <Input {...field} placeholder="Enter SKU" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="category"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Category</FormLabel>
-                <FormControl>
-                  <Input {...field} placeholder="Enter category" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="quantity"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Quantity</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    {...field} 
-                    onChange={e => field.onChange(parseInt(e.target.value) || 0)}
-                    value={field.value}
-                    min={1}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="unitPrice"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Unit Price</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    step="0.01"
-                    {...field} 
-                    onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                    value={field.value}
-                    min={0}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div>
+          <Label htmlFor="name">Item Name *</Label>
+          <Input
+            id="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
           />
         </div>
         
         <div>
-          <FormLabel>Estimated Arrival Date</FormLabel>
-          <DatePicker 
-            date={estimatedArrivalDate} 
-            onSelect={setEstimatedArrivalDate}
+          <Label htmlFor="sku">SKU/Part Number</Label>
+          <Input
+            id="sku"
+            value={sku}
+            onChange={(e) => setSku(e.target.value)}
+            placeholder="Auto-generated if empty"
           />
         </div>
         
-        <FormField
-          control={form.control}
-          name="supplierName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Supplier</FormLabel>
-              <Select
-                value={field.value}
-                onValueChange={handleSelectSupplier}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select supplier" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {suppliers.map(supplier => (
-                    <SelectItem key={supplier} value={supplier}>
-                      {supplier}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="itemStatus"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Status</FormLabel>
-              <Select
-                value={field.value}
-                onValueChange={handleSelectStatus}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="in-stock">In Stock</SelectItem>
-                  <SelectItem value="ordered">Ordered</SelectItem>
-                  <SelectItem value="backordered">Backordered</SelectItem>
-                  <SelectItem value="out-of-stock">Out of Stock</SelectItem>
-                  <SelectItem value="special-order">Special Order</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="supplierOrderRef"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Supplier Order Reference</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="Order reference number" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="notes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Notes</FormLabel>
-              <FormControl>
-                <Textarea 
-                  {...field} 
-                  placeholder="Enter any additional notes about this item"
-                  rows={3}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button type="submit">
-            {initialData?.id ? "Update" : "Add"} Item
-          </Button>
+        <div>
+          <Label htmlFor="category">Category</Label>
+          <Input
+            id="category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          />
         </div>
-      </form>
-    </Form>
+        
+        <div>
+          <Label htmlFor="quantity">Quantity *</Label>
+          <Input
+            id="quantity"
+            type="number"
+            min={1}
+            value={quantity}
+            onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+            required
+          />
+        </div>
+        
+        <div>
+          <Label htmlFor="unitPrice">Unit Price *</Label>
+          <Input
+            id="unitPrice"
+            type="number"
+            step="0.01"
+            min={0}
+            value={unitPrice}
+            onChange={(e) => setUnitPrice(parseFloat(e.target.value) || 0)}
+            required
+          />
+        </div>
+        
+        <div>
+          <Label htmlFor="itemStatus">Item Status</Label>
+          <InventoryFormSelect
+            id="itemStatus"
+            label=""
+            value={itemStatus}
+            onValueChange={(value) => setItemStatus(value as "special-order" | "ordered")}
+            options={["special-order", "ordered"]}
+          />
+        </div>
+        
+        <div>
+          <Label htmlFor="supplier">Supplier</Label>
+          <InventoryFormSelect
+            id="supplier"
+            label=""
+            value={supplier}
+            onValueChange={setSupplier}
+            options={suppliers}
+          />
+        </div>
+        
+        <div>
+          <Label htmlFor="orderRef">Order Reference</Label>
+          <Input
+            id="orderRef"
+            value={orderRef}
+            onChange={(e) => setOrderRef(e.target.value)}
+          />
+        </div>
+        
+        <div>
+          <Label>Estimated Arrival Date</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !estimatedDate && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {estimatedDate ? format(estimatedDate, "PPP") : "Select a date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={estimatedDate}
+                onSelect={setEstimatedDate}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
+      
+      <div>
+        <Label htmlFor="notes">Notes</Label>
+        <Textarea
+          id="notes"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          rows={3}
+        />
+      </div>
+      
+      <div className="flex justify-end space-x-2">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit">
+          Add Special Order Item
+        </Button>
+      </div>
+    </form>
   );
 }

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { InventoryItemExtended, AutoReorderSettings } from '@/types/inventory';
+import { AutoReorderSettings, InventoryItemExtended } from '@/types/inventory';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { RefreshCw, ShoppingCart } from 'lucide-react';
@@ -12,7 +12,7 @@ interface AutoReorderStatusProps {
 }
 
 export function AutoReorderStatus({ items, autoReorderSettings }: AutoReorderStatusProps) {
-  const itemsNeedingReorder = items.filter(item => item.quantity <= item.reorder_point);
+  const itemsNeedingReorder = items.filter(item => item.quantity <= item.reorderPoint);
   
   // Check if autoReorderSettings is a Record or a single AutoReorderSettings object
   const isGlobalSetting = !('enabled' in autoReorderSettings);

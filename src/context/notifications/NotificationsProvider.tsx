@@ -1,117 +1,145 @@
-
-import React, { createContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { Notification, NotificationPreferences } from '@/types/notification';
-import { 
+import { notificationService } from '@/services/notificationService';
+import { NotificationsContextProps } from './types';
+import { defaultPreferences } from './defaultData';
+import {
   createAddNotificationHandler,
   createMarkAsReadHandler,
   createMarkAllAsReadHandler,
   createClearNotificationHandler,
-  createClearAllNotificationsHandler
+  createClearAllNotificationsHandler,
+  createHandleNewNotificationHandler,
 } from './notificationHandlers';
-import { 
+import {
   createUpdatePreferencesHandler,
-  createUpdateSubscriptionHandler
+  createUpdateSubscriptionHandler,
 } from './preferenceHandlers';
+import { supabase } from '@/lib/supabase';
+import { preloadNotificationSounds } from '@/utils/notificationSounds';
 
-// Default notification preferences
-const defaultPreferences: NotificationPreferences = {
-  email: true,
-  push: true,
-  inApp: true,
-  sound: 'default',
-  frequencies: {
-    system: 'realtime',
-    invoice: 'realtime',
-    workOrder: 'realtime',
-    inventory: 'realtime',
-    customer: 'realtime',
-    team: 'realtime',
-    chat: 'realtime'
-  },
-  subscriptions: [
-    { category: 'system', enabled: true },
-    { category: 'invoice', enabled: true },
-    { category: 'workOrder', enabled: true },
-    { category: 'inventory', enabled: true },
-    { category: 'customer', enabled: true },
-    { category: 'team', enabled: true },
-    { category: 'chat', enabled: true }
-  ]
-};
+export const NotificationsContext = createContext<NotificationsContextProps | undefined>(undefined);
 
-interface NotificationContextType {
-  notifications: Notification[];
-  unreadCount: number;
-  connectionStatus: boolean;
-  preferences: NotificationPreferences;
-  markAsRead: (id: string) => void;
-  markAllAsRead: () => void;
-  addNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void;
-  clearNotification: (id: string) => void;
-  clearAllNotifications: () => void;
-  updatePreferences: (preferences: Partial<NotificationPreferences>) => void;
-  updateSubscription: (category: string, enabled: boolean) => void;
-  triggerTestNotification: () => void;
-}
-
-export const NotificationsContext = createContext<NotificationContextType>({
-  notifications: [],
-  unreadCount: 0,
-  connectionStatus: false,
-  preferences: defaultPreferences,
-  markAsRead: () => {},
-  markAllAsRead: () => {},
-  addNotification: () => {},
-  clearNotification: () => {},
-  clearAllNotifications: () => {},
-  updatePreferences: () => {},
-  updateSubscription: () => {},
-  triggerTestNotification: () => {},
-});
-
-interface NotificationsProviderProps {
-  children: ReactNode;
-}
-
-export const NotificationsProvider: React.FC<NotificationsProviderProps> = ({ children }) => {
+export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [connectionStatus, setConnectionStatus] = useState<boolean>(true);
+  const [connectionStatus, setConnectionStatus] = useState<boolean>(false);
   const [preferences, setPreferences] = useState<NotificationPreferences>(defaultPreferences);
+  const [userId, setUserId] = useState<string | null>(null);
+  
+  const unreadCount = notifications.filter(notification => !notification.read).length;
 
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  // Initialize handlers using the state updater functions
-  const markAsRead = createMarkAsReadHandler(setNotifications);
-  const markAllAsRead = createMarkAllAsReadHandler(setNotifications);
-  const addNotification = createAddNotificationHandler(setNotifications, preferences);
-  const clearNotification = createClearNotificationHandler(setNotifications);
-  const clearAllNotifications = createClearAllNotificationsHandler(setNotifications);
-  const updatePreferences = createUpdatePreferencesHandler(setPreferences);
-  const updateSubscription = createUpdateSubscriptionHandler(setPreferences);
-
-  // Simulate a connection status change every 30 seconds for demo purposes
+  // Get current user ID on mount
   useEffect(() => {
-    const interval = setInterval(() => {
-      // 95% chance to be connected
-      setConnectionStatus(Math.random() > 0.05);
-    }, 30000);
+    const getCurrentUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      const currentUserId = data?.user?.id;
+      setUserId(currentUserId);
+    };
     
-    return () => clearInterval(interval);
+    getCurrentUser();
+    
+    // Listen for authentication changes
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setUserId(session?.user?.id || null);
+    });
+    
+    // Preload notification sounds
+    preloadNotificationSounds();
+    
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
   }, []);
 
-  // Test notification trigger function
-  const triggerTestNotification = () => {
-    const types = ['info', 'success', 'warning', 'error'] as const;
-    const type = types[Math.floor(Math.random() * types.length)];
+  // Create handlers
+  const handleNewNotification = useCallback(
+    createHandleNewNotificationHandler(preferences, setNotifications),
+    [preferences]
+  );
+  
+  const addNotification = useCallback(
+    async (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
+      const handler = createAddNotificationHandler(setNotifications, preferences);
+      handler(notification);
+      await notificationService.addNotification(notification);
+    },
+    [preferences]
+  );
+  
+  const markAsRead = useCallback(
+    async (id: string) => {
+      await notificationService.markAsRead(id);
+      createMarkAsReadHandler(setNotifications)(id);
+    },
+    []
+  );
+  
+  const markAllAsRead = useCallback(
+    async () => {
+      await notificationService.markAllAsRead();
+      createMarkAllAsReadHandler(setNotifications)();
+    },
+    []
+  );
+  
+  const clearNotification = useCallback(
+    async (id: string) => {
+      await notificationService.clearNotification(id);
+      createClearNotificationHandler(setNotifications)(id);
+    },
+    []
+  );
+  
+  const clearAllNotifications = useCallback(
+    async () => {
+      await notificationService.clearAllNotifications();
+      createClearAllNotificationsHandler(setNotifications)();
+    },
+    []
+  );
+  
+  const updatePreferences = useCallback(
+    createUpdatePreferencesHandler(setPreferences),
+    []
+  );
+  
+  const updateSubscription = useCallback(
+    createUpdateSubscriptionHandler(setPreferences),
+    []
+  );
+
+  // Initialize notification service and set up listeners when user ID changes
+  useEffect(() => {
+    if (!userId) {
+      setNotifications([]);
+      setConnectionStatus(false);
+      return;
+    }
+
+    // Connect to the notification service
+    notificationService.connect(userId);
     
-    addNotification({
-      title: `Test ${type} Notification`,
-      message: `This is a test ${type} notification sent at ${new Date().toLocaleTimeString()}`,
-      type,
-      category: 'system',
-      priority: type === 'error' ? 'high' : 'medium'
+    // Set up listener for connection status
+    const unsubscribeStatus = notificationService.onConnectionStatus((status) => {
+      setConnectionStatus(status);
     });
-  };
+    
+    // Set up listener for new notifications
+    const unsubscribeNotifications = notificationService.onNotification((notification) => {
+      handleNewNotification(notification);
+    });
+    
+    // Clean up on unmount or userId change
+    return () => {
+      unsubscribeStatus();
+      unsubscribeNotifications();
+      notificationService.disconnect();
+    };
+  }, [userId, handleNewNotification]);
+
+  const triggerTestNotification = useCallback(() => {
+    notificationService.triggerDemoNotification();
+  }, []);
 
   return (
     <NotificationsContext.Provider 
@@ -120,9 +148,9 @@ export const NotificationsProvider: React.FC<NotificationsProviderProps> = ({ ch
         unreadCount,
         connectionStatus,
         preferences,
+        addNotification, 
         markAsRead, 
         markAllAsRead,
-        addNotification,
         clearNotification,
         clearAllNotifications,
         updatePreferences,

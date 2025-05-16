@@ -1,83 +1,132 @@
 
 /**
- * Format a number as currency (USD)
- * @param value Number to format
+ * Format a number as currency
+ * @param value - The number to format
+ * @param currency - The currency code (default: 'USD')
  * @returns Formatted currency string
  */
-export const formatCurrency = (value: number): string => {
+export function formatCurrency(value: number | string, currency = 'USD'): string {
+  const numericValue = typeof value === 'string' ? parseFloat(value) : value;
+  
+  if (isNaN(numericValue)) {
+    return '$0.00';
+  }
+  
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'USD',
+    currency,
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(value);
-};
+    maximumFractionDigits: 2,
+  }).format(numericValue);
+}
 
 /**
- * Format a number as a percentage
- * @param value Number to format (0.08 = 8%)
- * @returns Formatted percentage string
+ * Format a number with commas
+ * @param value - The number to format
+ * @returns Formatted number string
  */
-export const formatPercentage = (value: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'percent',
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1
-  }).format(value);
-};
+export function formatNumber(value: number | string): string {
+  const numericValue = typeof value === 'string' ? parseFloat(value) : value;
+  
+  if (isNaN(numericValue)) {
+    return '0';
+  }
+  
+  return new Intl.NumberFormat('en-US').format(numericValue);
+}
 
 /**
- * Format a date as a string
- * @param date Date to format
- * @param format Format to use (short, medium, long)
+ * Format a date to display format
+ * @param date - Date string or Date object
+ * @param includeTime - Whether to include time
  * @returns Formatted date string
  */
-export const formatDate = (date: Date | string, format: 'short' | 'medium' | 'long' = 'medium'): string => {
+export function formatDate(date: string | Date, includeTime = false): string {
   if (!date) return '';
   
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   
+  if (isNaN(dateObj.getTime())) {
+    return '';
+  }
+  
   const options: Intl.DateTimeFormatOptions = {
     year: 'numeric',
-    month: format === 'short' ? 'numeric' : 'short',
-    day: 'numeric'
+    month: 'short',
+    day: 'numeric',
   };
   
-  if (format === 'long') {
-    options.weekday = 'long';
+  if (includeTime) {
+    options.hour = '2-digit';
+    options.minute = '2-digit';
   }
   
   return new Intl.DateTimeFormat('en-US', options).format(dateObj);
-};
+}
 
 /**
- * Format a phone number to standard format (XXX) XXX-XXXX
- * @param phoneNumber Phone number to format
+ * Format a phone number to (XXX) XXX-XXXX
+ * @param phone - Phone number string
  * @returns Formatted phone number
  */
-export const formatPhoneNumber = (phoneNumber: string): string => {
-  if (!phoneNumber) return '';
+export function formatPhoneNumber(phone: string): string {
+  if (!phone) return '';
   
-  // Remove all non-numeric characters
-  const cleaned = phoneNumber.replace(/\D/g, '');
+  // Strip all non-numeric characters
+  const cleaned = phone.replace(/\D/g, '');
   
-  // Format the phone number
+  // Handle different input lengths
   if (cleaned.length === 10) {
-    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
-  } else if (cleaned.length === 11 && cleaned[0] === '1') {
-    return `(${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
+    return `(${cleaned.substring(0, 3)}) ${cleaned.substring(3, 6)}-${cleaned.substring(6, 10)}`;
+  } else if (cleaned.length === 11 && cleaned.charAt(0) === '1') {
+    return `(${cleaned.substring(1, 4)}) ${cleaned.substring(4, 7)}-${cleaned.substring(7, 11)}`;
+  } else if (cleaned.length > 10) {
+    // If more than 10 digits, truncate to 10
+    return formatPhoneNumber(cleaned.slice(-10));
   }
   
-  // Return original if it doesn't match expected formats
-  return phoneNumber;
-};
+  // If not a standard format, return the original or a placeholder
+  return phone;
+}
 
 /**
- * Clean a phone number to remove all non-numeric characters
- * @param phoneNumber Phone number to clean
- * @returns Cleaned phone number (only digits)
+ * Remove non-numeric characters from a phone number
+ * @param phone Phone number string
+ * @returns Cleaned phone number with only digits
  */
-export const cleanPhoneNumber = (phoneNumber: string): string => {
-  if (!phoneNumber) return '';
-  return phoneNumber.replace(/\D/g, '');
-};
+export function cleanPhoneNumber(phone: string): string {
+  return phone ? phone.replace(/\D/g, '') : '';
+}
+
+/**
+ * Format a percentage value
+ * @param value - The number to format as percentage
+ * @param decimals - Number of decimal places
+ * @returns Formatted percentage string
+ */
+export function formatPercent(value: number, decimals = 0): string {
+  if (isNaN(value)) {
+    return '0%';
+  }
+  
+  return new Intl.NumberFormat('en-US', {
+    style: 'percent',
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(value / 100);
+}
+
+/**
+ * Format file size in bytes to human readable format
+ * @param bytes - Size in bytes
+ * @returns Formatted size string
+ */
+export function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 Bytes';
+  
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}

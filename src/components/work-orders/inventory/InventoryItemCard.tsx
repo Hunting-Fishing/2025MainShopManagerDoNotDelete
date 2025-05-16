@@ -1,77 +1,56 @@
 
 import React from "react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { InventoryItemExtended } from "@/types/inventory";
-import { Tag } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
-export interface InventoryItemCardProps {
+interface InventoryItemCardProps {
   item: InventoryItemExtended;
-  onAddItem?: (item: InventoryItemExtended) => void;
+  onAddItem: (item: InventoryItemExtended) => void;
 }
 
-export const InventoryItemCard: React.FC<InventoryItemCardProps> = ({
-  item,
-  onAddItem
+export const InventoryItemCard: React.FC<InventoryItemCardProps> = ({ 
+  item, 
+  onAddItem 
 }) => {
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "in stock":
-        return "bg-green-100 text-green-800 border-green-300";
-      case "low stock":
-        return "bg-yellow-100 text-yellow-800 border-yellow-300";
-      case "out of stock":
-        return "bg-red-100 text-red-800 border-red-300";
-      case "discontinued":
-        return "bg-gray-100 text-gray-800 border-gray-300";
+  // Map status to badge variant
+  const getBadgeVariant = (status: string) => {
+    switch (status) {
+      case "In Stock":
+        return "success";
+      case "Low Stock":
+        return "warning";
+      case "Out of Stock":
+        return "destructive";
       default:
-        return "bg-blue-100 text-blue-800 border-blue-300";
-    }
-  };
-
-  const handleAdd = () => {
-    if (onAddItem) {
-      onAddItem(item);
+        return "secondary";
     }
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow duration-200">
-      <CardContent className="flex justify-between items-center p-4">
-        <div className="flex flex-col">
-          <div className="flex items-center">
-            <h3 className="font-semibold text-base">{item.name}</h3>
-            <span className="ml-2 text-sm text-gray-500">#{item.sku}</span>
-          </div>
-          <div className="flex items-center mt-1">
-            <span className="text-sm text-gray-600">${item.unit_price.toFixed(2)}</span>
-            <span className="mx-2 text-gray-300">|</span>
-            <span className="text-sm text-gray-600">
-              <Tag className="h-3 w-3 inline mr-1" />
-              {item.category}
-            </span>
-          </div>
-          <div className="flex items-center mt-1 space-x-2">
-            <span className={`text-xs px-2 py-0.5 rounded-full border ${getStatusColor(item.status)}`}>
-              {item.status}
-            </span>
-            <span className="text-xs">
-              {item.quantity} in stock
-            </span>
-          </div>
+    <div 
+      key={item.id} 
+      className="flex justify-between items-center p-3 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer"
+      onClick={() => onAddItem(item)}
+    >
+      <div>
+        <div className="font-medium">{item.name}</div>
+        <div className="text-sm text-slate-500">
+          {item.sku} - ${item.unitPrice.toFixed(2)}
         </div>
-        
-        {onAddItem && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={handleAdd}
-            className="h-8 px-2"
-          >
-            Add
-          </Button>
-        )}
-      </CardContent>
-    </Card>
+        <div className="flex items-center gap-2 mt-1">
+          <Badge variant={getBadgeVariant(item.status)}>
+            {item.status}
+          </Badge>
+          <span className="text-xs text-slate-500">
+            {item.quantity} in stock
+          </span>
+        </div>
+      </div>
+      <Button variant="ghost" size="sm">
+        <Plus className="h-4 w-4" />
+      </Button>
+    </div>
   );
 };

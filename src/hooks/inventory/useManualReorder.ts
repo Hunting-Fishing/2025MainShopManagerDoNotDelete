@@ -30,8 +30,6 @@ export function useManualReorder() {
         title: "Order Placed",
         message: `Manually ordered ${quantity} units of ${item.name}`,
         type: "success",
-        priority: "medium",
-        category: "inventory",
         link: "/inventory"
       });
     } catch (error) {

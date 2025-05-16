@@ -1,76 +1,95 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { useNotifications } from '@/context/notifications';
-
-// Mock inventory data
-const mockInventory = [
-  { id: '1', name: 'Oil Filter', stock: 2, minLevel: 5 },
-  { id: '2', name: 'Air Filter', stock: 0, minLevel: 10 },
-  { id: '3', name: 'Brake Pads', stock: 3, minLevel: 4 },
-  { id: '4', name: 'Wiper Blades', stock: 8, minLevel: 5 },
-  { id: '5', name: 'Engine Oil', stock: 0, minLevel: 8 },
-];
+import { useState, useEffect } from "react";
+import { InventoryItemExtended } from "@/types/inventory";
+import { getLowStockItems, getOutOfStockItems } from "@/services/inventory/filterService";
+import { useNotifications } from "@/context/NotificationsContext";
 
 export function useInventoryAlerts() {
-  const [lowStockItems, setLowStockItems] = useState<any[]>([]);
-  const [outOfStockItems, setOutOfStockItems] = useState<any[]>([]);
+  const [lowStockItems, setLowStockItems] = useState<InventoryItemExtended[]>([]);
+  const [outOfStockItems, setOutOfStockItems] = useState<InventoryItemExtended[]>([]);
+  const [loading, setLoading] = useState(true);
   const { addNotification } = useNotifications();
 
-  // Check inventory levels
-  const checkInventoryAlerts = useCallback(() => {
-    const lowStock: any[] = [];
-    const outOfStock: any[] = [];
-    
-    // In a real app, this would fetch from your database
-    mockInventory.forEach(item => {
-      if (item.stock === 0) {
-        outOfStock.push(item);
-      } else if (item.stock < item.minLevel) {
-        lowStock.push(item);
-      }
-    });
-    
-    setLowStockItems(lowStock);
-    setOutOfStockItems(outOfStock);
-    
-    // Send notification if there are out of stock items
-    if (outOfStock.length > 0) {
-      addNotification({
-        title: "Inventory Alert",
-        message: `${outOfStock.length} items are out of stock and need attention.`,
-        type: "warning",
-        category: "inventory",
-        priority: "high",
-        link: "/inventory?filter=outOfStock"
-      });
-    }
-    
-    // Send notification if there are low stock items
-    if (lowStock.length > 0) {
-      addNotification({
-        title: "Inventory Notice",
-        message: `${lowStock.length} items are running low on stock.`,
-        type: "info",
-        category: "inventory",
-        priority: "medium",
-        link: "/inventory?filter=lowStock"
-      });
-    }
-  }, [addNotification]);
-
-  // Run check on component mount
+  // Load low stock and out of stock items
   useEffect(() => {
-    checkInventoryAlerts();
+    async function loadAlertItems() {
+      try {
+        const [lowItems, outItems] = await Promise.all([
+          getLowStockItems(),
+          getOutOfStockItems()
+        ]);
+        
+        setLowStockItems(lowItems);
+        setOutOfStockItems(outItems);
+      } catch (error) {
+        console.error("Error loading inventory alerts:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
     
-    // Set up interval to check periodically (every hour in a real app)
-    const interval = setInterval(checkInventoryAlerts, 3600000);
-    
-    return () => clearInterval(interval);
-  }, [checkInventoryAlerts]);
+    loadAlertItems();
+  }, []);
+
+  // Function to check inventory and create alerts
+  const checkInventoryAlerts = async (
+    placeAutomaticOrder: (itemId: string) => void, 
+    autoReorderSettings: Record<string, { enabled: boolean; threshold: number; quantity: number }>
+  ) => {
+    try {
+      // Reload the data
+      const [lowItems, outItems] = await Promise.all([
+        getLowStockItems(),
+        getOutOfStockItems()
+      ]);
+      
+      setLowStockItems(lowItems);
+      setOutOfStockItems(outItems);
+      
+      // Create notifications for low stock items
+      lowItems.forEach(item => {
+        addNotification({
+          title: "Low Stock Alert",
+          message: `${item.name} is running low (${item.quantity} remaining)`,
+          type: "warning",
+          link: "/inventory",
+          duration: 8000
+        });
+        
+        // Check if auto-reorder is enabled and threshold is met
+        if (
+          autoReorderSettings[item.id] && 
+          autoReorderSettings[item.id].enabled && 
+          item.quantity <= autoReorderSettings[item.id].threshold
+        ) {
+          placeAutomaticOrder(item.id);
+        }
+      });
+
+      // Create notifications for out of stock items
+      outItems.forEach(item => {
+        addNotification({
+          title: "Out of Stock Alert",
+          message: `${item.name} is out of stock and needs to be reordered`,
+          type: "error",
+          link: "/inventory",
+          duration: 10000
+        });
+        
+        // Auto-reorder if enabled
+        if (autoReorderSettings[item.id] && autoReorderSettings[item.id].enabled) {
+          placeAutomaticOrder(item.id);
+        }
+      });
+    } catch (error) {
+      console.error("Error checking inventory alerts:", error);
+    }
+  };
 
   return {
     lowStockItems,
     outOfStockItems,
-    checkInventoryAlerts
+    loading,
+    checkInventoryAlerts,
   };
 }

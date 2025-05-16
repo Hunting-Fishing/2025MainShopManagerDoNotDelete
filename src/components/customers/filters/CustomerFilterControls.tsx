@@ -1,53 +1,100 @@
 
-import React from 'react';
-import { DateRange } from 'react-day-picker';
-import { CustomerFilterPanel } from './components/CustomerFilterPanel';
+import React, { useState } from "react";
+import { DateRange } from "react-day-picker";
+import { CustomerFilterHeader } from "./components/CustomerFilterHeader";
+import { CustomerFilterPanel } from "./components/CustomerFilterPanel";
 
 export interface CustomerFilters {
-  searchQuery?: string;
+  searchQuery: string;
   tags?: string[];
   vehicleType?: string;
-  hasVehicles?: string;
   dateRange?: DateRange;
+  hasVehicles?: string;
 }
 
-export interface CustomerFilterControlsProps {
+interface CustomerFilterControlsProps {
   filters: CustomerFilters;
   onFilterChange: (filters: CustomerFilters) => void;
 }
 
 export const CustomerFilterControls: React.FC<CustomerFilterControlsProps> = ({
   filters,
-  onFilterChange
+  onFilterChange,
 }) => {
-  const handleTagsChange = (tags: string[]) => {
-    onFilterChange({ ...filters, tags });
+  const [expanded, setExpanded] = useState(false);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onFilterChange({
+      ...filters,
+      searchQuery: e.target.value,
+    });
   };
 
-  const handleVehicleTypeChange = (vehicleType: string) => {
-    onFilterChange({ ...filters, vehicleType });
+  const handleTagsChange = (newTags: string[]) => {
+    onFilterChange({
+      ...filters,
+      tags: newTags,
+    });
   };
 
-  const handleDateRangeChange = (dateRange: DateRange | undefined) => {
-    onFilterChange({ ...filters, dateRange });
-  };
-  
-  const handleHasVehiclesChange = (hasVehicles: string) => {
-    onFilterChange({ ...filters, hasVehicles });
+  const handleVehicleTypeChange = (value: string) => {
+    onFilterChange({
+      ...filters,
+      vehicleType: value || undefined,
+    });
   };
 
-  const handleApplySearch = (newFilters: CustomerFilters) => {
-    onFilterChange(newFilters);
+  const handleHasVehiclesChange = (value: string) => {
+    onFilterChange({
+      ...filters,
+      hasVehicles: value,
+    });
   };
+
+  const handleDateRangeChange = (range: DateRange | undefined) => {
+    onFilterChange({
+      ...filters,
+      dateRange: range,
+    });
+  };
+
+  const resetFilters = () => {
+    onFilterChange({
+      searchQuery: "",
+      tags: [],
+      vehicleType: undefined,
+      dateRange: undefined,
+      hasVehicles: undefined,
+    });
+  };
+
+  const activeFiltersCount = 
+    (filters.tags && filters.tags.length > 0 ? 1 : 0) +
+    (filters.vehicleType ? 1 : 0) +
+    (filters.dateRange && (filters.dateRange.from || filters.dateRange.to) ? 1 : 0) +
+    (filters.hasVehicles ? 1 : 0);
 
   return (
-    <CustomerFilterPanel
-      filters={filters}
-      onTagsChange={handleTagsChange}
-      onVehicleTypeChange={handleVehicleTypeChange}
-      onDateRangeChange={handleDateRangeChange}
-      onHasVehiclesChange={handleHasVehiclesChange}
-      onApplySearch={handleApplySearch}
-    />
+    <div className="space-y-4">
+      <CustomerFilterHeader
+        searchQuery={filters.searchQuery}
+        onSearchChange={handleSearchChange}
+        expanded={expanded}
+        setExpanded={setExpanded}
+        activeFiltersCount={activeFiltersCount}
+        onResetFilters={resetFilters}
+      />
+
+      {expanded && (
+        <CustomerFilterPanel
+          filters={filters}
+          onTagsChange={handleTagsChange}
+          onVehicleTypeChange={handleVehicleTypeChange}
+          onDateRangeChange={handleDateRangeChange}
+          onHasVehiclesChange={handleHasVehiclesChange}
+          onApplySearch={onFilterChange}
+        />
+      )}
+    </div>
   );
 };

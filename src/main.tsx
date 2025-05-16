@@ -10,7 +10,6 @@ import { ThemeProvider } from '@/context/ThemeContext';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { NotificationsProvider } from '@/context/notifications';
 import { Toaster } from "sonner";
-import { BrowserRouter } from 'react-router-dom';
 
 // Create a client for React Query
 const queryClient = new QueryClient({
@@ -26,16 +25,14 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <ThemeProvider>
-            <LanguageProvider>
-              <NotificationsProvider>
-                <App />
-                <Toaster position="top-right" richColors closeButton />
-              </NotificationsProvider>
-            </LanguageProvider>
-          </ThemeProvider>
-        </BrowserRouter>
+        <ThemeProvider>
+          <LanguageProvider>
+            <NotificationsProvider>
+              <App />
+              <Toaster position="top-right" richColors closeButton />
+            </NotificationsProvider>
+          </LanguageProvider>
+        </ThemeProvider>
       </QueryClientProvider>
     </HelmetProvider>
   </React.StrictMode>

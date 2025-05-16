@@ -1,139 +1,182 @@
 
 import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { TimeEntry } from "@/types/workOrder";
-import { TimeTrackingSummary } from "./components/TimeTrackingSummary";
-import { ActiveTimerBanner } from "./components/ActiveTimerBanner";
-import { TimeEntryDialog } from "./TimeEntryDialog";
-import { TimeEntryList } from "./TimeEntryList";
+import { TimeEntryForm } from "./TimeEntryForm";
+import { TimeEntriesList } from "./TimeEntriesList";
+import { toast } from "@/hooks/use-toast";
 
-export interface TimeTrackingSectionProps {
+// Import our new components
+import { TimeTrackingHeader } from "./components/TimeTrackingHeader";
+import { ActiveTimerBanner } from "./components/ActiveTimerBanner";
+import { TimeTrackingSummary } from "./components/TimeTrackingSummary";
+import { EmptyTimeEntries } from "./components/EmptyTimeEntries";
+
+interface TimeTrackingSectionProps {
   workOrderId: string;
-  timeEntries?: TimeEntry[];
-  onUpdateTimeEntries?: (updatedEntries: TimeEntry[]) => void;
+  timeEntries: TimeEntry[];
+  onUpdateTimeEntries: (entries: TimeEntry[]) => void;
 }
 
-export function TimeTrackingSection({
-  workOrderId,
-  timeEntries = [],
-  onUpdateTimeEntries
+export function TimeTrackingSection({ 
+  workOrderId, 
+  timeEntries = [], 
+  onUpdateTimeEntries 
 }: TimeTrackingSectionProps) {
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
+  const [showTimeEntryForm, setShowTimeEntryForm] = useState(false);
+  const [editingTimeEntry, setEditingTimeEntry] = useState<TimeEntry | null>(null);
   const [activeTimer, setActiveTimer] = useState<TimeEntry | null>(null);
-  
-  const totalBillableTime = timeEntries
-    .filter(entry => entry.billable)
-    .reduce((total, entry) => total + entry.duration, 0);
+
+  // Calculate total time
+  const totalBillableTime = timeEntries.reduce((total, entry) => {
+    return entry.billable ? total + entry.duration : total;
+  }, 0);
+
+  const totalNonBillableTime = timeEntries.reduce((total, entry) => {
+    return !entry.billable ? total + entry.duration : total;
+  }, 0);
+
+  // Handle adding a new time entry
+  const handleAddTimeEntry = (entry: TimeEntry) => {
+    const newEntries = [...timeEntries, entry];
+    onUpdateTimeEntries(newEntries);
+    setShowTimeEntryForm(false);
     
-  const totalNonBillableTime = timeEntries
-    .filter(entry => !entry.billable)
-    .reduce((total, entry) => total + entry.duration, 0);
-  
-  const handleAddEntry = (entry: TimeEntry) => {
-    if (!onUpdateTimeEntries) return;
-    onUpdateTimeEntries([...timeEntries, entry]);
-    setShowAddDialog(false);
+    toast({
+      title: "Time Entry Added",
+      description: "Time entry has been added successfully.",
+    });
   };
-  
-  const handleUpdateEntry = (updatedEntry: TimeEntry) => {
-    if (!onUpdateTimeEntries) return;
-    const updatedEntries = timeEntries.map(entry => 
+
+  // Handle editing a time entry
+  const handleEditTimeEntry = (entry: TimeEntry) => {
+    setEditingTimeEntry(entry);
+    setShowTimeEntryForm(true);
+  };
+
+  // Handle updating a time entry
+  const handleUpdateTimeEntry = (updatedEntry: TimeEntry) => {
+    const newEntries = timeEntries.map(entry => 
       entry.id === updatedEntry.id ? updatedEntry : entry
     );
-    onUpdateTimeEntries(updatedEntries);
-    setEditingEntry(null);
+    onUpdateTimeEntries(newEntries);
+    setShowTimeEntryForm(false);
+    setEditingTimeEntry(null);
+    
+    toast({
+      title: "Time Entry Updated",
+      description: "Time entry has been updated successfully.",
+    });
   };
-  
-  const handleDeleteEntry = (entryId: string) => {
-    if (!onUpdateTimeEntries) return;
-    onUpdateTimeEntries(timeEntries.filter(entry => entry.id !== entryId));
+
+  // Handle deleting a time entry
+  const handleDeleteTimeEntry = (entryId: string) => {
+    const newEntries = timeEntries.filter(entry => entry.id !== entryId);
+    onUpdateTimeEntries(newEntries);
+    
+    toast({
+      title: "Time Entry Deleted",
+      description: "Time entry has been deleted successfully.",
+    });
   };
-  
+
+  // Handle starting a timer
   const handleStartTimer = (employeeId: string, employeeName: string) => {
+    // Create a new time entry with start time but no end time
     const newTimer: TimeEntry = {
-      id: crypto.randomUUID(),
-      employee_id: employeeId,
-      employeeId: employeeId,
-      employeeName: employeeName,
+      id: `TE-${Date.now()}`,
+      employeeId,
+      employeeName,
       startTime: new Date().toISOString(),
+      endTime: null,
       duration: 0,
       billable: true
     };
     
     setActiveTimer(newTimer);
-  };
-  
-  const handleStopTimer = () => {
-    if (!activeTimer || !onUpdateTimeEntries) return;
     
-    const endTime = new Date().toISOString();
-    const duration = Math.round(
-      (new Date(endTime).getTime() - new Date(activeTimer.startTime).getTime()) / 60000
-    );
+    toast({
+      title: "Timer Started",
+      description: "Time tracking has been started.",
+    });
+  };
+
+  // Handle stopping a timer
+  const handleStopTimer = () => {
+    if (!activeTimer) return;
+    
+    const endTime = new Date();
+    const startTime = new Date(activeTimer.startTime);
+    
+    // Calculate duration in minutes
+    const durationMs = endTime.getTime() - startTime.getTime();
+    const durationMinutes = Math.round(durationMs / (1000 * 60));
     
     const completedEntry: TimeEntry = {
       ...activeTimer,
-      endTime,
-      duration
+      endTime: endTime.toISOString(),
+      duration: durationMinutes
     };
     
-    onUpdateTimeEntries([...timeEntries, completedEntry]);
+    const newEntries = [...timeEntries, completedEntry];
+    onUpdateTimeEntries(newEntries);
     setActiveTimer(null);
+    
+    toast({
+      title: "Timer Stopped",
+      description: `Recorded ${durationMinutes} minutes of time.`,
+    });
   };
 
   return (
-    <div className="space-y-4">
-      {activeTimer && (
-        <ActiveTimerBanner
-          activeTimer={activeTimer}
-          onStopTimer={handleStopTimer}
-        />
-      )}
-      
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">Time Entries</h3>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => setShowAddDialog(true)}
-          disabled={!!activeTimer}
-        >
-          <PlusCircle className="mr-1 h-4 w-4" />
-          Add Time Entry
-        </Button>
-      </div>
-      
-      {(totalBillableTime > 0 || totalNonBillableTime > 0) && (
-        <TimeTrackingSummary
-          totalBillableTime={totalBillableTime}
-          totalNonBillableTime={totalNonBillableTime}
-        />
-      )}
-      
-      <TimeEntryList
-        entries={timeEntries}
-        onEdit={setEditingEntry}
-        onDelete={handleDeleteEntry}
-      />
-
-      <TimeEntryDialog
-        isOpen={showAddDialog}
-        onClose={() => setShowAddDialog(false)}
-        onSave={handleAddEntry}
-        workOrderId={workOrderId}
+    <Card className="mt-6">
+      <TimeTrackingHeader
+        activeTimer={activeTimer}
+        onStartTimer={handleStartTimer}
+        onStopTimer={handleStopTimer}
+        onAddTimeEntry={() => {
+          setEditingTimeEntry(null);
+          setShowTimeEntryForm(true);
+        }}
       />
       
-      {editingEntry && (
-        <TimeEntryDialog
-          isOpen={!!editingEntry}
-          onClose={() => setEditingEntry(null)}
-          onSave={handleUpdateEntry}
-          workOrderId={workOrderId}
-          initialEntry={editingEntry}
-        />
-      )}
-    </div>
+      <CardContent className="p-6">
+        {showTimeEntryForm ? (
+          <TimeEntryForm 
+            workOrderId={workOrderId}
+            timeEntry={editingTimeEntry}
+            onSave={editingTimeEntry ? handleUpdateTimeEntry : handleAddTimeEntry}
+            onCancel={() => {
+              setShowTimeEntryForm(false);
+              setEditingTimeEntry(null);
+            }}
+          />
+        ) : (
+          <>
+            {activeTimer && (
+              <ActiveTimerBanner
+                activeTimer={activeTimer}
+                onStopTimer={handleStopTimer}
+              />
+            )}
+            
+            <TimeTrackingSummary
+              totalBillableTime={totalBillableTime}
+              totalNonBillableTime={totalNonBillableTime}
+            />
+            
+            {timeEntries.length === 0 ? (
+              <EmptyTimeEntries />
+            ) : (
+              <TimeEntriesList 
+                timeEntries={timeEntries}
+                onEdit={handleEditTimeEntry}
+                onDelete={handleDeleteTimeEntry}
+              />
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }

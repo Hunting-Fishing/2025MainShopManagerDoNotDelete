@@ -76,17 +76,15 @@ export function useInvoiceItems(initialItems: InvoiceItem[] = []) {
 
   // Handle adding labor item
   const handleAddLaborItem = () => {
-    const newId = `labor-${Date.now()}`;
     setItems([
       ...items,
       {
-        id: newId,
+        id: `labor-${Date.now()}`,
         name: "Service Labor",
         description: "Technician hours",
         quantity: 1,
         price: 100, // Default labor rate
         total: 100,
-        hours: true,
         sku: "LABOR",
         category: "Services"
       }

@@ -1,7 +1,8 @@
 
 import { TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { InventoryItemExtended, AutoReorderSettings } from "@/types/inventory";
+import { InventoryItemExtended } from "@/types/inventory";
+import { AutoReorderSettings } from "@/hooks/inventory/useInventoryManager";
 import { ReorderDialog } from "./ReorderDialog";
 import { AutoReorderDialog } from "./AutoReorderDialog";
 
@@ -22,7 +23,7 @@ export function AlertItemRow({
     <TableRow>
       <TableCell className="font-medium">{item.name}</TableCell>
       <TableCell>{item.quantity}</TableCell>
-      <TableCell>{item.reorder_point}</TableCell>
+      <TableCell>{item.reorderPoint}</TableCell>
       <TableCell>
         <Badge variant={item.quantity === 0 ? "destructive" : "outline"} className={
           item.quantity === 0 

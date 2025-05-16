@@ -48,11 +48,11 @@ export const InventoryTableRow = ({
       case "onOrder":
         return item.onOrder || 0;
       case "reorderPoint":
-        return item.reorder_point;
+        return item.reorderPoint;
       case "cost":
         return item.cost ? `$${item.cost.toFixed(2)}` : "-";
       case "unitPrice":
-        return `$${item.unit_price.toFixed(2)}`;
+        return `$${item.unitPrice.toFixed(2)}`;
       case "marginMarkup":
         return item.marginMarkup ? `${item.marginMarkup.toFixed(2)}%` : "-";
       case "totalValue":

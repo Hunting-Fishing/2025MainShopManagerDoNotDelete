@@ -1,44 +1,8 @@
 
-import { DateRange } from "react-day-picker";
-import { WorkOrder } from "./workOrder";
-import { InventoryItem } from "./inventory";
+import { Dispatch, SetStateAction } from 'react';
+import { InventoryItem as BaseInventoryItem } from '@/types/inventory';
 
-export interface Invoice {
-  id: string;
-  customer: string;
-  customer_id?: string;
-  customer_address?: string;
-  customer_email?: string;
-  customerAddress?: string; // Alias for customer_address
-  customerEmail?: string; // Alias for customer_email
-  description?: string;
-  notes?: string;
-  date: string;
-  due_date: string;
-  status: 'draft' | 'pending' | 'paid' | 'overdue' | 'cancelled' | 'void' | 'sent';
-  subtotal?: number;
-  tax?: number;
-  total?: number;
-  created_at?: string;
-  last_updated_at?: string;
-  work_order_id?: string;
-  payment_method?: string;
-  created_by?: string;
-  createdBy?: string; // Alias for created_by
-  last_updated_by?: string;
-  shop_id: string;
-  
-  // Aliases for convenience
-  createdAt?: string;
-  dueDate?: string;
-  paymentMethod?: string;
-  
-  // Extended properties for UI
-  items?: InvoiceItem[];
-  assignedStaff?: StaffMember[];
-  workOrderId?: string;
-  invoice_number?: string; // Added for InvoiceListTable
-}
+export type InvoiceStatus = 'draft' | 'pending' | 'paid' | 'overdue' | 'cancelled';
 
 export interface InvoiceItem {
   id: string;
@@ -46,66 +10,87 @@ export interface InvoiceItem {
   description?: string;
   quantity: number;
   price: number;
+  hours?: boolean; // Is this a labor/time entry
   total: number;
-  hours?: boolean;
-  sku?: string; // Added for invoice items
-  category?: string; // Added for invoice items
+  sku: string;
+  category: string;
+}
+
+// Use inventory type directly to avoid conflicts
+export type InventoryItem = BaseInventoryItem;
+
+export interface StaffMember {
+  id: string;
+  name: string;
+  role?: string;
+}
+
+export interface Invoice {
+  id: string;
+  workOrderId?: string;
+  customer: string;
+  customerAddress?: string;
+  customerEmail?: string;
+  description?: string;
+  notes?: string;
+  total: number;
+  subtotal: number;
+  tax: number;
+  status: InvoiceStatus;
+  paymentMethod?: string;
+  date: string;
+  dueDate: string;
+  createdBy: string;
+  assignedStaff: StaffMember[];
+  items: InvoiceItem[];
+  customer_id?: string;
+  lastUpdatedBy?: string;
+  lastUpdatedAt?: string;
 }
 
 export interface InvoiceTemplate {
   id: string;
   name: string;
-  description?: string;
-  default_tax_rate: number;
-  default_due_date_days: number;
-  default_notes?: string;
-  created_at?: string;
-  last_used?: string;
-  usage_count?: number;
-  
-  // Aliases for convenience
-  createdAt?: string;
-  lastUsed?: string;
-  usageCount?: number;
-  defaultTaxRate?: number;
-  defaultDueDateDays?: number;
-  defaultNotes?: string;
-  defaultItems?: InvoiceItem[];
+  description: string;
+  createdAt: string;
+  lastUsed: string | null;
+  usageCount: number;
+  defaultTaxRate: number;
+  defaultDueDateDays: number;
+  defaultNotes: string;
+  defaultItems: InvoiceItem[];
 }
 
-export interface StaffMember {
+export interface WorkOrder {
   id: string;
-  name: string;
-  role?: string; // Added for StaffSelector
+  customer_id: string;
+  customer_name: string;
+  vehicle_id: string;
+  vehicle_info: string;
+  status: string;
+  description: string;
+  total_cost: number;
 }
-
-export interface InvoiceFilters {
-  status: string[] | string;
-  customerName: string;
-  customer?: string; // Added for InvoiceFilters
-  minAmount?: number;
-  maxAmount?: number;
-  dateRange: {
-    from: Date | null;
-    to: Date | null;
-  };
-}
-
-export interface InvoiceFiltersProps {
-  filters: InvoiceFilters;
-  onFilterChange: (field: keyof InvoiceFilters, value: any) => void;
-  onResetFilters: () => void;
-  setFilters?: (filters: InvoiceFilters) => void; // Added for InvoiceFilters
-  resetFilters?: () => void; // Added for InvoiceFilters
-}
-
-export type InvoiceStatus = 'draft' | 'pending' | 'paid' | 'overdue' | 'cancelled' | 'void' | 'sent';
 
 export type InvoiceUpdater = (prev: Invoice) => Invoice;
 
+// Helper function to create an invoice updater
 export const createInvoiceUpdater = (updates: Partial<Invoice>): InvoiceUpdater => {
   return (prev: Invoice) => ({
     ...prev,
     ...updates
   });
 };
+
+export interface InvoiceFiltersProps {
+  filters: {
+    status: string;
+    customer: string;
+    dateRange: {
+      from: Date | null;
+      to: Date | null;
+    };
+  };
+  setFilters: (filters: any) => void;
+  resetFilters: () => void;
+}

@@ -1,51 +1,55 @@
 
 import React from "react";
-import { SelectOption } from "./InventoryFormProps";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 interface InventoryFormSelectProps {
+  id: string;
   label: string;
-  name: string;
   value: string;
-  onChange: (name: string, value: string) => void;
-  options: SelectOption[];
-  required?: boolean;
+  onValueChange: (value: string) => void;
+  options: string[];
   error?: string;
+  required?: boolean;
 }
 
-export const InventoryFormSelect: React.FC<InventoryFormSelectProps> = ({
+export function InventoryFormSelect({
+  id,
   label,
-  name,
   value,
-  onChange,
+  onValueChange,
   options,
-  required = false,
   error,
-}) => {
-  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    onChange(name, e.target.value);
-  };
-
+  required,
+}: InventoryFormSelectProps) {
   return (
     <div className="space-y-2">
-      <label htmlFor={name} className="text-sm font-medium">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
-      <select
-        id={name}
-        name={name}
-        value={value}
-        onChange={handleSelectChange}
-        className={`w-full border rounded p-2 ${error ? "border-red-500" : "border-gray-300"}`}
-        required={required}
-      >
-        <option value="">Select {label}</option>
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      <Label htmlFor={id} className="flex items-center">
+        {label}
+      </Label>
+      
+      <Select value={value} onValueChange={onValueChange}>
+        <SelectTrigger id={id} className={error ? "border-red-500" : ""}>
+          <SelectValue placeholder={`Select ${label.toLowerCase()}`} />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((option) => (
+            <SelectItem key={option} value={option}>
+              {option}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      
+      {error && (
+        <p className="text-sm text-red-500">{error}</p>
+      )}
     </div>
   );
-};
+}

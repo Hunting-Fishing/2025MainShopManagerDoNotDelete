@@ -17,8 +17,7 @@ export function MaintenanceHeader({ totalScheduled, totalOverdue }: MaintenanceH
       title: "Maintenance Alert",
       message: "This is a test maintenance notification",
       type: "info",
-      category: "system",
-      priority: "medium" // Added the required priority field
+      category: "system"
     });
   };
   

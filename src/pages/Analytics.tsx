@@ -1,56 +1,116 @@
+
 import { useState } from "react";
+import { useReportData } from "@/hooks/useReportData";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
-import { ChartContainer } from "@/components/analytics/ChartContainer";
-import { DateRange } from "react-day-picker";
+import { addDays, subDays } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card } from "@/components/ui/card";
+
+// Import the report tabs
+import { RevenueReportTab } from "@/components/reports/RevenueReportTab";
+import { ServicesReportTab } from "@/components/reports/ServicesReportTab";
+import { CustomerReportTab } from "@/components/reports/CustomerReportTab";
 
 export default function Analytics() {
-  const [dateRange, setDateRange] = useState<DateRange>({
-    from: new Date(new Date().setDate(new Date().getDate() - 30)),
-    to: new Date()
+  const [timeRange, setTimeRange] = useState({
+    from: subDays(new Date(), 30),
+    to: new Date(),
   });
-  
-  const handleDateRangeChange = (range: DateRange) => {
-    setDateRange(range);
+
+  // Initialize with current date range
+  const { reportData, isLoading, error, fetchReportData } = useReportData();
+
+  // Handle date range changes
+  const handleDateRangeChange = (range: { from: Date; to: Date }) => {
+    setTimeRange(range);
+    fetchReportData({
+      start: range.from,
+      end: range.to
+    });
+  };
+
+  // Predefined ranges
+  const handlePredefinedRange = (days: number) => {
+    const to = new Date();
+    const from = subDays(to, days);
+    setTimeRange({ from, to });
+    fetchReportData({ start: from, end: to });
   };
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
-      
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex-none max-w-xs w-full">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Analytics</h1>
+          <p className="text-muted-foreground">
+            Detailed analytics and metrics for your business
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => handlePredefinedRange(7)}>
+            7 days
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => handlePredefinedRange(30)}>
+            30 days
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => handlePredefinedRange(90)}>
+            90 days
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => fetchReportData({ 
+              start: timeRange.from, 
+              end: timeRange.to 
+            })}
+          >
+            <RefreshCw className="h-4 w-4 mr-1" />
+            Refresh
+          </Button>
           <DateRangePicker 
-            value={dateRange}
-            onChange={handleDateRangeChange}
+            from={timeRange.from}
+            to={timeRange.to}
+            onUpdate={handleDateRangeChange}
           />
         </div>
-        
-        {/* Filter components would go here */}
       </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ChartContainer
-          title="Revenue"
-          description="Monthly revenue breakdown"
-        >
-          {/* Revenue chart component */}
-          <div className="h-80 w-full flex items-center justify-center bg-slate-50 rounded-md">
-            <p className="text-muted-foreground">Revenue chart placeholder</p>
-          </div>
-        </ChartContainer>
-        
-        <ChartContainer
-          title="Service Completion Rate"
-          description="Jobs completed on time vs delayed"
-        >
-          {/* Service rate chart component */}
-          <div className="h-80 w-full flex items-center justify-center bg-slate-50 rounded-md">
-            <p className="text-muted-foreground">Service rate chart placeholder</p>
-          </div>
-        </ChartContainer>
-        
-        {/* Additional charts */}
-      </div>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      ) : (
+        <Card className="p-4">
+          <Tabs defaultValue="revenue" className="w-full">
+            <TabsList className="w-full mb-6 grid grid-cols-3">
+              <TabsTrigger value="revenue">Revenue Analysis</TabsTrigger>
+              <TabsTrigger value="services">Service Analytics</TabsTrigger>
+              <TabsTrigger value="customers">Customer Insights</TabsTrigger>
+            </TabsList>
+            <TabsContent value="revenue">
+              <RevenueReportTab reportData={reportData} />
+            </TabsContent>
+            <TabsContent value="services">
+              <ServicesReportTab reportData={reportData} />
+            </TabsContent>
+            <TabsContent value="customers">
+              <CustomerReportTab reportData={reportData} />
+            </TabsContent>
+          </Tabs>
+        </Card>
+      )}
     </div>
   );
 }
