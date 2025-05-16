@@ -1,182 +1,171 @@
 
-import React, { useState } from "react";
+import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
-import { InventoryFormSelect } from "@/components/inventory/form/InventoryFormSelect";
-import { WorkOrderInventoryItem } from "@/types/workOrder";
-
-interface SelectOption {
-  value: string;
-  label: string;
-}
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { WorkOrderInventoryItem } from '@/types/workOrder';
+import { DatePicker } from '@/components/ui/date-picker';
 
 interface SpecialOrderItemFormProps {
-  onAdd: (item: Partial<WorkOrderInventoryItem>) => void;
+  onSave: (item: Partial<WorkOrderInventoryItem>) => void;
   onCancel: () => void;
-  suppliers: string[];
 }
 
-export function SpecialOrderItemForm({ onAdd, onCancel, suppliers }: SpecialOrderItemFormProps) {
-  const [name, setName] = useState("");
-  const [sku, setSku] = useState("");
-  const [category, setCategory] = useState("Special Order");
+export function SpecialOrderItemForm({ onSave, onCancel }: SpecialOrderItemFormProps) {
+  const [itemName, setItemName] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [unitPrice, setUnitPrice] = useState(0);
-  const [supplier, setSupplier] = useState(suppliers.length > 0 ? suppliers[0] : "");
-  const [orderRef, setOrderRef] = useState("");
-  const [notes, setNotes] = useState("");
-  const [estimatedDate, setEstimatedDate] = useState<Date | undefined>(undefined);
-  const [itemStatus, setItemStatus] = useState<"special-order" | "ordered">("special-order");
-
-  // Convert string arrays to SelectOption arrays
-  const supplierOptions: SelectOption[] = suppliers.map(supplier => ({ value: supplier, label: supplier }));
-  const statusOptions: SelectOption[] = [
-    { value: "special-order", label: "Special Order" },
-    { value: "ordered", label: "Ordered" }
-  ];
-
+  const [notes, setNotes] = useState('');
+  const [category, setCategory] = useState('Parts');
+  const [sku, setSku] = useState('');
+  const [estimatedArrival, setEstimatedArrival] = useState<Date | undefined>();
+  const [supplierName, setSupplierName] = useState('');
+  const [supplierOrderRef, setSupplierOrderRef] = useState('');
+  
+  // Form validation
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  const validate = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    
+    if (!itemName.trim()) newErrors.itemName = 'Item name is required';
+    if (quantity < 1) newErrors.quantity = 'Quantity must be at least 1';
+    if (unitPrice < 0) newErrors.unitPrice = 'Unit price cannot be negative';
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!validate()) return;
+    
     const newItem: Partial<WorkOrderInventoryItem> = {
-      name,
-      sku: sku || `SO-${Date.now().toString(36)}`,
-      category,
+      name: itemName,
       quantity,
       unitPrice,
-      itemStatus,
-      estimatedArrivalDate: estimatedDate ? format(estimatedDate, 'yyyy-MM-dd') : undefined,
-      supplierName: supplier,
-      supplierOrderRef: orderRef,
-      notes
+      notes,
+      category,
+      sku,
+      itemStatus: 'ordered',
+      supplierName,
+      estimatedArrivalDate: estimatedArrival ? estimatedArrival.toISOString() : undefined,
+      supplierOrderRef
     };
     
-    onAdd(newItem);
+    onSave(newItem);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div>
-          <Label htmlFor="name">Item Name *</Label>
-          <Input
-            id="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-        </div>
-        
-        <div>
-          <Label htmlFor="sku">SKU/Part Number</Label>
-          <Input
-            id="sku"
-            value={sku}
-            onChange={(e) => setSku(e.target.value)}
-            placeholder="Auto-generated if empty"
-          />
-        </div>
-        
-        <div>
-          <Label htmlFor="category">Category</Label>
-          <Input
-            id="category"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-          />
-        </div>
-        
-        <div>
-          <Label htmlFor="quantity">Quantity *</Label>
+    <form onSubmit={handleSubmit} className="space-y-4 p-4">
+      <h3 className="text-lg font-semibold mb-4">Add Special Order Item</h3>
+      
+      <div className="space-y-2">
+        <Label htmlFor="itemName">Item Name*</Label>
+        <Input
+          id="itemName"
+          value={itemName}
+          onChange={(e) => setItemName(e.target.value)}
+          className={errors.itemName ? 'border-red-500' : ''}
+        />
+        {errors.itemName && <p className="text-sm text-red-500">{errors.itemName}</p>}
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="quantity">Quantity*</Label>
           <Input
             id="quantity"
             type="number"
             min={1}
             value={quantity}
-            onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-            required
+            onChange={(e) => setQuantity(parseInt(e.target.value))}
+            className={errors.quantity ? 'border-red-500' : ''}
           />
+          {errors.quantity && <p className="text-sm text-red-500">{errors.quantity}</p>}
         </div>
         
-        <div>
-          <Label htmlFor="unitPrice">Unit Price *</Label>
+        <div className="space-y-2">
+          <Label htmlFor="unitPrice">Unit Price ($)*</Label>
           <Input
             id="unitPrice"
             type="number"
             step="0.01"
             min={0}
             value={unitPrice}
-            onChange={(e) => setUnitPrice(parseFloat(e.target.value) || 0)}
-            required
+            onChange={(e) => setUnitPrice(parseFloat(e.target.value))}
+            className={errors.unitPrice ? 'border-red-500' : ''}
           />
-        </div>
-        
-        <div>
-          <Label htmlFor="itemStatus">Item Status</Label>
-          <InventoryFormSelect
-            label=""
-            name="itemStatus"
-            value={itemStatus}
-            onChange={(e) => setItemStatus(e.target.value as "special-order" | "ordered")}
-            options={statusOptions}
-          />
-        </div>
-        
-        <div>
-          <Label htmlFor="supplier">Supplier</Label>
-          <InventoryFormSelect
-            label=""
-            name="supplier"
-            value={supplier}
-            onChange={(e) => setSupplier(e.target.value)}
-            options={supplierOptions}
-          />
-        </div>
-        
-        <div>
-          <Label htmlFor="orderRef">Order Reference</Label>
-          <Input
-            id="orderRef"
-            value={orderRef}
-            onChange={(e) => setOrderRef(e.target.value)}
-          />
-        </div>
-        
-        <div>
-          <Label>Estimated Arrival Date</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={"outline"}
-                className={cn(
-                  "w-full justify-start text-left font-normal",
-                  !estimatedDate && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {estimatedDate ? format(estimatedDate, "PPP") : "Select a date"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={estimatedDate}
-                onSelect={setEstimatedDate}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
+          {errors.unitPrice && <p className="text-sm text-red-500">{errors.unitPrice}</p>}
         </div>
       </div>
       
-      <div>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="category">Category</Label>
+          <Select value={category} onValueChange={value => setCategory(value)}>
+            <SelectTrigger id="category">
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Parts">Parts</SelectItem>
+              <SelectItem value="Accessories">Accessories</SelectItem>
+              <SelectItem value="Fluids">Fluids</SelectItem>
+              <SelectItem value="Materials">Materials</SelectItem>
+              <SelectItem value="Other">Other</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="sku">SKU/Part Number</Label>
+          <Input
+            id="sku"
+            value={sku}
+            onChange={(e) => setSku(e.target.value)}
+          />
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="supplier">Supplier Name</Label>
+          <Input
+            id="supplier"
+            value={supplierName}
+            onChange={(e) => setSupplierName(e.target.value)}
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="supplierOrderRef">Order Reference #</Label>
+          <Input
+            id="supplierOrderRef"
+            value={supplierOrderRef}
+            onChange={(e) => setSupplierOrderRef(e.target.value)}
+          />
+        </div>
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="estimatedArrival">Estimated Arrival Date</Label>
+        <DatePicker
+          date={estimatedArrival}
+          onDateChange={setEstimatedArrival}
+          className="w-full"
+        />
+      </div>
+      
+      <div className="space-y-2">
         <Label htmlFor="notes">Notes</Label>
         <Textarea
           id="notes"
@@ -186,12 +175,12 @@ export function SpecialOrderItemForm({ onAdd, onCancel, suppliers }: SpecialOrde
         />
       </div>
       
-      <div className="flex justify-end space-x-2">
+      <div className="flex justify-end space-x-3 pt-4">
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
         <Button type="submit">
-          Add Special Order Item
+          Add Item
         </Button>
       </div>
     </form>

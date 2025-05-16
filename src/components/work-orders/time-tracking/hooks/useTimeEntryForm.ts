@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
@@ -42,11 +43,12 @@ export const useTimeEntryForm = ({
   }, [entry]);
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
+    const isCheckbox = e.target.type === 'checkbox';
     
     setValues(prevValues => ({
       ...prevValues,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: isCheckbox ? (e.target as HTMLInputElement).checked : value
     }));
   };
 

@@ -104,8 +104,8 @@ export function InvoiceCreateLayout({
         />
         
         <InvoiceRightColumn 
-          createdBy={invoice.createdBy}
-          assignedStaff={invoice.assignedStaff}
+          createdBy={invoice.created_by || invoice.createdBy || ''}
+          assignedStaff={invoice.assignedStaff || []}
           staffMembers={staffMembers}
           subtotal={subtotal}
           taxRate={taxRate}
@@ -113,7 +113,7 @@ export function InvoiceCreateLayout({
           total={total}
           showStaffDialog={showStaffDialog}
           setShowStaffDialog={setShowStaffDialog}
-          onCreatedByChange={(value) => setInvoice(createInvoiceUpdater({ createdBy: value }))}
+          onCreatedByChange={(value) => setInvoice(createInvoiceUpdater({ created_by: value }))}
           onAddStaffMember={handleAddStaffMember}
           onRemoveStaffMember={handleRemoveStaffMember}
         />

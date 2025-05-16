@@ -21,22 +21,19 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { InvoiceFiltersProps } from "@/types/invoice";
 
-export function InvoiceFilters({ filters, setFilters, resetFilters }: InvoiceFiltersProps) {
+export function InvoiceFilters({ filters, onFilterChange, onResetFilters }: InvoiceFiltersProps) {
   const handleStatusChange = (value: string) => {
-    setFilters({ ...filters, status: value });
+    onFilterChange('status', value);
   };
   
   const handleCustomerChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setFilters({ ...filters, customer: event.target.value });
+    onFilterChange('customerName', event.target.value);
   };
   
   const handleDateRangeChange = (field: "from" | "to", value: Date | null) => {
-    setFilters({
-      ...filters,
-      dateRange: {
-        ...filters.dateRange,
-        [field]: value
-      }
+    onFilterChange('dateRange', {
+      ...filters.dateRange,
+      [field]: value
     });
   };
   
@@ -44,7 +41,7 @@ export function InvoiceFilters({ filters, setFilters, resetFilters }: InvoiceFil
     <div className="bg-white border rounded-lg p-4 mb-6 grid gap-4 md:grid-cols-4">
       <div className="space-y-2">
         <Label htmlFor="status">Status</Label>
-        <Select value={filters.status} onValueChange={handleStatusChange}>
+        <Select value={Array.isArray(filters.status) ? filters.status[0] : filters.status} onValueChange={handleStatusChange}>
           <SelectTrigger id="status">
             <SelectValue placeholder="All statuses" />
           </SelectTrigger>
@@ -64,7 +61,7 @@ export function InvoiceFilters({ filters, setFilters, resetFilters }: InvoiceFil
         <Input
           id="customer"
           placeholder="Search by customer name"
-          value={filters.customer}
+          value={filters.customerName}
           onChange={handleCustomerChange}
         />
       </div>
@@ -129,7 +126,7 @@ export function InvoiceFilters({ filters, setFilters, resetFilters }: InvoiceFil
       </div>
       
       <div className="flex items-end">
-        <Button variant="outline" onClick={resetFilters} className="w-full">
+        <Button variant="outline" onClick={onResetFilters} className="w-full">
           <FilterX className="mr-2 h-4 w-4" />
           Reset Filters
         </Button>

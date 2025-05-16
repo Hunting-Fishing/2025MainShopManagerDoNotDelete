@@ -1,184 +1,127 @@
 
-import { useState } from "react";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { InvoiceItem, Invoice, InvoiceTemplate } from "@/types/invoice";
-import { Save } from "lucide-react";
+import React, { useState } from 'react';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Invoice, InvoiceTemplate } from '@/types/invoice';
 
-const formSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  description: z.string().optional(),
-  defaultNotes: z.string().optional(),
-  defaultDueDateDays: z.coerce.number().int().min(0).default(30),
-  defaultTaxRate: z.coerce.number().min(0).max(100).default(0),
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
-interface SaveTemplateDialogProps {
-  currentInvoice: Invoice;
-  taxRate: number;
-  onSaveTemplate: (template: Omit<InvoiceTemplate, 'id' | 'createdAt' | 'usageCount'>) => void;
+export interface SaveTemplateDialogProps {
+  invoice: Invoice;
+  onSaveTemplate: (template: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount">) => void;
+  onClose: () => void;
 }
 
-export function SaveTemplateDialog({ currentInvoice, taxRate, onSaveTemplate }: SaveTemplateDialogProps) {
-  const [open, setOpen] = useState(false);
-
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      defaultNotes: currentInvoice.notes || "",
-      defaultDueDateDays: 30,
-      defaultTaxRate: taxRate,
-    },
-  });
-
-  const onSubmit = (values: FormValues) => {
-    // Convert the items to template format
-    const templateItems: InvoiceItem[] = currentInvoice.items.map(item => ({
-      ...item,
-    }));
-
-    const template = {
-      name: values.name,
-      description: values.description || "",
-      defaultNotes: values.defaultNotes || "",
-      defaultDueDateDays: values.defaultDueDateDays,
-      defaultTaxRate: values.defaultTaxRate,
-      lastUsed: null,
-      defaultItems: templateItems,
-    };
-
-    onSaveTemplate(template);
-    setOpen(false);
-    form.reset();
+export function SaveTemplateDialog({ invoice, onSaveTemplate, onClose }: SaveTemplateDialogProps) {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [defaultNotes, setDefaultNotes] = useState(invoice.notes || '');
+  const [defaultDueDateDays, setDefaultDueDateDays] = useState(30);
+  const [defaultTaxRate, setDefaultTaxRate] = useState(8);
+  
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    onSaveTemplate({
+      name,
+      description,
+      default_notes: defaultNotes,
+      default_due_date_days: defaultDueDateDays,
+      default_tax_rate: defaultTaxRate / 100,
+      defaultNotes,
+      defaultDueDateDays,
+      defaultTaxRate: defaultTaxRate / 100,
+      defaultItems: invoice.items || [],
+      last_used: null,
+    });
+    
+    onClose();
   };
-
+  
   return (
-    <>
-      <Button
-        variant="outline"
-        onClick={() => setOpen(true)}
-        className="flex items-center gap-2"
-      >
-        <Save size={16} />
-        Save as Template
-      </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Save as Template</DialogTitle>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Template Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Standard Service Invoice" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <h3 className="text-lg font-semibold mb-4">Save as Template</h3>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Template Name*</Label>
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter template name"
+              required
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Optional description"
+              className="resize-none"
+              rows={2}
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="taxRate">Default Tax Rate (%)</Label>
+              <Input
+                id="taxRate"
+                type="number"
+                min="0"
+                step="0.01"
+                value={defaultTaxRate}
+                onChange={(e) => setDefaultTaxRate(parseFloat(e.target.value) || 0)}
               />
-
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Brief description of this template"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="dueDateDays">Default Due In (Days)</Label>
+              <Input
+                id="dueDateDays"
+                type="number"
+                min="0"
+                value={defaultDueDateDays}
+                onChange={(e) => setDefaultDueDateDays(parseInt(e.target.value) || 0)}
               />
-
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="defaultDueDateDays"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Default Due Days</FormLabel>
-                      <FormControl>
-                        <Input type="number" min={0} {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Days until payment is due
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="defaultTaxRate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Default Tax Rate (%)</FormLabel>
-                      <FormControl>
-                        <Input type="number" min={0} max={100} step={0.1} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="defaultNotes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Default Notes</FormLabel>
-                    <FormControl>
-                      <Textarea {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="pt-2 flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit">Save Template</Button>
-              </div>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-    </>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="defaultNotes">Default Notes</Label>
+            <Textarea
+              id="defaultNotes"
+              value={defaultNotes}
+              onChange={(e) => setDefaultNotes(e.target.value)}
+              placeholder="Default notes for invoices"
+              className="resize-none"
+              rows={3}
+            />
+          </div>
+          
+          <div className="pt-4 flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit">
+              Save Template
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }

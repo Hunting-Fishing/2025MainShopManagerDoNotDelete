@@ -95,7 +95,7 @@ export const InventoryFormComponent: React.FC<InventoryFormProps> = ({
           label="Category"
           name="category"
           value={formData.category}
-          onChange={handleSelectChange}
+          onChange={(name, value) => handleSelectChange(name, value)}
           error={formErrors.category}
           options={categoryOptions}
           required
@@ -104,7 +104,7 @@ export const InventoryFormComponent: React.FC<InventoryFormProps> = ({
           label="Supplier"
           name="supplier"
           value={formData.supplier}
-          onChange={handleSelectChange}
+          onChange={(name, value) => handleSelectChange(name, value)}
           error={formErrors.supplier}
           options={supplierOptions}
           required
@@ -127,7 +127,7 @@ export const InventoryFormComponent: React.FC<InventoryFormProps> = ({
           label="Status"
           name="status"
           value={formData.status}
-          onChange={handleSelectChange}
+          onChange={(name, value) => handleSelectChange(name, value)}
           error={formErrors.status}
           options={[
             { value: "In Stock", label: "In Stock" },

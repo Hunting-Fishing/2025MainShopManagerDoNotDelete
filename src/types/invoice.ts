@@ -9,6 +9,8 @@ export interface Invoice {
   customer_id?: string;
   customer_address?: string;
   customer_email?: string;
+  customerAddress?: string; // Alias for customer_address
+  customerEmail?: string; // Alias for customer_email
   description?: string;
   notes?: string;
   date: string;
@@ -22,6 +24,7 @@ export interface Invoice {
   work_order_id?: string;
   payment_method?: string;
   created_by?: string;
+  createdBy?: string; // Alias for created_by
   last_updated_by?: string;
   shop_id: string;
   
@@ -34,6 +37,7 @@ export interface Invoice {
   items?: InvoiceItem[];
   assignedStaff?: StaffMember[];
   workOrderId?: string;
+  invoice_number?: string; // Added for InvoiceListTable
 }
 
 export interface InvoiceItem {
@@ -44,6 +48,8 @@ export interface InvoiceItem {
   price: number;
   total: number;
   hours?: boolean;
+  sku?: string; // Added for invoice items
+  category?: string; // Added for invoice items
 }
 
 export interface InvoiceTemplate {
@@ -70,11 +76,13 @@ export interface InvoiceTemplate {
 export interface StaffMember {
   id: string;
   name: string;
+  role?: string; // Added for StaffSelector
 }
 
 export interface InvoiceFilters {
-  status: string[];
+  status: string[] | string;
   customerName: string;
+  customer?: string; // Added for InvoiceFilters
   minAmount?: number;
   maxAmount?: number;
   dateRange: {
@@ -87,7 +95,11 @@ export interface InvoiceFiltersProps {
   filters: InvoiceFilters;
   onFilterChange: (field: keyof InvoiceFilters, value: any) => void;
   onResetFilters: () => void;
+  setFilters?: (filters: InvoiceFilters) => void; // Added for InvoiceFilters
+  resetFilters?: () => void; // Added for InvoiceFilters
 }
+
+export type InvoiceStatus = 'draft' | 'pending' | 'paid' | 'overdue' | 'cancelled' | 'void' | 'sent';
 
 export type InvoiceUpdater = (prev: Invoice) => Invoice;
 

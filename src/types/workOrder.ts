@@ -1,4 +1,5 @@
 
+
 export type WorkOrderStatusType = 'pending' | 'in-progress' | 'completed' | 'cancelled' | 'on-hold';
 export type WorkOrderPriorityType = 'low' | 'medium' | 'high';
 
@@ -24,7 +25,8 @@ export interface WorkOrderInventoryItem {
   notes?: string;
   estimatedArrivalDate?: string;
   supplierName?: string;
-  itemStatus?: 'in-stock' | 'ordered' | 'backordered' | 'out-of-stock';
+  itemStatus?: 'in-stock' | 'ordered' | 'backordered' | 'out-of-stock' | 'special-order';
+  supplierOrderRef?: string; // Added for WorkOrderInventoryField
 }
 
 export interface WorkOrder {
@@ -119,3 +121,4 @@ export const formatDate = (dateString: string): string => {
     day: 'numeric'
   });
 };
+
