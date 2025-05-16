@@ -1,64 +1,19 @@
 
-/**
- * Work order utilities for the application
- */
-import { WorkOrder } from "@/types/workOrder";
+import { TimeEntry } from "@/types/workOrder";
 
-// Re-export date formatting functions from dateUtils
-export { formatDate, formatTime, formatTimeInHoursAndMinutes } from "./dateUtils";
-
-// Re-export status and priority maps
-export { priorityMap, statusMap } from "./workOrders";
-
-/**
- * Normalizes a work order object to ensure consistent property access
- * regardless of different casing conventions (camelCase vs snake_case)
- * 
- * This function is also exported as normalizeWorkOrderObject for backward compatibility
- */
-export const normalizeWorkOrder = (workOrder: Partial<WorkOrder>): WorkOrder => {
-  if (!workOrder) return {} as WorkOrder;
+export const formatTimeInHoursAndMinutes = (minutes: number): string => {
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
   
-  return {
-    ...workOrder,
-    // Ensure both camelCase and snake_case versions exist
-    customerId: workOrder.customerId || workOrder.customer_id,
-    customer_id: workOrder.customer_id || workOrder.customerId,
-    technicianId: workOrder.technicianId || workOrder.technician_id,
-    technician_id: workOrder.technician_id || workOrder.technicianId,
-    vehicleId: workOrder.vehicleId || workOrder.vehicle_id,
-    vehicle_id: workOrder.vehicle_id || workOrder.vehicleId,
-    serviceType: workOrder.serviceType || workOrder.service_type,
-    service_type: workOrder.service_type || workOrder.serviceType,
-    serviceCategory: workOrder.serviceCategory || workOrder.service_category,
-    service_category: workOrder.service_category || workOrder.serviceCategory,
-    totalCost: workOrder.totalCost || workOrder.total_cost,
-    total_cost: workOrder.total_cost || workOrder.totalCost,
-    estimatedHours: workOrder.estimatedHours || workOrder.estimated_hours,
-    estimated_hours: workOrder.estimated_hours || workOrder.estimatedHours,
-    vehicleMake: workOrder.vehicleMake || workOrder.vehicle_make,
-    vehicle_make: workOrder.vehicle_make || workOrder.vehicleMake,
-    vehicleModel: workOrder.vehicleModel || workOrder.vehicle_model,
-    vehicle_model: workOrder.vehicle_model || workOrder.vehicleModel,
-    vehicleYear: workOrder.vehicleYear || workOrder.vehicle_year,
-    vehicle_year: workOrder.vehicle_year || workOrder.vehicleYear,
-    // Handle timestamps and dates
-    createdAt: workOrder.createdAt || workOrder.created_at,
-    created_at: workOrder.created_at || workOrder.createdAt,
-    updatedAt: workOrder.updatedAt || workOrder.updated_at || workOrder.lastUpdatedAt,
-    updated_at: workOrder.updated_at || workOrder.updatedAt || workOrder.lastUpdatedAt,
-    lastUpdatedAt: workOrder.lastUpdatedAt || workOrder.updatedAt || workOrder.updated_at,
-  } as WorkOrder;
+  return `${hours}h ${mins.toString().padStart(2, '0')}m`;
 };
 
-// Add alias for normalizeWorkOrder to support existing code
-export const normalizeWorkOrderObject = normalizeWorkOrder;
+export const calculateTotalTime = (entries: TimeEntry[]): number => {
+  return entries.reduce((total, entry) => total + entry.duration, 0);
+};
 
-// Export commonly used WorkOrder types
-export type { WorkOrderStatusType, WorkOrderPriorityType } from "@/types/workOrder";
-
-// Export WorkOrderTypes namespace for backward compatibility
-export namespace WorkOrderTypes {
-  export type StatusType = "pending" | "in-progress" | "completed" | "cancelled";
-  export type PriorityType = "low" | "medium" | "high";
-}
+export const calculateBillableTime = (entries: TimeEntry[]): number => {
+  return entries
+    .filter(entry => entry.billable)
+    .reduce((total, entry) => total + entry.duration, 0);
+};

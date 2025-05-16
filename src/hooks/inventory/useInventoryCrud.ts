@@ -1,87 +1,96 @@
 
-import { useState } from "react";
-import { toast } from "sonner";
+import { useState } from 'react';
 import { 
-  getInventoryItems, 
-  createInventoryItem, 
-  updateInventoryItem, 
-  deleteInventoryItem 
-} from "@/services/inventory/crudService";
-import { InventoryItemExtended } from "@/types/inventory";
+  getInventoryItems,
+  updateInventoryItem,
+  deleteInventoryItem,
+  createInventoryItem
+} from '@/services/inventory/crudService';
+import { InventoryItemExtended } from '@/types/inventory';
 
 export function useInventoryCrud() {
-  const [isLoading, setIsLoading] = useState(false);
   const [items, setItems] = useState<InventoryItemExtended[]>([]);
-  
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  // Load all inventory items
   const fetchItems = async () => {
     setIsLoading(true);
+    setError(null);
     try {
       const data = await getInventoryItems();
       setItems(data);
       return data;
-    } catch (error) {
-      console.error('Error fetching inventory items:', error);
-      toast.error('Failed to load inventory items');
+    } catch (e) {
+      const err = e as Error;
+      setError(err);
       return [];
     } finally {
       setIsLoading(false);
     }
   };
-  
-  const addItem = async (item: Partial<InventoryItemExtended>) => {
-    setIsLoading(true);
+
+  // Add a new inventory item
+  const addItem = async (item: InventoryItemExtended) => {
     try {
-      const newItem = await createInventoryItem(item);
+      // Ensure required fields are present
+      const completeItem: Omit<InventoryItemExtended, "id"> = {
+        name: item.name,
+        sku: item.sku,
+        quantity: item.quantity,
+        reorder_point: item.reorder_point,
+        unit_price: item.unit_price,
+        category: item.category,
+        supplier: item.supplier,
+        status: item.status,
+        description: item.description || ""
+      };
+      
+      const newItem = await createInventoryItem(completeItem);
       setItems(prev => [...prev, newItem]);
-      toast.success('Item added successfully');
       return newItem;
-    } catch (error) {
-      console.error('Error adding inventory item:', error);
-      toast.error('Failed to add item');
-      throw error;
-    } finally {
-      setIsLoading(false);
+    } catch (e) {
+      const err = e as Error;
+      setError(err);
+      throw err;
     }
   };
-  
+
+  // Update an existing inventory item
   const updateItem = async (id: string, updates: Partial<InventoryItemExtended>) => {
-    setIsLoading(true);
     try {
       const updatedItem = await updateInventoryItem(id, updates);
       setItems(prev => prev.map(item => item.id === id ? updatedItem : item));
-      toast.success('Item updated successfully');
       return updatedItem;
-    } catch (error) {
-      console.error('Error updating inventory item:', error);
-      toast.error('Failed to update item');
-      throw error;
-    } finally {
-      setIsLoading(false);
+    } catch (e) {
+      const err = e as Error;
+      setError(err);
+      throw err;
     }
   };
-  
+
+  // Update just the quantity of an item
   const updateQuantity = async (id: string, newQuantity: number) => {
     return updateItem(id, { quantity: newQuantity });
   };
-  
+
+  // Remove an inventory item
   const removeItem = async (id: string) => {
-    setIsLoading(true);
     try {
       await deleteInventoryItem(id);
       setItems(prev => prev.filter(item => item.id !== id));
-      toast.success('Item removed successfully');
-    } catch (error) {
-      console.error('Error removing inventory item:', error);
-      toast.error('Failed to remove item');
-      throw error;
-    } finally {
-      setIsLoading(false);
+      return true;
+    } catch (e) {
+      const err = e as Error;
+      setError(err);
+      throw err;
     }
   };
 
   return {
-    isLoading,
     items,
+    isLoading,
+    error,
     fetchItems,
     addItem,
     updateItem,

@@ -4,138 +4,121 @@ import { UseFormReturn } from "react-hook-form";
 import { WorkOrderFormFieldValues } from "@/components/work-orders/WorkOrderFormFields";
 import { InventoryItemExtended } from "@/types/inventory";
 import { WorkOrderInventoryItem } from "@/types/workOrder";
-import { v4 as uuidv4 } from "uuid";
 
-// Create a mock service implementation for now
-const mockWorkOrderService = {
-  addInventoryToWorkOrder: async () => true,
-  removeInventoryFromWorkOrder: async () => true,
-  updateWorkOrderInventoryQuantity: async () => true,
-};
-
+/**
+ * Hook to manage inventory item operations in a work order
+ */
 export const useInventoryItemOperations = (form: UseFormReturn<WorkOrderFormFieldValues>) => {
-  const [items, setItems] = useState<WorkOrderInventoryItem[]>(
-    form.getValues()?.inventoryItems || []
-  );
+  const [items, setItems] = useState<WorkOrderInventoryItem[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // Add inventory item to work order
+  // Internal methods to simulate API calls for now
+  const simulateAddInventoryCall = async (item: WorkOrderInventoryItem): Promise<WorkOrderInventoryItem> => {
+    return new Promise(resolve => {
+      setTimeout(() => resolve(item), 500);
+    });
+  };
+
+  const simulateRemoveInventoryCall = async (itemId: string): Promise<boolean> => {
+    return new Promise(resolve => {
+      setTimeout(() => resolve(true), 500);
+    });
+  };
+
+  const simulateUpdateInventoryCall = async (itemId: string, quantity: number): Promise<WorkOrderInventoryItem> => {
+    return new Promise(resolve => {
+      const item = items.find(i => i.id === itemId);
+      if (item) {
+        const updatedItem = { ...item, quantity, total: item.unit_price * quantity };
+        resolve(updatedItem);
+      } else {
+        throw new Error("Item not found");
+      }
+    });
+  };
+
+  /**
+   * Add inventory item to work order
+   */
   const addItem = async (inventoryItem: InventoryItemExtended) => {
     try {
-      // Check if item already exists in the list
-      const existingItem = items.find((item) => item.id === inventoryItem.id);
-      
-      if (existingItem) {
-        // If item exists, increment quantity
-        await updateQuantity(existingItem.id, existingItem.quantity + 1);
-        return;
-      }
-      
       setIsAdding(true);
       
-      // Create new inventory item for the work order
-      const newItem: WorkOrderInventoryItem = {
-        id: inventoryItem.id || uuidv4(),
+      const workOrderInventoryItem: WorkOrderInventoryItem = {
+        id: inventoryItem.id,
+        workOrderId: crypto.randomUUID(), // This would normally come from the work order
         name: inventoryItem.name,
         sku: inventoryItem.sku,
-        category: inventoryItem.category || "",
-        workOrderId: form.getValues().id, // Use camelCase for the TypeScript property
-        quantity: 1,
+        category: inventoryItem.category,
+        quantity: 1, // Default to 1
         unit_price: inventoryItem.unit_price,
-        total: inventoryItem.unit_price,
+        total: inventoryItem.unit_price // total = unit_price * quantity (1)
       };
       
-      // Add to API
-      await mockWorkOrderService.addInventoryToWorkOrder(newItem);
+      // Simulate API call
+      await simulateAddInventoryCall(workOrderInventoryItem);
       
       // Update local state
-      const updatedItems = [...items, newItem];
-      setItems(updatedItems);
+      setItems(prev => [...prev, workOrderInventoryItem]);
       
-      // Update form values
-      form.setValue("inventoryItems", updatedItems, { shouldDirty: true });
-      
+      return workOrderInventoryItem;
     } catch (error) {
-      console.error("Failed to add inventory item:", error);
+      console.error("Error adding inventory item:", error);
+      throw error;
     } finally {
       setIsAdding(false);
     }
   };
 
-  // Remove inventory item from work order
+  /**
+   * Remove inventory item from work order
+   */
   const removeItem = async (itemId: string) => {
     try {
-      setIsUpdating(true);
-      
-      // Filter out the item to be removed
-      const updatedItems = items.filter((item) => item.id !== itemId);
-      
-      // Remove from API
-      await mockWorkOrderService.removeInventoryFromWorkOrder(itemId);
+      // Simulate API call
+      await simulateRemoveInventoryCall(itemId);
       
       // Update local state
-      setItems(updatedItems);
+      setItems(prev => prev.filter(item => item.id !== itemId));
       
-      // Update form values
-      form.setValue("inventoryItems", updatedItems, { shouldDirty: true });
-      
+      return true;
     } catch (error) {
-      console.error("Failed to remove inventory item:", error);
-    } finally {
-      setIsUpdating(false);
+      console.error("Error removing inventory item:", error);
+      throw error;
     }
   };
 
-  // Update inventory item quantity
+  /**
+   * Update inventory item quantity
+   */
   const updateQuantity = async (itemId: string, quantity: number) => {
     try {
-      if (quantity < 1) return;
-      
       setIsUpdating(true);
       
-      // Find the item to update
-      const updatedItems = items.map((item) => {
-        if (item.id === itemId) {
-          const updatedQuantity = Math.max(1, quantity);
-          return {
-            ...item,
-            quantity: updatedQuantity,
-            total: updatedQuantity * item.unit_price,
-          };
-        }
-        return item;
-      });
-      
-      // Update in API
-      await mockWorkOrderService.updateWorkOrderInventoryQuantity(itemId, quantity);
+      // Simulate API call
+      const updatedItem = await simulateUpdateInventoryCall(itemId, quantity);
       
       // Update local state
-      setItems(updatedItems);
+      setItems(prev => prev.map(item => 
+        item.id === itemId ? updatedItem : item
+      ));
       
-      // Update form values
-      form.setValue("inventoryItems", updatedItems, { shouldDirty: true });
-      
+      return updatedItem;
     } catch (error) {
-      console.error("Failed to update inventory quantity:", error);
+      console.error("Error updating inventory quantity:", error);
+      throw error;
     } finally {
       setIsUpdating(false);
     }
   };
 
-  // Function to update inventory quantity
-  const updateInventoryQuantity = async (itemId: string, newQuantity: number) => {
-    return updateQuantity(itemId, newQuantity);
-  };
-  
   return {
     items,
-    setItems,
     isAdding,
     isUpdating,
     addItem,
     removeItem,
     updateQuantity,
-    updateInventoryQuantity
   };
 };

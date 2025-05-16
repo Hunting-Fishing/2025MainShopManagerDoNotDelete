@@ -42,6 +42,7 @@ interface InvoiceCreateLayoutProps {
   handleSaveInvoice: (status: "draft" | "pending" | "paid" | "overdue" | "cancelled") => void;
   handleApplyTemplate: (template: InvoiceTemplate) => void;
   handleSaveTemplate: (template: Omit<InvoiceTemplate, "id" | "created_at" | "usage_count">) => Promise<void>;
+  onTaxRateChange: (value: number) => void;
 }
 
 export function InvoiceCreateLayout({
@@ -73,6 +74,7 @@ export function InvoiceCreateLayout({
   handleSaveInvoice,
   handleApplyTemplate,
   handleSaveTemplate,
+  onTaxRateChange,
 }: InvoiceCreateLayoutProps) {
   return (
     <div className="space-y-6">
@@ -90,10 +92,10 @@ export function InvoiceCreateLayout({
           showWorkOrderDialog={showWorkOrderDialog}
           showInventoryDialog={showInventoryDialog}
           showStaffDialog={showStaffDialog}
-          setShowStaffDialog={setShowStaffDialog}
-          setInvoice={setInvoice}
           setShowWorkOrderDialog={setShowWorkOrderDialog}
           setShowInventoryDialog={setShowInventoryDialog}
+          setShowStaffDialog={setShowStaffDialog}
+          setInvoice={setInvoice}
           handleSelectWorkOrder={handleSelectWorkOrder}
           handleAddInventoryItem={handleAddInventoryItem}
           handleRemoveItem={handleRemoveItem}
@@ -106,7 +108,7 @@ export function InvoiceCreateLayout({
         />
         
         <InvoiceRightColumn 
-          created_by={invoice.created_by || ""}
+          createdBy={invoice.created_by || ""}
           assignedStaff={invoice.assignedStaff}
           staffMembers={staffMembers}
           subtotal={subtotal}
@@ -118,6 +120,7 @@ export function InvoiceCreateLayout({
           onCreatedByChange={(value) => setInvoice(createInvoiceUpdater({ created_by: value }))}
           onAddStaffMember={handleAddStaffMember}
           onRemoveStaffMember={handleRemoveStaffMember}
+          onTaxRateChange={onTaxRateChange}
         />
       </div>
     </div>

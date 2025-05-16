@@ -1,43 +1,35 @@
 
 import React from "react";
-import { TableBody as UITableBody, TableCell, TableRow } from "@/components/ui/table";
-import { InventoryTableRow } from "./TableRow";
+import { TableBody as UITableBody } from "@/components/ui/table";
 import { InventoryItemExtended } from "@/types/inventory";
-import { Column } from "./SortableColumnHeader";
+import { TableRow } from "./TableRow";
+
+export interface Column {
+  id: string;
+  name: string;
+}
 
 interface TableBodyProps {
   items: InventoryItemExtended[];
   visibleColumns: Column[];
-  onRowClick: (itemId: string) => void;
+  onRowClick?: (itemId: string) => void;
 }
 
-export const TableBody = ({ 
-  items, 
-  visibleColumns, 
-  onRowClick 
-}: TableBodyProps) => {
-  if (items.length === 0) {
-    return (
-      <UITableBody>
-        <TableRow>
-          <TableCell colSpan={visibleColumns.length + 1} className="h-24 text-center">
-            No inventory items found
-          </TableCell>
-        </TableRow>
-      </UITableBody>
-    );
+export function TableBody({ items, visibleColumns, onRowClick }: TableBodyProps) {
+  if (!items.length) {
+    return null;
   }
-  
+
   return (
     <UITableBody>
       {items.map((item) => (
-        <InventoryTableRow 
-          key={item.id} 
-          item={item} 
-          visibleColumns={visibleColumns} 
-          onRowClick={onRowClick} 
+        <TableRow
+          key={item.id}
+          item={item}
+          visibleColumns={visibleColumns}
+          onRowClick={onRowClick}
         />
       ))}
     </UITableBody>
   );
-};
+}

@@ -1,13 +1,13 @@
 
-import React, { useState, useEffect } from "react";
-import { TimeEntry } from "@/types/workOrder";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Clock } from "lucide-react";
+import { Plus } from "lucide-react";
+import { TimeEntry } from "@/types/workOrder";
+import { TimeEntryForm } from "./TimeEntryForm";
+import { useTimeEntryForm } from "./hooks/useTimeEntryForm";
 import { TimeEntryTable } from "./TimeEntryTable";
-import { TimeEntryDialog } from "./TimeEntryDialog";
-import { ActiveTimerBanner } from "./components/ActiveTimerBanner";
 
-interface TimeTrackingSectionProps {
+export interface TimeTrackingSectionProps {
   workOrderId: string;
   timeEntries: TimeEntry[];
   onUpdateTimeEntries: (entries: TimeEntry[]) => void;
@@ -18,184 +18,87 @@ export const TimeTrackingSection: React.FC<TimeTrackingSectionProps> = ({
   timeEntries,
   onUpdateTimeEntries,
 }) => {
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [selectedEntry, setSelectedEntry] = useState<TimeEntry | null>(null);
-  const [activeTimer, setActiveTimer] = useState<TimeEntry | null>(null);
-  const [currentDuration, setCurrentDuration] = useState(0);
+  const [isAddingEntry, setIsAddingEntry] = useState(false);
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
 
-  // Find any active timer (entries with start time but no end time)
-  useEffect(() => {
-    const active = timeEntries.find(
-      (entry) => entry.start_time && !entry.end_time
-    );
-    setActiveTimer(active || null);
-  }, [timeEntries]);
+  const editingEntry = editingEntryId
+    ? timeEntries.find(entry => entry.id === editingEntryId)
+    : null;
 
-  // Update current duration for active timer
-  useEffect(() => {
-    if (!activeTimer) return;
+  const formProps = useTimeEntryForm({
+    workOrderId,
+    timeEntry: editingEntry,
+    onSave: handleSaveTimeEntry,
+    onCancel: handleCancelEdit
+  });
 
-    const updateDuration = () => {
-      const start = new Date(activeTimer.start_time).getTime();
-      const now = new Date().getTime();
-      const duration = Math.floor((now - start) / (1000 * 60)); // in minutes
-      setCurrentDuration(duration);
-    };
+  function handleAddNewEntry() {
+    setIsAddingEntry(true);
+    setEditingEntryId(null);
+  }
 
-    updateDuration();
-    const interval = setInterval(updateDuration, 60000); // Update every minute
+  function handleEditEntry(entryId: string) {
+    setEditingEntryId(entryId);
+    setIsAddingEntry(false);
+  }
 
-    return () => clearInterval(interval);
-  }, [activeTimer]);
+  function handleSaveTimeEntry(timeEntry: TimeEntry) {
+    let updatedEntries: TimeEntry[];
 
-  const handleOpenAddDialog = () => {
-    setSelectedEntry(null);
-    setShowAddDialog(true);
-  };
-
-  const handleOpenEditDialog = (entry: TimeEntry) => {
-    setSelectedEntry(entry);
-    setShowEditDialog(true);
-  };
-
-  const handleStartTimer = () => {
-    const newEntry: Partial<TimeEntry> = {
-      work_order_id: workOrderId,
-      employee_id: "current-user", // Should come from auth context
-      employee_name: "Current User", // Should come from auth context
-      start_time: new Date().toISOString(),
-      billable: true,
-    };
-
-    const updatedEntries = [...timeEntries, newEntry as TimeEntry];
-    onUpdateTimeEntries(updatedEntries);
-  };
-
-  const handleStopTimer = () => {
-    if (!activeTimer) return;
-
-    const updatedEntries = timeEntries.map((entry) => {
-      if (entry.id === activeTimer.id) {
-        return {
-          ...entry,
-          end_time: new Date().toISOString(),
-          duration: currentDuration,
-        };
-      }
-      return entry;
-    });
-
-    onUpdateTimeEntries(updatedEntries);
-    setActiveTimer(null);
-  };
-
-  const handleSaveEntry = (entryData: Partial<TimeEntry>) => {
-    let updatedEntries;
-
-    if (selectedEntry) {
-      // Edit existing entry
-      updatedEntries = timeEntries.map((entry) => {
-        if (entry.id === selectedEntry.id) {
-          return {
-            ...entry,
-            ...entryData,
-          };
-        }
-        return entry;
-      });
+    if (editingEntryId) {
+      // Updating existing entry
+      updatedEntries = timeEntries.map((entry) =>
+        entry.id === editingEntryId ? timeEntry : entry
+      );
     } else {
-      // Add new entry
-      const newEntry = {
-        id: `te-${Date.now()}`, // Use a proper ID generation method in production
-        work_order_id: workOrderId,
-        ...entryData,
-      };
-      updatedEntries = [...timeEntries, newEntry as TimeEntry];
+      // Adding new entry
+      updatedEntries = [...timeEntries, timeEntry];
     }
 
     onUpdateTimeEntries(updatedEntries);
-    setShowAddDialog(false);
-    setShowEditDialog(false);
-  };
+    setIsAddingEntry(false);
+    setEditingEntryId(null);
+  }
 
-  const handleDeleteEntry = (entry: TimeEntry) => {
-    const updatedEntries = timeEntries.filter((e) => e.id !== entry.id);
+  function handleDeleteEntry(entryId: string) {
+    const updatedEntries = timeEntries.filter((entry) => entry.id !== entryId);
     onUpdateTimeEntries(updatedEntries);
-  };
+    
+    if (editingEntryId === entryId) {
+      setEditingEntryId(null);
+      setIsAddingEntry(false);
+    }
+  }
 
-  const totalBillableMinutes = timeEntries
-    .filter((entry) => entry.billable && entry.duration)
-    .reduce((total, entry) => total + (entry.duration || 0), 0);
+  function handleCancelEdit() {
+    setIsAddingEntry(false);
+    setEditingEntryId(null);
+  }
 
   return (
     <div className="space-y-6">
-      {activeTimer && (
-        <ActiveTimerBanner
-          timer={activeTimer}
-          onStopTimer={handleStopTimer}
-          currentDuration={currentDuration}
-        />
-      )}
-
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium">Time Entries</h3>
-        <div className="flex space-x-2">
-          {!activeTimer && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleStartTimer}
-              className="flex items-center"
-            >
-              <Clock className="h-4 w-4 mr-1" />
-              Start Timer
-            </Button>
-          )}
-          <Button
-            size="sm"
-            onClick={handleOpenAddDialog}
-            className="flex items-center"
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            Add Entry
-          </Button>
-        </div>
+        <h3 className="text-lg font-medium">Time Tracking</h3>
+        <Button onClick={handleAddNewEntry} disabled={isAddingEntry || !!editingEntryId}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Time Entry
+        </Button>
       </div>
 
-      <TimeEntryTable
-        entries={timeEntries}
-        onEdit={handleOpenEditDialog}
-        onDelete={handleDeleteEntry}
-      />
-
-      <div className="flex justify-end">
-        <div className="bg-slate-50 p-4 rounded-md">
-          <span className="text-sm text-slate-500">Total Billable Time: </span>
-          <span className="font-medium">
-            {Math.floor(totalBillableMinutes / 60)}h {totalBillableMinutes % 60}m
-          </span>
+      {(isAddingEntry || editingEntryId) && (
+        <div className="border p-4 rounded-md bg-muted/50">
+          <h4 className="text-sm font-medium mb-4">
+            {editingEntryId ? "Edit Time Entry" : "New Time Entry"}
+          </h4>
+          <TimeEntryForm {...formProps} />
         </div>
-      </div>
-
-      {/* Add Entry Dialog */}
-      <TimeEntryDialog
-        isOpen={showAddDialog}
-        onClose={() => setShowAddDialog(false)}
-        onSave={handleSaveEntry}
-        workOrderId={workOrderId}
-      />
-
-      {/* Edit Entry Dialog */}
-      {selectedEntry && (
-        <TimeEntryDialog
-          isOpen={showEditDialog}
-          onClose={() => setShowEditDialog(false)}
-          onSave={handleSaveEntry}
-          entry={selectedEntry}
-          workOrderId={workOrderId}
-        />
       )}
+
+      <TimeEntryTable 
+        entries={timeEntries} 
+        onEdit={handleEditEntry} 
+        onDelete={handleDeleteEntry} 
+      />
     </div>
   );
-};
+}

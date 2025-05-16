@@ -1,81 +1,84 @@
 
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { WorkOrder, TimeEntry, WorkOrderInventoryItem } from "@/types/workOrder";
 import { TimeTracking } from "../time-tracking/TimeTracking";
-import { WorkOrderNotes } from "./WorkOrderNotes";
-import { WorkOrderDocuments } from "./WorkOrderDocuments";
-import { WorkOrderHistory } from "./WorkOrderHistory";
-import { WorkOrderInventoryItems } from "../inventory/WorkOrderInventoryItems";
-import { TimeEntry, WorkOrder, WorkOrderInventoryItem } from "@/types/workOrder";
+import { WorkOrderInventoryItems } from "./WorkOrderInventoryItems";
+import { WorkOrderDocuments } from './WorkOrderDocuments';
+import { WorkOrderHistory } from './WorkOrderHistory';
+import { WorkOrderNotes } from './WorkOrderNotes';
 
 interface WorkOrderDetailsTabsProps {
   workOrder: WorkOrder;
+  timeEntries: TimeEntry[];
   onUpdateTimeEntries: (entries: TimeEntry[]) => void;
-  onUpdateNotes?: (notes: string) => void;
+  inventoryItems: WorkOrderInventoryItem[];
+  notes: string;
+  onUpdateNotes: (notes: string) => void;
 }
 
-export const WorkOrderDetailsTabs: React.FC<WorkOrderDetailsTabsProps> = ({
-  workOrder,
+export function WorkOrderDetailsTabs({ 
+  workOrder, 
+  timeEntries, 
   onUpdateTimeEntries,
-  onUpdateNotes,
-}) => {
+  inventoryItems,
+  notes,
+  onUpdateNotes
+}: WorkOrderDetailsTabsProps) {
   const [activeTab, setActiveTab] = useState("details");
 
-  // Extract inventory items from work order
-  const inventoryItems = workOrder.inventory_items || workOrder.inventoryItems || [];
-
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-  };
-
-  const handleUpdateNotes = (notes: string) => {
-    if (onUpdateNotes) {
-      onUpdateNotes(notes);
-    }
-  };
-
   return (
-    <Tabs
-      defaultValue="details"
-      value={activeTab}
-      onValueChange={handleTabChange}
-      className="w-full"
-    >
-      <TabsList className="grid grid-cols-4 mb-8">
-        <TabsTrigger value="details">Details</TabsTrigger>
-        <TabsTrigger value="time">Time Tracking</TabsTrigger>
-        <TabsTrigger value="inventory">Inventory</TabsTrigger>
-        <TabsTrigger value="documents">Documents</TabsTrigger>
-      </TabsList>
+    <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab}>
+      <div className="border-b mb-6">
+        <TabsList className="bg-transparent">
+          <TabsTrigger value="details">Details</TabsTrigger>
+          <TabsTrigger value="time">Time Tracking</TabsTrigger>
+          <TabsTrigger value="inventory">Inventory</TabsTrigger>
+          <TabsTrigger value="documents">Documents</TabsTrigger>
+          <TabsTrigger value="history">History</TabsTrigger>
+          <TabsTrigger value="notes">Notes</TabsTrigger>
+        </TabsList>
+      </div>
 
       <TabsContent value="details">
-        <div className="space-y-8">
-          <WorkOrderNotes
-            notes={workOrder.notes || ""}
-            onUpdateNotes={handleUpdateNotes}
-          />
-          <WorkOrderHistory workOrderId={workOrder.id} />
+        <div className="space-y-6">
+          <h3 className="text-lg font-medium">Work Order Details</h3>
+          <p>ID: {workOrder.id}</p>
+          <p>Status: {workOrder.status}</p>
+          <p>Description: {workOrder.description || 'No description'}</p>
         </div>
       </TabsContent>
 
       <TabsContent value="time">
         <TimeTracking
           workOrderId={workOrder.id}
-          timeEntries={workOrder.time_entries || []}
+          timeEntries={timeEntries}
           onUpdateTimeEntries={onUpdateTimeEntries}
         />
       </TabsContent>
 
       <TabsContent value="inventory">
-        <WorkOrderInventoryItems
+        <WorkOrderInventoryItems 
           workOrderId={workOrder.id}
-          inventoryItems={inventoryItems as WorkOrderInventoryItem[]}
+          inventoryItems={inventoryItems}
         />
       </TabsContent>
 
       <TabsContent value="documents">
         <WorkOrderDocuments workOrderId={workOrder.id} />
       </TabsContent>
+
+      <TabsContent value="history">
+        <WorkOrderHistory workOrderId={workOrder.id} />
+      </TabsContent>
+
+      <TabsContent value="notes">
+        <WorkOrderNotes 
+          workOrderId={workOrder.id}
+          notes={notes}
+          onUpdateNotes={onUpdateNotes}
+        />
+      </TabsContent>
     </Tabs>
   );
-};
+}

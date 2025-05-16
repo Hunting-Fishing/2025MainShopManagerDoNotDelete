@@ -1,59 +1,26 @@
 
-import React, { useState } from "react";
-import { WorkOrder, TimeEntry } from "@/types/workOrder";
-import { EditFormHeader } from "./edit/EditFormHeader";
-import { WorkOrderEditFormContent } from "./edit/WorkOrderEditFormContent";
-import { useWorkOrderEditForm } from "@/hooks/useWorkOrderEditForm";
+import React from "react";
 import { TimeTrackingSection } from "./time-tracking/TimeTrackingSection";
-import { useTechnicians } from "@/hooks/useTechnicians";
+import { TimeEntry } from "@/types/workOrder";
 
 interface WorkOrderEditFormProps {
-  workOrder: WorkOrder;
+  workOrderId: string;
+  timeEntries: TimeEntry[];
+  onUpdateTimeEntries: (updatedEntries: TimeEntry[]) => void;
 }
 
-export default function WorkOrderEditForm({ workOrder }: WorkOrderEditFormProps) {
-  const { 
-    workOrder: editWorkOrder, 
-    updateField, 
-    handleSubmit, 
-    loading, 
-    saving: isSubmitting, 
-    error: formError 
-  } = useWorkOrderEditForm(workOrder.id);
-  
-  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>(workOrder.timeEntries || []);
-  const { technicians, isLoading: loadingTechnicians } = useTechnicians();
-
-  // Handle updating time entries
-  const handleUpdateTimeEntries = (updatedEntries: TimeEntry[]) => {
-    setTimeEntries(updatedEntries);
-  };
-  
-  const onSubmit = async (data: any) => {
-    await handleSubmit();
-  };
-
+export const WorkOrderEditForm: React.FC<WorkOrderEditFormProps> = ({
+  workOrderId,
+  timeEntries,
+  onUpdateTimeEntries
+}) => {
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <EditFormHeader workOrderId={workOrder.id} />
-
-      {/* Form Content */}
-      <WorkOrderEditFormContent
-        workOrderId={workOrder.id}
-        technicians={technicians}
-        form={{ handleSubmit: onSubmit }}
-        onSubmit={onSubmit}
-        isSubmitting={isSubmitting}
-        error={formError}
-      />
-
-      {/* Time Tracking Section */}
-      <TimeTrackingSection 
-        work_order_id={workOrder.id}
+    <div className="space-y-8">
+      <TimeTrackingSection
+        workOrderId={workOrderId}
         timeEntries={timeEntries}
-        onUpdateTimeEntries={handleUpdateTimeEntries}
+        onUpdateTimeEntries={onUpdateTimeEntries}
       />
     </div>
   );
-}
+};

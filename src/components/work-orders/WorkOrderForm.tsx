@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -11,17 +12,28 @@ const formSchema = z.object({
   status: z.enum(["pending", "in-progress", "on-hold", "completed", "cancelled"]),
 });
 
+type FormValues = z.infer<typeof formSchema>;
+
 export function WorkOrderForm() {
-  const [data, setData] = useState<WorkOrder | null>(null);
-  const form = useForm({
+  const [workOrder, setWorkOrder] = useState<WorkOrder>({
+    id: "WO-" + Date.now().toString().substring(7),
+    customer: "New Customer",
+    priority: "medium",
+    status: "pending"
+  });
+  
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       status: "pending",
     },
   });
 
-  function onSubmit(data: z.infer<typeof formSchema>) {
-    setData(data);
+  function onSubmit(data: FormValues) {
+    setWorkOrder(prev => ({
+      ...prev,
+      status: data.status
+    }));
   }
 
   return (

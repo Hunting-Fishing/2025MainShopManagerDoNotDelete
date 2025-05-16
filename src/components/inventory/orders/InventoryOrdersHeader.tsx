@@ -9,7 +9,10 @@ export function InventoryOrdersHeader() {
   return (
     <div className="flex justify-between items-center">
       <h1 className="text-3xl font-bold tracking-tight">Items on Order</h1>
-      <Button onClick={openDialog} className="bg-green-600 hover:bg-green-700">
+      <Button 
+        onClick={(e) => openDialog()} 
+        className="bg-green-600 hover:bg-green-700"
+      >
         <PlusCircle className="h-4 w-4 mr-2" />
         New Order
       </Button>
