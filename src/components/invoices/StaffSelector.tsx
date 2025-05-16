@@ -1,52 +1,68 @@
 
-import React from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { StaffMember } from "@/types/invoice";
-import { Avatar } from "@/components/ui/avatar";
-import { User } from "lucide-react";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { StaffMember } from '@/types/invoice';
 
 interface StaffSelectorProps {
-  open: boolean;
-  staffMembers: StaffMember[];
+  isOpen: boolean;
   onClose: () => void;
-  onSelect: (member: StaffMember) => void;
+  staffMembers: StaffMember[];
+  onAddStaffMember: (staff: StaffMember) => void;
 }
 
-export function StaffSelector({ open, staffMembers, onClose, onSelect }: StaffSelectorProps) {
+export function StaffSelector({
+  isOpen,
+  onClose,
+  staffMembers,
+  onAddStaffMember
+}: StaffSelectorProps) {
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredStaff = staffMembers.filter(staff => 
+    staff.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleSelectStaff = (staff: StaffMember) => {
+    onAddStaffMember(staff);
+    onClose();
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Select Staff Member</DialogTitle>
+          <DialogTitle>Select Team Member</DialogTitle>
         </DialogHeader>
         
-        <div className="flex flex-col gap-2 mt-2 max-h-[350px] overflow-y-auto">
-          {staffMembers.length === 0 ? (
-            <div className="text-center py-4 text-muted-foreground">
-              No staff members available
-            </div>
-          ) : (
-            staffMembers.map((member) => (
-              <Button
-                key={member.id}
-                variant="outline"
-                className="flex items-center justify-start px-3 py-6"
-                onClick={() => {
-                  onSelect(member);
-                  onClose();
-                }}
-              >
-                <Avatar className="h-8 w-8 mr-3 bg-slate-100">
-                  <User className="h-4 w-4" />
-                </Avatar>
-                <div className="text-left">
-                  <p className="font-medium">{member.name}</p>
-                  {member.role && <p className="text-xs text-muted-foreground">{member.role}</p>}
+        <div className="space-y-4">
+          <input
+            type="text"
+            className="w-full p-2 border rounded-md"
+            placeholder="Search team members..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          
+          <div className="max-h-72 overflow-y-auto space-y-2">
+            {filteredStaff.length === 0 ? (
+              <p className="text-center text-slate-500 p-4">No team members found</p>
+            ) : (
+              filteredStaff.map((staff) => (
+                <div
+                  key={staff.id}
+                  className="flex items-center justify-between p-3 border rounded-md hover:bg-slate-50 cursor-pointer"
+                  onClick={() => handleSelectStaff(staff)}
+                >
+                  <div>
+                    <p className="font-medium">{staff.name}</p>
+                    {staff.role && <p className="text-xs text-slate-500">{staff.role}</p>}
+                  </div>
+                  <Button variant="ghost" size="sm">Select</Button>
                 </div>
-              </Button>
-            ))
-          )}
+              ))
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

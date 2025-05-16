@@ -21,6 +21,9 @@ export interface Invoice {
   items: InvoiceItem[];
   customerData?: Customer;
   created_at?: string;
+  assignedStaff: StaffMember[];
+  last_updated_by?: string;
+  last_updated_at?: string;
 }
 
 export interface InvoiceItem {
@@ -46,4 +49,28 @@ export interface InvoiceTemplate {
   created_at?: string;
   last_used?: string; 
   usage_count?: number;
+}
+
+// Define the StaffMember interface
+export interface StaffMember {
+  id: string;
+  name: string;
+  role?: string;
+}
+
+// Helper function to create an invoice updater
+export const createInvoiceUpdater = (updates: Partial<Invoice>) => {
+  return (prev: Invoice) => ({
+    ...prev,
+    ...updates
+  });
+};
+
+// Define InvoiceFiltersProps
+export interface InvoiceFiltersProps {
+  onApplyFilters: (filters: any) => void;
+}
+
+export interface InvoiceFiltersDropdownProps {
+  onApplyFilters: (filters: any) => void;
 }

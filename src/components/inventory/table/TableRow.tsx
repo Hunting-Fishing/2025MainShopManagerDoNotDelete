@@ -3,7 +3,6 @@ import React from "react";
 import { TableRow as UITableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { InventoryItemExtended } from "@/types/inventory";
-import { format } from "date-fns";
 import { Column } from "./SortableColumnHeader";
 
 interface TableRowProps {
@@ -75,10 +74,14 @@ export const InventoryTableRow = ({
     } 
     
     if (key === 'created_at' || key === 'updated_at') {
-      return formatDate(item[key as keyof InventoryItemExtended] as string);
+      // Make a safe type assertion to access these properties
+      const dateValue = item[key as keyof typeof item] as string | undefined;
+      return formatDate(dateValue);
     }
     
-    return item[key as keyof InventoryItemExtended] || "N/A";
+    // Safe access to any property
+    const value = item[key as keyof typeof item];
+    return value !== undefined ? value : "N/A";
   };
 
   return (

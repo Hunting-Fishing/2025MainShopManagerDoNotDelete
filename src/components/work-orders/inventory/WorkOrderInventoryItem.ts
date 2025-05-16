@@ -7,8 +7,9 @@ export interface ExtendedWorkOrderInventoryItem extends WorkOrderInventoryItem {
   itemStatus?: string;
   estimatedArrivalDate?: string;
   supplierName?: string;
+  supplierOrderRef?: string;
+  unitPrice?: number; // Alias for unit_price
 }
 
 // Re-export the type for components that need it
 export type { WorkOrderInventoryItem };
-

@@ -1,110 +1,104 @@
 
 import { useState } from "react";
 import { TimeEntry } from "@/types/workOrder";
-import { v4 as uuidv4 } from "uuid";
-import { validateTimeEntry } from "../utils/timeEntryValidation";
 
-interface UseTimeEntryFormProps {
-  workOrderId: string;
-  timeEntry?: TimeEntry | null;
-  onSave: (timeEntry: TimeEntry) => void;
-  onCancel: () => void;
-}
+export const useTimeEntryForm = (
+  initialEntry: Partial<TimeEntry> | null,
+  onSubmit: (entry: TimeEntry) => void,
+  onCancel: () => void
+) => {
+  const [formData, setFormData] = useState<Partial<TimeEntry>>({
+    employee_id: initialEntry?.employee_id || "",
+    employee_name: initialEntry?.employee_name || "",
+    start_time: initialEntry?.start_time || "",
+    end_time: initialEntry?.end_time || "",
+    duration: initialEntry?.duration || 0,
+    billable: initialEntry?.billable ?? true,
+    notes: initialEntry?.notes || "",
+    work_order_id: initialEntry?.work_order_id || ""
+  });
 
-export function useTimeEntryForm({
-  workOrderId,
-  timeEntry,
-  onSave,
-  onCancel
-}: UseTimeEntryFormProps) {
-  const [employee, setEmployee] = useState<string>(timeEntry?.employeeName || "");
-  const [startDate, setStartDate] = useState<string>(
-    timeEntry?.startTime 
-      ? new Date(timeEntry.startTime).toISOString().split('T')[0] 
-      : new Date().toISOString().split('T')[0]
-  );
-  const [startTime, setStartTime] = useState<string>(
-    timeEntry?.startTime 
-      ? new Date(timeEntry.startTime).toTimeString().slice(0, 5) 
-      : new Date().toTimeString().slice(0, 5)
-  );
-  const [endDate, setEndDate] = useState<string>(
-    timeEntry?.endTime 
-      ? new Date(timeEntry.endTime).toISOString().split('T')[0] 
-      : new Date().toISOString().split('T')[0]
-  );
-  const [endTime, setEndTime] = useState<string>(
-    timeEntry?.endTime 
-      ? new Date(timeEntry.endTime).toTimeString().slice(0, 5) 
-      : new Date().toTimeString().slice(0, 5)
-  );
-  const [duration, setDuration] = useState<string>(
-    timeEntry?.duration ? (timeEntry.duration / 60).toString() : ""
-  );
-  const [notes, setNotes] = useState<string>(timeEntry?.notes || "");
-  const [billable, setBillable] = useState<boolean>(timeEntry?.billable ?? true);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleChange = (field: keyof TimeEntry, value: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value
+    }));
     
-    // Combine date and time
-    const startDateTime = new Date(`${startDate}T${startTime}`);
-    const endDateTime = new Date(`${endDate}T${endTime}`);
+    // Clear any error for this field
+    if (errors[field]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
+
+  const calculateDuration = () => {
+    if (!formData.start_time || !formData.end_time) return;
     
-    // Calculate duration in minutes if not manually entered
-    let durationInMinutes = parseFloat(duration) * 60;
-    if (!durationInMinutes || isNaN(durationInMinutes)) {
-      const diffMs = endDateTime.getTime() - startDateTime.getTime();
-      durationInMinutes = Math.round(diffMs / (1000 * 60));
+    try {
+      const start = new Date(formData.start_time);
+      const end = new Date(formData.end_time);
+      const diffMs = end.getTime() - start.getTime();
+      const diffMins = Math.round(diffMs / 60000);
+      
+      if (diffMins > 0) {
+        handleChange("duration", diffMins);
+      } else {
+        setErrors(prev => ({
+          ...prev,
+          end_time: "End time must be after start time"
+        }));
+      }
+    } catch (error) {
+      console.error("Error calculating duration:", error);
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    
+    if (!formData.employee_id) {
+      newErrors.employee_id = "Staff member is required";
     }
     
-    // Run validation
-    const validationResult = validateTimeEntry({
-      employee,
-      startDateTime,
-      endDateTime,
-      durationInMinutes
-    });
-
-    if (!validationResult.valid) {
-      alert(validationResult.message);
-      return;
+    if (!formData.start_time) {
+      newErrors.start_time = "Start time is required";
     }
     
-    const updatedEntry: TimeEntry = {
-      id: timeEntry?.id || `TE-${uuidv4().substring(0, 8)}`,
-      employeeId: timeEntry?.employeeId || `EMP-${uuidv4().substring(0, 8)}`,
-      employeeName: employee,
-      startTime: startDateTime.toISOString(),
-      endTime: endDateTime.toISOString(),
-      duration: durationInMinutes,
-      notes: notes,
-      billable: billable
-    };
+    if (formData.duration <= 0) {
+      newErrors.duration = "Duration must be positive";
+    }
     
-    onSave(updatedEntry);
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = () => {
+    if (validateForm()) {
+      onSubmit({
+        id: initialEntry?.id || crypto.randomUUID(),
+        employee_id: formData.employee_id!,
+        employee_name: formData.employee_name!,
+        start_time: formData.start_time!,
+        end_time: formData.end_time,
+        duration: formData.duration || 0,
+        billable: formData.billable || false,
+        notes: formData.notes,
+        work_order_id: formData.work_order_id!
+      });
+    }
   };
 
   return {
-    employee,
-    setEmployee,
-    startDate,
-    setStartDate,
-    startTime,
-    setStartTime,
-    endDate,
-    setEndDate,
-    endTime,
-    setEndTime,
-    duration,
-    setDuration,
-    notes,
-    setNotes,
-    billable,
-    setBillable,
+    formData,
+    errors,
+    handleChange,
+    calculateDuration,
     handleSubmit,
-    isEditing: !!timeEntry,
-    onCancel
+    handleCancel: onCancel
   };
-}
+};

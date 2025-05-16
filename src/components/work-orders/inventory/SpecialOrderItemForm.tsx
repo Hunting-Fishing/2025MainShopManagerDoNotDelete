@@ -10,10 +10,10 @@ import { Calendar as CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { InventoryFormSelect } from "@/components/inventory/form/InventoryFormSelect";
-import { WorkOrderInventoryItem } from "@/types/workOrder";
+import { ExtendedWorkOrderInventoryItem } from "./WorkOrderInventoryItem";
 
 interface SpecialOrderItemFormProps {
-  onAdd: (item: Partial<WorkOrderInventoryItem>) => void;
+  onAdd: (item: Partial<ExtendedWorkOrderInventoryItem>) => void;
   onCancel: () => void;
   suppliers: string[];
 }
@@ -33,12 +33,12 @@ export function SpecialOrderItemForm({ onAdd, onCancel, suppliers }: SpecialOrde
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const newItem: Partial<WorkOrderInventoryItem> = {
+    const newItem: Partial<ExtendedWorkOrderInventoryItem> = {
       name,
       sku: sku || `SO-${Date.now().toString(36)}`,
       category,
       quantity,
-      unitPrice,
+      unit_price: unitPrice,
       itemStatus,
       estimatedArrivalDate: estimatedDate ? format(estimatedDate, 'yyyy-MM-dd') : undefined,
       supplierName: supplier,

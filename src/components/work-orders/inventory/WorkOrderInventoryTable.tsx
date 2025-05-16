@@ -2,12 +2,12 @@
 import React from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { WorkOrderInventoryItem } from "@/types/workOrder";
+import { ExtendedWorkOrderInventoryItem } from "./WorkOrderInventoryItem";
 import { InventoryQuantityManager } from "./InventoryQuantityManager";
 import { Badge } from "@/components/ui/badge";
 
 interface WorkOrderInventoryTableProps {
-  items: WorkOrderInventoryItem[];
+  items: ExtendedWorkOrderInventoryItem[];
   onUpdateQuantity: (id: string, quantity: number) => void;
   onRemoveItem: (id: string) => void;
 }
@@ -80,9 +80,9 @@ export const WorkOrderInventoryTable: React.FC<WorkOrderInventoryTableProps> = (
                   onUpdateQuantity={onUpdateQuantity}
                 />
               </td>
-              <td className="px-4 py-3 text-sm text-right">${item.unitPrice.toFixed(2)}</td>
+              <td className="px-4 py-3 text-sm text-right">${item.unit_price.toFixed(2)}</td>
               <td className="px-4 py-3 text-sm font-medium text-right">
-                ${(item.quantity * item.unitPrice).toFixed(2)}
+                ${(item.quantity * item.unit_price).toFixed(2)}
               </td>
               <td className="px-4 py-3 text-sm text-center">
                 <Button 
@@ -101,7 +101,7 @@ export const WorkOrderInventoryTable: React.FC<WorkOrderInventoryTableProps> = (
           <tr>
             <td colSpan={5} className="px-4 py-2 text-right text-sm font-medium">Total:</td>
             <td className="px-4 py-2 text-right text-sm font-bold">
-              ${items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0).toFixed(2)}
+              ${items.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0).toFixed(2)}
             </td>
             <td></td>
           </tr>
