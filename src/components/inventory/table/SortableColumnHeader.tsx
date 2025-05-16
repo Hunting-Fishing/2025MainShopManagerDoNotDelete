@@ -3,7 +3,7 @@ import React from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { TableHead } from "@/components/ui/table";
-import { GripVertical, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 
 export interface Column {
   id: string;
@@ -57,3 +57,6 @@ export function SortableColumnHeader({ column, onToggleVisibility }: SortableCol
     </TableHead>
   );
 }
+
+// Let's import the GripVertical icon which was missing
+import { GripVertical } from "lucide-react";

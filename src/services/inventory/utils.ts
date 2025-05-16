@@ -6,42 +6,43 @@ import { InventoryItemExtended } from "@/types/inventory";
  */
 export const calculateTotalValue = (items: InventoryItemExtended[]): number => {
   return items.reduce((total, item) => {
-    const cost = item.cost || 0;
-    const quantity = item.quantity || 0;
-    return total + (cost * quantity);
+    const itemValue = (item.quantity || 0) * (item.unit_price || 0);
+    return total + itemValue;
   }, 0);
 };
 
 /**
- * Calculate the value of a single inventory item
+ * Count items that are below their reorder level but not completely out of stock
  */
-export const calculateItemValue = (item: InventoryItemExtended): number => {
-  return (item.cost || 0) * (item.quantity || 0);
+export const countLowStockItems = (items: InventoryItemExtended[]): number => {
+  return items.filter(item => {
+    const quantity = item.quantity || 0;
+    const reorderPoint = item.reorder_point || 0;
+    return quantity > 0 && quantity <= reorderPoint;
+  }).length;
 };
 
 /**
- * Calculate total value of items in specific category
+ * Count items that are completely out of stock (quantity is 0)
  */
-export const calculateCategoryValue = (
-  items: InventoryItemExtended[], 
-  category: string
-): number => {
-  return items
-    .filter(item => item.category === category)
-    .reduce((total, item) => {
-      const cost = item.cost || 0;
-      const quantity = item.quantity || 0;
-      return total + (cost * quantity);
-    }, 0);
+export const countOutOfStockItems = (items: InventoryItemExtended[]): number => {
+  return items.filter(item => (item.quantity || 0) === 0).length;
 };
 
 /**
- * Format currency for display
+ * Calculate available quantity (total - reserved)
  */
-export const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2
-  }).format(amount);
+export const calculateAvailableQuantity = (item: InventoryItemExtended): number => {
+  const totalQuantity = item.quantity || 0;
+  const reservedQuantity = item.quantity_reserved || 0;
+  return Math.max(0, totalQuantity - reservedQuantity);
+};
+
+/**
+ * Check if an item needs reordering
+ */
+export const needsReordering = (item: InventoryItemExtended): boolean => {
+  const availableQuantity = calculateAvailableQuantity(item);
+  const reorderPoint = item.reorder_point || 0;
+  return availableQuantity <= reorderPoint;
 };

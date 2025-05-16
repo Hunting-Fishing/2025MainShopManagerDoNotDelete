@@ -1,109 +1,137 @@
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Invoice, StaffMember } from '@/types/invoice';
-import { toast } from '@/hooks/use-toast';
+import { useState, useEffect } from "react";
+import { Invoice } from "@/types/invoice";
 
-export function useInvoiceData() {
+export const useInvoiceData = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    const fetchInvoices = async () => {
+      try {
+        setIsLoading(true);
+        // In a real app, this would call an API endpoint
+        // For now, simulate a network request
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Mock data
+        const mockInvoices: Invoice[] = [
+          {
+            id: "inv-001",
+            number: "INV-001",
+            status: "pending",
+            issue_date: new Date().toISOString(),
+            due_date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
+            customer: {
+              id: "cust-001",
+              name: "John Doe",
+              email: "john@example.com",
+              address: "123 Main St, Anytown, USA"
+            },
+            subtotal: 650,
+            tax: 52,
+            tax_rate: 8,
+            total: 702,
+            notes: "Thanks for your business!",
+            created_by: "staff-001",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            work_order_id: "wo-001",
+            assigned_staff: []
+          },
+          {
+            id: "inv-002",
+            number: "INV-002",
+            status: "paid",
+            issue_date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+            due_date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+            customer: {
+              id: "cust-002",
+              name: "Jane Smith",
+              email: "jane@example.com",
+              address: "456 Oak Ave, Other City, USA"
+            },
+            subtotal: 850,
+            tax: 68,
+            tax_rate: 8,
+            total: 918,
+            notes: "Payment received. Thank you!",
+            created_by: "staff-002",
+            created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+            updated_at: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
+            work_order_id: "wo-002",
+            assigned_staff: []
+          }
+        ];
+        
+        setInvoices(mockInvoices);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('An unknown error occurred'));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     fetchInvoices();
   }, []);
 
-  const fetchInvoices = async () => {
+  const createInvoice = async (invoice: Omit<Invoice, "id" | "created_at" | "updated_at">) => {
     try {
-      setIsLoading(true);
-      setError('');
-
-      // Fetch all invoices
-      const { data: invoicesData, error: invoicesError } = await supabase
-        .from('invoices')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (invoicesError) {
-        throw invoicesError;
-      }
-
-      // For each invoice, fetch its items and staff
-      const invoicesWithDetails = await Promise.all(
-        invoicesData.map(async (invoice) => {
-          // Fetch invoice items
-          const { data: itemsData, error: itemsError } = await supabase
-            .from('invoice_items')
-            .select('*')
-            .eq('invoice_id', invoice.id);
-
-          if (itemsError) {
-            throw itemsError;
-          }
-
-          // Fetch assigned staff
-          const { data: staffData, error: staffError } = await supabase
-            .from('invoice_staff')
-            .select('*')
-            .eq('invoice_id', invoice.id);
-
-          if (staffError) {
-            throw staffError;
-          }
-
-          // Format the invoice object according to our type
-          const formattedInvoice: Invoice = {
-            id: invoice.id,
-            workOrderId: invoice.work_order_id || '',
-            customer: invoice.customer || 'Unknown Customer',
-            customerAddress: invoice.customer_address || '',
-            customerEmail: invoice.customer_email || '',
-            description: invoice.description || '',
-            notes: invoice.notes || '',
-            total: Number(invoice.total) || 0,
-            subtotal: Number(invoice.subtotal) || 0,
-            tax: Number(invoice.tax) || 0,
-            // Type-cast the status to make sure it conforms to InvoiceStatus
-            status: (invoice.status as Invoice['status']) || 'draft',
-            paymentMethod: invoice.payment_method || '',
-            date: invoice.date || new Date().toISOString().split('T')[0],
-            dueDate: invoice.due_date || '',
-            createdBy: invoice.created_by || '',
-            assignedStaff: staffData?.map((staff: any): StaffMember => ({
-              id: staff.id || crypto.randomUUID(),
-              name: staff.staff_name,
-              role: staff.role || ''
-            })) || [],
-            items: itemsData?.map((item: any) => ({
-              id: item.id,
-              name: item.name,
-              description: item.description || '',
-              quantity: Number(item.quantity),
-              price: Number(item.price),
-              hours: item.hours || false,
-              total: Number(item.total),
-              sku: item.sku || '',
-              category: item.category || ''
-            })) || []
-          };
-
-          return formattedInvoice;
-        })
-      );
-
-      setInvoices(invoicesWithDetails);
+      // In a real app, this would call an API
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const newInvoice: Invoice = {
+        id: `inv-${Math.floor(Math.random() * 10000)}`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        ...invoice
+      };
+      
+      setInvoices(prev => [...prev, newInvoice]);
+      return newInvoice;
     } catch (err) {
-      console.error('Error fetching invoices:', err);
-      setError('Failed to load invoices');
-      toast({
-        title: 'Error',
-        description: 'Failed to load invoices',
-        variant: 'destructive'
-      });
-    } finally {
-      setIsLoading(false);
+      throw err instanceof Error ? err : new Error('Failed to create invoice');
     }
   };
 
-  return { invoices, isLoading, error, fetchInvoices };
-}
+  const updateInvoice = async (id: string, updates: Partial<Invoice>) => {
+    try {
+      // In a real app, this would call an API
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      setInvoices(prev => 
+        prev.map(invoice => 
+          invoice.id === id 
+            ? { ...invoice, ...updates, updated_at: new Date().toISOString() } 
+            : invoice
+        )
+      );
+      
+      return true;
+    } catch (err) {
+      throw err instanceof Error ? err : new Error('Failed to update invoice');
+    }
+  };
+
+  const deleteInvoice = async (id: string) => {
+    try {
+      // In a real app, this would call an API
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      setInvoices(prev => prev.filter(invoice => invoice.id !== id));
+      return true;
+    } catch (err) {
+      throw err instanceof Error ? err : new Error('Failed to delete invoice');
+    }
+  };
+
+  return {
+    invoices,
+    isLoading,
+    error,
+    createInvoice,
+    updateInvoice,
+    deleteInvoice
+  };
+};

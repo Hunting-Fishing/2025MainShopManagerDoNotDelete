@@ -19,6 +19,7 @@ interface InvoiceCreateLayoutProps {
   tax: number;
   taxRate: number;
   total: number;
+  items: InvoiceItem[];
   showWorkOrderDialog: boolean;
   showInventoryDialog: boolean;
   showStaffDialog: boolean;
@@ -51,6 +52,7 @@ export function InvoiceCreateLayout({
   tax,
   taxRate,
   total,
+  items,
   showWorkOrderDialog,
   showInventoryDialog,
   showStaffDialog,
@@ -91,10 +93,8 @@ export function InvoiceCreateLayout({
           templates={templates}
           showWorkOrderDialog={showWorkOrderDialog}
           showInventoryDialog={showInventoryDialog}
-          showStaffDialog={showStaffDialog}
           setShowWorkOrderDialog={setShowWorkOrderDialog}
           setShowInventoryDialog={setShowInventoryDialog}
-          setShowStaffDialog={setShowStaffDialog}
           setInvoice={setInvoice}
           handleSelectWorkOrder={handleSelectWorkOrder}
           handleAddInventoryItem={handleAddInventoryItem}
@@ -109,7 +109,7 @@ export function InvoiceCreateLayout({
         
         <InvoiceRightColumn 
           createdBy={invoice.created_by || ""}
-          assignedStaff={invoice.assignedStaff}
+          assignedStaff={invoice.assigned_staff || []}
           staffMembers={staffMembers}
           subtotal={subtotal}
           taxRate={taxRate}

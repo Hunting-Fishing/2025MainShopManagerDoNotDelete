@@ -1,58 +1,65 @@
 
 /**
- * Format a currency value for display
+ * Utility functions for formatting data
  */
-export const formatCurrency = (value: number): string => {
+
+/**
+ * Format a phone number to a standardized format
+ */
+export const formatPhoneNumber = (phoneNumber: string): string => {
+  if (!phoneNumber) return '';
+  
+  // Remove all non-numeric characters
+  const cleaned = cleanPhoneNumber(phoneNumber);
+  
+  // Format based on length
+  if (cleaned.length === 10) {
+    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`;
+  } else if (cleaned.length === 11 && cleaned[0] === '1') {
+    return `+1 (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7, 11)}`;
+  }
+  
+  // Return original if it doesn't match expected patterns
+  return phoneNumber;
+};
+
+/**
+ * Clean a phone number by removing all non-numeric characters
+ */
+export const cleanPhoneNumber = (phoneNumber: string): string => {
+  if (!phoneNumber) return '';
+  return phoneNumber.replace(/\D/g, '');
+};
+
+/**
+ * Format a currency value
+ */
+export const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
-    minimumFractionDigits: 2,
-  }).format(value);
+  }).format(amount);
 };
 
 /**
- * Format a date value for display
+ * Format a percentage value
  */
-export const formatDate = (dateString: string): string => {
-  if (!dateString) return '';
-  try {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    }).format(date);
-  } catch (e) {
-    console.error('Error formatting date:', e);
-    return dateString;
-  }
+export const formatPercentage = (value: number): string => {
+  return `${value.toFixed(2)}%`;
 };
 
 /**
- * Format a percentage value for display
+ * Truncate a string to a specified length
  */
-export const formatPercent = (value: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'percent',
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  }).format(value / 100);
+export const truncateString = (str: string, maxLength: number): string => {
+  if (!str) return '';
+  if (str.length <= maxLength) return str;
+  return `${str.slice(0, maxLength)}...`;
 };
 
 /**
- * Format a phone number for display
+ * Format a number with commas for thousands
  */
-export const formatPhoneNumber = (phone: string): string => {
-  if (!phone) return '';
-  
-  // Strip all non-numeric characters
-  const cleaned = phone.replace(/\D/g, '');
-  
-  // Format as (XXX) XXX-XXXX
-  if (cleaned.length === 10) {
-    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
-  }
-  
-  // Return original if not 10 digits
-  return phone;
+export const formatNumber = (num: number): string => {
+  return new Intl.NumberFormat('en-US').format(num);
 };

@@ -1,54 +1,84 @@
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { Invoice } from "@/types/invoice";
 
-export function useInvoiceFilters(invoices: Invoice[]) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string[]>([]);
-  const [createdByFilter, setCreatedByFilter] = useState("all");
+interface InvoiceFilters {
+  status: string;
+  workOrderId: string;
+  createdBy: string;
+  dateRange: {
+    from?: Date;
+    to?: Date;
+  };
+}
 
-  // Get unique creators for filter
-  const creators = useMemo(() => {
-    const uniqueCreators = Array.from(new Set(invoices.map(invoice => invoice.createdBy)));
-    return uniqueCreators.filter(creator => creator).sort();
-  }, [invoices]);
+export const useInvoiceFilters = (invoices: Invoice[]) => {
+  const [filters, setFilters] = useState<InvoiceFilters>({
+    status: "all",
+    workOrderId: "",
+    createdBy: "",
+    dateRange: {},
+  });
 
-  // Filter invoices based on search query and filters
-  const filteredInvoices = useMemo(() => {
-    return invoices.filter((invoice) => {
-      const matchesSearch = 
-        !searchQuery ||
-        invoice.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        invoice.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        invoice.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (invoice.workOrderId && invoice.workOrderId.toLowerCase().includes(searchQuery.toLowerCase()));
-      
-      const matchesStatus = 
-        statusFilter.length === 0 || statusFilter.includes(invoice.status);
-      
-      const matchesCreator = 
-        createdByFilter === "all" || invoice.createdBy === createdByFilter;
-      
-      return matchesSearch && matchesStatus && matchesCreator;
-    });
-  }, [invoices, searchQuery, statusFilter, createdByFilter]);
+  const filteredInvoices = invoices.filter((invoice) => {
+    // Status filter
+    if (filters.status !== "all" && invoice.status !== filters.status) {
+      return false;
+    }
 
-  // Reset all filters
+    // Work order filter
+    if (filters.workOrderId && invoice.work_order_id !== filters.workOrderId) {
+      return false;
+    }
+
+    // Created by filter
+    if (filters.createdBy && invoice.created_by !== filters.createdBy) {
+      return false;
+    }
+
+    // Date range filter
+    if (filters.dateRange.from || filters.dateRange.to) {
+      const invoiceDate = new Date(invoice.issue_date);
+
+      if (filters.dateRange.from && invoiceDate < filters.dateRange.from) {
+        return false;
+      }
+
+      if (filters.dateRange.to) {
+        const endDate = new Date(filters.dateRange.to);
+        endDate.setHours(23, 59, 59, 999); // End of day
+        if (invoiceDate > endDate) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  });
+
+  const updateFilter = <K extends keyof InvoiceFilters>(
+    key: K,
+    value: InvoiceFilters[K]
+  ) => {
+    setFilters((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
+
   const resetFilters = () => {
-    setSearchQuery("");
-    setStatusFilter([]);
-    setCreatedByFilter("all");
+    setFilters({
+      status: "all",
+      workOrderId: "",
+      createdBy: "",
+      dateRange: {},
+    });
   };
 
   return {
-    searchQuery,
-    setSearchQuery,
-    statusFilter,
-    setStatusFilter,
-    createdByFilter,
-    setCreatedByFilter,
-    creators,
+    filters,
+    updateFilter,
+    resetFilters,
     filteredInvoices,
-    resetFilters
   };
-}
+};

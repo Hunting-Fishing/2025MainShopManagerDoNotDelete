@@ -1,24 +1,42 @@
 
 import { useState } from "react";
-import { Invoice, StaffMember } from "@/types/invoice";
-import { WorkOrder } from "@/types/workOrder";
-import { InventoryItemExtended } from "@/types/inventory";
+import { Invoice, InvoiceItem, StaffMember } from "@/types/invoice";
 
-export function useInvoiceFormState() {
-  const [invoice, setInvoice] = useState<Invoice>({
-    id: `INV-${Date.now().toString().slice(-6)}`,
-    customer: "",
-    customer_address: "",
-    customer_email: "",
-    status: "draft",
-    date: new Date().toISOString().split('T')[0],
-    due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    work_order_id: "",
-    items: [],
-    assignedStaff: [],
-    created_by: "",
-    notes: "",
-  });
-
-  return { invoice, setInvoice };
+export interface UseInvoiceFormStateProps {
+  initialWorkOrderId?: string;
 }
+
+const createEmptyInvoice = (workOrderId?: string): Invoice => ({
+  id: crypto.randomUUID(),
+  number: '',
+  customer: {
+    id: '',
+    name: '',
+    email: '',
+    address: ''
+  },
+  status: 'draft',
+  issue_date: new Date().toISOString(),
+  due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+  subtotal: 0,
+  tax: 0,
+  tax_rate: 0,
+  total: 0,
+  notes: '',
+  created_by: '',
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+  work_order_id: workOrderId || '',
+  assigned_staff: []
+});
+
+export const useInvoiceFormState = (props?: UseInvoiceFormStateProps) => {
+  const [invoice, setInvoice] = useState<Invoice>(() => 
+    createEmptyInvoice(props?.initialWorkOrderId)
+  );
+  
+  return {
+    invoice,
+    setInvoice
+  };
+};
