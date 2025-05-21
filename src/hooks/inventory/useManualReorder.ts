@@ -23,7 +23,6 @@ export function useManualReorder() {
     setQuantity(Math.max(1, newQuantity));
   };
 
-  // Renamed from submitReorder to reorderItem for consistency
   const reorderItem = async (itemId?: string, orderQuantity?: number) => {
     const itemToOrder = selectedItem;
     const quantityToOrder = orderQuantity || quantity;

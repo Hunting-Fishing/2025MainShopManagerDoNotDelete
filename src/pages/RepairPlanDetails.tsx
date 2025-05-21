@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { RepairPlan } from "@/types/repairPlan";
 import { RepairPlanHeader } from "@/components/repair-plan/RepairPlanHeader";
 import { RepairPlanDetailsCard } from "@/components/repair-plan/detail/RepairPlanDetailsCard";
@@ -9,78 +9,44 @@ import { RepairPlanTasksCard } from "@/components/repair-plan/detail/RepairPlanT
 import { RepairPlanActivityCard } from "@/components/repair-plan/detail/RepairPlanActivityCard";
 import { RepairPlanActionsCard } from "@/components/repair-plan/detail/RepairPlanActionsCard";
 import { getStatusColor, getPriorityColor } from "@/utils/repairPlanUtils";
-
-// Mock data for a repair plan (replace with real data in production)
-const mockRepairPlan: RepairPlan = {
-  id: "repair-1",
-  equipmentId: "equipment-1",
-  title: "HVAC System Overhaul",
-  description: "Complete overhaul of the HVAC system including compressor replacement and ductwork inspection.",
-  status: "scheduled",
-  priority: "high",
-  createdAt: "2023-11-01T10:00:00Z",
-  updatedAt: "2023-11-02T14:30:00Z",
-  scheduledDate: "2023-11-15",
-  estimatedDuration: 8,
-  assignedTechnician: "Michael Brown",
-  costEstimate: 1250.00,
-  customerApproved: true,
-  notes: "Customer requested the work to be done before the holiday season.",
-  tasks: [
-    {
-      id: "task-1",
-      description: "Remove old compressor",
-      estimatedHours: 1.5,
-      completed: false,
-      assignedTo: "Michael Brown",
-    },
-    {
-      id: "task-2",
-      description: "Install new compressor",
-      estimatedHours: 2,
-      completed: false,
-      assignedTo: "Michael Brown",
-    },
-    {
-      id: "task-3",
-      description: "Inspect ductwork",
-      estimatedHours: 2.5,
-      completed: false,
-      assignedTo: "Sarah Johnson",
-    },
-    {
-      id: "task-4",
-      description: "Clean air handler",
-      estimatedHours: 1,
-      completed: false,
-      assignedTo: "David Lee",
-    },
-  ],
-};
+import { supabase } from "@/lib/supabase";
 
 export default function RepairPlanDetails() {
   const { id } = useParams<{ id: string }>();
   const [repairPlan, setRepairPlan] = useState<RepairPlan | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
-    // In a real app, fetch the repair plan from your API
     const fetchRepairPlan = async () => {
       setIsLoading(true);
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // For demo purposes, we're using mock data
-        if (id) {
-          setRepairPlan(mockRepairPlan);
+        if (!id) {
+          setError("No repair plan ID provided");
+          return;
         }
-      } catch (error) {
-        console.error("Error fetching repair plan:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load repair plan details.",
-          variant: "destructive",
+        
+        const { data, error } = await supabase
+          .from('repair_plans')
+          .select(`
+            *,
+            tasks:repair_plan_tasks(*)
+          `)
+          .eq('id', id)
+          .single();
+          
+        if (error) throw error;
+        
+        if (data) {
+          setRepairPlan(data as RepairPlan);
+        } else {
+          setError("Repair plan not found");
+        }
+      } catch (err: any) {
+        console.error("Error fetching repair plan:", err);
+        setError(err.message || "Failed to load repair plan details.");
+        toast("Error", {
+          description: "Failed to load repair plan details."
         });
       } finally {
         setIsLoading(false);
@@ -94,13 +60,18 @@ export default function RepairPlanDetails() {
     if (!repairPlan) return;
     
     try {
-      // Update the task status in the local state
+      // Update the task status in Supabase
+      const { error } = await supabase
+        .from('repair_plan_tasks')
+        .update({ completed })
+        .eq('id', taskId);
+        
+      if (error) throw error;
+      
+      // Update the local state
       const updatedTasks = repairPlan.tasks.map(task => 
         task.id === taskId ? { ...task, completed } : task
       );
-      
-      // In a real app, you would save this update to your backend
-      console.log(`Updating task ${taskId} to ${completed ? 'completed' : 'not completed'}`);
       
       // Update local state
       setRepairPlan({
@@ -109,16 +80,13 @@ export default function RepairPlanDetails() {
         updatedAt: new Date().toISOString(),
       });
       
-      toast({
-        title: "Task Updated",
-        description: `Task marked as ${completed ? 'completed' : 'not completed'}.`,
+      toast("Task Updated", {
+        description: `Task marked as ${completed ? 'completed' : 'not completed'}.`
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating task:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update task status.",
-        variant: "destructive",
+      toast("Error", {
+        description: "Failed to update task status."
       });
     }
   };
