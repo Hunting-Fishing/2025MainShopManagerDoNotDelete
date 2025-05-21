@@ -2,15 +2,16 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
-import { InventoryItem } from "@/types/inventory";
+import { InventoryItem, InventoryItemExtended } from "@/types/inventory";
 import { InventoryStockHeader } from "@/components/inventory/InventoryStockHeader";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
 import { InventoryFilter } from "@/components/inventory/InventoryFilter";
 import { InventoryPagination } from "@/components/inventory/InventoryPagination";
 import { generateInventoryReport } from "@/utils/inventory/reportGenerator";
+import { standardizeInventoryItem } from "@/utils/inventory/adapters";
 
 export default function InventoryStock() {
-  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [inventory, setInventory] = useState<InventoryItemExtended[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -38,7 +39,9 @@ export default function InventoryStock() {
       }
 
       if (data) {
-        setInventory(data);
+        // Convert items to InventoryItemExtended type
+        const standardizedItems = data.map(item => standardizeInventoryItem(item));
+        setInventory(standardizedItems);
       }
     } catch (err: any) {
       setError(err.message || 'Failed to fetch inventory data');

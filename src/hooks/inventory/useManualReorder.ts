@@ -23,15 +23,19 @@ export function useManualReorder() {
     setQuantity(Math.max(1, newQuantity));
   };
 
-  const submitReorder = async () => {
-    if (!selectedItem) return;
+  // Renamed from submitReorder to reorderItem for consistency
+  const reorderItem = async (itemId?: string, orderQuantity?: number) => {
+    const itemToOrder = selectedItem;
+    const quantityToOrder = orderQuantity || quantity;
+    
+    if (!itemToOrder && !itemId) return;
     
     setIsReordering(true);
     try {
       const { error } = await supabase.from('inventory_orders').insert({
-        item_id: selectedItem.id,
-        quantity_ordered: quantity,
-        supplier: selectedItem.supplier,
+        item_id: itemId || itemToOrder?.id,
+        quantity_ordered: quantityToOrder,
+        supplier: itemToOrder?.supplier || '',
         expected_arrival: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days from now
         status: 'ordered'
       });
@@ -39,16 +43,17 @@ export function useManualReorder() {
       if (error) throw error;
       
       toast("Reorder submitted successfully", {
-        description: `Ordered ${quantity} units of ${selectedItem.name}`
+        description: `Ordered ${quantityToOrder} units of ${itemToOrder?.name || 'selected item'}`
       });
       
       clearSelection();
+      return true;
     } catch (err) {
       console.error("Error submitting reorder:", err);
       toast("Failed to submit reorder", {
-        description: "Please try again later",
-        variant: "destructive"
+        description: "Please try again later"
       });
+      return false;
     } finally {
       setIsReordering(false);
     }
@@ -61,6 +66,6 @@ export function useManualReorder() {
     selectItemForReorder,
     clearSelection,
     handleQuantityChange,
-    submitReorder
+    reorderItem
   };
 }

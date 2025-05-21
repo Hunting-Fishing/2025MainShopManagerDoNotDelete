@@ -103,8 +103,7 @@ export const useInventoryManager = () => {
     } catch (error) {
       console.error("Error reordering item:", error);
       toast("Failed to place reorder", {
-        description: "Please try again later",
-        variant: "destructive"
+        description: "Please try again later"
       });
       throw error;
     }
@@ -173,8 +172,7 @@ export const useInventoryManager = () => {
     } catch (error) {
       console.error("Error setting auto-reorder:", error);
       toast("Failed to enable auto-reorder", {
-        description: "Please check your settings and try again",
-        variant: "destructive"
+        description: "Please check your settings and try again"
       });
       throw error;
     }
