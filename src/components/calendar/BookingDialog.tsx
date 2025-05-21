@@ -1,29 +1,13 @@
 
-import React, { useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
+import { getAvailableTimeSlots, createBookingRequest, TimeSlot } from "@/services/calendar/bookingService";
 import { format } from "date-fns";
-import { TimeSlot, getAvailableTimeSlots, createBookingRequest } from "@/services/calendar/bookingService";
-import { toast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
+import { Loader } from "lucide-react";
 
 interface BookingDialogProps {
   date: Date;
@@ -33,102 +17,82 @@ interface BookingDialogProps {
 }
 
 export function BookingDialog({ date, isOpen, onClose, customerId }: BookingDialogProps) {
-  const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
-  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
-  const [selectedTechnician, setSelectedTechnician] = useState<string | null>(null);
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [serviceType, setServiceType] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const navigate = useNavigate();
-  const formattedDate = format(date, "yyyy-MM-dd");
-  const displayDate = format(date, "MMMM d, yyyy");
-  
+  // Load available time slots when dialog opens
   useEffect(() => {
-    if (isOpen) {
-      loadAvailableSlots();
-    }
-  }, [isOpen, date]);
-  
-  const loadAvailableSlots = async () => {
-    setIsLoading(true);
-    try {
-      const slots = await getAvailableTimeSlots(formattedDate);
-      setAvailableSlots(slots);
-    } catch (error) {
-      console.error("Error loading time slots:", error);
-      toast({
-        title: "Error",
-        description: "Could not load available appointment slots.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  const handleSlotSelect = (slotId: string) => {
-    setSelectedSlot(slotId);
-    // Extract technician ID from the slot ID
-    const selectedSlotData = availableSlots.find(slot => slot.id === slotId);
-    if (selectedSlotData) {
-      setSelectedTechnician(selectedSlotData.technician_id || null);
-    }
-  };
-  
-  const handleSubmit = async () => {
-    if (!selectedSlot || !selectedTechnician) {
-      toast({
-        title: "Missing information",
-        description: "Please select an available time slot.",
-        variant: "destructive",
-      });
-      return;
-    }
+    const fetchTimeSlots = async () => {
+      if (!isOpen) return;
+      
+      setIsLoading(true);
+      try {
+        const formattedDate = format(date, "yyyy-MM-dd");
+        const slots = await getAvailableTimeSlots(formattedDate);
+        setTimeSlots(slots);
+        setSelectedTimeSlot(null); // Reset selection
+      } catch (err) {
+        console.error("Error loading time slots:", err);
+        toast("Error loading time slots");
+      } finally {
+        setIsLoading(false);
+      }
+    };
     
-    if (!customerId) {
-      toast({
-        title: "Authentication required",
-        description: "Please log in to book an appointment.",
-        variant: "destructive",
-      });
+    if (isOpen) {
+      fetchTimeSlots();
+    }
+  }, [date, isOpen]);
+  
+  // Reset form when dialog closes
+  useEffect(() => {
+    if (!isOpen) {
+      setSelectedTimeSlot(null);
+      setServiceType("");
+      setNotes("");
+    }
+  }, [isOpen]);
+  
+  // Handle booking submission
+  const handleSubmit = async () => {
+    if (!selectedTimeSlot || !serviceType || !customerId) {
+      toast("Please fill all required fields");
       return;
     }
     
     setIsSubmitting(true);
-    
     try {
-      // Get time from selected slot
-      const selectedSlotData = availableSlots.find(slot => slot.id === selectedSlot);
-      if (!selectedSlotData) throw new Error("Selected slot not found");
+      const formattedDate = format(date, "yyyy-MM-dd");
       
-      const success = await createBookingRequest({
+      const bookingData = {
         customer_id: customerId,
-        technician_id: selectedTechnician,
+        technician_id: selectedTimeSlot.technician_id || "",
         date: formattedDate,
-        time_slot: selectedSlotData.time,
+        time_slot: selectedTimeSlot.time,
         service_type: serviceType,
         notes: notes
-      });
+      };
+      
+      const success = await createBookingRequest(bookingData);
       
       if (success) {
-        toast({
-          title: "Booking request submitted",
-          description: "Your appointment request has been sent.",
+        toast("Booking Request Submitted", {
+          description: "Your appointment request is pending approval"
         });
         onClose();
-        // Redirect to customer portal
-        navigate("/customer-portal?tab=appointments");
       } else {
-        throw new Error("Failed to submit booking");
+        toast("Booking Failed", {
+          description: "There was an error submitting your appointment request"
+        });
       }
-    } catch (error) {
-      console.error("Error submitting booking:", error);
-      toast({
-        title: "Booking failed",
-        description: "There was an error submitting your booking request.",
-        variant: "destructive",
+    } catch (err) {
+      console.error("Error submitting booking:", err);
+      toast("Booking Error", {
+        description: "There was a problem processing your request"
       });
     } finally {
       setIsSubmitting(false);
@@ -136,74 +100,104 @@ export function BookingDialog({ date, isOpen, onClose, customerId }: BookingDial
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Book an Appointment</DialogTitle>
           <DialogDescription>
-            Select an available time slot for {displayDate}
+            {date ? format(date, "EEEE, MMMM d, yyyy") : "Select a time slot"}
           </DialogDescription>
         </DialogHeader>
         
-        {isLoading ? (
-          <div className="flex justify-center py-8">
-            <div className="h-10 w-10 border-4 border-t-blue-600 border-b-blue-600 border-l-transparent border-r-transparent rounded-full animate-spin"></div>
+        <div className="space-y-4 py-4">
+          {/* Time Slot Selection */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Available Time Slots</label>
+            {isLoading ? (
+              <div className="flex items-center justify-center h-24">
+                <Loader className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : timeSlots.length === 0 ? (
+              <div className="text-center text-muted-foreground py-4">
+                No available time slots for this date
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                {timeSlots.map((slot) => (
+                  <Button
+                    key={slot.id}
+                    variant={selectedTimeSlot?.id === slot.id ? "default" : "outline"}
+                    onClick={() => setSelectedTimeSlot(slot)}
+                    className="w-full"
+                  >
+                    {slot.time}
+                  </Button>
+                ))}
+              </div>
+            )}
           </div>
-        ) : availableSlots.length === 0 ? (
-          <div className="py-6 text-center">
-            <p className="text-lg text-gray-500">No available slots for this date.</p>
-            <p className="text-sm text-gray-400 mt-2">Please select another day or contact us directly.</p>
+          
+          {/* Service Type */}
+          <div className="space-y-2">
+            <label htmlFor="serviceType" className="text-sm font-medium">
+              Service Type
+            </label>
+            <Select
+              value={serviceType}
+              onValueChange={setServiceType}
+            >
+              <SelectTrigger id="serviceType">
+                <SelectValue placeholder="Select a service" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="oil_change">Oil Change</SelectItem>
+                <SelectItem value="tune_up">Tune Up</SelectItem>
+                <SelectItem value="brake_service">Brake Service</SelectItem>
+                <SelectItem value="tire_rotation">Tire Rotation</SelectItem>
+                <SelectItem value="inspection">Vehicle Inspection</SelectItem>
+                <SelectItem value="diagnostic">Diagnostic</SelectItem>
+                <SelectItem value="other">Other Service</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        ) : (
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="timeSlot">Available Times</Label>
-              <Select value={selectedSlot || ""} onValueChange={handleSlotSelect}>
-                <SelectTrigger id="timeSlot">
-                  <SelectValue placeholder="Select a time" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableSlots.map((slot) => (
-                    <SelectItem key={slot.id} value={slot.id}>
-                      {slot.time} with {slot.technician}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="serviceType">Service Type</Label>
-              <Input
-                id="serviceType"
-                value={serviceType}
-                onChange={(e) => setServiceType(e.target.value)}
-                placeholder="Oil Change, Brake Replacement, etc."
-              />
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Please describe any specific concerns or requests"
-                rows={3}
-              />
-            </div>
+          
+          {/* Notes */}
+          <div className="space-y-2">
+            <label htmlFor="notes" className="text-sm font-medium">
+              Notes (optional)
+            </label>
+            <Textarea
+              id="notes"
+              placeholder="Please provide any details about your appointment"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+            />
           </div>
-        )}
+        </div>
         
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button 
-            onClick={handleSubmit} 
-            disabled={isSubmitting || availableSlots.length === 0 || !selectedSlot}
-          >
-            {isSubmitting ? "Submitting..." : "Book Appointment"}
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
           </Button>
-        </DialogFooter>
+          <Button 
+            onClick={handleSubmit}
+            disabled={!selectedTimeSlot || !serviceType || isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader className="mr-2 h-4 w-4 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              "Request Appointment"
+            )}
+          </Button>
+        </div>
+        
+        <p className="text-sm text-muted-foreground text-center mt-2">
+          Your appointment will be pending until approved by our staff
+        </p>
       </DialogContent>
     </Dialog>
   );

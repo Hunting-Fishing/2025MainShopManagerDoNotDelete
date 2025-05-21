@@ -13,6 +13,7 @@ import { Helmet } from "react-helmet-async";
 import { useAuthUser } from "@/hooks/useAuthUser";
 import { CustomerLoginRequired } from "@/components/customer-portal/CustomerLoginRequired";
 import { supabase } from "@/lib/supabase";
+import { BookingLinkButton } from "@/components/customer-portal/BookingLinkButton";
 
 export default function CustomerPortal() {
   const [activeTab, setActiveTab] = useState("appointments");
@@ -115,6 +116,11 @@ export default function CustomerPortal() {
 
       <div className="space-y-6" id="portal-content">
         <CustomerPortalHeader customerName={customerName} />
+        
+        {/* Add the booking button here */}
+        <div className="mb-6">
+          <BookingLinkButton />
+        </div>
 
         <Card>
           <CardHeader className="pb-3">

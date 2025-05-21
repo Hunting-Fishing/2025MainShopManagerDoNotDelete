@@ -1,4 +1,3 @@
-
 import React, { Suspense, useEffect, useState } from 'react';
 import {
   BrowserRouter as Router,
@@ -50,6 +49,7 @@ const Payments = React.lazy(() => import('./pages/Payments'));
 const Login = React.lazy(() => import('./pages/Login'));
 const StaffLogin = React.lazy(() => import('./pages/StaffLogin'));
 const CustomerPortal = React.lazy(() => import('./pages/CustomerPortal'));
+const ClientBooking = React.lazy(() => import('./pages/ClientBooking'));
 
 // Import components
 import Sidebar from './components/Sidebar';
@@ -148,6 +148,7 @@ function AppContent() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/staff-login" element={<StaffLogin />} />
                 <Route path="/customer-portal" element={<CustomerPortal />} />
+                <Route path="/client-booking" element={<ClientBooking />} />
               </Routes>
             </Suspense>
           </main>
