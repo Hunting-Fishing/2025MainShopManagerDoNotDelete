@@ -95,18 +95,16 @@ export const useInventoryManager = () => {
         
       if (error) throw error;
       
-      toast({
-        title: "Reorder placed",
-        description: `Ordered ${quantity} units of ${item.name}`,
+      toast(`Reorder placed: ${quantity} units of ${item.name}`, {
+        description: "Order has been submitted to supplier"
       });
       
       return data;
     } catch (error) {
       console.error("Error reordering item:", error);
-      toast({
-        title: "Error",
-        description: "Failed to place reorder",
-        variant: "destructive",
+      toast("Failed to place reorder", {
+        description: "Please try again later",
+        variant: "destructive"
       });
       throw error;
     }
@@ -167,18 +165,16 @@ export const useInventoryManager = () => {
         }
       }));
       
-      toast({
-        title: "Auto-reorder enabled",
-        description: `Auto-reorder set for when stock falls below ${threshold}`,
+      toast("Auto-reorder enabled", {
+        description: `Auto-reorder set for when stock falls below ${threshold}`
       });
       
       return result;
     } catch (error) {
       console.error("Error setting auto-reorder:", error);
-      toast({
-        title: "Error",
-        description: "Failed to enable auto-reorder",
-        variant: "destructive",
+      toast("Failed to enable auto-reorder", {
+        description: "Please check your settings and try again",
+        variant: "destructive"
       });
       throw error;
     }
@@ -208,4 +204,4 @@ export const useInventoryManager = () => {
   };
 };
 
-export type { AutoReorderSettings };
+export type { AutoReorderSettings, ReorderSettings };

@@ -1,15 +1,16 @@
 
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { InventoryItem } from "@/types/inventory";
+import { InventoryItemExtended } from "@/types/inventory";
 import { formatCurrency } from "@/utils/formatters";
 import { Badge } from "@/components/ui/badge";
 
-interface InventoryTableProps {
-  items: InventoryItem[];
+export interface InventoryTableProps {
+  items: InventoryItemExtended[];
+  onUpdateItem?: (id: string, updates: Partial<InventoryItemExtended>) => Promise<InventoryItemExtended>;
 }
 
-export function InventoryTable({ items }: InventoryTableProps) {
+export function InventoryTable({ items, onUpdateItem }: InventoryTableProps) {
   if (items.length === 0) {
     return (
       <div className="text-center p-8 border rounded-md bg-gray-50">
