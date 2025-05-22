@@ -3,11 +3,18 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Settings, Store, Hammer, Users, Wrench, BarChart3, Shield, Link as LinkIcon } from "lucide-react";
+import { Settings, Store, Hammer, Users, Wrench, BarChart3, Shield, Link as LinkIcon, Building } from "lucide-react";
 import { Container, Segment, Header as SemanticHeader, Grid } from "semantic-ui-react";
 
 export default function DeveloperPortal() {
   const adminModules = [
+    {
+      id: "organization-management",
+      title: "Organization Management",
+      description: "Access and manage organization data, shops, and access controls",
+      icon: <Building className="h-6 w-6 text-teal-600" />,
+      href: "/developer/organization-management",
+    },
     {
       id: "shopping-controls",
       title: "Shopping Controls",

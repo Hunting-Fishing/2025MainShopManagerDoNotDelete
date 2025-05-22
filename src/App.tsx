@@ -50,6 +50,10 @@ const Login = React.lazy(() => import('./pages/Login'));
 const StaffLogin = React.lazy(() => import('./pages/StaffLogin'));
 const CustomerPortal = React.lazy(() => import('./pages/CustomerPortal'));
 const ClientBooking = React.lazy(() => import('./pages/ClientBooking'));
+const DeveloperPortal = React.lazy(() => import('./pages/DeveloperPortal'));
+const ServiceManagement = React.lazy(() => import('./pages/ServiceManagement'));
+const ShoppingControls = React.lazy(() => import('./pages/ShoppingControls'));
+const OrganizationManagement = React.lazy(() => import('./pages/OrganizationManagement'));
 
 // Import components
 import Sidebar from './components/Sidebar';
@@ -149,6 +153,10 @@ function AppContent() {
                 <Route path="/staff-login" element={<StaffLogin />} />
                 <Route path="/customer-portal" element={<CustomerPortal />} />
                 <Route path="/client-booking" element={<ClientBooking />} />
+                <Route path="/developer" element={<DeveloperPortal />} />
+                <Route path="/developer/service-management" element={<ServiceManagement />} />
+                <Route path="/developer/shopping-controls" element={<ShoppingControls />} />
+                <Route path="/developer/organization-management" element={<OrganizationManagement />} />
               </Routes>
             </Suspense>
           </main>
@@ -160,6 +168,12 @@ function AppContent() {
 }
 
 function App() {
+  const { isAuthenticated } = useAuthUser();
+  const location = useLocation();
+
+  // Define routes that don't require the sidebar and navbar
+  const isPublicPage = ['/login', '/staff-login'].includes(location.pathname);
+
   return (
     <HelmetProvider>
       <Router>
