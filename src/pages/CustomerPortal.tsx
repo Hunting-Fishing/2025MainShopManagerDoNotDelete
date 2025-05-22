@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,19 +10,42 @@ import { ShopDirectory } from "@/components/customer-portal/ShopDirectory";
 import { CustomerShops } from "@/components/customer-portal/CustomerShops";
 import { Helmet } from "react-helmet-async";
 import { useAuthUser } from "@/hooks/useAuthUser";
-import { CustomerLoginRequired } from "@/components/customer-portal/CustomerLoginRequired";
-import { supabase } from "@/lib/supabase";
+import { CustomerLoginRequiredWithImpersonation } from "@/components/customer-portal/CustomerLoginRequiredWithImpersonation";
+import { supabase } from '@/lib/supabase';
 import { BookingLinkButton } from "@/components/customer-portal/BookingLinkButton";
+import { useImpersonation } from "@/contexts/ImpersonationContext";
+import { Button } from "@/components/ui/button";
+import { User } from "lucide-react";
 
 export default function CustomerPortal() {
   const [activeTab, setActiveTab] = useState("appointments");
   const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [customerData, setCustomerData] = useState<any>(null);
+  const { impersonatedCustomer, isImpersonating } = useImpersonation();
   
   useEffect(() => {
     async function checkAuthStatus() {
       try {
+        if (isImpersonating && impersonatedCustomer) {
+          // If impersonating, fetch the selected customer's data
+          const { data: customerData, error: customerError } = await supabase
+            .from("customers")
+            .select("*")
+            .eq("id", impersonatedCustomer.id)
+            .single();
+            
+          if (customerError) {
+            console.error("Error fetching impersonated customer data:", customerError);
+          } else {
+            setCustomerData(customerData);
+            setUserId('impersonated'); // Use a flag to indicate impersonation
+          }
+          
+          setIsLoading(false);
+          return;
+        }
+        
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -57,36 +79,38 @@ export default function CustomerPortal() {
     
     checkAuthStatus();
     
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setUserId(session?.user?.id || null);
-        
-        // If we have a user, fetch their customer data
-        if (session?.user?.id) {
-          const { data: customerData, error: customerError } = await supabase
-            .from("customers")
-            .select("*")
-            .eq("auth_user_id", session.user.id)
-            .single();
-            
-          if (customerError) {
-            console.error("Error fetching customer data:", customerError);
+    // Listen for auth state changes if not impersonating
+    if (!isImpersonating) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        async (_event, session) => {
+          setUserId(session?.user?.id || null);
+          
+          // If we have a user, fetch their customer data
+          if (session?.user?.id) {
+            const { data: customerData, error: customerError } = await supabase
+              .from("customers")
+              .select("*")
+              .eq("auth_user_id", session.user.id)
+              .single();
+              
+            if (customerError) {
+              console.error("Error fetching customer data:", customerError);
+            } else {
+              setCustomerData(customerData);
+            }
           } else {
-            setCustomerData(customerData);
+            setCustomerData(null);
           }
-        } else {
-          setCustomerData(null);
+          
+          setIsLoading(false);
         }
-        
-        setIsLoading(false);
-      }
-    );
-    
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
+      );
+      
+      return () => {
+        subscription.unsubscribe();
+      };
+    }
+  }, [isImpersonating, impersonatedCustomer]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -100,13 +124,13 @@ export default function CustomerPortal() {
     );
   }
 
-  if (!userId) {
-    return <CustomerLoginRequired />;
+  if (!userId && !isImpersonating) {
+    return <CustomerLoginRequiredWithImpersonation />;
   }
 
   const customerName = customerData ? 
     `${customerData.first_name || ''} ${customerData.last_name || ''}`.trim() : 
-    'Customer';
+    isImpersonating ? impersonatedCustomer?.name : 'Customer';
 
   return (
     <>
@@ -115,6 +139,23 @@ export default function CustomerPortal() {
       </Helmet>
 
       <div className="space-y-6" id="portal-content">
+        {isImpersonating && (
+          <div className="w-full bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6 flex items-center justify-between">
+            <div className="flex items-center">
+              <User className="h-5 w-5 text-amber-500 mr-2" />
+              <span className="font-medium text-amber-700">Developer Preview Mode</span>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => window.location.href="/developer/organization-management"}
+              className="border-amber-300 text-amber-700 hover:bg-amber-100"
+            >
+              Exit Preview
+            </Button>
+          </div>
+        )}
+        
         <CustomerPortalHeader customerName={customerName} />
         
         {/* Add the booking button here */}
