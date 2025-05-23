@@ -24,12 +24,18 @@ export function CustomerSelector() {
   const { data: customers, isLoading, error } = useQuery({
     queryKey: ['customers'],
     queryFn: async () => {
+      console.log('Fetching customers for impersonation');
       const { data, error } = await supabase
         .from('customers')
         .select('id, first_name, last_name, email')
         .not('auth_user_id', 'is', null); // Only get customers with auth accounts
       
-      if (error) throw new Error(error.message);
+      if (error) {
+        console.error('Error fetching customers:', error);
+        throw new Error(error.message);
+      }
+      
+      console.log('Retrieved customers:', data);
       return data as Customer[];
     }
   });
