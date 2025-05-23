@@ -11,13 +11,12 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Settings from "./pages/Settings";
 import InvoiceCreate from "./pages/InvoiceCreate";
-import { Layout } from "./components/Layout";
+import { Layout } from "./components/layout/Layout";
 import { NotificationsProvider } from './context/notifications';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import Unauthorized from './pages/Unauthorized';
 import { ImpersonationProvider } from './contexts/ImpersonationContext';
 import { OnboardingGate } from './components/onboarding/OnboardingGate';
-
 // Import additional pages that need protection
 import Customers from './pages/Customers';
 import CustomerDetails from './pages/CustomerDetails';
@@ -51,184 +50,201 @@ function App() {
                   <Route path="/unauthorized" element={<Unauthorized />} />
                   <Route path="/" element={<Index />} />
                   
-                  {/* Protected routes with onboarding gate */}
-                  <Route path="/dashboard" element={
-                    <ProtectedRoute>
-                      <OnboardingGate>
-                        <Layout>
-                          <Dashboard />
-                        </Layout>
-                      </OnboardingGate>
-                    </ProtectedRoute>
-                  } />
-
-                  <Route path="/settings/*" element={
-                    <ProtectedRoute>
-                      <OnboardingGate>
-                        <Layout>
-                          <Settings />
-                        </Layout>
-                      </OnboardingGate>
-                    </ProtectedRoute>
-                  } />
-
-                  {/* Customer Management Routes */}
-                  <Route path="/customers" element={
-                    <ProtectedRoute>
-                      <OnboardingGate>
-                        <Layout>
-                          <Customers />
-                        </Layout>
-                      </OnboardingGate>
-                    </ProtectedRoute>
-                  } />
-
-                  <Route path="/customers/create" element={
-                    <ProtectedRoute>
-                      <OnboardingGate>
-                        <Layout>
-                          <CreateCustomer />
-                        </Layout>
-                      </OnboardingGate>
-                    </ProtectedRoute>
-                  } />
-
-                  <Route path="/customers/:id" element={
-                    <ProtectedRoute>
-                      <OnboardingGate>
-                        <Layout>
-                          <CustomerDetails />
-                        </Layout>
-                      </OnboardingGate>
-                    </ProtectedRoute>
-                  } />
-
-                  {/* Invoice Routes */}
-                  <Route path="/invoices" element={
-                    <ProtectedRoute>
-                      <OnboardingGate>
-                        <Layout>
-                          <Invoices />
-                        </Layout>
-                      </OnboardingGate>
-                    </ProtectedRoute>
-                  } />
-
-                  <Route path="/invoice/create" element={
-                    <ProtectedRoute>
-                      <OnboardingGate>
-                        <Layout>
-                          <InvoiceCreate />
-                        </Layout>
-                      </OnboardingGate>
-                    </ProtectedRoute>
-                  } />
-
-                  <Route path="/invoices/:id" element={
-                    <ProtectedRoute>
-                      <OnboardingGate>
-                        <Layout>
-                          <InvoiceDetails />
-                        </Layout>
-                      </OnboardingGate>
-                    </ProtectedRoute>
-                  } />
-
-                  {/* Work Order Routes */}
-                  <Route path="/work-orders/create" element={
-                    <ProtectedRoute>
-                      <OnboardingGate>
-                        <Layout>
-                          <WorkOrderCreate />
-                        </Layout>
-                      </OnboardingGate>
-                    </ProtectedRoute>
-                  } />
-
-                  <Route path="/work-orders/:id" element={
-                    <ProtectedRoute>
-                      <OnboardingGate>
-                        <Layout>
-                          <WorkOrderDetails />
-                        </Layout>
-                      </OnboardingGate>
-                    </ProtectedRoute>
-                  } />
-
-                  {/* Inventory Routes */}
-                  <Route path="/inventory" element={
-                    <ProtectedRoute>
-                      <OnboardingGate>
-                        <Layout>
-                          <Inventory />
-                        </Layout>
-                      </OnboardingGate>
-                    </ProtectedRoute>
-                  } />
-
-                  {/* Team Routes */}
-                  <Route path="/team" element={
-                    <ProtectedRoute>
-                      <OnboardingGate>
-                        <Layout>
-                          <Team />
-                        </Layout>
-                      </OnboardingGate>
-                    </ProtectedRoute>
-                  } />
-
-                  {/* Reports & Analytics */}
-                  <Route path="/reports" element={
-                    <ProtectedRoute>
-                      <OnboardingGate>
-                        <Layout>
-                          <Reports />
-                        </Layout>
-                      </OnboardingGate>
-                    </ProtectedRoute>
-                  } />
-
-                  {/* Calendar & Communication */}
-                  <Route path="/calendar" element={
-                    <ProtectedRoute>
-                      <OnboardingGate>
-                        <Layout>
-                          <Calendar />
-                        </Layout>
-                      </OnboardingGate>
-                    </ProtectedRoute>
-                  } />
-
-                  <Route path="/chat" element={
-                    <ProtectedRoute>
-                      <OnboardingGate>
-                        <Layout>
-                          <Chat />
-                        </Layout>
-                      </OnboardingGate>
-                    </ProtectedRoute>
-                  } />
-
-                  {/* Admin-only routes */}
-                  <Route path="/developer/service-management" element={
-                    <ProtectedRoute requiredRole="admin">
-                      <OnboardingGate>
-                        <Layout>
-                          <ServiceManagement />
-                        </Layout>
-                      </OnboardingGate>
-                    </ProtectedRoute>
-                  } />
-
-                  <Route path="/developer/shopping-controls" element={
-                    <ProtectedRoute requiredRole="admin">
-                      <OnboardingGate>
-                        <Layout>
-                          <ShoppingControls />
-                        </Layout>
-                      </OnboardingGate>
-                    </ProtectedRoute>
-                  } />
+                  {/* Protected routes with onboarding */}
+                  <Route 
+                    path="/dashboard" 
+                    element={
+                      <ProtectedRoute>
+                        <OnboardingGate>
+                          <Layout>
+                            <Dashboard />
+                          </Layout>
+                        </OnboardingGate>
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  <Route 
+                    path="/customers" 
+                    element={
+                      <ProtectedRoute>
+                        <OnboardingGate>
+                          <Layout>
+                            <Customers />
+                          </Layout>
+                        </OnboardingGate>
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  <Route 
+                    path="/customers/:id" 
+                    element={
+                      <ProtectedRoute>
+                        <OnboardingGate>
+                          <Layout>
+                            <CustomerDetails />
+                          </Layout>
+                        </OnboardingGate>
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  <Route 
+                    path="/customers/create" 
+                    element={
+                      <ProtectedRoute>
+                        <OnboardingGate>
+                          <Layout>
+                            <CreateCustomer />
+                          </Layout>
+                        </OnboardingGate>
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  <Route 
+                    path="/invoices" 
+                    element={
+                      <ProtectedRoute>
+                        <OnboardingGate>
+                          <Layout>
+                            <Invoices />
+                          </Layout>
+                        </OnboardingGate>
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  <Route 
+                    path="/invoices/create" 
+                    element={
+                      <ProtectedRoute>
+                        <OnboardingGate>
+                          <Layout>
+                            <InvoiceCreate />
+                          </Layout>
+                        </OnboardingGate>
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  <Route 
+                    path="/invoices/:id" 
+                    element={
+                      <ProtectedRoute>
+                        <OnboardingGate>
+                          <Layout>
+                            <InvoiceDetails />
+                          </Layout>
+                        </OnboardingGate>
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  <Route 
+                    path="/inventory" 
+                    element={
+                      <ProtectedRoute>
+                        <OnboardingGate>
+                          <Layout>
+                            <Inventory />
+                          </Layout>
+                        </OnboardingGate>
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  <Route 
+                    path="/team" 
+                    element={
+                      <ProtectedRoute>
+                        <OnboardingGate>
+                          <Layout>
+                            <Team />
+                          </Layout>
+                        </OnboardingGate>
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  <Route 
+                    path="/reports" 
+                    element={
+                      <ProtectedRoute>
+                        <OnboardingGate>
+                          <Layout>
+                            <Reports />
+                          </Layout>
+                        </OnboardingGate>
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  <Route 
+                    path="/calendar" 
+                    element={
+                      <ProtectedRoute>
+                        <OnboardingGate>
+                          <Layout>
+                            <Calendar />
+                          </Layout>
+                        </OnboardingGate>
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  <Route 
+                    path="/chat" 
+                    element={
+                      <ProtectedRoute>
+                        <OnboardingGate>
+                          <Layout>
+                            <Chat />
+                          </Layout>
+                        </OnboardingGate>
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  <Route 
+                    path="/work-orders/create" 
+                    element={
+                      <ProtectedRoute>
+                        <OnboardingGate>
+                          <Layout>
+                            <WorkOrderCreate />
+                          </Layout>
+                        </OnboardingGate>
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  <Route 
+                    path="/work-orders/:id" 
+                    element={
+                      <ProtectedRoute>
+                        <OnboardingGate>
+                          <Layout>
+                            <WorkOrderDetails />
+                          </Layout>
+                        </OnboardingGate>
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  <Route 
+                    path="/settings/*" 
+                    element={
+                      <ProtectedRoute>
+                        <OnboardingGate>
+                          <Layout>
+                            <Settings />
+                          </Layout>
+                        </OnboardingGate>
+                      </ProtectedRoute>
+                    } 
+                  />
                 </Routes>
               </BrowserRouter>
             </ImpersonationProvider>
