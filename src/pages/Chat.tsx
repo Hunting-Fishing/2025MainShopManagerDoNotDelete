@@ -42,7 +42,7 @@ export default function Chat() {
     refreshRooms
   } = useChat({
     userId: userId || '',
-    userName: userName
+    userName: userName || ''
   });
 
   const {

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Command, LogOut } from 'lucide-react';
@@ -48,7 +47,7 @@ export function HeaderActions({ onOpenCommandMenu }: HeaderActionsProps) {
 export function UserMenu() {
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const { userName, isAuthenticated, loading } = useAuthUser();
+  const { userName, isAuthenticated, isLoading } = useAuthUser();
   
   // Get initials from the user name
   const getInitials = (name: string): string => {
@@ -104,7 +103,7 @@ export function UserMenu() {
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <Button variant="ghost" className="relative h-10 w-10 rounded-full">
         <Avatar className="h-10 w-10">
