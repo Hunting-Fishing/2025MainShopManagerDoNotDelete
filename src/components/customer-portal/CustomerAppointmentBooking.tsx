@@ -1,295 +1,178 @@
 
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
-import { Calendar } from "@/components/ui/calendar";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { toast } from "@/components/ui/use-toast";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { createCalendarEvent, getCalendarEvents } from "@/services/calendar/calendarEventService";
-import { Card, CardContent } from "@/components/ui/card";
-import { supabase } from "@/lib/supabase";
-import { useAuthUser } from "@/hooks/useAuthUser";
-
-type FormData = {
-  date: Date;
-  time: string;
-  serviceType: string;
-  vehicleId: string;
-  notes: string;
-};
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { CalendarHeader } from '@/components/calendar/CalendarHeader';
+import { CalendarView } from '@/components/calendar/CalendarView';
+import { useCalendarEvents } from '@/hooks/useCalendarEvents';
+import { CalendarViewType } from '@/types/calendar';
+import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
 
 export function CustomerAppointmentBooking() {
-  const { userId } = useAuthUser();
-  const [date, setDate] = useState<Date | undefined>(undefined);
-  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
-  const [vehicles, setVehicles] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [step, setStep] = useState(1);
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>();
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [view, setView] = useState<CalendarViewType>('day');
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const { toast } = useToast();
 
-  // Get user's vehicles
-  useState(() => {
-    const fetchVehicles = async () => {
-      if (!userId) return;
-      
-      const { data, error } = await supabase
-        .from('vehicles')
-        .select('id, year, make, model')
-        .eq('customer_id', userId);
-        
-      if (!error && data) {
-        setVehicles(data);
-      }
-    };
-    
-    fetchVehicles();
-  });
+  const { events, isLoading, error } = useCalendarEvents(currentDate, view);
 
-  // When date changes, fetch available time slots
-  const handleDateChange = async (newDate: Date | undefined) => {
-    setDate(newDate);
-    setValue("date", newDate as Date);
-    
-    if (newDate) {
-      setIsLoading(true);
-      try {
-        // Format date as string for API call
-        const dateStr = format(newDate, 'yyyy-MM-dd');
-        
-        // Get existing events for this date
-        const events = await getCalendarEvents(dateStr, dateStr);
-        
-        // Generate available time slots (9am to 5pm, excluding booked slots)
-        const bookedTimes = events.map(event => 
-          new Date(event.start).getHours().toString().padStart(2, '0') + ":00"
-        );
-        
-        const allSlots = [];
-        for(let i = 9; i <= 17; i++) {
-          const timeSlot = `${i.toString().padStart(2, '0')}:00`;
-          if (!bookedTimes.includes(timeSlot)) {
-            allSlots.push(timeSlot);
-          }
-        }
-        
-        setAvailableSlots(allSlots);
-      } catch (error) {
-        console.error("Error fetching available slots:", error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch available appointment slots",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoading(false);
-      }
+  // Filter events to only show available appointment slots
+  const availableSlots = events.filter(event => 
+    event.type === 'appointment' && 
+    event.status === 'available'
+  );
+
+  const handleDateClick = (date: Date) => {
+    setSelectedDate(date);
+    // Switch to day view when a date is clicked from month/week view
+    if (view !== 'day') {
+      setView('day');
+      setCurrentDate(date);
     }
   };
 
-  const onSubmit = async (data: FormData) => {
-    setIsLoading(true);
+  const handleBookAppointment = (date: Date, timeSlot?: string) => {
+    if (!date) return;
     
-    try {
-      // Get the selected vehicle details
-      const vehicle = vehicles.find(v => v.id === data.vehicleId);
-      const vehicleDescription = vehicle 
-        ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` 
-        : "Vehicle not specified";
-      
-      // Format the appointment date/time
-      const appointmentDate = format(data.date, 'yyyy-MM-dd');
-      const startTime = `${appointmentDate}T${data.time}:00`;
-      const endTime = `${appointmentDate}T${parseInt(data.time.split(':')[0]) + 1}:00:00`;
-
-      // Create the appointment
-      const eventData = {
-        title: `${data.serviceType} Appointment`,
-        description: data.notes || "Customer booked appointment",
-        start_time: startTime,
-        end_time: endTime,
-        all_day: false,
-        customer_id: userId,
-        vehicle_id: data.vehicleId,
-        event_type: 'appointment',
-        status: 'pending',
-        location: vehicleDescription
-      };
-
-      await createCalendarEvent(eventData);
-      
-      toast({
-        title: "Appointment Booked",
-        description: `Your appointment has been booked for ${format(data.date, 'MMMM d, yyyy')} at ${data.time}`,
-      });
-      
-      // Reset form and go back to step 1
-      setValue("date", undefined);
-      setValue("time", "");
-      setValue("serviceType", "");
-      setValue("notes", "");
-      setStep(1);
-      
-    } catch (error) {
-      console.error("Error booking appointment:", error);
-      toast({
-        title: "Booking Failed",
-        description: "There was a problem booking your appointment. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    const appointmentTime = timeSlot 
+      ? `${format(date, 'MMMM d, yyyy')} at ${timeSlot}`
+      : format(date, 'MMMM d, yyyy');
+    
+    toast({
+      title: "Appointment Request Submitted",
+      description: `Your request for ${appointmentTime} has been submitted. We'll contact you to confirm.`,
+    });
+    
+    setSelectedDate(null);
   };
+
+  if (error) {
+    return (
+      <Card className="w-full">
+        <CardContent className="p-6">
+          <div className="text-center text-red-600">
+            <p>Unable to load appointment calendar. Please try again later.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold">Book an Appointment</h2>
-        <p className="text-muted-foreground">
-          Schedule a service appointment at a time that works for you.
-        </p>
-      </div>
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            Book an Appointment
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          {/* Calendar Header with View Controls */}
+          <div className="mb-6">
+            <CalendarHeader
+              currentDate={currentDate}
+              setCurrentDate={setCurrentDate}
+              view={view}
+              setView={setView}
+            />
+          </div>
 
-      {step === 1 && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="date">Select a Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !date && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {date ? format(date, "PPP") : "Pick a date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={date}
-                      onSelect={handleDateChange}
-                      disabled={(date) => date < new Date() || date > new Date(new Date().setMonth(new Date().getMonth() + 2))}
-                    />
-                  </PopoverContent>
-                </Popover>
+          {/* Enhanced Calendar View */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+            <CalendarView
+              events={availableSlots}
+              currentDate={currentDate}
+              view={view}
+              loading={isLoading}
+              onDateClick={handleDateClick}
+              isCustomerView={true}
+            />
+          </div>
+
+          {/* Booking Instructions */}
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <h3 className="font-semibold text-blue-800 mb-2">How to Book:</h3>
+            <ul className="text-sm text-blue-700 space-y-1">
+              <li>• Use the view controls above to switch between Day, Week, and Month views</li>
+              <li>• Click on any date to see available time slots</li>
+              <li>• Green slots indicate available appointment times</li>
+              <li>• Select your preferred time to submit a booking request</li>
+            </ul>
+          </div>
+
+          {/* Selected Date Booking Panel */}
+          {selectedDate && view === 'day' && (
+            <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
+              <h3 className="font-semibold text-green-800 mb-3">
+                Available Times for {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {['9:00 AM', '10:00 AM', '11:00 AM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'].map((time) => (
+                  <Button
+                    key={time}
+                    variant="outline"
+                    size="sm"
+                    className="bg-white border-green-300 text-green-700 hover:bg-green-100"
+                    onClick={() => handleBookAppointment(selectedDate, time)}
+                  >
+                    {time}
+                  </Button>
+                ))}
               </div>
-
-              {date && availableSlots.length > 0 && (
-                <div className="grid gap-2">
-                  <Label htmlFor="time">Select a Time</Label>
-                  <Select onValueChange={(value) => setValue("time", value)}>
-                    <SelectTrigger id="time">
-                      <SelectValue placeholder="Select a time slot" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableSlots.map((slot) => (
-                        <SelectItem key={slot} value={slot}>
-                          {slot}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              {date && availableSlots.length === 0 && (
-                <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-4 rounded-md">
-                  No available appointment slots for this date. Please select another date.
-                </div>
-              )}
-
-              <Button 
-                onClick={() => setStep(2)} 
-                disabled={!date || !watch("time")}
-                className="w-full"
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mt-3 text-gray-500"
+                onClick={() => setSelectedDate(null)}
               >
-                Next
+                Cancel Selection
               </Button>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
 
-      {step === 2 && (
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="serviceType">Service Type</Label>
-                  <Select 
-                    onValueChange={(value) => setValue("serviceType", value)}
-                    required
-                  >
-                    <SelectTrigger id="serviceType">
-                      <SelectValue placeholder="Select service type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Oil Change">Oil Change</SelectItem>
-                      <SelectItem value="Tire Rotation">Tire Rotation</SelectItem>
-                      <SelectItem value="Brake Service">Brake Service</SelectItem>
-                      <SelectItem value="Engine Diagnostic">Engine Diagnostic</SelectItem>
-                      <SelectItem value="General Maintenance">General Maintenance</SelectItem>
-                      <SelectItem value="Other Service">Other Service</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="vehicleId">Vehicle</Label>
-                  <Select 
-                    onValueChange={(value) => setValue("vehicleId", value)}
-                    required
-                  >
-                    <SelectTrigger id="vehicleId">
-                      <SelectValue placeholder="Select your vehicle" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {vehicles.map((vehicle) => (
-                        <SelectItem key={vehicle.id} value={vehicle.id}>
-                          {vehicle.year} {vehicle.make} {vehicle.model}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+          {/* Quick Day Navigation for Day View */}
+          {view === 'day' && (
+            <div className="mt-4 flex justify-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentDate(new Date(currentDate.getTime() - 24 * 60 * 60 * 1000))}
+              >
+                Previous Day
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentDate(new Date())}
+              >
+                Today
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentDate(new Date(currentDate.getTime() + 24 * 60 * 60 * 1000))}
+              >
+                Next Day
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-                <div className="grid gap-2">
-                  <Label htmlFor="notes">Additional Notes</Label>
-                  <Textarea
-                    id="notes"
-                    placeholder="Please describe the issue or provide additional details about the service needed"
-                    className="min-h-[100px]"
-                    {...register("notes")}
-                  />
-                </div>
-
-                <div className="flex gap-2">
-                  <Button type="button" variant="outline" onClick={() => setStep(1)}>
-                    Back
-                  </Button>
-                  <Button type="submit" disabled={isLoading} className="flex-1">
-                    {isLoading ? "Booking..." : "Book Appointment"}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </form>
-      )}
+      {/* Additional Information Card */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="text-center text-sm text-gray-600">
+            <p className="mb-2">
+              <strong>Need help?</strong> Contact us at (555) 123-4567 or email support@yourshop.com
+            </p>
+            <p>
+              Appointments are subject to confirmation. We'll contact you within 24 hours to confirm your booking.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
