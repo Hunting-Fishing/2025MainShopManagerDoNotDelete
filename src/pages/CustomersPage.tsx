@@ -1,0 +1,129 @@
+
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Plus, Search, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { EmptyState } from '@/components/ui/empty-state';
+import { useCustomers } from '@/hooks/useCustomers';
+
+export default function CustomersPage() {
+  const { filteredCustomers, loading, error, filters, handleFilterChange } = useCustomers();
+
+  if (loading) {
+    return <LoadingSpinner size="lg" text="Loading customers..." className="mt-8" />;
+  }
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-600">Error loading customers: {error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Customers</h1>
+          <p className="text-muted-foreground">
+            Manage your customers and view their service history
+          </p>
+        </div>
+        <Button asChild>
+          <Link to="/customers/create">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Customer
+          </Link>
+        </Button>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Search & Filter</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search customers..."
+                value={filters.search}
+                onChange={(e) => handleFilterChange({ search: e.target.value })}
+                className="pl-10"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Customer List */}
+      {filteredCustomers.length === 0 ? (
+        <EmptyState
+          icon={<Users className="h-8 w-8 text-gray-400" />}
+          title="No customers found"
+          description="Get started by adding your first customer to the system."
+          action={{
+            label: "Add Customer",
+            onClick: () => window.location.href = "/customers/create"
+          }}
+        />
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {filteredCustomers.map((customer) => (
+            <Card key={customer.id} className="hover:shadow-md transition-shadow cursor-pointer">
+              <CardContent className="p-6">
+                <div className="space-y-3">
+                  <div>
+                    <h3 className="font-semibold text-lg">
+                      {customer.first_name} {customer.last_name}
+                    </h3>
+                    {customer.company && (
+                      <p className="text-sm text-gray-600">{customer.company}</p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-1 text-sm text-gray-600">
+                    {customer.email && (
+                      <p className="flex items-center">
+                        📧 {customer.email}
+                      </p>
+                    )}
+                    {customer.phone && (
+                      <p className="flex items-center">
+                        📞 {customer.phone}
+                      </p>
+                    )}
+                    {customer.address && (
+                      <p className="flex items-center">
+                        📍 {customer.address}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex justify-between items-center pt-3 border-t">
+                    <Badge variant="secondary">Active</Badge>
+                    <Link 
+                      to={`/customers/${customer.id}`}
+                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                    >
+                      View Details →
+                    </Link>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

@@ -1,65 +1,90 @@
 
 import { useState, useEffect } from 'react';
-import { WorkOrder } from '@/types/workOrder';
 import { supabase } from '@/lib/supabase';
-import { mapFromDbWorkOrder } from '@/utils/supabaseMappers';
+import { toast } from '@/hooks/use-toast';
+
+export interface WorkOrder {
+  id: string;
+  customer_id: string;
+  description: string;
+  status: 'pending' | 'in-progress' | 'completed' | 'cancelled';
+  priority: 'low' | 'medium' | 'high';
+  created_at: string;
+  updated_at: string;
+  customer?: {
+    first_name: string;
+    last_name: string;
+  };
+}
 
 export function useWorkOrders() {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchWorkOrders();
   }, []);
 
   const fetchWorkOrders = async () => {
-    setIsLoading(true);
     try {
+      setLoading(true);
+      setError(null);
+      
       const { data, error } = await supabase
         .from('work_orders')
-        .select('*')
+        .select(`
+          *,
+          customers (
+            first_name,
+            last_name
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-
-      const mappedWorkOrders = data.map((order) => mapFromDbWorkOrder(order));
-      setWorkOrders(mappedWorkOrders);
-    } catch (err) {
-      console.error('Error fetching work orders:', err);
-      setError(err instanceof Error ? err : new Error('Unknown error occurred'));
+      
+      setWorkOrders(data || []);
+    } catch (err: any) {
+      setError(err.message);
+      toast({
+        title: "Error",
+        description: "Failed to load work orders",
+        variant: "destructive"
+      });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const getWorkOrderById = async (id: string): Promise<WorkOrder | undefined> => {
-    setIsLoading(true);
+  const updateWorkOrderStatus = async (id: string, status: WorkOrder['status']) => {
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('work_orders')
-        .select('*')
-        .eq('id', id)
-        .single();
+        .update({ status })
+        .eq('id', id);
 
       if (error) throw error;
-      if (!data) return undefined;
-
-      return mapFromDbWorkOrder(data);
-    } catch (err) {
-      console.error(`Error fetching work order ${id}:`, err);
-      setError(err instanceof Error ? err : new Error('Unknown error occurred'));
-      return undefined;
-    } finally {
-      setIsLoading(false);
+      
+      await fetchWorkOrders();
+      toast({
+        title: "Success",
+        description: "Work order status updated"
+      });
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: "Failed to update work order",
+        variant: "destructive"
+      });
     }
   };
 
   return {
     workOrders,
-    isLoading,
+    loading,
     error,
-    fetchWorkOrders,
-    getWorkOrderById
+    refetch: fetchWorkOrders,
+    updateWorkOrderStatus
   };
 }

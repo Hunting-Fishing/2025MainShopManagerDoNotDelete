@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -17,6 +16,7 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import Unauthorized from './pages/Unauthorized';
 import { ImpersonationProvider } from './contexts/ImpersonationContext';
 import { OnboardingGate } from './components/onboarding/OnboardingGate';
+import { ErrorBoundary } from './components/error/ErrorBoundary';
 // Import additional pages that need protection
 import Customers from './pages/Customers';
 import CustomerDetails from './pages/CustomerDetails';
@@ -30,30 +30,31 @@ import Calendar from './pages/Calendar';
 import Chat from './pages/Chat';
 import WorkOrderCreate from './pages/WorkOrderCreate';
 import WorkOrderDetails from './pages/WorkOrderDetails';
+import CustomersPage from './pages/CustomersPage';
+import WorkOrdersPage from './pages/WorkOrdersPage';
 
 // Create a QueryClient instance
 const queryClient = new QueryClient();
 
 function App() {
   return (
-    <HelmetProvider>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <NotificationsProvider>
-            <ImpersonationProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <Routes>
-                  {/* Public routes */}
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/unauthorized" element={<Unauthorized />} />
-                  <Route path="/" element={<Index />} />
-                  
-                  {/* Protected routes with onboarding */}
-                  <Route 
-                    path="/dashboard" 
-                    element={
+    <ErrorBoundary>
+      <HelmetProvider>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <NotificationsProvider>
+              <ImpersonationProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <Routes>
+                    {/* Public routes */}
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/unauthorized" element={<Unauthorized />} />
+                    <Route path="/" element={<Index />} />
+
+                    {/* Protected routes */}
+                    <Route path="/dashboard" element={
                       <ProtectedRoute>
                         <OnboardingGate>
                           <Layout>
@@ -61,51 +62,29 @@ function App() {
                           </Layout>
                         </OnboardingGate>
                       </ProtectedRoute>
-                    } 
-                  />
-                  
-                  <Route 
-                    path="/customers" 
-                    element={
+                    } />
+                    
+                    <Route path="/customers" element={
                       <ProtectedRoute>
                         <OnboardingGate>
                           <Layout>
-                            <Customers />
+                            <CustomersPage />
                           </Layout>
                         </OnboardingGate>
                       </ProtectedRoute>
-                    } 
-                  />
-                  
-                  <Route 
-                    path="/customers/:id" 
-                    element={
+                    } />
+                    
+                    <Route path="/work-orders" element={
                       <ProtectedRoute>
                         <OnboardingGate>
                           <Layout>
-                            <CustomerDetails />
+                            <WorkOrdersPage />
                           </Layout>
                         </OnboardingGate>
                       </ProtectedRoute>
-                    } 
-                  />
-                  
-                  <Route 
-                    path="/customers/create" 
-                    element={
-                      <ProtectedRoute>
-                        <OnboardingGate>
-                          <Layout>
-                            <CreateCustomer />
-                          </Layout>
-                        </OnboardingGate>
-                      </ProtectedRoute>
-                    } 
-                  />
-                  
-                  <Route 
-                    path="/invoices" 
-                    element={
+                    } />
+                    
+                    <Route path="/invoices" element={
                       <ProtectedRoute>
                         <OnboardingGate>
                           <Layout>
@@ -113,38 +92,9 @@ function App() {
                           </Layout>
                         </OnboardingGate>
                       </ProtectedRoute>
-                    } 
-                  />
-                  
-                  <Route 
-                    path="/invoices/create" 
-                    element={
-                      <ProtectedRoute>
-                        <OnboardingGate>
-                          <Layout>
-                            <InvoiceCreate />
-                          </Layout>
-                        </OnboardingGate>
-                      </ProtectedRoute>
-                    } 
-                  />
-                  
-                  <Route 
-                    path="/invoices/:id" 
-                    element={
-                      <ProtectedRoute>
-                        <OnboardingGate>
-                          <Layout>
-                            <InvoiceDetails />
-                          </Layout>
-                        </OnboardingGate>
-                      </ProtectedRoute>
-                    } 
-                  />
-                  
-                  <Route 
-                    path="/inventory" 
-                    element={
+                    } />
+                    
+                    <Route path="/inventory" element={
                       <ProtectedRoute>
                         <OnboardingGate>
                           <Layout>
@@ -152,90 +102,9 @@ function App() {
                           </Layout>
                         </OnboardingGate>
                       </ProtectedRoute>
-                    } 
-                  />
-                  
-                  <Route 
-                    path="/team" 
-                    element={
-                      <ProtectedRoute>
-                        <OnboardingGate>
-                          <Layout>
-                            <Team />
-                          </Layout>
-                        </OnboardingGate>
-                      </ProtectedRoute>
-                    } 
-                  />
-                  
-                  <Route 
-                    path="/reports" 
-                    element={
-                      <ProtectedRoute>
-                        <OnboardingGate>
-                          <Layout>
-                            <Reports />
-                          </Layout>
-                        </OnboardingGate>
-                      </ProtectedRoute>
-                    } 
-                  />
-                  
-                  <Route 
-                    path="/calendar" 
-                    element={
-                      <ProtectedRoute>
-                        <OnboardingGate>
-                          <Layout>
-                            <Calendar />
-                          </Layout>
-                        </OnboardingGate>
-                      </ProtectedRoute>
-                    } 
-                  />
-                  
-                  <Route 
-                    path="/chat" 
-                    element={
-                      <ProtectedRoute>
-                        <OnboardingGate>
-                          <Layout>
-                            <Chat />
-                          </Layout>
-                        </OnboardingGate>
-                      </ProtectedRoute>
-                    } 
-                  />
-                  
-                  <Route 
-                    path="/work-orders/create" 
-                    element={
-                      <ProtectedRoute>
-                        <OnboardingGate>
-                          <Layout>
-                            <WorkOrderCreate />
-                          </Layout>
-                        </OnboardingGate>
-                      </ProtectedRoute>
-                    } 
-                  />
-                  
-                  <Route 
-                    path="/work-orders/:id" 
-                    element={
-                      <ProtectedRoute>
-                        <OnboardingGate>
-                          <Layout>
-                            <WorkOrderDetails />
-                          </Layout>
-                        </OnboardingGate>
-                      </ProtectedRoute>
-                    } 
-                  />
-                  
-                  <Route 
-                    path="/settings/*" 
-                    element={
+                    } />
+                    
+                    <Route path="/settings" element={
                       <ProtectedRoute>
                         <OnboardingGate>
                           <Layout>
@@ -243,15 +112,26 @@ function App() {
                           </Layout>
                         </OnboardingGate>
                       </ProtectedRoute>
-                    } 
-                  />
-                </Routes>
-              </BrowserRouter>
-            </ImpersonationProvider>
-          </NotificationsProvider>
-        </TooltipProvider>
-      </QueryClientProvider>
-    </HelmetProvider>
+                    } />
+
+                    {/* Legacy routes - keeping for compatibility */}
+                    <Route path="/customers/create" element={
+                      <ProtectedRoute>
+                        <OnboardingGate>
+                          <Layout>
+                            <CreateCustomer />
+                          </Layout>
+                        </OnboardingGate>
+                      </ProtectedRoute>
+                    } />
+                  </Routes>
+                </BrowserRouter>
+              </ImpersonationProvider>
+            </NotificationsProvider>
+          </TooltipProvider>
+        </QueryClientProvider>
+      </HelmetProvider>
+    </ErrorBoundary>
   );
 }
 

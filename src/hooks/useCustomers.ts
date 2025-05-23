@@ -1,125 +1,91 @@
-import { useState, useEffect } from "react";
-import { Customer } from "@/types/customer";
-import { getAllCustomers } from "@/services/customer/customerQueryService";
-import { useToast } from "@/hooks/use-toast";
-import { checkSupabaseConnection } from "@/lib/supabase";
-import { filterCustomers } from "@/utils/search/customerSearch";
-import { CustomerFilters } from "@/components/customers/filters/CustomerFilterControls";
 
-// Define a proper interface for FilterOptions that matches CustomerFilters
-interface FilterOptions {
-  searchQuery: string;
-  tags: string[];
-  dateRange: {
-    startDate: string;
-    endDate: string;
-  } | null;
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import { toast } from '@/hooks/use-toast';
+
+export interface Customer {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+  company?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
 }
 
-export const useCustomers = () => {
+export interface CustomerFilters {
+  search: string;
+  status: string;
+  sortBy: string;
+}
+
+export function useCustomers() {
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
-  const [filters, setFilters] = useState<CustomerFilters>({
-    searchQuery: "",
-    tags: [],
-  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [connectionOk, setConnectionOk] = useState<boolean | null>(null);
-  const { toast } = useToast();
-  
-  // Check database connection
-  useEffect(() => {
-    const checkConnection = async () => {
-      try {
-        const isConnected = await checkSupabaseConnection();
-        console.log("Connection status:", isConnected);
-        setConnectionOk(isConnected);
-        
-        if (!isConnected) {
-          setError("Unable to connect to the database. Please try again later.");
-          setLoading(false);
-          toast({
-            title: "Connection Error",
-            description: "Could not connect to the database. Please check your connection and try again.",
-            variant: "destructive",
-          });
-        }
-      } catch (err) {
-        console.error("Error checking connection:", err);
-        setConnectionOk(false);
-        setError("Connection check failed. Please try again later.");
-      }
-    };
-    
-    checkConnection();
-  }, [toast]);
-  
-  // Fetch customers when connection is confirmed
-  useEffect(() => {
-    const fetchCustomers = async () => {
-      if (connectionOk !== true) return;
-      
-      try {
-        setLoading(true);
-        setError(null);
-        console.log("Fetching all customers in useCustomers hook");
-        const data = await getAllCustomers();
-        console.log("Customer data received:", data);
-        
-        if (data && Array.isArray(data)) {
-          setCustomers(data);
-          setFilteredCustomers(data);
-        } else {
-          console.error("Received invalid customer data format:", data);
-          setError("Received invalid data format from the server.");
-        }
-      } catch (error) {
-        console.error("Error fetching customers:", error);
-        setError("Failed to load customer data. Please try again.");
-        toast({
-          title: "Error fetching customers",
-          description: "Could not load customer data. Please try again.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
+  const [filters, setFilters] = useState<CustomerFilters>({
+    search: '',
+    status: 'all',
+    sortBy: 'name'
+  });
 
+  useEffect(() => {
     fetchCustomers();
-  }, [toast, connectionOk]);
-  
-  // Apply filters whenever customers or filters change
-  useEffect(() => {
-    if (customers && customers.length > 0) {
-      console.log("Filtering customers with filters:", filters);
-      // Convert CustomerFilters to FilterOptions format before passing
-      const filterOptions: FilterOptions = {
-        searchQuery: filters.searchQuery,
-        tags: filters.tags,
-        dateRange: filters.dateRange ? {
-          startDate: filters.dateRange.from?.toString() || '',
-          endDate: filters.dateRange.to?.toString() || ''
-        } : null
-      };
-      const filtered = filterCustomers(customers, filterOptions);
-      console.log(`Filtered customers: ${filtered.length} of ${customers.length}`);
-      setFilteredCustomers(filtered);
-    }
-  }, [customers, filters]);
+  }, []);
 
-  const handleFilterChange = (newFilters: CustomerFilters) => {
-    console.log("Filter changed:", newFilters);
-    setFilters(newFilters);
+  const fetchCustomers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { data, error } = await supabase
+        .from('customers')
+        .select('*')
+        .order('last_name', { ascending: true });
+
+      if (error) throw error;
+      
+      setCustomers(data || []);
+    } catch (err: any) {
+      setError(err.message);
+      toast({
+        title: "Error",
+        description: "Failed to load customers",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredCustomers = customers.filter(customer => {
+    const searchTerm = filters.search.toLowerCase();
+    const matchesSearch = !searchTerm || 
+      customer.first_name.toLowerCase().includes(searchTerm) ||
+      customer.last_name.toLowerCase().includes(searchTerm) ||
+      customer.email?.toLowerCase().includes(searchTerm) ||
+      customer.company?.toLowerCase().includes(searchTerm);
+
+    return matchesSearch;
+  });
+
+  const handleFilterChange = (newFilters: Partial<CustomerFilters>) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
   };
 
   return {
     customers,
     filteredCustomers,
-    filters,
     loading,
     error,
-    handleFilterChange
+    filters,
+    handleFilterChange,
+    refetch: fetchCustomers
   };
-};
+}

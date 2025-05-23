@@ -1,40 +1,31 @@
 
-import { create } from 'zustand';
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
-interface SidebarState {
+interface SidebarContextType {
   isOpen: boolean;
   onOpen: () => void;
   onClose: () => void;
-  toggle: () => void;
 }
 
-export const useSidebar = create<SidebarState>((set) => ({
-  isOpen: false,
-  onOpen: () => set({ isOpen: true }),
-  onClose: () => set({ isOpen: false }),
-  toggle: () => set((state) => ({ isOpen: !state.isOpen })),
-}));
+const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
-// Create a context to use in the SidebarProvider
-const SidebarContext = createContext<{ collapsed: boolean; toggleCollapsed: () => void }>({
-  collapsed: false,
-  toggleCollapsed: () => {},
-});
+export function SidebarProvider({ children }: { children: React.ReactNode }) {
+  const [isOpen, setIsOpen] = useState(false);
 
-// Export SidebarProvider component
-export function SidebarProvider({ children }: { children: ReactNode }) {
-  const [collapsed, setCollapsed] = React.useState(false);
-  const toggleCollapsed = React.useCallback(() => {
-    setCollapsed((prev) => !prev);
-  }, []);
-  
+  const onOpen = () => setIsOpen(true);
+  const onClose = () => setIsOpen(false);
+
   return (
-    <SidebarContext.Provider value={{ collapsed, toggleCollapsed }}>
+    <SidebarContext.Provider value={{ isOpen, onOpen, onClose }}>
       {children}
     </SidebarContext.Provider>
   );
 }
 
-// Export useSidebarContext hook for components that need the context
-export const useSidebarContext = () => useContext(SidebarContext);
+export function useSidebar() {
+  const context = useContext(SidebarContext);
+  if (!context) {
+    throw new Error('useSidebar must be used within a SidebarProvider');
+  }
+  return context;
+}
