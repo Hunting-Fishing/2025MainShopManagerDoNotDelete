@@ -38,7 +38,6 @@ export async function decodeVin(vin: string): Promise<VinDecodeResult | null> {
     };
 
     const vinDecodeResult: VinDecodeResult = {
-      vin: vin,
       make: getResultValue('Make') || '',
       model: getResultValue('Model') || '',
       year: getResultValue('Model Year') || '',
@@ -48,11 +47,9 @@ export async function decodeVin(vin: string): Promise<VinDecodeResult | null> {
       drive_type: getResultValue('Drive Type') || '',
       fuel_type: getResultValue('Fuel Type - Primary') || '',
       country: getResultValue('Plant Country') || '',
-      manufacturer: getResultValue('Manufacturer Name') || '',
       trim: getResultValue('Trim') || '',
       transmission_type: getResultValue('Transmission Style') || '',
-      gvwr: getResultValue('Gross Vehicle Weight Rating') || '',
-      valid: true
+      gvwr: getResultValue('Gross Vehicle Weight Rating') || ''
     };
 
     console.log('VIN decoded successfully:', vinDecodeResult);
