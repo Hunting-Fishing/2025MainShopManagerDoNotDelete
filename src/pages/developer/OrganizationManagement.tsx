@@ -1,9 +1,11 @@
+
 import React, { useState } from 'react';
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { BookingPermissionsManager } from '@/components/developer/organization/BookingPermissionsManager';
+import { CustomerPortalAccess } from '@/components/developer/organization/CustomerPortalAccess';
 
 export default function OrganizationManagement() {
   const [activeTab, setActiveTab] = useState("general");
@@ -33,6 +35,9 @@ export default function OrganizationManagement() {
           <TabsTrigger value="users" className="rounded-full text-sm px-4 py-2">
             Users
           </TabsTrigger>
+          <TabsTrigger value="portal" className="rounded-full text-sm px-4 py-2">
+            Customer Portal
+          </TabsTrigger>
         </TabsList>
 
         <div className="mt-6 space-y-6">
@@ -52,6 +57,11 @@ export default function OrganizationManagement() {
           <TabsContent value="users" className="space-y-6">
             <h2 className="text-xl font-semibold mb-4">User Management</h2>
             <p>User management features will appear here.</p>
+          </TabsContent>
+
+          <TabsContent value="portal" className="space-y-6">
+            <h2 className="text-xl font-semibold mb-4">Customer Portal Management</h2>
+            <CustomerPortalAccess />
           </TabsContent>
         </div>
       </Tabs>
