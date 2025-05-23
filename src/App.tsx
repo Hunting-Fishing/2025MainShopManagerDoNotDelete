@@ -18,6 +18,20 @@ import Index from './pages/Index';
 import Unauthorized from './pages/Unauthorized';
 import { ImpersonationProvider } from './contexts/ImpersonationContext';
 
+// Import additional pages that need protection
+import Customers from './pages/Customers';
+import CustomerDetails from './pages/CustomerDetails';
+import CreateCustomer from './pages/CreateCustomer';
+import Invoices from './pages/Invoices';
+import InvoiceDetails from './pages/InvoiceDetails';
+import Inventory from './pages/Inventory';
+import Team from './pages/Team';
+import Reports from './pages/Reports';
+import Calendar from './pages/Calendar';
+import Chat from './pages/Chat';
+import WorkOrderCreate from './pages/WorkOrderCreate';
+import WorkOrderDetails from './pages/WorkOrderDetails';
+
 // Create a QueryClient instance
 const queryClient = new QueryClient();
 
@@ -32,7 +46,7 @@ function App() {
             <Route path="/unauthorized" element={<Unauthorized />} />
             <Route path="/" element={<Index />} />
             
-            {/* Protected routes */}
+            {/* Protected routes - General User Access */}
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Layout>
@@ -56,11 +70,114 @@ function App() {
                 </Layout>
               </ProtectedRoute>
             } />
-            
+
+            {/* Customer Management Routes */}
+            <Route path="/customers" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Customers />
+                </Layout>
+              </ProtectedRoute>
+            } />
+
+            <Route path="/customers/create" element={
+              <ProtectedRoute>
+                <Layout>
+                  <CreateCustomer />
+                </Layout>
+              </ProtectedRoute>
+            } />
+
+            <Route path="/customers/:id" element={
+              <ProtectedRoute>
+                <Layout>
+                  <CustomerDetails />
+                </Layout>
+              </ProtectedRoute>
+            } />
+
+            {/* Invoice Routes */}
+            <Route path="/invoices" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Invoices />
+                </Layout>
+              </ProtectedRoute>
+            } />
+
             <Route path="/invoice/create" element={
               <ProtectedRoute>
                 <Layout>
                   <InvoiceCreate />
+                </Layout>
+              </ProtectedRoute>
+            } />
+
+            <Route path="/invoices/:id" element={
+              <ProtectedRoute>
+                <Layout>
+                  <InvoiceDetails />
+                </Layout>
+              </ProtectedRoute>
+            } />
+
+            {/* Work Order Routes */}
+            <Route path="/work-orders/create" element={
+              <ProtectedRoute>
+                <Layout>
+                  <WorkOrderCreate />
+                </Layout>
+              </ProtectedRoute>
+            } />
+
+            <Route path="/work-orders/:id" element={
+              <ProtectedRoute>
+                <Layout>
+                  <WorkOrderDetails />
+                </Layout>
+              </ProtectedRoute>
+            } />
+
+            {/* Inventory Routes */}
+            <Route path="/inventory" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Inventory />
+                </Layout>
+              </ProtectedRoute>
+            } />
+
+            {/* Team Routes */}
+            <Route path="/team" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Team />
+                </Layout>
+              </ProtectedRoute>
+            } />
+
+            {/* Reports & Analytics */}
+            <Route path="/reports" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Reports />
+                </Layout>
+              </ProtectedRoute>
+            } />
+
+            {/* Calendar & Communication */}
+            <Route path="/calendar" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Calendar />
+                </Layout>
+              </ProtectedRoute>
+            } />
+
+            <Route path="/chat" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Chat />
                 </Layout>
               </ProtectedRoute>
             } />
@@ -85,7 +202,7 @@ function App() {
             <Route path="/developer/shopping-controls" element={
               <ProtectedRoute requiredRole="admin">
                 <Layout>
-                  <ServiceManagement />
+                  <ShoppingControls />
                 </Layout>
               </ProtectedRoute>
             } />
