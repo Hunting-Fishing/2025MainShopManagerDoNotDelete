@@ -5,6 +5,7 @@ import { toast } from '@/hooks/use-toast';
 
 export interface Customer {
   id: string;
+  shop_id: string;
   first_name: string;
   last_name: string;
   email?: string;
@@ -17,10 +18,16 @@ export interface Customer {
   notes?: string;
   created_at: string;
   updated_at: string;
+  // Additional fields for compatibility
+  name?: string;
+  status?: string;
+  lastServiceDate?: string;
+  dateAdded?: string;
 }
 
 export interface CustomerFilters {
   search: string;
+  searchQuery: string;
   status: string;
   sortBy: string;
 }
@@ -31,6 +38,7 @@ export function useCustomers() {
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<CustomerFilters>({
     search: '',
+    searchQuery: '',
     status: 'all',
     sortBy: 'name'
   });
@@ -51,7 +59,16 @@ export function useCustomers() {
 
       if (error) throw error;
       
-      setCustomers(data || []);
+      // Transform data to match expected interface
+      const transformedData = (data || []).map(customer => ({
+        ...customer,
+        name: `${customer.first_name} ${customer.last_name}`,
+        status: 'active',
+        dateAdded: customer.created_at,
+        shop_id: customer.shop_id || '',
+      }));
+      
+      setCustomers(transformedData);
     } catch (err: any) {
       setError(err.message);
       toast({
@@ -65,7 +82,7 @@ export function useCustomers() {
   };
 
   const filteredCustomers = customers.filter(customer => {
-    const searchTerm = filters.search.toLowerCase();
+    const searchTerm = filters.search.toLowerCase() || filters.searchQuery.toLowerCase();
     const matchesSearch = !searchTerm || 
       customer.first_name.toLowerCase().includes(searchTerm) ||
       customer.last_name.toLowerCase().includes(searchTerm) ||
@@ -75,8 +92,8 @@ export function useCustomers() {
     return matchesSearch;
   });
 
-  const handleFilterChange = (newFilters: Partial<CustomerFilters>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
+  const handleFilterChange = (newFilters: CustomerFilters) => {
+    setFilters(newFilters);
   };
 
   return {

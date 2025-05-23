@@ -8,7 +8,11 @@ export default function Invoices() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <InvoiceList invoices={invoices} isLoading={isLoading} error={error} />
+      <InvoiceList 
+        invoices={invoices} 
+        isLoading={isLoading} 
+        error={error ? new Error(error) : null} 
+      />
     </div>
   );
 }
