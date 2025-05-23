@@ -1,99 +1,96 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { CalendarHeader } from '@/components/calendar/CalendarHeader';
 import { CalendarView } from '@/components/calendar/CalendarView';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Calendar, Clock, MapPin, CheckCircle } from 'lucide-react';
 import { useCalendarEvents } from '@/hooks/useCalendarEvents';
-import { CalendarViewType } from '@/types/calendar';
-import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export function CustomerAppointmentBooking() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState<CalendarViewType>('day');
+  const [view, setView] = useState<'month' | 'week' | 'day'>('month');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const { toast } = useToast();
 
-  // Mock available slots for demo purposes, to prevent loading issues
-  const mockAvailableSlots = [
-    {
-      id: '1',
-      title: 'Available Appointment',
-      start: format(new Date(), 'yyyy-MM-dd') + 'T09:00:00',
-      end: format(new Date(), 'yyyy-MM-dd') + 'T10:00:00',
-      type: 'appointment',
-      status: 'available'
-    },
-    {
-      id: '2',
-      title: 'Available Appointment',
-      start: format(new Date(), 'yyyy-MM-dd') + 'T11:00:00',
-      end: format(new Date(), 'yyyy-MM-dd') + 'T12:00:00',
-      type: 'appointment',
-      status: 'available'
-    },
-    {
-      id: '3',
-      title: 'Available Appointment',
-      start: format(new Date(), 'yyyy-MM-dd') + 'T14:00:00',
-      end: format(new Date(), 'yyyy-MM-dd') + 'T15:00:00',
-      type: 'appointment',
-      status: 'available'
-    },
-  ];
+  const { events, isLoading, error } = useCalendarEvents(currentDate, view);
 
-  // Try to fetch real events, but fall back to mock data to prevent loading states
-  const { events = [], isLoading, error } = useCalendarEvents(currentDate, view);
-  
-  // Use mock data if loading takes too long or there's an error
-  const availableSlots = events.length > 0 && !error ? 
-    events.filter(event => event.type === 'appointment' && event.status === 'available') : 
-    mockAvailableSlots;
-
-  console.log("Calendar events:", { events, isLoading, error, availableSlots });
+  // Filter events to only show available appointment slots
+  const availableSlots = events.filter(event => 
+    event.type === 'appointment' && 
+    event.status === 'available'
+  );
 
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
-    // Switch to day view when a date is clicked from month/week view
-    if (view !== 'day') {
-      setView('day');
-      setCurrentDate(date);
-    }
   };
 
-  const handleBookAppointment = (date: Date, timeSlot?: string) => {
-    if (!date) return;
-    
-    const appointmentTime = timeSlot 
-      ? `${format(date, 'MMMM d, yyyy')} at ${timeSlot}`
-      : format(date, 'MMMM d, yyyy');
-    
+  const handleBookAppointment = (timeSlot: string) => {
+    if (!selectedDate) return;
+
+    // Here you would integrate with your booking system
     toast({
-      title: "Appointment Request Submitted",
-      description: `Your request for ${appointmentTime} has been submitted. We'll contact you to confirm.`,
+      title: "Booking Request Submitted",
+      description: `Your request for ${format(selectedDate, 'MMMM d, yyyy')} at ${timeSlot} has been submitted. We'll contact you to confirm.`,
     });
     
     setSelectedDate(null);
   };
 
+  if (error) {
+    return (
+      <Card className="w-full">
+        <CardContent className="p-6">
+          <Alert variant="destructive">
+            <AlertDescription>
+              Unable to load appointment calendar. Please contact us directly to schedule your appointment.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <Card className="w-full">
+      {/* Header */}
+      <Card className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Book an Appointment
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-6 w-6" />
+            Schedule Your Appointment
           </CardTitle>
+          <CardDescription className="text-blue-100">
+            Select your preferred date and time for service
+          </CardDescription>
         </CardHeader>
-        <CardContent className="p-6">
-          {/* Calendar Header with View Controls */}
-          <div className="mb-6">
-            <CalendarHeader
-              currentDate={currentDate}
-              setCurrentDate={setCurrentDate}
-              view={view}
-              setView={setView}
-            />
+      </Card>
+
+      {/* Calendar Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Available Appointments</CardTitle>
+          <CardDescription>
+            Click on any date to see available time slots
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {/* View Toggle */}
+          <div className="flex gap-2 mb-4">
+            {(['month', 'week', 'day'] as const).map((viewType) => (
+              <Button
+                key={viewType}
+                variant={view === viewType ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setView(viewType)}
+                className="capitalize"
+              >
+                {viewType}
+              </Button>
+            ))}
           </div>
 
           {/* Enhanced Calendar View */}
@@ -103,6 +100,14 @@ export function CustomerAppointmentBooking() {
                 <div className="flex flex-col items-center">
                   <div className="h-10 w-10 border-4 border-t-blue-500 border-r-transparent border-b-blue-500 border-l-transparent rounded-full animate-spin mb-2"></div>
                   <p className="text-blue-700">Loading available appointment slots...</p>
+                </div>
+              </div>
+            ) : availableSlots.length === 0 ? (
+              <div className="h-[400px] flex items-center justify-center">
+                <div className="text-center">
+                  <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600 mb-2">No appointment slots available</p>
+                  <p className="text-sm text-gray-500">Please contact us directly to schedule your appointment</p>
                 </div>
               </div>
             ) : (
@@ -118,88 +123,61 @@ export function CustomerAppointmentBooking() {
           </div>
 
           {/* Booking Instructions */}
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <h3 className="font-semibold text-blue-800 mb-2">How to Book:</h3>
-            <ul className="text-sm text-blue-700 space-y-1">
-              <li>• Use the view controls above to switch between Day, Week, and Month views</li>
-              <li>• Click on any date to see available time slots</li>
-              <li>• <span className="inline-block w-3 h-3 bg-green-500 rounded mr-1"></span>Green slots indicate available appointment times</li>
-              <li>• Select your preferred time to submit a booking request</li>
-            </ul>
-          </div>
-
-          {/* Selected Date Booking Panel */}
-          {selectedDate && view === 'day' && (
-            <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
-              <h3 className="font-semibold text-green-800 mb-3">
-                Available Times for {format(selectedDate, 'EEEE, MMMM d, yyyy')}
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {['9:00 AM', '10:00 AM', '11:00 AM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'].map((time) => (
-                  <Button
-                    key={time}
-                    variant="outline"
-                    size="sm"
-                    className="bg-green-500 border-green-600 text-white hover:bg-green-600 transition-colors font-medium"
-                    onClick={() => handleBookAppointment(selectedDate, time)}
-                  >
-                    {time}
-                  </Button>
-                ))}
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex items-center gap-3 p-4 bg-green-50 rounded-lg border border-green-200">
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              <div>
+                <p className="font-medium text-green-800">Available Times</p>
+                <p className="text-sm text-green-600">Green slots indicate available appointment times</p>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="mt-3 text-gray-500"
-                onClick={() => setSelectedDate(null)}
-              >
-                Cancel Selection
-              </Button>
             </div>
-          )}
-
-          {/* Quick Day Navigation for Day View */}
-          {view === 'day' && (
-            <div className="mt-4 flex justify-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentDate(new Date(currentDate.getTime() - 24 * 60 * 60 * 1000))}
-              >
-                Previous Day
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentDate(new Date())}
-              >
-                Today
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentDate(new Date(currentDate.getTime() + 24 * 60 * 60 * 1000))}
-              >
-                Next Day
-              </Button>
+            <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <Clock className="h-5 w-5 text-blue-600" />
+              <div>
+                <p className="font-medium text-blue-800">Select Time</p>
+                <p className="text-sm text-blue-600">Click on your preferred time to book</p>
+              </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Additional Information Card */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="text-center text-sm text-gray-600">
-            <p className="mb-2">
-              <strong>Need help?</strong> Contact us at (555) 123-4567 or email support@yourshop.com
-            </p>
-            <p>
-              Appointments are subject to confirmation. We'll contact you within 24 hours to confirm your booking.
-            </p>
+            <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-lg border border-purple-200">
+              <CheckCircle className="h-5 w-5 text-purple-600" />
+              <div>
+                <p className="font-medium text-purple-800">Confirmation</p>
+                <p className="text-sm text-purple-600">We'll contact you to confirm your booking</p>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Time Slot Selection Modal */}
+      {selectedDate && (
+        <Card className="border-2 border-blue-200">
+          <CardHeader>
+            <CardTitle>Select Time for {format(selectedDate, 'MMMM d, yyyy')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {['9:00 AM', '10:00 AM', '11:00 AM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM'].map((time) => (
+                <Button
+                  key={time}
+                  variant="outline"
+                  className="h-12 hover:bg-green-50 hover:border-green-300"
+                  onClick={() => handleBookAppointment(time)}
+                >
+                  {time}
+                </Button>
+              ))}
+            </div>
+            <Button
+              variant="ghost"
+              className="mt-4 w-full"
+              onClick={() => setSelectedDate(null)}
+            >
+              Cancel
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

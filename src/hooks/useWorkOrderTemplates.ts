@@ -2,74 +2,41 @@
 import { useState, useCallback, useEffect } from "react";
 import { WorkOrderTemplate } from "@/types/workOrder";
 import { toast } from "sonner";
-
-// Service functions (to be implemented or imported)
-const fetchTemplates = async (): Promise<WorkOrderTemplate[]> => {
-  // This would be a real API call in a complete implementation
-  // For now, return mock data
-  return [
-    {
-      id: "template-1",
-      name: "Basic Maintenance",
-      description: "Standard maintenance template",
-      status: "pending",
-      priority: "medium",
-      technician: "John Doe",
-      notes: "Regular maintenance inspection",
-      usage_count: 12,
-      last_used: "2023-10-15"
-    },
-    {
-      id: "template-2",
-      name: "Full Service",
-      description: "Complete vehicle service template",
-      status: "pending",
-      priority: "high",
-      technician: "Jane Smith",
-      notes: "Complete inspection and service",
-      usage_count: 8,
-      last_used: "2023-09-22"
-    },
-    {
-      id: "template-3",
-      name: "Quick Oil Change",
-      description: "Fast oil change service",
-      status: "pending",
-      priority: "low",
-      technician: "",
-      notes: "Oil and filter change only",
-      usage_count: 24,
-      last_used: "2023-10-18"
-    }
-  ];
-};
-
-const createTemplate = async (template: Omit<WorkOrderTemplate, "id" | "usage_count">): Promise<WorkOrderTemplate> => {
-  // This would make a real API call in a complete implementation
-  // For now, simulate creating a new template
-  return {
-    ...template,
-    id: `template-${Date.now()}`,
-    usage_count: 0,
-  };
-};
-
-const updateTemplateUsage = async (templateId: string): Promise<void> => {
-  // This would make a real API call in a complete implementation
-  console.log(`Template ${templateId} usage updated`);
-};
+import { supabase } from "@/lib/supabase";
 
 export const useWorkOrderTemplates = () => {
   const [templates, setTemplates] = useState<WorkOrderTemplate[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   const loadTemplates = useCallback(async () => {
     setLoading(true);
+    setError(null);
+    
     try {
-      const data = await fetchTemplates();
-      setTemplates(data);
-    } catch (error) {
-      console.error("Failed to load templates:", error);
+      const { data, error: fetchError } = await supabase
+        .from('work_order_templates')
+        .select('*')
+        .order('usage_count', { ascending: false });
+
+      if (fetchError) throw fetchError;
+
+      const formattedTemplates: WorkOrderTemplate[] = (data || []).map(template => ({
+        id: template.id,
+        name: template.name,
+        description: template.description || "",
+        status: template.status || "pending",
+        priority: template.priority || "medium", 
+        technician: template.technician || "",
+        notes: template.notes || "",
+        usage_count: template.usage_count || 0,
+        last_used: template.last_used || ""
+      }));
+
+      setTemplates(formattedTemplates);
+    } catch (err) {
+      console.error("Failed to load templates:", err);
+      setError("Failed to load work order templates");
       toast.error("Failed to load templates");
     } finally {
       setLoading(false);
@@ -80,34 +47,78 @@ export const useWorkOrderTemplates = () => {
     loadTemplates();
   }, [loadTemplates]);
   
-  const handleApplyTemplate = useCallback((template: WorkOrderTemplate) => {
-    // Update template usage
-    updateTemplateUsage(template.id).catch(console.error);
-    
-    // Return template for use
-    return template;
+  const handleApplyTemplate = useCallback(async (template: WorkOrderTemplate) => {
+    try {
+      // Update template usage count in database
+      const { error } = await supabase
+        .from('work_order_templates')
+        .update({ 
+          usage_count: (template.usage_count || 0) + 1,
+          last_used: new Date().toISOString()
+        })
+        .eq('id', template.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setTemplates(prev => prev.map(t => 
+        t.id === template.id 
+          ? { ...t, usage_count: (t.usage_count || 0) + 1, last_used: new Date().toISOString() }
+          : t
+      ));
+
+      return template;
+    } catch (err) {
+      console.error("Failed to update template usage:", err);
+      toast.error("Failed to update template usage");
+      return template;
+    }
   }, []);
   
   const handleSaveTemplate = useCallback(async (newTemplate: Omit<WorkOrderTemplate, "id" | "usage_count">) => {
     try {
-      // Save the template
-      const savedTemplate = await createTemplate(newTemplate);
+      const { data, error } = await supabase
+        .from('work_order_templates')
+        .insert({
+          name: newTemplate.name,
+          description: newTemplate.description,
+          status: newTemplate.status,
+          priority: newTemplate.priority,
+          technician: newTemplate.technician,
+          notes: newTemplate.notes,
+          usage_count: 0
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const savedTemplate: WorkOrderTemplate = {
+        id: data.id,
+        name: data.name,
+        description: data.description || "",
+        status: data.status || "pending",
+        priority: data.priority || "medium",
+        technician: data.technician || "",
+        notes: data.notes || "",
+        usage_count: 0,
+        last_used: ""
+      };
       
-      // Update local state
       setTemplates(prev => [...prev, savedTemplate]);
-      
       toast.success("Template saved successfully");
       return savedTemplate;
-    } catch (error) {
-      console.error("Failed to save template:", error);
+    } catch (err) {
+      console.error("Failed to save template:", err);
       toast.error("Failed to save template");
-      throw error;
+      throw err;
     }
   }, []);
   
   return {
     templates,
     loading,
+    error,
     handleApplyTemplate,
     handleSaveTemplate,
     refreshTemplates: loadTemplates

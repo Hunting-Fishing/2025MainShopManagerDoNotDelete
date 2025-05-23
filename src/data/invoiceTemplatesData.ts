@@ -4,20 +4,14 @@ import { useInvoiceTemplates } from "@/hooks/useInvoiceTemplates";
 // This file now re-exports the hook that fetches data from the database
 export { useInvoiceTemplates };
 
-// For backwards compatibility with any code that imports directly
+// For backwards compatibility - no mock fallbacks
 import { InvoiceTemplate } from "@/types/invoice";
 export const invoiceTemplates: InvoiceTemplate[] = [];
+
 export const updateTemplateUsage = async (templateId: string) => {
-  console.warn('Using deprecated function. Please use useInvoiceTemplates hook instead.');
-  // This is a no-op for compatibility
+  throw new Error('Please use useInvoiceTemplates hook instead of deprecated function.');
 };
+
 export const createTemplate = async () => {
-  console.warn('Using deprecated function. Please use useInvoiceTemplates hook instead.');
-  // Return a valid InvoiceTemplate object for backward compatibility
-  return { 
-    id: '', 
-    name: '',
-    created_at: '', 
-    usage_count: 0 
-  } as InvoiceTemplate;
+  throw new Error('Please use useInvoiceTemplates hook instead of deprecated function.');
 };

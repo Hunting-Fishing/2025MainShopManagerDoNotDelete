@@ -1,5 +1,7 @@
 
 import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 
 export function useActivityData(memberId: string) {
   const [activities, setActivities] = useState([]);
@@ -9,66 +11,70 @@ export function useActivityData(memberId: string) {
   const [flaggedOnly, setFlaggedOnly] = useState(false);
   const [sortBy, setSortBy] = useState("newest");
   const [filteredActivities, setFilteredActivities] = useState([]);
+  const [error, setError] = useState<string | null>(null);
 
-  // Fetch activity data
+  // Fetch real activity data from database
   useEffect(() => {
-    setIsLoading(true);
-    
-    // Mock data for demonstration
-    const mockActivities = [
-      {
-        id: "act1",
-        type: "workOrder",
-        date: "2023-12-01T15:20:00",
-        description: "Completed work order #WO-2023-1201",
-        flagged: false,
-        workOrderId: "WO-2023-1201",
-        customerId: "cust123"
-      },
-      {
-        id: "act2",
-        type: "workOrder",
-        date: "2023-12-01T10:30:00",
-        description: "Started work on work order #WO-2023-1205",
-        flagged: false,
-        workOrderId: "WO-2023-1205",
-        customerId: "cust456"
-      },
-      {
-        id: "act3",
-        type: "communication",
-        date: "2023-12-01T11:45:00",
-        description: "Called customer about parts delay",
-        flagged: true,
-        flagReason: "Customer complained about rudeness",
-        workOrderId: "WO-2023-1205",
-        customerId: "cust456"
-      },
-      {
-        id: "act4",
-        type: "parts",
-        date: "2023-12-01T14:15:00",
-        description: "Requested additional parts for job",
-        flagged: false,
-        workOrderId: "WO-2023-1201",
-        customerId: "cust123"
-      },
-      {
-        id: "act5",
-        type: "invoice",
-        date: "2023-12-01T16:30:00",
-        description: "Generated invoice #INV-2023-089",
-        flagged: false,
-        invoiceId: "INV-2023-089",
-        customerId: "cust123"
+    const fetchActivities = async () => {
+      if (!memberId) return;
+      
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        // Fetch work order activities
+        const { data: workOrderActivities, error: woError } = await supabase
+          .from('work_order_activities')
+          .select('*')
+          .eq('user_id', memberId)
+          .order('timestamp', { ascending: false });
+
+        if (woError) throw woError;
+
+        // Fetch customer activities  
+        const { data: customerActivities, error: custError } = await supabase
+          .from('customer_activities')
+          .select('*')
+          .eq('user_id', memberId)
+          .order('timestamp', { ascending: false });
+
+        if (custError) throw custError;
+
+        // Combine and format activities
+        const allActivities = [
+          ...(workOrderActivities || []).map(activity => ({
+            id: activity.id,
+            type: "workOrder",
+            date: activity.timestamp,
+            description: activity.action,
+            flagged: activity.flagged,
+            flagReason: activity.flag_reason,
+            workOrderId: activity.work_order_id,
+            userId: activity.user_id
+          })),
+          ...(customerActivities || []).map(activity => ({
+            id: activity.id,
+            type: "customer",
+            date: activity.timestamp,
+            description: activity.action,
+            flagged: activity.flagged,
+            flagReason: activity.flag_reason,
+            customerId: activity.customer_id,
+            userId: activity.user_id
+          }))
+        ];
+
+        setActivities(allActivities);
+      } catch (err) {
+        console.error('Error fetching activities:', err);
+        setError('Failed to load team member activities');
+        toast.error('Failed to load team member activities');
+      } finally {
+        setIsLoading(false);
       }
-    ];
-    
-    // In a real implementation, this would fetch from Supabase
-    setTimeout(() => {
-      setActivities(mockActivities);
-      setIsLoading(false);
-    }, 500);
+    };
+
+    fetchActivities();
   }, [memberId]);
 
   // Apply filters
@@ -111,6 +117,7 @@ export function useActivityData(memberId: string) {
   return {
     activities,
     isLoading,
+    error,
     searchQuery,
     setSearchQuery,
     typeFilter,

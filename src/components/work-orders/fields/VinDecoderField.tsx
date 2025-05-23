@@ -2,11 +2,12 @@
 import React, { useState } from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 import { VinDecodeResult } from "@/types/vehicle";
 import { toast } from "@/hooks/use-toast";
 import { decodeVin } from "@/utils/vehicleUtils";
 import { VehicleBodyStyle } from "@/types/vehicle";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface VinDecoderFieldProps {
   form: any;
@@ -15,13 +16,17 @@ interface VinDecoderFieldProps {
 
 export const VinDecoderField: React.FC<VinDecoderFieldProps> = ({ form, onVehicleDecoded }) => {
   const [isDecoding, setIsDecoding] = useState(false);
+  const [decodingError, setDecodingError] = useState<string | null>(null);
   
   const handleVinDecode = async (vinNumber: string) => {
     if (vinNumber.length !== 17) return;
     
     setIsDecoding(true);
+    setDecodingError(null);
+    
     try {
       const decodedData = await decodeVin(vinNumber);
+      
       if (decodedData) {
         // Update form fields with decoded vehicle information
         form.setValue("vehicleMake", decodedData.make || '');
@@ -37,7 +42,6 @@ export const VinDecoderField: React.FC<VinDecoderFieldProps> = ({ form, onVehicl
         if (decodedData.body_style) {
           const bodyStyle = decodedData.body_style.toLowerCase() as VehicleBodyStyle;
           form.setValue("bodyStyle", bodyStyle);
-          console.log("Setting body style from VIN:", bodyStyle);
         }
         
         if (decodedData.country) form.setValue("country", decodedData.country);
@@ -51,20 +55,22 @@ export const VinDecoderField: React.FC<VinDecoderFieldProps> = ({ form, onVehicl
         toast({
           title: "VIN Decoded Successfully",
           description: `Vehicle identified as ${decodedData.year} ${decodedData.make} ${decodedData.model}`,
-          variant: "success",
+          variant: "default",
         });
       } else {
+        setDecodingError("VIN decoding service is not available. Please enter vehicle details manually.");
         toast({
-          title: "VIN Decode Failed",
-          description: "Could not decode the provided VIN. Please check and try again.",
+          title: "VIN Decode Service Unavailable",
+          description: "Please enter vehicle details manually.",
           variant: "destructive",
         });
       }
     } catch (error) {
       console.error("Error decoding VIN:", error);
+      setDecodingError(error instanceof Error ? error.message : "VIN decoding failed");
       toast({
-        title: "Error",
-        description: "An error occurred while decoding the VIN.",
+        title: "VIN Decode Error",
+        description: "Please enter vehicle details manually.",
         variant: "destructive",
       });
     } finally {
@@ -73,29 +79,41 @@ export const VinDecoderField: React.FC<VinDecoderFieldProps> = ({ form, onVehicl
   };
 
   return (
-    <FormField
-      control={form.control}
-      name="vin"
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>
-            VIN {isDecoding && <Loader2 className="h-4 w-4 inline animate-spin ml-2" />}
-          </FormLabel>
-          <FormControl>
-            <Input 
-              {...field} 
-              placeholder="Vehicle Identification Number"
-              onChange={(e) => {
-                field.onChange(e);
-                if (e.target.value.length === 17) {
-                  handleVinDecode(e.target.value);
-                }
-              }}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
+    <div className="space-y-2">
+      <FormField
+        control={form.control}
+        name="vin"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>
+              VIN {isDecoding && <Loader2 className="h-4 w-4 inline animate-spin ml-2" />}
+            </FormLabel>
+            <FormControl>
+              <Input 
+                {...field} 
+                placeholder="Vehicle Identification Number (17 characters)"
+                maxLength={17}
+                onChange={(e) => {
+                  const value = e.target.value.toUpperCase();
+                  field.onChange(value);
+                  setDecodingError(null);
+                  if (value.length === 17) {
+                    handleVinDecode(value);
+                  }
+                }}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      
+      {decodingError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{decodingError}</AlertDescription>
+        </Alert>
       )}
-    />
+    </div>
   );
 };
