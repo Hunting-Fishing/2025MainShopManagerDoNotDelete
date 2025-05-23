@@ -5,6 +5,7 @@ import { CustomerFormValues } from "../CustomerFormSchema";
 import { useVehicleData } from "@/hooks/useVehicleData";
 import { toast } from "@/hooks/use-toast";
 import { VinDecodeResult } from "@/types/vehicle";
+import { decodeVin } from "@/utils/vehicleUtils";
 
 interface UseVehicleFormProps {
   form: UseFormReturn<CustomerFormValues>;
@@ -18,8 +19,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     years, 
     loading: dataLoading, 
     error,
-    fetchModels,
-    decodeVin
+    fetchModels
   } = useVehicleData();
 
   const [vinProcessing, setVinProcessing] = useState<boolean>(false);
@@ -149,17 +149,17 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
         } else {
           setVinProcessing(false);
           toast({
-            title: "VIN Decode Failed",
-            description: "Could not decode the VIN. Please check and try again.",
-            variant: "destructive",
+            title: "VIN Not Found",
+            description: "Could not decode the VIN. Please enter vehicle details manually.",
+            variant: "warning",
           });
         }
       } catch (error) {
         console.error("Error decoding VIN:", error);
         setVinProcessing(false);
         toast({
-          title: "Error",
-          description: "Failed to decode VIN. Please try again.",
+          title: "VIN Decode Error",
+          description: "VIN decoding service is unavailable. Please enter vehicle details manually.",
           variant: "destructive",
         });
       }
@@ -170,7 +170,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [vin, lastProcessedVin, vinProcessing, decodeVin, populateVehicleFromVin]);
+  }, [vin, lastProcessedVin, vinProcessing, populateVehicleFromVin]);
 
   return {
     makes,

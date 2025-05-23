@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { toast } from "@/hooks/use-toast";
 
 interface HistoryRecord {
   id: string;
@@ -31,64 +32,52 @@ export function useTeamHistory() {
   const loadHistory = async () => {
     setLoading(true);
     try {
-      // In a real implementation, this would fetch data from Supabase
-      // For now, we'll use mock data
-      const mockData: HistoryRecord[] = [
-        {
-          id: "1",
-          timestamp: "2023-05-15T12:30:00Z",
-          userId: "user-123",
-          userName: "John Smith",
-          action: "Login",
-          details: "User logged in from San Francisco, CA",
-          flagged: false,
-          resolved: false
-        },
-        {
-          id: "2",
-          timestamp: "2023-05-15T13:45:00Z",
-          userId: "user-456",
-          userName: "Jane Doe",
-          action: "Update",
-          details: "Updated customer information for Customer ID: CUST-789",
-          flagged: true,
-          resolved: false
-        },
-        {
-          id: "3",
-          timestamp: "2023-05-16T09:15:00Z",
-          userId: "user-789",
-          userName: "Bob Johnson",
-          action: "Create",
-          details: "Created a new work order WO-123 for vehicle servicing",
-          flagged: false,
-          resolved: false
-        },
-        {
-          id: "4",
-          timestamp: "2023-05-16T11:20:00Z",
-          userId: "user-123",
-          userName: "John Smith",
-          action: "Delete",
-          details: "Deleted inventory item INV-456",
-          flagged: true,
-          resolved: true
-        },
-        {
-          id: "5",
-          timestamp: "2023-05-17T14:05:00Z",
-          userId: "user-456",
-          userName: "Jane Doe",
-          action: "Permission Change",
-          details: "Changed role from 'User' to 'Admin'",
-          flagged: false,
-          resolved: false
-        }
-      ];
+      // Fetch real team member history from database
+      const { data: teamHistory, error } = await supabase
+        .from('team_member_history')
+        .select(`
+          id,
+          timestamp,
+          action_type,
+          action_by,
+          action_by_name,
+          details,
+          profile_id
+        `)
+        .order('timestamp', { ascending: false });
 
-      setHistory(mockData);
+      if (error) {
+        console.error('Error fetching team history:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load team history",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Transform data to match expected format
+      const formattedHistory: HistoryRecord[] = (teamHistory || []).map(record => ({
+        id: record.id,
+        timestamp: record.timestamp,
+        userId: record.action_by || 'unknown',
+        userName: record.action_by_name || 'Unknown User',
+        action: record.action_type,
+        details: typeof record.details === 'object' 
+          ? JSON.stringify(record.details) 
+          : String(record.details || ''),
+        flagged: false, // Can be enhanced based on business logic
+        resolved: false
+      }));
+
+      setHistory(formattedHistory);
     } catch (error) {
       console.error("Error loading team history:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load team history",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
