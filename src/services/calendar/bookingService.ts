@@ -20,6 +20,44 @@ export interface BookingRequestDto {
 }
 
 /**
+ * Check if the customer has booking permissions
+ */
+export async function checkBookingPermissions(customerId: string): Promise<boolean> {
+  try {
+    // First check global shop setting
+    const { data: shopSettings, error: shopError } = await supabase
+      .from('shop_settings')
+      .select('booking_enabled')
+      .limit(1)
+      .single();
+    
+    if (shopError || !shopSettings?.booking_enabled) {
+      return false;
+    }
+    
+    // Check individual customer permission
+    const { data: relationshipData, error: relationshipError } = await supabase
+      .from('customer_shop_relationships')
+      .select('booking_enabled')
+      .eq('customer_id', customerId)
+      .limit(1)
+      .single();
+    
+    if (relationshipError) {
+      console.error('Error fetching customer booking permissions:', relationshipError);
+      // Default to true if relationship not found (legacy behavior)
+      return true;
+    }
+    
+    return relationshipData.booking_enabled;
+  } catch (error) {
+    console.error("Error checking booking permissions:", error);
+    // Default to false on error for security
+    return false;
+  }
+}
+
+/**
  * Get available time slots for a specific date
  */
 export async function getAvailableTimeSlots(date: string): Promise<TimeSlot[]> {
@@ -137,6 +175,13 @@ export async function getAvailableTimeSlots(date: string): Promise<TimeSlot[]> {
  */
 export async function createBookingRequest(booking: BookingRequestDto): Promise<boolean> {
   try {
+    // First check if the customer has booking permissions
+    const hasPermission = await checkBookingPermissions(booking.customer_id);
+    if (!hasPermission) {
+      console.error("Customer does not have booking permission:", booking.customer_id);
+      return false;
+    }
+    
     // Create calendar event for the booking
     const { error } = await supabase
       .from('calendar_events')

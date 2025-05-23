@@ -1,353 +1,327 @@
 
-import { useState, useEffect } from "react";
-import { format, startOfMonth, endOfMonth, addMonths, isSameMonth, parseISO } from "date-fns";
-import { Calendar } from "@/components/ui/calendar";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getAvailableDates, getAvailableTimeSlots, createBookingRequest, TimeSlot } from "@/services/calendar/bookingService";
-import { supabase } from "@/lib/supabase";
-import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Helmet } from "react-helmet-async";
-import { Loader, CalendarIcon, Clock, Check } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { 
+  BookingRequestDto, 
+  TimeSlot, 
+  getAvailableTimeSlots, 
+  createBookingRequest,
+  checkBookingPermissions,
+  getAvailableDates
+} from '@/services/calendar/bookingService';
+import { toast } from '@/hooks/use-toast';
+import { useAuthUser } from '@/hooks/useAuthUser';
+import { AlertCircle, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { format } from 'date-fns';
+import { CustomerLoginRequiredWithImpersonation } from '@/components/customer-portal/CustomerLoginRequiredWithImpersonation';
 
 export default function ClientBooking() {
-  const navigate = useNavigate();
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
-  const [availableDates, setAvailableDates] = useState<string[]>([]);
-  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [availableTimeSlots, setAvailableTimeSlots] = useState<TimeSlot[]>([]);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('');
+  const [selectedServiceType, setSelectedServiceType] = useState<string>('');
+  const [notes, setNotes] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [serviceType, setServiceType] = useState<string>("");
-  const [notes, setNotes] = useState<string>("");
-  const [customerId, setCustomerId] = useState<string | null>(null);
-  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+  const [isCheckingPermissions, setIsCheckingPermissions] = useState(true);
+  const [isBookingPermitted, setIsBookingPermitted] = useState<boolean | null>(null);
+  const [availableDates, setAvailableDates] = useState<Date[]>([]);
+  const [loadingDates, setLoadingDates] = useState(true);
   
-  // Get the current month's range for fetching available dates
-  const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(currentMonth);
+  const { userId } = useAuthUser();
 
-  // Fetch customer ID when component mounts
+  // Check booking permissions on load
   useEffect(() => {
-    const fetchCustomerData = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session?.user) {
-          const { data, error } = await supabase
-            .from('customers')
-            .select('id')
-            .eq('auth_user_id', session.user.id)
-            .single();
-            
-          if (data) {
-            setCustomerId(data.id);
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching customer data:', err);
-      }
-    };
-    
-    fetchCustomerData();
-  }, []);
-
-  // Load available dates for the selected month
-  useEffect(() => {
-    const fetchAvailableDates = async () => {
-      setIsLoading(true);
-      try {
-        const dates = await getAvailableDates(monthStart, monthEnd);
-        setAvailableDates(dates);
-      } catch (err) {
-        console.error("Error loading available dates:", err);
-        toast("Error loading calendar", {
-          description: "Unable to load available appointment dates"
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchAvailableDates();
-  }, [currentMonth]);
-
-  // Load available time slots when a date is selected
-  useEffect(() => {
-    const fetchTimeSlots = async () => {
-      if (!selectedDate) return;
+    async function verifyBookingPermissions() {
+      if (!userId) return;
       
-      setIsLoading(true);
+      setIsCheckingPermissions(true);
       try {
-        const formattedDate = format(selectedDate, "yyyy-MM-dd");
-        const slots = await getAvailableTimeSlots(formattedDate);
-        setTimeSlots(slots);
-        setSelectedTimeSlot(null); // Reset selection
-      } catch (err) {
-        console.error("Error loading time slots:", err);
-        toast("Error loading time slots", {
-          description: "Unable to load available appointment times"
-        });
+        const permitted = await checkBookingPermissions(userId);
+        setIsBookingPermitted(permitted);
+      } catch (error) {
+        console.error('Error checking booking permissions:', error);
+        setIsBookingPermitted(false);
       } finally {
-        setIsLoading(false);
+        setIsCheckingPermissions(false);
       }
-    };
+    }
     
-    if (selectedDate) {
-      fetchTimeSlots();
+    verifyBookingPermissions();
+  }, [userId]);
+
+  // Load available dates for calendar
+  useEffect(() => {
+    async function loadAvailableDates() {
+      if (!isBookingPermitted) return;
+      setLoadingDates(true);
+      
+      try {
+        const now = new Date();
+        const endDate = new Date();
+        endDate.setMonth(endDate.getMonth() + 3); // Looking 3 months ahead
+        
+        const availableDateStrings = await getAvailableDates(now, endDate);
+        const parsedDates = availableDateStrings.map(dateStr => new Date(dateStr));
+        setAvailableDates(parsedDates);
+      } catch (error) {
+        console.error('Error loading available dates:', error);
+      } finally {
+        setLoadingDates(false);
+      }
     }
-  }, [selectedDate]);
-
-  // Handle date change
-  const handleDateSelect = (date: Date | undefined) => {
-    setSelectedDate(date);
-  };
-
-  // Handle month navigation
-  const goToPreviousMonth = () => {
-    setCurrentMonth(prevMonth => addMonths(prevMonth, -1));
-  };
-
-  const goToNextMonth = () => {
-    setCurrentMonth(prevMonth => addMonths(prevMonth, 1));
-  };
-
-  // Handle booking submission
-  const handleSubmitBooking = async () => {
-    if (!selectedTimeSlot || !selectedDate || !serviceType || !customerId) {
-      toast("Missing information", {
-        description: "Please select a date, time, and service type"
-      });
-      return;
+    
+    if (isBookingPermitted) {
+      loadAvailableDates();
     }
+  }, [isBookingPermitted]);
+
+  // When date changes, load available time slots
+  useEffect(() => {
+    async function loadTimeSlots() {
+      if (!date) return;
+      
+      try {
+        const formattedDate = format(date, 'yyyy-MM-dd');
+        const slots = await getAvailableTimeSlots(formattedDate);
+        setAvailableTimeSlots(slots);
+      } catch (error) {
+        console.error('Error loading time slots:', error);
+        setAvailableTimeSlots([]);
+      }
+    }
+    
+    loadTimeSlots();
+  }, [date]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!date || !selectedTimeSlot || !selectedServiceType || !userId) return;
     
     setIsSubmitting(true);
     
     try {
-      const formattedDate = format(selectedDate, "yyyy-MM-dd");
-      
-      const bookingData = {
-        customer_id: customerId,
-        technician_id: selectedTimeSlot.technician_id || "",
-        date: formattedDate,
-        time_slot: selectedTimeSlot.time,
-        service_type: serviceType,
+      const booking: BookingRequestDto = {
+        customer_id: userId,
+        technician_id: availableTimeSlots.find(slot => slot.time === selectedTimeSlot)?.technician_id || '',
+        date: format(date, 'yyyy-MM-dd'),
+        time_slot: selectedTimeSlot,
+        service_type: selectedServiceType,
         notes: notes
       };
       
-      const success = await createBookingRequest(bookingData);
+      const success = await createBookingRequest(booking);
       
       if (success) {
-        toast("Booking Request Submitted", {
-          description: "Your appointment request has been submitted and is pending approval"
+        toast({
+          title: 'Booking Request Submitted',
+          description: 'We have received your booking request and will contact you to confirm.',
         });
-        navigate("/customer-portal", { replace: true });
+        
+        // Reset form
+        setDate(undefined);
+        setSelectedTimeSlot('');
+        setSelectedServiceType('');
+        setNotes('');
       } else {
-        toast("Booking Failed", {
-          description: "There was an error submitting your appointment request"
+        toast({
+          title: 'Booking Failed',
+          description: 'Unable to complete your booking request. Please try again or contact us directly.',
+          variant: 'destructive',
         });
       }
-    } catch (err) {
-      console.error("Error submitting booking:", err);
-      toast("Booking Error", {
-        description: "There was a problem processing your request"
+    } catch (error) {
+      console.error('Error creating booking:', error);
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred. Please try again later.',
+        variant: 'destructive',
       });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // If not logged in, redirect to customer portal (which has authentication checks)
-  if (!customerId && !isLoading) {
-    return <div className="flex items-center justify-center h-64">
-      <div className="text-center">
-        <p className="mb-4">You need to be signed in to book appointments</p>
-        <Button onClick={() => navigate('/customer-portal')}>
-          Go to Customer Portal
-        </Button>
-      </div>
-    </div>;
-  }
+  const renderContent = () => {
+    if (isCheckingPermissions) {
+      return (
+        <div className="flex items-center justify-center p-8">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+          <span className="ml-3 text-lg">Checking booking permissions...</span>
+        </div>
+      );
+    }
+    
+    if (isBookingPermitted === false) {
+      return (
+        <Alert variant="destructive" className="my-8">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Booking Unavailable</AlertTitle>
+          <AlertDescription>
+            Booking is currently disabled for your account. Please contact customer support for assistance.
+          </AlertDescription>
+        </Alert>
+      );
+    }
 
-  return (
-    <>
-      <Helmet>
-        <title>Book an Appointment</title>
-      </Helmet>
-      
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold mb-6">Book an Appointment</h1>
-          
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Calendar Section */}
+    return (
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Date Selection */}
+          <div>
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Select a Date</CardTitle>
-                  <div className="flex space-x-2">
-                    <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
-                      Previous
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={goToNextMonth}>
-                      Next
-                    </Button>
-                  </div>
-                </div>
-                <CardDescription className="flex items-center">
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {format(currentMonth, 'MMMM yyyy')}
-                </CardDescription>
+                <CardTitle className="text-lg">Select Date</CardTitle>
+                <CardDescription>Choose a date for your appointment</CardDescription>
               </CardHeader>
               <CardContent>
-                {isLoading && !selectedDate ? (
-                  <div className="flex items-center justify-center h-72">
-                    <Loader className="h-8 w-8 animate-spin text-primary" />
+                <div className="flex justify-center">
+                  {loadingDates ? (
+                    <div className="flex items-center justify-center p-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                    </div>
+                  ) : (
+                    <Calendar
+                      mode="single"
+                      selected={date}
+                      onSelect={setDate}
+                      disabled={(date) => {
+                        // Disable dates in the past and any date that's not in availableDates
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        return date < today || !availableDates.some(d => 
+                          d.getFullYear() === date.getFullYear() && 
+                          d.getMonth() === date.getMonth() && 
+                          d.getDate() === date.getDate()
+                        );
+                      }}
+                      className="rounded-md border"
+                    />
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Time Slots and Service */}
+          <div className="space-y-6">
+            {/* Time Slot Selection */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Select Time</CardTitle>
+                <CardDescription>Choose an available time slot</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {!date ? (
+                  <div className="text-center p-4 text-slate-500">
+                    <CalendarIcon className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                    Please select a date first
+                  </div>
+                ) : availableTimeSlots.length === 0 ? (
+                  <div className="text-center p-4 text-slate-500">
+                    No available time slots for this date
                   </div>
                 ) : (
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={handleDateSelect}
-                    month={currentMonth}
-                    className="rounded-md border"
-                    disabled={(date) => {
-                      // Disable dates in the past
-                      if (date < new Date()) return true;
-                      
-                      // Disable dates not in available dates list
-                      const dateStr = format(date, "yyyy-MM-dd");
-                      return !availableDates.includes(dateStr);
-                    }}
-                    modifiers={{
-                      available: (date) => {
-                        const dateStr = format(date, "yyyy-MM-dd");
-                        return availableDates.includes(dateStr);
-                      }
-                    }}
-                    modifiersStyles={{
-                      available: {
-                        backgroundColor: 'var(--green-50)'
-                      }
-                    }}
-                  />
+                  <div className="grid grid-cols-2 gap-3">
+                    {availableTimeSlots.map((slot) => (
+                      <Button
+                        key={slot.id}
+                        type="button"
+                        variant={selectedTimeSlot === slot.time ? "default" : "outline"}
+                        className={`${
+                          selectedTimeSlot === slot.time ? "border-2 border-blue-600" : ""
+                        }`}
+                        onClick={() => setSelectedTimeSlot(slot.time)}
+                      >
+                        {slot.time} {slot.technician && `- ${slot.technician}`}
+                      </Button>
+                    ))}
+                  </div>
                 )}
               </CardContent>
             </Card>
-            
-            {/* Time Slots & Booking Details Section */}
-            <div className="space-y-6">
-              {/* Time Slots */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Select a Time</CardTitle>
-                  <CardDescription className="flex items-center">
-                    <Clock className="mr-2 h-4 w-4" />
-                    Available time slots
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {isLoading && selectedDate ? (
-                    <div className="flex items-center justify-center h-24">
-                      <Loader className="h-6 w-6 animate-spin text-primary" />
-                    </div>
-                  ) : !selectedDate ? (
-                    <div className="text-center text-muted-foreground py-8">
-                      Please select a date first
-                    </div>
-                  ) : timeSlots.length === 0 ? (
-                    <div className="text-center text-muted-foreground py-8">
-                      No available time slots for this date
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-2">
-                      {timeSlots.map((slot) => (
-                        <Button
-                          key={slot.id}
-                          variant={selectedTimeSlot?.id === slot.id ? "default" : "outline"}
-                          className="justify-between"
-                          onClick={() => setSelectedTimeSlot(slot)}
-                        >
-                          <span>{slot.time}</span>
-                          {selectedTimeSlot?.id === slot.id && (
-                            <Check className="h-4 w-4 ml-2" />
-                          )}
-                        </Button>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-              
-              {/* Booking Details */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Appointment Details</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <label htmlFor="serviceType" className="block text-sm font-medium">
-                      Service Type
-                    </label>
-                    <Select
-                      value={serviceType}
-                      onValueChange={setServiceType}
-                    >
-                      <SelectTrigger id="serviceType">
-                        <SelectValue placeholder="Select a service type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="oil_change">Oil Change</SelectItem>
-                        <SelectItem value="tune_up">Tune Up</SelectItem>
-                        <SelectItem value="brake_service">Brake Service</SelectItem>
-                        <SelectItem value="tire_rotation">Tire Rotation</SelectItem>
-                        <SelectItem value="inspection">Vehicle Inspection</SelectItem>
-                        <SelectItem value="diagnostic">Diagnostic</SelectItem>
-                        <SelectItem value="other">Other Service</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label htmlFor="notes" className="block text-sm font-medium">
-                      Notes (optional)
-                    </label>
-                    <Textarea
-                      id="notes"
-                      placeholder="Please provide any details about your appointment request"
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      rows={3}
-                    />
-                  </div>
-                  
-                  <Button 
-                    className="w-full"
-                    onClick={handleSubmitBooking}
-                    disabled={!selectedTimeSlot || !selectedDate || !serviceType || isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader className="mr-2 h-4 w-4 animate-spin" />
-                        Submitting...
-                      </>
-                    ) : (
-                      "Request Appointment"
-                    )}
-                  </Button>
-                  
-                  <p className="text-sm text-muted-foreground text-center mt-2">
-                    Your appointment will be pending until approved by our staff
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
+
+            {/* Service Type */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Service Type</CardTitle>
+                <CardDescription>Select the type of service you need</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Select value={selectedServiceType} onValueChange={setSelectedServiceType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select service type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="oil_change">Oil Change</SelectItem>
+                    <SelectItem value="tire_rotation">Tire Rotation</SelectItem>
+                    <SelectItem value="brake_service">Brake Service</SelectItem>
+                    <SelectItem value="engine_diagnostic">Engine Diagnostic</SelectItem>
+                    <SelectItem value="regular_maintenance">Regular Maintenance</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </CardContent>
+            </Card>
           </div>
         </div>
-      </div>
-    </>
+
+        {/* Notes */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Additional Notes</CardTitle>
+            <CardDescription>Please provide any additional details about your service needs</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Textarea 
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Describe any specific issues or requirements..."
+              className="min-h-[100px]"
+            />
+          </CardContent>
+        </Card>
+
+        {/* Submit Button */}
+        <div className="flex justify-end">
+          <Button 
+            type="submit" 
+            disabled={!date || !selectedTimeSlot || !selectedServiceType || isSubmitting}
+            className="px-8"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              "Request Appointment"
+            )}
+          </Button>
+        </div>
+      </form>
+    );
+  };
+
+  return (
+    <div className="container mx-auto py-10 px-4">
+      <CustomerLoginRequiredWithImpersonation>
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold">Book an Appointment</h1>
+            <p className="text-slate-600 mt-2">
+              Select your preferred date and time for your service appointment
+            </p>
+          </div>
+          
+          {renderContent()}
+        </div>
+      </CustomerLoginRequiredWithImpersonation>
+    </div>
   );
 }

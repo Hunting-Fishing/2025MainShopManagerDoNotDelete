@@ -1358,6 +1358,7 @@ export type Database = {
       }
       customer_shop_relationships: {
         Row: {
+          booking_enabled: boolean
           customer_id: string
           id: string
           joined_at: string
@@ -1365,6 +1366,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          booking_enabled?: boolean
           customer_id: string
           id?: string
           joined_at?: string
@@ -1372,6 +1374,7 @@ export type Database = {
           status?: string
         }
         Update: {
+          booking_enabled?: boolean
           customer_id?: string
           id?: string
           joined_at?: string
@@ -6629,6 +6632,7 @@ export type Database = {
       shop_settings: {
         Row: {
           address: string | null
+          booking_enabled: boolean
           created_at: string
           email: string | null
           hours: Json | null
@@ -6641,6 +6645,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          booking_enabled?: boolean
           created_at?: string
           email?: string | null
           hours?: Json | null
@@ -6653,6 +6658,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          booking_enabled?: boolean
           created_at?: string
           email?: string | null
           hours?: Json | null
