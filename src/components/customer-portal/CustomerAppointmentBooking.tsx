@@ -96,7 +96,7 @@ export function CustomerAppointmentBooking() {
             <ul className="text-sm text-blue-700 space-y-1">
               <li>• Use the view controls above to switch between Day, Week, and Month views</li>
               <li>• Click on any date to see available time slots</li>
-              <li>• Green slots indicate available appointment times</li>
+              <li>• <span className="inline-block w-3 h-3 bg-green-500 rounded mr-1"></span>Green slots indicate available appointment times</li>
               <li>• Select your preferred time to submit a booking request</li>
             </ul>
           </div>
@@ -113,7 +113,7 @@ export function CustomerAppointmentBooking() {
                     key={time}
                     variant="outline"
                     size="sm"
-                    className="bg-white border-green-300 text-green-700 hover:bg-green-100"
+                    className="bg-green-500 border-green-600 text-white hover:bg-green-600 transition-colors font-medium"
                     onClick={() => handleBookAppointment(selectedDate, time)}
                   >
                     {time}
