@@ -6,7 +6,7 @@ import { useNotifications } from "@/context/notifications";
 import { NotificationsDropdown } from "@/components/notifications/NotificationsDropdown";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { HeaderSidebarToggle } from "./HeaderSidebarToggle";
-import { UserMenu } from "./HeaderActions";
+import { HeaderActions } from "./HeaderActions";
 
 export function Header() {
   const { unreadCount } = useNotifications();
@@ -68,7 +68,7 @@ export function Header() {
             )}
           </Button>
         </NotificationsDropdown>
-        <UserMenu />
+        <HeaderActions />
       </div>
     </header>
   );
