@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useImpersonation } from '@/contexts/ImpersonationContext';
-import { Loader2, UserCheck } from 'lucide-react';
+import { Loader2, UserCheck, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 type Customer = {
   id: string;
@@ -25,18 +26,37 @@ export function CustomerSelector() {
     queryKey: ['customers'],
     queryFn: async () => {
       console.log('Fetching customers for impersonation');
-      const { data, error } = await supabase
+      // First try to get customers with auth accounts
+      const { data: linkedCustomers, error: linkedError } = await supabase
         .from('customers')
         .select('id, first_name, last_name, email')
-        .not('auth_user_id', 'is', null); // Only get customers with auth accounts
+        .not('auth_user_id', 'is', null);
       
-      if (error) {
-        console.error('Error fetching customers:', error);
-        throw new Error(error.message);
+      if (linkedError) {
+        console.error('Error fetching customers with auth accounts:', linkedError);
+        throw new Error(linkedError.message);
       }
       
-      console.log('Retrieved customers:', data);
-      return data as Customer[];
+      console.log('Retrieved customers with auth accounts:', linkedCustomers);
+      
+      // If no customers with auth accounts found, get all customers
+      if (linkedCustomers.length === 0) {
+        console.log('No customers with auth accounts found, fetching all customers');
+        const { data: allCustomers, error: allError } = await supabase
+          .from('customers')
+          .select('id, first_name, last_name, email')
+          .limit(50);
+        
+        if (allError) {
+          console.error('Error fetching all customers:', allError);
+          throw new Error(allError.message);
+        }
+        
+        console.log('Retrieved all customers:', allCustomers);
+        return allCustomers as Customer[];
+      }
+      
+      return linkedCustomers as Customer[];
     }
   });
 
@@ -77,15 +97,7 @@ export function CustomerSelector() {
     </Card>
   );
 
-  if (error) return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="p-4 text-red-500">
-          Failed to load customers: {error instanceof Error ? error.message : 'Unknown error'}
-        </div>
-      </CardContent>
-    </Card>
-  );
+  const noCustomersFound = !error && (!customers || customers.length === 0);
 
   return (
     <Card>
@@ -93,6 +105,24 @@ export function CustomerSelector() {
         <CardTitle>Customer Portal Preview</CardTitle>
       </CardHeader>
       <CardContent>
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Failed to load customers: {error instanceof Error ? error.message : 'Unknown error'}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {noCustomersFound && (
+          <Alert className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              No customers found in the database. Please add customers before using this feature.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {isImpersonating ? (
           <div className="space-y-4">
             <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center">
@@ -128,7 +158,7 @@ export function CustomerSelector() {
             </p>
             
             <div className="flex flex-col space-y-3">
-              <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+              <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId} disabled={noCustomersFound}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a customer" />
                 </SelectTrigger>
@@ -147,7 +177,7 @@ export function CustomerSelector() {
               
               <Button
                 onClick={handleSelectCustomer}
-                disabled={!selectedCustomerId}
+                disabled={!selectedCustomerId || noCustomersFound}
                 className="bg-blue-600 hover:bg-blue-700"
               >
                 Start Customer Preview
