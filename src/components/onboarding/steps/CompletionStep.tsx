@@ -1,238 +1,229 @@
 
 import React, { useState, useEffect } from 'react';
-import { CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
-import { useShopId } from '@/hooks/useShopId';
-import { supabase } from '@/lib/supabase';
-import { toast } from 'sonner';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { CheckCircle, Building, Clock, Phone, Mail, MapPin } from 'lucide-react';
+import { companyService } from '@/services/settings/companyService';
 
 interface CompletionStepProps {
-  onNext?: () => void;
-  onPrevious?: () => void;
-  data?: any;
+  onNext: () => void;
+  onBack: () => void;
+  isLoading?: boolean;
+  formData?: any;
 }
 
-export function CompletionStep({ onNext, onPrevious, data }: CompletionStepProps) {
-  const navigate = useNavigate();
-  const { shopId } = useShopId();
-  const [isLoading, setIsLoading] = useState(false);
+export function CompletionStep({ onNext, onBack, isLoading, formData }: CompletionStepProps) {
   const [shopData, setShopData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadShopData();
-  }, [shopId]);
-
-  const loadShopData = async () => {
-    if (!shopId) return;
-
-    try {
-      console.log('Loading shop data for completion step, shopId:', shopId);
-      
-      // Get shop info
-      const { data: shop, error: shopError } = await supabase
-        .from('shops')
-        .select('*')
-        .eq('id', shopId)
-        .single();
-
-      if (shopError) {
-        console.error('Error fetching shop:', shopError);
-        throw shopError;
-      }
-
-      // Get business hours
-      const { data: hours, error: hoursError } = await supabase
-        .from('shop_hours')
-        .select('*')
-        .eq('shop_id', shopId)
-        .order('day_of_week');
-
-      if (hoursError && hoursError.code !== 'PGRST116') {
-        console.error('Error fetching hours:', hoursError);
-      }
-
-      // Get onboarding progress
-      const { data: progress, error: progressError } = await supabase
-        .from('onboarding_progress')
-        .select('*')
-        .eq('shop_id', shopId)
-        .single();
-
-      if (progressError && progressError.code !== 'PGRST116') {
-        console.error('Error fetching progress:', progressError);
-      }
-
-      const combinedData = {
-        shop,
-        hours: hours || [],
-        progress: progress?.step_data || data || {}
-      };
-
-      console.log('Loaded shop data for completion:', combinedData);
-      setShopData(combinedData);
-    } catch (error) {
-      console.error('Error loading shop data:', error);
-      // If we can't load from database, fall back to the passed data
-      if (data) {
-        setShopData({
-          shop: null,
-          hours: [],
-          progress: data
-        });
-      }
-    }
-  };
-
-  const handleCompleteOnboarding = async () => {
-    setIsLoading(true);
-    try {
-      if (shopId) {
-        console.log('Completing onboarding for shop:', shopId);
+    const fetchShopData = async () => {
+      try {
+        console.log('CompletionStep: Fetching shop data...');
+        console.log('CompletionStep: Form data received:', formData);
         
-        // Mark onboarding as complete
-        await supabase
-          .from('shops')
-          .update({
-            onboarding_completed: true,
-            setup_step: 4
-          })
-          .eq('id', shopId);
-
-        await supabase
-          .from('onboarding_progress')
-          .update({
-            is_completed: true,
-            current_step: 4,
-            completed_steps: [0, 1, 2, 3]
-          })
-          .eq('shop_id', shopId);
-
-        toast.success("Welcome to Easy Shop Manager!", {
-          description: "Your shop has been set up successfully."
-        });
-
-        // Navigate to dashboard
-        navigate('/');
+        const { companyInfo } = await companyService.getShopInfo();
+        console.log('CompletionStep: Company info from service:', companyInfo);
+        
+        // Combine data from multiple sources, prioritizing form data
+        const combinedData = {
+          name: formData?.companyName || companyInfo?.name || 'Your Shop',
+          email: formData?.email || companyInfo?.email || '',
+          phone: formData?.phone || companyInfo?.phone || '',
+          address: formData?.address || companyInfo?.address || '',
+          city: formData?.city || companyInfo?.city || '',
+          state: formData?.state || companyInfo?.state || '',
+          zip: formData?.zip || companyInfo?.zip || '',
+          businessType: formData?.businessType || companyInfo?.businessType || '',
+          industry: formData?.industry || companyInfo?.industry || ''
+        };
+        
+        console.log('CompletionStep: Combined data:', combinedData);
+        setShopData(combinedData);
+      } catch (error) {
+        console.error('CompletionStep: Error fetching shop data:', error);
+        // Use form data as fallback
+        if (formData) {
+          setShopData({
+            name: formData.companyName || 'Your Shop',
+            email: formData.email || '',
+            phone: formData.phone || '',
+            address: formData.address || '',
+            city: formData.city || '',
+            state: formData.state || '',
+            zip: formData.zip || '',
+            businessType: formData.businessType || '',
+            industry: formData.industry || ''
+          });
+        }
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error completing onboarding:', error);
-      toast.error("Error", {
-        description: "Failed to complete setup. Please try again."
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    };
+
+    fetchShopData();
+  }, [formData]);
+
+  const handleComplete = async () => {
+    console.log('CompletionStep: Completing onboarding...');
+    onNext();
   };
 
-  const formatBusinessHours = (hours: any[]) => {
-    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    
-    if (!hours || hours.length === 0) {
-      return 'Business hours not set';
-    }
-
-    return hours.map((hour) => {
-      const dayName = dayNames[hour.day_of_week];
-      if (hour.is_closed) {
-        return `${dayName}: Closed`;
-      }
-      const openTime = hour.open_time?.slice(0, 5) || '09:00';
-      const closeTime = hour.close_time?.slice(0, 5) || '17:00';
-      return `${dayName}: ${openTime} - ${closeTime}`;
-    }).join(', ');
-  };
-
-  // Get data from multiple sources, prioritizing the most complete data
-  const displayData = shopData?.progress || data || {};
-  const shopInfo = shopData?.shop;
-  const businessHours = shopData?.hours || [];
-
-  // Extract information from different possible data structures
-  const basicInfo = displayData.basicInfo || displayData || {};
-  const businessSettings = displayData.businessSettings || {};
-  const sampleDataInfo = displayData.sampleData || {};
-
-  console.log('Rendering completion step with data:', {
-    displayData,
-    basicInfo,
-    businessSettings,
-    sampleDataInfo,
-    shopInfo
-  });
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading...</h2>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-          <CheckCircle className="h-8 w-8 text-green-600" />
+        <div className="flex justify-center mb-4">
+          <CheckCircle className="h-16 w-16 text-green-500" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          🎉 Congratulations!
-        </h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Setup Complete!</h2>
         <p className="text-gray-600">
-          Your shop setup is complete! Here's a summary of your information:
+          Your shop is now configured and ready to use. Review your information below.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-        <div>
-          <h3 className="font-semibold text-gray-900 mb-2">Shop Information</h3>
-          <div className="space-y-1 text-sm">
-            <p><span className="font-medium">Name:</span> {shopInfo?.name || basicInfo.shopName || 'Not provided'}</p>
-            <p><span className="font-medium">Address:</span> {shopInfo?.address || basicInfo.address || 'Not provided'}</p>
-            <p><span className="font-medium">Phone:</span> {shopInfo?.phone || basicInfo.phone || 'Not provided'}</p>
-            <p><span className="font-medium">Email:</span> {shopInfo?.email || basicInfo.email || 'Not provided'}</p>
-            <p><span className="font-medium">Business Type:</span> {shopInfo?.business_type || basicInfo.businessType || 'Not provided'}</p>
-            <p><span className="font-medium">Industry:</span> {shopInfo?.industry || basicInfo.industry || 'Not provided'}</p>
+      {/* Shop Information Summary */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Building className="h-5 w-5" />
+            Shop Information
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Basic Information */}
+            <div className="space-y-4">
+              <h4 className="font-medium text-gray-900">Basic Information</h4>
+              <div className="space-y-1 text-sm">
+                {shopData?.name && (
+                  <div className="flex items-center gap-2">
+                    <Building className="h-4 w-4 text-gray-500" />
+                    <span className="font-medium">Name:</span>
+                    <span>{shopData.name}</span>
+                  </div>
+                )}
+                {shopData?.email && (
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-gray-500" />
+                    <span className="font-medium">Email:</span>
+                    <span>{shopData.email}</span>
+                  </div>
+                )}
+                {shopData?.phone && (
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-gray-500" />
+                    <span className="font-medium">Phone:</span>
+                    <span>{shopData.phone}</span>
+                  </div>
+                )}
+                {(shopData?.address || shopData?.city || shopData?.state || shopData?.zip) && (
+                  <div className="flex items-start gap-2">
+                    <MapPin className="h-4 w-4 text-gray-500 mt-0.5" />
+                    <div>
+                      <span className="font-medium">Address:</span>
+                      <div className="text-gray-600">
+                        {shopData.address && <div>{shopData.address}</div>}
+                        {(shopData.city || shopData.state || shopData.zip) && (
+                          <div>
+                            {[shopData.city, shopData.state, shopData.zip].filter(Boolean).join(', ')}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Business Details */}
+            <div className="space-y-4">
+              <h4 className="font-medium text-gray-900">Business Details</h4>
+              <div className="space-y-2">
+                {shopData?.businessType && (
+                  <div>
+                    <span className="text-sm font-medium text-gray-700">Business Type:</span>
+                    <Badge variant="outline" className="ml-2">{shopData.businessType}</Badge>
+                  </div>
+                )}
+                {shopData?.industry && (
+                  <div>
+                    <span className="text-sm font-medium text-gray-700">Industry:</span>
+                    <Badge variant="outline" className="ml-2">{shopData.industry}</Badge>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div>
-          <h3 className="font-semibold text-gray-900 mb-2">Business Settings</h3>
-          <div className="space-y-1 text-sm">
-            <p><span className="font-medium">Hours:</span></p>
-            <p className="text-xs text-gray-600 ml-2">
-              {formatBusinessHours(businessHours)}
-            </p>
-            <p><span className="font-medium">Sample Data:</span> {sampleDataInfo.includeSampleData ? 'Included' : 'Not included'}</p>
-            <p><span className="font-medium">Setup Step:</span> {shopInfo?.setup_step || 'Complete'}</p>
-          </div>
-        </div>
-      </div>
+          {/* Debug Information */}
+          {(!shopData?.name && !shopData?.email && !shopData?.phone) && (
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+              <p className="text-sm text-yellow-800">
+                No shop information found. Please ensure you've completed the basic information step.
+              </p>
+              <details className="mt-2">
+                <summary className="text-xs text-yellow-700 cursor-pointer">Debug Info</summary>
+                <pre className="text-xs mt-1 text-yellow-700">
+                  {JSON.stringify({ formData, shopData }, null, 2)}
+                </pre>
+              </details>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-      {/* Debug information - remove in production */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-          <h4 className="text-sm font-medium text-yellow-800 mb-2">Debug Info:</h4>
-          <pre className="text-xs text-yellow-700 overflow-auto max-h-32">
-            {JSON.stringify({ displayData, shopInfo, businessHours }, null, 2)}
-          </pre>
-        </div>
-      )}
+      {/* Next Steps */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            What's Next?
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ul className="space-y-2 text-sm text-gray-600">
+            <li className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-500" />
+              Start creating work orders
+            </li>
+            <li className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-500" />
+              Add customers and vehicles
+            </li>
+            <li className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-500" />
+              Set up your inventory
+            </li>
+            <li className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-500" />
+              Configure team members
+            </li>
+          </ul>
+        </CardContent>
+      </Card>
 
-      <div className="flex justify-between items-center pt-6">
-        <Button
-          variant="outline"
-          onClick={onPrevious}
-          disabled={isLoading}
-        >
+      {/* Action Buttons */}
+      <div className="flex justify-between pt-6">
+        <Button variant="outline" onClick={onBack} disabled={isLoading}>
           Back
         </Button>
-        
-        <Button
-          onClick={handleCompleteOnboarding}
+        <Button 
+          onClick={handleComplete} 
           disabled={isLoading}
-          className="bg-green-600 hover:bg-green-700 text-white"
+          className="bg-green-600 hover:bg-green-700"
         >
-          {isLoading ? (
-            <span className="flex items-center gap-2">
-              <span className="animate-spin rounded-full h-4 w-4 border-t-2 border-white"></span>
-              Finishing Setup...
-            </span>
-          ) : (
-            'Complete Setup & Go to Dashboard'
-          )}
+          {isLoading ? 'Completing...' : 'Complete Setup'}
         </Button>
       </div>
     </div>
