@@ -17,11 +17,15 @@ export default function Customers() {
   const transformedCustomers = customers.map(customer => ({
     ...customer,
     email: customer.email || '', // Ensure email is always a string
+    phone: customer.phone || '', // Ensure phone is always a string
+    address: customer.address || '', // Ensure address is always a string
   }));
 
   const transformedFilteredCustomers = filteredCustomers.map(customer => ({
     ...customer,
     email: customer.email || '', // Ensure email is always a string
+    phone: customer.phone || '', // Ensure phone is always a string
+    address: customer.address || '', // Ensure address is always a string
   }));
 
   return (
@@ -31,6 +35,7 @@ export default function Customers() {
         filteredCustomers={transformedFilteredCustomers}
         filters={filters}
         loading={loading}
+        error={error}
         onFilterChange={handleFilterChange}
       />
     </div>
