@@ -74,7 +74,11 @@ export function ShopOnboardingWizard() {
   };
 
   const updateData = (stepData: any) => {
-    const stepKey = steps[currentStep].id.replace('-', '');
+    const stepKey = steps[currentStep].id === 'basic-info' ? 'basicInfo' 
+                  : steps[currentStep].id === 'business-settings' ? 'businessSettings'
+                  : steps[currentStep].id === 'sample-data' ? 'sampleData'
+                  : steps[currentStep].id;
+    
     setOnboardingData(prev => ({
       ...prev,
       [stepKey]: { ...prev[stepKey as keyof typeof prev], ...stepData }
