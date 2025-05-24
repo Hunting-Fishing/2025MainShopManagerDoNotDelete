@@ -37,22 +37,51 @@ export function BasicInfoStep({ onNext, onPrevious, data, updateData }: BasicInf
     });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const validateForm = () => {
+    console.log('Validating form with data:', formData);
     
-    if (!formData.shopName || !formData.ownerName || !formData.email || !formData.phone) {
-      toast.error('Please fill in all required fields');
-      return;
+    if (!formData.shopName?.trim()) {
+      toast.error('Shop name is required');
+      return false;
+    }
+    
+    if (!formData.ownerName?.trim()) {
+      toast.error('Owner name is required');
+      return false;
+    }
+    
+    if (!formData.email?.trim()) {
+      toast.error('Email is required');
+      return false;
+    }
+    
+    if (!formData.phone?.trim()) {
+      toast.error('Phone is required');
+      return false;
     }
 
-    setIsSubmitting(true);
-    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast.error('Please enter a valid email address');
+      return false;
+    }
+
+    console.log('Form validation passed');
+    return true;
+  };
+
+  const saveToDatabase = async () => {
     try {
-      console.log('Saving basic info:', formData);
+      console.log('Starting database save operation');
       
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No user found');
+      if (!user) {
+        console.error('No user found');
+        throw new Error('No user found');
+      }
+
+      console.log('User found:', user.id);
 
       // Get user's shop
       const { data: profile } = await supabase
@@ -61,7 +90,12 @@ export function BasicInfoStep({ onNext, onPrevious, data, updateData }: BasicInf
         .eq('id', user.id)
         .single();
 
-      if (!profile?.shop_id) throw new Error('No shop found for user');
+      if (!profile?.shop_id) {
+        console.error('No shop found for user');
+        throw new Error('No shop found for user');
+      }
+
+      console.log('Shop found:', profile.shop_id);
 
       // Update shop with basic info
       const { error: shopError } = await supabase
@@ -78,7 +112,12 @@ export function BasicInfoStep({ onNext, onPrevious, data, updateData }: BasicInf
         })
         .eq('id', profile.shop_id);
 
-      if (shopError) throw shopError;
+      if (shopError) {
+        console.error('Shop update error:', shopError);
+        throw shopError;
+      }
+
+      console.log('Shop updated successfully');
 
       // Update onboarding progress
       const { error: progressError } = await supabase
@@ -93,20 +132,56 @@ export function BasicInfoStep({ onNext, onPrevious, data, updateData }: BasicInf
           onConflict: 'shop_id'
         });
 
-      if (progressError) throw progressError;
+      if (progressError) {
+        console.error('Progress update error:', progressError);
+        throw progressError;
+      }
 
-      console.log('Basic info saved successfully');
-      toast.success('Basic information saved!');
-      
-      // Call onNext to navigate to the next step
-      console.log('Calling onNext to navigate to next step');
-      onNext();
+      console.log('Onboarding progress updated successfully');
+      toast.success('Basic information saved successfully!');
       
     } catch (error) {
-      console.error('Error saving basic info:', error);
-      toast.error('Failed to save basic information');
+      console.error('Database save error:', error);
+      toast.error('Failed to save basic information. You can continue to the next step and try again later.');
+      throw error;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Form submitted');
+    
+    // First validate the form
+    if (!validateForm()) {
+      console.log('Form validation failed, not proceeding');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Navigate to next step immediately after validation
+      console.log('Form validation passed, navigating to next step');
+      onNext();
+      
+      // Save to database in the background
+      console.log('Saving to database in background');
+      await saveToDatabase();
+      
+    } catch (error) {
+      console.error('Error during form submission:', error);
+      // Even if database save fails, we already navigated to next step
+      // This prevents users from getting stuck on this step
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleNextClick = () => {
+    console.log('Next button clicked, triggering form submit');
+    const form = document.querySelector('form');
+    if (form) {
+      form.requestSubmit();
     }
   };
 
@@ -211,7 +286,8 @@ export function BasicInfoStep({ onNext, onPrevious, data, updateData }: BasicInf
         </Button>
         
         <Button 
-          type="submit" 
+          type="button"
+          onClick={handleNextClick}
           disabled={isSubmitting}
           className="bg-blue-600 hover:bg-blue-700"
         >

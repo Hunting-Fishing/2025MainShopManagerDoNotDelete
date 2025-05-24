@@ -60,22 +60,36 @@ export function ShopOnboardingWizard() {
   const progress = ((currentStep + 1) / steps.length) * 100;
   const CurrentStepComponent = steps[currentStep].component;
 
-  const handleNext = async () => {
-    console.log('handleNext called, current step:', currentStep);
+  const handleNext = () => {
+    console.log('ShopOnboardingWizard handleNext called');
+    console.log('Current step:', currentStep);
+    console.log('Total steps:', steps.length);
     
     // Mark current step as completed
-    setCompletedSteps(prev => new Set([...prev, currentStep]));
+    const newCompletedSteps = new Set([...completedSteps, currentStep]);
+    setCompletedSteps(newCompletedSteps);
+    console.log('Completed steps updated:', Array.from(newCompletedSteps));
     
     // Navigate to next step if not at the end
     if (currentStep < steps.length - 1) {
-      console.log('Moving to next step:', currentStep + 1);
-      setCurrentStep(currentStep + 1);
+      const nextStep = currentStep + 1;
+      console.log('Navigating to step:', nextStep);
+      setCurrentStep(nextStep);
+    } else {
+      console.log('Already at last step, not navigating further');
     }
   };
 
   const handlePrevious = () => {
+    console.log('ShopOnboardingWizard handlePrevious called');
+    console.log('Current step:', currentStep);
+    
     if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
+      const prevStep = currentStep - 1;
+      console.log('Navigating to previous step:', prevStep);
+      setCurrentStep(prevStep);
+    } else {
+      console.log('Already at first step, cannot go back');
     }
   };
 
@@ -85,12 +99,24 @@ export function ShopOnboardingWizard() {
                   : steps[currentStep].id === 'sample-data' ? 'sampleData'
                   : steps[currentStep].id;
     
-    console.log('Updating data for step:', stepKey, stepData);
-    setOnboardingData(prev => ({
-      ...prev,
-      [stepKey]: { ...prev[stepKey as keyof typeof prev], ...stepData }
-    }));
+    console.log('Updating onboarding data for step:', stepKey);
+    console.log('New step data:', stepData);
+    
+    setOnboardingData(prev => {
+      const updated = {
+        ...prev,
+        [stepKey]: { ...prev[stepKey as keyof typeof prev], ...stepData }
+      };
+      console.log('Updated onboarding data:', updated);
+      return updated;
+    });
   };
+
+  // Debug logging for step changes
+  React.useEffect(() => {
+    console.log('Current step changed to:', currentStep);
+    console.log('Current step info:', steps[currentStep]);
+  }, [currentStep]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
