@@ -5,14 +5,14 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Equipment } from "@/types/equipment";
+import type { EquipmentWithMaintenance } from "@/services/equipmentService";
 import { formatDate } from "@/utils/workOrders";
 import { AlertTriangle, Calendar, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { EmptyMaintenanceState } from "./EmptyMaintenanceState";
 
 interface UpcomingMaintenanceTableProps {
-  upcomingMaintenance: Array<{ equipment: Equipment; dueDate: string }>;
+  upcomingMaintenance: Array<{ equipment: EquipmentWithMaintenance; dueDate: string }>;
   filterStatus: "all" | "overdue" | "scheduled";
   setFilterStatus: (status: "all" | "overdue" | "scheduled") => void;
 }
@@ -90,7 +90,7 @@ export function UpcomingMaintenanceTable({
                       </Link>
                     </TableCell>
                     <TableCell>{item.equipment.customer}</TableCell>
-                    <TableCell>{item.equipment.maintenanceFrequency}</TableCell>
+                    <TableCell>{item.equipment.maintenance_frequency}</TableCell>
                     <TableCell>
                       <div className="flex items-center">
                         <Clock className="mr-1 h-3 w-3 text-muted-foreground" />

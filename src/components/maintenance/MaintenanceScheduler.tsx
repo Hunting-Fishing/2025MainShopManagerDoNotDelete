@@ -1,14 +1,15 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Equipment } from "@/types/equipment";
+import type { EquipmentWithMaintenance } from "@/services/equipmentService";
 import { CalendarDays, Plus, Settings } from "lucide-react";
 import { SchedulerEquipmentList } from "./scheduler/SchedulerEquipmentList";
 import { SchedulerSettingsPanel } from "./scheduler/SchedulerSettingsPanel";
 
 interface MaintenanceSchedulerProps {
-  equipmentList: Equipment[];
+  equipmentList: EquipmentWithMaintenance[];
 }
 
 export function MaintenanceScheduler({ equipmentList }: MaintenanceSchedulerProps) {
