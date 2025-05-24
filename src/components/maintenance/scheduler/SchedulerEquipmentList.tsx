@@ -1,20 +1,20 @@
 
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Equipment } from "@/types/equipment";
+import type { EquipmentWithMaintenance } from "@/services/equipmentService";
 import { formatDate } from "@/utils/workOrders";
 import { CalendarRange, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 
 interface SchedulerEquipmentListProps {
-  equipmentList: Equipment[];
+  equipmentList: EquipmentWithMaintenance[];
 }
 
 export function SchedulerEquipmentList({ equipmentList }: SchedulerEquipmentListProps) {
-  // Filter equipment that has maintenance schedules
+  // Filter equipment that has maintenance dates scheduled
   const equipmentWithSchedules = equipmentList.filter(
-    equip => equip.maintenanceSchedules && equip.maintenanceSchedules.length > 0
+    equip => equip.next_maintenance_date
   );
   
   if (equipmentWithSchedules.length === 0) {
@@ -44,7 +44,7 @@ export function SchedulerEquipmentList({ equipmentList }: SchedulerEquipmentList
       <TableBody>
         {equipmentWithSchedules.map(equipment => {
           const today = new Date();
-          const nextDate = new Date(equipment.nextMaintenanceDate);
+          const nextDate = new Date(equipment.next_maintenance_date);
           const isOverdue = nextDate < today;
           
           return (
@@ -58,10 +58,10 @@ export function SchedulerEquipmentList({ equipmentList }: SchedulerEquipmentList
               <TableCell>
                 <div className="flex items-center gap-1">
                   <Clock className="h-3 w-3 text-muted-foreground" />
-                  {formatDate(equipment.nextMaintenanceDate)}
+                  {formatDate(equipment.next_maintenance_date)}
                 </div>
               </TableCell>
-              <TableCell className="capitalize">{equipment.maintenanceFrequency}</TableCell>
+              <TableCell className="capitalize">{equipment.maintenance_frequency}</TableCell>
               <TableCell>
                 {isOverdue ? (
                   <Badge variant="destructive">Overdue</Badge>

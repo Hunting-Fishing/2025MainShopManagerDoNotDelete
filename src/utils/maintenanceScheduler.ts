@@ -1,56 +1,30 @@
 
-import { Equipment } from "@/types/equipment";
-import { supabase } from "@/lib/supabase";
-import { v4 as uuidv4 } from 'uuid';
+import type { EquipmentWithMaintenance } from "@/services/equipmentService";
+import { supabase } from "@/integrations/supabase/client";
 import { addMonths, addDays, addYears, parseISO, format } from 'date-fns';
 
 // Get upcoming maintenance schedules from equipment list
 export const getUpcomingMaintenanceSchedules = (
-  equipmentList: Equipment[],
+  equipmentList: EquipmentWithMaintenance[],
   days: number = 30
-): Array<{ equipment: Equipment; dueDate: string }> => {
+): Array<{ equipment: EquipmentWithMaintenance; dueDate: string }> => {
   const today = new Date();
   const futureDate = new Date();
   futureDate.setDate(today.getDate() + days);
   
-  const upcomingMaintenance: Array<{ equipment: Equipment; dueDate: string }> = [];
+  const upcomingMaintenance: Array<{ equipment: EquipmentWithMaintenance; dueDate: string }> = [];
   
-  // First add based on nextMaintenanceDate field
+  // Add based on nextMaintenanceDate field
   equipmentList.forEach(equipment => {
-    if (equipment.nextMaintenanceDate) {
-      const nextDate = new Date(equipment.nextMaintenanceDate);
+    if (equipment.next_maintenance_date) {
+      const nextDate = new Date(equipment.next_maintenance_date);
       
       if (nextDate >= today && nextDate <= futureDate) {
         upcomingMaintenance.push({
           equipment,
-          dueDate: equipment.nextMaintenanceDate
+          dueDate: equipment.next_maintenance_date
         });
       }
-    }
-  });
-  
-  // Then add from maintenance schedules
-  equipmentList.forEach(equipment => {
-    if (equipment.maintenanceSchedules && Array.isArray(equipment.maintenanceSchedules)) {
-      equipment.maintenanceSchedules.forEach(schedule => {
-        if (schedule.nextDate) {
-          const scheduleDate = new Date(schedule.nextDate);
-          
-          if (scheduleDate >= today && scheduleDate <= futureDate) {
-            // Check if we already have this equipment with this exact date
-            const exists = upcomingMaintenance.some(
-              item => item.equipment.id === equipment.id && item.dueDate === schedule.nextDate
-            );
-            
-            if (!exists) {
-              upcomingMaintenance.push({
-                equipment,
-                dueDate: schedule.nextDate
-              });
-            }
-          }
-        }
-      });
     }
   });
   
@@ -62,16 +36,15 @@ export const getUpcomingMaintenanceSchedules = (
 
 // Schedule maintenance work order
 export const scheduleMaintenanceWorkOrder = async (
-  equipment: Equipment,
-  schedule: any
+  equipment: EquipmentWithMaintenance,
+  description: string
 ): Promise<string> => {
   try {
     // Create a real work order in the database
     const { data, error } = await supabase
       .from('work_orders')
       .insert({
-        description: `Scheduled maintenance: ${schedule.description}`,
-        customer_id: null, // Would need to map equipment to customer
+        description: `Scheduled maintenance: ${description}`,
         status: 'pending',
         created_at: new Date().toISOString(),
       })

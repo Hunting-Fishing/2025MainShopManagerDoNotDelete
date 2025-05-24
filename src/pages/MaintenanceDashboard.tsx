@@ -1,8 +1,8 @@
 
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { fetchEquipment, getOverdueMaintenanceEquipment } from "@/data/equipmentData";
-import { Equipment } from "@/types/equipment";
+import { fetchEquipment, getOverdueMaintenanceEquipment } from "@/services/equipmentService";
+import type { EquipmentWithMaintenance } from "@/services/equipmentService";
 import { getUpcomingMaintenanceSchedules } from "@/utils/maintenanceScheduler";
 import { 
   MaintenanceHeader, 
@@ -16,8 +16,8 @@ import {
 export default function MaintenanceDashboard() {
   const [timeframe, setTimeframe] = useState<"upcoming" | "all">("upcoming");
   const [filterStatus, setFilterStatus] = useState<"all" | "overdue" | "scheduled">("all");
-  const [equipment, setEquipment] = useState<Equipment[]>([]);
-  const [overdueEquipment, setOverdueEquipment] = useState<Equipment[]>([]);
+  const [equipment, setEquipment] = useState<EquipmentWithMaintenance[]>([]);
+  const [overdueEquipment, setOverdueEquipment] = useState<EquipmentWithMaintenance[]>([]);
   const [upcomingMaintenance, setUpcomingMaintenance] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   
@@ -25,8 +25,11 @@ export default function MaintenanceDashboard() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const equipmentData = await fetchEquipment();
-        const overdueData = await getOverdueMaintenanceEquipment();
+        setIsLoading(true);
+        const [equipmentData, overdueData] = await Promise.all([
+          fetchEquipment(),
+          getOverdueMaintenanceEquipment()
+        ]);
         
         setEquipment(equipmentData);
         setOverdueEquipment(overdueData);
@@ -54,8 +57,7 @@ export default function MaintenanceDashboard() {
 
   // Calculate maintenance statistics
   const today = new Date();
-  const totalScheduled = equipment.reduce((count, item) => 
-    count + (item.maintenanceSchedules?.length || 0), 0);
+  const totalScheduled = equipment.filter(item => item.next_maintenance_date).length;
   
   const totalOverdue = overdueEquipment.length;
   
@@ -63,8 +65,8 @@ export default function MaintenanceDashboard() {
   
   // Calculate completed count from equipment maintenance history
   const completedCount = equipment.reduce((count, item) => {
-    if (!item.maintenanceHistory) return count;
-    return count + item.maintenanceHistory.filter(record => 
+    if (!item.maintenance_history) return count;
+    return count + item.maintenance_history.filter(record => 
       new Date(record.date).getTime() > today.getTime() - (30 * 24 * 60 * 60 * 1000)
     ).length;
   }, 0);
