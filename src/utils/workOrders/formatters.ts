@@ -1,121 +1,80 @@
 
-/**
- * Format a date string to a localized format
- */
+import { WorkOrder } from "@/types/workOrder";
+
+// Format a date string
+export const formatDate = (dateString: string): string => {
+  if (!dateString) return 'N/A';
+  
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString();
+  } catch (error) {
+    console.error("Error formatting date:", error);
+    return 'Invalid Date';
+  }
+};
+
+// Format a time string
+export const formatTime = (timeString: string): string => {
+  if (!timeString) return 'N/A';
+  
+  try {
+    const date = new Date(timeString);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } catch (error) {
+    console.error("Error formatting time:", error);
+    return 'Invalid Time';
+  }
+};
+
+// Format time in hours and minutes
 export const formatTimeInHoursAndMinutes = (minutes: number): string => {
+  if (!minutes) return '0h 0m';
+  
   const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
+  const remainingMinutes = minutes % 60;
   
   if (hours === 0) {
-    return `${mins} min`;
-  } else if (mins === 0) {
-    return `${hours} hr`;
+    return `${remainingMinutes}m`;
+  } else if (remainingMinutes === 0) {
+    return `${hours}h`;
   } else {
-    return `${hours} hr ${mins} min`;
+    return `${hours}h ${remainingMinutes}m`;
   }
 };
 
-/**
- * Format a date string to a localized format
- */
-export const formatDate = (date: string | undefined): string => {
-  if (!date) return '';
-  return new Date(date).toLocaleDateString();
+// Calculate total time from time entries
+export const calculateTotalTime = (entries: any[]): number => {
+  return entries.reduce((total, entry) => total + entry.duration, 0);
 };
 
-/**
- * Format a time string (for display purposes)
- */
-export const formatTime = (time: string | undefined): string => {
-  if (!time) return '';
-  const timeDate = time ? new Date(time) : null;
-  return timeDate ? timeDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+// Calculate billable time from time entries
+export const calculateBillableTime = (entries: any[]): number => {
+  return entries
+    .filter(entry => entry.billable)
+    .reduce((total, entry) => total + entry.duration, 0);
 };
 
-/**
- * Normalize a work order object to ensure consistent property access
- * This handles both camelCase and snake_case properties
- */
-export const normalizeWorkOrder = (workOrder: any): any => {
-  const normalized = { ...workOrder };
-  
-  // Ensure both camelCase and snake_case versions of keys exist
-  if (workOrder.customerId && !workOrder.customer_id) {
-    normalized.customer_id = workOrder.customerId;
-  } else if (workOrder.customer_id && !workOrder.customerId) {
-    normalized.customerId = workOrder.customer_id;
-  }
-  
-  if (workOrder.technicianId && !workOrder.technician_id) {
-    normalized.technician_id = workOrder.technicianId;
-  } else if (workOrder.technician_id && !workOrder.technicianId) {
-    normalized.technicianId = workOrder.technician_id;
-  }
-  
-  if (workOrder.vehicleId && !workOrder.vehicle_id) {
-    normalized.vehicle_id = workOrder.vehicleId;
-  } else if (workOrder.vehicle_id && !workOrder.vehicleId) {
-    normalized.vehicleId = workOrder.vehicle_id;
-  }
-  
-  if (workOrder.createdAt && !workOrder.created_at) {
-    normalized.created_at = workOrder.createdAt;
-  } else if (workOrder.created_at && !workOrder.createdAt) {
-    normalized.createdAt = workOrder.created_at;
-  }
-  
-  if (workOrder.updatedAt && !workOrder.updated_at) {
-    normalized.updated_at = workOrder.updatedAt;
-  } else if (workOrder.updated_at && !workOrder.updatedAt) {
-    normalized.updatedAt = workOrder.updated_at;
-  }
-  
-  if (workOrder.lastUpdatedAt && !workOrder.updated_at) {
-    normalized.updated_at = workOrder.lastUpdatedAt;
-  } else if (workOrder.updated_at && !workOrder.lastUpdatedAt) {
-    normalized.lastUpdatedAt = workOrder.updated_at;
-  }
-  
-  // Handle vehicle make/model properties
-  if (workOrder.vehicleMake && !workOrder.vehicle_make) {
-    normalized.vehicle_make = workOrder.vehicleMake;
-  } else if (workOrder.vehicle_make && !workOrder.vehicleMake) {
-    normalized.vehicleMake = workOrder.vehicle_make;
-  }
-  
-  if (workOrder.vehicleModel && !workOrder.vehicle_model) {
-    normalized.vehicle_model = workOrder.vehicleModel;
-  } else if (workOrder.vehicle_model && !workOrder.vehicleModel) {
-    normalized.vehicleModel = workOrder.vehicle_model;
-  }
-  
-  // Handle financial info
-  if (workOrder.totalCost !== undefined && workOrder.total_cost === undefined) {
-    normalized.total_cost = workOrder.totalCost;
-  } else if (workOrder.total_cost !== undefined && workOrder.totalCost === undefined) {
-    normalized.totalCost = workOrder.total_cost;
-  }
-  
-  // Handle service info
-  if (workOrder.serviceType && !workOrder.service_type) {
-    normalized.service_type = workOrder.serviceType;
-  } else if (workOrder.service_type && !workOrder.serviceType) {
-    normalized.serviceType = workOrder.service_type;
-  }
-  
-  if (workOrder.serviceCategory && !workOrder.service_category) {
-    normalized.service_category = workOrder.serviceCategory;
-  } else if (workOrder.service_category && !workOrder.serviceCategory) {
-    normalized.serviceCategory = workOrder.service_category;
-  }
-  
-  if (workOrder.estimatedHours !== undefined && workOrder.estimated_hours === undefined) {
-    normalized.estimated_hours = workOrder.estimatedHours;
-  } else if (workOrder.estimated_hours !== undefined && workOrder.estimatedHours === undefined) {
-    normalized.estimatedHours = workOrder.estimated_hours;
-  }
-  
-  return normalized;
+// Normalize a work order by ensuring all required fields are present
+export const normalizeWorkOrder = (order: any): WorkOrder => {
+  return {
+    id: order.id || '',
+    customer: order.customer || '',
+    customer_id: order.customer_id,
+    vehicle_id: order.vehicle_id,
+    description: order.description || '',
+    status: order.status || 'pending',
+    priority: order.priority || 'medium',
+    date: order.date || order.created_at || new Date().toISOString(),
+    dueDate: order.due_date,
+    technician: order.technician || '',
+    technician_id: order.technician_id,
+    location: order.location || '',
+    notes: order.notes || '',
+    totalBillableTime: order.total_billable_time || 0,
+    createdAt: order.created_at || new Date().toISOString(),
+    updatedAt: order.updated_at,
+    timeEntries: [],
+    inventoryItems: []
+  };
 };
-
-// Removed the duplicate export here that was causing the issue

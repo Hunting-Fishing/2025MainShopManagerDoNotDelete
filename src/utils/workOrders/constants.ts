@@ -1,9 +1,5 @@
 
-// Re-export formatters explicitly to avoid missing modules
-import { formatDate, formatTime, formatTimeInHoursAndMinutes, normalizeWorkOrder } from './formatters';
-export { formatDate, formatTime, formatTimeInHoursAndMinutes, normalizeWorkOrder };
-
-// Define standard status and priority maps as the single source of truth
+// Single source of truth for work order status and priority mappings
 export const statusMap = {
   "pending": "Pending",
   "in-progress": "In Progress",
@@ -12,7 +8,7 @@ export const statusMap = {
   "cancelled": "Cancelled"
 };
 
-// Also export with legacy name for backward compatibility
+// Legacy export for backward compatibility
 export const WorkOrderStatus = statusMap;
 
 export const priorityMap = {
