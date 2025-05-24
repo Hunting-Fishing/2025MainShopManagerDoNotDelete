@@ -2,7 +2,7 @@
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Equipment } from "@/types/equipment";
-import { formatDate } from "@/utils/workOrderUtils";
+import { formatDate } from "@/utils/workOrders";
 import { CalendarRange, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";

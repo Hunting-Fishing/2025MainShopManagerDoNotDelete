@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { TimeEntry } from "@/types/workOrder";
-import { calculateTotalTime, calculateBillableTime, formatTimeInHoursAndMinutes } from "@/utils/workOrderUtils";
+import { calculateTotalTime, calculateBillableTime, formatTimeInHoursAndMinutes } from "@/utils/workOrders";
 import { TimeEntryTable } from "./TimeEntryTable";
 import { TimeEntryDialog } from "./TimeEntryDialog";
 

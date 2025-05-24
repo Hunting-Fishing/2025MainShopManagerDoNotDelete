@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Equipment } from "@/types/equipment";
 import { Link } from "react-router-dom";
 import { CalendarClock, Clock, AlertTriangle } from "lucide-react";
-import { formatDate } from "@/utils/workOrderUtils";
+import { formatDate } from "@/utils/workOrders";
 import { maintenanceFrequencyMap } from "@/data/equipmentData";
 
 interface MaintenanceDueCardProps {

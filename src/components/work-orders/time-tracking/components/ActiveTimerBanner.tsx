@@ -1,9 +1,8 @@
-
 import React from "react";
 import { Clock, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TimeEntry } from "@/types/workOrder";
-import { formatTimeInHoursAndMinutes } from "@/utils/workOrderUtils";
+import { formatTimeInHoursAndMinutes } from "@/utils/workOrders";
 
 interface ActiveTimerBannerProps {
   timer: TimeEntry;

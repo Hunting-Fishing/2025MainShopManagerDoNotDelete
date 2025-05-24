@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Equipment } from "@/types/equipment";
-import { formatDate } from "@/utils/workOrderUtils";
+import { formatDate } from "@/utils/workOrders";
 import { AlertTriangle, Calendar, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { EmptyMaintenanceState } from "./EmptyMaintenanceState";

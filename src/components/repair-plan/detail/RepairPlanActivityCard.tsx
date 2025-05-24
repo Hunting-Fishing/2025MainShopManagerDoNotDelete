@@ -1,8 +1,7 @@
-
 import React from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { RepairPlan } from "@/types/repairPlan";
-import { formatDate } from "@/utils/workOrderUtils";
+import { formatDate } from "@/utils/workOrders";
 
 interface RepairPlanActivityCardProps {
   repairPlan: RepairPlan;

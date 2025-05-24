@@ -4,7 +4,7 @@ import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, Wrench } from "lucide-react";
 import { RepairPlan } from "@/types/repairPlan";
-import { formatDate } from "@/utils/workOrderUtils";
+import { formatDate } from "@/utils/workOrders";
 import { SendSmsButton } from "@/components/calls/SendSmsButton";
 import { VoiceCallButton } from "@/components/calls/VoiceCallButton";
 

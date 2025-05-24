@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash } from "lucide-react";
 import { TimeEntry } from "@/types/workOrder";
-import { formatTimeInHoursAndMinutes } from "@/utils/workOrderUtils";
+import { formatTimeInHoursAndMinutes } from "@/utils/workOrders";
 import { format } from "date-fns";
 
 interface TimeEntryTableProps {
