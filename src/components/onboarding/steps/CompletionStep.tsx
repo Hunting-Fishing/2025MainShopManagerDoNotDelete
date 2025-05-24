@@ -21,6 +21,7 @@ export function CompletionStep({ onNext, onPrevious, data, updateData }: StepPro
       try {
         setIsLoading(true);
         const result = await companyService.getShopInfo();
+        console.log('Fetched shop data:', result);
         setShopData(result);
       } catch (error) {
         console.error('Error fetching shop info:', error);
@@ -57,6 +58,8 @@ export function CompletionStep({ onNext, onPrevious, data, updateData }: StepPro
     industry: data?.industry || shopData?.companyInfo?.industry || 'Not provided',
     logoUrl: data?.logoUrl || shopData?.companyInfo?.logoUrl || ''
   };
+
+  console.log('Display data:', displayData);
 
   return (
     <div className="space-y-6">
