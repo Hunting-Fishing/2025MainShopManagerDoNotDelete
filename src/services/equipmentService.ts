@@ -1,31 +1,10 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import type { Equipment, EquipmentStatus } from "@/types/equipment";
 
 // Define the interface that matches the actual database structure
-export interface EquipmentWithMaintenance {
-  id: string;
-  name: string;
-  model: string | null;
-  serial_number: string | null;
-  manufacturer: string | null;
-  category: string;
-  purchase_date: string | null;
-  install_date: string | null;
-  customer: string;
-  location: string | null;
-  status: string;
-  next_maintenance_date: string | null;
-  maintenance_frequency: string;
-  last_maintenance_date: string | null;
-  warranty_expiry_date: string | null;
-  warranty_status: string | null;
-  notes: string | null;
+export interface EquipmentWithMaintenance extends Equipment {
   shop_id: string | null;
-  created_at: string;
-  updated_at: string;
-  work_order_history: any[];
-  maintenance_history: any[];
-  maintenance_schedules: any[];
 }
 
 export const fetchEquipment = async (): Promise<EquipmentWithMaintenance[]> => {
@@ -43,6 +22,7 @@ export const fetchEquipment = async (): Promise<EquipmentWithMaintenance[]> => {
     // Transform the data to match our interface
     return (data || []).map(item => ({
       ...item,
+      status: item.status as EquipmentStatus,
       shop_id: item.shop_id || null,
       work_order_history: Array.isArray(item.work_order_history) ? item.work_order_history : [],
       maintenance_history: Array.isArray(item.maintenance_history) ? item.maintenance_history : [],
@@ -71,6 +51,7 @@ export const getOverdueMaintenanceEquipment = async (): Promise<EquipmentWithMai
 
     return (data || []).map(item => ({
       ...item,
+      status: item.status as EquipmentStatus,
       shop_id: item.shop_id || null,
       work_order_history: Array.isArray(item.work_order_history) ? item.work_order_history : [],
       maintenance_history: Array.isArray(item.maintenance_history) ? item.maintenance_history : [],
@@ -92,7 +73,7 @@ export interface CreateEquipmentData {
   install_date?: string;
   customer: string;
   location?: string;
-  status?: string;
+  status?: EquipmentStatus;
   next_maintenance_date?: string;
   maintenance_frequency?: string;
   last_maintenance_date?: string;
@@ -118,7 +99,6 @@ export const createEquipment = async (equipmentData: CreateEquipmentData): Promi
       .from('equipment')
       .insert({
         ...equipmentData,
-        shop_id: profile.shop_id,
         status: equipmentData.status || 'operational',
         maintenance_frequency: equipmentData.maintenance_frequency || 'quarterly',
       })
@@ -132,6 +112,7 @@ export const createEquipment = async (equipmentData: CreateEquipmentData): Promi
 
     return {
       ...data,
+      status: data.status as EquipmentStatus,
       shop_id: data.shop_id || null,
       work_order_history: [],
       maintenance_history: [],
@@ -159,6 +140,7 @@ export const updateEquipment = async (id: string, updates: Partial<CreateEquipme
 
     return {
       ...data,
+      status: data.status as EquipmentStatus,
       shop_id: data.shop_id || null,
       work_order_history: Array.isArray(data.work_order_history) ? data.work_order_history : [],
       maintenance_history: Array.isArray(data.maintenance_history) ? data.maintenance_history : [],

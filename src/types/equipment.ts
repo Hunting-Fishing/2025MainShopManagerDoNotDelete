@@ -5,6 +5,9 @@ export type MaintenanceFrequency = "monthly" | "quarterly" | "bi-annually" | "an
 // Define types for equipment warranty status
 export type WarrantyStatus = "active" | "expired" | "not-applicable";
 
+// Define equipment status type to match database
+export type EquipmentStatus = "operational" | "maintenance-required" | "out-of-service" | "decommissioned";
+
 // Define maintenance history record interface
 export interface MaintenanceRecord {
   id: string;
@@ -41,14 +44,14 @@ export interface Equipment {
   install_date: string | null;
   customer: string;
   location: string | null;
-  status: "operational" | "maintenance-required" | "out-of-service" | "decommissioned";
+  status: EquipmentStatus;
   next_maintenance_date: string | null;
   maintenance_frequency: string;
   last_maintenance_date: string | null;
   warranty_expiry_date: string | null;
   warranty_status: string | null;
   notes?: string;
-  shop_id?: string;
+  shop_id?: string | null;
   created_at: string;
   updated_at: string;
   work_order_history?: any[];

@@ -5,6 +5,7 @@ import { WarrantyStatusBadge } from "./WarrantyStatusBadge";
 import { CogIcon, Loader2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { EquipmentWithMaintenance } from "@/services/equipmentService";
+import type { EquipmentStatus } from "@/types/equipment";
 
 interface EquipmentTableProps {
   equipment: EquipmentWithMaintenance[];
@@ -64,7 +65,7 @@ export function EquipmentTable({ equipment, loading = false }: EquipmentTablePro
                   {item.category}
                 </TableCell>
                 <TableCell>
-                  <EquipmentStatusBadge status={item.status} />
+                  <EquipmentStatusBadge status={item.status as EquipmentStatus} />
                 </TableCell>
                 <TableCell className="text-slate-700">
                   {item.next_maintenance_date || 'Not scheduled'}

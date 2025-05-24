@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { EquipmentDetailsHeader } from "@/components/equipment-details/EquipmentDetailsHeader";
@@ -46,29 +47,13 @@ export default function EquipmentDetails() {
     );
   }
 
-  // Transform for legacy components that expect camelCase
-  const transformedEquipment = {
-    ...equipment,
-    serialNumber: equipment.serial_number,
-    purchaseDate: equipment.purchase_date,
-    installDate: equipment.install_date,
-    nextMaintenanceDate: equipment.next_maintenance_date,
-    lastMaintenanceDate: equipment.last_maintenance_date,
-    warrantyExpiryDate: equipment.warranty_expiry_date,
-    warrantyStatus: equipment.warranty_status,
-    maintenanceFrequency: equipment.maintenance_frequency,
-    workOrderHistory: equipment.work_order_history || [],
-    maintenanceHistory: equipment.maintenance_history || [],
-    maintenanceSchedules: equipment.maintenance_schedules || []
-  };
-
   const isMaintenanceOverdue = equipment.next_maintenance_date && 
     new Date(equipment.next_maintenance_date) < new Date();
 
   return (
     <div className="container mx-auto py-8">
       <EquipmentDetailsHeader 
-        equipmentItem={transformedEquipment}
+        equipmentItem={equipment}
         isMaintenanceOverdue={!!isMaintenanceOverdue}
       />
       

@@ -1,161 +1,225 @@
-import React, { useState, useEffect } from 'react';
-import { ResponsiveContainer } from '@/components/ui/responsive-container';
-import { ResponsiveStack } from '@/components/ui/responsive-stack';
-import { ResponsiveGrid } from '@/components/ui/responsive-grid';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Plus, Calendar, Wrench, AlertTriangle, CheckCircle } from 'lucide-react';
-import { fetchEquipment, getMaintenanceDueEquipment, getOverdueMaintenanceEquipment } from '@/data/equipmentData';
-import { Equipment } from '@/types/equipment';
+
+import { useState, useEffect } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { CalendarIcon, ClockIcon, AlertTriangleIcon } from "lucide-react";
+import { fetchEquipment, getOverdueMaintenanceEquipment } from "@/services/equipmentService";
+import type { EquipmentWithMaintenance } from "@/services/equipmentService";
 
 export default function Maintenance() {
-  const [maintenanceDueEquipment, setMaintenanceDueEquipment] = useState<Equipment[]>([]);
-  const [overdueEquipment, setOverdueEquipment] = useState<Equipment[]>([]);
-  const [completedMaintenance, setCompletedMaintenance] = useState<Equipment[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [equipment, setEquipment] = useState<EquipmentWithMaintenance[]>([]);
+  const [overdueEquipment, setOverdueEquipment] = useState<EquipmentWithMaintenance[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Load equipment data
   useEffect(() => {
-    const loadEquipmentData = async () => {
+    const loadData = async () => {
       try {
-        const equipment = await fetchEquipment();
-        const maintenanceDue = await getMaintenanceDueEquipment();
-        const overdue = await getOverdueMaintenanceEquipment();
-
-        // Filter completed maintenance in the last 30 days
-        const completed = equipment.filter(item => 
-          item.lastMaintenanceDate && new Date(item.lastMaintenanceDate) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-        );
-
-        setMaintenanceDueEquipment(maintenanceDue);
-        setOverdueEquipment(overdue);
-        setCompletedMaintenance(completed);
+        const [equipmentData, overdueData] = await Promise.all([
+          fetchEquipment(),
+          getOverdueMaintenanceEquipment()
+        ]);
+        setEquipment(equipmentData);
+        setOverdueEquipment(overdueData);
       } catch (error) {
-        console.error("Error loading equipment data:", error);
+        console.error("Error loading maintenance data:", error);
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
 
-    loadEquipmentData();
+    loadData();
   }, []);
 
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-slate-500">Loading maintenance data...</div>
+      <div className="container mx-auto py-8">
+        <div className="text-center">Loading maintenance data...</div>
       </div>
     );
   }
 
+  // Calculate upcoming maintenance (next 30 days)
+  const today = new Date();
+  const thirtyDaysFromNow = new Date();
+  thirtyDaysFromNow.setDate(today.getDate() + 30);
+
+  const upcomingMaintenance = equipment.filter(item => {
+    if (!item.next_maintenance_date) return false;
+    const maintenanceDate = new Date(item.next_maintenance_date);
+    return maintenanceDate >= today && maintenanceDate <= thirtyDaysFromNow;
+  });
+
+  // Calculate completed maintenance (last 30 days)
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(today.getDate() - 30);
+
+  const completedMaintenance = equipment.filter(item => {
+    if (!item.last_maintenance_date) return false;
+    const lastMaintenanceDate = new Date(item.last_maintenance_date);
+    return lastMaintenanceDate >= thirtyDaysAgo && lastMaintenanceDate <= today;
+  });
+
   return (
-    <ResponsiveContainer className="space-y-6">
-      <ResponsiveStack direction="horizontal" justify="between" align="center">
+    <div className="container mx-auto py-8">
+      <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-2xl font-bold mb-1">Maintenance Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Maintenance Dashboard</h1>
           <p className="text-muted-foreground">
-            Track and manage equipment maintenance schedules
+            Monitor and manage equipment maintenance schedules
           </p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Schedule Maintenance
-        </Button>
-      </ResponsiveStack>
+      </div>
 
-      <ResponsiveGrid
-        cols={{ default: 1, md: 3 }}
-        gap="md"
-      >
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center">
-              <Calendar className="h-5 w-5 mr-2 text-blue-500" />
-              <span>Upcoming</span>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Overdue Maintenance
             </CardTitle>
-            <CardDescription>Due within 30 days</CardDescription>
+            <AlertTriangleIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold mb-4">{maintenanceDueEquipment.length}</div>
-            <div className="space-y-3">
-              {maintenanceDueEquipment.slice(0, 3).map(item => (
-                <div key={item.id} className="flex items-center justify-between text-sm border-b pb-2">
-                  <span className="font-medium">{item.name}</span>
-                  <span className="text-muted-foreground">{item.nextMaintenanceDate}</span>
-                </div>
-              ))}
-              {maintenanceDueEquipment.length > 3 && (
-                <Button variant="link" className="px-0">View all {maintenanceDueEquipment.length}</Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center">
-              <AlertTriangle className="h-5 w-5 mr-2 text-red-500" />
-              <span>Overdue</span>
-            </CardTitle>
-            <CardDescription>Past scheduled maintenance</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold mb-4 text-red-500">{overdueEquipment.length}</div>
-            <div className="space-y-3">
-              {overdueEquipment.slice(0, 3).map(item => (
-                <div key={item.id} className="flex items-center justify-between text-sm border-b pb-2">
-                  <span className="font-medium">{item.name}</span>
-                  <span className="text-red-500">{item.nextMaintenanceDate}</span>
-                </div>
-              ))}
-              {overdueEquipment.length > 3 && (
-                <Button variant="link" className="px-0">View all {overdueEquipment.length}</Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center">
-              <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
-              <span>Completed</span>
-            </CardTitle>
-            <CardDescription>Last 30 days</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold mb-4">{completedMaintenance.length}</div>
-            <div className="space-y-3">
-              {completedMaintenance.slice(0, 3).map(item => (
-                <div key={item.id} className="flex items-center justify-between text-sm border-b pb-2">
-                  <span className="font-medium">{item.name}</span>
-                  <span className="text-muted-foreground">{item.lastMaintenanceDate}</span>
-                </div>
-              ))}
-              {completedMaintenance.length > 3 && (
-                <Button variant="link" className="px-0">View all {completedMaintenance.length}</Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </ResponsiveGrid>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Maintenance Schedule</CardTitle>
-          <CardDescription>Upcoming maintenance tasks for all equipment</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <Wrench className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
-            <h3 className="text-lg font-medium mb-1">Connect to your database</h3>
-            <p className="text-sm text-muted-foreground max-w-md mx-auto mb-4">
-              This feature requires connecting to your Supabase database to track and manage maintenance schedules.
+            <div className="text-2xl font-bold text-red-600">{overdueEquipment.length}</div>
+            <p className="text-xs text-muted-foreground">
+              Equipment requiring immediate attention
             </p>
-            <Button variant="outline">Set Up Database Connection</Button>
-          </div>
-        </CardContent>
-      </Card>
-    </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Upcoming (30 days)
+            </CardTitle>
+            <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-yellow-600">{upcomingMaintenance.length}</div>
+            <p className="text-xs text-muted-foreground">
+              Scheduled in the next 30 days
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Completed (30 days)
+            </CardTitle>
+            <ClockIcon className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{completedMaintenance.length}</div>
+            <p className="text-xs text-muted-foreground">
+              Completed in the last 30 days
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Maintenance Lists */}
+      <Tabs defaultValue="overdue" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="overdue">Overdue</TabsTrigger>
+          <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+          <TabsTrigger value="completed">Recently Completed</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overdue" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Overdue Maintenance</CardTitle>
+              <CardDescription>
+                Equipment that requires immediate maintenance attention
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {overdueEquipment.length === 0 ? (
+                <p className="text-muted-foreground">No overdue maintenance items.</p>
+              ) : (
+                <div className="space-y-4">
+                  {overdueEquipment.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div>
+                        <h3 className="font-medium">{item.name}</h3>
+                        <p className="text-sm text-muted-foreground">{item.customer}</p>
+                        <p className="text-sm text-red-600">
+                          Due: {item.next_maintenance_date}
+                        </p>
+                      </div>
+                      <Badge variant="destructive">Overdue</Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="upcoming" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Upcoming Maintenance</CardTitle>
+              <CardDescription>
+                Equipment scheduled for maintenance in the next 30 days
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {upcomingMaintenance.length === 0 ? (
+                <p className="text-muted-foreground">No upcoming maintenance scheduled.</p>
+              ) : (
+                <div className="space-y-4">
+                  {upcomingMaintenance.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div>
+                        <h3 className="font-medium">{item.name}</h3>
+                        <p className="text-sm text-muted-foreground">{item.customer}</p>
+                        <p className="text-sm text-blue-600">
+                          Scheduled: {item.next_maintenance_date}
+                        </p>
+                      </div>
+                      <Badge variant="secondary">Scheduled</Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="completed" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Recently Completed</CardTitle>
+              <CardDescription>
+                Maintenance completed in the last 30 days
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {completedMaintenance.length === 0 ? (
+                <p className="text-muted-foreground">No recently completed maintenance.</p>
+              ) : (
+                <div className="space-y-4">
+                  {completedMaintenance.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div>
+                        <h3 className="font-medium">{item.name}</h3>
+                        <p className="text-sm text-muted-foreground">{item.customer}</p>
+                        <p className="text-sm text-green-600">
+                          Completed: {item.last_maintenance_date}
+                        </p>
+                      </div>
+                      <Badge variant="outline">Completed</Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }
