@@ -8,9 +8,9 @@ export interface Customer {
   shop_id: string;
   first_name: string;
   last_name: string;
-  email?: string;
-  phone?: string;
-  address?: string;
+  email: string;
+  phone: string;
+  address: string;
   city?: string;
   state?: string;
   postal_code?: string;
@@ -62,6 +62,9 @@ export function useCustomers() {
       // Transform data to match expected interface
       const transformedData = (data || []).map(customer => ({
         ...customer,
+        email: customer.email || '',
+        phone: customer.phone || '',
+        address: customer.address || '',
         name: `${customer.first_name} ${customer.last_name}`,
         status: 'active',
         dateAdded: customer.created_at,

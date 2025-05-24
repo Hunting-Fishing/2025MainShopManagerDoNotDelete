@@ -36,7 +36,7 @@ export interface InvoiceItemsTableProps {
 }
 
 export interface InvoiceRightColumnProps {
-  created_by: string;
+  createdBy: string;
   assignedStaff: any[];
   staffMembers: any[];
   subtotal: number;
@@ -48,6 +48,7 @@ export interface InvoiceRightColumnProps {
   onCreatedByChange: (value: any) => void;
   onAddStaffMember: (staff: any) => void;
   onRemoveStaffMember: (staffId: string) => void;
+  onTaxRateChange: (value: number) => void;
 }
 
 export interface InvoiceLeftColumnProps {
