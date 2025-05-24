@@ -1,178 +1,169 @@
 
-import { Helmet } from "react-helmet-async";
-import { Link } from "react-router-dom";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { useAuthUser } from "@/hooks/useAuthUser";
-import { Loader2, User, Settings, FileText, Users } from "lucide-react";
+import React from 'react';
+import { Link, Navigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAuthUser } from '@/hooks/useAuthUser';
+import { Building2, Users, FileText, Settings, Calendar, MessageSquare } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
-export default function Index() {
-  const { isAuthenticated, isLoading, userName } = useAuthUser();
+const Index = () => {
+  const { isAuthenticated, isLoading } = useAuthUser();
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="space-y-4">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-32 w-96" />
+        </div>
       </div>
     );
   }
 
-  if (!isAuthenticated) {
-    return (
-      <>
-        <Helmet>
-          <title>Welcome | Easy Shop Manager</title>
-        </Helmet>
-        
-        <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-blue-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div className="text-center mb-12">
-              <h1 className="text-4xl font-bold text-gray-900 mb-4">
-                Welcome to Easy Shop Manager
-              </h1>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                Your complete automotive service shop management solution. 
-                Streamline operations, manage customers, track work orders, and grow your business.
-              </p>
+  // If user is authenticated, redirect to dashboard
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center space-x-2">
+              <Building2 className="h-8 w-8 text-blue-600" />
+              <h1 className="text-2xl font-bold text-gray-900">Easy Shop Manager</h1>
             </div>
-
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 mb-12">
-              <Card className="shadow-lg border-blue-100 hover:shadow-xl transition-shadow">
-                <CardContent className="pt-6">
-                  <div className="flex flex-col items-center text-center p-6">
-                    <div className="p-3 rounded-full bg-blue-100 mb-4">
-                      <User className="h-8 w-8 text-blue-700" />
-                    </div>
-                    <h3 className="text-xl font-bold mb-2">Customer Management</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Track customer information, vehicles, service history, and communications all in one place.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="shadow-lg border-green-100 hover:shadow-xl transition-shadow">
-                <CardContent className="pt-6">
-                  <div className="flex flex-col items-center text-center p-6">
-                    <div className="p-3 rounded-full bg-green-100 mb-4">
-                      <Settings className="h-8 w-8 text-green-700" />
-                    </div>
-                    <h3 className="text-xl font-bold mb-2">Work Order Tracking</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Create, manage, and track work orders from start to finish with real-time updates.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="shadow-lg border-purple-100 hover:shadow-xl transition-shadow">
-                <CardContent className="pt-6">
-                  <div className="flex flex-col items-center text-center p-6">
-                    <div className="p-3 rounded-full bg-purple-100 mb-4">
-                      <FileText className="h-8 w-8 text-purple-700" />
-                    </div>
-                    <h3 className="text-xl font-bold mb-2">Invoicing & Billing</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Generate professional invoices, track payments, and manage your shop's finances.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="text-center">
-              <div className="space-y-4">
-                <h2 className="text-2xl font-bold text-gray-900">Ready to get started?</h2>
-                <p className="text-gray-600">Join thousands of shop owners who trust Easy Shop Manager</p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Link to="/login">
-                    <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
-                      Sign In
-                    </Button>
-                  </Link>
-                  <Link to="/login">
-                    <Button variant="outline" size="lg">
-                      Create Account
-                    </Button>
-                  </Link>
-                </div>
-              </div>
+            <div className="flex items-center space-x-4">
+              <Link to="/login">
+                <Button variant="outline">Sign In</Button>
+              </Link>
+              <Link to="/login">
+                <Button>Get Started</Button>
+              </Link>
             </div>
           </div>
         </div>
-      </>
-    );
-  }
+      </header>
 
-  // Authenticated user view
-  return (
-    <>
-      <Helmet>
-        <title>Dashboard | Easy Shop Manager</title>
-      </Helmet>
-      
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">
-              Welcome back, {userName || 'User'}!
-            </h1>
-            <p className="text-gray-600 mt-2">
-              Here's what's happening with your shop today.
+      {/* Hero Section */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            Streamline Your Automotive Shop Operations
+          </h2>
+          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+            Manage customers, work orders, inventory, and team members all in one powerful platform designed specifically for automotive shops.
+          </p>
+          <div className="flex justify-center space-x-4">
+            <Link to="/login">
+              <Button size="lg" className="px-8 py-3">
+                Start Free Trial
+              </Button>
+            </Link>
+            <Button variant="outline" size="lg" className="px-8 py-3">
+              Watch Demo
+            </Button>
+          </div>
+        </div>
+
+        {/* Features Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+          <Card className="border-0 shadow-lg">
+            <CardHeader>
+              <Users className="h-12 w-12 text-blue-600 mb-4" />
+              <CardTitle>Customer Management</CardTitle>
+              <CardDescription>
+                Keep detailed customer records, vehicle information, and service history in one place.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="border-0 shadow-lg">
+            <CardHeader>
+              <FileText className="h-12 w-12 text-green-600 mb-4" />
+              <CardTitle>Work Orders & Invoicing</CardTitle>
+              <CardDescription>
+                Create professional work orders and invoices with automated calculations and templates.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="border-0 shadow-lg">
+            <CardHeader>
+              <Building2 className="h-12 w-12 text-purple-600 mb-4" />
+              <CardTitle>Inventory Control</CardTitle>
+              <CardDescription>
+                Track parts and supplies with real-time inventory levels and automated reordering.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="border-0 shadow-lg">
+            <CardHeader>
+              <Calendar className="h-12 w-12 text-orange-600 mb-4" />
+              <CardTitle>Scheduling & Calendar</CardTitle>
+              <CardDescription>
+                Manage appointments, technician schedules, and shop capacity efficiently.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="border-0 shadow-lg">
+            <CardHeader>
+              <MessageSquare className="h-12 w-12 text-red-600 mb-4" />
+              <CardTitle>Team Communication</CardTitle>
+              <CardDescription>
+                Keep your team connected with built-in chat and collaboration tools.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="border-0 shadow-lg">
+            <CardHeader>
+              <Settings className="h-12 w-12 text-indigo-600 mb-4" />
+              <CardTitle>Business Analytics</CardTitle>
+              <CardDescription>
+                Get insights into your shop's performance with detailed reports and analytics.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
+
+        {/* CTA Section */}
+        <div className="text-center bg-white rounded-2xl shadow-xl p-12">
+          <h3 className="text-3xl font-bold text-gray-900 mb-4">
+            Ready to Transform Your Shop?
+          </h3>
+          <p className="text-lg text-gray-600 mb-8">
+            Join thousands of automotive shops already using Easy Shop Manager to grow their business.
+          </p>
+          <Link to="/login">
+            <Button size="lg" className="px-12 py-4 text-lg">
+              Get Started Today
+            </Button>
+          </Link>
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <div className="flex items-center justify-center space-x-2 mb-4">
+              <Building2 className="h-6 w-6" />
+              <span className="text-lg font-semibold">Easy Shop Manager</span>
+            </div>
+            <p className="text-gray-400">
+              © 2024 Easy Shop Manager. All rights reserved.
             </p>
           </div>
-          
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <Link to="/dashboard">
-              <Card className="shadow-md border-blue-100 hover:shadow-lg transition-shadow cursor-pointer">
-                <CardContent className="pt-6">
-                  <div className="flex flex-col items-center text-center p-6">
-                    <div className="p-3 rounded-full bg-blue-100 mb-4">
-                      <Settings className="h-8 w-8 text-blue-700" />
-                    </div>
-                    <h2 className="text-xl font-bold mb-2">Dashboard</h2>
-                    <p className="text-muted-foreground">
-                      View your shop's overview, stats, and recent activity.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-            
-            <Link to="/customer-portal">
-              <Card className="shadow-md border-green-100 hover:shadow-lg transition-shadow cursor-pointer">
-                <CardContent className="pt-6">
-                  <div className="flex flex-col items-center text-center p-6">
-                    <div className="p-3 rounded-full bg-green-100 mb-4">
-                      <Users className="h-8 w-8 text-green-700" />
-                    </div>
-                    <h2 className="text-xl font-bold mb-2">Customer Portal</h2>
-                    <p className="text-muted-foreground">
-                      Manage customer relationships and service history.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-            
-            <Link to="/invoice/create">
-              <Card className="shadow-md border-purple-100 hover:shadow-lg transition-shadow cursor-pointer">
-                <CardContent className="pt-6">
-                  <div className="flex flex-col items-center text-center p-6">
-                    <div className="p-3 rounded-full bg-purple-100 mb-4">
-                      <FileText className="h-8 w-8 text-purple-700" />
-                    </div>
-                    <h2 className="text-xl font-bold mb-2">Create Invoice</h2>
-                    <p className="text-muted-foreground">
-                      Generate new invoices and manage billing.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          </div>
         </div>
-      </div>
-    </>
+      </footer>
+    </div>
   );
-}
+};
+
+export default Index;
