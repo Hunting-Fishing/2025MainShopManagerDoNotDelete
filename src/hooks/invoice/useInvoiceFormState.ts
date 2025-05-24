@@ -1,30 +1,44 @@
 
-import { useState } from "react";
-import { v4 as uuidv4 } from "uuid";
-import { Invoice, StaffMember } from "@/types/invoice";
-import { UseInvoiceFormStateProps } from "@/hooks/useInvoiceForm";
+import { useState } from 'react';
+import { Invoice } from '@/types/invoice';
 
-export const useInvoiceFormState = ({ initialWorkOrderId }: UseInvoiceFormStateProps = {}) => {
-  const [invoice, setInvoice] = useState<Invoice>({
-    id: uuidv4(),
-    number: `INV-${Date.now().toString().slice(-6)}`,
-    customer: "",
-    customer_id: "", // Required field
-    status: "draft",
-    issue_date: new Date().toISOString().split('T')[0],
-    due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    subtotal: 0,
-    tax_rate: 0.08,
-    tax: 0,
-    total: 0,
-    notes: "",
-    work_order_id: initialWorkOrderId || "",
-    assignedStaff: [],
-    items: [] // Required field
-  });
+export function useInvoiceFormState(initialInvoice?: Partial<Invoice>) {
+  const [invoice, setInvoice] = useState<Invoice>(() => ({
+    id: initialInvoice?.id || '',
+    number: initialInvoice?.number || '',
+    customer: initialInvoice?.customer || '',
+    customer_id: initialInvoice?.customer_id || '',
+    customer_email: initialInvoice?.customer_email || '',
+    customer_address: initialInvoice?.customer_address || '',
+    date: initialInvoice?.date || new Date().toISOString().split('T')[0],
+    status: initialInvoice?.status || 'draft',
+    issue_date: initialInvoice?.issue_date || new Date().toISOString().split('T')[0],
+    due_date: initialInvoice?.due_date || '',
+    subtotal: initialInvoice?.subtotal || 0,
+    tax_rate: initialInvoice?.tax_rate || 0.08,
+    tax: initialInvoice?.tax || 0,
+    total: initialInvoice?.total || 0,
+    notes: initialInvoice?.notes || '',
+    description: initialInvoice?.description || '',
+    payment_method: initialInvoice?.payment_method || '',
+    work_order_id: initialInvoice?.work_order_id || '',
+    assignedStaff: initialInvoice?.assignedStaff || [],
+    items: initialInvoice?.items || [],
+    created_at: initialInvoice?.created_at || new Date().toISOString(),
+    created_by: initialInvoice?.created_by || '',
+    updated_at: initialInvoice?.updated_at
+  }));
+
+  const updateInvoice = (updates: Partial<Invoice>) => {
+    setInvoice(prev => ({
+      ...prev,
+      ...updates
+    }));
+  };
 
   return {
     invoice,
-    setInvoice
+    setInvoice,
+    updateInvoice
   };
-};
+}

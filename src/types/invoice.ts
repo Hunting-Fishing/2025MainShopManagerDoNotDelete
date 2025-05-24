@@ -58,20 +58,26 @@ export interface InvoiceTemplate {
   default_items: InvoiceItem[];
 }
 
+export interface InvoiceFilters {
+  status: string;
+  dateRange: string;
+  search: string;
+  customer?: string;
+}
+
 export interface InvoiceFiltersProps {
   filters: InvoiceFilters;
   onFilterChange: (filters: InvoiceFilters) => void;
+  onApplyFilters?: (filters: any) => void;
+  setFilters?: (filters: InvoiceFilters) => void;
+  resetFilters?: () => void;
 }
 
 export interface InvoiceFiltersDropdownProps {
   filters: InvoiceFilters;
   onFilterChange: (filters: InvoiceFilters) => void;
-}
-
-export interface InvoiceFilters {
-  status: string;
-  dateRange: string;
-  search: string;
+  onResetFilters?: () => void;
+  onApplyFilters?: (filters: any) => void;
 }
 
 // Helper function to create an invoice updater
