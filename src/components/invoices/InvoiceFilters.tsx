@@ -1,185 +1,149 @@
 
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue
-} from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { CalendarIcon, Filter, RotateCcw, Search } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon, FilterX } from "lucide-react";
+import { DateRange } from "react-day-picker";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { InvoiceFiltersProps } from "@/types/invoice";
+import { InvoiceFilters as InvoiceFiltersType } from "@/types/invoice";
 
-export function InvoiceFilters({ filters, onFilterChange, onApplyFilters, setFilters, resetFilters }: InvoiceFiltersProps) {
-  // If filters and setFilters aren't provided, create local state
-  const [localFilters, setLocalFilters] = React.useState(filters || {
-    status: "all",
-    customer: "",
-    dateRange: {
-      from: undefined,
-      to: undefined
-    }
-  });
+interface InvoiceFiltersProps {
+  filters: InvoiceFiltersType;
+  onFilterChange: (filters: InvoiceFiltersType) => void;
+}
 
-  // Use either provided setFilters or local state
-  const handleFiltersChange = (updatedFilters: any) => {
-    if (setFilters) {
-      setFilters(updatedFilters);
-    } else {
-      setLocalFilters(updatedFilters);
-      
-      if (onApplyFilters) {
-        onApplyFilters(updatedFilters);
-      }
-    }
-  };
-
-  // Use either provided resetFilters or reset local state
-  const handleResetFilters = () => {
-    if (resetFilters) {
-      resetFilters();
-    } else {
-      const defaultFilters = {
-        status: "all",
-        customer: "",
-        dateRange: {
-          from: undefined,
-          to: undefined
-        }
-      };
-      setLocalFilters(defaultFilters);
-      
-      if (onApplyFilters) {
-        onApplyFilters(defaultFilters);
-      }
-    }
-  };
-
-  const activeFilters = filters || localFilters;
-  
-  const handleStatusChange = (value: string) => {
-    handleFiltersChange({ ...activeFilters, status: value });
-  };
-  
-  const handleCustomerChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    handleFiltersChange({ ...activeFilters, customer: event.target.value });
-  };
-  
-  const handleDateRangeChange = (field: "from" | "to", value: Date | undefined) => {
-    handleFiltersChange({
-      ...activeFilters,
-      dateRange: {
-        ...activeFilters.dateRange,
-        [field]: value
-      }
+export function InvoiceFilters({ filters, onFilterChange }: InvoiceFiltersProps) {
+  const handleStatusChange = (status: string) => {
+    onFilterChange({
+      ...filters,
+      status
     });
   };
-  
+
+  const handleSearchChange = (search: string) => {
+    onFilterChange({
+      ...filters,
+      search
+    });
+  };
+
+  const handleDateRangeChange = (dateRange: string) => {
+    onFilterChange({
+      ...filters,
+      dateRange
+    });
+  };
+
+  const handleCustomerChange = (customer: string) => {
+    onFilterChange({
+      ...filters,
+      customer
+    });
+  };
+
+  const resetFilters = () => {
+    onFilterChange({
+      status: 'all',
+      dateRange: 'all',
+      search: '',
+      customer: 'all'
+    });
+  };
+
+  const isFiltered = filters.status !== 'all' || 
+                   filters.dateRange !== 'all' || 
+                   filters.search !== '' || 
+                   (filters.customer && filters.customer !== 'all');
+
   return (
-    <div className="bg-white border rounded-lg p-4 mb-6 grid gap-4 md:grid-cols-4">
-      <div className="space-y-2">
-        <Label htmlFor="status">Status</Label>
-        <Select value={activeFilters.status} onValueChange={handleStatusChange}>
-          <SelectTrigger id="status">
-            <SelectValue placeholder="All statuses" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            <SelectItem value="draft">Draft</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="paid">Paid</SelectItem>
-            <SelectItem value="overdue">Overdue</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="customer">Customer</Label>
-        <Input
-          id="customer"
-          placeholder="Search by customer name"
-          value={activeFilters.customer}
-          onChange={handleCustomerChange}
-        />
-      </div>
-      
-      <div className="space-y-2">
-        <Label>Date Range</Label>
-        <div className="flex space-x-2">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full justify-start text-left font-normal",
-                  !activeFilters.dateRange.from && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {activeFilters.dateRange.from ? (
-                  format(activeFilters.dateRange.from, "PPP")
-                ) : (
-                  <span>Start date</span>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={activeFilters.dateRange.from || undefined}
-                onSelect={(date) => handleDateRangeChange("from", date)}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-          
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full justify-start text-left font-normal",
-                  !activeFilters.dateRange.to && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {activeFilters.dateRange.to ? (
-                  format(activeFilters.dateRange.to, "PPP")
-                ) : (
-                  <span>End date</span>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={activeFilters.dateRange.to || undefined}
-                onSelect={(date) => handleDateRangeChange("to", date)}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <Filter className="h-4 w-4" />
+          Filters
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Search</label>
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search invoices..."
+              value={filters.search}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="pl-10"
+            />
+          </div>
         </div>
-      </div>
-      
-      <div className="flex items-end">
-        <Button variant="outline" onClick={handleResetFilters} className="w-full">
-          <FilterX className="mr-2 h-4 w-4" />
-          Reset Filters
-        </Button>
-      </div>
-    </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Status</label>
+          <Select value={filters.status} onValueChange={handleStatusChange}>
+            <SelectTrigger>
+              <SelectValue placeholder="All statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="draft">Draft</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="paid">Paid</SelectItem>
+              <SelectItem value="overdue">Overdue</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Date Range</label>
+          <Select value={filters.dateRange} onValueChange={handleDateRangeChange}>
+            <SelectTrigger>
+              <SelectValue placeholder="All dates" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Dates</SelectItem>
+              <SelectItem value="today">Today</SelectItem>
+              <SelectItem value="yesterday">Yesterday</SelectItem>
+              <SelectItem value="thisWeek">This Week</SelectItem>
+              <SelectItem value="lastWeek">Last Week</SelectItem>
+              <SelectItem value="thisMonth">This Month</SelectItem>
+              <SelectItem value="lastMonth">Last Month</SelectItem>
+              <SelectItem value="thisYear">This Year</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {filters.customer && (
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Customer</label>
+            <Select value={filters.customer} onValueChange={handleCustomerChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="All customers" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Customers</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {isFiltered && (
+          <Button 
+            onClick={resetFilters}
+            variant="outline" 
+            className="w-full"
+            size="sm"
+          >
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Reset Filters
+          </Button>
+        )}
+      </CardContent>
+    </Card>
   );
 }

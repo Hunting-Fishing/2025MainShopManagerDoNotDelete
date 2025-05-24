@@ -95,12 +95,17 @@ export function useInvoiceTemplates() {
     });
   };
 
+  const saveTemplate = async (templateData: Omit<InvoiceTemplate, 'id' | 'created_at' | 'usage_count'>) => {
+    return createTemplate(templateData);
+  };
+
   return {
     templates,
     loading,
     error,
     createTemplate,
     saveAsTemplate,
+    saveTemplate,
     refetch: fetchTemplates
   };
 }

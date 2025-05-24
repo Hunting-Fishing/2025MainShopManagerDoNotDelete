@@ -89,4 +89,4 @@ export const createInvoiceUpdater = (updates: Partial<Invoice>) => {
 };
 
 // Re-export the StaffMember type
-export { StaffMember as InvoiceStaffMember };
+export type { StaffMember as InvoiceStaffMember };

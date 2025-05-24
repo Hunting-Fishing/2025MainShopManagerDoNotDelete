@@ -17,12 +17,11 @@ export const InvoiceTemplateActions: React.FC<InvoiceTemplateActionsProps> = ({
 }) => {
   const { 
     templates, 
-    isLoading, 
+    loading,
     error,
-    fetchTemplates,
-    applyTemplate,
-    saveTemplate,
-    createTemplateFromInvoice
+    createTemplate,
+    saveAsTemplate,
+    refetch
   } = useInvoiceTemplates();
 
   // Apply the selected template to the current invoice
@@ -33,7 +32,15 @@ export const InvoiceTemplateActions: React.FC<InvoiceTemplateActionsProps> = ({
   // Save the current invoice as a template
   const handleSaveAsTemplate = async (name: string, description: string) => {
     try {
-      const templateData = createTemplateFromInvoice(invoice, name, description);
+      const templateData = {
+        name,
+        description,
+        default_tax_rate: 0.08,
+        default_due_date_days: 30,
+        default_notes: invoice.notes || "",
+        default_items: invoice.items || [],
+        last_used: null
+      };
       await onSaveTemplate(templateData);
     } catch (error) {
       console.error("Error saving template:", error);

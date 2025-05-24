@@ -13,6 +13,15 @@ import { useCustomers } from '@/hooks/useCustomers';
 export default function CustomersPage() {
   const { filteredCustomers, loading, error, filters, handleFilterChange } = useCustomers();
 
+  const handleSearchChange = (search: string) => {
+    handleFilterChange({
+      search,
+      searchQuery: search,
+      status: filters.status || 'all',
+      sortBy: filters.sortBy || 'name'
+    });
+  };
+
   if (loading) {
     return <LoadingSpinner size="lg" text="Loading customers..." className="mt-8" />;
   }
@@ -57,7 +66,7 @@ export default function CustomersPage() {
               <Input
                 placeholder="Search customers..."
                 value={filters.search}
-                onChange={(e) => handleFilterChange({ search: e.target.value })}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-10"
               />
             </div>

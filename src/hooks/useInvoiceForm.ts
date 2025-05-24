@@ -1,3 +1,4 @@
+
 import { useInvoiceFormState } from "@/hooks/invoice/useInvoiceFormState";
 import { useInvoiceTemplates } from "@/hooks/invoice/useInvoiceTemplates";
 import { useInvoiceSave } from "@/hooks/invoice/useInvoiceSave";
@@ -6,10 +7,6 @@ import { useInvoiceWorkOrder } from "@/hooks/invoice/useInvoiceWorkOrder";
 import { StaffMember, Invoice, InvoiceTemplate, InvoiceItem } from "@/types/invoice";
 import { InventoryItem } from "@/types/inventory";
 import { useState } from "react";
-
-export interface UseInvoiceFormStateProps {
-  initialWorkOrderId?: string;
-}
 
 export function useInvoiceForm(initialWorkOrderId?: string) {
   // Create local state for items and assignedStaff if not provided by useInvoiceFormState
@@ -20,12 +17,10 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
   const [showStaffDialog, setShowStaffDialog] = useState(false);
   
   // Use form state hook with correct typing
-  const props: UseInvoiceFormStateProps = initialWorkOrderId ? { initialWorkOrderId } : {};
-  
   const {
     invoice,
     setInvoice,
-  } = useInvoiceFormState(props);
+  } = useInvoiceFormState(initialWorkOrderId ? { work_order_id: initialWorkOrderId } : {});
 
   // Add handlers for item management
   const handleAddInventoryItem = (item: InvoiceItem) => {
@@ -78,14 +73,18 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
   // Use invoice templates hook
   const { 
     templates,
-    applyTemplate,
+    createTemplate,
     saveTemplate
   } = useInvoiceTemplates();
 
   // Create wrapper functions for the template operations
   const handleApplyTemplate = (template: InvoiceTemplate) => {
-    const updatedInvoice = applyTemplate(template, invoice);
-    setInvoice(updatedInvoice);
+    setInvoice(prev => ({
+      ...prev,
+      items: template.default_items || [],
+      notes: template.default_notes || prev.notes,
+      tax_rate: template.default_tax_rate || prev.tax_rate
+    }));
   };
   
   const handleSaveTemplate = (templateData: Omit<InvoiceTemplate, "id" | "created_at" | "usage_count">) => {
