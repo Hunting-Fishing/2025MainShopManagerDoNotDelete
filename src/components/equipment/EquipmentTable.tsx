@@ -1,13 +1,13 @@
 
 import { Link } from "react-router-dom";
-import { Equipment } from "@/types/equipment";
 import { EquipmentStatusBadge } from "./EquipmentStatusBadge";
 import { WarrantyStatusBadge } from "./WarrantyStatusBadge";
 import { CogIcon, Loader2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import type { EquipmentWithMaintenance } from "@/services/equipmentService";
 
 interface EquipmentTableProps {
-  equipment: Equipment[];
+  equipment: EquipmentWithMaintenance[];
   loading?: boolean;
 }
 

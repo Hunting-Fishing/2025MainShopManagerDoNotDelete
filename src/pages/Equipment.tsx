@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { EquipmentTable } from "@/components/equipment/EquipmentTable";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,6 @@ import { MaintenanceDueCard } from "@/components/equipment/MaintenanceDueCard";
 import { WarrantyExpiringCard } from "@/components/equipment/WarrantyExpiringCard";
 import { fetchEquipment } from "@/services/equipmentService";
 import type { EquipmentWithMaintenance } from "@/services/equipmentService";
-import { getMaintenanceDueEquipment, getWarrantyExpiringEquipment } from "@/data/equipmentData";
 
 export default function Equipment() {
   const [equipment, setEquipment] = useState<EquipmentWithMaintenance[]>([]);
@@ -27,22 +27,6 @@ export default function Equipment() {
 
     loadEquipment();
   }, []);
-
-  // Transform the data for legacy components that expect camelCase
-  const transformedEquipment = equipment.map(item => ({
-    ...item,
-    serialNumber: item.serial_number,
-    purchaseDate: item.purchase_date,
-    installDate: item.install_date,
-    nextMaintenanceDate: item.next_maintenance_date,
-    lastMaintenanceDate: item.last_maintenance_date,
-    warrantyExpiryDate: item.warranty_expiry_date,
-    warrantyStatus: item.warranty_status,
-    maintenanceFrequency: item.maintenance_frequency,
-    workOrderHistory: item.work_order_history,
-    maintenanceHistory: item.maintenance_history,
-    maintenanceSchedules: item.maintenance_schedules || []
-  }));
 
   // Calculate summary data using database fields
   const maintenanceDueEquipment = equipment.filter(item => {

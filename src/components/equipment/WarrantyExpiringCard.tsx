@@ -1,11 +1,11 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Equipment } from "@/types/equipment";
 import { Link } from "react-router-dom";
 import { AlertCircle } from "lucide-react";
+import type { EquipmentWithMaintenance } from "@/services/equipmentService";
 
 interface WarrantyExpiringCardProps {
-  equipment: Equipment[];
+  equipment: EquipmentWithMaintenance[];
 }
 
 export function WarrantyExpiringCard({ equipment }: WarrantyExpiringCardProps) {

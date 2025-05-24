@@ -26,59 +26,63 @@ export const getEquipmentRecommendations = (equipmentItems: Equipment[]): Equipm
   
   equipmentItems.forEach(equipment => {
     // Check for overdue maintenance
-    const nextMaintenanceDate = parseISO(equipment.nextMaintenanceDate);
-    if (isAfter(today, nextMaintenanceDate)) {
-      recommendations.push({
-        id: `maint-overdue-${equipment.id}`,
-        equipmentId: equipment.id,
-        equipmentName: equipment.name,
-        type: 'urgent',
-        reason: `Maintenance overdue since ${equipment.nextMaintenanceDate}`,
-        action: 'Schedule maintenance immediately',
-        priority: 10,
-        dueDate: equipment.nextMaintenanceDate
-      });
-    } 
-    // Check for upcoming maintenance (within 30 days)
-    else if (differenceInDays(nextMaintenanceDate, today) <= 30) {
-      recommendations.push({
-        id: `maint-upcoming-${equipment.id}`,
-        equipmentId: equipment.id,
-        equipmentName: equipment.name,
-        type: 'soon',
-        reason: `Maintenance due in ${differenceInDays(nextMaintenanceDate, today)} days`,
-        action: 'Schedule maintenance soon',
-        priority: 7,
-        dueDate: equipment.nextMaintenanceDate
-      });
-    }
-    
-    // Check warranty status
-    const warrantyExpiryDate = parseISO(equipment.warrantyExpiryDate);
-    if (equipment.warrantyStatus === 'active') {
-      // Warranty expiring within 60 days
-      if (differenceInDays(warrantyExpiryDate, today) <= 60 && isAfter(warrantyExpiryDate, today)) {
+    if (equipment.next_maintenance_date) {
+      const nextMaintenanceDate = parseISO(equipment.next_maintenance_date);
+      if (isAfter(today, nextMaintenanceDate)) {
         recommendations.push({
-          id: `warranty-expiring-${equipment.id}`,
+          id: `maint-overdue-${equipment.id}`,
+          equipmentId: equipment.id,
+          equipmentName: equipment.name,
+          type: 'urgent',
+          reason: `Maintenance overdue since ${equipment.next_maintenance_date}`,
+          action: 'Schedule maintenance immediately',
+          priority: 10,
+          dueDate: equipment.next_maintenance_date
+        });
+      } 
+      // Check for upcoming maintenance (within 30 days)
+      else if (differenceInDays(nextMaintenanceDate, today) <= 30) {
+        recommendations.push({
+          id: `maint-upcoming-${equipment.id}`,
           equipmentId: equipment.id,
           equipmentName: equipment.name,
           type: 'soon',
-          reason: `Warranty expires in ${differenceInDays(warrantyExpiryDate, today)} days`,
-          action: 'Consider extended warranty options',
-          priority: 5,
-          dueDate: equipment.warrantyExpiryDate
+          reason: `Maintenance due in ${differenceInDays(nextMaintenanceDate, today)} days`,
+          action: 'Schedule maintenance soon',
+          priority: 7,
+          dueDate: equipment.next_maintenance_date
         });
       }
-    } else if (equipment.warrantyStatus === 'expired') {
-      recommendations.push({
-        id: `warranty-expired-${equipment.id}`,
-        equipmentId: equipment.id,
-        equipmentName: equipment.name,
-        type: 'normal',
-        reason: 'Equipment warranty has expired',
-        action: 'Consider purchasing extended coverage',
-        priority: 4
-      });
+    }
+    
+    // Check warranty status
+    if (equipment.warranty_expiry_date) {
+      const warrantyExpiryDate = parseISO(equipment.warranty_expiry_date);
+      if (equipment.warranty_status === 'active') {
+        // Warranty expiring within 60 days
+        if (differenceInDays(warrantyExpiryDate, today) <= 60 && isAfter(warrantyExpiryDate, today)) {
+          recommendations.push({
+            id: `warranty-expiring-${equipment.id}`,
+            equipmentId: equipment.id,
+            equipmentName: equipment.name,
+            type: 'soon',
+            reason: `Warranty expires in ${differenceInDays(warrantyExpiryDate, today)} days`,
+            action: 'Consider extended warranty options',
+            priority: 5,
+            dueDate: equipment.warranty_expiry_date
+          });
+        }
+      } else if (equipment.warranty_status === 'expired') {
+        recommendations.push({
+          id: `warranty-expired-${equipment.id}`,
+          equipmentId: equipment.id,
+          equipmentName: equipment.name,
+          type: 'normal',
+          reason: 'Equipment warranty has expired',
+          action: 'Consider purchasing extended coverage',
+          priority: 4
+        });
+      }
     }
     
     // Check equipment status

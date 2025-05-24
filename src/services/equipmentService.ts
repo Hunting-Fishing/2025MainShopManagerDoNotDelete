@@ -43,6 +43,7 @@ export const fetchEquipment = async (): Promise<EquipmentWithMaintenance[]> => {
     // Transform the data to match our interface
     return (data || []).map(item => ({
       ...item,
+      shop_id: item.shop_id || null,
       work_order_history: Array.isArray(item.work_order_history) ? item.work_order_history : [],
       maintenance_history: Array.isArray(item.maintenance_history) ? item.maintenance_history : [],
       maintenance_schedules: Array.isArray(item.maintenance_schedules) ? item.maintenance_schedules : [],
@@ -70,6 +71,7 @@ export const getOverdueMaintenanceEquipment = async (): Promise<EquipmentWithMai
 
     return (data || []).map(item => ({
       ...item,
+      shop_id: item.shop_id || null,
       work_order_history: Array.isArray(item.work_order_history) ? item.work_order_history : [],
       maintenance_history: Array.isArray(item.maintenance_history) ? item.maintenance_history : [],
       maintenance_schedules: Array.isArray(item.maintenance_schedules) ? item.maintenance_schedules : [],
@@ -130,6 +132,7 @@ export const createEquipment = async (equipmentData: CreateEquipmentData): Promi
 
     return {
       ...data,
+      shop_id: data.shop_id || null,
       work_order_history: [],
       maintenance_history: [],
       maintenance_schedules: [],
@@ -156,6 +159,7 @@ export const updateEquipment = async (id: string, updates: Partial<CreateEquipme
 
     return {
       ...data,
+      shop_id: data.shop_id || null,
       work_order_history: Array.isArray(data.work_order_history) ? data.work_order_history : [],
       maintenance_history: Array.isArray(data.maintenance_history) ? data.maintenance_history : [],
       maintenance_schedules: Array.isArray(data.maintenance_schedules) ? data.maintenance_schedules : [],
