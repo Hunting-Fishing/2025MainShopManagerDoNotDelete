@@ -2,188 +2,129 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { MaintenanceSchedule } from "@/types/equipment";
-import { scheduleMaintenanceWorkOrder, calculateNextMaintenanceDate } from "@/utils/maintenanceScheduler";
-import { formatDate } from "@/utils/dateUtils";
-import { CalendarClock, Plus, AlertTriangle, Clock, Bell, BellOff } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
-import { maintenanceFrequencyMap } from "@/data/equipmentData";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Calendar, Clock } from "lucide-react";
+import type { EquipmentWithMaintenance } from "@/services/equipmentService";
+
+interface MaintenanceSchedule {
+  id: string;
+  frequency_type: string;
+  next_date: string;
+  description: string;
+  estimated_duration?: number;
+  technician_id?: string;
+  is_recurring: boolean;
+}
 
 interface EquipmentMaintenanceSchedulesProps {
-  equipmentId: string;
-  equipmentName: string;
-  schedules: MaintenanceSchedule[];
-  onScheduleAdded?: () => void;
+  equipment: EquipmentWithMaintenance;
+  onAddSchedule?: () => void;
 }
 
 export function EquipmentMaintenanceSchedules({ 
-  equipmentId, 
-  equipmentName,
-  schedules,
-  onScheduleAdded
+  equipment, 
+  onAddSchedule 
 }: EquipmentMaintenanceSchedulesProps) {
-  const [isScheduling, setIsScheduling] = useState<Record<string, boolean>>({});
+  const [schedules] = useState<MaintenanceSchedule[]>([]);
 
-  // Function to handle scheduling maintenance
-  const handleScheduleMaintenance = async (schedule: MaintenanceSchedule) => {
-    // Set loading state for this specific schedule
-    setIsScheduling(prev => ({ ...prev, [schedule.nextDate]: true }));
-
-    // Get the equipment from the current page context
-    const equipment = {
-      id: equipmentId,
-      name: equipmentName,
-    } as any; // This is simplified - in a real implementation we'd need the full equipment object
-
-    try {
-      // Call the scheduler utility to create a work order
-      const result = await scheduleMaintenanceWorkOrder(equipment, schedule);
-      
-      if (result) {
-        // If the schedule is recurring, calculate the next date
-        if (schedule.isRecurring) {
-          const nextDate = calculateNextMaintenanceDate(schedule.nextDate, schedule.frequencyType);
-          // In a real app, we would update the schedule in the database
-          console.log(`Next maintenance date calculated: ${nextDate}`);
-          
-          toast({
-            title: "Next Maintenance Scheduled",
-            description: `The next maintenance will be due on ${nextDate}`,
-          });
-        }
-      }
-    } catch (error) {
-      console.error("Error scheduling maintenance:", error);
-      toast({
-        title: "Error",
-        description: "Failed to schedule maintenance. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      // Clear loading state
-      setIsScheduling(prev => ({ ...prev, [schedule.nextDate]: false }));
+  const handleAddSchedule = () => {
+    if (onAddSchedule) {
+      onAddSchedule();
     }
   };
 
-  // No schedules state
-  if (!schedules || schedules.length === 0) {
-    return (
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between bg-slate-50 border-b">
-          <div className="flex items-center">
-            <CalendarClock className="h-5 w-5 mr-2 text-slate-500" />
-            <CardTitle className="text-lg">Maintenance Schedules</CardTitle>
-          </div>
-          <Button variant="outline" size="sm" onClick={onScheduleAdded}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Schedule
-          </Button>
-        </CardHeader>
-        <CardContent className="py-6">
-          <div className="flex flex-col items-center justify-center text-center p-6">
-            <CalendarClock className="h-12 w-12 text-slate-300 mb-2" />
-            <h3 className="text-lg font-medium text-slate-900">No maintenance schedules</h3>
-            <p className="text-sm text-slate-500 mt-1">
-              No maintenance schedules have been set up for this equipment.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Determine if any schedule is overdue
-  const today = new Date();
-  const hasOverdueSchedules = schedules.some(
-    schedule => new Date(schedule.nextDate) < today
-  );
+  const getFrequencyBadgeColor = (frequency: string) => {
+    switch (frequency.toLowerCase()) {
+      case 'monthly':
+        return 'bg-blue-100 text-blue-800';
+      case 'quarterly':
+        return 'bg-green-100 text-green-800';
+      case 'annually':
+        return 'bg-purple-100 text-purple-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between bg-slate-50 border-b">
-        <div className="flex items-center">
-          <CalendarClock className="h-5 w-5 mr-2 text-slate-500" />
-          <CardTitle className="text-lg">Maintenance Schedules</CardTitle>
-          {hasOverdueSchedules && (
-            <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-              <AlertTriangle className="h-3 w-3 mr-1" />
-              Overdue
-            </span>
-          )}
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center">
+            <Calendar className="mr-2 h-5 w-5" />
+            Maintenance Schedules
+          </CardTitle>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleAddSchedule}
+          >
+            <Plus className="mr-1 h-3 w-3" />
+            Add Schedule
+          </Button>
         </div>
-        <Button variant="outline" size="sm" onClick={onScheduleAdded}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Schedule
-        </Button>
       </CardHeader>
-      <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Next Date</TableHead>
-              <TableHead>Frequency</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Duration</TableHead>
-              <TableHead>Notifications</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {schedules.map((schedule) => {
-              const isOverdue = new Date(schedule.nextDate) < today;
-              
-              return (
-                <TableRow key={`${schedule.nextDate}-${schedule.description}`}>
-                  <TableCell className={`font-medium ${isOverdue ? 'text-red-600' : ''}`}>
-                    {formatDate(schedule.nextDate)}
-                    {isOverdue && (
-                      <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
-                        Overdue
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {maintenanceFrequencyMap[schedule.frequencyType]}
-                    {schedule.isRecurring && (
-                      <span className="ml-1 text-xs text-slate-500">(Recurring)</span>
-                    )}
-                  </TableCell>
-                  <TableCell>{schedule.description}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center">
-                      <Clock className="h-3 w-3 mr-1 text-slate-400" />
-                      {schedule.estimatedDuration} hours
+      <CardContent>
+        {schedules.length === 0 ? (
+          <div className="text-center py-8">
+            <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              No maintenance schedules
+            </h3>
+            <p className="text-gray-500 mb-4">
+              Create scheduled maintenance tasks to keep this equipment running smoothly.
+            </p>
+            <Button onClick={handleAddSchedule}>
+              <Plus className="mr-2 h-4 w-4" />
+              Create First Schedule
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {schedules.map((schedule) => (
+              <div
+                key={schedule.id}
+                className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h4 className="font-medium">{schedule.description}</h4>
+                      <Badge className={getFrequencyBadgeColor(schedule.frequency_type)}>
+                        {schedule.frequency_type}
+                      </Badge>
+                      {schedule.is_recurring && (
+                        <Badge variant="outline">Recurring</Badge>
+                      )}
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    {schedule.notificationsEnabled ? (
-                      <span className="inline-flex items-center text-green-600">
-                        <Bell className="h-3 w-3 mr-1" />
-                        {schedule.reminderDays} days before
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center text-slate-500">
-                        <BellOff className="h-3 w-3 mr-1" />
-                        Disabled
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant={isOverdue ? "destructive" : "outline"}
-                      size="sm"
-                      onClick={() => handleScheduleMaintenance(schedule)}
-                      disabled={isScheduling[schedule.nextDate]}
-                    >
-                      {isScheduling[schedule.nextDate] ? "Scheduling..." : "Schedule Now"}
+                    
+                    <div className="flex items-center gap-4 text-sm text-gray-600">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        Next: {new Date(schedule.next_date).toLocaleDateString()}
+                      </div>
+                      {schedule.estimated_duration && (
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {schedule.estimated_duration}h estimated
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm">
+                      Edit
                     </Button>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+                    <Button variant="outline" size="sm">
+                      Complete
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

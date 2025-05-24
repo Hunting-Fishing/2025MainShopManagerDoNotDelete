@@ -18,6 +18,7 @@ export interface MaintenanceRecord {
 
 // Define a maintenance schedule interface
 export interface MaintenanceSchedule {
+  id: string;
   frequencyType: MaintenanceFrequency;
   nextDate: string;
   description: string;
@@ -28,26 +29,29 @@ export interface MaintenanceSchedule {
   reminderDays: number; // days before to send notification
 }
 
-// Define equipment/asset interface
+// Define equipment/asset interface that matches the database structure
 export interface Equipment {
   id: string;
   name: string;
-  model: string;
-  serialNumber: string;
-  manufacturer: string;
+  model: string | null;
+  serial_number: string | null;
+  manufacturer: string | null;
   category: string;
-  purchaseDate: string;
-  installDate: string;
+  purchase_date: string | null;
+  install_date: string | null;
   customer: string;
-  location: string;
+  location: string | null;
   status: "operational" | "maintenance-required" | "out-of-service" | "decommissioned";
-  nextMaintenanceDate: string;
-  maintenanceFrequency: MaintenanceFrequency;
-  lastMaintenanceDate: string;
-  warrantyExpiryDate: string;
-  warrantyStatus: WarrantyStatus;
+  next_maintenance_date: string | null;
+  maintenance_frequency: string;
+  last_maintenance_date: string | null;
+  warranty_expiry_date: string | null;
+  warranty_status: string | null;
   notes?: string;
-  workOrderHistory?: string[]; // IDs of related work orders
-  maintenanceHistory?: MaintenanceRecord[];
-  maintenanceSchedules?: MaintenanceSchedule[];
+  shop_id?: string;
+  created_at: string;
+  updated_at: string;
+  work_order_history?: any[];
+  maintenance_history?: MaintenanceRecord[];
+  maintenance_schedules?: MaintenanceSchedule[];
 }
