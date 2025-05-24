@@ -1,10 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock, Calendar, DollarSign, Settings } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { supabase } from '@/lib/supabase';
+import { useShopId } from '@/hooks/useShopId';
+import { toast } from '@/hooks/use-toast';
 
 interface BusinessSettingsStepProps {
   onNext: () => void;
@@ -13,282 +16,244 @@ interface BusinessSettingsStepProps {
   updateData: (data: any) => void;
 }
 
-const daysOfWeek = [
-  { key: 'monday', label: 'Monday' },
-  { key: 'tuesday', label: 'Tuesday' },
-  { key: 'wednesday', label: 'Wednesday' },
-  { key: 'thursday', label: 'Thursday' },
-  { key: 'friday', label: 'Friday' },
-  { key: 'saturday', label: 'Saturday' },
-  { key: 'sunday', label: 'Sunday' },
+const days = [
+  { id: 1, name: 'Monday' },
+  { id: 2, name: 'Tuesday' },
+  { id: 3, name: 'Wednesday' },
+  { id: 4, name: 'Thursday' },
+  { id: 5, name: 'Friday' },
+  { id: 6, name: 'Saturday' },
+  { id: 0, name: 'Sunday' }
 ];
 
 export function BusinessSettingsStep({ onNext, onPrevious, data, updateData }: BusinessSettingsStepProps) {
+  const { shopId } = useShopId();
+  const [isLoading, setIsLoading] = useState(false);
+  const [businessHours, setBusinessHours] = useState(
+    days.map(day => ({
+      day_of_week: day.id,
+      dayName: day.name,
+      open_time: '09:00',
+      close_time: '17:00',
+      is_closed: day.id === 0 || day.id === 6 // Default closed on weekends
+    }))
+  );
   const [settings, setSettings] = useState({
-    hours: {
-      monday: { open: '08:00', close: '17:00', closed: false },
-      tuesday: { open: '08:00', close: '17:00', closed: false },
-      wednesday: { open: '08:00', close: '17:00', closed: false },
-      thursday: { open: '08:00', close: '17:00', closed: false },
-      friday: { open: '08:00', close: '17:00', closed: false },
-      saturday: { open: '08:00', close: '15:00', closed: false },
-      sunday: { open: '10:00', close: '14:00', closed: true },
-    },
-    features: {
-      onlineBooking: true,
-      emailNotifications: true,
-      smsNotifications: false,
-      digitalInvoicing: true,
-      loyaltyProgram: false,
-      workOrderTracking: true,
-    },
-    rates: {
-      standardLabor: 125,
-      diagnosticLabor: 145,
-      emergencyLabor: 175,
-    },
+    laborRate: '100',
+    taxRate: '8.5',
+    appointmentBooking: true,
+    emailNotifications: true,
+    smsNotifications: false,
     ...data.businessSettings
   });
 
-  const handleHourChange = (day: string, field: 'open' | 'close', value: string) => {
+  useEffect(() => {
+    if (data.businessSettings?.businessHours) {
+      setBusinessHours(data.businessSettings.businessHours);
+    }
+  }, [data.businessSettings]);
+
+  const handleHourChange = (dayIndex: number, field: string, value: string | boolean) => {
+    setBusinessHours(prev => 
+      prev.map((hour, index) => 
+        index === dayIndex ? { ...hour, [field]: value } : hour
+      )
+    );
+  };
+
+  const handleSettingChange = (field: string, value: string | boolean) => {
     setSettings(prev => ({
       ...prev,
-      hours: {
-        ...prev.hours,
-        [day]: { ...prev.hours[day], [field]: value }
-      }
+      [field]: value
     }));
   };
 
-  const handleClosedToggle = (day: string, closed: boolean) => {
-    setSettings(prev => ({
-      ...prev,
-      hours: {
-        ...prev.hours,
-        [day]: { ...prev.hours[day], closed }
-      }
-    }));
-  };
+  const handleNext = async () => {
+    setIsLoading(true);
+    try {
+      if (shopId) {
+        // Save business hours to database
+        const hoursToSave = businessHours.map(hour => ({
+          shop_id: shopId,
+          day_of_week: hour.day_of_week,
+          open_time: hour.open_time + ':00',
+          close_time: hour.close_time + ':00',
+          is_closed: hour.is_closed
+        }));
 
-  const handleFeatureToggle = (feature: string, enabled: boolean) => {
-    setSettings(prev => ({
-      ...prev,
-      features: {
-        ...prev.features,
-        [feature]: enabled
-      }
-    }));
-  };
+        // Delete existing hours first
+        await supabase
+          .from('shop_hours')
+          .delete()
+          .eq('shop_id', shopId);
 
-  const handleRateChange = (rate: string, value: number) => {
-    setSettings(prev => ({
-      ...prev,
-      rates: {
-        ...prev.rates,
-        [rate]: value
-      }
-    }));
-  };
+        // Insert new hours
+        const { error: hoursError } = await supabase
+          .from('shop_hours')
+          .insert(hoursToSave);
 
-  const handleNext = () => {
-    updateData({ businessSettings: settings });
-    onNext();
+        if (hoursError) throw hoursError;
+
+        // Update onboarding progress
+        const businessSettingsData = {
+          businessHours,
+          laborRate: settings.laborRate,
+          taxRate: settings.taxRate,
+          appointmentBooking: settings.appointmentBooking,
+          emailNotifications: settings.emailNotifications,
+          smsNotifications: settings.smsNotifications
+        };
+
+        const { error: progressError } = await supabase
+          .from('onboarding_progress')
+          .update({
+            step_data: {
+              basicInfo: data.basicInfo || {},
+              businessSettings: businessSettingsData,
+              sampleData: data.sampleData || {}
+            },
+            current_step: 2,
+            completed_steps: [0, 1]
+          })
+          .eq('shop_id', shopId);
+
+        if (progressError) throw progressError;
+      }
+
+      // Update local state
+      updateData({ businessSettings: { businessHours, ...settings } });
+      onNext();
+    } catch (error: any) {
+      console.error('Error saving business settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save business settings. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Business Hours */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Business Hours
-            </CardTitle>
-            <CardDescription>
-              Set your operating hours for each day of the week
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {daysOfWeek.map((day) => (
-              <div key={day.key} className="flex items-center justify-between space-x-4">
-                <div className="flex items-center space-x-2 min-w-[100px]">
-                  <Label className="text-sm font-medium">{day.label}</Label>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    checked={!settings.hours[day.key].closed}
-                    onCheckedChange={(checked) => handleClosedToggle(day.key, !checked)}
-                  />
-                  
-                  {!settings.hours[day.key].closed && (
-                    <>
-                      <input
-                        type="time"
-                        value={settings.hours[day.key].open}
-                        onChange={(e) => handleHourChange(day.key, 'open', e.target.value)}
-                        className="px-2 py-1 border rounded text-sm"
-                      />
-                      <span className="text-gray-500">to</span>
-                      <input
-                        type="time"
-                        value={settings.hours[day.key].close}
-                        onChange={(e) => handleHourChange(day.key, 'close', e.target.value)}
-                        className="px-2 py-1 border rounded text-sm"
-                      />
-                    </>
-                  )}
-                  
-                  {settings.hours[day.key].closed && (
-                    <span className="text-sm text-gray-500 ml-4">Closed</span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* Labor Rates */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5" />
-              Labor Rates
-            </CardTitle>
-            <CardDescription>
-              Set your standard labor rates (can be changed later)
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="standardLabor">Standard Labor Rate ($/hour)</Label>
-              <input
-                id="standardLabor"
-                type="number"
-                value={settings.rates.standardLabor}
-                onChange={(e) => handleRateChange('standardLabor', parseFloat(e.target.value) || 0)}
-                className="w-full px-3 py-2 border rounded-md mt-1"
-                placeholder="125"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="diagnosticLabor">Diagnostic Rate ($/hour)</Label>
-              <input
-                id="diagnosticLabor"
-                type="number"
-                value={settings.rates.diagnosticLabor}
-                onChange={(e) => handleRateChange('diagnosticLabor', parseFloat(e.target.value) || 0)}
-                className="w-full px-3 py-2 border rounded-md mt-1"
-                placeholder="145"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="emergencyLabor">Emergency Rate ($/hour)</Label>
-              <input
-                id="emergencyLabor"
-                type="number"
-                value={settings.rates.emergencyLabor}
-                onChange={(e) => handleRateChange('emergencyLabor', parseFloat(e.target.value) || 0)}
-                className="w-full px-3 py-2 border rounded-md mt-1"
-                placeholder="175"
-              />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Feature Settings */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            Feature Settings
-          </CardTitle>
+          <CardTitle>Business Hours</CardTitle>
           <CardDescription>
-            Choose which features to enable for your shop
+            Set your operating hours for each day of the week
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {businessHours.map((hour, index) => (
+            <div key={hour.day_of_week} className="flex items-center justify-between p-3 border rounded-lg">
+              <div className="flex items-center space-x-4">
+                <Switch
+                  checked={!hour.is_closed}
+                  onCheckedChange={(checked) => handleHourChange(index, 'is_closed', !checked)}
+                />
+                <Label className="w-20">{hour.dayName}</Label>
+              </div>
+              {!hour.is_closed && (
+                <div className="flex items-center space-x-2">
+                  <Input
+                    type="time"
+                    value={hour.open_time}
+                    onChange={(e) => handleHourChange(index, 'open_time', e.target.value)}
+                    className="w-32"
+                  />
+                  <span>to</span>
+                  <Input
+                    type="time"
+                    value={hour.close_time}
+                    onChange={(e) => handleHourChange(index, 'close_time', e.target.value)}
+                    className="w-32"
+                  />
+                </div>
+              )}
+              {hour.is_closed && (
+                <span className="text-gray-500">Closed</span>
+              )}
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Rates & Settings</CardTitle>
+          <CardDescription>
+            Configure your basic pricing and notification preferences
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="laborRate">Default Labor Rate ($/hour)</Label>
+              <Input
+                id="laborRate"
+                type="number"
+                value={settings.laborRate}
+                onChange={(e) => handleSettingChange('laborRate', e.target.value)}
+                placeholder="100"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="taxRate">Tax Rate (%)</Label>
+              <Input
+                id="taxRate"
+                type="number"
+                step="0.1"
+                value={settings.taxRate}
+                onChange={(e) => handleSettingChange('taxRate', e.target.value)}
+                placeholder="8.5"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <Label>Online Booking</Label>
+                <Label>Online Appointment Booking</Label>
                 <p className="text-sm text-gray-500">Allow customers to book appointments online</p>
               </div>
               <Switch
-                checked={settings.features.onlineBooking}
-                onCheckedChange={(checked) => handleFeatureToggle('onlineBooking', checked)}
+                checked={settings.appointmentBooking}
+                onCheckedChange={(checked) => handleSettingChange('appointmentBooking', checked)}
               />
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div>
                 <Label>Email Notifications</Label>
-                <p className="text-sm text-gray-500">Send automated email updates</p>
+                <p className="text-sm text-gray-500">Receive notifications via email</p>
               </div>
               <Switch
-                checked={settings.features.emailNotifications}
-                onCheckedChange={(checked) => handleFeatureToggle('emailNotifications', checked)}
+                checked={settings.emailNotifications}
+                onCheckedChange={(checked) => handleSettingChange('emailNotifications', checked)}
               />
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div>
                 <Label>SMS Notifications</Label>
-                <p className="text-sm text-gray-500">Send text message updates</p>
+                <p className="text-sm text-gray-500">Receive notifications via text message</p>
               </div>
               <Switch
-                checked={settings.features.smsNotifications}
-                onCheckedChange={(checked) => handleFeatureToggle('smsNotifications', checked)}
-              />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>Digital Invoicing</Label>
-                <p className="text-sm text-gray-500">Create and send digital invoices</p>
-              </div>
-              <Switch
-                checked={settings.features.digitalInvoicing}
-                onCheckedChange={(checked) => handleFeatureToggle('digitalInvoicing', checked)}
-              />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>Work Order Tracking</Label>
-                <p className="text-sm text-gray-500">Real-time job progress tracking</p>
-              </div>
-              <Switch
-                checked={settings.features.workOrderTracking}
-                onCheckedChange={(checked) => handleFeatureToggle('workOrderTracking', checked)}
-              />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>Loyalty Program</Label>
-                <p className="text-sm text-gray-500">Customer points and rewards system</p>
-              </div>
-              <Switch
-                checked={settings.features.loyaltyProgram}
-                onCheckedChange={(checked) => handleFeatureToggle('loyaltyProgram', checked)}
+                checked={settings.smsNotifications}
+                onCheckedChange={(checked) => handleSettingChange('smsNotifications', checked)}
               />
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Navigation */}
       <div className="flex justify-between">
-        <Button variant="outline" onClick={onPrevious}>
+        <Button onClick={onPrevious} variant="outline">
           Previous
         </Button>
-        <Button onClick={handleNext} className="px-8">
-          Continue
+        <Button onClick={handleNext} disabled={isLoading}>
+          {isLoading ? 'Saving...' : 'Next'}
         </Button>
       </div>
     </div>

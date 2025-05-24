@@ -4953,6 +4953,47 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_progress: {
+        Row: {
+          completed_steps: number[] | null
+          created_at: string | null
+          current_step: number | null
+          id: string
+          is_completed: boolean | null
+          shop_id: string
+          step_data: Json
+          updated_at: string | null
+        }
+        Insert: {
+          completed_steps?: number[] | null
+          created_at?: string | null
+          current_step?: number | null
+          id?: string
+          is_completed?: boolean | null
+          shop_id: string
+          step_data?: Json
+          updated_at?: string | null
+        }
+        Update: {
+          completed_steps?: number[] | null
+          created_at?: string | null
+          current_step?: number | null
+          id?: string
+          is_completed?: boolean | null
+          shop_id?: string
+          step_data?: Json
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_progress_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: true
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           created_at: string
@@ -6761,10 +6802,13 @@ export type Database = {
           logo_url: string | null
           longitude: number | null
           name: string
+          onboarding_completed: boolean | null
+          onboarding_data: Json | null
           organization_id: string
           other_industry: string | null
           phone: string | null
           postal_code: string | null
+          setup_step: number | null
           shop_description: string | null
           shop_image_url: string | null
           state: string | null
@@ -6784,10 +6828,13 @@ export type Database = {
           logo_url?: string | null
           longitude?: number | null
           name: string
+          onboarding_completed?: boolean | null
+          onboarding_data?: Json | null
           organization_id: string
           other_industry?: string | null
           phone?: string | null
           postal_code?: string | null
+          setup_step?: number | null
           shop_description?: string | null
           shop_image_url?: string | null
           state?: string | null
@@ -6807,10 +6854,13 @@ export type Database = {
           logo_url?: string | null
           longitude?: number | null
           name?: string
+          onboarding_completed?: boolean | null
+          onboarding_data?: Json | null
           organization_id?: string
           other_industry?: string | null
           phone?: string | null
           postal_code?: string | null
+          setup_step?: number | null
           shop_description?: string | null
           shop_image_url?: string | null
           state?: string | null

@@ -47,11 +47,29 @@ export function useOnboardingStatus() {
         return;
       }
 
-      // Check shop details
+      // Check shop details and onboarding completion
       const { data: shop } = await supabase
         .from('shops')
-        .select('*')
+        .select('*, onboarding_completed, setup_step')
         .eq('id', profile.shop_id)
+        .single();
+
+      // Check if onboarding is marked as complete
+      if (shop?.onboarding_completed) {
+        setStatus({
+          isComplete: true,
+          hasShopInfo: true,
+          hasBusinessSettings: true,
+          lastStep: 4,
+        });
+        return;
+      }
+
+      // Check onboarding progress
+      const { data: progress } = await supabase
+        .from('onboarding_progress')
+        .select('*')
+        .eq('shop_id', profile.shop_id)
         .single();
 
       // Check business hours
@@ -60,15 +78,16 @@ export function useOnboardingStatus() {
         .select('*')
         .eq('shop_id', profile.shop_id);
 
-      const hasShopInfo = !!(shop?.name && shop?.address && shop?.phone && shop?.email);
+      const hasShopInfo = !!(shop?.name && shop?.email && shop?.phone);
       const hasBusinessSettings = hours && hours.length > 0;
-      const isComplete = hasShopInfo && hasBusinessSettings;
+      const currentStep = progress?.current_step || (hasBusinessSettings ? 2 : hasShopInfo ? 1 : 0);
+      const isComplete = hasShopInfo && hasBusinessSettings && (progress?.is_completed || shop?.onboarding_completed);
 
       setStatus({
         isComplete,
         hasShopInfo,
         hasBusinessSettings,
-        lastStep: isComplete ? 4 : hasBusinessSettings ? 2 : hasShopInfo ? 1 : 0,
+        lastStep: currentStep,
       });
 
     } catch (error) {
