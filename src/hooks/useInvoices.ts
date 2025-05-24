@@ -2,23 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
-
-export interface Invoice {
-  id: string;
-  number: string;
-  customer_id: string;
-  customer: string;
-  date: string;
-  due_date: string;
-  issue_date: string;
-  status: 'draft' | 'pending' | 'paid' | 'overdue';
-  subtotal: number;
-  tax: number;
-  tax_rate: number;
-  total: number;
-  created_at: string;
-  items: any[];
-}
+import { Invoice } from '@/types/invoice';
 
 export function useInvoices() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -46,11 +30,20 @@ export function useInvoices() {
       // Transform data to match expected interface
       const transformedData = (data || []).map(invoice => ({
         ...invoice,
-        number: invoice.id,
+        number: invoice.number || invoice.id,
         customer_id: invoice.customer_id || '',
-        issue_date: invoice.date,
-        tax_rate: 0.08,
-        items: [],
+        customer_email: invoice.customer_email || '',
+        customer_address: invoice.customer_address || '',
+        issue_date: invoice.issue_date || invoice.date,
+        tax_rate: invoice.tax_rate || 0.08,
+        items: invoice.items || [],
+        notes: invoice.notes || '',
+        description: invoice.description || '',
+        payment_method: invoice.payment_method || '',
+        work_order_id: invoice.work_order_id || '',
+        assignedStaff: invoice.assignedStaff || [],
+        created_by: invoice.created_by || '',
+        updated_at: invoice.updated_at || invoice.created_at,
       }));
       
       setInvoices(transformedData);

@@ -1,34 +1,25 @@
 
-import { useCustomers } from "@/hooks/useCustomers";
+import React from "react";
 import { CustomersList } from "@/components/customers/list/CustomersList";
-import { CustomersHeader } from "@/components/customers/list/CustomersHeader";
+import { useCustomers } from "@/hooks/useCustomers";
 
 export default function Customers() {
-  const {
-    customers,
-    filteredCustomers,
-    filters,
-    loading,
-    error,
-    handleFilterChange
+  const { 
+    customers, 
+    filteredCustomers, 
+    loading, 
+    error, 
+    filters, 
+    handleFilterChange 
   } = useCustomers();
 
-  console.log("Customers page rendering with:", { 
-    totalCustomers: customers?.length || 0, 
-    filteredCount: filteredCustomers?.length || 0,
-    isLoading: loading,
-    hasError: !!error
-  });
-
   return (
-    <div className="space-y-6">
-      <CustomersHeader />
-      <CustomersList
+    <div className="container mx-auto px-4 py-8">
+      <CustomersList 
         customers={customers}
         filteredCustomers={filteredCustomers}
         filters={filters}
         loading={loading}
-        error={error}
         onFilterChange={handleFilterChange}
       />
     </div>
