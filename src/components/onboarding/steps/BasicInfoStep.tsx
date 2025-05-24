@@ -3,11 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { FormField } from '@/components/ui/form-field';
 import { supabase } from '@/lib/supabase';
-import { useShopId } from '@/hooks/useShopId';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 interface BasicInfoStepProps {
   onNext: () => void;
@@ -16,243 +14,221 @@ interface BasicInfoStepProps {
   updateData: (data: any) => void;
 }
 
-const businessTypes = [
-  'Independent Shop',
-  'Franchise',
-  'Dealership Service Center',
-  'Fleet Service',
-  'Mobile Service',
-  'Specialty Shop'
-];
-
-const industries = [
-  'General Automotive Repair',
-  'Transmission Service',
-  'Brake Service',
-  'Tire Service',
-  'Body Shop',
-  'Performance/Racing',
-  'Classic Car Restoration',
-  'Truck/Heavy Vehicle',
-  'Motorcycle Service',
-  'Marine Service',
-  'Equipment Repair'
-];
-
 export function BasicInfoStep({ onNext, onPrevious, data, updateData }: BasicInfoStepProps) {
-  const { shopId } = useShopId();
   const [formData, setFormData] = useState({
-    name: '',
-    address: '',
-    city: '',
-    state: '',
-    zip: '',
-    phone: '',
-    email: '',
-    businessType: '',
-    industry: '',
-    ...data.basicInfo
+    shopName: data.basicInfo?.shopName || '',
+    ownerName: data.basicInfo?.ownerName || '',
+    email: data.basicInfo?.email || '',
+    phone: data.basicInfo?.phone || '',
+    address: data.basicInfo?.address || '',
+    city: data.basicInfo?.city || '',
+    state: data.basicInfo?.state || '',
+    zipCode: data.basicInfo?.zipCode || '',
   });
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    updateData({ basicInfo: { ...formData, [name]: value } });
   };
 
   const handleNext = async () => {
-    // Validate required fields
-    if (!formData.name || !formData.email || !formData.phone) {
+    if (!formData.shopName || !formData.email) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all required fields (name, email, phone)",
-        variant: "destructive"
+        description: "Please fill in at least the shop name and email address.",
+        variant: "destructive",
       });
       return;
     }
 
-    setIsLoading(true);
+    setLoading(true);
     try {
-      // Save to shops table
-      if (shopId) {
-        const { error: shopError } = await supabase
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error('No authenticated user found');
+      }
+
+      // Get or create shop
+      let shopId;
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('shop_id')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.shop_id) {
+        shopId = profile.shop_id;
+        // Update existing shop
+        const { error: updateError } = await supabase
           .from('shops')
           .update({
-            name: formData.name,
-            address: formData.address,
-            city: formData.city,
-            state: formData.state,
-            postal_code: formData.zip,
-            phone: formData.phone,
+            name: formData.shopName,
             email: formData.email,
-            business_type: formData.businessType,
-            industry: formData.industry,
-            updated_at: new Date().toISOString()
+            phone: formData.phone || null,
+            address: formData.address || null,
+            city: formData.city || null,
+            state: formData.state || null,
+            zip: formData.zipCode || null,
+            updated_at: new Date().toISOString(),
           })
           .eq('id', shopId);
 
+        if (updateError) throw updateError;
+      } else {
+        // Create new shop
+        const { data: newShop, error: shopError } = await supabase
+          .from('shops')
+          .insert({
+            name: formData.shopName,
+            email: formData.email,
+            phone: formData.phone || null,
+            address: formData.address || null,
+            city: formData.city || null,
+            state: formData.state || null,
+            zip: formData.zipCode || null,
+            owner_id: user.id,
+          })
+          .select()
+          .single();
+
         if (shopError) throw shopError;
+        shopId = newShop.id;
 
-        // Save to onboarding progress
-        const { error: progressError } = await supabase
-          .from('onboarding_progress')
-          .upsert({
-            shop_id: shopId,
-            step_data: {
-              basicInfo: formData,
-              businessSettings: data.businessSettings || {},
-              sampleData: data.sampleData || {}
-            },
-            current_step: 1,
-            completed_steps: [0]
-          });
+        // Update profile with shop_id
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ shop_id: shopId })
+          .eq('id', user.id);
 
-        if (progressError) throw progressError;
+        if (profileError) throw profileError;
       }
 
-      // Update local state
-      updateData({ basicInfo: formData });
+      // Upsert onboarding progress (insert or update)
+      const { error: progressError } = await supabase
+        .from('onboarding_progress')
+        .upsert({
+          shop_id: shopId,
+          current_step: 1,
+          completed_steps: ['basic-info'],
+          is_completed: false,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'shop_id'
+        });
+
+      if (progressError) throw progressError;
+
+      toast({
+        title: "Information Saved",
+        description: "Your basic shop information has been saved successfully.",
+      });
+
       onNext();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving basic info:', error);
       toast({
         title: "Error",
-        description: "Failed to save information. Please try again.",
-        variant: "destructive"
+        description: "Failed to save shop information. Please try again.",
+        variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Shop Information</CardTitle>
-          <CardDescription>
-            Tell us about your automotive shop to get started
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Shop Name *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                placeholder="Enter your shop name"
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="businessType">Business Type</Label>
-              <Select value={formData.businessType} onValueChange={(value) => handleInputChange('businessType', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select business type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {businessTypes.map((type) => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="md:col-span-2">
+          <FormField
+            label="Shop Name"
+            id="shopName"
+            name="shopName"
+            value={formData.shopName}
+            onChange={handleInputChange}
+            placeholder="Enter your shop name"
+            required
+          />
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="address">Address</Label>
-            <Input
-              id="address"
-              value={formData.address}
-              onChange={(e) => handleInputChange('address', e.target.value)}
-              placeholder="Enter street address"
-            />
-          </div>
+        <FormField
+          label="Owner Name"
+          id="ownerName"
+          name="ownerName"
+          value={formData.ownerName}
+          onChange={handleInputChange}
+          placeholder="Enter owner name"
+        />
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="city">City</Label>
-              <Input
-                id="city"
-                value={formData.city}
-                onChange={(e) => handleInputChange('city', e.target.value)}
-                placeholder="City"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="state">State</Label>
-              <Input
-                id="state"
-                value={formData.state}
-                onChange={(e) => handleInputChange('state', e.target.value)}
-                placeholder="State"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="zip">ZIP Code</Label>
-              <Input
-                id="zip"
-                value={formData.zip}
-                onChange={(e) => handleInputChange('zip', e.target.value)}
-                placeholder="ZIP"
-              />
-            </div>
-          </div>
+        <FormField
+          label="Email Address"
+          id="email"
+          name="email"
+          type="email"
+          value={formData.email}
+          onChange={handleInputChange}
+          placeholder="Enter email address"
+          required
+        />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number *</Label>
-              <Input
-                id="phone"
-                value={formData.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
-                placeholder="(555) 123-4567"
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Address *</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
-                placeholder="shop@example.com"
-                required
-              />
-            </div>
-          </div>
+        <FormField
+          label="Phone Number"
+          id="phone"
+          name="phone"
+          value={formData.phone}
+          onChange={handleInputChange}
+          placeholder="Enter phone number"
+        />
 
-          <div className="space-y-2">
-            <Label htmlFor="industry">Industry</Label>
-            <Select value={formData.industry} onValueChange={(value) => handleInputChange('industry', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select your primary industry" />
-              </SelectTrigger>
-              <SelectContent>
-                {industries.map((industry) => (
-                  <SelectItem key={industry} value={industry}>{industry}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+        <div className="md:col-span-2">
+          <FormField
+            label="Address"
+            id="address"
+            name="address"
+            value={formData.address}
+            onChange={handleInputChange}
+            placeholder="Enter street address"
+          />
+        </div>
 
-      <div className="flex justify-between">
-        <Button onClick={onPrevious} variant="outline" disabled>
+        <FormField
+          label="City"
+          id="city"
+          name="city"
+          value={formData.city}
+          onChange={handleInputChange}
+          placeholder="Enter city"
+        />
+
+        <FormField
+          label="State"
+          id="state"
+          name="state"
+          value={formData.state}
+          onChange={handleInputChange}
+          placeholder="Enter state"
+        />
+
+        <FormField
+          label="ZIP Code"
+          id="zipCode"
+          name="zipCode"
+          value={formData.zipCode}
+          onChange={handleInputChange}
+          placeholder="Enter ZIP code"
+        />
+      </div>
+
+      <div className="flex justify-between pt-6">
+        <Button variant="outline" onClick={onPrevious} disabled>
           Previous
         </Button>
-        <Button onClick={handleNext} disabled={isLoading}>
-          {isLoading ? 'Saving...' : 'Next'}
+        <Button onClick={handleNext} disabled={loading}>
+          {loading ? "Saving..." : "Next"}
         </Button>
       </div>
     </div>
