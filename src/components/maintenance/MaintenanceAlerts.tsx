@@ -39,7 +39,7 @@ export function MaintenanceAlerts({ overdueEquipment }: MaintenanceAlertsProps) 
               {overdueEquipment.slice(0, 3).map((item) => (
                 <li key={item.id} className="text-sm text-red-600 flex justify-between">
                   <span>{item.name} ({item.customer})</span>
-                  <span>Due: {format(new Date(item.nextMaintenanceDate), "MMM d, yyyy")}</span>
+                  <span>Due: {item.next_maintenance_date ? format(new Date(item.next_maintenance_date), "MMM d, yyyy") : 'N/A'}</span>
                 </li>
               ))}
               {overdueEquipment.length > 3 && (

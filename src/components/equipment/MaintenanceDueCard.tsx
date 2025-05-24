@@ -14,15 +14,15 @@ interface MaintenanceDueCardProps {
 export function MaintenanceDueCard({ equipment }: MaintenanceDueCardProps) {
   // Sort equipment by next maintenance date (ascending)
   const sortedEquipment = [...equipment].sort((a, b) => {
-    const dateA = new Date(a.nextMaintenanceDate).getTime();
-    const dateB = new Date(b.nextMaintenanceDate).getTime();
+    const dateA = a.next_maintenance_date ? new Date(a.next_maintenance_date).getTime() : 0;
+    const dateB = b.next_maintenance_date ? new Date(b.next_maintenance_date).getTime() : 0;
     return dateA - dateB;
   });
 
   // Check for overdue maintenance
   const today = new Date();
   const hasOverdueEquipment = equipment.some(
-    item => new Date(item.nextMaintenanceDate) < today
+    item => item.next_maintenance_date && new Date(item.next_maintenance_date) < today
   );
 
   return (
@@ -45,7 +45,9 @@ export function MaintenanceDueCard({ equipment }: MaintenanceDueCardProps) {
         ) : (
           <div className="space-y-3">
             {sortedEquipment.map((item) => {
-              const maintenanceDate = new Date(item.nextMaintenanceDate);
+              if (!item.next_maintenance_date) return null;
+              
+              const maintenanceDate = new Date(item.next_maintenance_date);
               const isOverdue = maintenanceDate < today;
               const daysUntil = Math.ceil((maintenanceDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
               
@@ -60,13 +62,13 @@ export function MaintenanceDueCard({ equipment }: MaintenanceDueCardProps) {
                         <span className="text-xs text-slate-500">{item.customer}</span>
                         <span className="text-xs flex items-center">
                           <Clock className="h-3 w-3 mr-1 text-slate-400" />
-                          {maintenanceFrequencyMap[item.maintenanceFrequency]} maintenance
+                          {maintenanceFrequencyMap[item.maintenance_frequency] || item.maintenance_frequency} maintenance
                         </span>
                       </div>
                     </div>
                     <div className="text-right">
                       <span className={`text-sm font-medium ${isOverdue ? 'text-red-600' : 'text-slate-700'}`}>
-                        {formatDate(item.nextMaintenanceDate)}
+                        {formatDate(item.next_maintenance_date)}
                       </span>
                       <div className="mt-1">
                         {isOverdue ? (

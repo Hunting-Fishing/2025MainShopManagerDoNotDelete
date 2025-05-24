@@ -28,7 +28,7 @@ export function WarrantyExpiringCard({ equipment }: WarrantyExpiringCardProps) {
                 </Link>
                 <div className="flex justify-between mt-1">
                   <span className="text-xs text-slate-500">{item.customer}</span>
-                  <span className="text-xs font-medium text-red-600">Expires: {item.warrantyExpiryDate}</span>
+                  <span className="text-xs font-medium text-red-600">Expires: {item.warranty_expiry_date}</span>
                 </div>
               </div>
             ))}

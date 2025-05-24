@@ -10,7 +10,7 @@ interface EquipmentDetailCardsProps {
 }
 
 export function EquipmentDetailCards({ equipmentItem }: EquipmentDetailCardsProps) {
-  const isMaintenanceOverdue = new Date(equipmentItem.nextMaintenanceDate) < new Date();
+  const isMaintenanceOverdue = equipmentItem.next_maintenance_date && new Date(equipmentItem.next_maintenance_date) < new Date();
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -26,7 +26,7 @@ export function EquipmentDetailCards({ equipmentItem }: EquipmentDetailCardsProp
             </div>
             <div className="flex justify-between">
               <dt className="font-medium text-slate-500">Serial Number:</dt>
-              <dd>{equipmentItem.serialNumber}</dd>
+              <dd>{equipmentItem.serial_number}</dd>
             </div>
             <div className="flex justify-between">
               <dt className="font-medium text-slate-500">Category:</dt>
@@ -56,33 +56,33 @@ export function EquipmentDetailCards({ equipmentItem }: EquipmentDetailCardsProp
           <dl className="space-y-2">
             <div className="flex justify-between">
               <dt className="font-medium text-slate-500">Purchase Date:</dt>
-              <dd>{equipmentItem.purchaseDate}</dd>
+              <dd>{equipmentItem.purchase_date}</dd>
             </div>
             <div className="flex justify-between">
               <dt className="font-medium text-slate-500">Install Date:</dt>
-              <dd>{equipmentItem.installDate}</dd>
+              <dd>{equipmentItem.install_date}</dd>
             </div>
             <div className="flex justify-between">
               <dt className="font-medium text-slate-500">Last Maintenance:</dt>
-              <dd>{equipmentItem.lastMaintenanceDate}</dd>
+              <dd>{equipmentItem.last_maintenance_date}</dd>
             </div>
             <div className="flex justify-between">
               <dt className="font-medium text-slate-500">Next Maintenance:</dt>
               <dd className={isMaintenanceOverdue ? "text-red-600 font-medium" : ""}>
-                {equipmentItem.nextMaintenanceDate}
+                {equipmentItem.next_maintenance_date}
               </dd>
             </div>
             <div className="flex justify-between">
               <dt className="font-medium text-slate-500">Maintenance Frequency:</dt>
-              <dd>{maintenanceFrequencyMap[equipmentItem.maintenanceFrequency]}</dd>
+              <dd>{maintenanceFrequencyMap[equipmentItem.maintenance_frequency] || equipmentItem.maintenance_frequency}</dd>
             </div>
             <div className="flex justify-between">
               <dt className="font-medium text-slate-500">Warranty Expiry:</dt>
-              <dd>{equipmentItem.warrantyExpiryDate}</dd>
+              <dd>{equipmentItem.warranty_expiry_date}</dd>
             </div>
             <div className="flex justify-between">
               <dt className="font-medium text-slate-500">Warranty Status:</dt>
-              <dd><WarrantyStatusBadge status={equipmentItem.warrantyStatus} /></dd>
+              <dd><WarrantyStatusBadge status={equipmentItem.warranty_status} /></dd>
             </div>
           </dl>
         </CardContent>

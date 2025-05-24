@@ -50,7 +50,7 @@ export function EquipmentTable({ equipment, loading = false }: EquipmentTablePro
             </TableRow>
           ) : (
             equipment.map((item, index) => (
-              <TableRow key={item.id} colorIndex={index}>
+              <TableRow key={item.id}>
                 <TableCell className="font-medium text-slate-900">
                   {item.id}
                 </TableCell>
@@ -67,10 +67,10 @@ export function EquipmentTable({ equipment, loading = false }: EquipmentTablePro
                   <EquipmentStatusBadge status={item.status} />
                 </TableCell>
                 <TableCell className="text-slate-700">
-                  {item.nextMaintenanceDate || 'Not scheduled'}
+                  {item.next_maintenance_date || 'Not scheduled'}
                 </TableCell>
                 <TableCell>
-                  <WarrantyStatusBadge status={item.warrantyStatus} />
+                  <WarrantyStatusBadge status={item.warranty_status} />
                 </TableCell>
                 <TableCell className="text-right">
                   <Link to={`/equipment/${item.id}`} className="text-blue-600 hover:text-blue-800 mr-4">
