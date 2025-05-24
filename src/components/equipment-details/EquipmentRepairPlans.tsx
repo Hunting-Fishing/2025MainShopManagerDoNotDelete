@@ -37,8 +37,6 @@ export function EquipmentRepairPlans({
       <CardContent className="p-0">
         <RepairPlansList 
           repairPlans={equipmentRepairPlans}
-          showFilters={false}
-          showHeader={false}
         />
       </CardContent>
     </Card>
