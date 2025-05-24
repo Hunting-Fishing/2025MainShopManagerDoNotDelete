@@ -1,241 +1,155 @@
-
 import React from 'react';
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { HelmetProvider } from 'react-helmet-async';
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import Settings from "./pages/Settings";
-import InvoiceCreate from "./pages/InvoiceCreate";
-import { Layout } from "./components/layout/Layout";
-import { NotificationsProvider } from './context/notifications';
-import { ProtectedRoute } from './components/auth/ProtectedRoute';
-import Unauthorized from './pages/Unauthorized';
-import NotFound from './pages/NotFound';
-import { ImpersonationProvider } from './contexts/ImpersonationContext';
-import { OnboardingGate } from './components/onboarding/OnboardingGate';
-import { ErrorBoundary } from './components/error/ErrorBoundary';
-// Import all pages
-import Customers from './pages/Customers';
-import CustomerDetails from './pages/CustomerDetails';
-import CreateCustomer from './pages/CreateCustomer';
-import Invoices from './pages/Invoices';
-import InvoiceDetails from './pages/InvoiceDetails';
-import Inventory from './pages/Inventory';
-import Team from './pages/Team';
-import Reports from './pages/Reports';
-import Calendar from './pages/Calendar';
-import Chat from './pages/Chat';
-import WorkOrderCreate from './pages/WorkOrderCreate';
-import WorkOrderDetails from './pages/WorkOrderDetails';
-import CustomersPage from './pages/CustomersPage';
-import WorkOrdersPage from './pages/WorkOrdersPage';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { Toaster } from 'sonner';
+import { AuthGate } from '@/components/AuthGate';
+import { OnboardingGate } from '@/components/onboarding/OnboardingGate';
+import { Layout } from '@/components/layout/Layout';
 
-// Create a QueryClient instance
-const queryClient = new QueryClient();
+// Import pages
+import Index from '@/pages/Index';
+import Dashboard from '@/pages/Dashboard';
+import CustomersPage from '@/pages/CustomersPage';
+import CreateCustomer from '@/pages/CreateCustomer';
+import CustomerDetails from '@/pages/CustomerDetails';
+import CustomerEdit from '@/pages/CustomerEdit';
+import WorkOrdersPage from '@/pages/WorkOrdersPage';
+import WorkOrderCreate from '@/pages/WorkOrderCreate';
+import WorkOrderDetails from '@/pages/WorkOrderDetails';
+import WorkOrderEdit from '@/pages/WorkOrderEdit';
+import Invoices from '@/pages/Invoices';
+import InvoiceCreate from '@/pages/InvoiceCreate';
+import InvoiceDetails from '@/pages/InvoiceDetails';
+import InvoiceEdit from '@/pages/InvoiceEdit';
+import Inventory from '@/pages/Inventory';
+import InventoryAdd from '@/pages/InventoryAdd';
+import Team from '@/pages/Team';
+import TeamMemberCreate from '@/pages/TeamMemberCreate';
+import TeamMemberProfile from '@/pages/TeamMemberProfile';
+import TeamRoles from '@/pages/TeamRoles';
+import Reports from '@/pages/Reports';
+import Calendar from '@/pages/Calendar';
+import ServiceReminders from '@/pages/ServiceReminders';
+import Analytics from '@/pages/Analytics';
+import Notifications from '@/pages/Notifications';
+import Chat from '@/pages/Chat';
+import CompanySettings from '@/pages/settings/CompanySettings';
+import AccountSettings from '@/pages/settings/AccountSettings';
+import NotificationSettings from '@/pages/settings/NotificationSettings';
+import BrandingSettings from '@/pages/settings/BrandingSettings';
+import LanguageSettings from '@/pages/settings/LanguageSettings';
+import LoyaltySettings from '@/pages/settings/LoyaltySettings';
+import LabourSettings from '@/pages/settings/LabourSettings';
+import MarkupSettings from '@/pages/settings/MarkupSettings';
+import InventorySettings from '@/pages/settings/InventorySettings';
+import EmailSettings from '@/pages/settings/EmailSettings';
+import EmailSchedulingSettings from '@/pages/settings/EmailSchedulingSettings';
+import IntegrationSettings from '@/pages/settings/IntegrationSettings';
+import SecuritySettings from '@/pages/settings/SecuritySettings';
+import SecurityAdvancedSettings from '@/pages/settings/SecurityAdvancedSettings';
+import DataExportSettings from '@/pages/settings/DataExportSettings';
+import TeamHistorySettings from '@/pages/settings/TeamHistorySettings';
+import AppearanceSettings from '@/pages/settings/AppearanceSettings';
+import ErrorPage from '@/pages/error-page';
+import NotFound from '@/pages/NotFound';
+import Unauthorized from '@/pages/Unauthorized';
 
-function App() {
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 30, // 30 minutes
+    },
+  },
+});
+
+const App: React.FC = () => {
   return (
-    <ErrorBoundary>
-      <HelmetProvider>
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            <NotificationsProvider>
-              <ImpersonationProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <Router>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/" element={<Index />} />
+          <Route path="/login" element={<Index />} />
+          <Route path="/unauthorized" element={<Unauthorized />} />
+          
+          {/* Protected routes */}
+          <Route path="/*" element={
+            <AuthGate>
+              <OnboardingGate>
+                <Layout>
                   <Routes>
-                    {/* Public routes */}
-                    <Route path="/" element={<Index />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/unauthorized" element={<Unauthorized />} />
-
-                    {/* Protected routes with Layout and OnboardingGate */}
-                    <Route path="/dashboard" element={
-                      <ProtectedRoute>
-                        <OnboardingGate>
-                          <Layout>
-                            <Dashboard />
-                          </Layout>
-                        </OnboardingGate>
-                      </ProtectedRoute>
-                    } />
+                    <Route path="/dashboard" element={<Dashboard />} />
                     
-                    {/* Customers routes */}
-                    <Route path="/customers" element={
-                      <ProtectedRoute>
-                        <OnboardingGate>
-                          <Layout>
-                            <CustomersPage />
-                          </Layout>
-                        </OnboardingGate>
-                      </ProtectedRoute>
-                    } />
+                    {/* Customer routes */}
+                    <Route path="/customers" element={<CustomersPage />} />
+                    <Route path="/customers/create" element={<CreateCustomer />} />
+                    <Route path="/customers/:id" element={<CustomerDetails />} />
+                    <Route path="/customers/:id/edit" element={<CustomerEdit />} />
                     
-                    <Route path="/customers/create" element={
-                      <ProtectedRoute>
-                        <OnboardingGate>
-                          <Layout>
-                            <CreateCustomer />
-                          </Layout>
-                        </OnboardingGate>
-                      </ProtectedRoute>
-                    } />
+                    {/* Work Order routes */}
+                    <Route path="/work-orders" element={<WorkOrdersPage />} />
+                    <Route path="/work-orders/create" element={<WorkOrderCreate />} />
+                    <Route path="/work-orders/:id" element={<WorkOrderDetails />} />
+                    <Route path="/work-orders/:id/edit" element={<WorkOrderEdit />} />
                     
-                    <Route path="/customers/:id" element={
-                      <ProtectedRoute>
-                        <OnboardingGate>
-                          <Layout>
-                            <CustomerDetails />
-                          </Layout>
-                        </OnboardingGate>
-                      </ProtectedRoute>
-                    } />
-                    
-                    {/* Work Orders routes */}
-                    <Route path="/work-orders" element={
-                      <ProtectedRoute>
-                        <OnboardingGate>
-                          <Layout>
-                            <WorkOrdersPage />
-                          </Layout>
-                        </OnboardingGate>
-                      </ProtectedRoute>
-                    } />
-                    
-                    <Route path="/work-orders/create" element={
-                      <ProtectedRoute>
-                        <OnboardingGate>
-                          <Layout>
-                            <WorkOrderCreate />
-                          </Layout>
-                        </OnboardingGate>
-                      </ProtectedRoute>
-                    } />
-                    
-                    <Route path="/work-orders/:id" element={
-                      <ProtectedRoute>
-                        <OnboardingGate>
-                          <Layout>
-                            <WorkOrderDetails />
-                          </Layout>
-                        </OnboardingGate>
-                      </ProtectedRoute>
-                    } />
-                    
-                    {/* Invoices routes */}
-                    <Route path="/invoices" element={
-                      <ProtectedRoute>
-                        <OnboardingGate>
-                          <Layout>
-                            <Invoices />
-                          </Layout>
-                        </OnboardingGate>
-                      </ProtectedRoute>
-                    } />
-                    
-                    <Route path="/invoices/create" element={
-                      <ProtectedRoute>
-                        <OnboardingGate>
-                          <Layout>
-                            <InvoiceCreate />
-                          </Layout>
-                        </OnboardingGate>
-                      </ProtectedRoute>
-                    } />
-                    
-                    <Route path="/invoices/:id" element={
-                      <ProtectedRoute>
-                        <OnboardingGate>
-                          <Layout>
-                            <InvoiceDetails />
-                          </Layout>
-                        </OnboardingGate>
-                      </ProtectedRoute>
-                    } />
+                    {/* Invoice routes */}
+                    <Route path="/invoices" element={<Invoices />} />
+                    <Route path="/invoices/create" element={<InvoiceCreate />} />
+                    <Route path="/invoices/:id" element={<InvoiceDetails />} />
+                    <Route path="/invoices/:id/edit" element={<InvoiceEdit />} />
                     
                     {/* Inventory routes */}
-                    <Route path="/inventory" element={
-                      <ProtectedRoute>
-                        <OnboardingGate>
-                          <Layout>
-                            <Inventory />
-                          </Layout>
-                        </OnboardingGate>
-                      </ProtectedRoute>
-                    } />
+                    <Route path="/inventory" element={<Inventory />} />
+                    <Route path="/inventory/add" element={<InventoryAdd />} />
                     
                     {/* Team routes */}
-                    <Route path="/team" element={
-                      <ProtectedRoute>
-                        <OnboardingGate>
-                          <Layout>
-                            <Team />
-                          </Layout>
-                        </OnboardingGate>
-                      </ProtectedRoute>
-                    } />
+                    <Route path="/team" element={<Team />} />
+                    <Route path="/team/create" element={<TeamMemberCreate />} />
+                    <Route path="/team/:id" element={<TeamMemberProfile />} />
+                    <Route path="/team/roles" element={<TeamRoles />} />
                     
-                    {/* Reports routes */}
-                    <Route path="/reports" element={
-                      <ProtectedRoute>
-                        <OnboardingGate>
-                          <Layout>
-                            <Reports />
-                          </Layout>
-                        </OnboardingGate>
-                      </ProtectedRoute>
-                    } />
-                    
-                    {/* Calendar routes */}
-                    <Route path="/calendar" element={
-                      <ProtectedRoute>
-                        <OnboardingGate>
-                          <Layout>
-                            <Calendar />
-                          </Layout>
-                        </OnboardingGate>
-                      </ProtectedRoute>
-                    } />
-                    
-                    {/* Chat routes */}
-                    <Route path="/chat" element={
-                      <ProtectedRoute>
-                        <OnboardingGate>
-                          <Layout>
-                            <Chat />
-                          </Layout>
-                        </OnboardingGate>
-                      </ProtectedRoute>
-                    } />
+                    {/* Other main routes */}
+                    <Route path="/reports" element={<Reports />} />
+                    <Route path="/calendar" element={<Calendar />} />
+                    <Route path="/reminders" element={<ServiceReminders />} />
+                    <Route path="/analytics" element={<Analytics />} />
+                    <Route path="/notifications" element={<Notifications />} />
+                    <Route path="/chat" element={<Chat />} />
                     
                     {/* Settings routes */}
-                    <Route path="/settings" element={
-                      <ProtectedRoute>
-                        <OnboardingGate>
-                          <Layout>
-                            <Settings />
-                          </Layout>
-                        </OnboardingGate>
-                      </ProtectedRoute>
-                    } />
-
-                    {/* Catch-all route for 404 */}
+                    <Route path="/settings/company" element={<CompanySettings />} />
+                    <Route path="/settings/account" element={<AccountSettings />} />
+                    <Route path="/settings/notifications" element={<NotificationSettings />} />
+                    <Route path="/settings/branding" element={<BrandingSettings />} />
+                    <Route path="/settings/language" element={<LanguageSettings />} />
+                    <Route path="/settings/loyalty" element={<LoyaltySettings />} />
+                    <Route path="/settings/labour" element={<LabourSettings />} />
+                    <Route path="/settings/markup" element={<MarkupSettings />} />
+                    <Route path="/settings/inventory" element={<InventorySettings />} />
+                    <Route path="/settings/email" element={<EmailSettings />} />
+                    <Route path="/settings/email-scheduling" element={<EmailSchedulingSettings />} />
+                    <Route path="/settings/integrations" element={<IntegrationSettings />} />
+                    <Route path="/settings/security" element={<SecuritySettings />} />
+                    <Route path="/settings/security-advanced" element={<SecurityAdvancedSettings />} />
+                    <Route path="/settings/data-export" element={<DataExportSettings />} />
+                    <Route path="/settings/team-history" element={<TeamHistorySettings />} />
+                    <Route path="/settings/appearance" element={<AppearanceSettings />} />
+                    
+                    {/* Fallback routes */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
-                </BrowserRouter>
-              </ImpersonationProvider>
-            </NotificationsProvider>
-          </TooltipProvider>
-        </QueryClientProvider>
-      </HelmetProvider>
-    </ErrorBoundary>
+                </Layout>
+              </OnboardingGate>
+            </AuthGate>
+          } />
+        </Routes>
+        <Toaster position="top-right" richColors closeButton />
+      </Router>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
   );
-}
+};
 
 export default App;
