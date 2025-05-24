@@ -19,7 +19,6 @@ export default function MaintenanceDashboard() {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [overdueEquipment, setOverdueEquipment] = useState<Equipment[]>([]);
   const [upcomingMaintenance, setUpcomingMaintenance] = useState<any[]>([]);
-  const [allMaintenanceHistory, setAllMaintenanceHistory] = useState<Array<any>>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   
   // Load equipment data
@@ -35,27 +34,6 @@ export default function MaintenanceDashboard() {
         // Get upcoming maintenance schedules (next 30 days)
         const upcoming = getUpcomingMaintenanceSchedules(equipmentData, 30);
         setUpcomingMaintenance(upcoming);
-        
-        // Collect all maintenance history from all equipment
-        const history: Array<any> = [];
-        
-        equipmentData.forEach(item => {
-          if (item.maintenanceHistory && Array.isArray(item.maintenanceHistory)) {
-            item.maintenanceHistory.forEach(record => {
-              history.push({
-                ...record,
-                equipmentName: item.name
-              });
-            });
-          }
-        });
-        
-        // Sort maintenance history by date (most recent first)
-        const sortedHistory = [...history].sort((a, b) => {
-          return new Date(b.date).getTime() - new Date(a.date).getTime();
-        });
-        
-        setAllMaintenanceHistory(sortedHistory);
       } catch (error) {
         console.error("Error loading maintenance dashboard data:", error);
       } finally {
@@ -83,9 +61,13 @@ export default function MaintenanceDashboard() {
   
   const upcomingCount = upcomingMaintenance.length;
   
-  const completedCount = allMaintenanceHistory.filter(record => 
-    new Date(record.date).getTime() > today.getTime() - (30 * 24 * 60 * 60 * 1000)
-  ).length;
+  // Calculate completed count from equipment maintenance history
+  const completedCount = equipment.reduce((count, item) => {
+    if (!item.maintenanceHistory) return count;
+    return count + item.maintenanceHistory.filter(record => 
+      new Date(record.date).getTime() > today.getTime() - (30 * 24 * 60 * 60 * 1000)
+    ).length;
+  }, 0);
 
   return (
     <div className="space-y-6">
@@ -128,9 +110,7 @@ export default function MaintenanceDashboard() {
         
         <TabsContent value="history" className="space-y-4">
           <MaintenanceHistoryTable 
-            maintenanceHistory={allMaintenanceHistory}
-            timeframe={timeframe}
-            setTimeframe={setTimeframe}
+            equipment={equipment}
           />
         </TabsContent>
       </Tabs>

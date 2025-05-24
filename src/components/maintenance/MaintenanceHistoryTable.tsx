@@ -22,9 +22,9 @@ export function MaintenanceHistoryTable({ equipment }: MaintenanceHistoryTablePr
     }))
   );
 
-  // Sort by completion date (most recent first)
+  // Sort by date (most recent first) - using 'date' property instead of 'completedDate'
   const sortedRecords = allMaintenanceRecords.sort((a, b) => 
-    new Date(b.completedDate).getTime() - new Date(a.completedDate).getTime()
+    new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
   if (sortedRecords.length === 0) {
@@ -74,7 +74,7 @@ export function MaintenanceHistoryTable({ equipment }: MaintenanceHistoryTablePr
               <TableRow key={`${record.equipmentId}-${index}`}>
                 <TableCell className="font-medium">{record.equipmentName}</TableCell>
                 <TableCell>{record.description}</TableCell>
-                <TableCell>{formatDate(record.completedDate)}</TableCell>
+                <TableCell>{formatDate(record.date)}</TableCell>
                 <TableCell>{record.technician || 'N/A'}</TableCell>
                 <TableCell>{record.cost ? `$${record.cost.toFixed(2)}` : 'N/A'}</TableCell>
                 <TableCell>

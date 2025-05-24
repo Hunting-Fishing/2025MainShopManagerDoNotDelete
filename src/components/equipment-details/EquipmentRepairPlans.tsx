@@ -25,7 +25,7 @@ export function EquipmentRepairPlans({
       <CardHeader className="flex flex-row items-center justify-between bg-slate-50 border-b">
         <div className="flex items-center">
           <Wrench className="h-5 w-5 mr-2 text-slate-500" />
-          <CardTitle className="text-lg">Repair Plans</CardTitle>
+          <CardTitle className="text-lg">Repair Plans for {equipmentName}</CardTitle>
         </div>
         <Link to={`/repair-plans/new?equipment=${equipmentId}`}>
           <Button variant="outline" size="sm">
@@ -37,7 +37,6 @@ export function EquipmentRepairPlans({
       <CardContent className="p-0">
         <RepairPlansList 
           repairPlans={equipmentRepairPlans}
-          title={`Repair Plans for ${equipmentName}`}
           showFilters={false}
           showHeader={false}
         />
