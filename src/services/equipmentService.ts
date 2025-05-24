@@ -1,10 +1,10 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import type { Equipment, EquipmentStatus } from "@/types/equipment";
+import type { Equipment, EquipmentStatus, MaintenanceRecord, MaintenanceSchedule } from "@/types/equipment";
 
 // Define the interface that matches the actual database structure
 export interface EquipmentWithMaintenance extends Equipment {
-  shop_id: string | null;
+  shop_id?: string | null;
 }
 
 export const fetchEquipment = async (): Promise<EquipmentWithMaintenance[]> => {
@@ -23,10 +23,10 @@ export const fetchEquipment = async (): Promise<EquipmentWithMaintenance[]> => {
     return (data || []).map(item => ({
       ...item,
       status: item.status as EquipmentStatus,
-      shop_id: item.shop_id || null,
-      work_order_history: Array.isArray(item.work_order_history) ? item.work_order_history : [],
-      maintenance_history: Array.isArray(item.maintenance_history) ? item.maintenance_history : [],
-      maintenance_schedules: Array.isArray(item.maintenance_schedules) ? item.maintenance_schedules : [],
+      shop_id: null, // Equipment table doesn't have shop_id, so set to null
+      work_order_history: Array.isArray(item.work_order_history) ? item.work_order_history as any[] : [],
+      maintenance_history: Array.isArray(item.maintenance_history) ? item.maintenance_history as MaintenanceRecord[] : [],
+      maintenance_schedules: Array.isArray(item.maintenance_schedules) ? item.maintenance_schedules as MaintenanceSchedule[] : [],
     }));
   } catch (error) {
     console.error("Error in fetchEquipment:", error);
@@ -52,10 +52,10 @@ export const getOverdueMaintenanceEquipment = async (): Promise<EquipmentWithMai
     return (data || []).map(item => ({
       ...item,
       status: item.status as EquipmentStatus,
-      shop_id: item.shop_id || null,
-      work_order_history: Array.isArray(item.work_order_history) ? item.work_order_history : [],
-      maintenance_history: Array.isArray(item.maintenance_history) ? item.maintenance_history : [],
-      maintenance_schedules: Array.isArray(item.maintenance_schedules) ? item.maintenance_schedules : [],
+      shop_id: null, // Equipment table doesn't have shop_id, so set to null
+      work_order_history: Array.isArray(item.work_order_history) ? item.work_order_history as any[] : [],
+      maintenance_history: Array.isArray(item.maintenance_history) ? item.maintenance_history as MaintenanceRecord[] : [],
+      maintenance_schedules: Array.isArray(item.maintenance_schedules) ? item.maintenance_schedules as MaintenanceSchedule[] : [],
     }));
   } catch (error) {
     console.error("Error in getOverdueMaintenanceEquipment:", error);
@@ -84,17 +84,6 @@ export interface CreateEquipmentData {
 
 export const createEquipment = async (equipmentData: CreateEquipmentData): Promise<EquipmentWithMaintenance | null> => {
   try {
-    // Get the current user's shop_id
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('shop_id')
-      .eq('id', (await supabase.auth.getUser()).data.user?.id)
-      .single();
-
-    if (!profile?.shop_id) {
-      throw new Error('User shop not found');
-    }
-
     const { data, error } = await supabase
       .from('equipment')
       .insert({
@@ -113,7 +102,7 @@ export const createEquipment = async (equipmentData: CreateEquipmentData): Promi
     return {
       ...data,
       status: data.status as EquipmentStatus,
-      shop_id: data.shop_id || null,
+      shop_id: null, // Equipment table doesn't have shop_id, so set to null
       work_order_history: [],
       maintenance_history: [],
       maintenance_schedules: [],
@@ -141,10 +130,10 @@ export const updateEquipment = async (id: string, updates: Partial<CreateEquipme
     return {
       ...data,
       status: data.status as EquipmentStatus,
-      shop_id: data.shop_id || null,
-      work_order_history: Array.isArray(data.work_order_history) ? data.work_order_history : [],
-      maintenance_history: Array.isArray(data.maintenance_history) ? data.maintenance_history : [],
-      maintenance_schedules: Array.isArray(data.maintenance_schedules) ? data.maintenance_schedules : [],
+      shop_id: null, // Equipment table doesn't have shop_id, so set to null
+      work_order_history: Array.isArray(data.work_order_history) ? data.work_order_history as any[] : [],
+      maintenance_history: Array.isArray(data.maintenance_history) ? data.maintenance_history as MaintenanceRecord[] : [],
+      maintenance_schedules: Array.isArray(data.maintenance_schedules) ? data.maintenance_schedules as MaintenanceSchedule[] : [],
     };
   } catch (error) {
     console.error("Error in updateEquipment:", error);
