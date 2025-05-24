@@ -5,19 +5,62 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { StaffMember, Invoice, InvoiceTemplate } from "@/types/invoice";
+import { StaffMember, Invoice, InvoiceTemplate, InvoiceItem } from "@/types/invoice";
+import { WorkOrder } from "@/types/workOrder";
+import { InventoryItem } from "@/types/inventory";
 
 interface InvoiceLeftColumnProps {
   invoice: Invoice;
-  onInvoiceChange: (field: string, value: any) => void;
-  onSaveTemplate: (templateData: Omit<InvoiceTemplate, "id" | "created_at" | "usage_count">) => void;
+  workOrders: WorkOrder[];
+  inventoryItems: InventoryItem[];
+  templates: InvoiceTemplate[];
+  showWorkOrderDialog: boolean;
+  showInventoryDialog: boolean;
+  showStaffDialog: boolean;
+  setInvoice: (invoice: Invoice | ((prev: Invoice) => Invoice)) => void;
+  setShowWorkOrderDialog: (show: boolean) => void;
+  setShowInventoryDialog: (show: boolean) => void;
+  setShowStaffDialog: (show: boolean) => void;
+  handleSelectWorkOrder: (workOrder: WorkOrder) => void;
+  handleAddInventoryItem: (item: InvoiceItem) => void;
+  handleRemoveItem: (id: string) => void;
+  handleUpdateItemQuantity: (id: string, quantity: number) => void;
+  handleUpdateItemDescription: (id: string, description: string) => void;
+  handleUpdateItemPrice: (id: string, price: number) => void;
+  handleAddLaborItem: () => void;
+  handleApplyTemplate: (template: InvoiceTemplate) => void;
+  handleSaveTemplate: (template: Omit<InvoiceTemplate, "id" | "created_at" | "usage_count">) => Promise<void>;
 }
 
 export function InvoiceLeftColumn({ 
   invoice, 
-  onInvoiceChange, 
-  onSaveTemplate 
+  workOrders,
+  inventoryItems,
+  templates,
+  showWorkOrderDialog,
+  showInventoryDialog,
+  showStaffDialog,
+  setInvoice,
+  setShowWorkOrderDialog,
+  setShowInventoryDialog,
+  setShowStaffDialog,
+  handleSelectWorkOrder,
+  handleAddInventoryItem,
+  handleRemoveItem,
+  handleUpdateItemQuantity,
+  handleUpdateItemDescription,
+  handleUpdateItemPrice,
+  handleAddLaborItem,
+  handleApplyTemplate,
+  handleSaveTemplate
 }: InvoiceLeftColumnProps) {
+  const handleInvoiceChange = (field: string, value: any) => {
+    setInvoice(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
   const handleSaveAsTemplate = () => {
     const templateName = prompt("Enter template name:");
     const templateDescription = prompt("Enter template description:");
@@ -33,7 +76,7 @@ export function InvoiceLeftColumn({
         last_used: null
       };
       
-      onSaveTemplate(templateData);
+      handleSaveTemplate(templateData);
     }
   };
 
@@ -49,7 +92,7 @@ export function InvoiceLeftColumn({
             <Input
               id="customer"
               value={invoice.customer}
-              onChange={(e) => onInvoiceChange('customer', e.target.value)}
+              onChange={(e) => handleInvoiceChange('customer', e.target.value)}
               placeholder="Enter customer name"
             />
           </div>
@@ -60,7 +103,7 @@ export function InvoiceLeftColumn({
               id="customer_email"
               type="email"
               value={invoice.customer_email || ''}
-              onChange={(e) => onInvoiceChange('customer_email', e.target.value)}
+              onChange={(e) => handleInvoiceChange('customer_email', e.target.value)}
               placeholder="Enter customer email"
             />
           </div>
@@ -70,7 +113,7 @@ export function InvoiceLeftColumn({
             <Textarea
               id="customer_address"
               value={invoice.customer_address || ''}
-              onChange={(e) => onInvoiceChange('customer_address', e.target.value)}
+              onChange={(e) => handleInvoiceChange('customer_address', e.target.value)}
               placeholder="Enter customer address"
             />
           </div>
@@ -87,7 +130,7 @@ export function InvoiceLeftColumn({
             <Textarea
               id="description"
               value={invoice.description || ''}
-              onChange={(e) => onInvoiceChange('description', e.target.value)}
+              onChange={(e) => handleInvoiceChange('description', e.target.value)}
               placeholder="Enter invoice description"
             />
           </div>
@@ -97,7 +140,7 @@ export function InvoiceLeftColumn({
             <Textarea
               id="notes"
               value={invoice.notes || ''}
-              onChange={(e) => onInvoiceChange('notes', e.target.value)}
+              onChange={(e) => handleInvoiceChange('notes', e.target.value)}
               placeholder="Enter invoice notes"
             />
           </div>
