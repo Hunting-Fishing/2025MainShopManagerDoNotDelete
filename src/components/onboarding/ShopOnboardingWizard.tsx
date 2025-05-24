@@ -60,9 +60,15 @@ export function ShopOnboardingWizard() {
   const progress = ((currentStep + 1) / steps.length) * 100;
   const CurrentStepComponent = steps[currentStep].component;
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    console.log('handleNext called, current step:', currentStep);
+    
+    // Mark current step as completed
     setCompletedSteps(prev => new Set([...prev, currentStep]));
+    
+    // Navigate to next step if not at the end
     if (currentStep < steps.length - 1) {
+      console.log('Moving to next step:', currentStep + 1);
       setCurrentStep(currentStep + 1);
     }
   };
@@ -79,6 +85,7 @@ export function ShopOnboardingWizard() {
                   : steps[currentStep].id === 'sample-data' ? 'sampleData'
                   : steps[currentStep].id;
     
+    console.log('Updating data for step:', stepKey, stepData);
     setOnboardingData(prev => ({
       ...prev,
       [stepKey]: { ...prev[stepKey as keyof typeof prev], ...stepData }
