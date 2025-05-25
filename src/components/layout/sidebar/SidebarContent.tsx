@@ -16,7 +16,7 @@ import {
 import { cn } from '@/lib/utils';
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Customers', href: '/customers', icon: Users },
   { name: 'Work Orders', href: '/work-orders', icon: Wrench },
   { name: 'Invoices', href: '/invoices', icon: FileText },
@@ -41,7 +41,8 @@ export function SidebarContent() {
       {/* Navigation */}
       <nav className="flex-1 px-4 py-6 space-y-2">
         {navigation.map((item) => {
-          const isActive = location.pathname === item.href;
+          const isActive = location.pathname === item.href || 
+                          (item.href !== '/' && location.pathname.startsWith(item.href));
           return (
             <Link
               key={item.name}
