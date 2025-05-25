@@ -6,7 +6,7 @@ import { ResponsiveContainer } from 'recharts';
 interface BaseChartProps {
   title: string;
   description?: string;
-  children: React.ReactNode;
+  children: React.ReactElement;
   isLoading?: boolean;
   error?: string | null;
   className?: string;
