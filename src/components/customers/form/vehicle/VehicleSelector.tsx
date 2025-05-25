@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,11 +11,8 @@ import {
   ModelField, 
   LicensePlateField 
 } from "./fields";
-import { decodeVin } from "@/utils/vehicleUtils";
-import { useToast } from "@/hooks/use-toast";
 import { VehicleAdditionalDetails } from "./VehicleAdditionalDetails";
-import { VinDecodeResult } from "@/types/vehicle";
-import { useVehicleData } from "@/hooks/useVehicleData";
+import { useVehicleForm } from "./useVehicleForm";
 
 interface VehicleSelectorProps {
   form: UseFormReturn<any>;
@@ -28,64 +25,15 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
   index,
   onRemove
 }) => {
-  const { toast } = useToast();
-  const { fetchModels, makes, models } = useVehicleData();
-  const [decodedVehicle, setDecodedVehicle] = useState<VinDecodeResult | null>(null);
-  const vin = form.watch(`vehicles.${index}.vin`);
+  const { 
+    makes, 
+    models, 
+    vinProcessing, 
+    decodedVehicleInfo, 
+    fetchModels 
+  } = useVehicleForm({ form, index });
+
   const make = form.watch(`vehicles.${index}.make`);
-
-  useEffect(() => {
-    if (make) {
-      fetchModels(make);
-    }
-  }, [make, fetchModels]);
-
-  useEffect(() => {
-    const handleVinDecode = async () => {
-      if (vin?.length === 17) {
-        try {
-          const decodedData = await decodeVin(vin);
-          if (decodedData) {
-            setDecodedVehicle(decodedData);
-            
-            // Set all the decoded details in the form
-            form.setValue(`vehicles.${index}.make`, decodedData.make || '');
-            form.setValue(`vehicles.${index}.model`, decodedData.model || '');
-            form.setValue(`vehicles.${index}.year`, decodedData.year || '');
-            form.setValue(`vehicles.${index}.trim`, decodedData.trim || '');
-            form.setValue(`vehicles.${index}.transmission`, decodedData.transmission || '');
-            form.setValue(`vehicles.${index}.transmission_type`, decodedData.transmission_type || '');
-            form.setValue(`vehicles.${index}.drive_type`, decodedData.drive_type || '');
-            form.setValue(`vehicles.${index}.fuel_type`, decodedData.fuel_type || '');
-            form.setValue(`vehicles.${index}.engine`, decodedData.engine || '');
-            form.setValue(`vehicles.${index}.body_style`, decodedData.body_style || '');
-            form.setValue(`vehicles.${index}.country`, decodedData.country || '');
-            form.setValue(`vehicles.${index}.gvwr`, decodedData.gvwr || '');
-            
-            // If the make has changed, update the models
-            if (decodedData.make) {
-              fetchModels(decodedData.make);
-            }
-            
-            toast({
-              title: "VIN Decoded Successfully",
-              description: `Vehicle identified as ${decodedData.year} ${decodedData.make} ${decodedData.model} ${decodedData.trim || ''}`,
-              variant: "success",
-            });
-          }
-        } catch (error) {
-          console.error("Error decoding VIN:", error);
-          toast({
-            title: "Error",
-            description: "Failed to decode VIN. Please enter vehicle details manually.",
-            variant: "destructive",
-          });
-        }
-      }
-    };
-    
-    handleVinDecode();
-  }, [vin, form, index, toast, fetchModels]);
 
   return (
     <Card className="relative">
@@ -101,7 +49,12 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
       
       <CardContent className="pt-6 pb-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <VinField form={form} index={index} />
+          <VinField 
+            form={form} 
+            index={index} 
+            processing={vinProcessing}
+            decodedVehicleInfo={decodedVehicleInfo}
+          />
           <LicensePlateField form={form} index={index} />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
@@ -114,9 +67,8 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
             form={form} 
             index={index} 
             makes={makes} 
-            onMakeChange={(make) => {
-              // When make changes, refresh models and reset model value
-              fetchModels(make);
+            onMakeChange={(selectedMake) => {
+              fetchModels(selectedMake);
               form.setValue(`vehicles.${index}.model`, '');
             }}
           />
@@ -127,7 +79,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
             selectedMake={make}
           />
         </div>
-        <VehicleAdditionalDetails form={form} index={index} decodedDetails={decodedVehicle} />
+        <VehicleAdditionalDetails form={form} index={index} decodedDetails={decodedVehicleInfo} />
       </CardContent>
     </Card>
   );

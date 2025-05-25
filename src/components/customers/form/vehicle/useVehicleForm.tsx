@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { CustomerFormValues } from "../CustomerFormSchema";
 import { useVehicleData } from "@/hooks/useVehicleData";
@@ -23,98 +23,91 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
   } = useVehicleData();
 
   const [vinProcessing, setVinProcessing] = useState<boolean>(false);
-  const [lastProcessedVin, setLastProcessedVin] = useState<string>('');
-  const [vinDecodeTimeout, setVinDecodeTimeout] = useState<NodeJS.Timeout | null>(null);
-  const [modelsLoaded, setModelsLoaded] = useState<boolean>(false);
-  const [vinDecodeSuccess, setVinDecodeSuccess] = useState<boolean>(false);
   const [decodedVehicleInfo, setDecodedVehicleInfo] = useState<VinDecodeResult | null>(null);
+  const vinDecodeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isProcessingRef = useRef<boolean>(false);
   
   const selectedMake = form.watch(`vehicles.${index}.make`);
   const vin = form.watch(`vehicles.${index}.vin`);
 
   // Fetch models when make changes
   useEffect(() => {
-    if (selectedMake) {
-      setModelsLoaded(false);
-      fetchModels(selectedMake).then(() => {
-        setModelsLoaded(true);
-      });
+    if (selectedMake && makes.length > 0) {
+      fetchModels(selectedMake);
     }
-  }, [selectedMake, fetchModels]);
+  }, [selectedMake, fetchModels, makes.length]);
 
-  // Enhanced auto-populate function that ensures proper order of operations
   const populateVehicleFromVin = useCallback(async (vehicleInfo: VinDecodeResult) => {
-    if (!vehicleInfo) return;
+    if (!vehicleInfo || isProcessingRef.current) return;
     
+    isProcessingRef.current = true;
     setVinProcessing(true);
     setDecodedVehicleInfo(vehicleInfo);
-    console.log("Populating form with decoded VIN info:", vehicleInfo);
+    
+    console.log("Populating vehicle from VIN:", vehicleInfo);
     
     try {
-      // First set the year - ensure it's a string
+      // Set year first
       if (vehicleInfo.year) {
         form.setValue(`vehicles.${index}.year`, String(vehicleInfo.year));
       }
       
-      // Then set the make and fetch models for this make
+      // Set make and wait for models to load
       if (vehicleInfo.make) {
         form.setValue(`vehicles.${index}.make`, vehicleInfo.make);
         
-        // Wait for models to load
+        // Wait for models to be fetched
         await fetchModels(vehicleInfo.make);
-        setModelsLoaded(true);
         
-        // Set the model after models are fetched
-        if (vehicleInfo.model) {
-          setTimeout(() => {
+        // Small delay to ensure models are loaded
+        setTimeout(() => {
+          if (vehicleInfo.model) {
             form.setValue(`vehicles.${index}.model`, vehicleInfo.model);
-            
-            // Set additional vehicle details if available
-            if (vehicleInfo.transmission) 
-              form.setValue(`vehicles.${index}.transmission`, vehicleInfo.transmission);
-            if (vehicleInfo.drive_type) 
-              form.setValue(`vehicles.${index}.drive_type`, vehicleInfo.drive_type);
-            if (vehicleInfo.fuel_type) 
-              form.setValue(`vehicles.${index}.fuel_type`, vehicleInfo.fuel_type);
-            if (vehicleInfo.body_style) 
-              form.setValue(`vehicles.${index}.body_style`, vehicleInfo.body_style);
-            if (vehicleInfo.engine) 
-              form.setValue(`vehicles.${index}.engine`, vehicleInfo.engine);
-            if (vehicleInfo.trim)
-              form.setValue(`vehicles.${index}.trim`, vehicleInfo.trim);
-            if (vehicleInfo.transmission_type)
-              form.setValue(`vehicles.${index}.transmission_type`, vehicleInfo.transmission_type);
-            if (vehicleInfo.gvwr)
-              form.setValue(`vehicles.${index}.gvwr`, vehicleInfo.gvwr);
-            if (vehicleInfo.country)
-              form.setValue(`vehicles.${index}.country`, vehicleInfo.country);
-            
-            // Trigger form validation after all fields are set
-            form.trigger([
-              `vehicles.${index}.year`,
-              `vehicles.${index}.make`,
-              `vehicles.${index}.model`
-            ]);
-            
-            toast({
-              title: "VIN Decoded Successfully",
-              description: `Vehicle identified as ${vehicleInfo.year} ${vehicleInfo.make} ${vehicleInfo.model}`,
-              variant: "success",
-            });
-            
-            setVinDecodeSuccess(true);
-            setVinProcessing(false);
-          }, 300); // Small delay to ensure models are loaded
-        } else {
+          }
+          
+          // Set additional details
+          if (vehicleInfo.transmission) 
+            form.setValue(`vehicles.${index}.transmission`, vehicleInfo.transmission);
+          if (vehicleInfo.drive_type) 
+            form.setValue(`vehicles.${index}.drive_type`, vehicleInfo.drive_type);
+          if (vehicleInfo.fuel_type) 
+            form.setValue(`vehicles.${index}.fuel_type`, vehicleInfo.fuel_type);
+          if (vehicleInfo.body_style) 
+            form.setValue(`vehicles.${index}.body_style`, vehicleInfo.body_style);
+          if (vehicleInfo.engine) 
+            form.setValue(`vehicles.${index}.engine`, vehicleInfo.engine);
+          if (vehicleInfo.trim)
+            form.setValue(`vehicles.${index}.trim`, vehicleInfo.trim);
+          if (vehicleInfo.transmission_type)
+            form.setValue(`vehicles.${index}.transmission_type`, vehicleInfo.transmission_type);
+          if (vehicleInfo.gvwr)
+            form.setValue(`vehicles.${index}.gvwr`, vehicleInfo.gvwr);
+          if (vehicleInfo.country)
+            form.setValue(`vehicles.${index}.country`, vehicleInfo.country);
+          
+          // Trigger validation
+          form.trigger([
+            `vehicles.${index}.year`,
+            `vehicles.${index}.make`,
+            `vehicles.${index}.model`
+          ]);
+          
+          toast({
+            title: "VIN Decoded Successfully",
+            description: `Vehicle identified as ${vehicleInfo.year} ${vehicleInfo.make} ${vehicleInfo.model}`,
+          });
+          
           setVinProcessing(false);
-        }
+          isProcessingRef.current = false;
+        }, 500);
       } else {
         setVinProcessing(false);
+        isProcessingRef.current = false;
       }
     } catch (err) {
       console.error("Error populating vehicle form:", err);
       setVinProcessing(false);
-      setVinDecodeSuccess(false);
+      isProcessingRef.current = false;
       
       toast({
         title: "Error",
@@ -124,39 +117,36 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     }
   }, [form, index, fetchModels, toast]);
 
-  // Auto-populate fields when VIN changes with improved debouncing
+  // VIN decoding effect with improved debouncing
   useEffect(() => {
-    // Skip if the VIN hasn't changed or is not long enough
-    if (!vin || vin.length < 17 || vin === lastProcessedVin || vinProcessing) {
+    if (!vin || vin.length !== 17 || vinProcessing || isProcessingRef.current) {
       return;
     }
     
-    // Clear existing timeout if any
-    if (vinDecodeTimeout) {
-      clearTimeout(vinDecodeTimeout);
+    // Clear existing timeout
+    if (vinDecodeTimeoutRef.current) {
+      clearTimeout(vinDecodeTimeoutRef.current);
     }
     
-    // Set a new timeout for debouncing
-    const timeoutId = setTimeout(async () => {
-      setVinProcessing(true);
-      setLastProcessedVin(vin);
-      setVinDecodeSuccess(false);
+    // Set new timeout for debouncing
+    vinDecodeTimeoutRef.current = setTimeout(async () => {
+      if (isProcessingRef.current) return;
+      
+      console.log("Starting VIN decode for:", vin);
       
       try {
         const vehicleInfo = await decodeVin(vin);
         if (vehicleInfo) {
           await populateVehicleFromVin(vehicleInfo);
         } else {
-          setVinProcessing(false);
           toast({
             title: "VIN Not Found",
             description: "Could not decode the VIN. Please enter vehicle details manually.",
-            variant: "warning",
+            variant: "destructive",
           });
         }
       } catch (error) {
         console.error("Error decoding VIN:", error);
-        setVinProcessing(false);
         toast({
           title: "VIN Decode Error",
           description: "VIN decoding service is unavailable. Please enter vehicle details manually.",
@@ -165,12 +155,22 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
       }
     }, 1000);
     
-    setVinDecodeTimeout(timeoutId);
-    
     return () => {
-      if (timeoutId) clearTimeout(timeoutId);
+      if (vinDecodeTimeoutRef.current) {
+        clearTimeout(vinDecodeTimeoutRef.current);
+      }
     };
-  }, [vin, lastProcessedVin, vinProcessing, populateVehicleFromVin]);
+  }, [vin, vinProcessing, populateVehicleFromVin, toast]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (vinDecodeTimeoutRef.current) {
+        clearTimeout(vinDecodeTimeoutRef.current);
+      }
+      isProcessingRef.current = false;
+    };
+  }, []);
 
   return {
     makes,
@@ -179,8 +179,6 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     loading: dataLoading,
     error,
     vinProcessing,
-    modelsLoaded,
-    vinDecodeSuccess,
     decodedVehicleInfo,
     fetchModels
   };

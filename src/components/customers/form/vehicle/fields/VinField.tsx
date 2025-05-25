@@ -10,12 +10,19 @@ import { BaseFieldProps } from "./BaseFieldTypes";
 export const VinField: React.FC<BaseFieldProps & { 
   processing?: boolean;
   decodedVehicleInfo?: {
-    year?: string;
+    year?: string | number;
     make?: string;
     model?: string;
-    valid: boolean;
+    valid?: boolean;
   };
 }> = ({ form, index, processing = false, decodedVehicleInfo }) => {
+  const vinValue = form.watch(`vehicles.${index}.vin`);
+  const makeValue = form.watch(`vehicles.${index}.make`);
+  const modelValue = form.watch(`vehicles.${index}.model`);
+  const yearValue = form.watch(`vehicles.${index}.year`);
+  
+  const showDecodedInfo = decodedVehicleInfo && (makeValue || modelValue || yearValue);
+  
   return (
     <FormField
       control={form.control}
@@ -51,32 +58,41 @@ export const VinField: React.FC<BaseFieldProps & {
             </FormControl>
             <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center">
               {processing && (
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
               )}
-              {!processing && decodedVehicleInfo && (
-                decodedVehicleInfo.valid ? 
-                  <CheckCircle2 className="h-4 w-4 text-green-500" /> : 
-                  <AlertCircle className="h-4 w-4 text-amber-500" />
+              {!processing && vinValue?.length === 17 && showDecodedInfo && (
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+              )}
+              {!processing && vinValue?.length === 17 && !showDecodedInfo && (
+                <AlertCircle className="h-4 w-4 text-amber-500" />
               )}
             </div>
           </div>
           
-          {decodedVehicleInfo && decodedVehicleInfo.valid && decodedVehicleInfo.make && decodedVehicleInfo.model && (
+          {showDecodedInfo && (
             <div className="mt-2 text-sm">
-              <Badge variant="outline" className="bg-muted/50 mr-2">
-                {decodedVehicleInfo.year || ''}
-              </Badge>
-              <Badge variant="outline" className="bg-muted/50 mr-2">
-                {decodedVehicleInfo.make || ''}
-              </Badge>
-              <Badge variant="outline" className="bg-muted/50">
-                {decodedVehicleInfo.model || ''}
-              </Badge>
+              <div className="flex flex-wrap gap-1">
+                {yearValue && (
+                  <Badge variant="outline" className="bg-green-50 border-green-200 text-green-700">
+                    {yearValue}
+                  </Badge>
+                )}
+                {makeValue && (
+                  <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-700">
+                    {makeValue}
+                  </Badge>
+                )}
+                {modelValue && (
+                  <Badge variant="outline" className="bg-purple-50 border-purple-200 text-purple-700">
+                    {modelValue}
+                  </Badge>
+                )}
+              </div>
             </div>
           )}
           
           <FormDescription>
-            Enter a complete 17-digit VIN to auto-populate vehicle details
+            {processing ? "Decoding VIN..." : "Enter a complete 17-digit VIN to auto-populate vehicle details"}
           </FormDescription>
           <FormMessage />
         </FormItem>
