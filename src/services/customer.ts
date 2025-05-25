@@ -39,7 +39,7 @@ export const getCustomer = async (id: string): Promise<Customer | null> => {
 };
 
 // Re-export from more specialized services for backward compatibility
-// Import directly from the services to avoid circular dependencies
 export { getCustomerById } from './customer/customerQueryService';
 export { getAllCustomers } from './customer/customerQueryService';
 export { updateCustomer } from './customer/customerUpdateService';
+export { createCustomer } from './customer/customerCreateService';

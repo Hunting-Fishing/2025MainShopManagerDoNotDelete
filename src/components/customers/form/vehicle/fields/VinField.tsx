@@ -1,20 +1,10 @@
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { 
-  Loader2, 
-  AlertCircle, 
-  RefreshCw, 
-  CheckCircle, 
-  Car,
-  ChevronDown,
-  ChevronUp
-} from "lucide-react";
+import { HelpCircle, AlertCircle, CheckCircle, RotateCcw, Search } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { BaseFieldProps } from "./BaseFieldTypes";
 import { VinDecodeResult } from "@/types/vehicle";
 
@@ -34,152 +24,117 @@ export const VinField: React.FC<VinFieldProps> = ({
   error = null,
   canRetry = false,
   onRetry,
-  decodedVehicleInfo = null,
-  onVinDecode
+  decodedVehicleInfo,
+  onVinDecode 
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [hasAttemptedDecode, setHasAttemptedDecode] = useState(false);
 
-  const handleVinChange = (value: string) => {
-    const upperValue = value.toUpperCase();
-    console.log('VIN field value changed to:', upperValue);
-    form.setValue(`vehicles.${index}.vin`, upperValue);
-    
-    // Automatically decode when VIN is 17 characters
-    if (upperValue.length === 17 && onVinDecode) {
-      console.log('Triggering VIN decode for:', upperValue);
-      onVinDecode(upperValue);
+  const handleVinDecode = useCallback(async () => {
+    const vin = form.getValues(`vehicles.${index}.vin`);
+    if (vin && vin.length === 17 && onVinDecode) {
+      setHasAttemptedDecode(true);
+      await onVinDecode(vin);
     }
+  }, [form, index, onVinDecode]);
+
+  const getVinStatusIcon = () => {
+    if (processing) {
+      return <Search className="h-4 w-4 text-blue-500 animate-spin" />;
+    }
+    if (error) {
+      return <AlertCircle className="h-4 w-4 text-red-500" />;
+    }
+    if (decodedVehicleInfo) {
+      return <CheckCircle className="h-4 w-4 text-green-500" />;
+    }
+    return null;
   };
 
-  console.log('VinField render - decodedVehicleInfo:', decodedVehicleInfo);
-  console.log('VinField render - processing:', processing);
-  console.log('VinField render - error:', error);
-
   return (
-    <div className="space-y-3">
-      <FormField
-        control={form.control}
-        name={`vehicles.${index}.vin`}
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel className="flex items-center gap-2">
-              VIN
-              {processing && <Loader2 className="h-4 w-4 animate-spin text-blue-600" />}
-              {decodedVehicleInfo && !processing && (
-                <CheckCircle className="h-4 w-4 text-green-600" />
-              )}
-            </FormLabel>
+    <FormField
+      control={form.control}
+      name={`vehicles.${index}.vin`}
+      render={({ field }) => (
+        <FormItem>
+          <div className="flex items-center gap-2">
+            <FormLabel>VIN</FormLabel>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>17-character Vehicle Identification Number</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            {getVinStatusIcon()}
+          </div>
+          
+          <div className="flex gap-2">
             <FormControl>
               <Input
                 {...field}
                 placeholder="Enter 17-character VIN"
                 maxLength={17}
-                onChange={(e) => handleVinChange(e.target.value)}
-                className={`font-mono ${
-                  decodedVehicleInfo ? 'border-green-300 bg-green-50' : ''
-                } ${error ? 'border-red-300 bg-red-50' : ''}`}
+                className="uppercase"
+                onChange={(e) => {
+                  const value = e.target.value.toUpperCase();
+                  field.onChange(value);
+                  setHasAttemptedDecode(false);
+                }}
               />
             </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      {/* Error Display */}
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="flex items-center justify-between">
-            <span>{error}</span>
+            
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleVinDecode}
+              disabled={!field.value || field.value.length !== 17 || processing}
+              className="shrink-0"
+            >
+              {processing ? (
+                <Search className="h-4 w-4 animate-spin" />
+              ) : (
+                <Search className="h-4 w-4" />
+              )}
+              Decode
+            </Button>
+            
             {canRetry && onRetry && (
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={onRetry}
-                className="ml-2"
+                className="shrink-0"
               >
-                <RefreshCw className="h-3 w-3 mr-1" />
+                <RotateCcw className="h-4 w-4" />
                 Retry
               </Button>
             )}
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Success Display with Vehicle Info */}
-      {decodedVehicleInfo && !error && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Car className="h-4 w-4 text-green-600" />
-              <span className="text-sm font-medium text-green-800">
-                VIN Decoded Successfully
-              </span>
-              <Badge variant="secondary" className="bg-green-100 text-green-800">
-                {decodedVehicleInfo.year} {decodedVehicleInfo.make} {decodedVehicleInfo.model}
-              </Badge>
-            </div>
-            
-            <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  {isExpanded ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </Button>
-              </CollapsibleTrigger>
-              
-              <CollapsibleContent className="mt-3">
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  {decodedVehicleInfo.body_style && (
-                    <div>
-                      <span className="font-medium">Body Style:</span> {decodedVehicleInfo.body_style}
-                    </div>
-                  )}
-                  {decodedVehicleInfo.drive_type && (
-                    <div>
-                      <span className="font-medium">Drive Type:</span> {decodedVehicleInfo.drive_type}
-                    </div>
-                  )}
-                  {decodedVehicleInfo.fuel_type && (
-                    <div>
-                      <span className="font-medium">Fuel Type:</span> {decodedVehicleInfo.fuel_type}
-                    </div>
-                  )}
-                  {decodedVehicleInfo.transmission && (
-                    <div>
-                      <span className="font-medium">Transmission:</span> {decodedVehicleInfo.transmission}
-                    </div>
-                  )}
-                  {decodedVehicleInfo.engine && (
-                    <div>
-                      <span className="font-medium">Engine:</span> {decodedVehicleInfo.engine}
-                    </div>
-                  )}
-                  {decodedVehicleInfo.country && (
-                    <div>
-                      <span className="font-medium">Country:</span> {decodedVehicleInfo.country}
-                    </div>
-                  )}
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
           </div>
-        </div>
-      )}
 
-      {/* Processing Display */}
-      {processing && (
-        <Alert>
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <AlertDescription>
-            Decoding VIN... This may take a few seconds.
-          </AlertDescription>
-        </Alert>
+          {/* Display decoded vehicle information */}
+          {decodedVehicleInfo && (
+            <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-md">
+              <p className="text-sm font-medium text-green-800">
+                Vehicle Decoded: {decodedVehicleInfo.year} {decodedVehicleInfo.make} {decodedVehicleInfo.model}
+              </p>
+            </div>
+          )}
+
+          {/* Display error */}
+          {error && hasAttemptedDecode && (
+            <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          )}
+          
+          <FormMessage />
+        </FormItem>
       )}
-    </div>
+    />
   );
 };

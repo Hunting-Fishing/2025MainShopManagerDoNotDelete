@@ -32,13 +32,12 @@ export const useCustomerCreate = () => {
     other_referral_details: "",
     is_fleet: false,
     fleet_company: "",
-    vehicles: [], // Ensure vehicles array is initialized
+    vehicles: [],
     segments: [],
     create_new_household: false,
     new_household_name: "",
     household_id: "", 
     household_relationship: "primary",
-    // Set the role to "Customer" by default for new customer entries
     role: "Customer",
   });
 
@@ -54,7 +53,6 @@ export const useCustomerCreate = () => {
     // Always ensure customers get the Customer role
     const customerData = { ...data, role: "Customer" };
     
-    // Ensure vehicles are properly formatted in the submission
     console.log("Submitting customer with vehicles:", customerData.vehicles);
     
     await handleSubmit(customerData, currentUserShopId);
