@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { getMonthlyRevenue } from '@/services/dashboardService';
+import { getMonthlyRevenue } from '@/services/dashboard';
 import { formatCurrency } from '@/utils/formatters';
 
 export function MonthlyRevenueChart() {
