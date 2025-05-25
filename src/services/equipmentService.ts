@@ -1,4 +1,5 @@
 
+
 import { supabase } from "@/integrations/supabase/client";
 import type { Equipment, EquipmentStatus, MaintenanceRecord, MaintenanceSchedule } from "@/types/equipment";
 
@@ -25,8 +26,8 @@ export const fetchEquipment = async (): Promise<EquipmentWithMaintenance[]> => {
       status: item.status as EquipmentStatus,
       shop_id: null, // Equipment table doesn't have shop_id, so set to null
       work_order_history: Array.isArray(item.work_order_history) ? item.work_order_history as any[] : [],
-      maintenance_history: Array.isArray(item.maintenance_history) ? item.maintenance_history as MaintenanceRecord[] : [],
-      maintenance_schedules: Array.isArray(item.maintenance_schedules) ? item.maintenance_schedules as MaintenanceSchedule[] : [],
+      maintenance_history: Array.isArray(item.maintenance_history) ? (item.maintenance_history as unknown) as MaintenanceRecord[] : [],
+      maintenance_schedules: Array.isArray(item.maintenance_schedules) ? (item.maintenance_schedules as unknown) as MaintenanceSchedule[] : [],
     }));
   } catch (error) {
     console.error("Error in fetchEquipment:", error);
@@ -54,8 +55,8 @@ export const getOverdueMaintenanceEquipment = async (): Promise<EquipmentWithMai
       status: item.status as EquipmentStatus,
       shop_id: null, // Equipment table doesn't have shop_id, so set to null
       work_order_history: Array.isArray(item.work_order_history) ? item.work_order_history as any[] : [],
-      maintenance_history: Array.isArray(item.maintenance_history) ? item.maintenance_history as MaintenanceRecord[] : [],
-      maintenance_schedules: Array.isArray(item.maintenance_schedules) ? item.maintenance_schedules as MaintenanceSchedule[] : [],
+      maintenance_history: Array.isArray(item.maintenance_history) ? (item.maintenance_history as unknown) as MaintenanceRecord[] : [],
+      maintenance_schedules: Array.isArray(item.maintenance_schedules) ? (item.maintenance_schedules as unknown) as MaintenanceSchedule[] : [],
     }));
   } catch (error) {
     console.error("Error in getOverdueMaintenanceEquipment:", error);
@@ -87,9 +88,22 @@ export const createEquipment = async (equipmentData: CreateEquipmentData): Promi
     const { data, error } = await supabase
       .from('equipment')
       .insert({
-        ...equipmentData,
+        name: equipmentData.name,
+        model: equipmentData.model || '',
+        serial_number: equipmentData.serial_number || '',
+        manufacturer: equipmentData.manufacturer || '',
+        category: equipmentData.category,
+        purchase_date: equipmentData.purchase_date || '',
+        install_date: equipmentData.install_date || '',
+        customer: equipmentData.customer,
+        location: equipmentData.location || '',
         status: equipmentData.status || 'operational',
+        next_maintenance_date: equipmentData.next_maintenance_date || '',
         maintenance_frequency: equipmentData.maintenance_frequency || 'quarterly',
+        last_maintenance_date: equipmentData.last_maintenance_date || '',
+        warranty_expiry_date: equipmentData.warranty_expiry_date || '',
+        warranty_status: equipmentData.warranty_status || '',
+        notes: equipmentData.notes || '',
       })
       .select()
       .single();
@@ -132,11 +146,12 @@ export const updateEquipment = async (id: string, updates: Partial<CreateEquipme
       status: data.status as EquipmentStatus,
       shop_id: null, // Equipment table doesn't have shop_id, so set to null
       work_order_history: Array.isArray(data.work_order_history) ? data.work_order_history as any[] : [],
-      maintenance_history: Array.isArray(data.maintenance_history) ? data.maintenance_history as MaintenanceRecord[] : [],
-      maintenance_schedules: Array.isArray(data.maintenance_schedules) ? data.maintenance_schedules as MaintenanceSchedule[] : [],
+      maintenance_history: Array.isArray(data.maintenance_history) ? (data.maintenance_history as unknown) as MaintenanceRecord[] : [],
+      maintenance_schedules: Array.isArray(data.maintenance_schedules) ? (data.maintenance_schedules as unknown) as MaintenanceSchedule[] : [],
     };
   } catch (error) {
     console.error("Error in updateEquipment:", error);
     return null;
   }
 };
+
