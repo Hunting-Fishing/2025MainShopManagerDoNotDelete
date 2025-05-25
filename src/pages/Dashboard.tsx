@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { DashboardSeo } from "@/components/seo/DashboardSeo";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { WorkOrdersByStatusChart } from "@/components/dashboard/WorkOrdersByStatusChart";
 import { RecentWorkOrders } from "@/components/dashboard/RecentWorkOrders";
@@ -11,7 +12,7 @@ import {
   getPhaseProgressData,
   getChecklistStats,
   getTechnicianEfficiency 
-} from "@/services/dashboard"; // Updated import
+} from "@/services/dashboard";
 import { DashboardStats } from "@/types/dashboard";
 import { supabase } from '@/lib/supabase';
 import { WorkOrderPhaseProgress } from "@/components/dashboard/WorkOrderPhaseProgress";
@@ -92,48 +93,73 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="container py-8">
-      <h1 className="text-3xl font-bold mb-8">Dashboard</h1>
+    <>
+      <DashboardSeo />
+      <div className="container py-8">
+        <header className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Work Order Management Dashboard</h1>
+          <p className="text-muted-foreground">Monitor your shop's performance, track work orders, and manage equipment maintenance</p>
+        </header>
 
-      <div className="grid gap-6">
-        {/* Stats Cards */}
-        <StatsCards stats={stats} isLoading={isLoading} />
+        <div className="grid gap-6">
+          {/* Key Performance Metrics */}
+          <section aria-labelledby="stats-heading">
+            <h2 id="stats-heading" className="sr-only">Key Performance Metrics</h2>
+            <StatsCards stats={stats} isLoading={isLoading} />
+          </section>
 
-        {/* Multi-phase Work Order Progress */}
-        <div className="grid grid-cols-1 gap-6">
-          <WorkOrderPhaseProgress data={phaseProgressData} isLoading={isLoading} />
-        </div>
+          {/* Work Order Progress Tracking */}
+          <section aria-labelledby="progress-heading">
+            <h2 id="progress-heading" className="text-xl font-semibold mb-4">Multi-Phase Work Order Progress</h2>
+            <div className="grid grid-cols-1 gap-6">
+              <WorkOrderPhaseProgress data={phaseProgressData} isLoading={isLoading} />
+            </div>
+          </section>
 
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <WorkOrdersByStatusChart />
-          <ServiceTypeDistributionChart />
-        </div>
+          {/* Performance Analytics */}
+          <section aria-labelledby="analytics-heading">
+            <h2 id="analytics-heading" className="text-xl font-semibold mb-4">Shop Performance Analytics</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <WorkOrdersByStatusChart />
+              <ServiceTypeDistributionChart />
+            </div>
+          </section>
 
-        {/* Quality Control and Technician Efficiency */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="col-span-2">
-            <TechnicianPerformanceChart />
-          </div>
-          <div>
-            <QualityControlStats stats={stats} checklistData={checklistStats} isLoading={isLoading} />
-          </div>
-        </div>
+          {/* Team Performance & Quality Control */}
+          <section aria-labelledby="team-heading">
+            <h2 id="team-heading" className="text-xl font-semibold mb-4">Team Performance & Quality Control</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="col-span-2">
+                <TechnicianPerformanceChart />
+              </div>
+              <div>
+                <QualityControlStats stats={stats} checklistData={checklistStats} isLoading={isLoading} />
+              </div>
+            </div>
+          </section>
 
-        {/* Technician Efficiency Table */}
-        <div className="grid grid-cols-1 gap-6">
-          <TechnicianEfficiencyTable data={technicianEfficiency} isLoading={isLoading} />
-        </div>
+          {/* Technician Efficiency Analysis */}
+          <section aria-labelledby="efficiency-heading">
+            <h2 id="efficiency-heading" className="text-xl font-semibold mb-4">Technician Efficiency Analysis</h2>
+            <div className="grid grid-cols-1 gap-6">
+              <TechnicianEfficiencyTable data={technicianEfficiency} isLoading={isLoading} />
+            </div>
+          </section>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <RecentWorkOrders />
-          </div>
-          <div>
-            <EquipmentRecommendations />
-          </div>
+          {/* Recent Activity & Recommendations */}
+          <section aria-labelledby="activity-heading">
+            <h2 id="activity-heading" className="text-xl font-semibold mb-4">Recent Activity & Equipment Recommendations</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <RecentWorkOrders />
+              </div>
+              <div>
+                <EquipmentRecommendations />
+              </div>
+            </div>
+          </section>
         </div>
       </div>
-    </div>
+    </>
   );
 }
