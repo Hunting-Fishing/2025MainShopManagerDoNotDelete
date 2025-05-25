@@ -33,6 +33,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
   const [decodedVehicleInfo, setDecodedVehicleInfo] = useState<VinDecodeResult | null>(null);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isProcessingRef = useRef<boolean>(false);
+  const lastProcessedVinRef = useRef<string>('');
   
   const selectedMake = form.watch(`vehicles.${index}.make`);
   const vin = form.watch(`vehicles.${index}.vin`);
@@ -109,24 +110,36 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     }
   }, [form, index, fetchModels]);
 
-  // Handle VIN input changes with debouncing
+  // Handle VIN input changes with debouncing and duplicate prevention
   useEffect(() => {
     // Clear any existing timeout
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
 
-    // Clear previous state when VIN changes
+    // Clear previous state when VIN changes or is invalid
     if (vin?.length !== 17) {
       clearVinState();
       setDecodedVehicleInfo(null);
+      lastProcessedVinRef.current = '';
+      return;
+    }
+
+    // Skip if this VIN was already processed
+    if (vin === lastProcessedVinRef.current) {
+      return;
+    }
+
+    // Skip if already processing or VIN decoder is busy
+    if (vinProcessing || isProcessingRef.current) {
       return;
     }
 
     // Debounce VIN decoding
     debounceTimeoutRef.current = setTimeout(() => {
-      if (vin?.length === 17 && !vinProcessing && !isProcessingRef.current) {
+      if (vin?.length === 17 && vin !== lastProcessedVinRef.current && !vinProcessing && !isProcessingRef.current) {
         console.log("Starting VIN decode for:", vin);
+        lastProcessedVinRef.current = vin;
         decodeVin(vin, populateVehicleFromVin);
       }
     }, 1000);
@@ -145,6 +158,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
         clearTimeout(debounceTimeoutRef.current);
       }
       isProcessingRef.current = false;
+      lastProcessedVinRef.current = '';
       clearVinState();
     };
   }, [clearVinState]);
@@ -152,6 +166,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
   const handleVinRetry = useCallback(() => {
     if (vin?.length === 17) {
       console.log("Retrying VIN decode for:", vin);
+      lastProcessedVinRef.current = ''; // Reset to allow retry
       retryVinDecode(vin, populateVehicleFromVin);
     }
   }, [vin, retryVinDecode, populateVehicleFromVin]);

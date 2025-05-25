@@ -23,6 +23,7 @@ export const useVinDecoder = () => {
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const currentVinRef = useRef<string>('');
   const maxRetries = 3;
   const baseRetryDelay = 2000;
 
@@ -44,6 +45,8 @@ export const useVinDecoder = () => {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
+    
+    currentVinRef.current = '';
   }, []);
 
   const decode = useCallback(async (
@@ -51,8 +54,21 @@ export const useVinDecoder = () => {
     onSuccess: (result: VinDecodeResult) => void,
     onError?: (error: string) => void
   ): Promise<void> => {
+    // Prevent duplicate calls for the same VIN
+    if (currentVinRef.current === vin && state.isProcessing) {
+      console.log("VIN decode already in progress for:", vin);
+      return;
+    }
+
     // Clear any existing timeout or abort controller
-    clearState();
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
 
     if (!vin || vin.length !== 17) {
       const errorMsg = !vin ? 'VIN is required' : `VIN must be 17 characters (current: ${vin.length})`;
@@ -61,6 +77,7 @@ export const useVinDecoder = () => {
       return;
     }
 
+    currentVinRef.current = vin;
     setState(prev => ({ 
       ...prev, 
       isProcessing: true, 
@@ -75,6 +92,12 @@ export const useVinDecoder = () => {
       abortControllerRef.current = new AbortController();
       
       const result = await decodeVin(vin);
+      
+      // Check if this is still the current VIN being processed
+      if (currentVinRef.current !== vin) {
+        console.log("VIN decode result ignored - newer request in progress");
+        return;
+      }
       
       // Success
       setState(prev => ({ 
@@ -95,6 +118,12 @@ export const useVinDecoder = () => {
 
     } catch (error) {
       console.error('VIN decode failed:', error);
+      
+      // Check if this is still the current VIN being processed
+      if (currentVinRef.current !== vin) {
+        console.log("VIN decode error ignored - newer request in progress");
+        return;
+      }
       
       let errorMessage = 'Unknown error occurred';
       let canRetry = false;
@@ -128,7 +157,6 @@ export const useVinDecoder = () => {
           title,
           description: errorMessage,
           variant,
-          action: canRetry ? undefined : undefined // Could add retry button here
         });
       } else {
         toast({
@@ -142,14 +170,17 @@ export const useVinDecoder = () => {
       if (canRetry && error instanceof VinDecodingError && error.error.recoverable) {
         console.log(`Scheduling retry in ${retryAfter}ms...`);
         timeoutRef.current = setTimeout(() => {
-          decode(vin, onSuccess, onError);
+          if (currentVinRef.current === vin) { // Only retry if still the current VIN
+            decode(vin, onSuccess, onError);
+          }
         }, retryAfter);
       }
     }
-  }, [state.retryCount, clearState, baseRetryDelay, maxRetries]);
+  }, [state.retryCount, baseRetryDelay, maxRetries]);
 
   const retry = useCallback((vin: string, onSuccess: (result: VinDecodeResult) => void, onError?: (error: string) => void) => {
     if (!state.canRetry) return;
+    currentVinRef.current = ''; // Reset to allow retry
     decode(vin, onSuccess, onError);
   }, [state.canRetry, decode]);
 
