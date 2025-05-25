@@ -1,11 +1,26 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Equipment, EquipmentStatus, MaintenanceRecord, MaintenanceSchedule } from "@/types/equipment";
-import { transformEquipmentData, prepareEquipmentForInsert } from "@/utils/equipment/typeUtils";
 
 // Define the interface that matches the actual database structure
 export interface EquipmentWithMaintenance extends Equipment {
   shop_id?: string | null;
+}
+
+// Utility function to safely convert Json arrays to typed arrays
+function safeArrayConversion<T>(value: any, fallback: T[] = []): T[] {
+  return Array.isArray(value) ? (value as unknown) as T[] : fallback;
+}
+
+// Transform equipment data from database to application format
+function transformEquipmentData(item: any): EquipmentWithMaintenance {
+  return {
+    ...item,
+    status: item.status as EquipmentStatus,
+    work_order_history: safeArrayConversion(item.work_order_history),
+    maintenance_history: safeArrayConversion<MaintenanceRecord>(item.maintenance_history),
+    maintenance_schedules: safeArrayConversion<MaintenanceSchedule>(item.maintenance_schedules),
+  };
 }
 
 export const fetchEquipment = async (): Promise<EquipmentWithMaintenance[]> => {
@@ -20,7 +35,6 @@ export const fetchEquipment = async (): Promise<EquipmentWithMaintenance[]> => {
       throw error;
     }
 
-    // Transform the data using utility function
     return (data || []).map(transformEquipmentData);
   } catch (error) {
     console.error("Error in fetchEquipment:", error);
@@ -71,9 +85,29 @@ export interface CreateEquipmentData {
 
 export const createEquipment = async (equipmentData: CreateEquipmentData): Promise<EquipmentWithMaintenance | null> => {
   try {
+    // Prepare data for database insertion - only include fields that exist in the database
+    const insertData = {
+      name: equipmentData.name,
+      model: equipmentData.model || '',
+      serial_number: equipmentData.serial_number || '',
+      manufacturer: equipmentData.manufacturer || '',
+      category: equipmentData.category,
+      purchase_date: equipmentData.purchase_date || '',
+      install_date: equipmentData.install_date || '',
+      customer: equipmentData.customer,
+      location: equipmentData.location || '',
+      status: equipmentData.status || 'operational',
+      next_maintenance_date: equipmentData.next_maintenance_date || '',
+      maintenance_frequency: equipmentData.maintenance_frequency || 'quarterly',
+      last_maintenance_date: equipmentData.last_maintenance_date || '',
+      warranty_expiry_date: equipmentData.warranty_expiry_date || '',
+      warranty_status: equipmentData.warranty_status || '',
+      notes: equipmentData.notes || '',
+    };
+
     const { data, error } = await supabase
       .from('equipment')
-      .insert(prepareEquipmentForInsert(equipmentData))
+      .insert(insertData)
       .select()
       .single();
 
