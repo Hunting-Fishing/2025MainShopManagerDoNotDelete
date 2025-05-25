@@ -5,11 +5,14 @@ export * from '../customer';
 // Specific exports for backward compatibility
 export {
   getAllCustomers,
-  getCustomerById,
+  getCustomerById
+} from '../customer/customerQueryService';
+
+export {
   searchCustomers,
   checkDuplicateCustomers,
   getCustomersWithVehicles
-} from '../customer/customerQueryService';
+} from '../customer/customerSearchService';
 
 export {
   updateCustomer
@@ -43,5 +46,5 @@ export {
   deleteCustomerInteraction
 } from '../customer/interactions';
 
-// Export types
-export type { Customer, CustomerCreate, CustomerNote } from '../customer';
+// Export types from the customer service that has proper type definitions
+export type { Customer, CustomerCreate, CustomerNote } from '@/types/customer';
