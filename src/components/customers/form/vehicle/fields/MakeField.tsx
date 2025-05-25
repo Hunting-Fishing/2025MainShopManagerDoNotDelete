@@ -38,6 +38,7 @@ export const MakeField: React.FC<MakeFieldProps> = ({ form, index, makes = [], o
           <Select
             value={field.value || ""}
             onValueChange={(value) => {
+              console.log("Make field value changed to:", value);
               field.onChange(value);
               if (onMakeChange) {
                 onMakeChange(value);

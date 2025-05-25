@@ -34,7 +34,10 @@ export const ModelField: React.FC<ModelFieldProps> = ({ form, index, models = []
           </div>
           <Select
             value={field.value || ""}
-            onValueChange={field.onChange}
+            onValueChange={(value) => {
+              console.log("Model field value changed to:", value);
+              field.onChange(value);
+            }}
             disabled={!selectedMake || field.disabled}
           >
             <FormControl>
@@ -44,7 +47,7 @@ export const ModelField: React.FC<ModelFieldProps> = ({ form, index, models = []
             </FormControl>
             <SelectContent>
               {!selectedMake ? (
-                <SelectItem value="select-make">Select make first</SelectItem>
+                <SelectItem value="select-make" disabled>Select make first</SelectItem>
               ) : models.length > 0 ? (
                 models
                   .filter(model => model.model_name) // Filter out invalid models
@@ -54,7 +57,7 @@ export const ModelField: React.FC<ModelFieldProps> = ({ form, index, models = []
                     </SelectItem>
                   ))
               ) : (
-                <SelectItem value="no-models">No models available</SelectItem>
+                <SelectItem value="no-models" disabled>No models available</SelectItem>
               )}
             </SelectContent>
           </Select>

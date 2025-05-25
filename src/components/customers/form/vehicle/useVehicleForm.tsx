@@ -45,6 +45,35 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     }
   }, [selectedMake, fetchModels, makes.length]);
 
+  // Find matching make by name or display name
+  const findMakeByName = useCallback((makeName: string) => {
+    if (!makeName || !makes.length) return null;
+    
+    const normalizedMakeName = makeName.toLowerCase().trim();
+    
+    // First try exact match with make_id
+    let matchingMake = makes.find(make => 
+      make.make_id.toLowerCase() === normalizedMakeName
+    );
+    
+    // Then try exact match with display name
+    if (!matchingMake) {
+      matchingMake = makes.find(make => 
+        make.make_display.toLowerCase() === normalizedMakeName
+      );
+    }
+    
+    // Finally try partial match
+    if (!matchingMake) {
+      matchingMake = makes.find(make => 
+        make.make_display.toLowerCase().includes(normalizedMakeName) ||
+        make.make_id.toLowerCase().includes(normalizedMakeName)
+      );
+    }
+    
+    return matchingMake;
+  }, [makes]);
+
   const populateVehicleFromVin = useCallback(async (vehicleInfo: VinDecodeResult) => {
     if (!vehicleInfo || isProcessingRef.current) return;
     
@@ -59,48 +88,74 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
         form.setValue(`vehicles.${index}.year`, String(vehicleInfo.year));
       }
       
-      // Set make and wait for models to load
+      // Find and set make
       if (vehicleInfo.make) {
-        form.setValue(`vehicles.${index}.make`, vehicleInfo.make);
+        const matchingMake = findMakeByName(vehicleInfo.make);
         
-        // Wait for models to be fetched
-        await fetchModels(vehicleInfo.make);
-        
-        // Small delay to ensure models are loaded
-        setTimeout(() => {
-          if (vehicleInfo.model) {
-            form.setValue(`vehicles.${index}.model`, vehicleInfo.model);
-          }
+        if (matchingMake) {
+          console.log("Found matching make:", matchingMake);
+          form.setValue(`vehicles.${index}.make`, matchingMake.make_id);
           
-          // Set additional details
-          if (vehicleInfo.transmission) 
-            form.setValue(`vehicles.${index}.transmission`, vehicleInfo.transmission);
-          if (vehicleInfo.drive_type) 
-            form.setValue(`vehicles.${index}.drive_type`, vehicleInfo.drive_type);
-          if (vehicleInfo.fuel_type) 
-            form.setValue(`vehicles.${index}.fuel_type`, vehicleInfo.fuel_type);
-          if (vehicleInfo.body_style) 
-            form.setValue(`vehicles.${index}.body_style`, vehicleInfo.body_style);
-          if (vehicleInfo.engine) 
-            form.setValue(`vehicles.${index}.engine`, vehicleInfo.engine);
-          if (vehicleInfo.trim)
-            form.setValue(`vehicles.${index}.trim`, vehicleInfo.trim);
-          if (vehicleInfo.transmission_type)
-            form.setValue(`vehicles.${index}.transmission_type`, vehicleInfo.transmission_type);
-          if (vehicleInfo.gvwr)
-            form.setValue(`vehicles.${index}.gvwr`, vehicleInfo.gvwr);
-          if (vehicleInfo.country)
-            form.setValue(`vehicles.${index}.country`, vehicleInfo.country);
+          // Fetch models for this make
+          await fetchModels(matchingMake.make_id);
           
-          // Trigger validation
-          form.trigger([
-            `vehicles.${index}.year`,
-            `vehicles.${index}.make`,
-            `vehicles.${index}.model`
-          ]);
-          
+          // Wait a bit for models to load, then set model
+          setTimeout(() => {
+            if (vehicleInfo.model) {
+              // Try to find matching model
+              const currentModels = models;
+              const normalizedModelName = vehicleInfo.model.toLowerCase().trim();
+              
+              const matchingModel = currentModels.find(model =>
+                model.model_name.toLowerCase() === normalizedModelName ||
+                model.model_name.toLowerCase().includes(normalizedModelName)
+              );
+              
+              if (matchingModel) {
+                console.log("Found matching model:", matchingModel);
+                form.setValue(`vehicles.${index}.model`, matchingModel.model_name);
+              } else {
+                console.log("No matching model found for:", vehicleInfo.model);
+                // Set the model name anyway, even if not in our database
+                form.setValue(`vehicles.${index}.model`, vehicleInfo.model);
+              }
+            }
+            
+            // Set additional details
+            if (vehicleInfo.transmission) 
+              form.setValue(`vehicles.${index}.transmission`, vehicleInfo.transmission);
+            if (vehicleInfo.drive_type) 
+              form.setValue(`vehicles.${index}.drive_type`, vehicleInfo.drive_type);
+            if (vehicleInfo.fuel_type) 
+              form.setValue(`vehicles.${index}.fuel_type`, vehicleInfo.fuel_type);
+            if (vehicleInfo.body_style) 
+              form.setValue(`vehicles.${index}.body_style`, vehicleInfo.body_style);
+            if (vehicleInfo.engine) 
+              form.setValue(`vehicles.${index}.engine`, vehicleInfo.engine);
+            if (vehicleInfo.trim)
+              form.setValue(`vehicles.${index}.trim`, vehicleInfo.trim);
+            if (vehicleInfo.transmission_type)
+              form.setValue(`vehicles.${index}.transmission_type`, vehicleInfo.transmission_type);
+            if (vehicleInfo.gvwr)
+              form.setValue(`vehicles.${index}.gvwr`, vehicleInfo.gvwr);
+            if (vehicleInfo.country)
+              form.setValue(`vehicles.${index}.country`, vehicleInfo.country);
+            
+            // Trigger validation
+            form.trigger([
+              `vehicles.${index}.year`,
+              `vehicles.${index}.make`,
+              `vehicles.${index}.model`
+            ]);
+            
+            isProcessingRef.current = false;
+          }, 1000); // Increased timeout to ensure models are loaded
+        } else {
+          console.log("No matching make found for:", vehicleInfo.make);
+          // Set the make name anyway, even if not in our database
+          form.setValue(`vehicles.${index}.make`, vehicleInfo.make);
           isProcessingRef.current = false;
-        }, 500);
+        }
       } else {
         isProcessingRef.current = false;
       }
@@ -108,7 +163,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
       console.error("Error populating vehicle form:", err);
       isProcessingRef.current = false;
     }
-  }, [form, index, fetchModels]);
+  }, [form, index, fetchModels, findMakeByName, models]);
 
   // Handle VIN input changes with debouncing and duplicate prevention
   useEffect(() => {
