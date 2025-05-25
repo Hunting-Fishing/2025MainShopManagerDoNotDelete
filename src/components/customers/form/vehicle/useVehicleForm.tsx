@@ -3,9 +3,8 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { CustomerFormValues } from "../CustomerFormSchema";
 import { useVehicleData } from "@/hooks/useVehicleData";
-import { toast } from "@/hooks/use-toast";
+import { useVinDecoder } from "./hooks/useVinDecoder";
 import { VinDecodeResult } from "@/types/vehicle";
-import { decodeVin } from "@/utils/vehicleUtils";
 
 interface UseVehicleFormProps {
   form: UseFormReturn<CustomerFormValues>;
@@ -18,13 +17,21 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     models, 
     years, 
     loading: dataLoading, 
-    error,
+    error: dataError,
     fetchModels
   } = useVehicleData();
 
-  const [vinProcessing, setVinProcessing] = useState<boolean>(false);
+  const {
+    isProcessing: vinProcessing,
+    error: vinError,
+    canRetry,
+    decode: decodeVin,
+    retry: retryVinDecode,
+    clearState: clearVinState
+  } = useVinDecoder();
+
   const [decodedVehicleInfo, setDecodedVehicleInfo] = useState<VinDecodeResult | null>(null);
-  const vinDecodeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isProcessingRef = useRef<boolean>(false);
   
   const selectedMake = form.watch(`vehicles.${index}.make`);
@@ -41,7 +48,6 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     if (!vehicleInfo || isProcessingRef.current) return;
     
     isProcessingRef.current = true;
-    setVinProcessing(true);
     setDecodedVehicleInfo(vehicleInfo);
     
     console.log("Populating vehicle from VIN:", vehicleInfo);
@@ -92,94 +98,75 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
             `vehicles.${index}.model`
           ]);
           
-          toast({
-            title: "VIN Decoded Successfully",
-            description: `Vehicle identified as ${vehicleInfo.year} ${vehicleInfo.make} ${vehicleInfo.model}`,
-          });
-          
-          setVinProcessing(false);
           isProcessingRef.current = false;
         }, 500);
       } else {
-        setVinProcessing(false);
         isProcessingRef.current = false;
       }
     } catch (err) {
       console.error("Error populating vehicle form:", err);
-      setVinProcessing(false);
       isProcessingRef.current = false;
-      
-      toast({
-        title: "Error",
-        description: "Failed to populate vehicle information.",
-        variant: "destructive",
-      });
     }
-  }, [form, index, fetchModels, toast]);
+  }, [form, index, fetchModels]);
 
-  // VIN decoding effect with improved debouncing
+  // Handle VIN input changes with debouncing
   useEffect(() => {
-    if (!vin || vin.length !== 17 || vinProcessing || isProcessingRef.current) {
+    // Clear any existing timeout
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+
+    // Clear previous state when VIN changes
+    if (vin?.length !== 17) {
+      clearVinState();
+      setDecodedVehicleInfo(null);
       return;
     }
-    
-    // Clear existing timeout
-    if (vinDecodeTimeoutRef.current) {
-      clearTimeout(vinDecodeTimeoutRef.current);
-    }
-    
-    // Set new timeout for debouncing
-    vinDecodeTimeoutRef.current = setTimeout(async () => {
-      if (isProcessingRef.current) return;
-      
-      console.log("Starting VIN decode for:", vin);
-      
-      try {
-        const vehicleInfo = await decodeVin(vin);
-        if (vehicleInfo) {
-          await populateVehicleFromVin(vehicleInfo);
-        } else {
-          toast({
-            title: "VIN Not Found",
-            description: "Could not decode the VIN. Please enter vehicle details manually.",
-            variant: "destructive",
-          });
-        }
-      } catch (error) {
-        console.error("Error decoding VIN:", error);
-        toast({
-          title: "VIN Decode Error",
-          description: "VIN decoding service is unavailable. Please enter vehicle details manually.",
-          variant: "destructive",
-        });
+
+    // Debounce VIN decoding
+    debounceTimeoutRef.current = setTimeout(() => {
+      if (vin?.length === 17 && !vinProcessing && !isProcessingRef.current) {
+        console.log("Starting VIN decode for:", vin);
+        decodeVin(vin, populateVehicleFromVin);
       }
     }, 1000);
-    
+
     return () => {
-      if (vinDecodeTimeoutRef.current) {
-        clearTimeout(vinDecodeTimeoutRef.current);
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
       }
     };
-  }, [vin, vinProcessing, populateVehicleFromVin, toast]);
+  }, [vin, vinProcessing, decodeVin, populateVehicleFromVin, clearVinState]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (vinDecodeTimeoutRef.current) {
-        clearTimeout(vinDecodeTimeoutRef.current);
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
       }
       isProcessingRef.current = false;
+      clearVinState();
     };
-  }, []);
+  }, [clearVinState]);
+
+  const handleVinRetry = useCallback(() => {
+    if (vin?.length === 17) {
+      console.log("Retrying VIN decode for:", vin);
+      retryVinDecode(vin, populateVehicleFromVin);
+    }
+  }, [vin, retryVinDecode, populateVehicleFromVin]);
 
   return {
     makes,
     models,
     years,
     loading: dataLoading,
-    error,
+    error: dataError,
     vinProcessing,
+    vinError,
+    canRetry,
     decodedVehicleInfo,
-    fetchModels
+    fetchModels,
+    onVinRetry: handleVinRetry
   };
 };

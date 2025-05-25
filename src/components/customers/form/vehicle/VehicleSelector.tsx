@@ -1,4 +1,3 @@
-
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -29,8 +28,11 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
     makes, 
     models, 
     vinProcessing, 
+    vinError,
+    canRetry,
     decodedVehicleInfo, 
-    fetchModels 
+    fetchModels,
+    onVinRetry
   } = useVehicleForm({ form, index });
 
   const make = form.watch(`vehicles.${index}.make`);
@@ -53,6 +55,9 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
             form={form} 
             index={index} 
             processing={vinProcessing}
+            error={vinError}
+            canRetry={canRetry}
+            onRetry={onVinRetry}
             decodedVehicleInfo={decodedVehicleInfo}
           />
           <LicensePlateField form={form} index={index} />
