@@ -5,7 +5,7 @@ export * from './workOrderService';
 export * from './checklistService';
 export * from './technicianService';
 export * from './equipmentService';
-export * from '../dashboard/revenueService';
+export * from './revenueService';
 
 // Fix function name for getPhaseProgress
 export { getPhaseProgress as getPhaseProgressData } from './workOrderService';
