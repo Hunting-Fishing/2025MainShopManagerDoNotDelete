@@ -31,24 +31,30 @@ export function transformEquipmentData(item: any) {
 
 /**
  * Prepares equipment data for database insertion
+ * Maps the equipment data to match the exact database schema
  */
 export function prepareEquipmentForInsert(equipmentData: any) {
   return {
+    // Note: Don't include 'id' - let the database generate it
     name: equipmentData.name,
     model: equipmentData.model || '',
     serial_number: equipmentData.serial_number || '',
     manufacturer: equipmentData.manufacturer || '',
     category: equipmentData.category,
-    purchase_date: equipmentData.purchase_date || '',
-    install_date: equipmentData.install_date || '',
+    purchase_date: equipmentData.purchase_date || null,
+    install_date: equipmentData.install_date || null,
     customer: equipmentData.customer,
     location: equipmentData.location || '',
     status: equipmentData.status || 'operational',
-    next_maintenance_date: equipmentData.next_maintenance_date || '',
+    next_maintenance_date: equipmentData.next_maintenance_date || null,
     maintenance_frequency: equipmentData.maintenance_frequency || 'quarterly',
-    last_maintenance_date: equipmentData.last_maintenance_date || '',
-    warranty_expiry_date: equipmentData.warranty_expiry_date || '',
+    last_maintenance_date: equipmentData.last_maintenance_date || null,
+    warranty_expiry_date: equipmentData.warranty_expiry_date || null,
     warranty_status: equipmentData.warranty_status || '',
     notes: equipmentData.notes || '',
+    // Set JSON fields to empty arrays initially
+    work_order_history: [],
+    maintenance_history: [],
+    maintenance_schedules: []
   };
 }
