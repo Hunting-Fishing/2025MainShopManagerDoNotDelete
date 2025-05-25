@@ -1,3 +1,4 @@
+
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
     canRetry,
     decodedVehicleInfo, 
     fetchModels,
+    handleVinDecode,
     onVinRetry
   } = useVehicleForm({ form, index });
 
@@ -59,6 +61,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
             canRetry={canRetry}
             onRetry={onVinRetry}
             decodedVehicleInfo={decodedVehicleInfo}
+            onVinDecode={handleVinDecode}
           />
           <LicensePlateField form={form} index={index} />
         </div>

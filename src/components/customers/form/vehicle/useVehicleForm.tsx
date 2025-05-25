@@ -1,242 +1,204 @@
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { UseFormReturn } from "react-hook-form";
-import { CustomerFormValues } from "../CustomerFormSchema";
-import { useVehicleData } from "@/hooks/useVehicleData";
-import { useVinDecoder } from "./hooks/useVinDecoder";
-import { VinDecodeResult } from "@/types/vehicle";
+import { useState, useCallback, useEffect } from 'react';
+import { UseFormReturn } from 'react-hook-form';
+import { CarMake, CarModel, VinDecodeResult } from '@/types/vehicle';
+import { useVehicleData } from '@/hooks/useVehicleData';
+import { useVinDecoder } from './hooks/useVinDecoder';
 
 interface UseVehicleFormProps {
-  form: UseFormReturn<CustomerFormValues>;
+  form: UseFormReturn<any>;
   index: number;
 }
 
 export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
+  const { makes, models, fetchModels } = useVehicleData();
+  const [decodedVehicleInfo, setDecodedVehicleInfo] = useState<VinDecodeResult | null>(null);
+  
   const { 
-    makes, 
-    models, 
-    years, 
-    loading: dataLoading, 
-    error: dataError,
-    fetchModels
-  } = useVehicleData();
-
-  const {
-    isProcessing: vinProcessing,
-    error: vinError,
+    isProcessing: vinProcessing, 
+    error: vinError, 
     canRetry,
     decode: decodeVin,
-    retry: retryVinDecode,
-    clearState: clearVinState
+    retry: retryVinDecode 
   } = useVinDecoder();
 
-  const [decodedVehicleInfo, setDecodedVehicleInfo] = useState<VinDecodeResult | null>(null);
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isProcessingRef = useRef<boolean>(false);
-  const lastProcessedVinRef = useRef<string>('');
-  
-  const selectedMake = form.watch(`vehicles.${index}.make`);
-  const vin = form.watch(`vehicles.${index}.vin`);
-
-  // Fetch models when make changes
-  useEffect(() => {
-    if (selectedMake && makes.length > 0) {
-      fetchModels(selectedMake);
-    }
-  }, [selectedMake, fetchModels, makes.length]);
-
-  // Find matching make by name or display name
-  const findMakeByName = useCallback((makeName: string) => {
-    if (!makeName || !makes.length) return null;
+  // Helper function to find matching make
+  const findMatchingMake = useCallback((decodedMake: string): CarMake | null => {
+    if (!decodedMake || !makes?.length) return null;
     
-    const normalizedMakeName = makeName.toLowerCase().trim();
+    const normalizedDecodedMake = decodedMake.toLowerCase().trim();
+    console.log('Looking for make match for:', normalizedDecodedMake, 'in makes:', makes);
     
-    // First try exact match with make_id
-    let matchingMake = makes.find(make => 
-      make.make_id.toLowerCase() === normalizedMakeName
+    // Try exact match on make_display first
+    let match = makes.find(make => 
+      make.make_display?.toLowerCase() === normalizedDecodedMake
     );
     
-    // Then try exact match with display name
-    if (!matchingMake) {
-      matchingMake = makes.find(make => 
-        make.make_display.toLowerCase() === normalizedMakeName
-      );
+    if (match) {
+      console.log('Found exact display match:', match);
+      return match;
     }
     
-    // Finally try partial match
-    if (!matchingMake) {
-      matchingMake = makes.find(make => 
-        make.make_display.toLowerCase().includes(normalizedMakeName) ||
-        make.make_id.toLowerCase().includes(normalizedMakeName)
-      );
+    // Try exact match on make_id
+    match = makes.find(make => 
+      make.make_id?.toLowerCase() === normalizedDecodedMake
+    );
+    
+    if (match) {
+      console.log('Found exact ID match:', match);
+      return match;
     }
     
-    return matchingMake;
+    // Try partial match on make_display
+    match = makes.find(make => 
+      make.make_display?.toLowerCase().includes(normalizedDecodedMake) ||
+      normalizedDecodedMake.includes(make.make_display?.toLowerCase() || '')
+    );
+    
+    if (match) {
+      console.log('Found partial display match:', match);
+      return match;
+    }
+    
+    // Try partial match on make_id
+    match = makes.find(make => 
+      make.make_id?.toLowerCase().includes(normalizedDecodedMake) ||
+      normalizedDecodedMake.includes(make.make_id?.toLowerCase() || '')
+    );
+    
+    if (match) {
+      console.log('Found partial ID match:', match);
+      return match;
+    }
+    
+    console.log('No make match found for:', decodedMake);
+    return null;
   }, [makes]);
 
-  const populateVehicleFromVin = useCallback(async (vehicleInfo: VinDecodeResult) => {
-    if (!vehicleInfo || isProcessingRef.current) return;
+  // Helper function to find matching model
+  const findMatchingModel = useCallback((decodedModel: string, makeId: string): CarModel | null => {
+    if (!decodedModel || !models?.length) return null;
     
-    isProcessingRef.current = true;
-    setDecodedVehicleInfo(vehicleInfo);
+    const normalizedDecodedModel = decodedModel.toLowerCase().trim();
+    console.log('Looking for model match for:', normalizedDecodedModel, 'in models:', models);
     
-    console.log("Populating vehicle from VIN:", vehicleInfo);
+    // Filter models for the specific make first
+    const modelsForMake = models.filter(model => model.model_make_id === makeId);
+    console.log('Models for make:', makeId, modelsForMake);
     
-    try {
-      // Set year first
-      if (vehicleInfo.year) {
-        form.setValue(`vehicles.${index}.year`, String(vehicleInfo.year));
-      }
+    if (modelsForMake.length === 0) return null;
+    
+    // Try exact match first
+    let match = modelsForMake.find(model => 
+      model.model_name?.toLowerCase() === normalizedDecodedModel
+    );
+    
+    if (match) {
+      console.log('Found exact model match:', match);
+      return match;
+    }
+    
+    // Try partial match
+    match = modelsForMake.find(model => 
+      model.model_name?.toLowerCase().includes(normalizedDecodedModel) ||
+      normalizedDecodedModel.includes(model.model_name?.toLowerCase() || '')
+    );
+    
+    if (match) {
+      console.log('Found partial model match:', match);
+      return match;
+    }
+    
+    console.log('No model match found for:', decodedModel);
+    return null;
+  }, [models]);
+
+  // Handle VIN decode success
+  const handleVinDecodeSuccess = useCallback(async (result: VinDecodeResult) => {
+    console.log('Handling VIN decode success:', result);
+    setDecodedVehicleInfo(result);
+    
+    // Populate basic fields immediately
+    if (result.year) {
+      form.setValue(`vehicles.${index}.year`, result.year.toString());
+      console.log('Set year to:', result.year);
+    }
+    
+    // Handle make matching and population
+    if (result.make && makes?.length > 0) {
+      const matchingMake = findMatchingMake(result.make);
       
-      // Find and set make
-      if (vehicleInfo.make) {
-        const matchingMake = findMakeByName(vehicleInfo.make);
+      if (matchingMake) {
+        console.log('Setting make to:', matchingMake.make_id);
+        form.setValue(`vehicles.${index}.make`, matchingMake.make_id);
         
-        if (matchingMake) {
-          console.log("Found matching make:", matchingMake);
-          form.setValue(`vehicles.${index}.make`, matchingMake.make_id);
-          
-          // Fetch models for this make
+        // Fetch models for this make
+        try {
           await fetchModels(matchingMake.make_id);
+          console.log('Models fetched for make:', matchingMake.make_id);
           
-          // Wait a bit for models to load, then set model
+          // Small delay to ensure models are loaded
           setTimeout(() => {
-            if (vehicleInfo.model) {
-              // Try to find matching model
-              const currentModels = models;
-              const normalizedModelName = vehicleInfo.model.toLowerCase().trim();
-              
-              const matchingModel = currentModels.find(model =>
-                model.model_name.toLowerCase() === normalizedModelName ||
-                model.model_name.toLowerCase().includes(normalizedModelName)
-              );
-              
+            if (result.model) {
+              const matchingModel = findMatchingModel(result.model, matchingMake.make_id);
               if (matchingModel) {
-                console.log("Found matching model:", matchingModel);
+                console.log('Setting model to:', matchingModel.model_name);
                 form.setValue(`vehicles.${index}.model`, matchingModel.model_name);
               } else {
-                console.log("No matching model found for:", vehicleInfo.model);
-                // Set the model name anyway, even if not in our database
-                form.setValue(`vehicles.${index}.model`, vehicleInfo.model);
+                console.log('No matching model found, setting original model name:', result.model);
+                form.setValue(`vehicles.${index}.model`, result.model);
               }
             }
-            
-            // Set additional details
-            if (vehicleInfo.transmission) 
-              form.setValue(`vehicles.${index}.transmission`, vehicleInfo.transmission);
-            if (vehicleInfo.drive_type) 
-              form.setValue(`vehicles.${index}.drive_type`, vehicleInfo.drive_type);
-            if (vehicleInfo.fuel_type) 
-              form.setValue(`vehicles.${index}.fuel_type`, vehicleInfo.fuel_type);
-            if (vehicleInfo.body_style) 
-              form.setValue(`vehicles.${index}.body_style`, vehicleInfo.body_style);
-            if (vehicleInfo.engine) 
-              form.setValue(`vehicles.${index}.engine`, vehicleInfo.engine);
-            if (vehicleInfo.trim)
-              form.setValue(`vehicles.${index}.trim`, vehicleInfo.trim);
-            if (vehicleInfo.transmission_type)
-              form.setValue(`vehicles.${index}.transmission_type`, vehicleInfo.transmission_type);
-            if (vehicleInfo.gvwr)
-              form.setValue(`vehicles.${index}.gvwr`, vehicleInfo.gvwr);
-            if (vehicleInfo.country)
-              form.setValue(`vehicles.${index}.country`, vehicleInfo.country);
-            
-            // Trigger validation
-            form.trigger([
-              `vehicles.${index}.year`,
-              `vehicles.${index}.make`,
-              `vehicles.${index}.model`
-            ]);
-            
-            isProcessingRef.current = false;
-          }, 1000); // Increased timeout to ensure models are loaded
-        } else {
-          console.log("No matching make found for:", vehicleInfo.make);
-          // Set the make name anyway, even if not in our database
-          form.setValue(`vehicles.${index}.make`, vehicleInfo.make);
-          isProcessingRef.current = false;
+          }, 100);
+        } catch (error) {
+          console.error('Error fetching models:', error);
         }
       } else {
-        isProcessingRef.current = false;
+        console.log('No matching make found, setting original make name:', result.make);
+        form.setValue(`vehicles.${index}.make`, result.make);
+        
+        // Still try to set the model if available
+        if (result.model) {
+          form.setValue(`vehicles.${index}.model`, result.model);
+        }
       }
-    } catch (err) {
-      console.error("Error populating vehicle form:", err);
-      isProcessingRef.current = false;
     }
-  }, [form, index, fetchModels, findMakeByName, models]);
+    
+    // Trigger form validation
+    form.trigger(`vehicles.${index}`);
+  }, [form, index, makes, findMatchingMake, findMatchingModel, fetchModels]);
 
-  // Handle VIN input changes with debouncing and duplicate prevention
-  useEffect(() => {
-    // Clear any existing timeout
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
+  // Handle VIN decode error
+  const handleVinDecodeError = useCallback((error: string) => {
+    console.error('VIN decode error:', error);
+    setDecodedVehicleInfo(null);
+  }, []);
+
+  // VIN decode function
+  const handleVinDecode = useCallback(async (vin: string) => {
+    if (!vin || vin.length !== 17) return;
+    
+    console.log('Starting VIN decode for:', vin);
+    await decodeVin(vin, handleVinDecodeSuccess, handleVinDecodeError);
+  }, [decodeVin, handleVinDecodeSuccess, handleVinDecodeError]);
+
+  // Retry VIN decode
+  const onVinRetry = useCallback(() => {
+    const currentVin = form.getValues(`vehicles.${index}.vin`);
+    if (currentVin && canRetry) {
+      retryVinDecode(currentVin, handleVinDecodeSuccess, handleVinDecodeError);
     }
-
-    // Clear previous state when VIN changes or is invalid
-    if (vin?.length !== 17) {
-      clearVinState();
-      setDecodedVehicleInfo(null);
-      lastProcessedVinRef.current = '';
-      return;
-    }
-
-    // Skip if this VIN was already processed
-    if (vin === lastProcessedVinRef.current) {
-      return;
-    }
-
-    // Skip if already processing or VIN decoder is busy
-    if (vinProcessing || isProcessingRef.current) {
-      return;
-    }
-
-    // Debounce VIN decoding
-    debounceTimeoutRef.current = setTimeout(() => {
-      if (vin?.length === 17 && vin !== lastProcessedVinRef.current && !vinProcessing && !isProcessingRef.current) {
-        console.log("Starting VIN decode for:", vin);
-        lastProcessedVinRef.current = vin;
-        decodeVin(vin, populateVehicleFromVin);
-      }
-    }, 1000);
-
-    return () => {
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
-      }
-    };
-  }, [vin, vinProcessing, decodeVin, populateVehicleFromVin, clearVinState]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
-      }
-      isProcessingRef.current = false;
-      lastProcessedVinRef.current = '';
-      clearVinState();
-    };
-  }, [clearVinState]);
-
-  const handleVinRetry = useCallback(() => {
-    if (vin?.length === 17) {
-      console.log("Retrying VIN decode for:", vin);
-      lastProcessedVinRef.current = ''; // Reset to allow retry
-      retryVinDecode(vin, populateVehicleFromVin);
-    }
-  }, [vin, retryVinDecode, populateVehicleFromVin]);
+  }, [form, index, canRetry, retryVinDecode, handleVinDecodeSuccess, handleVinDecodeError]);
 
   return {
     makes,
     models,
-    years,
-    loading: dataLoading,
-    error: dataError,
     vinProcessing,
     vinError,
     canRetry,
     decodedVehicleInfo,
     fetchModels,
-    onVinRetry: handleVinRetry
+    handleVinDecode,
+    onVinRetry
   };
 };
