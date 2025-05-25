@@ -31,11 +31,10 @@ export function transformEquipmentData(item: any) {
 
 /**
  * Prepares equipment data for database insertion
- * Maps the equipment data to match the exact database schema
+ * Only includes fields that should be inserted (excludes auto-generated fields like id, created_at, updated_at)
  */
 export function prepareEquipmentForInsert(equipmentData: any) {
   return {
-    // Note: Don't include 'id' - let the database generate it
     name: equipmentData.name,
     model: equipmentData.model || '',
     serial_number: equipmentData.serial_number || '',
@@ -52,7 +51,7 @@ export function prepareEquipmentForInsert(equipmentData: any) {
     warranty_expiry_date: equipmentData.warranty_expiry_date || null,
     warranty_status: equipmentData.warranty_status || '',
     notes: equipmentData.notes || '',
-    // Set JSON fields to empty arrays initially
+    // Set JSON fields to empty arrays initially - these match the database jsonb fields
     work_order_history: [],
     maintenance_history: [],
     maintenance_schedules: []

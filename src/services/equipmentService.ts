@@ -72,10 +72,12 @@ export const createEquipment = async (equipmentData: CreateEquipmentData): Promi
   try {
     // Use the utility function to prepare data for insertion
     const insertData = prepareEquipmentForInsert(equipmentData);
+    
+    console.log('Inserting equipment data:', insertData);
 
     const { data, error } = await supabase
       .from('equipment')
-      .insert(insertData)
+      .insert([insertData])
       .select()
       .single();
 
