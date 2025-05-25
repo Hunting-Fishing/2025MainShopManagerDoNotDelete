@@ -41,13 +41,19 @@ export const VinField: React.FC<VinFieldProps> = ({
 
   const handleVinChange = (value: string) => {
     const upperValue = value.toUpperCase();
+    console.log('VIN field value changed to:', upperValue);
     form.setValue(`vehicles.${index}.vin`, upperValue);
     
     // Automatically decode when VIN is 17 characters
     if (upperValue.length === 17 && onVinDecode) {
+      console.log('Triggering VIN decode for:', upperValue);
       onVinDecode(upperValue);
     }
   };
+
+  console.log('VinField render - decodedVehicleInfo:', decodedVehicleInfo);
+  console.log('VinField render - processing:', processing);
+  console.log('VinField render - error:', error);
 
   return (
     <div className="space-y-3">
