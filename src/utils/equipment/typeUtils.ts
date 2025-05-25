@@ -31,10 +31,14 @@ export function transformEquipmentData(item: any) {
 
 /**
  * Prepares equipment data for database insertion
- * Only includes fields that should be inserted (excludes auto-generated fields like id, created_at, updated_at)
+ * Generates ID and includes all required fields for the equipment table
  */
 export function prepareEquipmentForInsert(equipmentData: any) {
+  // Generate a unique ID for the equipment
+  const equipmentId = `EQ-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  
   return {
+    id: equipmentId,
     name: equipmentData.name,
     model: equipmentData.model || '',
     serial_number: equipmentData.serial_number || '',

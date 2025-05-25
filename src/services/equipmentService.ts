@@ -77,7 +77,7 @@ export const createEquipment = async (equipmentData: CreateEquipmentData): Promi
 
     const { data, error } = await supabase
       .from('equipment')
-      .insert([insertData])
+      .insert(insertData)
       .select()
       .single();
 
