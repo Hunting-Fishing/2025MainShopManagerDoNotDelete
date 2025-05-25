@@ -7,6 +7,7 @@ import 'semantic-ui-css/semantic.min.css';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { ImpersonationProvider } from '@/contexts/ImpersonationContext';
+import { NotificationsProvider } from '@/context/notifications';
 import { Toaster } from "sonner";
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
@@ -14,8 +15,10 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
     <ThemeProvider>
       <LanguageProvider>
         <ImpersonationProvider>
-          <App />
-          <Toaster position="top-right" richColors closeButton />
+          <NotificationsProvider>
+            <App />
+            <Toaster position="top-right" richColors closeButton />
+          </NotificationsProvider>
         </ImpersonationProvider>
       </LanguageProvider>
     </ThemeProvider>
