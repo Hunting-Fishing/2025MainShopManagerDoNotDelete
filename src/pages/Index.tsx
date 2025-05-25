@@ -1,217 +1,218 @@
 
 import React from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuthUser } from '@/hooks/useAuthUser';
-import { Building2, Users, FileText, Settings, Calendar, MessageSquare } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
-import { EnhancedSeoHead } from '@/components/common/EnhancedSeoHead';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { 
+  Wrench, 
+  Users, 
+  Package, 
+  ClipboardList, 
+  BarChart3, 
+  Settings,
+  ArrowRight,
+  CheckCircle
+} from 'lucide-react';
+import { SeoHead } from '@/components/common/SeoHead';
 
-const Index = () => {
-  const { isAuthenticated, isLoading } = useAuthUser();
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="space-y-4">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-32 w-96" />
-        </div>
-      </div>
-    );
-  }
-
-  // If user is authenticated, redirect to dashboard
-  if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "Easy Shop Manager",
-    "description": "Professional work order management system for automotive shops and service businesses",
-    "applicationCategory": "BusinessApplication",
-    "operatingSystem": "Web Browser",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "USD"
-    },
-    "featureList": [
-      "Work Order Management",
-      "Equipment Tracking",
-      "Inventory Control", 
-      "Customer Management",
-      "Team Scheduling",
-      "Business Analytics"
-    ]
-  };
-
+export default function Index() {
   return (
     <>
-      <EnhancedSeoHead
+      <SeoHead
         title="Easy Shop Manager - Professional Work Order Management System"
-        description="Streamline your automotive shop operations with Easy Shop Manager's comprehensive work order, inventory, and team management solutions. Start your free trial today."
-        keywords="work order management, automotive shop software, equipment tracking, inventory management, customer management, service business software"
-        structuredData={structuredData}
-        canonicalUrl="https://easyshopmanager.com"
+        description="Streamline your automotive shop operations with our comprehensive work order management system. Track equipment, manage inventory, handle customer relationships, and boost efficiency."
+        keywords="work order management, automotive shop software, equipment tracking, inventory management, customer management system, maintenance scheduling"
       />
       
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-        {/* Header */}
-        <header className="bg-white shadow-sm border-b">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-4">
-              <div className="flex items-center space-x-2">
-                <Building2 className="h-8 w-8 text-blue-600" alt="" />
-                <span className="text-2xl font-bold text-gray-900">Easy Shop Manager</span>
-              </div>
-              <nav className="flex items-center space-x-4" role="navigation" aria-label="Main navigation">
-                <Link to="/login">
-                  <Button variant="outline">Sign In</Button>
+        {/* Hero Section */}
+        <section className="relative py-20 px-4">
+          <div className="container mx-auto max-w-6xl text-center">
+            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+              Professional Work Order Management for Modern Shops
+            </h1>
+            <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
+              Streamline operations, track equipment maintenance, manage inventory, and deliver exceptional customer service with our comprehensive shop management solution.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button asChild size="lg" className="text-lg px-8 py-3 bg-blue-600 hover:bg-blue-700">
+                <Link to="/dashboard">
+                  Get Started
+                  <ArrowRight className="ml-2 h-5 w-5" aria-label="Navigate to dashboard" />
                 </Link>
-                <Link to="/login">
-                  <Button>Get Started</Button>
+              </Button>
+              <Button asChild variant="outline" size="lg" className="text-lg px-8 py-3">
+                <Link to="/equipment">
+                  View Equipment
                 </Link>
-              </nav>
+              </Button>
             </div>
           </div>
-        </header>
+        </section>
 
-        {/* Hero Section */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <section className="text-center mb-16" aria-labelledby="hero-heading">
-            <h1 id="hero-heading" className="text-4xl font-bold text-gray-900 mb-4">
-              Streamline Your Automotive Shop Operations
-            </h1>
-            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              Manage customers, work orders, inventory, and team members all in one powerful platform designed specifically for automotive shops and service businesses.
-            </p>
-            <div className="flex justify-center space-x-4">
-              <Link to="/login">
-                <Button size="lg" className="px-8 py-3">
-                  Start Free Trial
-                </Button>
-              </Link>
-              <Button variant="outline" size="lg" className="px-8 py-3">
-                Watch Demo
-              </Button>
-            </div>
-          </section>
-
-          {/* Features Section */}
-          <section aria-labelledby="features-heading">
-            <h2 id="features-heading" className="sr-only">Key Features</h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-              <Card className="border-0 shadow-lg">
-                <CardHeader>
-                  <Users className="h-12 w-12 text-blue-600 mb-4" alt="" />
-                  <CardTitle>
-                    <h3>Customer Management</h3>
-                  </CardTitle>
-                  <CardDescription>
-                    Keep detailed customer records, vehicle information, and service history in one centralized location.
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-
-              <Card className="border-0 shadow-lg">
-                <CardHeader>
-                  <FileText className="h-12 w-12 text-green-600 mb-4" alt="" />
-                  <CardTitle>
-                    <h3>Work Orders & Invoicing</h3>
-                  </CardTitle>
-                  <CardDescription>
-                    Create professional work orders and invoices with automated calculations and customizable templates.
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-
-              <Card className="border-0 shadow-lg">
-                <CardHeader>
-                  <Building2 className="h-12 w-12 text-purple-600 mb-4" alt="" />
-                  <CardTitle>
-                    <h3>Equipment & Inventory Control</h3>
-                  </CardTitle>
-                  <CardDescription>
-                    Track parts, supplies, and equipment with real-time inventory levels and automated reordering.
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-
-              <Card className="border-0 shadow-lg">
-                <CardHeader>
-                  <Calendar className="h-12 w-12 text-orange-600 mb-4" alt="" />
-                  <CardTitle>
-                    <h3>Scheduling & Calendar</h3>
-                  </CardTitle>
-                  <CardDescription>
-                    Manage appointments, technician schedules, and shop capacity efficiently with smart scheduling.
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-
-              <Card className="border-0 shadow-lg">
-                <CardHeader>
-                  <MessageSquare className="h-12 w-12 text-red-600 mb-4" alt="" />
-                  <CardTitle>
-                    <h3>Team Communication</h3>
-                  </CardTitle>
-                  <CardDescription>
-                    Keep your team connected with built-in chat and collaboration tools for seamless communication.
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-
-              <Card className="border-0 shadow-lg">
-                <CardHeader>
-                  <Settings className="h-12 w-12 text-indigo-600 mb-4" alt="" />
-                  <CardTitle>
-                    <h3>Business Analytics</h3>
-                  </CardTitle>
-                  <CardDescription>
-                    Get insights into your shop's performance with detailed reports and analytics dashboards.
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-            </div>
-          </section>
-
-          {/* CTA Section */}
-          <section className="text-center bg-white rounded-2xl shadow-xl p-12" aria-labelledby="cta-heading">
-            <h2 id="cta-heading" className="text-3xl font-bold text-gray-900 mb-4">
-              Ready to Transform Your Shop?
-            </h2>
-            <p className="text-lg text-gray-600 mb-8">
-              Join thousands of automotive shops already using Easy Shop Manager to grow their business and improve efficiency.
-            </p>
-            <Link to="/login">
-              <Button size="lg" className="px-12 py-4 text-lg">
-                Get Started Today
-              </Button>
-            </Link>
-          </section>
-        </main>
-
-        {/* Footer */}
-        <footer className="bg-gray-900 text-white py-12">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center">
-              <div className="flex items-center justify-center space-x-2 mb-4">
-                <Building2 className="h-6 w-6" alt="" />
-                <span className="text-lg font-semibold">Easy Shop Manager</span>
-              </div>
-              <p className="text-gray-400">
-                © 2024 Easy Shop Manager. All rights reserved.
+        {/* Features Section */}
+        <section className="py-20 px-4 bg-white">
+          <div className="container mx-auto max-w-6xl">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                Everything You Need to Manage Your Shop
+              </h2>
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                From work order tracking to equipment maintenance, our platform provides all the tools you need for efficient shop operations.
               </p>
             </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <Card className="hover:shadow-lg transition-shadow border-gray-200">
+                <CardHeader className="text-center pb-4">
+                  <div className="mx-auto mb-4 p-3 bg-blue-100 rounded-full w-fit">
+                    <ClipboardList className="h-8 w-8 text-blue-600" aria-label="Work order management icon" />
+                  </div>
+                  <CardTitle className="text-xl font-semibold text-gray-900">Work Order Management</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600 text-center leading-relaxed">
+                    Create, assign, and track work orders from start to finish. Monitor progress, manage priorities, and ensure timely completion of all service requests.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-shadow border-gray-200">
+                <CardHeader className="text-center pb-4">
+                  <div className="mx-auto mb-4 p-3 bg-green-100 rounded-full w-fit">
+                    <Wrench className="h-8 w-8 text-green-600" aria-label="Equipment tracking icon" />
+                  </div>
+                  <CardTitle className="text-xl font-semibold text-gray-900">Equipment Tracking</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600 text-center leading-relaxed">
+                    Monitor all shop equipment, schedule preventive maintenance, track service history, and prevent costly breakdowns with proactive maintenance alerts.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-shadow border-gray-200">
+                <CardHeader className="text-center pb-4">
+                  <div className="mx-auto mb-4 p-3 bg-purple-100 rounded-full w-fit">
+                    <Package className="h-8 w-8 text-purple-600" aria-label="Inventory management icon" />
+                  </div>
+                  <CardTitle className="text-xl font-semibold text-gray-900">Inventory Management</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600 text-center leading-relaxed">
+                    Track parts and supplies in real-time, set automatic reorder points, manage suppliers, and never run out of critical inventory items.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-shadow border-gray-200">
+                <CardHeader className="text-center pb-4">
+                  <div className="mx-auto mb-4 p-3 bg-orange-100 rounded-full w-fit">
+                    <Users className="h-8 w-8 text-orange-600" aria-label="Customer management icon" />
+                  </div>
+                  <CardTitle className="text-xl font-semibold text-gray-900">Customer Management</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600 text-center leading-relaxed">
+                    Maintain comprehensive customer profiles, track service history, manage vehicle information, and build lasting customer relationships.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-shadow border-gray-200">
+                <CardHeader className="text-center pb-4">
+                  <div className="mx-auto mb-4 p-3 bg-red-100 rounded-full w-fit">
+                    <BarChart3 className="h-8 w-8 text-red-600" aria-label="Analytics and reporting icon" />
+                  </div>
+                  <CardTitle className="text-xl font-semibold text-gray-900">Analytics & Reporting</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600 text-center leading-relaxed">
+                    Generate detailed reports on shop performance, track key metrics, analyze trends, and make data-driven decisions to grow your business.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-shadow border-gray-200">
+                <CardHeader className="text-center pb-4">
+                  <div className="mx-auto mb-4 p-3 bg-gray-100 rounded-full w-fit">
+                    <Settings className="h-8 w-8 text-gray-600" aria-label="Configuration and settings icon" />
+                  </div>
+                  <CardTitle className="text-xl font-semibold text-gray-900">Easy Configuration</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600 text-center leading-relaxed">
+                    Customize the system to match your workflow, set up user permissions, configure notifications, and adapt the platform to your shop's unique needs.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
           </div>
-        </footer>
+        </section>
+
+        {/* Benefits Section */}
+        <section className="py-20 px-4 bg-gray-50">
+          <div className="container mx-auto max-w-6xl">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                Why Choose Easy Shop Manager?
+              </h2>
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                Built specifically for automotive shops and service businesses, our platform delivers measurable results.
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+              <div className="space-y-6">
+                <div className="flex items-start space-x-4">
+                  <CheckCircle className="h-6 w-6 text-green-500 mt-1 flex-shrink-0" aria-label="Benefit checkmark" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Increased Efficiency</h3>
+                    <p className="text-gray-600">Streamline workflows and reduce manual tasks by up to 40% with automated processes and intelligent scheduling.</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-4">
+                  <CheckCircle className="h-6 w-6 text-green-500 mt-1 flex-shrink-0" aria-label="Benefit checkmark" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Better Customer Service</h3>
+                    <p className="text-gray-600">Provide faster responses and more accurate service estimates with centralized customer and vehicle information.</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-4">
+                  <CheckCircle className="h-6 w-6 text-green-500 mt-1 flex-shrink-0" aria-label="Benefit checkmark" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Reduced Downtime</h3>
+                    <p className="text-gray-600">Prevent equipment failures with proactive maintenance scheduling and real-time monitoring alerts.</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-4">
+                  <CheckCircle className="h-6 w-6 text-green-500 mt-1 flex-shrink-0" aria-label="Benefit checkmark" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Cost Savings</h3>
+                    <p className="text-gray-600">Optimize inventory levels, reduce waste, and lower operational costs through data-driven insights.</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white p-8 rounded-lg shadow-lg">
+                <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">Ready to Get Started?</h3>
+                <p className="text-gray-600 mb-6 text-center">
+                  Join hundreds of shops that have transformed their operations with Easy Shop Manager.
+                </p>
+                <Button asChild className="w-full text-lg py-3 bg-blue-600 hover:bg-blue-700">
+                  <Link to="/dashboard">
+                    Start Managing Your Shop
+                    <ArrowRight className="ml-2 h-5 w-5" aria-label="Get started arrow" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </>
   );
-};
-
-export default Index;
+}
