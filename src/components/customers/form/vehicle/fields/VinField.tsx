@@ -3,10 +3,11 @@ import React from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, CheckCircle2, AlertCircle, HelpCircle, RotateCcw, AlertTriangle } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle, HelpCircle, RotateCcw, AlertTriangle, Info } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { BaseFieldProps } from "./BaseFieldTypes";
 
 export const VinField: React.FC<BaseFieldProps & { 
@@ -18,6 +19,14 @@ export const VinField: React.FC<BaseFieldProps & {
     year?: string | number;
     make?: string;
     model?: string;
+    trim?: string;
+    engine?: string;
+    transmission?: string;
+    drive_type?: string;
+    fuel_type?: string;
+    body_style?: string;
+    country?: string;
+    gvwr?: string;
     valid?: boolean;
   };
 }> = ({ 
@@ -29,6 +38,8 @@ export const VinField: React.FC<BaseFieldProps & {
   onRetry,
   decodedVehicleInfo 
 }) => {
+  const [showDetails, setShowDetails] = React.useState(false);
+  
   const vinValue = form.watch(`vehicles.${index}.vin`);
   const makeValue = form.watch(`vehicles.${index}.make`);
   const modelValue = form.watch(`vehicles.${index}.model`);
@@ -37,6 +48,18 @@ export const VinField: React.FC<BaseFieldProps & {
   const showDecodedInfo = decodedVehicleInfo && (makeValue || modelValue || yearValue);
   const hasError = error && vinValue?.length === 17;
   const isComplete = vinValue?.length === 17 && showDecodedInfo && !error;
+  
+  // Count how many additional details we have
+  const additionalDetails = decodedVehicleInfo ? [
+    decodedVehicleInfo.trim,
+    decodedVehicleInfo.engine,
+    decodedVehicleInfo.transmission,
+    decodedVehicleInfo.drive_type,
+    decodedVehicleInfo.fuel_type,
+    decodedVehicleInfo.body_style,
+    decodedVehicleInfo.country,
+    decodedVehicleInfo.gvwr
+  ].filter(Boolean).length : 0;
   
   return (
     <FormField
@@ -52,7 +75,7 @@ export const VinField: React.FC<BaseFieldProps & {
                   <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
                 <TooltipContent side="right" className="max-w-sm">
-                  <p>Vehicle Identification Number - A 17-character unique identifier for the vehicle. Enter a complete VIN to auto-populate vehicle details.</p>
+                  <p>Vehicle Identification Number - A 17-character unique identifier. Enter a complete VIN to auto-populate vehicle details including make, model, year, engine, transmission, and more.</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -123,9 +146,9 @@ export const VinField: React.FC<BaseFieldProps & {
             </Alert>
           )}
           
-          {/* Success Info */}
+          {/* Success Info with Primary Details */}
           {showDecodedInfo && !hasError && (
-            <div className="mt-2">
+            <div className="mt-2 space-y-2">
               <div className="flex flex-wrap gap-1">
                 {yearValue && (
                   <Badge variant="outline" className="bg-green-50 border-green-200 text-green-700">
@@ -142,13 +165,82 @@ export const VinField: React.FC<BaseFieldProps & {
                     {modelValue}
                   </Badge>
                 )}
+                {decodedVehicleInfo?.trim && (
+                  <Badge variant="outline" className="bg-orange-50 border-orange-200 text-orange-700">
+                    {decodedVehicleInfo.trim}
+                  </Badge>
+                )}
               </div>
+              
+              {/* Additional Details Toggle */}
+              {additionalDetails > 0 && (
+                <Collapsible open={showDetails} onOpenChange={setShowDetails}>
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-auto p-1 text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      <Info className="h-3 w-3 mr-1" />
+                      {showDetails ? 'Hide' : 'Show'} {additionalDetails} additional detail{additionalDetails !== 1 ? 's' : ''}
+                    </Button>
+                  </CollapsibleTrigger>
+                  
+                  <CollapsibleContent className="mt-2">
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      {decodedVehicleInfo?.engine && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Engine:</span>
+                          <span className="font-medium">{decodedVehicleInfo.engine}</span>
+                        </div>
+                      )}
+                      {decodedVehicleInfo?.transmission && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Transmission:</span>
+                          <span className="font-medium">{decodedVehicleInfo.transmission}</span>
+                        </div>
+                      )}
+                      {decodedVehicleInfo?.drive_type && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Drive Type:</span>
+                          <span className="font-medium">{decodedVehicleInfo.drive_type}</span>
+                        </div>
+                      )}
+                      {decodedVehicleInfo?.fuel_type && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Fuel Type:</span>
+                          <span className="font-medium">{decodedVehicleInfo.fuel_type}</span>
+                        </div>
+                      )}
+                      {decodedVehicleInfo?.body_style && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Body Style:</span>
+                          <span className="font-medium">{decodedVehicleInfo.body_style}</span>
+                        </div>
+                      )}
+                      {decodedVehicleInfo?.country && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Country:</span>
+                          <span className="font-medium">{decodedVehicleInfo.country}</span>
+                        </div>
+                      )}
+                      {decodedVehicleInfo?.gvwr && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">GVWR:</span>
+                          <span className="font-medium">{decodedVehicleInfo.gvwr}</span>
+                        </div>
+                      )}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              )}
             </div>
           )}
           
           <FormDescription>
             {processing 
-              ? "Decoding VIN..." 
+              ? "Decoding VIN and retrieving detailed vehicle information..." 
               : hasError 
                 ? "Fix the error above to continue"
                 : "Enter a complete 17-digit VIN to auto-populate vehicle details"
