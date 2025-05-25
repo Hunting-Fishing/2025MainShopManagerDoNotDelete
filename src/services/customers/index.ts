@@ -6,13 +6,22 @@ export * from '../customer';
 export {
   getAllCustomers,
   getCustomerById,
-  updateCustomer,
-  deleteCustomer,
-  createCustomer,
   searchCustomers,
   checkDuplicateCustomers,
   getCustomersWithVehicles
 } from '../customer/customerQueryService';
+
+export {
+  updateCustomer
+} from '../customer/customerUpdateService';
+
+export {
+  deleteCustomer
+} from '../customer/customerDeleteService';
+
+export {
+  createCustomer
+} from '../customer/customerCreateService';
 
 export {
   addCustomerNote,
