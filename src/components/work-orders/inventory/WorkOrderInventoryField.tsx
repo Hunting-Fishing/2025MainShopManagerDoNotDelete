@@ -80,23 +80,35 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
 
   // Convert items to proper WorkOrderInventoryItem format for display
   const workOrderItems: WorkOrderInventoryItem[] = items.map((item, index) => {
-    // Create a properly typed WorkOrderInventoryItem
-    const workOrderItem: WorkOrderInventoryItem = {
-      id: item.id || `temp-${Date.now()}-${index}`,
-      name: item.name || 'Unknown Item',
-      sku: item.sku || 'NO-SKU',
-      category: item.category || 'General',
-      quantity: item.quantity || 1,
-      unit_price: item.unit_price || 0,
-      total: item.total || (item.quantity || 1) * (item.unit_price || 0),
-      notes: item.notes || undefined,
-      itemStatus: item.itemStatus || undefined,
-      estimatedArrivalDate: item.estimatedArrivalDate || undefined,
-      supplierName: item.supplierName || undefined,
-      supplierOrderRef: item.supplierOrderRef || undefined
+    // Build the item ensuring all required fields are strings/numbers, not undefined
+    const mappedItem: WorkOrderInventoryItem = {
+      id: item.id ?? `temp-${Date.now()}-${index}`,
+      name: item.name ?? 'Unknown Item',
+      sku: item.sku ?? 'NO-SKU',
+      category: item.category ?? 'General',
+      quantity: item.quantity ?? 1,
+      unit_price: item.unit_price ?? 0,
+      total: item.total ?? ((item.quantity ?? 1) * (item.unit_price ?? 0))
     };
     
-    return workOrderItem;
+    // Add optional properties only if they exist
+    if (item.notes !== undefined) {
+      mappedItem.notes = item.notes;
+    }
+    if (item.itemStatus !== undefined) {
+      mappedItem.itemStatus = item.itemStatus;
+    }
+    if (item.estimatedArrivalDate !== undefined) {
+      mappedItem.estimatedArrivalDate = item.estimatedArrivalDate;
+    }
+    if (item.supplierName !== undefined) {
+      mappedItem.supplierName = item.supplierName;
+    }
+    if (item.supplierOrderRef !== undefined) {
+      mappedItem.supplierOrderRef = item.supplierOrderRef;
+    }
+    
+    return mappedItem;
   });
 
   return (
