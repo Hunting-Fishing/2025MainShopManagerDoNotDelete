@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Info } from 'lucide-react';
+import { Info, Car, CheckCircle } from 'lucide-react';
 
 interface VehicleAdditionalDetailsProps {
   form: UseFormReturn<any>;
@@ -24,51 +24,67 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
   return (
     <div className="space-y-4 mt-4">
       {showDecodedInfo && (
-        <Card className="bg-blue-50 border-blue-200">
+        <Card className="bg-gradient-to-r from-blue-50 to-green-50 border-blue-200">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">
-              <Info className="h-4 w-4 text-blue-600" />
-              VIN Decoded Information
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              VIN Successfully Decoded
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
               {decodedDetails.year && (
-                <div>
-                  <span className="font-medium">Year:</span>
-                  <Badge variant="outline" className="ml-1">{decodedDetails.year}</Badge>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-gray-600">Year:</span>
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                    {decodedDetails.year}
+                  </Badge>
                 </div>
               )}
               {decodedDetails.make && (
-                <div>
-                  <span className="font-medium">Make:</span>
-                  <Badge variant="outline" className="ml-1">{decodedDetails.make}</Badge>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-gray-600">Make:</span>
+                  <Badge variant="secondary" className="bg-green-100 text-green-800">
+                    {decodedDetails.make}
+                  </Badge>
                 </div>
               )}
               {decodedDetails.model && decodedDetails.model !== 'Unknown' && (
-                <div>
-                  <span className="font-medium">Model:</span>
-                  <Badge variant="outline" className="ml-1">{decodedDetails.model}</Badge>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-gray-600">Model:</span>
+                  <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+                    {decodedDetails.model}
+                  </Badge>
                 </div>
               )}
               {decodedDetails.country && (
-                <div>
-                  <span className="font-medium">Country:</span>
-                  <Badge variant="outline" className="ml-1">{decodedDetails.country}</Badge>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-gray-600">Country:</span>
+                  <Badge variant="outline" className="border-gray-300">
+                    {decodedDetails.country}
+                  </Badge>
                 </div>
               )}
               {decodedDetails.transmission && (
-                <div>
-                  <span className="font-medium">Transmission:</span>
-                  <Badge variant="outline" className="ml-1">{decodedDetails.transmission}</Badge>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-gray-600">Transmission:</span>
+                  <Badge variant="outline" className="border-orange-300 text-orange-700">
+                    {decodedDetails.transmission}
+                  </Badge>
                 </div>
               )}
               {decodedDetails.fuel_type && (
-                <div>
-                  <span className="font-medium">Fuel:</span>
-                  <Badge variant="outline" className="ml-1">{decodedDetails.fuel_type}</Badge>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-gray-600">Fuel:</span>
+                  <Badge variant="outline" className="border-indigo-300 text-indigo-700">
+                    {decodedDetails.fuel_type}
+                  </Badge>
                 </div>
               )}
+            </div>
+            <div className="mt-3 text-xs text-gray-500 flex items-center gap-1">
+              <Info className="h-3 w-3" />
+              This information was automatically extracted from the VIN
             </div>
           </CardContent>
         </Card>
