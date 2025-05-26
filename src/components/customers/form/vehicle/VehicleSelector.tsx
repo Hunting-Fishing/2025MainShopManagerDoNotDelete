@@ -31,6 +31,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
     vinProcessing, 
     vinError,
     canRetry,
+    hasAttempted,
     decodedVehicleInfo, 
     fetchModels,
     handleVinDecode,
@@ -59,6 +60,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
             processing={vinProcessing}
             error={vinError}
             canRetry={canRetry}
+            hasAttempted={hasAttempted}
             onRetry={onVinRetry}
             decodedVehicleInfo={decodedVehicleInfo}
             onVinDecode={handleVinDecode}

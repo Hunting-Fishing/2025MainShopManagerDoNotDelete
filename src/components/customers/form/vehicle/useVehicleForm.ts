@@ -144,7 +144,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
       }
       
       // Handle make matching and form updates
-      if (result.make) {
+      if (result.make && result.make !== 'Unknown') {
         const matchingMake = findMatchingMake(result.make);
         if (matchingMake) {
           console.log('Setting make to:', matchingMake.make_id);
@@ -152,8 +152,8 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
           
           // Fetch models for this make
           fetchModels(matchingMake.make_id).then(() => {
-            // Set model if available
-            if (result.model) {
+            // Set model if available and not Unknown
+            if (result.model && result.model !== 'Unknown') {
               console.log('Setting model to:', result.model);
               form.setValue(`vehicles.${index}.model`, result.model);
             }
@@ -195,6 +195,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     vinProcessing: vinDecoder.isProcessing,
     vinError: vinDecoder.error,
     canRetry: vinDecoder.canRetry,
+    hasAttempted: vinDecoder.hasAttempted,
     decodedVehicleInfo,
     fetchModels,
     handleVinDecode,

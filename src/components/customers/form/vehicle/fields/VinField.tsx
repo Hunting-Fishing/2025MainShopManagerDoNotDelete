@@ -3,8 +3,9 @@ import React, { useState, useCallback } from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { HelpCircle, AlertCircle, CheckCircle, RotateCcw, Search } from "lucide-react";
+import { HelpCircle, AlertCircle, CheckCircle, RotateCcw, Search, Loader2, AlertTriangle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { BaseFieldProps } from "./BaseFieldTypes";
 import { VinDecodeResult } from "@/types/vehicle";
 
@@ -12,6 +13,7 @@ interface VinFieldProps extends BaseFieldProps {
   processing?: boolean;
   error?: string | null;
   canRetry?: boolean;
+  hasAttempted?: boolean;
   onRetry?: () => void;
   decodedVehicleInfo?: VinDecodeResult | null;
   onVinDecode?: (vin: string) => void;
@@ -23,25 +25,43 @@ export const VinField: React.FC<VinFieldProps> = ({
   processing = false,
   error = null,
   canRetry = false,
+  hasAttempted = false,
   onRetry,
   decodedVehicleInfo,
   onVinDecode 
 }) => {
-  const [hasAttemptedDecode, setHasAttemptedDecode] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const handleVinDecode = useCallback(async () => {
     const vin = form.getValues(`vehicles.${index}.vin`);
     if (vin && vin.length === 17 && onVinDecode) {
-      setHasAttemptedDecode(true);
+      setLocalError(null);
       await onVinDecode(vin);
     }
   }, [form, index, onVinDecode]);
 
+  const handleVinChange = useCallback((value: string) => {
+    const upperValue = value.toUpperCase();
+    form.setValue(`vehicles.${index}.vin`, upperValue);
+    setLocalError(null);
+    
+    // Basic validation
+    if (upperValue.length > 0 && upperValue.length < 17) {
+      setLocalError(`VIN must be 17 characters (current: ${upperValue.length})`);
+    } else if (upperValue.length === 17) {
+      // Check for invalid characters
+      const invalidChars = /[IOQ]/i;
+      if (invalidChars.test(upperValue)) {
+        setLocalError('VIN contains invalid characters (I, O, Q are not allowed)');
+      }
+    }
+  }, [form, index]);
+
   const getVinStatusIcon = () => {
     if (processing) {
-      return <Search className="h-4 w-4 text-blue-500 animate-spin" />;
+      return <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />;
     }
-    if (error) {
+    if (error || localError) {
       return <AlertCircle className="h-4 w-4 text-red-500" />;
     }
     if (decodedVehicleInfo) {
@@ -49,6 +69,11 @@ export const VinField: React.FC<VinFieldProps> = ({
     }
     return null;
   };
+
+  const currentVin = form.watch(`vehicles.${index}.vin`) || '';
+  const isValidLength = currentVin.length === 17;
+  const hasLocalError = localError !== null;
+  const hasRemoteError = error !== null && hasAttempted;
 
   return (
     <FormField
@@ -64,7 +89,12 @@ export const VinField: React.FC<VinFieldProps> = ({
                   <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
                 <TooltipContent side="right">
-                  <p>17-character Vehicle Identification Number</p>
+                  <div className="text-sm">
+                    <p>17-character Vehicle Identification Number</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Letters I, O, Q are not allowed in VINs
+                    </p>
+                  </div>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -77,11 +107,10 @@ export const VinField: React.FC<VinFieldProps> = ({
                 {...field}
                 placeholder="Enter 17-character VIN"
                 maxLength={17}
-                className="uppercase"
+                className={`uppercase font-mono ${hasLocalError || hasRemoteError ? 'border-red-500' : ''}`}
                 onChange={(e) => {
-                  const value = e.target.value.toUpperCase();
-                  field.onChange(value);
-                  setHasAttemptedDecode(false);
+                  handleVinChange(e.target.value);
+                  field.onChange(e.target.value.toUpperCase());
                 }}
               />
             </FormControl>
@@ -91,15 +120,15 @@ export const VinField: React.FC<VinFieldProps> = ({
               variant="outline"
               size="sm"
               onClick={handleVinDecode}
-              disabled={!field.value || field.value.length !== 17 || processing}
+              disabled={!isValidLength || processing || hasLocalError}
               className="shrink-0"
             >
               {processing ? (
-                <Search className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Search className="h-4 w-4" />
               )}
-              Decode
+              {processing ? 'Decoding...' : 'Decode'}
             </Button>
             
             {canRetry && onRetry && (
@@ -116,20 +145,49 @@ export const VinField: React.FC<VinFieldProps> = ({
             )}
           </div>
 
-          {/* Display decoded vehicle information */}
-          {decodedVehicleInfo && (
-            <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-md">
-              <p className="text-sm font-medium text-green-800">
-                Vehicle Decoded: {decodedVehicleInfo.year} {decodedVehicleInfo.make} {decodedVehicleInfo.model}
-              </p>
+          {/* Character count indicator */}
+          {currentVin.length > 0 && (
+            <div className="text-xs text-muted-foreground">
+              {currentVin.length}/17 characters
             </div>
           )}
 
-          {/* Display error */}
-          {error && hasAttemptedDecode && (
-            <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-sm text-red-700">{error}</p>
-            </div>
+          {/* Local validation error */}
+          {hasLocalError && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>{localError}</AlertDescription>
+            </Alert>
+          )}
+
+          {/* Display decoded vehicle information */}
+          {decodedVehicleInfo && !hasLocalError && (
+            <Alert className="border-green-200 bg-green-50">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-800">
+                <strong>Vehicle Decoded:</strong> {decodedVehicleInfo.year} {decodedVehicleInfo.make} {decodedVehicleInfo.model}
+                {decodedVehicleInfo.country && (
+                  <span className="block text-sm text-green-600 mt-1">
+                    Country: {decodedVehicleInfo.country}
+                  </span>
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Display remote error */}
+          {hasRemoteError && !hasLocalError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                {error}
+                {canRetry && (
+                  <span className="block text-sm mt-1">
+                    Click "Retry" to attempt VIN decoding again.
+                  </span>
+                )}
+              </AlertDescription>
+            </Alert>
           )}
           
           <FormMessage />
