@@ -15,6 +15,8 @@ export const normalizeInventoryItem = (item: any): InventoryItemExtended => {
     price: item.unit_price || 0, // Ensure price property exists
     location: item.location,
     status: item.status || 'In Stock',
+    created_at: item.created_at || new Date().toISOString(),
+    updated_at: item.updated_at || new Date().toISOString(),
     partNumber: item.partNumber,
     barcode: item.barcode,
     subcategory: item.subcategory,
