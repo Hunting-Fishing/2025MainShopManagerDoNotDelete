@@ -22,6 +22,9 @@ export const CustomersList = ({
   error,
   onFilterChange 
 }: CustomersListProps) => {
+  console.log('CustomersList - customers:', customers);
+  console.log('CustomersList - filteredCustomers:', filteredCustomers);
+  
   return (
     <Card>
       <div className="p-6 space-y-4">
@@ -49,6 +52,15 @@ export const CustomersList = ({
               />
             </TableBody>
           </Table>
+        </div>
+        
+        {/* Show customer count */}
+        <div className="text-sm text-muted-foreground">
+          {filteredCustomers.length > 0 && (
+            <p>
+              Showing {filteredCustomers.length} of {customers.length} customers
+            </p>
+          )}
         </div>
       </div>
     </Card>

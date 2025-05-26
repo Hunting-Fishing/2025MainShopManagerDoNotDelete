@@ -8,10 +8,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { EmptyState } from '@/components/ui/empty-state';
+import { CustomersList } from '@/components/customers/list/CustomersList';
 import { useCustomers } from '@/hooks/useCustomers';
 
 export default function CustomersPage() {
-  const { filteredCustomers, loading, error, filters, handleFilterChange } = useCustomers();
+  const { 
+    customers,
+    filteredCustomers, 
+    loading, 
+    error, 
+    filters, 
+    handleFilterChange 
+  } = useCustomers();
 
   const handleSearchChange = (search: string) => {
     handleFilterChange({
@@ -54,7 +62,7 @@ export default function CustomersPage() {
         </Button>
       </div>
 
-      {/* Filters */}
+      {/* Search */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Search & Filter</CardTitle>
@@ -65,7 +73,7 @@ export default function CustomersPage() {
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Search customers..."
-                value={filters.search}
+                value={filters.search || ''}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-10"
               />
@@ -75,7 +83,7 @@ export default function CustomersPage() {
       </Card>
 
       {/* Customer List */}
-      {filteredCustomers.length === 0 ? (
+      {customers.length === 0 ? (
         <EmptyState
           icon={<Users className="h-8 w-8 text-gray-400" />}
           title="No customers found"
@@ -86,52 +94,14 @@ export default function CustomersPage() {
           }}
         />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredCustomers.map((customer) => (
-            <Card key={customer.id} className="hover:shadow-md transition-shadow cursor-pointer">
-              <CardContent className="p-6">
-                <div className="space-y-3">
-                  <div>
-                    <h3 className="font-semibold text-lg">
-                      {customer.first_name} {customer.last_name}
-                    </h3>
-                    {customer.company && (
-                      <p className="text-sm text-gray-600">{customer.company}</p>
-                    )}
-                  </div>
-                  
-                  <div className="space-y-1 text-sm text-gray-600">
-                    {customer.email && (
-                      <p className="flex items-center">
-                        📧 {customer.email}
-                      </p>
-                    )}
-                    {customer.phone && (
-                      <p className="flex items-center">
-                        📞 {customer.phone}
-                      </p>
-                    )}
-                    {customer.address && (
-                      <p className="flex items-center">
-                        📍 {customer.address}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="flex justify-between items-center pt-3 border-t">
-                    <Badge variant="secondary">Active</Badge>
-                    <Link 
-                      to={`/customers/${customer.id}`}
-                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                    >
-                      View Details →
-                    </Link>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <CustomersList
+          customers={customers}
+          filteredCustomers={filteredCustomers}
+          filters={filters}
+          loading={loading}
+          error={error}
+          onFilterChange={handleFilterChange}
+        />
       )}
     </div>
   );

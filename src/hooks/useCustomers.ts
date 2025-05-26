@@ -1,38 +1,17 @@
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import { toast } from '@/hooks/use-toast';
-
-export interface Customer {
-  id: string;
-  shop_id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone: string;
-  address: string;
-  city?: string;
-  state?: string;
-  postal_code?: string;
-  company?: string;
-  notes?: string;
-  created_at: string;
-  updated_at: string;
-  // Additional fields for compatibility
-  name?: string;
-  status?: string;
-  lastServiceDate?: string;
-  dateAdded?: string;
-}
+import { useState, useEffect, useMemo } from 'react';
+import { Customer } from '@/types/customer';
+import { getAllCustomers } from '@/services/customer';
+import { useToast } from '@/hooks/use-toast';
 
 export interface CustomerFilters {
-  search: string;
-  searchQuery: string;
-  status: string;
-  sortBy: string;
+  search?: string;
+  searchQuery?: string;
+  status?: string;
+  sortBy?: string;
 }
 
-export function useCustomers() {
+export const useCustomers = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,61 +21,82 @@ export function useCustomers() {
     status: 'all',
     sortBy: 'name'
   });
+  const { toast } = useToast();
 
+  // Fetch customers on mount
   useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        console.log('Fetching customers...');
+        
+        const customersData = await getAllCustomers();
+        console.log('Customers fetched:', customersData);
+        
+        setCustomers(customersData || []);
+      } catch (err) {
+        console.error('Error fetching customers:', err);
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load customers';
+        setError(errorMessage);
+        toast({
+          title: "Error",
+          description: "Failed to load customers. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchCustomers();
-  }, []);
+  }, [toast]);
 
-  const fetchCustomers = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const { data, error } = await supabase
-        .from('customers')
-        .select('*')
-        .order('last_name', { ascending: true });
+  // Filter and sort customers
+  const filteredCustomers = useMemo(() => {
+    let filtered = [...customers];
 
-      if (error) throw error;
-      
-      // Transform data to match expected interface
-      const transformedData = (data || []).map(customer => ({
-        ...customer,
-        email: customer.email || '',
-        phone: customer.phone || '',
-        address: customer.address || '',
-        name: `${customer.first_name} ${customer.last_name}`,
-        status: 'active',
-        dateAdded: customer.created_at,
-        shop_id: customer.shop_id || '',
-      }));
-      
-      setCustomers(transformedData);
-    } catch (err: any) {
-      setError(err.message);
-      toast({
-        title: "Error",
-        description: "Failed to load customers",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
+    // Apply search filter
+    if (filters.search || filters.searchQuery) {
+      const searchTerm = (filters.search || filters.searchQuery || '').toLowerCase().trim();
+      if (searchTerm) {
+        filtered = filtered.filter(customer => {
+          const fullName = `${customer.first_name || ''} ${customer.last_name || ''}`.toLowerCase();
+          const email = (customer.email || '').toLowerCase();
+          const phone = (customer.phone || '').toLowerCase();
+          const company = (customer.company || '').toLowerCase();
+          
+          return fullName.includes(searchTerm) ||
+                 email.includes(searchTerm) ||
+                 phone.includes(searchTerm) ||
+                 company.includes(searchTerm);
+        });
+      }
     }
-  };
 
-  const filteredCustomers = customers.filter(customer => {
-    const searchTerm = filters.search.toLowerCase() || filters.searchQuery.toLowerCase();
-    const matchesSearch = !searchTerm || 
-      customer.first_name.toLowerCase().includes(searchTerm) ||
-      customer.last_name.toLowerCase().includes(searchTerm) ||
-      customer.email?.toLowerCase().includes(searchTerm) ||
-      customer.company?.toLowerCase().includes(searchTerm);
+    // Apply sorting
+    if (filters.sortBy) {
+      filtered.sort((a, b) => {
+        switch (filters.sortBy) {
+          case 'name':
+            const nameA = `${a.first_name || ''} ${a.last_name || ''}`.trim();
+            const nameB = `${b.first_name || ''} ${b.last_name || ''}`.trim();
+            return nameA.localeCompare(nameB);
+          case 'email':
+            return (a.email || '').localeCompare(b.email || '');
+          case 'created':
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          default:
+            return 0;
+        }
+      });
+    }
 
-    return matchesSearch;
-  });
+    return filtered;
+  }, [customers, filters]);
 
-  const handleFilterChange = (newFilters: CustomerFilters) => {
-    setFilters(newFilters);
+  const handleFilterChange = (newFilters: Partial<CustomerFilters>) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
   };
 
   return {
@@ -106,6 +106,5 @@ export function useCustomers() {
     error,
     filters,
     handleFilterChange,
-    refetch: fetchCustomers
   };
-}
+};
