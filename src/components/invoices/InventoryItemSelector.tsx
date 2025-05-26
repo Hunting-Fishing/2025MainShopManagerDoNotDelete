@@ -50,7 +50,9 @@ export function InventoryItemSelector({
               >
                 <div>
                   <div className="font-medium">{item.name}</div>
-                  <div className="text-sm text-slate-500">{item.sku} - ${item.price.toFixed(2)}</div>
+                  <div className="text-sm text-slate-500">
+                    {item.sku} - ${(item.price || item.unit_price || 0).toFixed(2)}
+                  </div>
                 </div>
                 <Button variant="ghost" size="sm">
                   <Plus className="h-4 w-4" />

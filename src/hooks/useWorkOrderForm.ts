@@ -4,6 +4,9 @@ import { useForm } from "react-hook-form";
 import { WorkOrderFormValues, WorkOrderInventoryItem } from "@/types/workOrder";
 import { useToast } from "@/hooks/use-toast";
 
+// Re-export for other components
+export { WorkOrderFormValues } from "@/types/workOrder";
+
 export const useWorkOrderForm = (initialData: Partial<WorkOrderFormValues> = {}) => {
   const { toast } = useToast();
   const [inventoryItems, setInventoryItems] = useState<WorkOrderInventoryItem[]>([]);

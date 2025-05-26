@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { StaffMember, Invoice, InvoiceItem } from '@/types/invoice';
 import { WorkOrder } from '@/types/workOrder';
@@ -76,13 +75,15 @@ export function useInvoiceData(initialWorkOrderId?: string) {
   
   // Functions to handle inventory items
   const handleAddInventoryItem = (inventoryItem: InventoryItem) => {
+    const itemPrice = inventoryItem.price || inventoryItem.unit_price || 0;
+    
     const newItem: InvoiceItem = {
       id: uuidv4(),
       name: inventoryItem.name,
       description: inventoryItem.description || inventoryItem.name,
       quantity: 1,
-      price: inventoryItem.price || inventoryItem.unit_price || 0,
-      total: inventoryItem.price || inventoryItem.unit_price || 0,
+      price: itemPrice,
+      total: itemPrice,
       sku: inventoryItem.sku,
       category: inventoryItem.category,
     };

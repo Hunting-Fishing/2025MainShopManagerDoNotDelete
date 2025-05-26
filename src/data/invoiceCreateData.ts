@@ -1,319 +1,67 @@
-import { v4 as uuidv4 } from 'uuid';
-import { WorkOrder } from '@/types/workOrder';
-import { StaffMember } from '@/types/invoice';
-import { supabase } from '@/lib/supabase';
 
-// Helper function to safely access properties
-const safeProp = <T extends Record<string, any>>(obj: T | null | undefined, key: keyof T): any => {
-  if (!obj) return '';
-  return obj[key] || '';
-};
+import { useInvoiceData } from "@/hooks/useInvoiceData";
+import { WorkOrder } from "@/types/workOrder";
 
-// Helper function to safely check if an object is an array
-const isArray = (obj: any): obj is Array<any> => {
-  return Array.isArray(obj);
-};
+// This file now re-exports the hook that fetches data from the database
+export { useInvoiceData };
 
-// Function to generate a customer name from customer data
-export function getCustomerName(customer: any): string {
-  if (!customer) return '';
-  
-  // If it's an array, we need to handle it differently
-  if (isArray(customer)) {
-    if (customer.length > 0) {
-      return `${safeProp(customer[0], 'first_name')} ${safeProp(customer[0], 'last_name')}`;
-    }
-    return '';
-  }
-  
-  // Otherwise it's an object
-  return `${safeProp(customer, 'first_name')} ${safeProp(customer, 'last_name')}`;
-}
-
-// Function to generate a vehicle description
-export function getVehicleDescription(vehicle: any): string {
-  if (!vehicle) return '';
-  
-  // If it's an array, handle it differently
-  if (isArray(vehicle)) {
-    if (vehicle.length > 0) {
-      return `${safeProp(vehicle[0], 'year')} ${safeProp(vehicle[0], 'make')} ${safeProp(vehicle[0], 'model')}`;
-    }
-    return '';
-  }
-  
-  // Otherwise it's an object
-  return `${safeProp(vehicle, 'year')} ${safeProp(vehicle, 'make')} ${safeProp(vehicle, 'model')}`;
-}
-
-// Define work order statuses
-export const workOrderStatuses = [
-  'New',
-  'In Progress',
-  'On Hold',
-  'Completed',
-  'Cancelled'
-];
-
-// Define invoice statuses
-export const invoiceStatuses = [
-  'Draft',
-  'Pending',
-  'Paid',
-  'Overdue',
-  'Cancelled'
-];
-
-// Function to fetch work orders from the database
-export const fetchWorkOrders = async () => {
-  try {
-    const { data: workOrdersData, error } = await supabase
-      .from('work_orders')
-      .select(`
-        *,
-        customers (id, first_name, last_name),
-        vehicles (id, make, model, year)
-      `)
-      .order('created_at', { ascending: false });
-      
-    if (error) {
-      throw error;
-    }
-    
-    // Transform the data to match our WorkOrder type
-    const workOrders: WorkOrder[] = workOrdersData.map(wo => {
-      const customer = wo.customers || { first_name: "Unknown", last_name: "Customer" };
-      const vehicle = wo.vehicles || { make: "", model: "", year: "" };
-      
-      const customerName = getCustomerName(customer);
-      
-      const vehicleInfo = getVehicleDescription(vehicle);
-        
-      return {
-        id: wo.id,
-        customer_id: wo.customer_id || '',
-        customer_name: customerName,
-        customer: customerName, // Add this to match WorkOrder interface
-        vehicle_id: wo.vehicle_id || '',
-        vehicle_info: vehicleInfo,
-        status: wo.status || 'pending',
-        description: wo.description || '',
-        total_cost: wo.total_cost || 0,
-        timeEntries: [], // We'll fetch these separately if needed
-        date: wo.created_at || new Date().toISOString(),
-        dueDate: wo.updated_at || new Date().toISOString(),
-        priority: "medium", // Default value
-        technician: wo.technician_id || '',
-        location: '', // Default value
-        totalBillableTime: 0 // We'll calculate this if needed
-      };
-    });
-    
-    return workOrders;
-  } catch (error) {
-    console.error('Error fetching work orders:', error);
-    // Return mock data
-    return [
-      {
-        id: "wo-1234",
-        customer_id: "cust-1",
-        customer_name: "John Doe",
-        customer: "John Doe",
-        vehicle_id: "veh-1",
-        vehicle_info: "2019 Toyota Camry",
-        status: "in-progress",
-        description: "Regular maintenance and oil change",
-        total_cost: 149.99,
-        timeEntries: [],
-        date: "2023-05-20",
-        dueDate: "2023-05-27",
-        priority: "medium",
-        technician: "tech-1",
-        location: "Bay 3",
-        totalBillableTime: 1.5
-      },
-      {
-        id: "wo-1235",
-        customer_id: "cust-2",
-        customer_name: "Jane Smith",
-        customer: "Jane Smith",
-        vehicle_id: "veh-2",
-        vehicle_info: "2018 Honda Accord",
-        status: "completed",
-        description: "Brake pad replacement and rotor inspection",
-        total_cost: 299.99,
-        timeEntries: [],
-        date: "2023-05-18",
-        dueDate: "2023-05-25",
-        priority: "high",
-        technician: "tech-2",
-        location: "Bay 5",
-        totalBillableTime: 2.5
-      }
-    ];
-  }
-};
-
-// Function to fetch inventory items from the database
-export const fetchInventoryItems = async () => {
-  try {
-    const { data, error } = await supabase
-      .from('inventory_items')
-      .select('*')
-      .order('name');
-      
-    if (error) {
-      throw error;
-    }
-    
-    return data.map(item => ({
-      id: item.id,
-      name: item.name,
-      description: item.description || '',
-      sku: item.sku,
-      category: item.category || '',
-      quantity: item.quantity || 0,
-      price: item.unit_price || 0,
-      total: 0 // Will be calculated when item is added to invoice
-    }));
-  } catch (error) {
-    console.error('Error fetching inventory items:', error);
-    // Return mock data
-    return [
-      { id: "item-1", name: "Oil Filter", description: "Standard oil filter", sku: "OF-1234", category: "Filters", quantity: 1, price: 12.99, total: 12.99 },
-      { id: "item-2", name: "Synthetic Oil (1 quart)", description: "Full synthetic motor oil", sku: "OIL-5678", category: "Fluids", quantity: 5, price: 9.99, total: 49.95 },
-      { id: "item-3", name: "Brake Pads (Front)", description: "Ceramic front brake pads", sku: "BP-9012", category: "Brakes", quantity: 1, price: 45.99, total: 45.99 }
-    ];
-  }
-};
-
-// Function to fetch staff members from the database
-export const fetchStaffMembers = async () => {
-  try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, first_name, last_name, job_title')
-      .order('first_name');
-      
-    if (error) {
-      throw error;
-    }
-    
-    // Transform the data to match our StaffMember type
-    const staffMembers: StaffMember[] = data.map(profile => ({
-      id: profile.id.toString(), // Convert to string to match our type
-      name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Unknown Staff',
-      role: profile.job_title || 'Staff'
-    }));
-    
-    return staffMembers;
-  } catch (error) {
-    console.error('Error fetching staff members:', error);
-    // Provide fallback data with string IDs to match StaffMember interface
-    return [
-      { id: "1", name: "John Smith", role: "Technician" },
-      { id: "2", name: "Sarah Johnson", role: "Manager" },
-      { id: "3", name: "Mike Davis", role: "Advisor" }
-    ];
-  }
-};
-
-export const mockWorkOrders = [
-  {
-    id: 'wo-001',
-    customer_id: 'cust-001',
-    customer_name: 'John Smith',
-    customer: 'John Smith',
-    vehicle_id: 'veh-001',
-    vehicle_info: '2020 Honda Civic',
-    status: 'completed',
-    description: 'Oil change and filter replacement',
-    total_cost: 89.99,
-    timeEntries: [],
-    date: '2024-01-15',
-    dueDate: '2024-01-15',
-    priority: 'medium',
-    technician: 'Mike Johnson',
-    location: 'Bay 1',
-    totalBillableTime: 60,
-    created_at: '2024-01-15T08:00:00Z',
-    updated_at: '2024-01-15T09:00:00Z'
-  },
-  {
-    id: 'wo-002',
-    customer_id: 'cust-002',
-    customer_name: 'Sarah Davis',
-    customer: 'Sarah Davis',
-    vehicle_id: 'veh-002',
-    vehicle_info: '2019 Toyota Camry',
-    status: 'completed',
-    description: 'Brake pad replacement',
-    total_cost: 249.99,
-    timeEntries: [],
-    date: '2024-01-14',
-    dueDate: '2024-01-14',
-    priority: 'high',
-    technician: 'Alex Thompson',
-    location: 'Bay 2',
-    totalBillableTime: 120,
-    created_at: '2024-01-14T08:00:00Z',
-    updated_at: '2024-01-14T10:00:00Z'
-  }
-];
-
-export const workOrdersData: WorkOrder[] = [
+// For backwards compatibility - sample work orders with proper typing
+export const sampleWorkOrders: WorkOrder[] = [
   {
     id: "wo-001",
     customer_id: "cust-001",
-    customer: "Smith Automotive",
+    customer: "ABC Auto Parts",
     vehicle_id: "veh-001",
     status: "completed",
-    description: "Oil change and filter replacement",
-    total_cost: 89.99,
+    description: "Oil change and tire rotation",
+    total_cost: 125.50,
     timeEntries: [],
-    created_at: "2024-01-15T10:00:00Z",
-    updated_at: "2024-01-15T11:30:00Z",
     date: "2024-01-15",
-    dueDate: "2024-01-15",
+    dueDate: "2024-01-16",
     priority: "medium",
-    technician: "John Doe",
+    technician: "John Smith",
     location: "Bay 1",
-    totalBillableTime: 90,
+    total_billable_time: 2.5,
+    created_at: "2024-01-15T08:00:00Z",
+    updated_at: "2024-01-15T10:30:00Z"
   },
   {
-    id: "wo-002", 
+    id: "wo-002",
     customer_id: "cust-002",
-    customer: "Johnson Fleet Services",
+    customer: "Fleet Solutions Inc",
     vehicle_id: "veh-002",
-    status: "completed",
-    description: "Brake pad replacement",
-    total_cost: 245.50,
+    status: "in-progress",
+    description: "Brake system inspection and repair",
+    total_cost: 450.00,
     timeEntries: [],
-    created_at: "2024-01-14T09:00:00Z",
-    updated_at: "2024-01-14T12:00:00Z",
-    date: "2024-01-14",
-    dueDate: "2024-01-14", 
+    date: "2024-01-16",
+    dueDate: "2024-01-17",
     priority: "high",
-    technician: "Jane Smith",
+    technician: "Sarah Johnson",
     location: "Bay 2",
-    totalBillableTime: 180,
+    total_billable_time: 4.0,
+    created_at: "2024-01-16T09:00:00Z",
+    updated_at: "2024-01-16T11:00:00Z"
   },
   {
     id: "wo-003",
-    customer_id: "cust-003", 
-    customer: "Davis Transportation",
+    customer_id: "cust-003",
+    customer: "Metro Transit Authority",
     vehicle_id: "veh-003",
-    status: "completed",
-    description: "Transmission service",
-    total_cost: 189.99,
+    status: "pending",
+    description: "Engine diagnostic and transmission service",
+    total_cost: 800.00,
     timeEntries: [],
-    created_at: "2024-01-13T08:00:00Z",
-    updated_at: "2024-01-13T10:30:00Z",
-    date: "2024-01-13",
-    dueDate: "2024-01-13",
-    priority: "medium", 
-    technician: "Mike Wilson",
+    date: "2024-01-17",
+    dueDate: "2024-01-18",
+    priority: "urgent",
+    technician: "Mike Davis",
     location: "Bay 3",
-    totalBillableTime: 150,
+    total_billable_time: 6.5,
+    created_at: "2024-01-17T07:30:00Z",
+    updated_at: "2024-01-17T07:30:00Z"
   }
 ];
+
+// For backwards compatibility, but no mock data fallbacks
+export const workOrders = sampleWorkOrders;

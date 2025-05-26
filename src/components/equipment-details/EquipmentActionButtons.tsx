@@ -7,32 +7,44 @@ import { Equipment } from '@/types/equipment';
 
 interface EquipmentActionButtonsProps {
   equipment: Equipment;
+  onScheduleMaintenance?: () => void;
+  onCreateWorkOrder?: (type: any, priority: any) => void;
 }
 
 export const EquipmentActionButtons: React.FC<EquipmentActionButtonsProps> = ({ 
-  equipment 
+  equipment,
+  onScheduleMaintenance,
+  onCreateWorkOrder
 }) => {
   const navigate = useNavigate();
 
   const handleCreateWorkOrder = () => {
-    navigate('/work-orders/create', {
-      state: {
-        equipmentId: equipment.id,
-        customer: equipment.customer,
-        location: equipment.location,
-        description: `Maintenance for ${equipment.name} (${equipment.model})`
-      }
-    });
+    if (onCreateWorkOrder) {
+      onCreateWorkOrder('maintenance', 'medium');
+    } else {
+      navigate('/work-orders/create', {
+        state: {
+          equipmentId: equipment.id,
+          customer: equipment.customer,
+          location: equipment.location,
+          description: `Maintenance for ${equipment.name} (${equipment.model})`
+        }
+      });
+    }
   };
 
   const handleScheduleMaintenance = () => {
-    navigate('/calendar', {
-      state: {
-        equipmentId: equipment.id,
-        eventType: 'maintenance',
-        title: `Maintenance: ${equipment.name}`
-      }
-    });
+    if (onScheduleMaintenance) {
+      onScheduleMaintenance();
+    } else {
+      navigate('/calendar', {
+        state: {
+          equipmentId: equipment.id,
+          eventType: 'maintenance',
+          title: `Maintenance: ${equipment.name}`
+        }
+      });
+    }
   };
 
   const handleViewReports = () => {

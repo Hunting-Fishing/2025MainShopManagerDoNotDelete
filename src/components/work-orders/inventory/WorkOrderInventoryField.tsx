@@ -28,7 +28,7 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
     addItem,
     removeItem,
     updateQuantity
-  } = useInventoryItemOperations(form);
+  } = useInventoryItemOperations(form as any);
 
   // Fetch suppliers for special order dialog
   useEffect(() => {
@@ -60,12 +60,17 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
     
     const newItem: WorkOrderInventoryItem = {
       id: tempId,
-      name: item.name,
+      name: item.name || '',
       sku: item.sku || `SO-${Date.now().toString(36)}`,
-      category: item.category,
-      quantity: item.quantity,
+      category: item.category || '',
+      quantity: item.quantity || 1,
       unit_price: item.unit_price || 0,
-      total: item.quantity * (item.unit_price || 0)
+      total: (item.quantity || 1) * (item.unit_price || 0),
+      notes: item.notes,
+      itemStatus: item.itemStatus || 'special-order',
+      estimatedArrivalDate: item.estimatedArrivalDate,
+      supplierName: item.supplierName,
+      supplierOrderRef: item.supplierOrderRef
     };
     
     const currentItems = form.getValues("inventoryItems") || [];
