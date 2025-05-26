@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { VinDecodeResult } from '@/types/vehicle';
-import { decodeVin as apiDecodeVin } from '@/services/vinDecoderService';
+import { decodeVin, getVinValidationError } from '@/services/vinDecoderService';
 
 export interface UseVinDecoderReturn {
   decode: (vin: string) => Promise<VinDecodeResult | null>;
@@ -18,9 +18,11 @@ export const useVinDecoder = (): UseVinDecoderReturn => {
   const [hasAttempted, setHasAttempted] = useState(false);
   const [lastVin, setLastVin] = useState<string>('');
 
-  const decode = async (vin: string): Promise<VinDecodeResult | null> => {
-    if (!vin || vin.length !== 17) {
-      setError('VIN must be exactly 17 characters');
+  const decodeVinInternal = async (vin: string): Promise<VinDecodeResult | null> => {
+    // Validate VIN format first
+    const validationError = getVinValidationError(vin);
+    if (validationError) {
+      setError(validationError);
       return null;
     }
 
@@ -32,8 +34,7 @@ export const useVinDecoder = (): UseVinDecoderReturn => {
     try {
       console.log('Starting VIN decode process for:', vin);
       
-      // Use the service directly instead of going through utils
-      const result = await apiDecodeVin(vin);
+      const result = await decodeVin(vin);
       
       if (result) {
         console.log('VIN decode successful:', result);
@@ -55,12 +56,12 @@ export const useVinDecoder = (): UseVinDecoderReturn => {
 
   const retry = () => {
     if (lastVin) {
-      decode(lastVin);
+      decodeVinInternal(lastVin);
     }
   };
 
   return {
-    decode,
+    decode: decodeVinInternal,
     isDecoding,
     error,
     canRetry: !!error && !!lastVin,
