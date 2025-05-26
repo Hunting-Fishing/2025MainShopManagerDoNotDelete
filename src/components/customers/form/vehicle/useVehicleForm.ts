@@ -1,9 +1,9 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { CarMake, CarModel, VinDecodeResult } from '@/types/vehicle';
-import { supabase } from '@/lib/supabase';
 import { useVinDecoder } from './hooks/useVinDecoder';
+import { fetchMakes, fetchModels } from '@/services/vehicleDataService';
 
 interface UseVehicleFormProps {
   form: UseFormReturn<any>;
@@ -13,45 +13,35 @@ interface UseVehicleFormProps {
 export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
   const [makes, setMakes] = useState<CarMake[]>([]);
   const [models, setModels] = useState<CarModel[]>([]);
-  const [makesLoading, setMakesLoading] = useState(true);
-  const [modelsLoading, setModelsLoading] = useState(false);
   const [decodedVehicleInfo, setDecodedVehicleInfo] = useState<VinDecodeResult | null>(null);
-
-  const {
-    decode: decodeVin,
-    isDecoding: vinProcessing,
+  
+  const { 
+    decode: decodeVin, 
+    isDecoding: vinProcessing, 
     error: vinError,
     canRetry,
     hasAttempted,
-    retry: onVinRetry
+    retry
   } = useVinDecoder();
 
-  // Fetch makes from database
-  const fetchMakes = useCallback(async () => {
-    try {
-      setMakesLoading(true);
-      const { data, error } = await supabase
-        .from('vehicle_makes')
-        .select('*')
-        .order('make_display', { ascending: true });
-
-      if (error) {
-        console.error('Error fetching makes:', error);
+  // Load makes on component mount
+  useEffect(() => {
+    const loadMakes = async () => {
+      try {
+        const makesData = await fetchMakes();
+        console.log('Loaded makes data:', makesData);
+        setMakes(makesData || []);
+      } catch (error) {
+        console.error('Error loading makes:', error);
         setMakes([]);
-      } else {
-        console.log('Fetched makes from database:', data);
-        setMakes(data || []);
       }
-    } catch (error) {
-      console.error('Error in fetchMakes:', error);
-      setMakes([]);
-    } finally {
-      setMakesLoading(false);
-    }
+    };
+
+    loadMakes();
   }, []);
 
-  // Fetch models for a specific make
-  const fetchModels = useCallback(async (makeId: string) => {
+  // Function to fetch models based on make
+  const fetchModels = async (makeId: string) => {
     if (!makeId) {
       console.log('No make ID provided, clearing models');
       setModels([]);
@@ -59,134 +49,123 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     }
 
     try {
-      setModelsLoading(true);
-      const { data, error } = await supabase
-        .from('vehicle_models')
-        .select('*')
-        .eq('model_make_id', makeId)
-        .order('model_name', { ascending: true });
-
-      if (error) {
-        console.error('Error fetching models:', error);
-        setModels([]);
-      } else {
-        console.log('Fetched models for make:', makeId, data);
-        setModels(data || []);
-      }
+      console.log('Fetching models for make ID:', makeId);
+      const modelsData = await fetchModels(makeId);
+      console.log('Loaded models data:', modelsData);
+      setModels(modelsData || []);
     } catch (error) {
-      console.error('Error in fetchModels:', error);
+      console.error('Error loading models:', error);
       setModels([]);
-    } finally {
-      setModelsLoading(false);
     }
-  }, []);
+  };
 
   // Handle VIN decoding
-  const handleVinDecode = useCallback(async (vin: string) => {
-    if (!vin || vin.length !== 17) return;
+  const handleVinDecode = async (vin: string) => {
+    if (!vin || vin.length !== 17) {
+      return;
+    }
 
     try {
-      console.log('Starting VIN decode for:', vin);
+      console.log('Starting VIN decode process for:', vin);
       const result = await decodeVin(vin);
       
       if (result) {
         console.log('VIN decode successful, result:', result);
         setDecodedVehicleInfo(result);
         
-        // Set the year if available
+        // Store decoded data in form
         if (result.year) {
           console.log('Setting year:', result.year);
           form.setValue(`vehicles.${index}.year`, result.year.toString());
+          form.setValue(`vehicles.${index}.decoded_year`, result.year.toString());
         }
-
-        // Handle make field - improved logic for empty database
+        
         if (result.make) {
-          const decodedMake = result.make;
-          console.log('Processing decoded make:', decodedMake);
+          console.log('Setting decoded make:', result.make);
+          form.setValue(`vehicles.${index}.decoded_make`, result.make);
           
-          // Wait for makes to be loaded if they're still loading
-          if (makesLoading) {
-            console.log('Makes still loading, waiting...');
-            // Store the decoded make temporarily
-            form.setValue(`vehicles.${index}.decoded_make`, decodedMake);
-            return;
-          }
-
-          if (makes.length === 0) {
-            console.log('No makes database available, using raw make value:', decodedMake);
-            // Database is empty, use the raw decoded value
-            form.setValue(`vehicles.${index}.make`, decodedMake);
-            form.setValue(`vehicles.${index}.decoded_make`, decodedMake);
-          } else {
-            console.log('Searching for make in database:', decodedMake);
-            // Try to find matching make in database
+          // Check if we have makes in database and find matching make
+          if (makes.length > 0) {
             const matchingMake = makes.find(make => 
-              make.make_display?.toLowerCase() === decodedMake.toLowerCase() ||
-              make.make_id?.toLowerCase() === decodedMake.toLowerCase()
+              make.make_display?.toLowerCase() === result.make?.toLowerCase()
             );
-
+            
             if (matchingMake) {
               console.log('Found matching make in database:', matchingMake);
               form.setValue(`vehicles.${index}.make`, matchingMake.make_id);
-              form.setValue(`vehicles.${index}.decoded_make`, ''); // Clear temporary field
-              // Fetch models for this make
+              // Auto-fetch models for the matched make
               fetchModels(matchingMake.make_id);
             } else {
-              console.log('No matching make found in database, preserving decoded value');
-              // No match found, preserve the decoded information for manual entry
+              console.log('No matching make found in database for:', result.make);
+              // Clear the make field to allow manual selection
               form.setValue(`vehicles.${index}.make`, '');
-              form.setValue(`vehicles.${index}.decoded_make`, decodedMake);
             }
+          } else {
+            console.log('No makes database available, using raw make value:', result.make);
+            form.setValue(`vehicles.${index}.make`, result.make);
           }
         }
-
-        // Set model if available and not "Unknown"
+        
+        // Set other decoded fields
         if (result.model && result.model !== 'Unknown') {
-          console.log('Setting model:', result.model);
-          form.setValue(`vehicles.${index}.model`, result.model);
+          console.log('Setting decoded model:', result.model);
+          form.setValue(`vehicles.${index}.decoded_model`, result.model);
+          
+          // If we have models and find a match, set it
+          if (models.length > 0) {
+            const matchingModel = models.find(model => 
+              model.model_name?.toLowerCase() === result.model?.toLowerCase()
+            );
+            
+            if (matchingModel) {
+              console.log('Found matching model in database:', matchingModel);
+              form.setValue(`vehicles.${index}.model`, matchingModel.model_name);
+            }
+          } else {
+            // Set the raw model value if no database
+            form.setValue(`vehicles.${index}.model`, result.model);
+          }
         }
-
-        console.log('Form updated with VIN decoded data');
+        
+        // Set additional decoded fields for reference
+        if (result.transmission) {
+          form.setValue(`vehicles.${index}.decoded_transmission`, result.transmission);
+        }
+        if (result.fuel_type) {
+          form.setValue(`vehicles.${index}.decoded_fuel_type`, result.fuel_type);
+        }
+        if (result.engine) {
+          form.setValue(`vehicles.${index}.decoded_engine`, result.engine);
+        }
+        if (result.body_style) {
+          form.setValue(`vehicles.${index}.decoded_body_style`, result.body_style);
+        }
+        if (result.country) {
+          form.setValue(`vehicles.${index}.decoded_country`, result.country);
+        }
+        if (result.trim) {
+          form.setValue(`vehicles.${index}.decoded_trim`, result.trim);
+        }
+        if (result.gvwr) {
+          form.setValue(`vehicles.${index}.decoded_gvwr`, result.gvwr);
+        }
+        
+        // Trigger form validation
+        form.trigger(`vehicles.${index}`);
       }
     } catch (error) {
-      console.error('Error in handleVinDecode:', error);
+      console.error('VIN decode error:', error);
+      setDecodedVehicleInfo(null);
     }
-  }, [decodeVin, form, index, makes, makesLoading, fetchModels]);
+  };
 
-  // Handle the case where makes finish loading after VIN decode
-  useEffect(() => {
-    // Get the current form values
-    const currentValues = form.getValues();
-    const vehicleData = currentValues.vehicles?.[index];
-    const decodedMakeValue = vehicleData?.decoded_make;
-    
-    if (decodedMakeValue && makes.length > 0 && !makesLoading) {
-      console.log('Makes loaded after VIN decode, trying to match:', decodedMakeValue);
-      
-      const matchingMake = makes.find(make => 
-        make.make_display?.toLowerCase() === decodedMakeValue.toLowerCase() ||
-        make.make_id?.toLowerCase() === decodedMakeValue.toLowerCase()
-      );
-
-      if (matchingMake) {
-        console.log('Found matching make after load:', matchingMake);
-        form.setValue(`vehicles.${index}.make`, matchingMake.make_id);
-        form.setValue(`vehicles.${index}.decoded_make`, ''); // Clear the temporary field
-        fetchModels(matchingMake.make_id);
-      }
-    }
-  }, [makes, makesLoading, form, index, fetchModels]);
-
-  // Load makes on component mount
-  useEffect(() => {
-    fetchMakes();
-  }, [fetchMakes]);
+  const onVinRetry = () => {
+    retry();
+  };
 
   return {
     makes,
     models,
-    makesLoading,
-    modelsLoading,
     vinProcessing,
     vinError,
     canRetry,

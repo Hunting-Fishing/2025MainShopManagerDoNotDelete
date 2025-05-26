@@ -20,7 +20,19 @@ export interface VehicleFormData {
   country?: string;
   transmission_type?: string;
   gvwr?: string;
-  color?: string; // Adding color for backward compatibility
+  color?: string;
+  
+  // Decoded VIN fields (temporary storage)
+  decoded_make?: string;
+  decoded_model?: string;
+  decoded_year?: string;
+  decoded_transmission?: string;
+  decoded_fuel_type?: string;
+  decoded_engine?: string;
+  decoded_body_style?: string;
+  decoded_country?: string;
+  decoded_trim?: string;
+  decoded_gvwr?: string;
 }
 
 // Default empty vehicle
@@ -39,7 +51,7 @@ export const emptyVehicle: VehicleFormData = {
   country: '',
   transmission_type: '',
   gvwr: '',
-  color: '' // Adding color for backward compatibility
+  color: ''
 };
 
 // Add the vehicleSchema export using Zod
@@ -59,5 +71,17 @@ export const vehicleSchema = z.object({
   country: z.string().optional().or(z.literal("")),
   transmission_type: z.string().optional().or(z.literal("")),
   gvwr: z.string().optional().or(z.literal("")),
-  color: z.string().optional().or(z.literal("")) // Adding color for backward compatibility
+  color: z.string().optional().or(z.literal("")),
+  
+  // Decoded VIN fields
+  decoded_make: z.string().optional().or(z.literal("")),
+  decoded_model: z.string().optional().or(z.literal("")),
+  decoded_year: z.string().optional().or(z.literal("")),
+  decoded_transmission: z.string().optional().or(z.literal("")),
+  decoded_fuel_type: z.string().optional().or(z.literal("")),
+  decoded_engine: z.string().optional().or(z.literal("")),
+  decoded_body_style: z.string().optional().or(z.literal("")),
+  decoded_country: z.string().optional().or(z.literal("")),
+  decoded_trim: z.string().optional().or(z.literal("")),
+  decoded_gvwr: z.string().optional().or(z.literal(""))
 });
