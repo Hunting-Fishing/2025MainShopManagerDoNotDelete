@@ -57,18 +57,18 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
 
   // Handle adding a special order item
   const handleAddSpecialOrder = (item: any) => {
-    // Create a properly typed WorkOrderInventoryItem with all required fields
+    // Create a properly typed WorkOrderInventoryItem with all required fields guaranteed
     const newItem: WorkOrderInventoryItem = {
-      id: item.id ?? `temp-${Date.now()}`,
-      name: item.name ?? 'Special Order Item',
-      sku: item.sku ?? `SO-${Date.now().toString(36)}`,
-      category: item.category ?? 'Special Order',
-      quantity: item.quantity ?? 1,
-      unit_price: item.unit_price ?? 0,
-      total: (item.quantity ?? 1) * (item.unit_price ?? 0)
+      id: item.id || `temp-${Date.now()}`,
+      name: item.name || 'Special Order Item',
+      sku: item.sku || `SO-${Date.now().toString(36)}`,
+      category: item.category || 'Special Order',
+      quantity: item.quantity || 1,
+      unit_price: item.unit_price || 0,
+      total: (item.quantity || 1) * (item.unit_price || 0)
     };
     
-    // Add optional properties if they exist
+    // Add optional properties only if they exist and are not undefined
     if (item.notes !== undefined) {
       newItem.notes = item.notes;
     }
