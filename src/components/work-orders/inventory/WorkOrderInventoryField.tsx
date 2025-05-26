@@ -8,11 +8,11 @@ import { InventorySectionHeader } from "./InventorySectionHeader";
 import { SpecialOrderDialog } from "./SpecialOrderDialog";
 import { useInventoryItemOperations } from "@/hooks/inventory/workOrder/useInventoryItemOperations";
 import { supabase } from "@/integrations/supabase/client";
-import { WorkOrderFormSchemaValues, WorkOrderInventoryItem } from "@/types/workOrder";
+import { WorkOrderFormValues, WorkOrderInventoryItem } from "@/types/workOrder";
 import { toExtendedWorkOrderItem } from "@/utils/inventory/adapters";
 
 interface WorkOrderInventoryFieldProps {
-  form: UseFormReturn<WorkOrderFormSchemaValues>;
+  form: UseFormReturn<WorkOrderFormValues>;
 }
 
 export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = ({
@@ -61,7 +61,7 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
     const newItem: WorkOrderInventoryItem = {
       id: tempId,
       name: item.name,
-      sku: item.sku,
+      sku: item.sku || `SO-${Date.now().toString(36)}`,
       category: item.category,
       quantity: item.quantity,
       unit_price: item.unit_price || 0,

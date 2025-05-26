@@ -3,6 +3,25 @@ import { WorkOrderInventoryItem } from "@/types/workOrder";
 import { InventoryItemExtended } from "@/types/inventory";
 
 /**
+ * Standardize inventory item to InventoryItemExtended format
+ */
+export const standardizeInventoryItem = (item: any): InventoryItemExtended => ({
+  id: item.id,
+  name: item.name || '',
+  sku: item.sku || '',
+  category: item.category || '',
+  supplier: item.supplier || '',
+  location: item.location || '',
+  status: item.status || 'In Stock',
+  description: item.description || '',
+  quantity: item.quantity || 0,
+  reorder_point: item.reorder_point || 10,
+  unit_price: item.unit_price || 0,
+  created_at: item.created_at || new Date().toISOString(),
+  updated_at: item.updated_at || new Date().toISOString()
+});
+
+/**
  * Convert inventory item to work order format
  */
 export const toWorkOrderInventoryItem = (
@@ -26,14 +45,13 @@ export const toExtendedWorkOrderItem = (item: WorkOrderInventoryItem): Inventory
   name: item.name,
   sku: item.sku,
   category: item.category,
-  supplier: item.supplierName || '',
+  supplier: '',
   location: '',
   status: 'In Stock',
   description: item.notes || '',
   quantity: item.quantity,
   reorder_point: 10,
   unit_price: item.unit_price,
-  shop_id: '',
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString()
 });

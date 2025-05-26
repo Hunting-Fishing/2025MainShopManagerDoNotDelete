@@ -1,11 +1,8 @@
 
 import { useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
-import { WorkOrderFormSchemaValues, WorkOrderInventoryItem } from "@/types/workOrder";
+import { WorkOrderFormValues, WorkOrderInventoryItem } from "@/types/workOrder";
 import { useToast } from "@/hooks/use-toast";
-
-// Export the type for use in other components
-export type WorkOrderFormValues = WorkOrderFormSchemaValues;
 
 export const useWorkOrderForm = (initialData: Partial<WorkOrderFormValues> = {}) => {
   const { toast } = useToast();
@@ -13,26 +10,19 @@ export const useWorkOrderForm = (initialData: Partial<WorkOrderFormValues> = {})
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Set default values with proper type handling
-  const defaultValues: Partial<WorkOrderFormSchemaValues> = {
-    title: initialData.title || "",
+  const defaultValues: Partial<WorkOrderFormValues> = {
     description: initialData.description || "",
     customer: initialData.customer || "",
-    customer_id: initialData.customer_id || "",
     status: initialData.status || "pending",
     priority: initialData.priority || "medium",
-    due_date: initialData.due_date || "",
+    dueDate: initialData.dueDate || "",
     technician: initialData.technician || "",
-    technician_id: initialData.technician_id || "",
-    serviceCategory: initialData.serviceCategory || "",
-    service_type: initialData.service_type || "",
-    estimated_hours: initialData.estimated_hours || 1,
     location: initialData.location || "",
     notes: initialData.notes || "",
-    vehicle_id: initialData.vehicle_id || "",
-    vehicle: initialData.vehicle || "",
-    make: initialData.make || "",
-    model: initialData.model || "",
-    year: initialData.year || "",
+    vehicleMake: initialData.vehicleMake || "",
+    vehicleModel: initialData.vehicleModel || "",
+    vehicleYear: initialData.vehicleYear || "",
+    licensePlate: initialData.licensePlate || "",
     vin: initialData.vin || ""
   };
 
@@ -73,12 +63,8 @@ export const useWorkOrderForm = (initialData: Partial<WorkOrderFormValues> = {})
   }, [toast, reset, defaultValues]);
 
   // Fix validateWorkOrder function
-  const validateWorkOrder = (values: Partial<WorkOrderFormSchemaValues>) => {
+  const validateWorkOrder = (values: Partial<WorkOrderFormValues>) => {
     const errors: Record<string, string> = {};
-    
-    if (!values.title) {
-      errors.title = "Work order title is required";
-    }
     
     if (!values.description) {
       errors.description = "Description is required";
@@ -88,8 +74,8 @@ export const useWorkOrderForm = (initialData: Partial<WorkOrderFormValues> = {})
       errors.customer = "Customer is required";
     }
     
-    if (!values.due_date) {
-      errors.due_date = "Due date is required";
+    if (!values.dueDate) {
+      errors.dueDate = "Due date is required";
     }
     
     return errors;

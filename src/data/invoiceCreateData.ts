@@ -218,6 +218,49 @@ export const fetchStaffMembers = async () => {
   }
 };
 
+export const mockWorkOrders = [
+  {
+    id: 'wo-001',
+    customer_id: 'cust-001',
+    customer_name: 'John Smith',
+    customer: 'John Smith',
+    vehicle_id: 'veh-001',
+    vehicle_info: '2020 Honda Civic',
+    status: 'completed',
+    description: 'Oil change and filter replacement',
+    total_cost: 89.99,
+    timeEntries: [],
+    date: '2024-01-15',
+    dueDate: '2024-01-15',
+    priority: 'medium',
+    technician: 'Mike Johnson',
+    location: 'Bay 1',
+    totalBillableTime: 60,
+    created_at: '2024-01-15T08:00:00Z',
+    updated_at: '2024-01-15T09:00:00Z'
+  },
+  {
+    id: 'wo-002',
+    customer_id: 'cust-002',
+    customer_name: 'Sarah Davis',
+    customer: 'Sarah Davis',
+    vehicle_id: 'veh-002',
+    vehicle_info: '2019 Toyota Camry',
+    status: 'completed',
+    description: 'Brake pad replacement',
+    total_cost: 249.99,
+    timeEntries: [],
+    date: '2024-01-14',
+    dueDate: '2024-01-14',
+    priority: 'high',
+    technician: 'Alex Thompson',
+    location: 'Bay 2',
+    totalBillableTime: 120,
+    created_at: '2024-01-14T08:00:00Z',
+    updated_at: '2024-01-14T10:00:00Z'
+  }
+];
+
 export const workOrdersData: WorkOrder[] = [
   {
     id: "wo-001",
@@ -235,7 +278,7 @@ export const workOrdersData: WorkOrder[] = [
     priority: "medium",
     technician: "John Doe",
     location: "Bay 1",
-    total_billable_time: 90,
+    totalBillableTime: 90,
   },
   {
     id: "wo-002", 
@@ -253,7 +296,7 @@ export const workOrdersData: WorkOrder[] = [
     priority: "high",
     technician: "Jane Smith",
     location: "Bay 2",
-    total_billable_time: 180,
+    totalBillableTime: 180,
   },
   {
     id: "wo-003",
@@ -271,6 +314,6 @@ export const workOrdersData: WorkOrder[] = [
     priority: "medium", 
     technician: "Mike Wilson",
     location: "Bay 3",
-    total_billable_time: 150,
+    totalBillableTime: 150,
   }
 ];

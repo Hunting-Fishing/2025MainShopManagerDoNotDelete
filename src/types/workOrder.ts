@@ -37,27 +37,24 @@ export interface WorkOrder {
   inventory_items?: WorkOrderInventoryItem[];
 }
 
-// Work Order Form Values - Used by form components (renamed for consistency)
+// Work Order Form Values - Used by form components
 export interface WorkOrderFormValues {
   customer: string;
   description: string;
-  status: string;
-  priority: string;
+  status: "pending" | "in-progress" | "on-hold" | "completed" | "cancelled";
+  priority: "low" | "medium" | "high" | "urgent";
   technician: string;
   location: string;
   dueDate: string;
   notes: string;
-  vehicleMake: string;
-  vehicleModel: string;
-  vehicleYear: string;
-  odometer: string;
-  licensePlate: string;
-  vin: string;
+  vehicleMake?: string;
+  vehicleModel?: string;
+  vehicleYear?: string;
+  odometer?: string;
+  licensePlate?: string;
+  vin?: string;
   inventoryItems: WorkOrderInventoryItem[];
 }
-
-// Alias for schema compatibility
-export type WorkOrderFormSchemaValues = WorkOrderFormValues;
 
 // Inventory item within a work order
 export interface WorkOrderInventoryItem {
@@ -148,6 +145,7 @@ export const priorityMap: Record<string, { label: string; classes: string }> = {
 // Legacy type aliases for backward compatibility
 export type WorkOrderPriorityType = WorkOrderPriority;
 export type WorkOrderStatusType = WorkOrderStatus;
+export type WorkOrderFormSchemaValues = WorkOrderFormValues;
 
 // Export for backward compatibility
 export const WorkOrderTypes = {
