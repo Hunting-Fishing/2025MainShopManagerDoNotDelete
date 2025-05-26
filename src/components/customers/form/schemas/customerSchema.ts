@@ -73,8 +73,7 @@ export const customerSchema = z.object({
   tags: z.array(z.string()).default([]),
   segments: z.array(z.string()).default([]),
   
-  // Role - default to Customer
-  role: z.string().default("Customer"),
+  // Remove role field since it's not part of the customers table schema
 }).superRefine(validateOtherBusinessIndustry);
 
 // Type definition for the form values

@@ -38,7 +38,7 @@ export const useCustomerCreate = () => {
     new_household_name: "",
     household_id: "", 
     household_relationship: "primary",
-    role: "Customer",
+    // Remove role from default values since it's not part of the customers table
   });
 
   // Update defaultValues when currentUserShopId changes
@@ -50,8 +50,8 @@ export const useCustomerCreate = () => {
   }
 
   const onSubmit = async (data: CustomerFormValues) => {
-    // Always ensure customers get the Customer role
-    const customerData = { ...data, role: "Customer" };
+    // Remove role from the data before submitting since it's not part of the customers table
+    const { role, ...customerData } = data;
     
     console.log("Submitting customer with vehicles:", customerData.vehicles);
     

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, CustomerCreate, adaptCustomerForUI } from "@/types/customer";
 import { addCustomerNote } from "./customerNotesService";
@@ -13,12 +12,12 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
   });
 
   // Extract vehicles to handle separately
-  const { vehicles = [], notes, ...customerData } = customer;
+  const { vehicles = [], notes, role, ...customerData } = customer;
   
   console.log("Processing customer creation with vehicles:", vehicles);
   
-  // Ensure the role is always set to "Customer"
-  customerData.role = "Customer";
+  // Remove role from customerData since it doesn't exist in the customers table
+  // The role field is not part of the customers table schema
   
   // Handle special case for business_industry and other_business_industry
   if (customerData.business_industry === 'other' && customerData.other_business_industry) {
