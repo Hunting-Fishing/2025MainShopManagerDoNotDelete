@@ -50,12 +50,10 @@ export const useCustomerCreate = () => {
   }
 
   const onSubmit = async (data: CustomerFormValues) => {
-    // Remove role from the data before submitting since it's not part of the customers table
-    const { role, ...customerData } = data;
+    // No need to destructure role since it doesn't exist in CustomerFormValues anymore
+    console.log("Submitting customer with vehicles:", data.vehicles);
     
-    console.log("Submitting customer with vehicles:", customerData.vehicles);
-    
-    await handleSubmit(customerData, currentUserShopId);
+    await handleSubmit(data, currentUserShopId);
   };
 
   const handleImportComplete = () => {
