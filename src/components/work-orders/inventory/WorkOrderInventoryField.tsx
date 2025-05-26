@@ -92,15 +92,15 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
 
   // Convert items to proper WorkOrderInventoryItem format for display
   const workOrderItems: WorkOrderInventoryItem[] = items.map((item, index) => {
-    // Build the item ensuring all required fields are properly typed
+    // Ensure all required fields have values and create a properly typed object
     const mappedItem: WorkOrderInventoryItem = {
-      id: item.id ?? `temp-${Date.now()}-${index}`,
-      name: item.name ?? 'Unknown Item',
-      sku: item.sku ?? 'NO-SKU',
-      category: item.category ?? 'General',
-      quantity: item.quantity ?? 1,
-      unit_price: item.unit_price ?? 0,
-      total: item.total ?? ((item.quantity ?? 1) * (item.unit_price ?? 0))
+      id: item.id || `temp-${Date.now()}-${index}`,
+      name: item.name || 'Unknown Item',
+      sku: item.sku || 'NO-SKU',
+      category: item.category || 'General',
+      quantity: item.quantity || 1,
+      unit_price: item.unit_price || 0,
+      total: item.total || ((item.quantity || 1) * (item.unit_price || 0))
     };
     
     // Add optional properties only if they exist
