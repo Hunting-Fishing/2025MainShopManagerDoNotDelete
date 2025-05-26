@@ -53,6 +53,7 @@ export const calculateTotalValue = (items: InventoryItemExtended[]): number => {
  * Format inventory item from API
  */
 export const formatInventoryItem = (item: Partial<InventoryItemExtended>): InventoryItemExtended => {
+  const unitPrice = Number(item.unit_price || item.price) || 0;
   return {
     id: item.id || crypto.randomUUID(),
     name: item.name || '',
@@ -61,8 +62,8 @@ export const formatInventoryItem = (item: Partial<InventoryItemExtended>): Inven
     description: item.description || '',
     quantity: Number(item.quantity) || 0,
     reorder_point: Number(item.reorder_point) || 10,
-    unit_price: Number(item.unit_price) || 0,
-    price: Number(item.unit_price) || 0,
+    unit_price: unitPrice,
+    price: unitPrice,
     supplier: item.supplier || '',
     location: item.location || '',
     status: item.status || 'In Stock',

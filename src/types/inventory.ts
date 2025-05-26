@@ -120,8 +120,27 @@ export interface InventoryStatus {
   color?: string;
 }
 
-// Re-export for backward compatibility
-export * from './transactions';
-export * from './vendors';
-export * from './purchaseOrders';
-export * from './locations';
+// Transaction types
+export interface InventoryTransaction {
+  id: string;
+  inventory_item_id: string;
+  transaction_type: 'in' | 'out' | 'adjustment';
+  quantity: number;
+  reference_id?: string;
+  reference_type?: string;
+  notes?: string;
+  created_at: string;
+  created_by?: string;
+}
+
+// Vendor types
+export interface Vendor {
+  id: string;
+  name: string;
+  contact_person?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  created_at: string;
+  updated_at: string;
+}

@@ -17,6 +17,7 @@ export const standardizeInventoryItem = (item: any): InventoryItemExtended => ({
   quantity: item.quantity || 0,
   reorder_point: item.reorder_point || 10,
   unit_price: item.unit_price || 0,
+  price: item.unit_price || 0, // Ensure price is set
   created_at: item.created_at || new Date().toISOString(),
   updated_at: item.updated_at || new Date().toISOString()
 });
@@ -52,6 +53,7 @@ export const toExtendedWorkOrderItem = (item: WorkOrderInventoryItem): Inventory
   quantity: item.quantity,
   reorder_point: 10,
   unit_price: item.unit_price,
+  price: item.unit_price, // Ensure price is set
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString()
 });

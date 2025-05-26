@@ -55,11 +55,9 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
 
   // Handle adding a special order item
   const handleAddSpecialOrder = (item: any) => {
-    // Generate a temporary ID for the item
-    const tempId = `temp-${Date.now()}`;
-    
+    // Ensure all required properties are present
     const newItem: WorkOrderInventoryItem = {
-      id: tempId,
+      id: item.id || `temp-${Date.now()}`,
       name: item.name || '',
       sku: item.sku || `SO-${Date.now().toString(36)}`,
       category: item.category || '',
@@ -77,8 +75,15 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
     form.setValue("inventoryItems", [...currentItems, newItem], { shouldValidate: true });
   };
 
-  // Convert items to extended format for display
-  const extendedItems = items.map(item => toExtendedWorkOrderItem(item));
+  // Convert items to extended format for display, ensuring all required properties
+  const extendedItems = items.map(item => {
+    const extended = toExtendedWorkOrderItem(item);
+    // Ensure the item has all required WorkOrderInventoryItem properties
+    return {
+      ...extended,
+      total: item.total || (item.quantity * item.unit_price)
+    };
+  });
 
   return (
     <FormField
