@@ -1,4 +1,3 @@
-
 import { Customer } from "./customer";
 import { Vehicle } from "./vehicle";
 import { InventoryItem } from "./inventory";
@@ -36,6 +35,8 @@ export interface WorkOrder {
   created_at?: string; // Snake_case version
   updatedAt?: string; // Legacy camelCase property
   updated_at?: string; // Snake_case version
+  start_time?: string; // Add missing start_time property
+  end_time?: string; // Add missing end_time property
   invoice_id?: string;
   total_cost?: number;
   estimated_hours?: number;
@@ -50,6 +51,8 @@ export interface WorkOrder {
   vehicle_make?: string;
   vehicle_model?: string;
   service_category?: string; // Add missing service_category property
+  service_category_id?: string; // Add missing service_category_id property
+  invoiced_at?: string; // Add missing invoiced_at property
 }
 
 export interface TimeEntry {
