@@ -8,10 +8,13 @@ import { InventorySectionHeader } from "./InventorySectionHeader";
 import { SpecialOrderDialog } from "./SpecialOrderDialog";
 import { useInventoryItemOperations } from "@/hooks/inventory/workOrder/useInventoryItemOperations";
 import { supabase } from "@/integrations/supabase/client";
-import { WorkOrderFormValues, WorkOrderInventoryItem } from "@/types/workOrder";
+import { WorkOrderFormSchemaValues, workOrderInventoryItemSchema } from "@/schemas/workOrderSchema";
+import { z } from "zod";
+
+type WorkOrderInventoryItem = z.infer<typeof workOrderInventoryItemSchema>;
 
 interface WorkOrderInventoryFieldProps {
-  form: UseFormReturn<WorkOrderFormValues>;
+  form: UseFormReturn<WorkOrderFormSchemaValues>;
 }
 
 export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = ({
@@ -27,7 +30,7 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
     addItem,
     removeItem,
     updateQuantity
-  } = useInventoryItemOperations(form as any);
+  } = useInventoryItemOperations(form);
 
   // Fetch suppliers for special order dialog
   useEffect(() => {
