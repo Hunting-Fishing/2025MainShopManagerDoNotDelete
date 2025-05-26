@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { WorkOrder, WorkOrderStatusType } from "@/types/workOrder";
 import { toast } from "sonner";
@@ -58,8 +57,8 @@ export const useWorkOrderEditForm = (workOrderId: string) => {
         // Keep it as is, type system will handle it
       }
       
-      // Fixed: We now pass workOrderId as the first parameter, workOrderToSave as second
-      const result = await updateWorkOrder(workOrderId, workOrderToSave);
+      // Fixed: Pass the updated work order object with the id included
+      const result = await updateWorkOrder({ ...workOrderToSave, id: workOrderId });
       toast.success("Work order updated successfully");
       return result;
     } catch (err) {
