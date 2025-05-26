@@ -1,12 +1,13 @@
+
 import { useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
-import { WorkOrderFormFieldValues } from "@/components/work-orders/WorkOrderFormFields";
+import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
 
 /**
  * Hook to handle inventory status effects based on work order status changes
  */
 export const useInventoryStatusEffects = (
-  form: UseFormReturn<WorkOrderFormFieldValues>,
+  form: UseFormReturn<WorkOrderFormSchemaValues>,
   consumeWorkOrderInventory: (workOrderId: string) => Promise<boolean>,
   reserveInventory: (workOrderId: string) => Promise<boolean>
 ) => {

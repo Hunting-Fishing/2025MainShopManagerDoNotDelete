@@ -1,14 +1,13 @@
-
 import { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
-import { WorkOrderFormFieldValues } from "@/components/work-orders/WorkOrderFormFields";
+import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
 import { InventoryItemExtended } from "@/types/inventory";
 import { WorkOrderInventoryItem } from "@/types/workOrder";
 
 /**
  * Hook to manage inventory item operations in a work order
  */
-export const useInventoryItemOperations = (form: UseFormReturn<WorkOrderFormFieldValues>) => {
+export const useInventoryItemOperations = (form: UseFormReturn<WorkOrderFormSchemaValues>) => {
   const [items, setItems] = useState<WorkOrderInventoryItem[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
