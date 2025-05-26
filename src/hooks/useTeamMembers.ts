@@ -1,10 +1,11 @@
+
 import { useState, useEffect } from 'react';
 import { TeamMember } from "@/types/team";
 import { useFetchProfiles } from './team/useFetchProfiles';
 import { useFetchUserRoles } from './team/useFetchUserRoles';
 import { useTeamDataTransformer } from './team/useTeamDataTransformer';
 import { supabase } from '@/lib/supabase';
-import { getAllWorkOrders } from '@/services/workOrder'; // Direct service import
+import { getAllWorkOrders } from '@/services/workOrder';
 
 /**
  * Interface for the status change details from team_member_history
@@ -92,27 +93,41 @@ export function useTeamMembers() {
                 const statusValue = details.new_status || 'Active';
                 const validStatus = validateStatus(statusValue);
                 
+                // Transform to proper TeamMember format
                 return {
-                  ...member,
+                  id: member.id,
+                  name: `${member.first_name} ${member.last_name}`,
+                  email: member.email,
+                  phone: member.phone,
+                  role: member.job_title || 'Team Member',
+                  jobTitle: member.job_title || '',
+                  department: member.department || '',
                   status: validStatus,
+                  workOrders: member.activeWorkOrders || 0,
                   statusChangeDate: latestStatusChange.timestamp,
                   statusChangeReason: details.reason || ''
-                };
+                } as TeamMember;
               }
             } catch (err) {
               console.error('Error fetching status for member:', member.id, err);
             }
-            return member;
+            
+            // Default transformation for members without status history
+            return {
+              id: member.id,
+              name: `${member.first_name} ${member.last_name}`,
+              email: member.email,
+              phone: member.phone,
+              role: member.job_title || 'Team Member',
+              jobTitle: member.job_title || '',
+              department: member.department || '',
+              status: 'Active' as const,
+              workOrders: member.activeWorkOrders || 0
+            } as TeamMember;
           })
         );
         
-        // Ensure all members have valid status values before setting state
-        const validatedMembers = membersWithStatus.map(member => ({
-          ...member,
-          status: member.status || 'Active' as const
-        }));
-        
-        setTeamMembers(validatedMembers as TeamMember[]);
+        setTeamMembers(membersWithStatus);
       } catch (err: any) {
         console.error('Error fetching team members:', err);
         setError(err?.message || 'Failed to load team members. Please try again later.');

@@ -1,6 +1,6 @@
 
 import { InventoryItem } from "@/types/inventory";
-import { WorkOrderInventoryItem } from "@/types/workOrder"; // Updated import
+import { WorkOrderInventoryItem } from "@/types/workOrder";
 
 export function toExtendedWorkOrderItem(item: WorkOrderInventoryItem): WorkOrderInventoryItem {
   return {
@@ -19,9 +19,24 @@ export function toInventoryItem(workOrderItem: WorkOrderInventoryItem): Inventor
     unit_price: workOrderItem.unit_price,
     reorder_point: 10, // Default value
     supplier: workOrderItem.supplierName || 'Unknown',
-    location: '', // Default empty
     status: 'In Stock',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
+  };
+}
+
+export function standardizeInventoryItem(item: any): InventoryItem {
+  return {
+    id: item.id,
+    name: item.name || '',
+    sku: item.sku || '',
+    category: item.category || '',
+    quantity: Number(item.quantity) || 0,
+    unit_price: Number(item.unit_price) || 0,
+    reorder_point: Number(item.reorder_point) || 10,
+    supplier: item.supplier || '',
+    status: item.status || 'In Stock',
+    created_at: item.created_at || new Date().toISOString(),
+    updated_at: item.updated_at || new Date().toISOString()
   };
 }
