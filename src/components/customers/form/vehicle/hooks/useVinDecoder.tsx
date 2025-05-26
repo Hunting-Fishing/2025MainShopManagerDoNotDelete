@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { VinDecodeResult } from '@/types/vehicle';
+import { decodeVin as apiDecodeVin } from '@/services/vinDecoderService';
 
 export interface UseVinDecoderReturn {
   decode: (vin: string) => Promise<VinDecodeResult | null>;
@@ -31,9 +32,8 @@ export const useVinDecoder = (): UseVinDecoderReturn => {
     try {
       console.log('Starting VIN decode process for:', vin);
       
-      // Import the VIN decoder service
-      const { decodeVin } = await import('@/utils/vehicleUtils');
-      const result = await decodeVin(vin);
+      // Use the service directly instead of going through utils
+      const result = await apiDecodeVin(vin);
       
       if (result) {
         console.log('VIN decode successful:', result);

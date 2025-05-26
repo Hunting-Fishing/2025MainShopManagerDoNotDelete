@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Loader2, AlertCircle } from "lucide-react";
 import { VinDecodeResult } from "@/types/vehicle";
 import { toast } from "@/hooks/use-toast";
-import { decodeVin } from "@/utils/vehicleUtils";
+import { decodeVin } from "@/services/vinDecoderService";
 import { VehicleBodyStyle } from "@/types/vehicle";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
