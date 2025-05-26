@@ -77,7 +77,10 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
   }, []);
 
   const findMatchingMake = useCallback((decodedMake: string): CarMake | null => {
-    if (!decodedMake || makes.length === 0) return null;
+    if (!decodedMake || makes.length === 0) {
+      console.log('No makes available in database or no decoded make provided');
+      return null;
+    }
     
     console.log('Finding matching make for decoded make:', decodedMake);
     console.log('Available makes:', makes);
@@ -143,11 +146,11 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
         form.setValue(`vehicles.${index}.year`, result.year.toString());
       }
       
-      // Handle make matching and form updates
+      // Handle make - prioritize database matching but fallback to raw value
       if (result.make && result.make !== 'Unknown') {
         const matchingMake = findMatchingMake(result.make);
         if (matchingMake) {
-          console.log('Setting make to:', matchingMake.make_id);
+          console.log('Setting make to database match:', matchingMake.make_id);
           form.setValue(`vehicles.${index}.make`, matchingMake.make_id);
           
           // Fetch models for this make
@@ -159,8 +162,19 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
             }
           });
         } else {
-          console.log('No matching make found, setting raw make value:', result.make);
-          form.setValue(`vehicles.${index}.make`, result.make);
+          // If no database match but we have makes data, don't set anything to avoid confusion
+          // If no makes data at all, use the raw value as fallback
+          if (makes.length === 0) {
+            console.log('No makes database available, using raw make value:', result.make);
+            form.setValue(`vehicles.${index}.make`, result.make);
+            // Also set model if available
+            if (result.model && result.model !== 'Unknown') {
+              console.log('Setting raw model value:', result.model);
+              form.setValue(`vehicles.${index}.model`, result.model);
+            }
+          } else {
+            console.log('Makes database available but no match found, leaving make field empty for user selection');
+          }
         }
       }
     };
@@ -171,7 +185,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     };
 
     await vinDecoder.decode(vin, onSuccess, onError);
-  }, [form, index, findMatchingMake, fetchModels, vinDecoder]);
+  }, [form, index, findMatchingMake, fetchModels, vinDecoder, makes.length]);
 
   const onVinRetry = useCallback(() => {
     const currentVin = form.getValues(`vehicles.${index}.vin`);
