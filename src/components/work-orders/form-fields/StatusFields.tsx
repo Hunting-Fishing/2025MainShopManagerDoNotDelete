@@ -34,7 +34,7 @@ export const StatusFields: React.FC<StatusFieldsProps> = ({ form }) => {
               <SelectContent>
                 {Object.entries(statusMap).map(([value, label]) => (
                   <SelectItem key={value} value={value}>
-                    {String(label)}
+                    {label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -57,14 +57,14 @@ export const StatusFields: React.FC<StatusFieldsProps> = ({ form }) => {
                 defaultValue={field.value}
                 className="flex space-x-1"
               >
-                {Object.entries(priorityMap).map(([value, { label, classes }]) => (
+                {Object.entries(priorityMap).map(([value, priorityData]) => (
                   <div key={value} className="flex items-center space-x-2">
                     <RadioGroupItem value={value} id={`priority-${value}`} />
                     <Label
                       htmlFor={`priority-${value}`}
-                      className={`rounded-full px-2 py-1 text-xs ${classes}`}
+                      className={`rounded-full px-2 py-1 text-xs ${priorityData.classes}`}
                     >
-                      {label}
+                      {priorityData.label}
                     </Label>
                   </div>
                 ))}

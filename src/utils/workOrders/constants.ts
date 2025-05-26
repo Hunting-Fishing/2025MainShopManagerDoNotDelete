@@ -1,3 +1,4 @@
+
 /**
  * Work order status mappings and constants
  */
@@ -12,10 +13,19 @@ export const statusMap: Record<WorkOrderStatus, string> = {
   'on-hold': 'On Hold'
 };
 
-export const priorityMap: Record<string, string> = {
-  'low': 'Low',
-  'medium': 'Medium',
-  'high': 'High'
+export const priorityMap: Record<string, { label: string; classes: string }> = {
+  'low': {
+    label: 'Low',
+    classes: 'bg-blue-100 text-blue-800 border-blue-200'
+  },
+  'medium': {
+    label: 'Medium',
+    classes: 'bg-yellow-100 text-yellow-800 border-yellow-200'
+  },
+  'high': {
+    label: 'High',
+    classes: 'bg-red-100 text-red-800 border-red-200'
+  }
 };
 
 /**

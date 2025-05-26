@@ -40,7 +40,6 @@ export const normalizeWorkOrder = (data: any): WorkOrder => {
     id: data.id,
     customer_id: data.customer_id,
     vehicle_id: data.vehicle_id,
-    advisor_id: data.advisor_id,
     technician_id: data.technician_id,
     status: data.status,
     description: data.description,

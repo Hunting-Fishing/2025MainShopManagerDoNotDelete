@@ -18,10 +18,12 @@ export {
 
 export {
   statusMap,
-  WorkOrderStatus,
   priorityMap,
   determinePriority
 } from './constants';
+
+// Use export type for types when isolatedModules is enabled
+export type { WorkOrderStatus } from './constants';
 
 // Re-export service functions for backward compatibility
 export { 
