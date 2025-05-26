@@ -86,7 +86,8 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
     }
     
     const currentItems = form.getValues("inventoryItems") || [];
-    form.setValue("inventoryItems", [...currentItems, newItem], { shouldValidate: true });
+    const updatedItems: WorkOrderInventoryItem[] = [...currentItems, newItem];
+    form.setValue("inventoryItems", updatedItems, { shouldValidate: true });
   };
 
   // Convert items to proper WorkOrderInventoryItem format for display
