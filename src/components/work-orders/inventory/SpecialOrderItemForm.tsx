@@ -10,10 +10,10 @@ import { Calendar as CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { InventoryFormSelect } from "@/components/inventory/form/InventoryFormSelect";
-import { WorkOrderInventoryItem } from "@/types/workOrder"; // Updated import
+import { WorkOrderInventoryItem } from "@/types/workOrder";
 
 interface SpecialOrderItemFormProps {
-  onAdd: (item: Partial<WorkOrderInventoryItem>) => void;
+  onAdd: (item: WorkOrderInventoryItem) => void;
   onCancel: () => void;
   suppliers: string[];
 }
@@ -28,17 +28,19 @@ export function SpecialOrderItemForm({ onAdd, onCancel, suppliers }: SpecialOrde
   const [orderRef, setOrderRef] = useState("");
   const [notes, setNotes] = useState("");
   const [estimatedDate, setEstimatedDate] = useState<Date | undefined>(undefined);
-  const [itemStatus, setItemStatus] = useState<"special-order" | "ordered">("special-order");
+  const [itemStatus, setItemStatus] = useState<"special-order" | "ordered" | "in-stock">("special-order");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const newItem: Partial<WorkOrderInventoryItem> = {
+    const newItem: WorkOrderInventoryItem = {
+      id: `temp-${Date.now()}`,
       name,
       sku: sku || `SO-${Date.now().toString(36)}`,
       category,
       quantity,
       unit_price: unitPrice,
+      total: quantity * unitPrice,
       itemStatus,
       estimatedArrivalDate: estimatedDate ? format(estimatedDate, 'yyyy-MM-dd') : undefined,
       supplierName: supplier,
@@ -112,8 +114,8 @@ export function SpecialOrderItemForm({ onAdd, onCancel, suppliers }: SpecialOrde
             id="itemStatus"
             label=""
             value={itemStatus}
-            onValueChange={(value) => setItemStatus(value as "special-order" | "ordered")}
-            options={["special-order", "ordered"]}
+            onValueChange={(value) => setItemStatus(value as "special-order" | "ordered" | "in-stock")}
+            options={["special-order", "ordered", "in-stock"]}
           />
         </div>
         

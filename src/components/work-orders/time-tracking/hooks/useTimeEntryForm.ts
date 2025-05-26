@@ -122,6 +122,7 @@ export const useTimeEntryForm = ({
       duration,
       billable,
       notes: notes || undefined,
+      created_at: timeEntry?.created_at || new Date().toISOString(),
     };
     
     onSave(timeEntryData);

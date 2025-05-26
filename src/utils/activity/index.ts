@@ -1,4 +1,5 @@
 
 // Re-export activity functions
 export * from './customerActivity';
-export * from '../workOrders/activity';
+
+// Note: Work order activity functions are available in src/services/workOrder/

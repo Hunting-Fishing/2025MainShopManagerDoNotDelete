@@ -4,10 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Wrench, Calendar, FileText, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Equipment } from '@/types/equipment';
-import { 
-  WorkOrderPriority, 
-  WorkOrderStatus 
-} from '@/types/workOrder';
 
 interface EquipmentActionButtonsProps {
   equipment: Equipment;

@@ -1,120 +1,82 @@
+import { useState, useEffect } from 'react';
+import { TimeEntry } from '@/types/workOrder';
 
-import { useState } from "react";
-import { TimeEntry } from "@/types/workOrder";
+interface UseWorkOrderTimeEntriesProps {
+  workOrderId: string;
+  initialTimeEntries?: TimeEntry[];
+}
 
-export function useWorkOrderTimeEntries() {
-  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export const useWorkOrderTimeEntries = ({ workOrderId, initialTimeEntries }: UseWorkOrderTimeEntriesProps) => {
+  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>(initialTimeEntries || []);
 
-  // Fetch time entries for a work order
-  const fetchTimeEntries = async (workOrderId: string) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      // This would be an API call in a real app
-      const mockEntries = mockGetTimeEntries(workOrderId);
-      setTimeEntries(mockEntries);
-      return mockEntries;
-    } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : "Unknown error";
-      setError(errorMessage);
-      return [];
-    } finally {
-      setIsLoading(false);
+  useEffect(() => {
+    // Simulate fetching time entries from an API
+    const fetchTimeEntries = async () => {
+      // Replace this with your actual API call
+      const fetchedEntries: TimeEntry[] = [];
+      setTimeEntries(fetchedEntries);
+    };
+
+    // If initialTimeEntries is not provided, fetch them
+    if (!initialTimeEntries) {
+      fetchTimeEntries();
     }
+  }, [workOrderId, initialTimeEntries]);
+
+  const addTimeEntry = (entry: Omit<TimeEntry, 'id' | 'created_at'>) => {
+    const newEntry: TimeEntry = {
+      id: crypto.randomUUID(),
+      created_at: new Date().toISOString(),
+      ...entry
+    };
+    setTimeEntries([...timeEntries, newEntry]);
   };
 
-  // Add a time entry
-  const addTimeEntry = async (entry: Omit<TimeEntry, "id">) => {
-    try {
-      // This would be an API call in a real app
-      const newEntry: TimeEntry = {
-        ...entry,
-        id: `entry-${Date.now()}`,
-      };
-      
-      setTimeEntries(prev => [...prev, newEntry]);
-      return newEntry;
-    } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : "Unknown error";
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    }
+  const updateTimeEntry = (id: string, updates: Partial<TimeEntry>) => {
+    setTimeEntries(timeEntries.map(entry => 
+      entry.id === id ? { ...entry, ...updates } : entry
+    ));
   };
 
-  // Update a time entry
-  const updateTimeEntry = async (entryId: string, updates: Partial<TimeEntry>) => {
-    try {
-      const updatedEntries = timeEntries.map(entry => 
-        entry.id === entryId ? { ...entry, ...updates } : entry
-      );
-      
-      setTimeEntries(updatedEntries);
-      return updatedEntries.find(entry => entry.id === entryId);
-    } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : "Unknown error";
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    }
+  const removeTimeEntry = (id: string) => {
+    setTimeEntries(timeEntries.filter(entry => entry.id !== id));
   };
 
-  // Remove a time entry
-  const removeTimeEntry = async (entryId: string) => {
-    try {
-      setTimeEntries(prev => prev.filter(entry => entry.id !== entryId));
-      return true;
-    } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : "Unknown error";
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    }
-  };
-
-  // Calculate total billable hours
-  const calculateBillableHours = (entries: TimeEntry[]): number => {
-    return entries
-      .filter(entry => entry.billable)
-      .reduce((total, entry) => total + entry.duration, 0);
+  const addSampleEntries = () => {
+    const sampleEntries: TimeEntry[] = [
+      {
+        id: crypto.randomUUID(),
+        work_order_id: workOrderId,
+        employee_id: 'emp-001',
+        employee_name: 'John Doe',
+        start_time: '2024-01-15T08:00:00',
+        end_time: '2024-01-15T10:00:00',
+        duration: 120,
+        billable: true,
+        notes: 'Diagnosed transmission issue',
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: crypto.randomUUID(),
+        work_order_id: workOrderId,
+        employee_id: 'emp-002',
+        employee_name: 'Jane Smith',
+        start_time: '2024-01-15T10:30:00',
+        end_time: '2024-01-15T12:30:00',
+        duration: 120,
+        billable: true,
+        notes: 'Replaced transmission fluid and filter',
+        created_at: new Date().toISOString(),
+      }
+    ];
+    setTimeEntries([...timeEntries, ...sampleEntries]);
   };
 
   return {
     timeEntries,
-    isLoading,
-    error,
-    fetchTimeEntries,
     addTimeEntry,
     updateTimeEntry,
     removeTimeEntry,
-    calculateBillableHours
+    addSampleEntries
   };
-}
-
-// Mock API function
-function mockGetTimeEntries(workOrderId: string): TimeEntry[] {
-  // Return mock data based on the work order ID
-  return [
-    {
-      id: "entry1",
-      work_order_id: workOrderId,
-      employee_id: "emp1",
-      employee_name: "John Technician",
-      start_time: "2023-05-01T09:00:00",
-      end_time: "2023-05-01T11:30:00",
-      duration: 150, // 2.5 hours in minutes
-      billable: true,
-      notes: "Initial diagnostics"
-    },
-    {
-      id: "entry2",
-      work_order_id: workOrderId,
-      employee_id: "emp2",
-      employee_name: "Sarah Mechanic",
-      start_time: "2023-05-01T13:00:00",
-      end_time: "2023-05-01T16:00:00",
-      duration: 180, // 3 hours in minutes
-      billable: true,
-      notes: "Parts replacement"
-    }
-  ];
-}
+};

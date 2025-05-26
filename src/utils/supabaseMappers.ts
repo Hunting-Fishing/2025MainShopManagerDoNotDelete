@@ -15,13 +15,9 @@ export const mapToDbWorkOrder = (workOrder: Partial<WorkOrder>) => {
     technician: workOrder.technician,
     location: workOrder.location,
     notes: workOrder.notes,
-    total_billable_time: workOrder.totalBillableTime,
-    created_at: workOrder.createdAt,
-    updated_at: workOrder.updatedAt
-    // Removing problematic properties that don't exist
-    // created_by: workOrder.created_by,
-    // last_updated_by: workOrder.last_updated_by,
-    // last_updated_at: workOrder.lastUpdatedAt
+    total_billable_time: workOrder.total_billable_time,
+    created_at: workOrder.created_at,
+    updated_at: workOrder.updated_at
   };
 };
 
@@ -38,10 +34,9 @@ export const mapFromDbWorkOrder = (dbWorkOrder: any, timeEntries: TimeEntry[] = 
     technician: dbWorkOrder.technician,
     location: dbWorkOrder.location,
     notes: dbWorkOrder.notes || '',
-    totalBillableTime: dbWorkOrder.total_billable_time || 0,
-    createdAt: dbWorkOrder.created_at,
-    updatedAt: dbWorkOrder.updated_at,
-    // created_by: dbWorkOrder.created_by, // Removed problematic field
+    total_billable_time: dbWorkOrder.total_billable_time || 0,
+    created_at: dbWorkOrder.created_at,
+    updated_at: dbWorkOrder.updated_at,
     timeEntries,
     inventoryItems
   };
@@ -57,7 +52,8 @@ export const mapTimeEntryFromDb = (entry: any): TimeEntry => ({
   duration: entry.duration,
   notes: entry.notes,
   billable: entry.billable,
-  work_order_id: entry.work_order_id || '' // Add the missing required property
+  work_order_id: entry.work_order_id || '',
+  created_at: entry.created_at || new Date().toISOString()
 });
 
 // Map inventory item from DB format to app format
@@ -68,5 +64,5 @@ export const mapInventoryItemFromDb = (item: any): WorkOrderInventoryItem => ({
   category: item.category,
   quantity: item.quantity,
   unit_price: item.unit_price,
-  total: item.total || (item.quantity * item.unit_price) // Calculate total if not provided
+  total: item.total || (item.quantity * item.unit_price)
 });

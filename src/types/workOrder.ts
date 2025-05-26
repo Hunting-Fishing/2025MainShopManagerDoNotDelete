@@ -37,7 +37,7 @@ export interface WorkOrder {
   inventory_items?: WorkOrderInventoryItem[];
 }
 
-// Work Order Form Values - Used by form components
+// Work Order Form Values - Used by form components (renamed for consistency)
 export interface WorkOrderFormValues {
   customer: string;
   description: string;
@@ -56,6 +56,9 @@ export interface WorkOrderFormValues {
   inventoryItems: WorkOrderInventoryItem[];
 }
 
+// Alias for schema compatibility
+export type WorkOrderFormSchemaValues = WorkOrderFormValues;
+
 // Inventory item within a work order
 export interface WorkOrderInventoryItem {
   id: string;
@@ -66,6 +69,11 @@ export interface WorkOrderInventoryItem {
   quantity: number;
   unit_price: number;
   total: number;
+  notes?: string;
+  itemStatus?: "special-order" | "ordered" | "in-stock";
+  estimatedArrivalDate?: string;
+  supplierName?: string;
+  supplierOrderRef?: string;
 }
 
 // Time tracking entry
@@ -80,6 +88,23 @@ export interface TimeEntry {
   billable: boolean;
   notes?: string;
   created_at: string;
+}
+
+// Work Order Template interface
+export interface WorkOrderTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  status: string;
+  priority?: string;
+  technician?: string;
+  notes?: string;
+  location?: string;
+  inventory_items?: WorkOrderInventoryItem[];
+  usage_count: number;
+  last_used?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // Work order status options
