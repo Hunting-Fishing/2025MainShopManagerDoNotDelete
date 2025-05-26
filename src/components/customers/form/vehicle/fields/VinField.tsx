@@ -35,13 +35,15 @@ export const VinField: React.FC<VinFieldProps> = ({
   const handleVinChange = (value: string) => {
     const cleanVin = value.toUpperCase().replace(/[^A-Z0-9]/g, '');
     
-    if (cleanVin.length === 17 && onVinDecode) {
+    // Only auto-decode if this is a new complete VIN (17 characters)
+    if (cleanVin.length === 17 && onVinDecode && !processing) {
       onVinDecode(cleanVin);
     }
   };
 
   const handleDecodeClick = () => {
-    if (currentVin.length === 17 && onVinDecode) {
+    // Allow manual decode if VIN is 17 characters, regardless of previous decode attempts
+    if (currentVin.length === 17 && onVinDecode && !processing) {
       onVinDecode(currentVin);
     }
   };
@@ -84,7 +86,7 @@ export const VinField: React.FC<VinFieldProps> = ({
               ) : (
                 <>
                   <Zap className="h-4 w-4 mr-2" />
-                  Decode VIN
+                  {decodedVehicleInfo ? "Re-decode VIN" : "Decode VIN"}
                 </>
               )}
             </Button>
