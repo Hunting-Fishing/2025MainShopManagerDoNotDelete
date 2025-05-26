@@ -79,13 +79,13 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
 
   // Convert items to proper WorkOrderInventoryItem format for display
   const workOrderItems: WorkOrderInventoryItem[] = items.map(item => ({
-    id: item.id,
-    name: item.name,
-    sku: item.sku,
+    id: item.id || `temp-${Date.now()}-${Math.random()}`,
+    name: item.name || 'Unknown Item',
+    sku: item.sku || 'NO-SKU',
     category: item.category || 'General',
-    quantity: item.quantity,
-    unit_price: item.unit_price,
-    total: item.total || (item.quantity * item.unit_price),
+    quantity: item.quantity || 1,
+    unit_price: item.unit_price || 0,
+    total: item.total || (item.quantity || 1) * (item.unit_price || 0),
     notes: item.notes,
     itemStatus: item.itemStatus,
     estimatedArrivalDate: item.estimatedArrivalDate,
