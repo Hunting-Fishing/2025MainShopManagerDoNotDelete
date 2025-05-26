@@ -25,6 +25,7 @@ import EquipmentDetails from '@/pages/EquipmentDetails';
 import Team from '@/pages/Team';
 import Reports from '@/pages/Reports';
 import Notifications from '@/pages/Notifications';
+import DeveloperPortal from '@/pages/DeveloperPortal';
 import NotFound from '@/pages/NotFound';
 import Unauthorized from '@/pages/Unauthorized';
 import ErrorPage from '@/pages/error-page';
@@ -79,6 +80,8 @@ function App() {
                           <Route path="/team" element={<Team />} />
                           <Route path="/reports" element={<Reports />} />
                           <Route path="/notifications" element={<Notifications />} />
+                          <Route path="/developer" element={<DeveloperPortal />} />
+                          <Route path="/developer/*" element={<DeveloperPortal />} />
                           <Route path="/settings/company" element={<CompanySettings />} />
                           <Route path="/settings/appearance" element={<AppearanceSettings />} />
                           <Route path="*" element={<NotFound />} />
