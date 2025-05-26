@@ -11,14 +11,16 @@ export interface InventoryItem {
   status?: string;
   quantity?: number;
   reorder_point?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface InventoryItemExtended extends InventoryItem {
   quantity: number;
   reorder_point: number;
   unit_price: number;
-  created_at?: string;
-  updated_at?: string;
+  created_at: string;
+  updated_at: string;
   location?: string;
   status: string;
   supplier: string;

@@ -1,5 +1,5 @@
 
-import { InventoryItem } from "@/types/inventory";
+import { InventoryItem, InventoryItemExtended } from "@/types/inventory";
 import { WorkOrderInventoryItem } from "@/types/workOrder";
 
 export function toExtendedWorkOrderItem(item: WorkOrderInventoryItem): WorkOrderInventoryItem {
@@ -9,7 +9,7 @@ export function toExtendedWorkOrderItem(item: WorkOrderInventoryItem): WorkOrder
   };
 }
 
-export function toInventoryItem(workOrderItem: WorkOrderInventoryItem): InventoryItem {
+export function toInventoryItem(workOrderItem: WorkOrderInventoryItem): InventoryItemExtended {
   return {
     id: workOrderItem.id,
     name: workOrderItem.name,
@@ -17,6 +17,7 @@ export function toInventoryItem(workOrderItem: WorkOrderInventoryItem): Inventor
     category: workOrderItem.category,
     quantity: workOrderItem.quantity,
     unit_price: workOrderItem.unit_price,
+    price: workOrderItem.unit_price,
     reorder_point: 10, // Default value
     supplier: workOrderItem.supplierName || 'Unknown',
     status: 'In Stock',
@@ -25,14 +26,16 @@ export function toInventoryItem(workOrderItem: WorkOrderInventoryItem): Inventor
   };
 }
 
-export function standardizeInventoryItem(item: any): InventoryItem {
+export function standardizeInventoryItem(item: any): InventoryItemExtended {
   return {
     id: item.id,
     name: item.name || '',
     sku: item.sku || '',
     category: item.category || '',
+    description: item.description || '',
     quantity: Number(item.quantity) || 0,
     unit_price: Number(item.unit_price) || 0,
+    price: Number(item.unit_price) || 0,
     reorder_point: Number(item.reorder_point) || 10,
     supplier: item.supplier || '',
     status: item.status || 'In Stock',

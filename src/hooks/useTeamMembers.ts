@@ -103,7 +103,10 @@ export function useTeamMembers() {
                   jobTitle: member.job_title || '',
                   department: member.department || '',
                   status: validStatus,
-                  workOrders: member.activeWorkOrders || 0,
+                  workOrders: {
+                    assigned: member.activeWorkOrders || 0,
+                    completed: 0 // We'll need to calculate this if needed
+                  },
                   statusChangeDate: latestStatusChange.timestamp,
                   statusChangeReason: details.reason || ''
                 } as TeamMember;
@@ -122,7 +125,10 @@ export function useTeamMembers() {
               jobTitle: member.job_title || '',
               department: member.department || '',
               status: 'Active' as const,
-              workOrders: member.activeWorkOrders || 0
+              workOrders: {
+                assigned: member.activeWorkOrders || 0,
+                completed: 0 // We'll need to calculate this if needed
+              }
             } as TeamMember;
           })
         );
