@@ -119,7 +119,7 @@ export default function WorkOrderFilters({
                   }`}
                   onClick={() => toggleStatus(key)}
                 >
-                  {label}
+                  {String(label)}
                 </Badge>
               ))}
             </div>

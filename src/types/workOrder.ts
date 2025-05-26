@@ -19,9 +19,22 @@ export interface WorkOrder {
   description?: string;
   service_type?: string;
   invoice_id?: string;
+  // Additional UI properties for backward compatibility
+  customer?: string;
+  technician?: string;
+  date?: string;
+  dueDate?: string;
+  due_date?: string;
+  priority?: string;
+  location?: string;
+  notes?: string;
+  total_billable_time?: number;
+  vehicle_make?: string;
+  vehicle_model?: string;
   // Additional fields for UI
   timeEntries?: TimeEntry[];
   inventoryItems?: WorkOrderInventoryItem[];
+  inventory_items?: WorkOrderInventoryItem[];
 }
 
 // Work Order Form Values - Used by form components
@@ -89,3 +102,32 @@ export const WORK_ORDER_PRIORITIES = [
 ] as const;
 
 export type WorkOrderPriority = typeof WORK_ORDER_PRIORITIES[number];
+
+// Status mapping for UI display
+export const statusMap: Record<string, string> = {
+  'pending': 'Pending',
+  'in-progress': 'In Progress',
+  'on-hold': 'On Hold',
+  'completed': 'Completed',
+  'cancelled': 'Cancelled'
+};
+
+// Priority mapping for UI display
+export const priorityMap: Record<string, { label: string; classes: string }> = {
+  'low': { label: 'Low', classes: 'bg-gray-100 text-gray-800' },
+  'medium': { label: 'Medium', classes: 'bg-yellow-100 text-yellow-800' },
+  'high': { label: 'High', classes: 'bg-red-100 text-red-800' },
+  'urgent': { label: 'Urgent', classes: 'bg-red-200 text-red-900' }
+};
+
+// Legacy type aliases for backward compatibility
+export type WorkOrderPriorityType = WorkOrderPriority;
+export type WorkOrderStatusType = WorkOrderStatus;
+
+// Export for backward compatibility
+export const WorkOrderTypes = {
+  WORK_ORDER_STATUSES,
+  WORK_ORDER_PRIORITIES,
+  statusMap,
+  priorityMap
+};

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
@@ -16,7 +17,16 @@ import {
   WorkOrder, 
   priorityMap, 
   statusMap 
-} from "@/types/workOrder"; // Using consolidated types
+} from "@/types/workOrder";
+import { 
+  getWorkOrderCustomer,
+  getWorkOrderTechnician,
+  getWorkOrderDate,
+  getWorkOrderDueDate,
+  getWorkOrderPriority,
+  getWorkOrderLocation,
+  getWorkOrderTotalBillableTime
+} from "@/utils/workOrderUtils";
 
 interface WorkOrdersTableProps {
   workOrders: WorkOrder[];
@@ -86,27 +96,27 @@ export default function WorkOrdersTable({ workOrders }: WorkOrdersTableProps) {
               <TableCell>
                 {order.description}
                 <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                  {order.location && (
+                  {getWorkOrderLocation(order) && (
                     <span className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" /> 
-                      {format(new Date(order.date || order.created_at || new Date()), "MMM d, yyyy")}
+                      {format(new Date(getWorkOrderDate(order) || order.created_at || new Date()), "MMM d, yyyy")}
                     </span>
                   )}
-                  {order.technician && (
+                  {getWorkOrderTechnician(order) && (
                     <span className="flex items-center gap-1">
                       <User className="h-3 w-3" /> 
-                      {order.technician}
+                      {getWorkOrderTechnician(order)}
                     </span>
                   )}
-                  {order.total_billable_time && (
+                  {getWorkOrderTotalBillableTime(order) > 0 && (
                     <span className="flex items-center gap-1">
                       <Clock className="h-3 w-3" /> 
-                      {Math.floor(order.total_billable_time / 60)}h {order.total_billable_time % 60}m
+                      {Math.floor(getWorkOrderTotalBillableTime(order) / 60)}h {getWorkOrderTotalBillableTime(order) % 60}m
                     </span>
                   )}
                 </div>
               </TableCell>
-              <TableCell>{order.customer}</TableCell>
+              <TableCell>{getWorkOrderCustomer(order)}</TableCell>
               <TableCell>
                 <Badge 
                   variant="outline" 
@@ -116,16 +126,16 @@ export default function WorkOrdersTable({ workOrders }: WorkOrdersTableProps) {
                 </Badge>
               </TableCell>
               <TableCell>
-                {(order.dueDate || order.due_date) ? 
-                  format(new Date(order.dueDate || order.due_date || ""), "MMM d, yyyy") : 
+                {getWorkOrderDueDate(order) ? 
+                  format(new Date(getWorkOrderDueDate(order)), "MMM d, yyyy") : 
                   "—"}
               </TableCell>
               <TableCell>
                 <Badge 
                   variant="outline" 
-                  className={`rounded-full border text-xs ${priorityMap[order.priority]?.classes || ""}`}
+                  className={`rounded-full border text-xs ${priorityMap[getWorkOrderPriority(order)]?.classes || ""}`}
                 >
-                  {order.priority}
+                  {getWorkOrderPriority(order)}
                 </Badge>
               </TableCell>
               <TableCell className="text-right">
