@@ -1,61 +1,58 @@
 
 import React from "react";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { UseFormReturn } from "react-hook-form";
-import { WorkOrderFormFieldValues } from "../WorkOrderFormFields";
+import {
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
 
 interface CustomerFieldsProps {
-  form: UseFormReturn<WorkOrderFormFieldValues>;
+  form: UseFormReturn<WorkOrderFormSchemaValues>;
 }
 
 export const CustomerFields: React.FC<CustomerFieldsProps> = ({ form }) => {
   return (
-    <>
-      {/* Customer Field */}
-      <FormField
-        control={form.control}
-        name="customer"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Customer</FormLabel>
-            <FormControl>
-              <Input placeholder="Enter customer name" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      {/* Location Field */}
-      <FormField
-        control={form.control}
-        name="location"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Location</FormLabel>
-            <FormControl>
-              <Input placeholder="Enter location" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      {/* Description Field */}
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold">Customer & Service Details</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <FormField
+          control={form.control}
+          name="customer"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Customer Name</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter customer name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+      
       <FormField
         control={form.control}
         name="description"
         render={({ field }) => (
-          <FormItem className="col-span-1 md:col-span-2">
-            <FormLabel>Description</FormLabel>
+          <FormItem>
+            <FormLabel>Service Description</FormLabel>
             <FormControl>
-              <Input placeholder="Brief description of the work" {...field} />
+              <Textarea 
+                placeholder="Describe the service or repair needed..."
+                className="min-h-[100px]"
+                {...field} 
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
-    </>
+    </div>
   );
 };
