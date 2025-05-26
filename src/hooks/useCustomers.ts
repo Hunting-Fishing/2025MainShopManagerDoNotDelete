@@ -3,12 +3,17 @@ import { useState, useEffect, useMemo } from 'react';
 import { Customer } from '@/types/customer';
 import { getAllCustomers } from '@/services/customer';
 import { useToast } from '@/hooks/use-toast';
+import { DateRange } from 'react-day-picker';
 
 export interface CustomerFilters {
   search?: string;
   searchQuery?: string;
   status?: string;
   sortBy?: string;
+  tags?: string[];
+  vehicleType?: string;
+  hasVehicles?: string;
+  dateRange?: DateRange;
 }
 
 export const useCustomers = () => {
@@ -19,7 +24,11 @@ export const useCustomers = () => {
     search: '',
     searchQuery: '',
     status: 'all',
-    sortBy: 'name'
+    sortBy: 'name',
+    tags: [],
+    vehicleType: '',
+    hasVehicles: '',
+    dateRange: undefined
   });
   const { toast } = useToast();
 
