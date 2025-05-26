@@ -1,197 +1,189 @@
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { WorkOrder } from '@/types/workOrder';
+import { getAllWorkOrders, getUniqueTechnicians } from '@/services/workOrder';
+import { Plus, Filter, Users, Calendar, TrendingUp } from 'lucide-react';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { PlusCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import WorkOrdersHeader from "@/components/work-orders/WorkOrdersHeader";
-import WorkOrderFilters from "@/components/work-orders/WorkOrderFilters";
-import WorkOrdersTable from "@/components/work-orders/WorkOrdersTable";
-import WorkOrdersPagination from "@/components/work-orders/WorkOrdersPagination";
-import { WorkOrder } from "@/types/workOrder";
-import { supabase } from "@/lib/supabase";
-import { toast } from "@/hooks/use-toast";
-import { mapDatabaseToAppModel, getUniqueTechnicians } from "@/utils/workOrders";
+const statusColors = {
+  pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+  'in-progress': 'bg-blue-100 text-blue-800 border-blue-200',
+  completed: 'bg-green-100 text-green-800 border-green-200',
+  cancelled: 'bg-red-100 text-red-800 border-red-200',
+  'on-hold': 'bg-gray-100 text-gray-800 border-gray-200'
+};
 
-export default function WorkOrders() {
-  const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string[]>([]);
-  const [selectedTechnician, setSelectedTechnician] = useState<string>("all");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [loading, setLoading] = useState(true);
+const priorityColors = {
+  low: 'bg-gray-100 text-gray-800',
+  medium: 'bg-yellow-100 text-yellow-800',
+  high: 'bg-red-100 text-red-800'
+};
+
+export default function WorkOrdersPage() {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [technicians, setTechnicians] = useState<string[]>([]);
-  
-  const itemsPerPage = 5; // Number of work orders to show per page
+  const [selectedTechnician, setSelectedTechnician] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
-  // Fetch work orders from Supabase
   useEffect(() => {
-    const fetchWorkOrders = async () => {
-      try {
-        setLoading(true);
-        
-        // Get work orders with time entries
-        const { data: workOrderData, error } = await supabase
-          .from('work_orders')
-          .select(`
-            *,
-            work_order_time_entries(*)
-          `);
-          
-        if (error) {
-          throw error;
-        }
-
-        // Fetch customer and technician data separately to avoid relationship issues
-        const workOrdersWithDetails = await Promise.all(workOrderData.map(async (order) => {
-          // Get customer data if available
-          let customerData = null;
-          if (order.customer_id) {
-            const { data } = await supabase
-              .from('customers')
-              .select('first_name, last_name')
-              .eq('id', order.customer_id)
-              .single();
-            customerData = data;
-          }
-
-          // Get technician data if available
-          let technicianData = null;
-          if (order.technician_id) {
-            const { data } = await supabase
-              .from('profiles')
-              .select('first_name, last_name')
-              .eq('id', order.technician_id)
-              .single();
-            technicianData = data;
-          }
-
-          return {
-            ...order,
-            customers: customerData,
-            profiles: technicianData
-          };
-        }));
-        
-        // Map database models to application models
-        const completeWorkOrders: WorkOrder[] = workOrdersWithDetails.map((order) => 
-          mapDatabaseToAppModel(order)
-        );
-        
-        setWorkOrders(completeWorkOrders);
-        
-        // Get unique technicians for the filter
-        const uniqueTechs = await getUniqueTechnicians();
-        setTechnicians(uniqueTechs);
-      } catch (error) {
-        console.error("Error fetching work orders:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load work orders",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     fetchWorkOrders();
+    fetchTechnicians();
   }, []);
 
-  // Filter work orders based on search query and filters
-  const filteredWorkOrders: WorkOrder[] = workOrders.filter((order) => {
-    const matchesSearch = 
-      !searchQuery ||
-      order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (order.description?.toLowerCase() || '').includes(searchQuery.toLowerCase());
-    
-    const matchesStatus = 
-      statusFilter.length === 0 || statusFilter.includes(order.status);
-    
-    const matchesTechnician = 
-      selectedTechnician === "all" || order.technician === selectedTechnician;
-    
-    return matchesSearch && matchesStatus && matchesTechnician;
+  const fetchWorkOrders = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getAllWorkOrders();
+      setWorkOrders(data);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchTechnicians = async () => {
+    try {
+      const data = await getUniqueTechnicians();
+      setTechnicians(data);
+    } catch (err: any) {
+      console.error("Error fetching technicians:", err);
+    }
+  };
+
+  const filteredWorkOrders = workOrders.filter(workOrder => {
+    const technicianFilter = selectedTechnician === 'all' || workOrder.technician_id === selectedTechnician;
+    const searchFilter = searchTerm === '' ||
+      workOrder.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      workOrder.customer?.toLowerCase().includes(searchTerm.toLowerCase());
+    return technicianFilter && searchFilter;
   });
 
-  // Calculate pagination values
-  const totalItems = filteredWorkOrders.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  
-  // Get current page items
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredWorkOrders.slice(indexOfFirstItem, indexOfLastItem);
-
-  // Reset all filters
-  const resetFilters = () => {
-    setSearchQuery("");
-    setStatusFilter([]);
-    setSelectedTechnician("all");
-    setCurrentPage(1); // Reset to first page when filters change
-  };
-
-  // Handle page change
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  // Create new work order
-  const handleCreateWorkOrder = () => {
-    navigate('/work-orders/create');
-  };
-
   if (loading) {
+    return <LoadingSpinner size="lg" text="Loading work orders..." className="mt-8" />;
+  }
+
+  if (error) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-gray-500">Loading work orders...</div>
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-600">Error loading work orders: {error}</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-6 rounded-xl border border-blue-200 dark:border-blue-800">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Work Orders</h1>
-            <p className="text-muted-foreground">
-              Manage and track all your service work orders
-            </p>
-          </div>
-          <Button 
-            onClick={handleCreateWorkOrder}
-            className="rounded-full bg-blue-600 hover:bg-blue-700"
-          >
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Create Work Order
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Work Orders</h1>
+          <p className="text-muted-foreground">
+            Manage and track service work orders
+          </p>
+        </div>
+        <Button asChild>
+          <Link to="/work-orders/create">
+            <Plus className="mr-2 h-4 w-4" />
+            New Work Order
+          </Link>
+        </Button>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <Select value={selectedTechnician} onValueChange={setSelectedTechnician}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="All Technicians" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Technicians</SelectItem>
+              {technicians.map(technician => (
+                <SelectItem key={technician} value={technician}>{technician}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Input
+            type="search"
+            placeholder="Search work orders..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline">
+            <Filter className="mr-2 h-4 w-4" />
+            Filters
+          </Button>
+          <Button variant="outline">
+            <Users className="mr-2 h-4 w-4" />
+            Team
+          </Button>
+          <Button variant="outline">
+            <Calendar className="mr-2 h-4 w-4" />
+            Calendar
+          </Button>
+          <Button variant="outline">
+            <TrendingUp className="mr-2 h-4 w-4" />
+            Analytics
           </Button>
         </div>
       </div>
-      
-      {/* Filters and search */}
-      <WorkOrderFilters 
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
-        selectedTechnician={selectedTechnician}
-        setSelectedTechnician={setSelectedTechnician}
-        technicians={technicians}
-        resetFilters={resetFilters}
-      />
 
-      {/* Work Orders table */}
-      <WorkOrdersTable workOrders={currentItems} />
-      
-      {/* Pagination */}
-      {filteredWorkOrders.length > 0 && (
-        <WorkOrdersPagination 
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-        />
+      {/* Work Orders List */}
+      {filteredWorkOrders.length === 0 ? (
+        <div className="p-6">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <p className="text-gray-600">No work orders found.</p>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredWorkOrders.map(workOrder => (
+            <Card key={workOrder.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex justify-between items-start">
+                  <div className="space-y-3 flex-1">
+                    <div className="flex items-center gap-3">
+                      <h3 className="font-semibold text-lg">
+                        Work Order #{workOrder.id.substring(0, 8)}
+                      </h3>
+                      <Badge className={statusColors[workOrder.status]}>
+                        {workOrder.status.charAt(0).toUpperCase() + workOrder.status.slice(1)}
+                      </Badge>
+                      <Badge variant="outline" className={priorityColors[workOrder.priority]}>
+                        {workOrder.priority.charAt(0).toUpperCase() + workOrder.priority.slice(1)} Priority
+                      </Badge>
+                    </div>
+                    <p className="text-gray-600">{workOrder.description}</p>
+                    <p className="text-sm text-gray-500">
+                      Customer: {workOrder.customer}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      Created: {new Date(workOrder.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div>
+                    <Link to={`/work-orders/${workOrder.id}`}>
+                      <Button variant="ghost" size="sm">
+                        View Details
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
     </div>
   );

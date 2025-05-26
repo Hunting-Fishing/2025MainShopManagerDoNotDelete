@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { WorkOrderPageLayout } from "@/components/work-orders/WorkOrderPageLayout";
-import { getWorkOrderById } from "@/utils/workOrders";
+import { getWorkOrderById } from "@/services/workOrder";
 import { WorkOrderDetailsView } from "@/components/work-orders/WorkOrderDetailsView";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Button } from "@/components/ui/button";
