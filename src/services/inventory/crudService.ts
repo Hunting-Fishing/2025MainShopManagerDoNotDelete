@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { InventoryItemExtended } from "@/types/inventory";
 import { formatInventoryItem } from "@/utils/inventory/inventoryUtils";
@@ -101,6 +100,27 @@ export const updateInventoryItem = async (id: string, updates: Partial<Inventory
     return data ? formatInventoryItem(data) : null;
   } catch (error) {
     console.error('Error updating inventory item:', error);
+    return null;
+  }
+};
+
+/**
+ * Update inventory item quantity only
+ */
+export const updateInventoryQuantity = async (id: string, quantity: number): Promise<InventoryItemExtended | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('inventory_items')
+      .update({ quantity })
+      .eq('id', id)
+      .select()
+      .single();
+      
+    if (error) throw error;
+    
+    return data ? formatInventoryItem(data) : null;
+  } catch (error) {
+    console.error('Error updating inventory quantity:', error);
     return null;
   }
 };

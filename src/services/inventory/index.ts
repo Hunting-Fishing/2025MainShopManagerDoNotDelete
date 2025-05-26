@@ -12,9 +12,9 @@ import {
 // Re-export filter operations
 import { 
   filterInventoryItems,
-  getInventoryCategories as getCategories,
-  getInventorySuppliers as getSuppliers,
-  getInventoryLocations as getLocations,
+  getInventoryCategories,
+  getInventorySuppliers,
+  getInventoryLocations,
   getInventoryStatuses
 } from './filterService';
 
@@ -54,9 +54,9 @@ export {
   
   // Filter operations
   filterInventoryItems,
-  getCategories as getInventoryCategories,
-  getSuppliers as getInventorySuppliers,
-  getLocations as getInventoryLocations,
+  getInventoryCategories,
+  getInventorySuppliers,
+  getInventoryLocations,
   getInventoryStatuses,
   
   // Transaction operations

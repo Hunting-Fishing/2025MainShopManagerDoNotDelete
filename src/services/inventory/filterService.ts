@@ -1,4 +1,3 @@
-
 import { InventoryItemExtended, InventoryFilter } from "@/types/inventory";
 import { getInventoryItems } from "./crudService";
 
@@ -101,5 +100,57 @@ export const getFilterOptions = async () => {
       locations: [],
       statuses: []
     };
+  }
+};
+
+/**
+ * Get inventory categories
+ */
+export const getInventoryCategories = async (): Promise<string[]> => {
+  try {
+    const allItems = await getInventoryItems();
+    return [...new Set(allItems.map(item => item.category).filter(Boolean))];
+  } catch (error) {
+    console.error('Error getting inventory categories:', error);
+    return [];
+  }
+};
+
+/**
+ * Get inventory suppliers
+ */
+export const getInventorySuppliers = async (): Promise<string[]> => {
+  try {
+    const allItems = await getInventoryItems();
+    return [...new Set(allItems.map(item => item.supplier).filter(Boolean))];
+  } catch (error) {
+    console.error('Error getting inventory suppliers:', error);
+    return [];
+  }
+};
+
+/**
+ * Get inventory locations
+ */
+export const getInventoryLocations = async (): Promise<string[]> => {
+  try {
+    const allItems = await getInventoryItems();
+    return [...new Set(allItems.map(item => item.location).filter(Boolean))];
+  } catch (error) {
+    console.error('Error getting inventory locations:', error);
+    return [];
+  }
+};
+
+/**
+ * Get inventory statuses
+ */
+export const getInventoryStatuses = async (): Promise<string[]> => {
+  try {
+    const allItems = await getInventoryItems();
+    return [...new Set(allItems.map(item => item.status).filter(Boolean))];
+  } catch (error) {
+    console.error('Error getting inventory statuses:', error);
+    return [];
   }
 };
