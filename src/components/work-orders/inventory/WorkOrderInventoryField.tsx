@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { UseFormReturn } from "react-hook-form";
@@ -77,20 +78,31 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
   };
 
   // Convert items to proper WorkOrderInventoryItem format for display
-  const workOrderItems: WorkOrderInventoryItem[] = items.map((item, index): WorkOrderInventoryItem => ({
-    id: item.id || `temp-${Date.now()}-${index}`,
-    name: item.name || 'Unknown Item',
-    sku: item.sku || 'NO-SKU',
-    category: item.category || 'General',
-    quantity: item.quantity || 1,
-    unit_price: item.unit_price || 0,
-    total: item.total || (item.quantity || 1) * (item.unit_price || 0),
-    notes: item.notes,
-    itemStatus: item.itemStatus,
-    estimatedArrivalDate: item.estimatedArrivalDate,
-    supplierName: item.supplierName,
-    supplierOrderRef: item.supplierOrderRef
-  }));
+  const workOrderItems: WorkOrderInventoryItem[] = items.map((item, index): WorkOrderInventoryItem => {
+    // Ensure id is always a string (required field)
+    const id: string = item.id || `temp-${Date.now()}-${index}`;
+    const name: string = item.name || 'Unknown Item';
+    const sku: string = item.sku || 'NO-SKU';
+    const category: string = item.category || 'General';
+    const quantity: number = item.quantity || 1;
+    const unit_price: number = item.unit_price || 0;
+    const total: number = item.total || quantity * unit_price;
+
+    return {
+      id,
+      name,
+      sku,
+      category,
+      quantity,
+      unit_price,
+      total,
+      notes: item.notes,
+      itemStatus: item.itemStatus,
+      estimatedArrivalDate: item.estimatedArrivalDate,
+      supplierName: item.supplierName,
+      supplierOrderRef: item.supplierOrderRef
+    };
+  });
 
   return (
     <FormField
