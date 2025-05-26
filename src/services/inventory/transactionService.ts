@@ -25,7 +25,19 @@ export const recordInventoryTransaction = async (transaction: Omit<InventoryTran
       .single();
       
     if (error) throw error;
-    return data;
+    
+    // Type cast the response to ensure proper typing
+    return data ? {
+      id: data.id,
+      inventory_item_id: data.inventory_item_id,
+      transaction_type: data.transaction_type as 'in' | 'out' | 'adjustment',
+      quantity: data.quantity,
+      reference_id: data.reference_id,
+      reference_type: data.reference_type,
+      notes: data.notes,
+      created_at: data.created_at,
+      performed_by: data.performed_by
+    } : null;
   } catch (error) {
     console.error('Error recording inventory transaction:', error);
     return null;
@@ -44,7 +56,19 @@ export const getItemTransactions = async (itemId: string): Promise<InventoryTran
       .order('created_at', { ascending: false });
       
     if (error) throw error;
-    return data || [];
+    
+    // Type cast the response to ensure proper typing
+    return data?.map(item => ({
+      id: item.id,
+      inventory_item_id: item.inventory_item_id,
+      transaction_type: item.transaction_type as 'in' | 'out' | 'adjustment',
+      quantity: item.quantity,
+      reference_id: item.reference_id,
+      reference_type: item.reference_type,
+      notes: item.notes,
+      created_at: item.created_at,
+      performed_by: item.performed_by
+    })) || [];
   } catch (error) {
     console.error('Error fetching item transactions:', error);
     return [];
@@ -62,7 +86,19 @@ export const getInventoryTransactions = async (): Promise<InventoryTransaction[]
       .order('created_at', { ascending: false });
       
     if (error) throw error;
-    return data || [];
+    
+    // Type cast the response to ensure proper typing
+    return data?.map(item => ({
+      id: item.id,
+      inventory_item_id: item.inventory_item_id,
+      transaction_type: item.transaction_type as 'in' | 'out' | 'adjustment',
+      quantity: item.quantity,
+      reference_id: item.reference_id,
+      reference_type: item.reference_type,
+      notes: item.notes,
+      created_at: item.created_at,
+      performed_by: item.performed_by
+    })) || [];
   } catch (error) {
     console.error('Error fetching inventory transactions:', error);
     return [];

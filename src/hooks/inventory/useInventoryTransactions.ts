@@ -39,17 +39,17 @@ export function useInventoryTransactions(itemId?: string) {
   const createTransaction = async (
     inventoryItemId: string, 
     quantity: number, 
-    transactionType: string, 
+    transactionType: 'in' | 'out' | 'adjustment', 
     notes?: string
   ) => {
     setError(null);
     try {
-      await recordInventoryTransaction(
-        inventoryItemId,
+      await recordInventoryTransaction({
+        inventory_item_id: inventoryItemId,
         quantity,
-        transactionType,
+        transaction_type: transactionType,
         notes
-      );
+      });
       
       // Refresh transactions
       const updatedTransactions = itemId 
