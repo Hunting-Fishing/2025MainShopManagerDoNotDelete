@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { CarMake, CarModel, VinDecodeResult } from '@/types/vehicle';
 import { useVinDecoder } from './hooks/useVinDecoder';
-import { fetchMakes, fetchModels } from '@/services/vehicleDataService';
+import { fetchMakes, fetchModels as fetchModelsFromAPI } from '@/services/vehicleDataService';
 
 interface UseVehicleFormProps {
   form: UseFormReturn<any>;
@@ -50,7 +50,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
 
     try {
       console.log('Fetching models for make ID:', makeId);
-      const modelsData = await fetchModels(makeId);
+      const modelsData = await fetchModelsFromAPI(makeId);
       console.log('Loaded models data:', modelsData);
       setModels(modelsData || []);
     } catch (error) {
