@@ -1,33 +1,27 @@
+/**
+ * Work order status mappings and constants
+ */
 
-// Single source of truth for work order status and priority mappings
-export const statusMap = {
-  "pending": "Pending",
-  "in-progress": "In Progress",
-  "on-hold": "On Hold",
-  "completed": "Completed",
-  "cancelled": "Cancelled"
+export type WorkOrderStatus = 'pending' | 'in-progress' | 'completed' | 'cancelled' | 'on-hold';
+
+export const statusMap: Record<WorkOrderStatus, string> = {
+  'pending': 'Pending',
+  'in-progress': 'In Progress',
+  'completed': 'Completed',
+  'cancelled': 'Cancelled',
+  'on-hold': 'On Hold'
 };
 
-// Legacy export for backward compatibility
-export const WorkOrderStatus = statusMap;
-
-export const priorityMap = {
-  "low": {
-    label: "Low",
-    classes: "bg-green-100 text-green-800 border border-green-200"
-  },
-  "medium": {
-    label: "Medium",
-    classes: "bg-yellow-100 text-yellow-800 border border-yellow-200"
-  },
-  "high": {
-    label: "High",
-    classes: "bg-red-100 text-red-800 border border-red-200"
-  }
+export const priorityMap: Record<string, string> = {
+  'low': 'Low',
+  'medium': 'Medium',
+  'high': 'High'
 };
 
-// Helper function to determine priority based on criteria
-export const determinePriority = (dueDate: string, status: string): "low" | "medium" | "high" => {
-  // Implementation logic here
-  return "medium";
+/**
+ * Determine priority based on work order data
+ */
+export const determinePriority = (workOrder: any): string => {
+  // Add logic to determine priority based on work order characteristics
+  return workOrder.priority || 'medium';
 };

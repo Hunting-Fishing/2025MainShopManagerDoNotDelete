@@ -2,20 +2,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { getAllWorkOrders, updateWorkOrderStatus } from '@/services/workOrder';
-
-export interface WorkOrder {
-  id: string;
-  customer_id: string;
-  description: string;
-  status: 'pending' | 'in-progress' | 'completed' | 'cancelled';
-  priority: 'low' | 'medium' | 'high';
-  created_at: string;
-  updated_at: string;
-  customer?: {
-    first_name: string;
-    last_name: string;
-  };
-}
+import { WorkOrder } from '@/types/workOrder';
 
 export function useWorkOrders() {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
@@ -32,7 +19,7 @@ export function useWorkOrders() {
       setError(null);
       
       const data = await getAllWorkOrders();
-      setWorkOrders(data as WorkOrder[]);
+      setWorkOrders(data);
     } catch (err: any) {
       setError(err.message);
       toast({

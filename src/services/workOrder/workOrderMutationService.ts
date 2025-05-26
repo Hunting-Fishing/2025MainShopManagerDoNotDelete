@@ -8,9 +8,15 @@ import { normalizeWorkOrder } from "@/utils/workOrders/formatters";
  */
 export const createWorkOrder = async (workOrder: Partial<WorkOrder>): Promise<WorkOrder | null> => {
   try {
+    // Ensure required fields are present
+    const workOrderData = {
+      status: 'pending',
+      ...workOrder
+    };
+
     const { data, error } = await supabase
       .from('work_orders')
-      .insert([workOrder])
+      .insert([workOrderData])
       .select();
       
     if (error) {

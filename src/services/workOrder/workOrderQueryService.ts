@@ -91,21 +91,21 @@ export const getWorkOrdersByStatus = async (status: string): Promise<WorkOrder[]
 };
 
 /**
- * Get unique technicians from work orders
+ * Get unique technicians from work orders - using technician_id instead of technician
  */
 export const getUniqueTechnicians = async (): Promise<string[]> => {
   try {
     const { data, error } = await supabase
       .from('work_orders')
-      .select('technician')
-      .not('technician', 'is', null);
+      .select('technician_id')
+      .not('technician_id', 'is', null);
       
     if (error) {
       throw error;
     }
     
     // Filter out nulls and duplicates
-    return [...new Set(data?.map(item => item.technician).filter(Boolean))];
+    return [...new Set(data?.map(item => item.technician_id).filter(Boolean))];
   } catch (error) {
     console.error('Error fetching technicians:', error);
     return [];

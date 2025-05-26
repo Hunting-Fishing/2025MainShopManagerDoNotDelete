@@ -1,80 +1,86 @@
 
 import { WorkOrder } from "@/types/workOrder";
 
-// Format a date string
-export const formatDate = (dateString: string): string => {
-  if (!dateString) return 'N/A';
-  
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString();
-  } catch (error) {
-    console.error("Error formatting date:", error);
-    return 'Invalid Date';
-  }
+/**
+ * Format date to a readable string
+ */
+export const formatDate = (date: string | Date): string => {
+  if (!date) return '';
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return dateObj.toLocaleDateString();
 };
 
-// Format a time string
-export const formatTime = (timeString: string): string => {
-  if (!timeString) return 'N/A';
-  
-  try {
-    const date = new Date(timeString);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  } catch (error) {
-    console.error("Error formatting time:", error);
-    return 'Invalid Time';
-  }
+/**
+ * Format time to a readable string
+ */
+export const formatTime = (time: string): string => {
+  if (!time) return '';
+  const date = new Date(time);
+  return date.toLocaleTimeString();
 };
 
-// Format time in hours and minutes
+/**
+ * Format time duration in hours and minutes
+ */
 export const formatTimeInHoursAndMinutes = (minutes: number): string => {
-  if (!minutes) return '0h 0m';
-  
+  if (!minutes) return '0 minutes';
   const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
+  const mins = minutes % 60;
   
-  if (hours === 0) {
-    return `${remainingMinutes}m`;
-  } else if (remainingMinutes === 0) {
-    return `${hours}h`;
-  } else {
-    return `${hours}h ${remainingMinutes}m`;
-  }
+  if (hours === 0) return `${mins} minutes`;
+  if (mins === 0) return `${hours} hours`;
+  return `${hours}h ${mins}m`;
 };
 
-// Calculate total time from time entries
-export const calculateTotalTime = (entries: any[]): number => {
-  return entries.reduce((total, entry) => total + entry.duration, 0);
-};
-
-// Calculate billable time from time entries
-export const calculateBillableTime = (entries: any[]): number => {
-  return entries
-    .filter(entry => entry.billable)
-    .reduce((total, entry) => total + entry.duration, 0);
-};
-
-// Normalize a work order by ensuring all required fields are present
-export const normalizeWorkOrder = (order: any): WorkOrder => {
+/**
+ * Normalize work order data from database
+ */
+export const normalizeWorkOrder = (data: any): WorkOrder => {
   return {
-    id: order.id || '',
-    customer: order.customer || '',
-    customer_id: order.customer_id,
-    vehicle_id: order.vehicle_id,
-    description: order.description || '',
-    status: order.status || 'pending',
-    priority: order.priority || 'medium',
-    date: order.date || order.created_at || new Date().toISOString(),
-    dueDate: order.due_date,
-    technician: order.technician || '',
-    technician_id: order.technician_id,
-    location: order.location || '',
-    notes: order.notes || '',
-    totalBillableTime: order.total_billable_time || 0,
-    createdAt: order.created_at || new Date().toISOString(),
-    updatedAt: order.updated_at,
+    id: data.id,
+    customer_id: data.customer_id,
+    vehicle_id: data.vehicle_id,
+    advisor_id: data.advisor_id,
+    technician_id: data.technician_id,
+    status: data.status,
+    description: data.description,
+    service_type: data.service_type,
+    estimated_hours: data.estimated_hours,
+    total_cost: data.total_cost,
+    created_by: data.created_by,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+    start_time: data.start_time,
+    end_time: data.end_time,
+    service_category_id: data.service_category_id,
+    invoice_id: data.invoice_id,
+    invoiced_at: data.invoiced_at,
+    
+    // Legacy fields for backward compatibility
+    customer: data.customer || '',
+    technician: data.technician || '',
+    priority: data.priority || 'medium',
+    date: data.created_at,
+    dueDate: data.end_time || data.created_at,
+    location: data.location || '',
+    notes: data.description || '',
     timeEntries: [],
     inventoryItems: []
   };
+};
+
+/**
+ * Calculate total time from time entries
+ */
+export const calculateTotalTime = (timeEntries: any[]): number => {
+  return timeEntries.reduce((total, entry) => total + (entry.duration || 0), 0);
+};
+
+/**
+ * Calculate billable time from time entries
+ */
+export const calculateBillableTime = (timeEntries: any[]): number => {
+  return timeEntries
+    .filter(entry => entry.billable)
+    .reduce((total, entry) => total + (entry.duration || 0), 0);
 };

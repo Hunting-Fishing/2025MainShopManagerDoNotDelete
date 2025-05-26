@@ -23,5 +23,35 @@ export {
   determinePriority
 } from './constants';
 
-// Note: CRUD operations have been moved to src/services/workOrder/
-// Import getAllWorkOrders, getWorkOrderById, createWorkOrder, etc. from there
+// Re-export service functions for backward compatibility
+export { 
+  getAllWorkOrders, 
+  getWorkOrderById,
+  getWorkOrdersByCustomerId,
+  getWorkOrdersByStatus,
+  getUniqueTechnicians
+} from '../../services/workOrder/workOrderQueryService';
+
+export { 
+  createWorkOrder, 
+  updateWorkOrder, 
+  deleteWorkOrder,
+  updateWorkOrderStatus
+} from '../../services/workOrder/workOrderMutationService';
+
+export { 
+  recordWorkOrderActivity, 
+  getWorkOrderActivities 
+} from '../../services/workOrder/workOrderActivityService';
+
+export { 
+  getWorkOrderInventoryItems, 
+  addInventoryItemToWorkOrder 
+} from '../../services/workOrder/workOrderInventoryService';
+
+export { 
+  getWorkOrderTimeEntries, 
+  addTimeEntryToWorkOrder 
+} from '../../services/workOrder/workOrderTimeTrackingService';
+
+// Note: CRUD operations are now centralized in src/services/workOrder/
