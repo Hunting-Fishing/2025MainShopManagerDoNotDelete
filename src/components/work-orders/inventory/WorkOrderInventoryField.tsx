@@ -86,7 +86,40 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
     }
     
     const currentItems = form.getValues("inventoryItems") || [];
-    const updatedItems: WorkOrderInventoryItem[] = [...currentItems, newItem];
+    
+    // Convert existing items to ensure they have all required properties
+    const normalizedCurrentItems: WorkOrderInventoryItem[] = currentItems.map((existingItem, index) => {
+      const normalizedItem: WorkOrderInventoryItem = {
+        id: existingItem.id || `temp-${Date.now()}-${index}`,
+        name: existingItem.name || 'Unknown Item',
+        sku: existingItem.sku || 'NO-SKU',
+        category: existingItem.category || 'General',
+        quantity: existingItem.quantity || 1,
+        unit_price: existingItem.unit_price || 0,
+        total: existingItem.total || ((existingItem.quantity || 1) * (existingItem.unit_price || 0))
+      };
+      
+      // Add optional properties only if they exist
+      if (existingItem.notes !== undefined) {
+        normalizedItem.notes = existingItem.notes;
+      }
+      if (existingItem.itemStatus !== undefined) {
+        normalizedItem.itemStatus = existingItem.itemStatus;
+      }
+      if (existingItem.estimatedArrivalDate !== undefined) {
+        normalizedItem.estimatedArrivalDate = existingItem.estimatedArrivalDate;
+      }
+      if (existingItem.supplierName !== undefined) {
+        normalizedItem.supplierName = existingItem.supplierName;
+      }
+      if (existingItem.supplierOrderRef !== undefined) {
+        normalizedItem.supplierOrderRef = existingItem.supplierOrderRef;
+      }
+      
+      return normalizedItem;
+    });
+    
+    const updatedItems: WorkOrderInventoryItem[] = [...normalizedCurrentItems, newItem];
     form.setValue("inventoryItems", updatedItems, { shouldValidate: true });
   };
 
