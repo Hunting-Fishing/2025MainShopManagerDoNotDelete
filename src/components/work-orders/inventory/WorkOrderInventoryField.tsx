@@ -91,9 +91,9 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
   };
 
   // Convert items to proper WorkOrderInventoryItem format for display
-  const workOrderItems: WorkOrderInventoryItem[] = items.map((item, index): WorkOrderInventoryItem => {
-    // Create the mapped item with explicit type annotation and required fields
-    const mappedItem: WorkOrderInventoryItem = {
+  const workOrderItems: WorkOrderInventoryItem[] = items.map((item, index) => {
+    // Create base object with all required properties
+    const baseItem: WorkOrderInventoryItem = {
       id: item.id || `temp-${Date.now()}-${index}`,
       name: item.name || 'Unknown Item',
       sku: item.sku || 'NO-SKU',
@@ -105,22 +105,22 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
     
     // Add optional properties only if they exist
     if (item.notes !== undefined) {
-      mappedItem.notes = item.notes;
+      baseItem.notes = item.notes;
     }
     if (item.itemStatus !== undefined) {
-      mappedItem.itemStatus = item.itemStatus;
+      baseItem.itemStatus = item.itemStatus;
     }
     if (item.estimatedArrivalDate !== undefined) {
-      mappedItem.estimatedArrivalDate = item.estimatedArrivalDate;
+      baseItem.estimatedArrivalDate = item.estimatedArrivalDate;
     }
     if (item.supplierName !== undefined) {
-      mappedItem.supplierName = item.supplierName;
+      baseItem.supplierName = item.supplierName;
     }
     if (item.supplierOrderRef !== undefined) {
-      mappedItem.supplierOrderRef = item.supplierOrderRef;
+      baseItem.supplierOrderRef = item.supplierOrderRef;
     }
     
-    return mappedItem;
+    return baseItem;
   });
 
   return (
