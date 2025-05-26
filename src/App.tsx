@@ -15,6 +15,7 @@ import Login from '@/pages/Login';
 import CustomersPage from '@/pages/CustomersPage';
 import CreateCustomer from '@/pages/CreateCustomer';
 import CustomerDetails from '@/pages/CustomerDetails';
+import EditCustomer from '@/pages/EditCustomer';
 import WorkOrders from '@/pages/WorkOrders';
 import WorkOrderCreate from '@/pages/WorkOrderCreate';
 import WorkOrderDetails from '@/pages/WorkOrderDetails';
@@ -70,6 +71,7 @@ function App() {
                           <Route path="/customers" element={<CustomersPage />} />
                           <Route path="/customers/create" element={<CreateCustomer />} />
                           <Route path="/customers/:id" element={<CustomerDetails />} />
+                          <Route path="/customers/:id/edit" element={<EditCustomer />} />
                           <Route path="/work-orders" element={<WorkOrders />} />
                           <Route path="/work-orders/create" element={<WorkOrderCreate />} />
                           <Route path="/work-orders/:id" element={<WorkOrderDetails />} />
