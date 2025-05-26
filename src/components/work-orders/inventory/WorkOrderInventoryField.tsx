@@ -9,7 +9,6 @@ import { SpecialOrderDialog } from "./SpecialOrderDialog";
 import { useInventoryItemOperations } from "@/hooks/inventory/workOrder/useInventoryItemOperations";
 import { supabase } from "@/integrations/supabase/client";
 import { WorkOrderFormValues, WorkOrderInventoryItem } from "@/types/workOrder";
-import { toExtendedWorkOrderItem } from "@/utils/inventory/adapters";
 
 interface WorkOrderInventoryFieldProps {
   form: UseFormReturn<WorkOrderFormValues>;
@@ -55,12 +54,12 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
 
   // Handle adding a special order item
   const handleAddSpecialOrder = (item: any) => {
-    // Ensure all required properties are present
+    // Ensure all required properties are present with proper defaults
     const newItem: WorkOrderInventoryItem = {
       id: item.id || `temp-${Date.now()}`,
-      name: item.name || '',
+      name: item.name || 'Special Order Item',
       sku: item.sku || `SO-${Date.now().toString(36)}`,
-      category: item.category || '',
+      category: item.category || 'Special Order',
       quantity: item.quantity || 1,
       unit_price: item.unit_price || 0,
       total: (item.quantity || 1) * (item.unit_price || 0),
@@ -75,15 +74,21 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
     form.setValue("inventoryItems", [...currentItems, newItem], { shouldValidate: true });
   };
 
-  // Convert items to extended format for display, ensuring all required properties
-  const extendedItems = items.map(item => {
-    const extended = toExtendedWorkOrderItem(item);
-    // Ensure the item has all required WorkOrderInventoryItem properties
-    return {
-      ...extended,
-      total: item.total || (item.quantity * item.unit_price)
-    };
-  });
+  // Convert items to proper WorkOrderInventoryItem format for display
+  const workOrderItems: WorkOrderInventoryItem[] = items.map(item => ({
+    id: item.id,
+    name: item.name,
+    sku: item.sku,
+    category: item.category || 'General',
+    quantity: item.quantity,
+    unit_price: item.unit_price,
+    total: item.total || (item.quantity * item.unit_price),
+    notes: item.notes,
+    itemStatus: item.itemStatus,
+    estimatedArrivalDate: item.estimatedArrivalDate,
+    supplierName: item.supplierName,
+    supplierOrderRef: item.supplierOrderRef
+  }));
 
   return (
     <FormField
@@ -100,7 +105,7 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
             />
             
             <WorkOrderInventoryTable 
-              items={extendedItems} 
+              items={workOrderItems} 
               onUpdateQuantity={updateQuantity}
               onRemoveItem={removeItem}
             />
