@@ -36,8 +36,8 @@ export const fetchModels = async (makeId: string): Promise<CarModel[]> => {
     const { data, error } = await supabase
       .from('vehicle_models')
       .select('*')
-      .eq('model_make_id', makeId)
-      .order('model_name');
+      .eq('make_id', makeId)
+      .order('model_display');
 
     if (error) {
       console.error('Error fetching models:', error);

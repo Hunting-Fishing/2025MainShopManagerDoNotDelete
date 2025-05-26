@@ -152,19 +152,6 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
           )}
         />
       </div>
-
-      <FormField
-        control={form.control}
-        name={`vehicles.${index}.notes`}
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Notes</FormLabel>
-            <FormControl>
-              <Input {...field} placeholder="Additional vehicle notes or details" />
-            </FormControl>
-          </FormItem>
-        )}
-      />
     </div>
   );
 };

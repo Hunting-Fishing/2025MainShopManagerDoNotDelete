@@ -18,18 +18,18 @@ export type VehicleBodyStyle =
 
 // Add missing exports that many files depend on
 export interface VinDecodeResult {
-  year: string | number;
-  make: string;
-  model: string;
-  transmission?: string;
-  transmission_type?: string;
-  drive_type?: string;
-  fuel_type?: string;
-  body_style?: string;
-  country?: string;
-  engine?: string;
-  gvwr?: string;
-  trim?: string;
+  year: string | number | null;
+  make: string | null;
+  model: string | null;
+  transmission?: string | null;
+  transmission_type?: string | null;
+  drive_type?: string | null;
+  fuel_type?: string | null;
+  body_style?: string | null;
+  country?: string | null;
+  engine?: string | null;
+  gvwr?: string | null;
+  trim?: string | null;
 }
 
 export interface Vehicle {
@@ -65,7 +65,8 @@ export interface CarMake {
 
 export interface CarModel {
   model_name: string;
-  model_make_id: string;
+  model_display: string;
+  make_id: string;
 }
 
 // Re-export vehicle body style types

@@ -129,24 +129,31 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
         
         // Set additional decoded fields for reference
         if (result.transmission) {
+          form.setValue(`vehicles.${index}.transmission`, result.transmission);
           form.setValue(`vehicles.${index}.decoded_transmission`, result.transmission);
         }
         if (result.fuel_type) {
+          form.setValue(`vehicles.${index}.fuel_type`, result.fuel_type);
           form.setValue(`vehicles.${index}.decoded_fuel_type`, result.fuel_type);
         }
         if (result.engine) {
+          form.setValue(`vehicles.${index}.engine`, result.engine);
           form.setValue(`vehicles.${index}.decoded_engine`, result.engine);
         }
         if (result.body_style) {
+          form.setValue(`vehicles.${index}.body_style`, result.body_style);
           form.setValue(`vehicles.${index}.decoded_body_style`, result.body_style);
         }
         if (result.country) {
+          form.setValue(`vehicles.${index}.country`, result.country);
           form.setValue(`vehicles.${index}.decoded_country`, result.country);
         }
         if (result.trim) {
+          form.setValue(`vehicles.${index}.trim`, result.trim);
           form.setValue(`vehicles.${index}.decoded_trim`, result.trim);
         }
         if (result.gvwr) {
+          form.setValue(`vehicles.${index}.gvwr`, result.gvwr);
           form.setValue(`vehicles.${index}.decoded_gvwr`, result.gvwr);
         }
         
