@@ -91,8 +91,8 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
   };
 
   // Convert items to proper WorkOrderInventoryItem format for display
-  const workOrderItems: WorkOrderInventoryItem[] = items.map((item, index) => {
-    // Create a properly typed WorkOrderInventoryItem ensuring all required fields are present
+  const workOrderItems: WorkOrderInventoryItem[] = items.map((item, index): WorkOrderInventoryItem => {
+    // Create the mapped item with explicit type annotation and required fields
     const mappedItem: WorkOrderInventoryItem = {
       id: item.id || `temp-${Date.now()}-${index}`,
       name: item.name || 'Unknown Item',
