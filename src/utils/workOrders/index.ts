@@ -22,38 +22,9 @@ export {
   determinePriority
 } from './constants';
 
-// Use export type for types when isolatedModules is enabled
+// Re-export the WorkOrderStatus type for backward compatibility
 export type { WorkOrderStatus } from './constants';
 
-// Re-export service functions for backward compatibility
-export { 
-  getAllWorkOrders, 
-  getWorkOrderById,
-  getWorkOrdersByCustomerId,
-  getWorkOrdersByStatus,
-  getUniqueTechnicians
-} from '../../services/workOrder/workOrderQueryService';
-
-export { 
-  createWorkOrder, 
-  updateWorkOrder, 
-  deleteWorkOrder,
-  updateWorkOrderStatus
-} from '../../services/workOrder/workOrderMutationService';
-
-export { 
-  recordWorkOrderActivity, 
-  getWorkOrderActivities 
-} from '../../services/workOrder/workOrderActivityService';
-
-export { 
-  getWorkOrderInventoryItems, 
-  addInventoryItemToWorkOrder 
-} from '../../services/workOrder/workOrderInventoryService';
-
-export { 
-  getWorkOrderTimeEntries, 
-  addTimeEntryToWorkOrder 
-} from '../../services/workOrder/workOrderTimeTrackingService';
-
-// Note: CRUD operations are now centralized in src/services/workOrder/
+// Note: Core CRUD operations are now centralized in src/services/workOrder/
+// Import them directly from there for better organization:
+// import { getAllWorkOrders, createWorkOrder, etc. } from '@/services/workOrder';

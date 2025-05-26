@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { WorkOrder, WorkOrderStatusType } from "@/types/workOrder";
 import { toast } from "sonner";
-import { getWorkOrderById, updateWorkOrder } from "@/services/workOrderService";
+import { getWorkOrderById, updateWorkOrder } from "@/services/workOrder";
 import { useNavigate } from "react-router-dom";
 
 export const useWorkOrderEditForm = (workOrderId: string) => {
