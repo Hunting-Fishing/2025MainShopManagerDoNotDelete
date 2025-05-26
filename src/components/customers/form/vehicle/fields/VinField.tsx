@@ -30,11 +30,19 @@ export const VinField: React.FC<VinFieldProps> = ({
   decodedVehicleInfo,
   onVinDecode
 }) => {
+  const currentVin = form.watch(`vehicles.${index}.vin`) || "";
+
   const handleVinChange = (value: string) => {
     const cleanVin = value.toUpperCase().replace(/[^A-Z0-9]/g, '');
     
     if (cleanVin.length === 17 && onVinDecode) {
       onVinDecode(cleanVin);
+    }
+  };
+
+  const handleDecodeClick = () => {
+    if (currentVin.length === 17 && onVinDecode) {
+      onVinDecode(currentVin);
     }
   };
 
@@ -56,6 +64,30 @@ export const VinField: React.FC<VinFieldProps> = ({
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+          </div>
+
+          {/* Decode Button */}
+          <div className="mb-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleDecodeClick}
+              disabled={processing || currentVin.length !== 17}
+              className="w-full"
+            >
+              {processing ? (
+                <>
+                  <Zap className="h-4 w-4 mr-2 animate-pulse" />
+                  Decoding VIN...
+                </>
+              ) : (
+                <>
+                  <Zap className="h-4 w-4 mr-2" />
+                  Decode VIN
+                </>
+              )}
+            </Button>
           </div>
 
           {/* Show VIN decode status */}
