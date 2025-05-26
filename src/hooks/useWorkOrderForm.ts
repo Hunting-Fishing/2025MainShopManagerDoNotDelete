@@ -1,8 +1,8 @@
+
 import { useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
-import { WorkOrderFormSchemaValues } from "@/types/workOrderSchema";
+import { WorkOrderFormSchemaValues, WorkOrderInventoryItem } from "@/types/workOrder";
 import { useToast } from "@/hooks/use-toast";
-import { WorkOrderInventoryItem } from "@/components/work-orders/inventory/WorkOrderInventoryItem";
 
 // Export the type for use in other components
 export type WorkOrderFormValues = WorkOrderFormSchemaValues;

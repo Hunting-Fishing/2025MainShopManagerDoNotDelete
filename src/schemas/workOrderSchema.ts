@@ -1,8 +1,8 @@
 
 import { z } from "zod";
-import { WorkOrderStatusType, WorkOrderPriorityType } from "@/types/workOrder";
+import { WorkOrderStatusType, WorkOrderPriorityType, WorkOrderInventoryItem } from "@/types/workOrder";
 
-// Define inventory item schema using the type
+// Define inventory item schema using the consolidated type
 export const inventoryItemSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -12,7 +12,7 @@ export const inventoryItemSchema = z.object({
   unitPrice: z.number()
 });
 
-// Form schema validation
+// Form schema validation using consolidated types
 export const workOrderFormSchema = z.object({
   customer: z.string().min(2, {
     message: "Customer name must be at least 2 characters.",
@@ -33,7 +33,6 @@ export const workOrderFormSchema = z.object({
   location: z.string().min(2, {
     message: "Location must be at least 2 characters.",
   }),
-  // Changed from string to Date
   dueDate: z.date({
     required_error: "Due date is required.",
   }),
@@ -46,7 +45,8 @@ export const workOrderFormSchema = z.object({
   vehicleYear: z.string().optional(),
   odometer: z.string().optional(),
   licensePlate: z.string().optional(),
-  vin: z.string().optional(), // Added the vin field
+  vin: z.string().optional(),
 });
 
+// Export the inferred type that matches our consolidated types
 export type WorkOrderFormSchemaValues = z.infer<typeof workOrderFormSchema>;

@@ -3,7 +3,7 @@ import { Filter, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { getUniqueTechnicians } from "@/services/workOrder";
-import { statusMap } from "@/utils/workOrders"; // Updated import path
+import { statusMap } from "@/types/workOrder"; // Updated import path to consolidated types
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,

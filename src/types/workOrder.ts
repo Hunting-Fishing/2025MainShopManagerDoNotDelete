@@ -1,3 +1,4 @@
+
 import { Customer } from "./customer";
 import { Vehicle } from "./vehicle";
 import { InventoryItem } from "./inventory";
@@ -68,6 +69,7 @@ export interface TimeEntry {
   created_at?: string;
 }
 
+// Consolidated WorkOrderInventoryItem interface (from the deleted standalone file)
 export interface WorkOrderInventoryItem {
   id: string;
   name: string;
@@ -78,9 +80,10 @@ export interface WorkOrderInventoryItem {
   unit_price: number;
   total: number;
   notes?: string;
-  itemStatus?: string;
+  itemStatus?: "special-order" | "ordered" | "in-stock";
   estimatedArrivalDate?: string;
   supplierName?: string;
+  supplierOrderRef?: string;
 }
 
 export interface WorkOrderTemplate {
@@ -100,30 +103,35 @@ export interface WorkOrderTemplate {
   inventory_items?: WorkOrderInventoryItem[];
 }
 
-// Define Work Order Types
-export const WorkOrderTypes = {
-  REPAIR: "repair",
-  MAINTENANCE: "maintenance",
-  INSPECTION: "inspection",
-  DIAGNOSTICS: "diagnostics",
-  OTHER: "other"
-};
-
+// Consolidated form schema values (from the deleted types file)
 export interface WorkOrderFormSchemaValues {
-  customer: string;
-  description: string;
-  status: string;
-  priority: string;
-  technician: string;
-  location: string;
-  dueDate: Date | string;
-  notes: string;
-  vehicleMake: string;
-  vehicleModel: string;
-  vehicleYear: string;
-  odometer: string;
-  licensePlate: string;
-  vin: string;
+  title?: string;
+  description?: string;
+  customer?: string;
+  customer_id?: string;
+  due_date?: string;
+  status?: WorkOrderStatusType;
+  priority?: WorkOrderPriorityType;
+  technician?: string;
+  technician_id?: string;
+  serviceCategory?: string;
+  service_type?: string;
+  estimated_hours?: number;
+  location?: string;
+  vehicle_id?: string;
+  vehicle?: string;
+  notes?: string;
+  make?: string;
+  model?: string;
+  year?: string;
+  vin?: string;
+  // Form-specific fields
+  vehicleMake?: string;
+  vehicleModel?: string;
+  vehicleYear?: string;
+  odometer?: string;
+  licensePlate?: string;
+  dueDate?: Date | string;
   inventoryItems?: WorkOrderInventoryItem[];
 }
 
@@ -141,6 +149,15 @@ export interface WorkOrderFormValues {
   technician_id: string;
   inventoryItems: WorkOrderInventoryItem[];
 }
+
+// Define Work Order Types
+export const WorkOrderTypes = {
+  REPAIR: "repair",
+  MAINTENANCE: "maintenance",
+  INSPECTION: "inspection",
+  DIAGNOSTICS: "diagnostics",
+  OTHER: "other"
+};
 
 export const statusMap = {
   "pending": "Pending",

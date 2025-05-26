@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
@@ -17,7 +16,7 @@ import {
   WorkOrder, 
   priorityMap, 
   statusMap 
-} from "@/types/workOrder";
+} from "@/types/workOrder"; // Using consolidated types
 
 interface WorkOrdersTableProps {
   workOrders: WorkOrder[];
