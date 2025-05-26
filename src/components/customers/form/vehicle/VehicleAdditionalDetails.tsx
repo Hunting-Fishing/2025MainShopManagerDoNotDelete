@@ -90,7 +90,7 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
         </Card>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <FormField
           control={form.control}
           name={`vehicles.${index}.color`}
@@ -146,6 +146,86 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
                 <Input 
                   {...field} 
                   placeholder={decodedDetails?.transmission || "e.g., Automatic, Manual"}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name={`vehicles.${index}.fuel_type`}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Fuel Type</FormLabel>
+              <FormControl>
+                <Input 
+                  {...field} 
+                  placeholder={decodedDetails?.fuel_type || "e.g., Gasoline, Diesel, Hybrid"}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name={`vehicles.${index}.drive_type`}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Drive Type</FormLabel>
+              <FormControl>
+                <Input 
+                  {...field} 
+                  placeholder="e.g., FWD, RWD, AWD, 4WD"
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name={`vehicles.${index}.body_style`}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Body Style</FormLabel>
+              <FormControl>
+                <Input 
+                  {...field} 
+                  placeholder={decodedDetails?.body_style || "e.g., Sedan, SUV, Truck"}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name={`vehicles.${index}.country`}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Country of Origin</FormLabel>
+              <FormControl>
+                <Input 
+                  {...field} 
+                  placeholder={decodedDetails?.country || "e.g., United States, Japan"}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name={`vehicles.${index}.gvwr`}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>GVWR</FormLabel>
+              <FormControl>
+                <Input 
+                  {...field} 
+                  placeholder={decodedDetails?.gvwr || "Gross Vehicle Weight Rating"}
                 />
               </FormControl>
             </FormItem>
