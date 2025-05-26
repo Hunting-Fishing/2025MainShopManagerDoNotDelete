@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect } from "react";
 import { FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { UseFormReturn } from "react-hook-form";
@@ -58,21 +57,33 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
 
   // Handle adding a special order item
   const handleAddSpecialOrder = (item: any) => {
-    // Ensure all required properties are present with proper defaults
+    // Create a properly typed WorkOrderInventoryItem with all required fields
     const newItem: WorkOrderInventoryItem = {
-      id: item.id || `temp-${Date.now()}`,
-      name: item.name || 'Special Order Item',
-      sku: item.sku || `SO-${Date.now().toString(36)}`,
-      category: item.category || 'Special Order',
-      quantity: item.quantity || 1,
-      unit_price: item.unit_price || 0,
-      total: (item.quantity || 1) * (item.unit_price || 0),
-      notes: item.notes,
-      itemStatus: item.itemStatus || 'special-order',
-      estimatedArrivalDate: item.estimatedArrivalDate,
-      supplierName: item.supplierName,
-      supplierOrderRef: item.supplierOrderRef
+      id: item.id ?? `temp-${Date.now()}`,
+      name: item.name ?? 'Special Order Item',
+      sku: item.sku ?? `SO-${Date.now().toString(36)}`,
+      category: item.category ?? 'Special Order',
+      quantity: item.quantity ?? 1,
+      unit_price: item.unit_price ?? 0,
+      total: (item.quantity ?? 1) * (item.unit_price ?? 0)
     };
+    
+    // Add optional properties if they exist
+    if (item.notes !== undefined) {
+      newItem.notes = item.notes;
+    }
+    if (item.itemStatus !== undefined) {
+      newItem.itemStatus = item.itemStatus;
+    }
+    if (item.estimatedArrivalDate !== undefined) {
+      newItem.estimatedArrivalDate = item.estimatedArrivalDate;
+    }
+    if (item.supplierName !== undefined) {
+      newItem.supplierName = item.supplierName;
+    }
+    if (item.supplierOrderRef !== undefined) {
+      newItem.supplierOrderRef = item.supplierOrderRef;
+    }
     
     const currentItems = form.getValues("inventoryItems") || [];
     form.setValue("inventoryItems", [...currentItems, newItem], { shouldValidate: true });
