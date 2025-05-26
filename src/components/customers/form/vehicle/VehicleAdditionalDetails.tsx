@@ -1,11 +1,13 @@
 
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
-import { FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Zap } from "lucide-react";
 import { VinDecodeResult } from "@/types/vehicle";
-import { Info } from "lucide-react";
 
 interface VehicleAdditionalDetailsProps {
   form: UseFormReturn<any>;
@@ -13,41 +15,79 @@ interface VehicleAdditionalDetailsProps {
   decodedDetails?: VinDecodeResult | null;
 }
 
-export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> = ({ 
-  form, 
-  index, 
-  decodedDetails 
+export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> = ({
+  form,
+  index,
+  decodedDetails
 }) => {
-  // Watch current form values to show what's populated
-  const currentValues = form.watch(`vehicles.${index}`);
-  
-  return (
-    <div className="mt-6 space-y-4">
-      {decodedDetails && (
-        <Card className="bg-blue-50 border-blue-200">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center text-blue-700">
-              <Info className="h-4 w-4 mr-2" />
-              VIN Decoded Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-xs text-blue-600">
-            <p>The following details were automatically populated from the VIN decode:</p>
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              {decodedDetails.transmission && <span>• Transmission: {decodedDetails.transmission}</span>}
-              {decodedDetails.fuel_type && <span>• Fuel Type: {decodedDetails.fuel_type}</span>}
-              {decodedDetails.drive_type && <span>• Drive Type: {decodedDetails.drive_type}</span>}
-              {decodedDetails.engine && <span>• Engine: {decodedDetails.engine}</span>}
-              {decodedDetails.body_style && <span>• Body Style: {decodedDetails.body_style}</span>}
-              {decodedDetails.country && <span>• Country: {decodedDetails.country}</span>}
-              {decodedDetails.trim && <span>• Trim: {decodedDetails.trim}</span>}
-              {decodedDetails.gvwr && <span>• GVWR: {decodedDetails.gvwr}</span>}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+  // Check if we have any decoded details to show
+  const hasDecodedData = decodedDetails && Object.values(decodedDetails).some(value => value !== null && value !== '');
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+  const transmissionOptions = [
+    'Automatic',
+    'Manual',
+    'CVT',
+    'Semi-Automatic',
+    'Dual Clutch',
+    'Other'
+  ];
+
+  const fuelTypeOptions = [
+    'Gasoline',
+    'Diesel', 
+    'Electric',
+    'Hybrid',
+    'Plug-in Hybrid',
+    'Flex-Fuel',
+    'CNG',
+    'LPG',
+    'Hydrogen',
+    'Other'
+  ];
+
+  const driveTypeOptions = [
+    'FWD',
+    'RWD', 
+    'AWD',
+    '4WD',
+    '4x4',
+    'Part-time 4WD',
+    'Other'
+  ];
+
+  const bodyStyleOptions = [
+    'Sedan',
+    'Hatchback',
+    'Coupe',
+    'Convertible',
+    'Wagon',
+    'SUV',
+    'Crossover',
+    'Minivan',
+    'Van',
+    'Pickup',
+    'Truck',
+    'Bus',
+    'Motorcycle',
+    'Off-road',
+    'Other'
+  ];
+
+  return (
+    <Card className="mt-4">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base">Additional Vehicle Details</CardTitle>
+          {hasDecodedData && (
+            <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">
+              <Zap className="h-3 w-3 mr-1" />
+              VIN Decoded
+            </Badge>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Color */}
         <FormField
           control={form.control}
           name={`vehicles.${index}.color`}
@@ -57,13 +97,16 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
               <FormControl>
                 <Input 
                   {...field} 
-                  placeholder="e.g., Red, Blue, Silver"
+                  placeholder="Vehicle color"
+                  className={decodedDetails?.color ? "bg-green-50 border-green-200" : ""}
                 />
               </FormControl>
+              <FormMessage />
             </FormItem>
           )}
         />
 
+        {/* Trim Level */}
         <FormField
           control={form.control}
           name={`vehicles.${index}.trim`}
@@ -73,14 +116,132 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
               <FormControl>
                 <Input 
                   {...field} 
-                  placeholder={decodedDetails?.trim || "e.g., LT, EX, Premium"}
-                  value={field.value || currentValues?.trim || ''}
+                  placeholder="Trim level"
+                  className={decodedDetails?.trim ? "bg-green-50 border-green-200" : ""}
                 />
               </FormControl>
+              <FormMessage />
             </FormItem>
           )}
         />
 
+        {/* Transmission */}
+        <FormField
+          control={form.control}
+          name={`vehicles.${index}.transmission`}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Transmission</FormLabel>
+              <Select 
+                onValueChange={field.onChange} 
+                value={field.value || ''}
+              >
+                <FormControl>
+                  <SelectTrigger className={decodedDetails?.transmission ? "bg-green-50 border-green-200" : ""}>
+                    <SelectValue placeholder="Select transmission" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {transmissionOptions.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Fuel Type */}
+        <FormField
+          control={form.control}
+          name={`vehicles.${index}.fuel_type`}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Fuel Type</FormLabel>
+              <Select 
+                onValueChange={field.onChange} 
+                value={field.value || ''}
+              >
+                <FormControl>
+                  <SelectTrigger className={decodedDetails?.fuel_type ? "bg-green-50 border-green-200" : ""}>
+                    <SelectValue placeholder="Select fuel type" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {fuelTypeOptions.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Drive Type */}
+        <FormField
+          control={form.control}
+          name={`vehicles.${index}.drive_type`}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Drive Type</FormLabel>
+              <Select 
+                onValueChange={field.onChange} 
+                value={field.value || ''}
+              >
+                <FormControl>
+                  <SelectTrigger className={decodedDetails?.drive_type ? "bg-green-50 border-green-200" : ""}>
+                    <SelectValue placeholder="Select drive type" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {driveTypeOptions.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Body Style */}
+        <FormField
+          control={form.control}
+          name={`vehicles.${index}.body_style`}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Body Style</FormLabel>
+              <Select 
+                onValueChange={field.onChange} 
+                value={field.value || ''}
+              >
+                <FormControl>
+                  <SelectTrigger className={decodedDetails?.body_style ? "bg-green-50 border-green-200" : ""}>
+                    <SelectValue placeholder="Select body style" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {bodyStyleOptions.map((option) => (
+                    <SelectItem key={option} value={option.toLowerCase()}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Engine */}
         <FormField
           control={form.control}
           name={`vehicles.${index}.engine`}
@@ -90,82 +251,16 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
               <FormControl>
                 <Input 
                   {...field} 
-                  placeholder={decodedDetails?.engine || "e.g., 2.4L 4-Cylinder"}
-                  value={field.value || currentValues?.engine || ''}
+                  placeholder="Engine details"
+                  className={decodedDetails?.engine ? "bg-green-50 border-green-200" : ""}
                 />
               </FormControl>
+              <FormMessage />
             </FormItem>
           )}
         />
 
-        <FormField
-          control={form.control}
-          name={`vehicles.${index}.transmission`}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Transmission</FormLabel>
-              <FormControl>
-                <Input 
-                  {...field} 
-                  placeholder={decodedDetails?.transmission || "e.g., Automatic, Manual"}
-                  value={field.value || currentValues?.transmission || ''}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name={`vehicles.${index}.fuel_type`}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Fuel Type</FormLabel>
-              <FormControl>
-                <Input 
-                  {...field} 
-                  placeholder={decodedDetails?.fuel_type || "e.g., Gasoline, Diesel, Hybrid"}
-                  value={field.value || currentValues?.fuel_type || ''}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name={`vehicles.${index}.drive_type`}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Drive Type</FormLabel>
-              <FormControl>
-                <Input 
-                  {...field} 
-                  placeholder={decodedDetails?.drive_type || "e.g., FWD, RWD, AWD, 4WD"}
-                  value={field.value || currentValues?.drive_type || ''}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name={`vehicles.${index}.body_style`}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Body Style</FormLabel>
-              <FormControl>
-                <Input 
-                  {...field} 
-                  placeholder={decodedDetails?.body_style || "e.g., Sedan, SUV, Truck"}
-                  value={field.value || currentValues?.body_style || ''}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-
+        {/* Country of Origin */}
         <FormField
           control={form.control}
           name={`vehicles.${index}.country`}
@@ -175,14 +270,16 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
               <FormControl>
                 <Input 
                   {...field} 
-                  placeholder={decodedDetails?.country || "e.g., United States, Japan"}
-                  value={field.value || currentValues?.country || ''}
+                  placeholder="Country of origin"
+                  className={decodedDetails?.country ? "bg-green-50 border-green-200" : ""}
                 />
               </FormControl>
+              <FormMessage />
             </FormItem>
           )}
         />
 
+        {/* GVWR */}
         <FormField
           control={form.control}
           name={`vehicles.${index}.gvwr`}
@@ -192,14 +289,15 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
               <FormControl>
                 <Input 
                   {...field} 
-                  placeholder={decodedDetails?.gvwr || "Gross Vehicle Weight Rating"}
-                  value={field.value || currentValues?.gvwr || ''}
+                  placeholder="Gross Vehicle Weight Rating"
+                  className={decodedDetails?.gvwr ? "bg-green-50 border-green-200" : ""}
                 />
               </FormControl>
+              <FormMessage />
             </FormItem>
           )}
         />
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };

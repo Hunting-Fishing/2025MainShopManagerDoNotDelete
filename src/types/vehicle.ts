@@ -29,6 +29,7 @@ export interface VinDecodeResult {
   engine?: string | null;
   gvwr?: string | null;
   trim?: string | null;
+  color?: string | null;
 }
 
 export interface Vehicle {

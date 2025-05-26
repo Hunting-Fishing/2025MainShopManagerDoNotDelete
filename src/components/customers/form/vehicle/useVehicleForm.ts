@@ -1,8 +1,8 @@
+
 import { useState, useEffect } from 'react';
-import { UseFormReturn } from 'react-hook-form';
-import { CarMake, CarModel, VinDecodeResult } from '@/types/vehicle';
+import { VinDecodeResult } from '@/types/vehicle';
 import { useVinDecoder } from './hooks/useVinDecoder';
-import { fetchMakes, fetchModels as fetchModelsFromAPI } from '@/services/vehicleDataService';
+import { UseFormReturn } from 'react-hook-form';
 
 interface UseVehicleFormProps {
   form: UseFormReturn<any>;
@@ -10,95 +10,88 @@ interface UseVehicleFormProps {
 }
 
 export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
-  const [makes, setMakes] = useState<CarMake[]>([]);
-  const [models, setModels] = useState<CarModel[]>([]);
+  const [makes, setMakes] = useState<any[]>([]);
+  const [models, setModels] = useState<any[]>([]);
   const [decodedVehicleInfo, setDecodedVehicleInfo] = useState<VinDecodeResult | null>(null);
   
   const { 
-    decode: decodeVin, 
+    decode, 
     isDecoding: vinProcessing, 
     error: vinError,
     canRetry,
     hasAttempted,
-    retry
+    retry: onVinRetry 
   } = useVinDecoder();
 
-  // Load makes on component mount
-  useEffect(() => {
-    const loadMakes = async () => {
-      try {
-        const makesData = await fetchMakes();
-        console.log('Loaded makes data:', makesData);
-        setMakes(makesData || []);
-      } catch (error) {
-        console.error('Error loading makes:', error);
-        setMakes([]);
-      }
-    };
+  // Mock data for makes - in a real app, this would come from an API
+  const mockMakes = [
+    { id: 'chevrolet', name: 'Chevrolet' },
+    { id: 'ford', name: 'Ford' },
+    { id: 'toyota', name: 'Toyota' },
+    { id: 'honda', name: 'Honda' },
+    { id: 'nissan', name: 'Nissan' },
+    { id: 'bmw', name: 'BMW' },
+    { id: 'mercedes-benz', name: 'Mercedes-Benz' },
+    { id: 'audi', name: 'Audi' },
+    { id: 'volkswagen', name: 'Volkswagen' },
+    { id: 'hyundai', name: 'Hyundai' },
+    { id: 'kia', name: 'Kia' },
+    { id: 'subaru', name: 'Subaru' },
+    { id: 'mazda', name: 'Mazda' },
+    { id: 'mitsubishi', name: 'Mitsubishi' },
+    { id: 'volvo', name: 'Volvo' },
+  ];
 
-    loadMakes();
+  // Mock data for models - in a real app, this would be filtered by make
+  const mockModels = [
+    { id: 'equinox', name: 'Equinox', make_id: 'chevrolet' },
+    { id: 'silverado', name: 'Silverado', make_id: 'chevrolet' },
+    { id: 'f-150', name: 'F-150', make_id: 'ford' },
+    { id: 'mustang', name: 'Mustang', make_id: 'ford' },
+    { id: 'camry', name: 'Camry', make_id: 'toyota' },
+    { id: 'corolla', name: 'Corolla', make_id: 'toyota' },
+    { id: 'civic', name: 'Civic', make_id: 'honda' },
+    { id: 'accord', name: 'Accord', make_id: 'honda' },
+  ];
+
+  useEffect(() => {
+    setMakes(mockMakes);
   }, []);
 
-  // Function to fetch models based on make
-  const fetchModels = async (makeId: string) => {
-    if (!makeId) {
-      console.log('No make ID provided, clearing models');
-      setModels([]);
-      return;
-    }
-
-    try {
-      console.log('Fetching models for make ID:', makeId);
-      const modelsData = await fetchModelsFromAPI(makeId);
-      console.log('Loaded models data:', modelsData);
-      setModels(modelsData || []);
-    } catch (error) {
-      console.error('Error loading models:', error);
-      setModels([]);
-    }
+  const fetchModels = (makeId: string) => {
+    console.log('Fetching models for make:', makeId);
+    const filteredModels = mockModels.filter(model => 
+      model.make_id.toLowerCase() === makeId.toLowerCase()
+    );
+    setModels(filteredModels);
   };
 
-  // Handle VIN decoding
   const handleVinDecode = async (vin: string) => {
-    if (!vin || vin.length !== 17) {
-      return;
-    }
-
+    console.log('Starting VIN decode process for:', vin);
+    
     try {
-      console.log('Starting VIN decode process for:', vin);
-      const result = await decodeVin(vin);
+      const result = await decode(vin);
       
       if (result) {
         console.log('VIN decode successful, result:', result);
         setDecodedVehicleInfo(result);
         
-        // Store decoded data in form - Basic Info
+        // Set all available fields from VIN decode result
         if (result.year) {
           console.log('Setting year:', result.year);
-          form.setValue(`vehicles.${index}.year`, result.year.toString());
-          form.setValue(`vehicles.${index}.decoded_year`, result.year.toString());
+          form.setValue(`vehicles.${index}.year`, String(result.year));
         }
         
         if (result.make) {
           console.log('Setting decoded make:', result.make);
-          form.setValue(`vehicles.${index}.decoded_make`, result.make);
+          // Handle make - try to match with existing makes or use raw value
+          const matchedMake = mockMakes.find(make => 
+            make.name.toLowerCase() === result.make?.toLowerCase()
+          );
           
-          // Check if we have makes in database and find matching make
-          if (makes.length > 0) {
-            const matchingMake = makes.find(make => 
-              make.make_display?.toLowerCase() === result.make?.toLowerCase()
-            );
-            
-            if (matchingMake) {
-              console.log('Found matching make in database:', matchingMake);
-              form.setValue(`vehicles.${index}.make`, matchingMake.make_id);
-              // Auto-fetch models for the matched make
-              fetchModels(matchingMake.make_id);
-            } else {
-              console.log('No matching make found in database for:', result.make);
-              // Clear the make field to allow manual selection
-              form.setValue(`vehicles.${index}.make`, '');
-            }
+          if (matchedMake) {
+            form.setValue(`vehicles.${index}.make`, matchedMake.id);
+            fetchModels(matchedMake.id);
           } else {
             console.log('No makes database available, using raw make value:', result.make);
             form.setValue(`vehicles.${index}.make`, result.make);
@@ -106,85 +99,62 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
         }
         
         if (result.model && result.model !== 'Unknown') {
-          console.log('Setting decoded model:', result.model);
-          form.setValue(`vehicles.${index}.decoded_model`, result.model);
-          
-          // If we have models and find a match, set it
-          if (models.length > 0) {
-            const matchingModel = models.find(model => 
-              model.model_name?.toLowerCase() === result.model?.toLowerCase()
-            );
-            
-            if (matchingModel) {
-              console.log('Found matching model in database:', matchingModel);
-              form.setValue(`vehicles.${index}.model`, matchingModel.model_name);
-            }
-          } else {
-            // Set the raw model value if no database
-            form.setValue(`vehicles.${index}.model`, result.model);
-          }
+          form.setValue(`vehicles.${index}.model`, result.model);
         }
-        
-        // Set additional decoded fields - THIS IS THE KEY FIX
+
+        // Set additional vehicle details
         if (result.transmission) {
           console.log('Setting transmission:', result.transmission);
           form.setValue(`vehicles.${index}.transmission`, result.transmission);
-          form.setValue(`vehicles.${index}.decoded_transmission`, result.transmission);
         }
         
         if (result.fuel_type) {
           console.log('Setting fuel_type:', result.fuel_type);
           form.setValue(`vehicles.${index}.fuel_type`, result.fuel_type);
-          form.setValue(`vehicles.${index}.decoded_fuel_type`, result.fuel_type);
         }
         
         if (result.drive_type) {
           console.log('Setting drive_type:', result.drive_type);
           form.setValue(`vehicles.${index}.drive_type`, result.drive_type);
-          form.setValue(`vehicles.${index}.decoded_drive_type`, result.drive_type);
         }
         
         if (result.engine) {
           console.log('Setting engine:', result.engine);
           form.setValue(`vehicles.${index}.engine`, result.engine);
-          form.setValue(`vehicles.${index}.decoded_engine`, result.engine);
         }
         
         if (result.body_style) {
           console.log('Setting body_style:', result.body_style);
           form.setValue(`vehicles.${index}.body_style`, result.body_style);
-          form.setValue(`vehicles.${index}.decoded_body_style`, result.body_style);
         }
         
         if (result.country) {
           console.log('Setting country:', result.country);
           form.setValue(`vehicles.${index}.country`, result.country);
-          form.setValue(`vehicles.${index}.decoded_country`, result.country);
         }
         
         if (result.trim) {
           console.log('Setting trim:', result.trim);
           form.setValue(`vehicles.${index}.trim`, result.trim);
-          form.setValue(`vehicles.${index}.decoded_trim`, result.trim);
         }
         
         if (result.gvwr) {
           console.log('Setting gvwr:', result.gvwr);
           form.setValue(`vehicles.${index}.gvwr`, result.gvwr);
-          form.setValue(`vehicles.${index}.decoded_gvwr`, result.gvwr);
+        }
+        
+        if (result.color) {
+          console.log('Setting color:', result.color);
+          form.setValue(`vehicles.${index}.color`, result.color);
         }
         
         // Trigger form validation
         form.trigger(`vehicles.${index}`);
       }
     } catch (error) {
-      console.error('VIN decode error:', error);
+      console.error('VIN decode failed:', error);
       setDecodedVehicleInfo(null);
     }
-  };
-
-  const onVinRetry = () => {
-    retry();
   };
 
   return {
