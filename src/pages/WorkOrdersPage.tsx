@@ -91,7 +91,12 @@ export default function WorkOrdersPage() {
                     
                     {workOrder.customer && (
                       <p className="text-sm text-gray-500">
-                        Customer: {typeof workOrder.customer === 'string' ? workOrder.customer : `${workOrder.customer.first_name || ''} ${workOrder.customer.last_name || ''}`}
+                        Customer: {typeof workOrder.customer === 'string' 
+                          ? workOrder.customer 
+                          : workOrder.customer && typeof workOrder.customer === 'object' && 'first_name' in workOrder.customer
+                            ? `${workOrder.customer.first_name || ''} ${workOrder.customer.last_name || ''}`.trim()
+                            : 'Unknown Customer'
+                        }
                       </p>
                     )}
                     

@@ -46,7 +46,6 @@ export const normalizeWorkOrder = (data: any): WorkOrder => {
     service_type: data.service_type,
     estimated_hours: data.estimated_hours,
     total_cost: data.total_cost,
-    created_by: data.created_by,
     created_at: data.created_at,
     updated_at: data.updated_at,
     start_time: data.start_time,
