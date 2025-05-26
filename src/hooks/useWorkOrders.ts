@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
+import { getAllWorkOrders, updateWorkOrderStatus } from '@/services/workOrder';
 
 export interface WorkOrder {
   id: string;
@@ -31,20 +31,8 @@ export function useWorkOrders() {
       setLoading(true);
       setError(null);
       
-      const { data, error } = await supabase
-        .from('work_orders')
-        .select(`
-          *,
-          customers (
-            first_name,
-            last_name
-          )
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      
-      setWorkOrders(data || []);
+      const data = await getAllWorkOrders();
+      setWorkOrders(data as WorkOrder[]);
     } catch (err: any) {
       setError(err.message);
       toast({
@@ -57,20 +45,16 @@ export function useWorkOrders() {
     }
   };
 
-  const updateWorkOrderStatus = async (id: string, status: WorkOrder['status']) => {
+  const updateStatus = async (id: string, status: WorkOrder['status']) => {
     try {
-      const { error } = await supabase
-        .from('work_orders')
-        .update({ status })
-        .eq('id', id);
-
-      if (error) throw error;
-      
-      await fetchWorkOrders();
-      toast({
-        title: "Success",
-        description: "Work order status updated"
-      });
+      const updatedWorkOrder = await updateWorkOrderStatus(id, status);
+      if (updatedWorkOrder) {
+        await fetchWorkOrders(); // Refresh the list
+        toast({
+          title: "Success",
+          description: "Work order status updated"
+        });
+      }
     } catch (err: any) {
       toast({
         title: "Error",
@@ -85,6 +69,6 @@ export function useWorkOrders() {
     loading,
     error,
     refetch: fetchWorkOrders,
-    updateWorkOrderStatus
+    updateWorkOrderStatus: updateStatus
   };
 }

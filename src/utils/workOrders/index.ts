@@ -2,7 +2,6 @@
 // Centralized work order utilities - single source of truth
 export * from './generators';
 export * from './mappers';
-export * from './crud';
 export * from './activity';
 export * from './formatters';
 export * from './constants';
@@ -23,3 +22,6 @@ export {
   priorityMap,
   determinePriority
 } from './constants';
+
+// Note: CRUD operations have been moved to src/services/workOrder/
+// Import getAllWorkOrders, getWorkOrderById, createWorkOrder, etc. from there
