@@ -17,7 +17,11 @@ interface MakeFieldProps extends BaseFieldProps {
 export const MakeField: React.FC<MakeFieldProps> = ({ form, index, makes = [], onMakeChange }) => {
   // Ensure makes is valid array
   const safeMakes = Array.isArray(makes) ? makes : [];
-  const decodedMake = form.watch(`vehicles.${index}.decoded_make`);
+  
+  // Get the current form values safely
+  const currentValues = form.getValues();
+  const vehicleData = currentValues.vehicles?.[index];
+  const decodedMake = vehicleData?.decoded_make;
   
   console.log('MakeField render - makes:', safeMakes);
   console.log('MakeField render - current form value:', form.getValues(`vehicles.${index}.make`));

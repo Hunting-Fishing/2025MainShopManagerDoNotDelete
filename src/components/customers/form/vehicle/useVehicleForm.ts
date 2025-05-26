@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import { CarMake, CarModel } from '@/types/vehicle';
+import { CarMake, CarModel, VinDecodeResult } from '@/types/vehicle';
 import { supabase } from '@/lib/supabase';
 import { useVinDecoder } from './hooks/useVinDecoder';
 
@@ -15,7 +15,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
   const [models, setModels] = useState<CarModel[]>([]);
   const [makesLoading, setMakesLoading] = useState(true);
   const [modelsLoading, setModelsLoading] = useState(false);
-  const [decodedVehicleInfo, setDecodedVehicleInfo] = useState(null);
+  const [decodedVehicleInfo, setDecodedVehicleInfo] = useState<VinDecodeResult | null>(null);
 
   const {
     decode: decodeVin,
@@ -107,14 +107,14 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
           // Wait for makes to be loaded if they're still loading
           if (makesLoading) {
             console.log('Makes still loading, waiting...');
-            // We'll handle this in the useEffect below
+            // Store the decoded make temporarily
+            form.setValue(`vehicles.${index}.decoded_make`, decodedMake);
             return;
           }
 
           if (makes.length === 0) {
-            console.log('No makes database available, setting decoded make as text value');
-            // Database is empty, but we have decoded data - allow user to see it
-            // Set it as a custom value that can be displayed
+            console.log('No makes database available, using raw make value:', decodedMake);
+            // Database is empty, use the raw decoded value
             form.setValue(`vehicles.${index}.make`, decodedMake);
             form.setValue(`vehicles.${index}.decoded_make`, decodedMake);
           } else {
@@ -128,11 +128,12 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
             if (matchingMake) {
               console.log('Found matching make in database:', matchingMake);
               form.setValue(`vehicles.${index}.make`, matchingMake.make_id);
+              form.setValue(`vehicles.${index}.decoded_make`, ''); // Clear temporary field
               // Fetch models for this make
               fetchModels(matchingMake.make_id);
             } else {
               console.log('No matching make found in database, preserving decoded value');
-              // No match found, but preserve the decoded information
+              // No match found, preserve the decoded information for manual entry
               form.setValue(`vehicles.${index}.make`, '');
               form.setValue(`vehicles.${index}.decoded_make`, decodedMake);
             }
@@ -154,7 +155,11 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
 
   // Handle the case where makes finish loading after VIN decode
   useEffect(() => {
-    const decodedMakeValue = form.getValues(`vehicles.${index}.decoded_make`);
+    // Get the current form values
+    const currentValues = form.getValues();
+    const vehicleData = currentValues.vehicles?.[index];
+    const decodedMakeValue = vehicleData?.decoded_make;
+    
     if (decodedMakeValue && makes.length > 0 && !makesLoading) {
       console.log('Makes loaded after VIN decode, trying to match:', decodedMakeValue);
       
