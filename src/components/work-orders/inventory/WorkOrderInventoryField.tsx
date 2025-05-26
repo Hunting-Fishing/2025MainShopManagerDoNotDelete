@@ -78,20 +78,22 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
   };
 
   // Convert items to proper WorkOrderInventoryItem format for display
-  const workOrderItems: WorkOrderInventoryItem[] = items.map(item => ({
-    id: item.id || `temp-${Date.now()}-${Math.random()}`,
-    name: item.name || 'Unknown Item',
-    sku: item.sku || 'NO-SKU',
-    category: item.category || 'General',
-    quantity: item.quantity || 1,
-    unit_price: item.unit_price || 0,
-    total: item.total || (item.quantity || 1) * (item.unit_price || 0),
-    notes: item.notes,
-    itemStatus: item.itemStatus,
-    estimatedArrivalDate: item.estimatedArrivalDate,
-    supplierName: item.supplierName,
-    supplierOrderRef: item.supplierOrderRef
-  }));
+  const workOrderItems: WorkOrderInventoryItem[] = items.map((item): WorkOrderInventoryItem => {
+    return {
+      id: item.id || `temp-${Date.now()}-${Math.random()}`,
+      name: item.name || 'Unknown Item',
+      sku: item.sku || 'NO-SKU',
+      category: item.category || 'General',
+      quantity: item.quantity || 1,
+      unit_price: item.unit_price || 0,
+      total: item.total || (item.quantity || 1) * (item.unit_price || 0),
+      notes: item.notes,
+      itemStatus: item.itemStatus,
+      estimatedArrivalDate: item.estimatedArrivalDate,
+      supplierName: item.supplierName,
+      supplierOrderRef: item.supplierOrderRef
+    };
+  });
 
   return (
     <FormField
