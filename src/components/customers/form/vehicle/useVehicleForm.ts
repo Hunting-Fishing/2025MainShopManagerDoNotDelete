@@ -40,18 +40,34 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     { make_id: 'mazda', make_display: 'Mazda' },
     { make_id: 'mitsubishi', make_display: 'Mitsubishi' },
     { make_id: 'volvo', make_display: 'Volvo' },
+    { make_id: 'general-motors', make_display: 'General Motors' },
+    { make_id: 'jeep', make_display: 'Jeep' },
+    { make_id: 'chrysler', make_display: 'Chrysler' },
+    { make_id: 'dodge', make_display: 'Dodge' },
+    { make_id: 'ram', make_display: 'Ram' },
   ];
 
   // Mock data for models with correct structure
   const mockModels = [
     { model_name: 'Equinox', model_display: 'Equinox', make_id: 'chevrolet' },
     { model_name: 'Silverado', model_display: 'Silverado', make_id: 'chevrolet' },
+    { model_name: 'Malibu', model_display: 'Malibu', make_id: 'chevrolet' },
+    { model_name: 'Tahoe', model_display: 'Tahoe', make_id: 'chevrolet' },
     { model_name: 'F-150', model_display: 'F-150', make_id: 'ford' },
     { model_name: 'Mustang', model_display: 'Mustang', make_id: 'ford' },
+    { model_name: 'Explorer', model_display: 'Explorer', make_id: 'ford' },
+    { model_name: 'Escape', model_display: 'Escape', make_id: 'ford' },
     { model_name: 'Camry', model_display: 'Camry', make_id: 'toyota' },
     { model_name: 'Corolla', model_display: 'Corolla', make_id: 'toyota' },
+    { model_name: 'RAV4', model_display: 'RAV4', make_id: 'toyota' },
+    { model_name: 'Prius', model_display: 'Prius', make_id: 'toyota' },
     { model_name: 'Civic', model_display: 'Civic', make_id: 'honda' },
     { model_name: 'Accord', model_display: 'Accord', make_id: 'honda' },
+    { model_name: 'CR-V', model_display: 'CR-V', make_id: 'honda' },
+    { model_name: 'Pilot', model_display: 'Pilot', make_id: 'honda' },
+    // Add models for other makes...
+    { model_name: 'Equinox', model_display: 'Equinox', make_id: 'general-motors' },
+    { model_name: 'Sierra', model_display: 'Sierra', make_id: 'general-motors' },
   ];
 
   useEffect(() => {
@@ -85,9 +101,15 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
         if (result.make) {
           console.log('Setting decoded make:', result.make);
           
+          // Normalize the make name for matching
+          const normalizedMake = result.make.toLowerCase().replace(/[^a-z0-9]/g, '-');
+          
           // Try to match with existing makes first
           const matchedMake = mockMakes.find(make => 
-            make.make_display.toLowerCase() === result.make?.toLowerCase()
+            make.make_display.toLowerCase() === result.make?.toLowerCase() ||
+            make.make_id === normalizedMake ||
+            make.make_id.includes(normalizedMake) ||
+            normalizedMake.includes(make.make_id)
           );
           
           if (matchedMake) {
@@ -104,7 +126,10 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
         }
         
         if (result.model && result.model !== 'Unknown') {
+          console.log('Setting model:', result.model);
           form.setValue(`vehicles.${index}.model`, result.model);
+          // Store decoded model separately for display purposes
+          form.setValue(`vehicles.${index}.decoded_model`, result.model);
         }
 
         // Set additional vehicle details
@@ -155,6 +180,9 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
         
         // Trigger form validation
         form.trigger(`vehicles.${index}`);
+      } else {
+        console.log('VIN decode returned no result');
+        setDecodedVehicleInfo(null);
       }
     } catch (error) {
       console.error('VIN decode failed:', error);

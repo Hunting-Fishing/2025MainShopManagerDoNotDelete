@@ -1,130 +1,29 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+}
 
 interface VinDecodeResult {
   year: string | number | null;
   make: string | null;
   model: string | null;
   transmission?: string | null;
-  transmission_type?: string | null;
-  drive_type?: string | null;
   fuel_type?: string | null;
+  engine?: string | null;
   body_style?: string | null;
   country?: string | null;
-  engine?: string | null;
-  gvwr?: string | null;
   trim?: string | null;
+  gvwr?: string | null;
   color?: string | null;
+  drive_type?: string | null;
 }
 
-serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
-  try {
-    const { vin } = await req.json();
-    
-    if (!vin || vin.length !== 17) {
-      throw new Error('Invalid VIN format');
-    }
-
-    console.log('Decoding VIN:', vin);
-
-    // Call NHTSA API
-    const nhtsaResponse = await fetch(
-      `https://vpic.nhtsa.dot.gov/api/vehicles/decodevin/${vin}?format=json`,
-      {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-        },
-      }
-    );
-
-    if (!nhtsaResponse.ok) {
-      throw new Error(`NHTSA API error: ${nhtsaResponse.status}`);
-    }
-
-    const nhtsaData = await nhtsaResponse.json();
-    
-    if (nhtsaData.Results && Array.isArray(nhtsaData.Results)) {
-      const results = nhtsaData.Results;
-      
-      const getValueByVariable = (variableId: number): string => {
-        const result = results.find(r => r.VariableId === variableId);
-        return result?.Value || '';
-      };
-
-      // Enhanced variable mapping for more fields
-      const vinResult: VinDecodeResult = {
-        year: parseInt(getValueByVariable(29)) || null,
-        make: getValueByVariable(26) || null,
-        model: getValueByVariable(28) || null,
-        transmission: getValueByVariable(37) || null,
-        fuel_type: getValueByVariable(24) || null,
-        engine: getValueByVariable(13) || null,
-        body_style: getValueByVariable(5) || null,
-        country: getValueByVariable(27) || null,
-        trim: getValueByVariable(109) || null,
-        gvwr: getValueByVariable(25) || null,
-        drive_type: getValueByVariable(35) || null,
-        color: getValueByVariable(17) || null,
-      };
-
-      // Clean up empty values
-      Object.keys(vinResult).forEach(key => {
-        if (vinResult[key as keyof VinDecodeResult] === '' || 
-            vinResult[key as keyof VinDecodeResult] === 'Not Applicable' ||
-            vinResult[key as keyof VinDecodeResult] === 'N/A') {
-          vinResult[key as keyof VinDecodeResult] = null;
-        }
-      });
-
-      console.log('VIN decode result:', vinResult);
-
-      return new Response(JSON.stringify(vinResult), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // If NHTSA fails, use fallback analysis
-    console.log('NHTSA data invalid, using fallback');
-    const fallbackResult = performFallbackVinAnalysis(vin);
-    
-    return new Response(JSON.stringify(fallbackResult), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-
-  } catch (error) {
-    console.error('VIN decode error:', error);
-    
-    // Try fallback analysis on error
-    try {
-      const { vin } = await req.json();
-      const fallbackResult = performFallbackVinAnalysis(vin);
-      
-      return new Response(JSON.stringify(fallbackResult), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    } catch (fallbackError) {
-      console.error('Fallback analysis failed:', fallbackError);
-      return new Response(JSON.stringify({ error: error.message }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-  }
-});
-
-function performFallbackVinAnalysis(vin: string): VinDecodeResult {
-  console.log('Performing fallback VIN analysis for:', vin);
+// Enhanced VIN analysis when API is unavailable
+const performFallbackVinAnalysis = (vin: string): VinDecodeResult => {
+  console.log('Performing enhanced fallback VIN analysis for:', vin);
   
   // Extract year from VIN (10th character)
   const yearChar = vin.charAt(9);
@@ -134,14 +33,17 @@ function performFallbackVinAnalysis(vin: string): VinDecodeResult {
   const countryChar = vin.charAt(0);
   const country = getCountryFromVinChar(countryChar);
   
-  // Basic make detection from WMI (first 3 characters)
+  // Enhanced make detection from WMI (first 3 characters)
   const wmi = vin.substring(0, 3);
   const make = getMakeFromWMI(wmi);
+  
+  // Try to extract more info from VIN structure
+  const model = getModelFromVin(vin, make);
   
   return {
     year,
     make,
-    model: null, // Cannot reliably determine model from VIN alone
+    model,
     country,
     transmission: null,
     fuel_type: null,
@@ -150,8 +52,9 @@ function performFallbackVinAnalysis(vin: string): VinDecodeResult {
     trim: null,
     gvwr: null,
     color: null,
+    drive_type: null,
   };
-}
+};
 
 function getYearFromVinChar(char: string): number | null {
   const yearMap: { [key: string]: number } = {
@@ -175,40 +78,214 @@ function getCountryFromVinChar(char: string): string {
   if (['J'].includes(firstChar)) return 'Japan';
   if (['K', 'L'].includes(firstChar)) return 'South Korea';
   if (['S', 'Z'].includes(firstChar)) return 'Europe';
-  if (['V', 'W', 'X', 'Y', 'Z'].includes(firstChar)) return 'Europe';
+  if (['V', 'W', 'X', 'Y'].includes(firstChar)) return 'Europe';
   
   return 'Unknown';
 }
 
 function getMakeFromWMI(wmi: string): string {
   const wmiMap: { [key: string]: string } = {
+    // General Motors
     '1G1': 'Chevrolet', '1G6': 'Cadillac', '1GM': 'Pontiac', '1GC': 'Chevrolet',
-    '1GB': 'Chevrolet', '1GK': 'GMC', '1GT': 'GMC', '1FA': 'Ford', '1FB': 'Ford',
-    '1FC': 'Ford', '1FD': 'Ford', '1FM': 'Ford', '1FT': 'Ford', '1H': 'Honda',
-    '1J': 'Jeep', '1L': 'Lincoln', '1M': 'Mercury', '1N': 'Nissan', '1VW': 'Volkswagen',
-    '2G': 'Chevrolet', '2C': 'Chrysler', '2F': 'Ford', '2H': 'Honda', '2T': 'Toyota',
-    '3F': 'Ford', '3G': 'Chevrolet', '3N': 'Nissan', '3VW': 'Volkswagen',
-    '4F': 'Mazda', '4J': 'Mercedes-Benz', '4S': 'Subaru', '4T': 'Toyota', '4U': 'BMW',
-    '5F': 'Honda', '5J': 'Honda', '5L': 'Lincoln', '5N': 'Nissan', '5T': 'Toyota',
-    'JH': 'Honda', 'JM': 'Mazda', 'JN': 'Nissan', 'JT': 'Toyota', 'KM': 'Hyundai',
-    'KN': 'Kia', 'SAL': 'Land Rover', 'SAJ': 'Jaguar', 'WAU': 'Audi', 'WBA': 'BMW',
-    'WDB': 'Mercedes-Benz', 'WVW': 'Volkswagen', 'YV1': 'Volvo', '2GN': 'Chevrolet'
+    '1GB': 'Chevrolet', '1GK': 'GMC', '1GT': 'GMC', '2G1': 'Chevrolet',
+    '2GN': 'Chevrolet', // Equinox WMI
+    
+    // Ford
+    '1FA': 'Ford', '1FB': 'Ford', '1FC': 'Ford', '1FD': 'Ford', 
+    '1FM': 'Ford', '1FT': 'Ford', '2FA': 'Ford', '3FA': 'Ford',
+    
+    // Honda
+    '1H': 'Honda', '2H': 'Honda', '5J': 'Honda', 'JH': 'Honda',
+    
+    // Toyota
+    '4T': 'Toyota', '5T': 'Toyota', 'JT': 'Toyota', '2T': 'Toyota',
+    
+    // Nissan
+    '1N': 'Nissan', '3N': 'Nissan', '5N': 'Nissan', 'JN': 'Nissan',
+    
+    // European brands
+    'WAU': 'Audi', 'WBA': 'BMW', 'WDB': 'Mercedes-Benz', 'WVW': 'Volkswagen',
+    'YV1': 'Volvo', 'SAL': 'Land Rover', 'SAJ': 'Jaguar',
+    
+    // Hyundai/Kia
+    'KM': 'Hyundai', 'KN': 'Kia', 'KMA': 'Hyundai', 'KNA': 'Kia',
+    
+    // Chrysler/Jeep
+    '1C': 'Chrysler', '1J': 'Jeep', '2C': 'Chrysler',
+    
+    // Mazda
+    '4F': 'Mazda', 'JM': 'Mazda',
+    
+    // Subaru
+    '4S': 'Subaru', 'JF': 'Subaru',
+    
+    // Mitsubishi
+    'JA': 'Mitsubishi', '4A': 'Mitsubishi',
   };
   
-  // Try exact match first
+  // Try exact 3-character match first
   if (wmiMap[wmi]) return wmiMap[wmi];
   
   // Try first two characters
   const twoChar = wmi.substring(0, 2);
   if (wmiMap[twoChar]) return wmiMap[twoChar];
   
-  // Try first character patterns
+  // Try first character patterns for broader matching
   const firstChar = wmi.charAt(0);
-  if (firstChar === '1') return 'GM/Ford';
-  if (firstChar === '2') return 'GM/Ford';
-  if (firstChar === 'J') return 'Japanese';
-  if (firstChar === 'K') return 'Korean';
-  if (firstChar === 'W') return 'German';
+  if (firstChar === '1') {
+    // US manufacturers
+    if (wmi.includes('G')) return 'General Motors';
+    if (wmi.includes('F')) return 'Ford';
+    return 'Unknown US Make';
+  }
+  if (firstChar === '2') return 'General Motors'; // Often GM Canada
+  if (firstChar === 'J') return 'Japanese Make';
+  if (firstChar === 'K') return 'Korean Make';
+  if (firstChar === 'W') return 'German Make';
   
   return 'Unknown';
 }
+
+function getModelFromVin(vin: string, make: string): string {
+  // For specific VIN pattern matching
+  const wmi = vin.substring(0, 3);
+  const vds = vin.substring(3, 9); // Vehicle descriptor section
+  
+  // Chevrolet Equinox patterns
+  if ((make === 'Chevrolet' || make === 'General Motors') && wmi === '2GN') {
+    return 'Equinox';
+  }
+  
+  // Add more specific model detection patterns here as needed
+  return 'Unknown';
+}
+
+serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { vin } = await req.json();
+    console.log('Decoding VIN:', vin);
+    
+    if (!vin || vin.length !== 17) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid VIN format' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    let result: VinDecodeResult | null = null;
+
+    // Try NHTSA API first
+    try {
+      console.log('Attempting NHTSA API call...');
+      const nhtsaResponse = await fetch(
+        `https://vpic.nhtsa.dot.gov/api/vehicles/decodevin/${vin}?format=json`,
+        {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'VIN-Decoder-Service/1.0'
+          },
+        }
+      );
+
+      if (!nhtsaResponse.ok) {
+        throw new Error(`NHTSA API error: ${nhtsaResponse.status}`);
+      }
+
+      const data = await nhtsaResponse.json();
+      console.log('NHTSA API response received');
+      
+      if (data.Results && Array.isArray(data.Results)) {
+        const results = data.Results;
+        
+        const getValueByVariable = (variableId: number): string => {
+          const result = results.find((r: any) => r.VariableId === variableId);
+          return result?.Value || '';
+        };
+
+        // Map NHTSA variable IDs to vehicle data
+        const year = getValueByVariable(29);
+        const make = getValueByVariable(26);
+        const model = getValueByVariable(28);
+        const transmission = getValueByVariable(37);
+        const fuel_type = getValueByVariable(24);
+        const engine = getValueByVariable(13);
+        const body_style = getValueByVariable(5);
+        const country = getValueByVariable(27);
+        const trim = getValueByVariable(109);
+        const gvwr = getValueByVariable(25);
+        const drive_type = getValueByVariable(15);
+
+        result = {
+          year: year ? parseInt(year) : null,
+          make: make || null,
+          model: model || null,
+          transmission: transmission || null,
+          fuel_type: fuel_type || null,
+          engine: engine || null,
+          body_style: body_style || null,
+          country: country || null,
+          trim: trim || null,
+          gvwr: gvwr || null,
+          color: null, // NHTSA doesn't provide color
+          drive_type: drive_type || null,
+        };
+
+        console.log('NHTSA decode successful:', result);
+      }
+    } catch (nhtsaError) {
+      console.log('NHTSA API failed:', nhtsaError.message);
+      // Continue to fallback
+    }
+
+    // If NHTSA failed or returned no useful data, use fallback analysis
+    if (!result || (!result.make && !result.model && !result.year)) {
+      console.log('Using fallback VIN analysis');
+      result = performFallbackVinAnalysis(vin);
+      console.log('Fallback analysis result:', result);
+    }
+
+    return new Response(
+      JSON.stringify(result),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
+
+  } catch (error) {
+    console.error('VIN decode error:', error);
+    
+    // Return a minimal fallback result instead of an error
+    try {
+      const { vin: errorVin } = await req.clone().json().catch(() => ({ vin: '' }));
+      if (errorVin && errorVin.length === 17) {
+        const fallbackResult = performFallbackVinAnalysis(errorVin);
+        console.log('Emergency fallback result:', fallbackResult);
+        return new Response(
+          JSON.stringify(fallbackResult),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+    } catch (fallbackError) {
+      console.error('Fallback analysis failed:', fallbackError);
+    }
+    
+    return new Response(
+      JSON.stringify({ error: error.message || 'VIN decode failed' }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
+  }
+});

@@ -41,7 +41,9 @@ export const useVinDecoder = (): UseVinDecoderReturn => {
         setError(null);
         return result;
       } else {
-        setError('Failed to decode VIN');
+        // Don't treat this as an error since our service now always returns a result
+        console.log('VIN decode returned null result');
+        setError('Unable to decode VIN - please enter vehicle details manually');
         return null;
       }
     } catch (err) {

@@ -29,7 +29,9 @@ export const MakeField: React.FC<MakeFieldProps> = ({ form, index, makes = [], o
   console.log('MakeField render - decoded make:', decodedMake);
   
   // Check if current value is a VIN decoded value (not in our makes list)
-  const isVinDecodedValue = currentMakeValue && !safeMakes.find(make => make.make_id === currentMakeValue);
+  const isVinDecodedValue = currentMakeValue && 
+    !safeMakes.find(make => make.make_id === currentMakeValue) &&
+    (decodedMake || safeMakes.length === 0);
   
   return (
     <FormField
@@ -80,10 +82,19 @@ export const MakeField: React.FC<MakeFieldProps> = ({ form, index, makes = [], o
               >
                 <FormControl>
                   <SelectTrigger className={isVinDecodedValue ? "border-green-200 bg-green-50" : ""}>
-                    <SelectValue placeholder={isVinDecodedValue ? `VIN: ${field.value}` : "Select make"} />
+                    <SelectValue placeholder={
+                      isVinDecodedValue ? `VIN: ${field.value} (click to override)` : "Select make"
+                    } />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
+                  {/* Show option to clear VIN decoded value */}
+                  {isVinDecodedValue && (
+                    <SelectItem value="" className="text-muted-foreground">
+                      Clear VIN decoded value
+                    </SelectItem>
+                  )}
+                  
                   {safeMakes
                     .filter(make => make.make_id && make.make_display) // Filter out invalid makes
                     .map((make) => (
