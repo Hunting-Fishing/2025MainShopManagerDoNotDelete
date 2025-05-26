@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { CarMake, CarModel, VinDecodeResult } from '@/types/vehicle';
@@ -73,7 +72,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
         console.log('VIN decode successful, result:', result);
         setDecodedVehicleInfo(result);
         
-        // Store decoded data in form
+        // Store decoded data in form - Basic Info
         if (result.year) {
           console.log('Setting year:', result.year);
           form.setValue(`vehicles.${index}.year`, result.year.toString());
@@ -106,7 +105,6 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
           }
         }
         
-        // Set other decoded fields
         if (result.model && result.model !== 'Unknown') {
           console.log('Setting decoded model:', result.model);
           form.setValue(`vehicles.${index}.decoded_model`, result.model);
@@ -127,32 +125,51 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
           }
         }
         
-        // Set additional decoded fields for reference
+        // Set additional decoded fields - THIS IS THE KEY FIX
         if (result.transmission) {
+          console.log('Setting transmission:', result.transmission);
           form.setValue(`vehicles.${index}.transmission`, result.transmission);
           form.setValue(`vehicles.${index}.decoded_transmission`, result.transmission);
         }
+        
         if (result.fuel_type) {
+          console.log('Setting fuel_type:', result.fuel_type);
           form.setValue(`vehicles.${index}.fuel_type`, result.fuel_type);
           form.setValue(`vehicles.${index}.decoded_fuel_type`, result.fuel_type);
         }
+        
+        if (result.drive_type) {
+          console.log('Setting drive_type:', result.drive_type);
+          form.setValue(`vehicles.${index}.drive_type`, result.drive_type);
+          form.setValue(`vehicles.${index}.decoded_drive_type`, result.drive_type);
+        }
+        
         if (result.engine) {
+          console.log('Setting engine:', result.engine);
           form.setValue(`vehicles.${index}.engine`, result.engine);
           form.setValue(`vehicles.${index}.decoded_engine`, result.engine);
         }
+        
         if (result.body_style) {
+          console.log('Setting body_style:', result.body_style);
           form.setValue(`vehicles.${index}.body_style`, result.body_style);
           form.setValue(`vehicles.${index}.decoded_body_style`, result.body_style);
         }
+        
         if (result.country) {
+          console.log('Setting country:', result.country);
           form.setValue(`vehicles.${index}.country`, result.country);
           form.setValue(`vehicles.${index}.decoded_country`, result.country);
         }
+        
         if (result.trim) {
+          console.log('Setting trim:', result.trim);
           form.setValue(`vehicles.${index}.trim`, result.trim);
           form.setValue(`vehicles.${index}.decoded_trim`, result.trim);
         }
+        
         if (result.gvwr) {
+          console.log('Setting gvwr:', result.gvwr);
           form.setValue(`vehicles.${index}.gvwr`, result.gvwr);
           form.setValue(`vehicles.${index}.decoded_gvwr`, result.gvwr);
         }

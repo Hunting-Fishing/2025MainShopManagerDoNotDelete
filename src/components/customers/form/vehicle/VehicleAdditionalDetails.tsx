@@ -1,12 +1,11 @@
 
-import React from 'react';
-import { UseFormReturn } from 'react-hook-form';
-import { VinDecodeResult } from '@/types/vehicle';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Info, Car, CheckCircle } from 'lucide-react';
+import React from "react";
+import { UseFormReturn } from "react-hook-form";
+import { FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { VinDecodeResult } from "@/types/vehicle";
+import { Info } from "lucide-react";
 
 interface VehicleAdditionalDetailsProps {
   form: UseFormReturn<any>;
@@ -14,77 +13,35 @@ interface VehicleAdditionalDetailsProps {
   decodedDetails?: VinDecodeResult | null;
 }
 
-export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> = ({
-  form,
-  index,
-  decodedDetails
+export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> = ({ 
+  form, 
+  index, 
+  decodedDetails 
 }) => {
-  const showDecodedInfo = decodedDetails && Object.keys(decodedDetails).length > 0;
-
+  // Watch current form values to show what's populated
+  const currentValues = form.watch(`vehicles.${index}`);
+  
   return (
-    <div className="space-y-4 mt-4">
-      {showDecodedInfo && (
-        <Card className="bg-gradient-to-r from-blue-50 to-green-50 border-blue-200">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              VIN Successfully Decoded
+    <div className="mt-6 space-y-4">
+      {decodedDetails && (
+        <Card className="bg-blue-50 border-blue-200">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center text-blue-700">
+              <Info className="h-4 w-4 mr-2" />
+              VIN Decoded Information
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-0">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
-              {decodedDetails.year && (
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-gray-600">Year:</span>
-                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                    {decodedDetails.year}
-                  </Badge>
-                </div>
-              )}
-              {decodedDetails.make && (
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-gray-600">Make:</span>
-                  <Badge variant="secondary" className="bg-green-100 text-green-800">
-                    {decodedDetails.make}
-                  </Badge>
-                </div>
-              )}
-              {decodedDetails.model && decodedDetails.model !== 'Unknown' && (
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-gray-600">Model:</span>
-                  <Badge variant="secondary" className="bg-purple-100 text-purple-800">
-                    {decodedDetails.model}
-                  </Badge>
-                </div>
-              )}
-              {decodedDetails.country && (
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-gray-600">Country:</span>
-                  <Badge variant="outline" className="border-gray-300">
-                    {decodedDetails.country}
-                  </Badge>
-                </div>
-              )}
-              {decodedDetails.transmission && (
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-gray-600">Transmission:</span>
-                  <Badge variant="outline" className="border-orange-300 text-orange-700">
-                    {decodedDetails.transmission}
-                  </Badge>
-                </div>
-              )}
-              {decodedDetails.fuel_type && (
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-gray-600">Fuel:</span>
-                  <Badge variant="outline" className="border-indigo-300 text-indigo-700">
-                    {decodedDetails.fuel_type}
-                  </Badge>
-                </div>
-              )}
-            </div>
-            <div className="mt-3 text-xs text-gray-500 flex items-center gap-1">
-              <Info className="h-3 w-3" />
-              This information was automatically extracted from the VIN
+          <CardContent className="text-xs text-blue-600">
+            <p>The following details were automatically populated from the VIN decode:</p>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {decodedDetails.transmission && <span>• Transmission: {decodedDetails.transmission}</span>}
+              {decodedDetails.fuel_type && <span>• Fuel Type: {decodedDetails.fuel_type}</span>}
+              {decodedDetails.drive_type && <span>• Drive Type: {decodedDetails.drive_type}</span>}
+              {decodedDetails.engine && <span>• Engine: {decodedDetails.engine}</span>}
+              {decodedDetails.body_style && <span>• Body Style: {decodedDetails.body_style}</span>}
+              {decodedDetails.country && <span>• Country: {decodedDetails.country}</span>}
+              {decodedDetails.trim && <span>• Trim: {decodedDetails.trim}</span>}
+              {decodedDetails.gvwr && <span>• GVWR: {decodedDetails.gvwr}</span>}
             </div>
           </CardContent>
         </Card>
@@ -98,7 +55,10 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
             <FormItem>
               <FormLabel>Color</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="Vehicle color" />
+                <Input 
+                  {...field} 
+                  placeholder="e.g., Red, Blue, Silver"
+                />
               </FormControl>
             </FormItem>
           )}
@@ -114,6 +74,7 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
                 <Input 
                   {...field} 
                   placeholder={decodedDetails?.trim || "e.g., LT, EX, Premium"}
+                  value={field.value || currentValues?.trim || ''}
                 />
               </FormControl>
             </FormItem>
@@ -130,6 +91,7 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
                 <Input 
                   {...field} 
                   placeholder={decodedDetails?.engine || "e.g., 2.4L 4-Cylinder"}
+                  value={field.value || currentValues?.engine || ''}
                 />
               </FormControl>
             </FormItem>
@@ -146,6 +108,7 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
                 <Input 
                   {...field} 
                   placeholder={decodedDetails?.transmission || "e.g., Automatic, Manual"}
+                  value={field.value || currentValues?.transmission || ''}
                 />
               </FormControl>
             </FormItem>
@@ -162,6 +125,7 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
                 <Input 
                   {...field} 
                   placeholder={decodedDetails?.fuel_type || "e.g., Gasoline, Diesel, Hybrid"}
+                  value={field.value || currentValues?.fuel_type || ''}
                 />
               </FormControl>
             </FormItem>
@@ -177,7 +141,8 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
               <FormControl>
                 <Input 
                   {...field} 
-                  placeholder="e.g., FWD, RWD, AWD, 4WD"
+                  placeholder={decodedDetails?.drive_type || "e.g., FWD, RWD, AWD, 4WD"}
+                  value={field.value || currentValues?.drive_type || ''}
                 />
               </FormControl>
             </FormItem>
@@ -194,6 +159,7 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
                 <Input 
                   {...field} 
                   placeholder={decodedDetails?.body_style || "e.g., Sedan, SUV, Truck"}
+                  value={field.value || currentValues?.body_style || ''}
                 />
               </FormControl>
             </FormItem>
@@ -210,6 +176,7 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
                 <Input 
                   {...field} 
                   placeholder={decodedDetails?.country || "e.g., United States, Japan"}
+                  value={field.value || currentValues?.country || ''}
                 />
               </FormControl>
             </FormItem>
@@ -226,6 +193,7 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
                 <Input 
                   {...field} 
                   placeholder={decodedDetails?.gvwr || "Gross Vehicle Weight Rating"}
+                  value={field.value || currentValues?.gvwr || ''}
                 />
               </FormControl>
             </FormItem>
