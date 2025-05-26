@@ -7,11 +7,11 @@ import { AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, adaptCustomerForUI } from "@/types/customer";
 
-// Import components
+// Import standardized form field components
 import { CustomerInfoSection } from "@/components/work-orders/CustomerInfoSection";
-import { WorkOrderStatusSection } from "@/components/work-orders/WorkOrderStatusSection";
-import { AssignmentSection } from "@/components/work-orders/AssignmentSection";
-import { NotesSection } from "@/components/work-orders/NotesSection";
+import { StatusFields } from "@/components/work-orders/form-fields/StatusFields";
+import { AssignmentFields } from "@/components/work-orders/form-fields/AssignmentFields";
+import { NotesField } from "@/components/work-orders/form-fields/NotesField";
 import { WorkOrderInventoryField } from "@/components/work-orders/inventory/WorkOrderInventoryField";
 import { EditFormActions } from "@/components/work-orders/edit/EditFormActions";
 
@@ -69,6 +69,9 @@ export const WorkOrderEditFormContent: React.FC<WorkOrderEditFormContentProps> =
     fetchCustomers();
   }, []);
 
+  // Convert technicians to the format expected by AssignmentFields
+  const technicianNames = technicians.map(tech => tech.name);
+
   return (
     <Card className="p-6">
       {error && (
@@ -86,13 +89,13 @@ export const WorkOrderEditFormContent: React.FC<WorkOrderEditFormContentProps> =
             <CustomerInfoSection form={form as any} customers={customers} isLoading={loadingCustomers} />
             
             {/* Status & Priority */}
-            <WorkOrderStatusSection form={form as any} />
+            <StatusFields form={form as any} />
             
             {/* Assignment */}
-            <AssignmentSection form={form as any} technicians={technicians} />
+            <AssignmentFields form={form as any} technicians={technicianNames} />
             
             {/* Notes */}
-            <NotesSection form={form as any} />
+            <NotesField form={form as any} />
 
             {/* Inventory Items */}
             <WorkOrderInventoryField form={form as any} />

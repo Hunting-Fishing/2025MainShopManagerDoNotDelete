@@ -1,11 +1,11 @@
 
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
-import { WorkOrderFormValues } from "@/types/workOrder";
+import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
 import { InventorySectionWrapper } from "./inventory/InventorySectionWrapper";
 
 interface WorkOrderInventorySectionProps {
-  form: UseFormReturn<WorkOrderFormValues>;
+  form: UseFormReturn<WorkOrderFormSchemaValues>;
 }
 
 const WorkOrderInventorySection: React.FC<WorkOrderInventorySectionProps> = ({ form }) => {
