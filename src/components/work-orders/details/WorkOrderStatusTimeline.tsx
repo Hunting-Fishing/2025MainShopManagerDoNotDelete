@@ -2,7 +2,7 @@
 import React from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Calendar, Clock, MapPin, User, AlertTriangle } from "lucide-react";
-import { WorkOrder } from "@/data/workOrdersData";
+import { WorkOrder } from "@/types/workOrder"; // Updated import
 import { formatDate } from "@/utils/workOrders";
 
 interface WorkOrderStatusTimelineProps {

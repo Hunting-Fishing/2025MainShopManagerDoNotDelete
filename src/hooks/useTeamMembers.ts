@@ -1,11 +1,10 @@
-
 import { useState, useEffect } from 'react';
 import { TeamMember } from "@/types/team";
 import { useFetchProfiles } from './team/useFetchProfiles';
 import { useFetchUserRoles } from './team/useFetchUserRoles';
-import { useFetchWorkOrders } from './team/useFetchWorkOrders';
 import { useTeamDataTransformer } from './team/useTeamDataTransformer';
 import { supabase } from '@/lib/supabase';
+import { getAllWorkOrders } from '@/services/workOrder'; // Direct service import
 
 /**
  * Interface for the status change details from team_member_history
@@ -27,8 +26,17 @@ export function useTeamMembers() {
   // Import the specialized hooks
   const { fetchProfiles } = useFetchProfiles();
   const { fetchUserRoles } = useFetchUserRoles();
-  const { fetchWorkOrders } = useFetchWorkOrders();
   const { transformData } = useTeamDataTransformer();
+
+  // Fetch work orders directly
+  const fetchWorkOrders = async () => {
+    try {
+      return await getAllWorkOrders();
+    } catch (error) {
+      console.error('Error fetching work orders:', error);
+      return [];
+    }
+  };
 
   useEffect(() => {
     async function fetchTeamMembers() {

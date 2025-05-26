@@ -1,3 +1,4 @@
+
 import { 
   startOfWeek, 
   endOfWeek, 
@@ -10,7 +11,7 @@ import {
 } from "date-fns";
 import { CalendarEvent } from "@/types/calendar";
 import { cn } from "@/lib/utils";
-import { priorityMap } from "@/data/workOrdersData";
+import { priorityMap } from "@/types/workOrder"; // Updated import
 import { ChatRoom } from "@/types/chat";
 
 interface CalendarWeekViewProps {

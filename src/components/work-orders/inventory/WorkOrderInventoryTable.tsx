@@ -3,10 +3,10 @@ import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Trash } from "lucide-react";
-import { ExtendedWorkOrderInventoryItem } from "./WorkOrderInventoryItem";
+import { WorkOrderInventoryItem } from "@/types/workOrder"; // Updated import
 
 interface WorkOrderInventoryTableProps {
-  items: ExtendedWorkOrderInventoryItem[];
+  items: WorkOrderInventoryItem[];
   onRemoveItem?: (id: string) => void;
   onUpdateQuantity?: (id: string, quantity: number) => void;
   readonly?: boolean;

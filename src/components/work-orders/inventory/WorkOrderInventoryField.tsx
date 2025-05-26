@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { UseFormReturn } from "react-hook-form";
@@ -8,8 +7,7 @@ import { InventorySectionHeader } from "./InventorySectionHeader";
 import { SpecialOrderDialog } from "./SpecialOrderDialog";
 import { useWorkOrderInventory } from "@/hooks/inventory/workOrder/useWorkOrderInventory";
 import { supabase } from "@/integrations/supabase/client";
-import { WorkOrderFormValues } from "@/types/workOrder";
-import { WorkOrderInventoryItem, ExtendedWorkOrderInventoryItem } from "./WorkOrderInventoryItem";
+import { WorkOrderFormValues, WorkOrderInventoryItem } from "@/types/workOrder";
 import { toExtendedWorkOrderItem } from "@/utils/inventory/adapters";
 
 interface WorkOrderInventoryFieldProps {
