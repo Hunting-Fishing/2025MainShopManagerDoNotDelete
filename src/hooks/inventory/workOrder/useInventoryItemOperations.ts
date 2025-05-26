@@ -6,37 +6,14 @@ import { InventoryItemExtended } from "@/types/inventory";
 import { WorkOrderInventoryItem } from "@/types/workOrder";
 
 /**
- * Hook to manage inventory item operations in a work order
+ * Hook to manage inventory item operations in a work order form
  */
 export const useInventoryItemOperations = (form: UseFormReturn<WorkOrderFormSchemaValues>) => {
-  const [items, setItems] = useState<WorkOrderInventoryItem[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // Internal methods to simulate API calls for now
-  const simulateAddInventoryCall = async (item: WorkOrderInventoryItem): Promise<WorkOrderInventoryItem> => {
-    return new Promise(resolve => {
-      setTimeout(() => resolve(item), 500);
-    });
-  };
-
-  const simulateRemoveInventoryCall = async (itemId: string): Promise<boolean> => {
-    return new Promise(resolve => {
-      setTimeout(() => resolve(true), 500);
-    });
-  };
-
-  const simulateUpdateInventoryCall = async (itemId: string, quantity: number): Promise<WorkOrderInventoryItem> => {
-    return new Promise(resolve => {
-      const item = items.find(i => i.id === itemId);
-      if (item) {
-        const updatedItem = { ...item, quantity, total: item.unit_price * quantity };
-        resolve(updatedItem);
-      } else {
-        throw new Error("Item not found");
-      }
-    });
-  };
+  // Get the current items from form
+  const items = form.watch("inventoryItems") || [];
 
   /**
    * Add inventory item to work order
@@ -45,24 +22,30 @@ export const useInventoryItemOperations = (form: UseFormReturn<WorkOrderFormSche
     try {
       setIsAdding(true);
       
-      const workOrderInventoryItem: WorkOrderInventoryItem = {
+      // Check if item already exists
+      const existingItemIndex = items.findIndex(item => item.id === inventoryItem.id);
+      
+      if (existingItemIndex >= 0) {
+        // Item exists, increase quantity
+        await updateQuantity(inventoryItem.id, items[existingItemIndex].quantity + 1);
+        return;
+      }
+      
+      // Add new item
+      const newItem: WorkOrderInventoryItem = {
         id: inventoryItem.id,
-        workOrderId: crypto.randomUUID(), // This would normally come from the work order
         name: inventoryItem.name,
         sku: inventoryItem.sku,
-        category: inventoryItem.category,
-        quantity: 1, // Default to 1
+        category: inventoryItem.category || '',
+        quantity: 1,
         unit_price: inventoryItem.unit_price,
-        total: inventoryItem.unit_price // total = unit_price * quantity (1)
+        total: inventoryItem.unit_price
       };
       
-      // Simulate API call
-      await simulateAddInventoryCall(workOrderInventoryItem);
+      const currentItems = form.getValues("inventoryItems") || [];
+      form.setValue("inventoryItems", [...currentItems, newItem], { shouldValidate: true });
       
-      // Update local state
-      setItems(prev => [...prev, workOrderInventoryItem]);
-      
-      return workOrderInventoryItem;
+      return newItem;
     } catch (error) {
       console.error("Error adding inventory item:", error);
       throw error;
@@ -76,11 +59,12 @@ export const useInventoryItemOperations = (form: UseFormReturn<WorkOrderFormSche
    */
   const removeItem = async (itemId: string) => {
     try {
-      // Simulate API call
-      await simulateRemoveInventoryCall(itemId);
-      
-      // Update local state
-      setItems(prev => prev.filter(item => item.id !== itemId));
+      const currentItems = form.getValues("inventoryItems") || [];
+      form.setValue(
+        "inventoryItems",
+        currentItems.filter(item => item.id !== itemId),
+        { shouldValidate: true }
+      );
       
       return true;
     } catch (error) {
@@ -96,15 +80,22 @@ export const useInventoryItemOperations = (form: UseFormReturn<WorkOrderFormSche
     try {
       setIsUpdating(true);
       
-      // Simulate API call
-      const updatedItem = await simulateUpdateInventoryCall(itemId, quantity);
+      const currentItems = form.getValues("inventoryItems") || [];
+      const updatedItems = currentItems.map(item => {
+        if (item.id === itemId) {
+          const newQuantity = Math.max(1, quantity); // Ensure minimum 1
+          return {
+            ...item,
+            quantity: newQuantity,
+            total: newQuantity * item.unit_price
+          };
+        }
+        return item;
+      });
       
-      // Update local state
-      setItems(prev => prev.map(item => 
-        item.id === itemId ? updatedItem : item
-      ));
+      form.setValue("inventoryItems", updatedItems, { shouldValidate: true });
       
-      return updatedItem;
+      return updatedItems.find(item => item.id === itemId);
     } catch (error) {
       console.error("Error updating inventory quantity:", error);
       throw error;

@@ -34,7 +34,7 @@ export const useWorkOrderInventory = (form: UseFormReturn<WorkOrderFormValues>) 
         category: selectedItem.category || '',
         quantity: 1,
         unit_price: selectedItem.unit_price,
-        total: selectedItem.unit_price // Ensure total is calculated and included
+        total: selectedItem.unit_price
       };
       
       const currentItems = form.getValues("inventoryItems") || [];
@@ -66,7 +66,7 @@ export const useWorkOrderInventory = (form: UseFormReturn<WorkOrderFormValues>) 
           return {
             ...item,
             quantity,
-            total: quantity * item.unit_price // Update total when quantity changes
+            total: quantity * item.unit_price
           };
         }
         return item;
@@ -78,13 +78,6 @@ export const useWorkOrderInventory = (form: UseFormReturn<WorkOrderFormValues>) 
     }
   };
   
-  // This function would be used for actual consumption from inventory
-  const consumeWorkOrderInventory = async (workOrderId: string) => {
-    // Implementation would connect to API to actually consume inventory
-    // Left as stub for future implementation
-    return Promise.resolve({ success: true });
-  };
-  
   return {
     showInventoryDialog,
     setShowInventoryDialog,
@@ -94,6 +87,5 @@ export const useWorkOrderInventory = (form: UseFormReturn<WorkOrderFormValues>) 
     handleAddItem,
     handleRemoveItem,
     handleUpdateQuantity,
-    consumeWorkOrderInventory
   };
 };

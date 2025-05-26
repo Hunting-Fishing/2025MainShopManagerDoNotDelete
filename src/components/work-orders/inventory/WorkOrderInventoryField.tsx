@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { UseFormReturn } from "react-hook-form";
@@ -5,29 +6,29 @@ import { WorkOrderInventoryTable } from "./WorkOrderInventoryTable";
 import { InventorySelectionDialog } from "./InventorySelectionDialog";
 import { InventorySectionHeader } from "./InventorySectionHeader";
 import { SpecialOrderDialog } from "./SpecialOrderDialog";
-import { useWorkOrderInventory } from "@/hooks/inventory/workOrder/useWorkOrderInventory";
+import { useInventoryItemOperations } from "@/hooks/inventory/workOrder/useInventoryItemOperations";
 import { supabase } from "@/integrations/supabase/client";
-import { WorkOrderFormValues, WorkOrderInventoryItem } from "@/types/workOrder";
+import { WorkOrderFormSchemaValues, WorkOrderInventoryItem } from "@/types/workOrder";
 import { toExtendedWorkOrderItem } from "@/utils/inventory/adapters";
 
 interface WorkOrderInventoryFieldProps {
-  form: UseFormReturn<WorkOrderFormValues>;
+  form: UseFormReturn<WorkOrderFormSchemaValues>;
 }
 
 export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = ({
   form
 }) => {
+  const [showInventoryDialog, setShowInventoryDialog] = useState(false);
   const [showSpecialOrderDialog, setShowSpecialOrderDialog] = useState(false);
   const [suppliers, setSuppliers] = useState<string[]>([]);
   
   const {
-    showInventoryDialog,
-    setShowInventoryDialog,
     items,
-    handleAddItem,
-    handleRemoveItem,
-    handleUpdateQuantity
-  } = useWorkOrderInventory(form);
+    isAdding,
+    addItem,
+    removeItem,
+    updateQuantity
+  } = useInventoryItemOperations(form);
 
   // Fetch suppliers for special order dialog
   useEffect(() => {
@@ -64,7 +65,7 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
       category: item.category,
       quantity: item.quantity,
       unit_price: item.unit_price || 0,
-      total: item.quantity * (item.unit_price || 0) // Ensure total is calculated
+      total: item.quantity * (item.unit_price || 0)
     };
     
     const currentItems = form.getValues("inventoryItems") || [];
@@ -90,8 +91,8 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
             
             <WorkOrderInventoryTable 
               items={extendedItems} 
-              onUpdateQuantity={handleUpdateQuantity}
-              onRemoveItem={handleRemoveItem}
+              onUpdateQuantity={updateQuantity}
+              onRemoveItem={removeItem}
             />
           </div>
 
@@ -99,7 +100,7 @@ export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = (
           <InventorySelectionDialog
             open={showInventoryDialog}
             onOpenChange={setShowInventoryDialog}
-            onAddItem={handleAddItem}
+            onAddItem={addItem}
           />
           
           {/* Special Order Dialog */}

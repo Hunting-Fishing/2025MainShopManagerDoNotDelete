@@ -1,46 +1,36 @@
 
-// Define status options for work orders
-export const statusOptions = [
-  { value: "pending", label: "Pending" },
-  { value: "in-progress", label: "In Progress" },
-  { value: "on-hold", label: "On Hold" },
-  { value: "completed", label: "Completed" },
-  { value: "cancelled", label: "Cancelled" }
+// Work Order Status Constants
+export const WORK_ORDER_STATUSES = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'in-progress', label: 'In Progress' },
+  { value: 'on-hold', label: 'On Hold' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'cancelled', label: 'Cancelled' }
 ];
 
-// Define priority options for work orders
-export const priorityOptions = [
-  { value: "low", label: "Low Priority" },
-  { value: "medium", label: "Medium Priority" },
-  { value: "high", label: "High Priority" }
+// Work Order Priority Constants
+export const WORK_ORDER_PRIORITIES = [
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+  { value: 'urgent', label: 'Urgent' }
 ];
 
-// Define technician options for work orders
-export const technicianOptions = [
-  { value: "john-doe", label: "John Doe" },
-  { value: "jane-smith", label: "Jane Smith" },
-  { value: "bob-johnson", label: "Bob Johnson" },
-  { value: "sarah-williams", label: "Sarah Williams" },
-  { value: "mike-brown", label: "Mike Brown" }
-];
-
-// Define service types for work orders
-export const serviceTypes = [
-  { value: "repair", label: "Repair" },
-  { value: "maintenance", label: "Maintenance" },
-  { value: "inspection", label: "Inspection" },
-  { value: "diagnostics", label: "Diagnostics" },
-  { value: "other", label: "Other" }
-];
-
-// Define service categories for work orders
-export const serviceCategories = [
-  { value: "engine", label: "Engine" },
-  { value: "transmission", label: "Transmission" },
-  { value: "brakes", label: "Brakes" },
-  { value: "suspension", label: "Suspension" },
-  { value: "electrical", label: "Electrical" },
-  { value: "body", label: "Body Work" },
-  { value: "interior", label: "Interior" },
-  { value: "other", label: "Other" }
-];
+// Default form values
+export const DEFAULT_WORK_ORDER_VALUES = {
+  customer: "",
+  description: "",
+  status: "pending",
+  priority: "medium",
+  technician: "",
+  location: "",
+  dueDate: "",
+  notes: "",
+  vehicleMake: "",
+  vehicleModel: "",
+  vehicleYear: "",
+  odometer: "",
+  licensePlate: "",
+  vin: "",
+  inventoryItems: []
+};

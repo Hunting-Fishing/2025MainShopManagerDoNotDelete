@@ -1,61 +1,61 @@
 
-import { Customer } from "./customer";
-import { Vehicle } from "./vehicle";
-import { InventoryItem } from "./inventory";
-
-export type WorkOrderStatusType = 
-  | "pending" 
-  | "in-progress" 
-  | "on-hold" 
-  | "completed" 
-  | "cancelled";
-
-export type WorkOrderPriorityType = 
-  | "low" 
-  | "medium" 
-  | "high";
-
-// Main WorkOrder interface with consistent property naming
+// Work Order Types - Standardized to match database schema (snake_case)
 export interface WorkOrder {
   id: string;
-  customer: string;
   customer_id?: string;
   vehicle_id?: string;
+  advisor_id?: string;
+  technician_id?: string;
+  estimated_hours?: number;
+  total_cost?: number;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+  start_time?: string;
+  end_time?: string;
+  service_category_id?: string;
+  invoiced_at?: string;
+  status: string;
   description?: string;
   service_type?: string;
-  status: WorkOrderStatusType;
-  priority: WorkOrderPriorityType;
-  date?: string;
-  dueDate?: string; // Keep this legacy camelCase property
-  due_date?: string; // And the snake_case version for consistency
-  technician?: string;
-  technician_id?: string;
-  location?: string;
-  notes?: string;
-  createdAt?: string; // Legacy camelCase property 
-  created_at?: string; // Snake_case version
-  updatedAt?: string; // Legacy camelCase property
-  updated_at?: string; // Snake_case version
-  start_time?: string; // Add missing start_time property
-  end_time?: string; // Add missing end_time property
   invoice_id?: string;
-  total_cost?: number;
-  estimated_hours?: number;
+  // Additional fields for UI
   timeEntries?: TimeEntry[];
-  time_entries?: TimeEntry[];
-  totalBillableTime?: number;
-  total_billable_time?: number;
-  inventory_items?: WorkOrderInventoryItem[];
   inventoryItems?: WorkOrderInventoryItem[];
-  customerData?: Customer;
-  vehicleData?: Vehicle;
-  vehicle_make?: string;
-  vehicle_model?: string;
-  service_category?: string; // Add missing service_category property
-  service_category_id?: string; // Add missing service_category_id property
-  invoiced_at?: string; // Add missing invoiced_at property
 }
 
+// Work Order Form Values - Used by form components
+export interface WorkOrderFormValues {
+  customer: string;
+  description: string;
+  status: string;
+  priority: string;
+  technician: string;
+  location: string;
+  dueDate: string;
+  notes: string;
+  vehicleMake: string;
+  vehicleModel: string;
+  vehicleYear: string;
+  odometer: string;
+  licensePlate: string;
+  vin: string;
+  inventoryItems: WorkOrderInventoryItem[];
+}
+
+// Inventory item within a work order
+export interface WorkOrderInventoryItem {
+  id: string;
+  workOrderId?: string;
+  name: string;
+  sku: string;
+  category: string;
+  quantity: number;
+  unit_price: number;
+  total: number;
+}
+
+// Time tracking entry
 export interface TimeEntry {
   id: string;
   work_order_id: string;
@@ -66,118 +66,26 @@ export interface TimeEntry {
   duration: number;
   billable: boolean;
   notes?: string;
-  created_at?: string;
+  created_at: string;
 }
 
-// Consolidated WorkOrderInventoryItem interface (from the deleted standalone file)
-export interface WorkOrderInventoryItem {
-  id: string;
-  name: string;
-  sku: string;
-  category: string;
-  workOrderId?: string;
-  quantity: number;
-  unit_price: number;
-  total: number;
-  notes?: string;
-  itemStatus?: "special-order" | "ordered" | "in-stock";
-  estimatedArrivalDate?: string;
-  supplierName?: string;
-  supplierOrderRef?: string;
-}
+// Work order status options
+export const WORK_ORDER_STATUSES = [
+  'pending',
+  'in-progress', 
+  'on-hold',
+  'completed',
+  'cancelled'
+] as const;
 
-export interface WorkOrderTemplate {
-  id: string;
-  name: string;
-  description?: string;
-  status: WorkOrderStatusType;
-  priority?: WorkOrderPriorityType;
-  technician?: string;
-  notes?: string;
-  location?: string;
-  created_at?: string;
-  last_used?: string;
-  lastUsed?: string; // Alias for compatibility
-  usage_count?: number;
-  items?: WorkOrderInventoryItem[];
-  inventory_items?: WorkOrderInventoryItem[];
-}
+export type WorkOrderStatus = typeof WORK_ORDER_STATUSES[number];
 
-// Consolidated form schema values (from the deleted types file)
-export interface WorkOrderFormSchemaValues {
-  title?: string;
-  description?: string;
-  customer?: string;
-  customer_id?: string;
-  due_date?: string;
-  status?: WorkOrderStatusType;
-  priority?: WorkOrderPriorityType;
-  technician?: string;
-  technician_id?: string;
-  serviceCategory?: string;
-  service_type?: string;
-  estimated_hours?: number;
-  location?: string;
-  vehicle_id?: string;
-  vehicle?: string;
-  notes?: string;
-  make?: string;
-  model?: string;
-  year?: string;
-  vin?: string;
-  // Form-specific fields
-  vehicleMake?: string;
-  vehicleModel?: string;
-  vehicleYear?: string;
-  odometer?: string;
-  licensePlate?: string;
-  dueDate?: Date | string;
-  inventoryItems?: WorkOrderInventoryItem[];
-}
+// Work order priority options
+export const WORK_ORDER_PRIORITIES = [
+  'low',
+  'medium',
+  'high',
+  'urgent'
+] as const;
 
-export interface WorkOrderFormValues {
-  estimated_hours: number;
-  status: WorkOrderStatusType;
-  description: string;
-  service_type: string;
-  customer: string;
-  location: string;
-  notes: string;
-  priority: WorkOrderPriorityType;
-  dueDate: string;
-  technician: string;
-  technician_id: string;
-  inventoryItems: WorkOrderInventoryItem[];
-}
-
-// Define Work Order Types
-export const WorkOrderTypes = {
-  REPAIR: "repair",
-  MAINTENANCE: "maintenance",
-  INSPECTION: "inspection",
-  DIAGNOSTICS: "diagnostics",
-  OTHER: "other"
-};
-
-export const statusMap = {
-  "pending": "Pending",
-  "in-progress": "In Progress",
-  "on-hold": "On Hold",
-  "completed": "Completed",
-  "cancelled": "Cancelled"
-};
-
-export const priorityMap = {
-  "low": {
-    label: "Low",
-    classes: "bg-blue-100 text-blue-800 border-blue-200"
-  },
-  "medium": {
-    label: "Medium",
-    classes: "bg-yellow-100 text-yellow-800 border-yellow-200"
-  },
-  "high": {
-    label: "High",
-    classes: "bg-red-100 text-red-800 border-red-200"
-  }
-};
+export type WorkOrderPriority = typeof WORK_ORDER_PRIORITIES[number];
