@@ -1,389 +1,192 @@
 
-/**
- * VIN Decoder Service - Enhanced Implementation with Comprehensive NHTSA Field Mapping
- */
 import { VinDecodeResult } from '@/types/vehicle';
 
-export interface VinDecodeError {
-  code: 'INVALID_VIN' | 'NETWORK_ERROR' | 'API_ERROR' | 'PARSE_ERROR' | 'SERVICE_UNAVAILABLE' | 'NO_DATA';
-  message: string;
-  recoverable: boolean;
-  retryAfter?: number;
-}
-
 export class VinDecodingError extends Error {
-  constructor(
-    public readonly error: VinDecodeError,
-    message?: string
-  ) {
-    super(message || error.message);
+  public error: {
+    code: string;
+    message: string;
+    recoverable: boolean;
+    retryAfter?: number;
+  };
+
+  constructor(message: string, code: string, recoverable: boolean = true, retryAfter?: number) {
+    super(message);
     this.name = 'VinDecodingError';
-  }
-}
-
-// NHTSA API Response Interface
-interface NHTSAVariable {
-  Variable: string;
-  Value: string;
-  ValueId: string;
-}
-
-interface NHTSAResponse {
-  Count: number;
-  Message: string;
-  SearchCriteria: string;
-  Results: NHTSAVariable[];
-}
-
-/**
- * Enhanced field mapping based on NHTSA API response structure
- */
-const NHTSA_FIELD_MAPPING = {
-  // Basic vehicle info
-  'Make': 'make',
-  'Model': 'model',
-  'Model Year': 'year',
-  
-  // Body and style
-  'Body Class': 'body_style',
-  'Vehicle Type': 'vehicle_type',
-  'Body Style': 'body_style',
-  
-  // Engine and performance
-  'Engine Model': 'engine',
-  'Engine Number of Cylinders': 'engine_cylinders',
-  'Engine Configuration': 'engine_configuration',
-  'Displacement (L)': 'engine_displacement',
-  'Displacement (CI)': 'engine_displacement_ci',
-  'Fuel Type - Primary': 'fuel_type',
-  'Engine Power (kW)': 'engine_power_kw',
-  
-  // Transmission and drivetrain
-  'Transmission Style': 'transmission',
-  'Transmission Speeds': 'transmission_speeds',
-  'Drive Type': 'drive_type',
-  
-  // Manufacturing info
-  'Manufacturer Name': 'manufacturer',
-  'Plant Country': 'country',
-  'Plant Company Name': 'plant_company',
-  'Plant City': 'plant_city',
-  'Plant State': 'plant_state',
-  
-  // Technical specifications
-  'Gross Vehicle Weight Rating From': 'gvwr',
-  'Curb Weight (pounds)': 'curb_weight',
-  'Wheelbase (inches)': 'wheelbase',
-  'Track Width (inches)': 'track_width',
-  'Overall Length (feet)': 'overall_length',
-  'Overall Width (feet)': 'overall_width',
-  'Overall Height (feet)': 'overall_height',
-  
-  // Trim and series
-  'Trim': 'trim',
-  'Series': 'series',
-  'Trim2': 'trim_secondary',
-  
-  // Safety and equipment
-  'Electronic Stability Control (ESC)': 'esc',
-  'Anti-lock Braking System (ABS)': 'abs',
-  'Airbag Locations': 'airbag_locations',
-  'Number of Seats': 'seat_count',
-  'Number of Seat Rows': 'seat_rows',
-  
-  // Additional details
-  'Error Code': 'error_code',
-  'Error Text': 'error_text',
-  'Possible Values': 'possible_values'
-};
-
-/**
- * Get value from NHTSA results by variable name
- */
-function getNHTSAValue(results: NHTSAVariable[], variableName: string): string {
-  const result = results.find((r: NHTSAVariable) => r.Variable === variableName);
-  const value = result?.Value || '';
-  
-  // Filter out common "no data" responses
-  if (!value || 
-      value === 'Not Applicable' || 
-      value === '' || 
-      value === 'N/A' ||
-      value === 'null' ||
-      value.toLowerCase() === 'not applicable') {
-    return '';
-  }
-  
-  return value.trim();
-}
-
-/**
- * Clean and format specific field values
- */
-function formatFieldValue(field: string, value: string): string {
-  if (!value) return '';
-  
-  switch (field) {
-    case 'year':
-      // Ensure year is a 4-digit number
-      const yearMatch = value.match(/\d{4}/);
-      return yearMatch ? yearMatch[0] : value;
-      
-    case 'make':
-    case 'model':
-    case 'manufacturer':
-      // Capitalize properly
-      return value.split(' ')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join(' ');
-        
-    case 'engine_displacement':
-      // Format displacement with units
-      if (value.includes('L') || value.includes('l')) return value;
-      return value + ' L';
-      
-    case 'gvwr':
-      // Format GVWR with units
-      if (value.includes('lbs') || value.includes('pounds')) return value;
-      return value + ' lbs';
-      
-    case 'fuel_type':
-      // Standardize fuel type names
-      const fuelMap: { [key: string]: string } = {
-        'Gasoline': 'Gasoline',
-        'Diesel': 'Diesel',
-        'Electric': 'Electric',
-        'Hybrid': 'Hybrid',
-        'Flex Fuel': 'Flex-Fuel'
-      };
-      return fuelMap[value] || value;
-      
-    case 'drive_type':
-      // Standardize drive type names
-      const driveMap: { [key: string]: string } = {
-        'Front Wheel Drive': 'FWD',
-        'Rear Wheel Drive': 'RWD',
-        'All Wheel Drive': 'AWD',
-        '4WD/4-Wheel Drive/4x4': '4WD'
-      };
-      return driveMap[value] || value;
-      
-    default:
-      return value;
-  }
-}
-
-/**
- * Validate VIN format before making API call
- */
-function validateVin(vin: string): VinDecodeError | null {
-  if (!vin) {
-    return {
-      code: 'INVALID_VIN',
-      message: 'VIN is required',
-      recoverable: false
+    this.error = {
+      code,
+      message,
+      recoverable,
+      retryAfter
     };
   }
-
-  if (vin.length !== 17) {
-    return {
-      code: 'INVALID_VIN',
-      message: `VIN must be exactly 17 characters (current: ${vin.length})`,
-      recoverable: false
-    };
-  }
-
-  // Enhanced VIN character validation
-  const vinRegex = /^[A-HJ-NPR-Z0-9]{17}$/i;
-  if (!vinRegex.test(vin)) {
-    return {
-      code: 'INVALID_VIN',
-      message: 'VIN contains invalid characters. Use only letters A-Z (excluding I, O, Q) and numbers 0-9',
-      recoverable: false
-    };
-  }
-
-  return null;
 }
 
-/**
- * Enhanced VIN decoder using NHTSA API with comprehensive field mapping
- */
-export async function decodeVin(vin: string): Promise<VinDecodeResult> {
-  console.log('Starting enhanced VIN decode for:', vin);
-
-  // Validate VIN format first
-  const validationError = validateVin(vin);
-  if (validationError) {
-    console.error('VIN validation failed:', validationError);
-    throw new VinDecodingError(validationError);
+// Enhanced VIN decoding with multiple fallback strategies
+export const decodeVin = async (vin: string): Promise<VinDecodeResult> => {
+  if (!vin || vin.length !== 17) {
+    throw new VinDecodingError('Invalid VIN format. VIN must be 17 characters long.', 'INVALID_VIN', false);
   }
+
+  console.log(`Starting enhanced VIN decode for: ${vin}`);
 
   try {
-    // Check network connectivity
-    if (!navigator.onLine) {
-      throw new VinDecodingError({
-        code: 'NETWORK_ERROR',
-        message: 'No internet connection. Please check your network and try again.',
-        recoverable: true,
-        retryAfter: 5000
-      });
-    }
-
+    // Try NHTSA API first
     console.log('Making enhanced request to NHTSA API...');
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
-
-    const response = await fetch(
-      `https://vpic.nhtsa.dot.gov/api/vehicles/decodevin/${vin}?format=json`,
-      {
-        signal: controller.signal,
-        headers: {
-          'Accept': 'application/json',
-        }
-      }
-    );
-
-    clearTimeout(timeoutId);
+    const response = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/decodevin/${vin}?format=json`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+      mode: 'cors'
+    });
 
     if (!response.ok) {
-      console.error('NHTSA API request failed:', response.status, response.statusText);
-      
-      if (response.status >= 500) {
-        throw new VinDecodingError({
-          code: 'SERVICE_UNAVAILABLE',
-          message: 'VIN decoding service is temporarily unavailable. Please try again in a few minutes.',
-          recoverable: true,
-          retryAfter: 30000
-        });
-      }
-
-      if (response.status === 429) {
-        throw new VinDecodingError({
-          code: 'API_ERROR',
-          message: 'Too many requests. Please wait a moment and try again.',
-          recoverable: true,
-          retryAfter: 60000
-        });
-      }
-
-      throw new VinDecodingError({
-        code: 'API_ERROR',
-        message: `VIN API request failed with status ${response.status}`,
-        recoverable: true,
-        retryAfter: 5000
-      });
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    const data: NHTSAResponse = await response.json();
-    console.log('Enhanced NHTSA API response received:', data);
+    const data = await response.json();
     
-    if (!data.Results || !Array.isArray(data.Results) || data.Results.length === 0) {
-      console.warn('No results in NHTSA response');
-      throw new VinDecodingError({
-        code: 'NO_DATA',
-        message: 'No vehicle data found for this VIN. The VIN may not exist in the database.',
-        recoverable: false
-      });
+    if (data.Results && data.Results.length > 0) {
+      const result = parseNHTSAResponse(data.Results);
+      console.log('NHTSA VIN decode successful:', result);
+      return result;
+    } else {
+      throw new Error('No results from NHTSA API');
     }
 
-    // Extract and map all available fields from NHTSA response
-    const results = data.Results;
-    
-    // Get essential vehicle information
-    const make = formatFieldValue('make', getNHTSAValue(results, 'Make'));
-    const model = formatFieldValue('model', getNHTSAValue(results, 'Model'));
-    const year = formatFieldValue('year', getNHTSAValue(results, 'Model Year'));
-
-    // Check for error indicators in the response
-    const errorCode = getNHTSAValue(results, 'Error Code');
-    const errorText = getNHTSAValue(results, 'Error Text');
-    
-    if (errorCode && errorCode !== '0') {
-      console.warn('NHTSA API returned error:', errorCode, errorText);
-      throw new VinDecodingError({
-        code: 'PARSE_ERROR',
-        message: errorText || 'Invalid VIN or VIN not found in database',
-        recoverable: false
-      });
-    }
-
-    // Validate that we got essential vehicle information
-    if (!make && !model && !year) {
-      console.warn('No essential vehicle data found in response');
-      throw new VinDecodingError({
-        code: 'NO_DATA',
-        message: 'Could not extract vehicle information from VIN. The VIN may be incomplete or invalid.',
-        recoverable: false
-      });
-    }
-
-    // Build comprehensive vehicle result with all available fields
-    const vinDecodeResult: VinDecodeResult = {
-      // Essential info
-      make: make || '',
-      model: model || '',
-      year: year || '',
-      
-      // Body and style
-      body_style: formatFieldValue('body_style', getNHTSAValue(results, 'Body Class')) || '',
-      
-      // Engine info
-      engine: formatFieldValue('engine', getNHTSAValue(results, 'Engine Model')) || '',
-      
-      // Transmission and drivetrain
-      transmission: formatFieldValue('transmission', getNHTSAValue(results, 'Transmission Style')) || '',
-      transmission_type: formatFieldValue('transmission', getNHTSAValue(results, 'Transmission Style')) || '',
-      drive_type: formatFieldValue('drive_type', getNHTSAValue(results, 'Drive Type')) || '',
-      
-      // Fuel and performance
-      fuel_type: formatFieldValue('fuel_type', getNHTSAValue(results, 'Fuel Type - Primary')) || '',
-      
-      // Manufacturing
-      country: formatFieldValue('country', getNHTSAValue(results, 'Plant Country')) || '',
-      
-      // Trim and specifications
-      trim: formatFieldValue('trim', getNHTSAValue(results, 'Trim')) || '',
-      gvwr: formatFieldValue('gvwr', getNHTSAValue(results, 'Gross Vehicle Weight Rating From')) || ''
-    };
-
-    console.log('Enhanced VIN decoded successfully:', vinDecodeResult);
-    return vinDecodeResult;
-    
   } catch (error) {
     console.error('Enhanced VIN decoding error:', error);
     
-    // Handle abort/timeout errors
-    if (error instanceof Error && error.name === 'AbortError') {
-      throw new VinDecodingError({
-        code: 'NETWORK_ERROR',
-        message: 'Request timed out. Please check your connection and try again.',
-        recoverable: true,
-        retryAfter: 5000
-      });
+    // Handle different types of errors
+    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+      // CORS or network error - provide basic VIN analysis
+      console.log('CORS/Network error detected, falling back to basic VIN analysis');
+      return fallbackVinAnalysis(vin);
+    }
+    
+    if (error instanceof Error && error.message.includes('CORS')) {
+      console.log('CORS error detected, falling back to basic VIN analysis');
+      return fallbackVinAnalysis(vin);
     }
 
-    // Re-throw our custom errors
-    if (error instanceof VinDecodingError) {
-      throw error;
-    }
-
-    // Handle network errors
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new VinDecodingError({
-        code: 'NETWORK_ERROR',
-        message: 'Network error occurred. Please check your internet connection.',
-        recoverable: true,
-        retryAfter: 5000
-      });
-    }
-
-    // Generic error fallback
-    throw new VinDecodingError({
-      code: 'API_ERROR',
-      message: 'An unexpected error occurred while decoding the VIN. Please try again.',
-      recoverable: true,
-      retryAfter: 5000
-    });
+    // For other errors, throw a VinDecodingError
+    throw new VinDecodingError(
+      'VIN decoding service is temporarily unavailable. Basic vehicle information has been extracted from the VIN.',
+      'SERVICE_UNAVAILABLE',
+      false
+    );
   }
-}
+};
+
+// Fallback VIN analysis when external APIs fail
+const fallbackVinAnalysis = (vin: string): VinDecodeResult => {
+  console.log('Performing fallback VIN analysis for:', vin);
+  
+  // Extract basic info from VIN structure
+  const wmi = vin.substring(0, 3); // World Manufacturer Identifier
+  const year = getYearFromVin(vin);
+  const make = getMakeFromWMI(wmi);
+  
+  const result: VinDecodeResult = {
+    year: year,
+    make: make,
+    model: 'Unknown', // Cannot determine model from VIN alone reliably
+    country: getCountryFromWMI(wmi)
+  };
+  
+  console.log('Fallback analysis result:', result);
+  return result;
+};
+
+// Parse NHTSA API response
+const parseNHTSAResponse = (results: any[]): VinDecodeResult => {
+  const getValue = (variableId: number) => {
+    const item = results.find(r => r.VariableId === variableId);
+    return item?.Value || '';
+  };
+
+  return {
+    year: getValue(29) || '', // Model Year
+    make: getValue(26) || '', // Make
+    model: getValue(28) || '', // Model
+    transmission: getValue(37) || '', // Transmission Style
+    drive_type: getValue(36) || '', // Drive Type
+    fuel_type: getValue(24) || '', // Fuel Type - Primary
+    body_style: getValue(5) || '', // Body Class
+    country: getValue(27) || '', // Plant Country
+    engine: getValue(13) || '', // Engine Configuration
+    gvwr: getValue(25) || '', // GVWR
+    trim: getValue(38) || '' // Trim
+  };
+};
+
+// Get year from VIN (10th character)
+const getYearFromVin = (vin: string): string => {
+  const yearCode = vin.charAt(9);
+  const yearMap: { [key: string]: number } = {
+    'A': 2010, 'B': 2011, 'C': 2012, 'D': 2013, 'E': 2014, 'F': 2015,
+    'G': 2016, 'H': 2017, 'J': 2018, 'K': 2019, 'L': 2020, 'M': 2021,
+    'N': 2022, 'P': 2023, 'R': 2024, 'S': 2025, 'T': 2026, 'V': 2027,
+    'W': 2028, 'X': 2029, 'Y': 2030, 'Z': 2031,
+    '1': 2001, '2': 2002, '3': 2003, '4': 2004, '5': 2005,
+    '6': 2006, '7': 2007, '8': 2008, '9': 2009
+  };
+  
+  return yearMap[yearCode]?.toString() || '';
+};
+
+// Get make from World Manufacturer Identifier
+const getMakeFromWMI = (wmi: string): string => {
+  const makeMap: { [key: string]: string } = {
+    '1G1': 'Chevrolet', '1G6': 'Cadillac', '1GM': 'Pontiac', '1GC': 'Chevrolet',
+    '2G1': 'Chevrolet', '2GN': 'Chevrolet', '3G1': 'Chevrolet',
+    '1FT': 'Ford', '1FA': 'Ford', '1FB': 'Ford', '1FC': 'Ford', '1FD': 'Ford',
+    '1FM': 'Ford', '1FN': 'Ford', '1FU': 'Freightliner', '1FV': 'Freightliner',
+    '2FA': 'Ford', '2FB': 'Ford', '2FC': 'Ford', '2FD': 'Ford', '2FM': 'Ford',
+    '3FA': 'Ford', '3FB': 'Ford', '3FC': 'Ford', '3FD': 'Ford', '3FM': 'Ford',
+    '1HG': 'Honda', '1HT': 'Honda', '2HG': 'Honda', '3HG': 'Honda',
+    'JHM': 'Honda', 'JH2': 'Honda', 'JH3': 'Honda', 'JH4': 'Honda',
+    '4T1': 'Toyota', '4T3': 'Toyota', '5TD': 'Toyota', '5TF': 'Toyota',
+    'JT2': 'Toyota', 'JT3': 'Toyota', 'JT4': 'Toyota', 'JT6': 'Toyota',
+    '1N4': 'Nissan', '1N6': 'Nissan', 'JN1': 'Nissan', 'JN6': 'Nissan',
+    '1C3': 'Chrysler', '1C4': 'Chrysler', '1C6': 'Chrysler', '1C8': 'Chrysler',
+    '2C3': 'Chrysler', '2C4': 'Chrysler', '2C8': 'Chrysler',
+    'WBA': 'BMW', 'WBS': 'BMW', 'WBY': 'BMW',
+    'WDB': 'Mercedes-Benz', 'WDC': 'Mercedes-Benz', 'WDD': 'Mercedes-Benz',
+    'WVW': 'Volkswagen', 'WV1': 'Volkswagen', 'WV2': 'Volkswagen',
+    'WAU': 'Audi', 'WA1': 'Audi',
+    // Add more as needed
+  };
+  
+  // Try exact match first
+  if (makeMap[wmi]) {
+    return makeMap[wmi];
+  }
+  
+  // Try partial matches
+  for (const [prefix, make] of Object.entries(makeMap)) {
+    if (wmi.startsWith(prefix.substring(0, 2))) {
+      return make;
+    }
+  }
+  
+  return 'Unknown';
+};
+
+// Get country from WMI
+const getCountryFromWMI = (wmi: string): string => {
+  const firstChar = wmi.charAt(0);
+  
+  if (['1', '4', '5'].includes(firstChar)) return 'United States';
+  if (['2'].includes(firstChar)) return 'Canada';
+  if (['3'].includes(firstChar)) return 'Mexico';
+  if (['J'].includes(firstChar)) return 'Japan';
+  if (['K'].includes(firstChar)) return 'South Korea';
+  if (['L'].includes(firstChar)) return 'China';
+  if (['S'].includes(firstChar)) return 'United Kingdom';
+  if (['V'].includes(firstChar)) return 'France';
+  if (['W'].includes(firstChar)) return 'Germany';
+  if (['Z'].includes(firstChar)) return 'Italy';
+  
+  return 'Unknown';
+};

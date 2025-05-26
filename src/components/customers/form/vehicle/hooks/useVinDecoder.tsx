@@ -24,8 +24,8 @@ export const useVinDecoder = () => {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const currentVinRef = useRef<string>('');
-  const maxRetries = 3;
-  const baseRetryDelay = 2000;
+  const maxRetries = 2; // Reduced retry attempts
+  const baseRetryDelay = 3000; // Reduced delay
 
   const clearState = useCallback(() => {
     setState({
@@ -88,9 +88,6 @@ export const useVinDecoder = () => {
     try {
       console.log(`VIN decode attempt ${state.retryCount + 1} for VIN: ${vin}`);
       
-      // Create new abort controller for this request
-      abortControllerRef.current = new AbortController();
-      
       const result = await decodeVin(vin);
       
       // Check if this is still the current VIN being processed
@@ -99,7 +96,7 @@ export const useVinDecoder = () => {
         return;
       }
       
-      // Success
+      // Success - even if it's fallback data
       setState(prev => ({ 
         ...prev, 
         isProcessing: false, 
@@ -110,11 +107,20 @@ export const useVinDecoder = () => {
 
       onSuccess(result);
       
-      toast({
-        title: "VIN Decoded Successfully",
-        description: `Vehicle identified as ${result.year} ${result.make} ${result.model}`,
-        variant: "default",
-      });
+      // Show appropriate success message
+      if (result.make === 'Unknown' || result.model === 'Unknown') {
+        toast({
+          title: "VIN Partially Decoded",
+          description: `Basic vehicle information extracted from VIN. Year: ${result.year}, Make: ${result.make}`,
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "VIN Decoded Successfully",
+          description: `Vehicle identified as ${result.year} ${result.make} ${result.model}`,
+          variant: "default",
+        });
+      }
 
     } catch (error) {
       console.error('VIN decode failed:', error);
@@ -125,14 +131,12 @@ export const useVinDecoder = () => {
         return;
       }
       
-      let errorMessage = 'Unknown error occurred';
+      let errorMessage = 'VIN decoding failed';
       let canRetry = false;
-      let retryAfter = baseRetryDelay;
 
       if (error instanceof VinDecodingError) {
         errorMessage = error.error.message;
         canRetry = error.error.recoverable && state.retryCount < maxRetries;
-        retryAfter = error.error.retryAfter || baseRetryDelay;
       } else if (error instanceof Error) {
         errorMessage = error.message;
         canRetry = state.retryCount < maxRetries;
@@ -148,32 +152,21 @@ export const useVinDecoder = () => {
 
       onError?.(errorMessage);
 
-      // Show appropriate toast based on error type
-      if (error instanceof VinDecodingError) {
-        const variant = error.error.recoverable ? "destructive" : "destructive";
-        const title = error.error.recoverable ? "VIN Decode Failed" : "Invalid VIN";
-        
-        toast({
-          title,
-          description: errorMessage,
-          variant,
-        });
-      } else {
-        toast({
-          title: "VIN Decode Error",
-          description: errorMessage,
-          variant: "destructive",
-        });
-      }
+      // Show toast for errors
+      toast({
+        title: "VIN Decode Error",
+        description: "Please enter vehicle details manually.",
+        variant: "destructive",
+      });
 
-      // Schedule auto-retry if applicable
+      // Only auto-retry for network/CORS errors
       if (canRetry && error instanceof VinDecodingError && error.error.recoverable) {
-        console.log(`Scheduling retry in ${retryAfter}ms...`);
+        console.log(`Scheduling retry in ${baseRetryDelay}ms...`);
         timeoutRef.current = setTimeout(() => {
           if (currentVinRef.current === vin) { // Only retry if still the current VIN
             decode(vin, onSuccess, onError);
           }
-        }, retryAfter);
+        }, baseRetryDelay);
       }
     }
   }, [state.retryCount, baseRetryDelay, maxRetries]);
