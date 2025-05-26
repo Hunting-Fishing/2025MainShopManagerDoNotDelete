@@ -27,10 +27,15 @@ export const ModelField: React.FC<ModelFieldProps> = ({
   const currentValues = form.getValues();
   const vehicleData = currentValues.vehicles?.[index];
   const decodedModel = vehicleData?.decoded_model;
+  const currentModelValue = form.watch(`vehicles.${index}.model`);
   
   console.log('ModelField render - models:', safeModels);
   console.log('ModelField render - selectedMake:', selectedMake);
-  console.log('ModelField render - current form value:', form.getValues(`vehicles.${index}.model`));
+  console.log('ModelField render - current form value:', currentModelValue);
+  
+  // Check if current value is a VIN decoded value (not in our models list)
+  const isVinDecodedValue = currentModelValue && currentModelValue !== 'Unknown' && 
+    !safeModels.find(model => model.model_name === currentModelValue);
   
   return (
     <FormField
@@ -55,28 +60,33 @@ export const ModelField: React.FC<ModelFieldProps> = ({
               </TooltipProvider>
             </div>
 
-            {/* Show decoded model information if available and no database entries */}
-            {decodedModel && decodedModel !== 'Unknown' && safeModels.length === 0 && (
+            {/* Show decoded model information if available */}
+            {isVinDecodedValue && (
               <div className="mb-2">
-                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                   <Car className="h-3 w-3 mr-1" />
-                  VIN Decoded: {decodedModel}
+                  VIN Decoded: {field.value}
                 </Badge>
               </div>
             )}
 
             {safeModels.length > 0 ? (
               <Select
-                value={field.value || ""}
+                value={!isVinDecodedValue ? field.value || "" : ""}
                 onValueChange={(value) => {
                   console.log("Model field value changed to:", value);
                   field.onChange(value);
+                  // Clear decoded model when manually selecting
+                  form.setValue(`vehicles.${index}.decoded_model`, '');
                 }}
                 disabled={field.disabled || !selectedMake}
               >
                 <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder={selectedMake ? "Select model" : "Select make first"} />
+                  <SelectTrigger className={isVinDecodedValue ? "border-green-200 bg-green-50" : ""}>
+                    <SelectValue placeholder={
+                      isVinDecodedValue ? `VIN: ${field.value}` : 
+                      selectedMake ? "Select model" : "Select make first"
+                    } />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -93,11 +103,14 @@ export const ModelField: React.FC<ModelFieldProps> = ({
               <FormControl>
                 <Input 
                   {...field} 
-                  placeholder={decodedModel && decodedModel !== 'Unknown' ? `VIN decoded: ${decodedModel}` : "Enter vehicle model"}
-                  value={field.value || decodedModel || ""}
+                  placeholder="Enter vehicle model"
+                  value={field.value || ""}
                   onChange={(e) => {
                     field.onChange(e.target.value);
+                    // Clear decoded model when manually entering
+                    form.setValue(`vehicles.${index}.decoded_model`, '');
                   }}
+                  className={isVinDecodedValue ? "border-green-200 bg-green-50" : ""}
                 />
               </FormControl>
             )}

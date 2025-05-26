@@ -23,35 +23,35 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     retry: onVinRetry 
   } = useVinDecoder();
 
-  // Mock data for makes - in a real app, this would come from an API
+  // Mock data for makes with correct structure
   const mockMakes = [
-    { id: 'chevrolet', name: 'Chevrolet' },
-    { id: 'ford', name: 'Ford' },
-    { id: 'toyota', name: 'Toyota' },
-    { id: 'honda', name: 'Honda' },
-    { id: 'nissan', name: 'Nissan' },
-    { id: 'bmw', name: 'BMW' },
-    { id: 'mercedes-benz', name: 'Mercedes-Benz' },
-    { id: 'audi', name: 'Audi' },
-    { id: 'volkswagen', name: 'Volkswagen' },
-    { id: 'hyundai', name: 'Hyundai' },
-    { id: 'kia', name: 'Kia' },
-    { id: 'subaru', name: 'Subaru' },
-    { id: 'mazda', name: 'Mazda' },
-    { id: 'mitsubishi', name: 'Mitsubishi' },
-    { id: 'volvo', name: 'Volvo' },
+    { make_id: 'chevrolet', make_display: 'Chevrolet' },
+    { make_id: 'ford', make_display: 'Ford' },
+    { make_id: 'toyota', make_display: 'Toyota' },
+    { make_id: 'honda', make_display: 'Honda' },
+    { make_id: 'nissan', make_display: 'Nissan' },
+    { make_id: 'bmw', make_display: 'BMW' },
+    { make_id: 'mercedes-benz', make_display: 'Mercedes-Benz' },
+    { make_id: 'audi', make_display: 'Audi' },
+    { make_id: 'volkswagen', make_display: 'Volkswagen' },
+    { make_id: 'hyundai', make_display: 'Hyundai' },
+    { make_id: 'kia', make_display: 'Kia' },
+    { make_id: 'subaru', make_display: 'Subaru' },
+    { make_id: 'mazda', make_display: 'Mazda' },
+    { make_id: 'mitsubishi', make_display: 'Mitsubishi' },
+    { make_id: 'volvo', make_display: 'Volvo' },
   ];
 
-  // Mock data for models - in a real app, this would be filtered by make
+  // Mock data for models with correct structure
   const mockModels = [
-    { id: 'equinox', name: 'Equinox', make_id: 'chevrolet' },
-    { id: 'silverado', name: 'Silverado', make_id: 'chevrolet' },
-    { id: 'f-150', name: 'F-150', make_id: 'ford' },
-    { id: 'mustang', name: 'Mustang', make_id: 'ford' },
-    { id: 'camry', name: 'Camry', make_id: 'toyota' },
-    { id: 'corolla', name: 'Corolla', make_id: 'toyota' },
-    { id: 'civic', name: 'Civic', make_id: 'honda' },
-    { id: 'accord', name: 'Accord', make_id: 'honda' },
+    { model_name: 'Equinox', model_display: 'Equinox', make_id: 'chevrolet' },
+    { model_name: 'Silverado', model_display: 'Silverado', make_id: 'chevrolet' },
+    { model_name: 'F-150', model_display: 'F-150', make_id: 'ford' },
+    { model_name: 'Mustang', model_display: 'Mustang', make_id: 'ford' },
+    { model_name: 'Camry', model_display: 'Camry', make_id: 'toyota' },
+    { model_name: 'Corolla', model_display: 'Corolla', make_id: 'toyota' },
+    { model_name: 'Civic', model_display: 'Civic', make_id: 'honda' },
+    { model_name: 'Accord', model_display: 'Accord', make_id: 'honda' },
   ];
 
   useEffect(() => {
@@ -84,17 +84,22 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
         
         if (result.make) {
           console.log('Setting decoded make:', result.make);
-          // Handle make - try to match with existing makes or use raw value
+          
+          // Try to match with existing makes first
           const matchedMake = mockMakes.find(make => 
-            make.name.toLowerCase() === result.make?.toLowerCase()
+            make.make_display.toLowerCase() === result.make?.toLowerCase()
           );
           
           if (matchedMake) {
-            form.setValue(`vehicles.${index}.make`, matchedMake.id);
-            fetchModels(matchedMake.id);
+            console.log('Found matching make in database:', matchedMake);
+            form.setValue(`vehicles.${index}.make`, matchedMake.make_id);
+            fetchModels(matchedMake.make_id);
           } else {
-            console.log('No makes database available, using raw make value:', result.make);
+            console.log('No matching make found, using VIN decoded value:', result.make);
+            // Store the decoded make as raw value for display
             form.setValue(`vehicles.${index}.make`, result.make);
+            // Store decoded make separately for display purposes
+            form.setValue(`vehicles.${index}.decoded_make`, result.make);
           }
         }
         

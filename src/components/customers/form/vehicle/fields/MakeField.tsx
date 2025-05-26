@@ -22,10 +22,14 @@ export const MakeField: React.FC<MakeFieldProps> = ({ form, index, makes = [], o
   const currentValues = form.getValues();
   const vehicleData = currentValues.vehicles?.[index];
   const decodedMake = vehicleData?.decoded_make;
+  const currentMakeValue = form.watch(`vehicles.${index}.make`);
   
   console.log('MakeField render - makes:', safeMakes);
-  console.log('MakeField render - current form value:', form.getValues(`vehicles.${index}.make`));
+  console.log('MakeField render - current form value:', currentMakeValue);
   console.log('MakeField render - decoded make:', decodedMake);
+  
+  // Check if current value is a VIN decoded value (not in our makes list)
+  const isVinDecodedValue = currentMakeValue && !safeMakes.find(make => make.make_id === currentMakeValue);
   
   return (
     <FormField
@@ -50,22 +54,24 @@ export const MakeField: React.FC<MakeFieldProps> = ({ form, index, makes = [], o
               </TooltipProvider>
             </div>
 
-            {/* Show decoded make information if available and no database entries */}
-            {decodedMake && safeMakes.length === 0 && (
+            {/* Show decoded make information if available */}
+            {isVinDecodedValue && (
               <div className="mb-2">
-                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                   <Car className="h-3 w-3 mr-1" />
-                  VIN Decoded: {decodedMake}
+                  VIN Decoded: {field.value}
                 </Badge>
               </div>
             )}
 
             {safeMakes.length > 0 ? (
               <Select
-                value={field.value || ""}
+                value={!isVinDecodedValue ? field.value || "" : ""}
                 onValueChange={(value) => {
                   console.log("Make field value changed to:", value);
                   field.onChange(value);
+                  // Clear decoded make when manually selecting
+                  form.setValue(`vehicles.${index}.decoded_make`, '');
                   if (onMakeChange) {
                     onMakeChange(value);
                   }
@@ -73,8 +79,8 @@ export const MakeField: React.FC<MakeFieldProps> = ({ form, index, makes = [], o
                 disabled={field.disabled}
               >
                 <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select make" />
+                  <SelectTrigger className={isVinDecodedValue ? "border-green-200 bg-green-50" : ""}>
+                    <SelectValue placeholder={isVinDecodedValue ? `VIN: ${field.value}` : "Select make"} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -91,14 +97,17 @@ export const MakeField: React.FC<MakeFieldProps> = ({ form, index, makes = [], o
               <FormControl>
                 <Input 
                   {...field} 
-                  placeholder={decodedMake ? `VIN decoded: ${decodedMake}` : "Enter vehicle make"}
-                  value={field.value || decodedMake || ""}
+                  placeholder="Enter vehicle make"
+                  value={field.value || ""}
                   onChange={(e) => {
                     field.onChange(e.target.value);
+                    // Clear decoded make when manually entering
+                    form.setValue(`vehicles.${index}.decoded_make`, '');
                     if (onMakeChange) {
                       onMakeChange(e.target.value);
                     }
                   }}
+                  className={isVinDecodedValue ? "border-green-200 bg-green-50" : ""}
                 />
               </FormControl>
             )}
