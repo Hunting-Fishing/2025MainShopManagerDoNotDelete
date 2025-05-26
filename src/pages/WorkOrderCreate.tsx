@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { WorkOrderFormHeader } from "@/components/work-orders/WorkOrderFormHeader";
@@ -31,7 +32,7 @@ const WorkOrderCreate = () => {
       priority: "medium",
       technician: "",
       location: "",
-      dueDate: new Date(),
+      dueDate: "",
       notes: "",
       vehicleMake: "",
       vehicleModel: "",

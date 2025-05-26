@@ -102,11 +102,9 @@ export const AssignmentFields: React.FC<AssignmentFieldsProps> = ({
                       )}
                     >
                       {field.value ? (
-                        field.value instanceof Date 
-                          ? format(field.value, "PPP")
-                          : typeof field.value === 'string' 
-                            ? field.value 
-                            : "Pick a date"
+                        typeof field.value === 'string' 
+                          ? field.value 
+                          : "Pick a date"
                       ) : (
                         "Pick a date"
                       )}
@@ -117,8 +115,8 @@ export const AssignmentFields: React.FC<AssignmentFieldsProps> = ({
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
-                    selected={field.value instanceof Date ? field.value : new Date(field.value || Date.now())}
-                    onSelect={(date) => field.onChange(date)}
+                    selected={field.value ? new Date(field.value) : undefined}
+                    onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
                     initialFocus
                   />
                 </PopoverContent>

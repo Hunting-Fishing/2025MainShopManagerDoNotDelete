@@ -14,7 +14,7 @@ import Login from '@/pages/Login';
 import CustomersPage from '@/pages/CustomersPage';
 import CreateCustomer from '@/pages/CreateCustomer';
 import CustomerDetails from '@/pages/CustomerDetails';
-import WorkOrdersPage from '@/pages/WorkOrdersPage';
+import WorkOrders from '@/pages/WorkOrders';
 import WorkOrderCreate from '@/pages/WorkOrderCreate';
 import WorkOrderDetails from '@/pages/WorkOrderDetails';
 import WorkOrderEdit from '@/pages/WorkOrderEdit';
@@ -64,7 +64,7 @@ function App() {
                         <Route path="/customers" element={<CustomersPage />} />
                         <Route path="/customers/create" element={<CreateCustomer />} />
                         <Route path="/customers/:id" element={<CustomerDetails />} />
-                        <Route path="/work-orders" element={<WorkOrdersPage />} />
+                        <Route path="/work-orders" element={<WorkOrders />} />
                         <Route path="/work-orders/create" element={<WorkOrderCreate />} />
                         <Route path="/work-orders/:id" element={<WorkOrderDetails />} />
                         <Route path="/work-orders/:id/edit" element={<WorkOrderEdit />} />
