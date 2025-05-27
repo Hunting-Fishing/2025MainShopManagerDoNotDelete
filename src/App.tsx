@@ -8,6 +8,8 @@ import Layout from '@/components/layout/Layout';
 import AuthGate from '@/components/AuthGate';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { ImpersonationProvider } from '@/contexts/ImpersonationContext';
+import { ReactErrorBoundary } from '@/components/error/ReactErrorBoundary';
+import { ConsoleErrorLogger } from '@/components/debug/ConsoleErrorLogger';
 
 // Pages
 import Dashboard from '@/pages/Dashboard';
@@ -47,58 +49,61 @@ const queryClient = new QueryClient({
 
 function App() {
   return (
-    <HelmetProvider>
-      <QueryClientProvider client={queryClient}>
-        <ImpersonationProvider>
-          <Router>
-            <div className="App">
-              <Routes>
-                {/* Public routes */}
-                <Route path="/login" element={<Login />} />
-                <Route path="/client-booking" element={<ClientBooking />} />
-                <Route path="/customer-portal" element={<ClientBooking />} />
-                <Route path="/unauthorized" element={<Unauthorized />} />
-                <Route path="/error" element={<ErrorPage />} />
-                
-                {/* Protected routes */}
-                <Route
-                  path="/*"
-                  element={
-                    <AuthGate>
-                      <Layout>
-                        <Routes>
-                          <Route path="/" element={<Dashboard />} />
-                          <Route path="/customers" element={<CustomersPage />} />
-                          <Route path="/customers/create" element={<CreateCustomer />} />
-                          <Route path="/customers/:id" element={<CustomerDetails />} />
-                          <Route path="/customers/:id/edit" element={<EditCustomer />} />
-                          <Route path="/work-orders" element={<WorkOrders />} />
-                          <Route path="/work-orders/create" element={<WorkOrderCreate />} />
-                          <Route path="/work-orders/:id" element={<WorkOrderDetails />} />
-                          <Route path="/work-orders/:id/edit" element={<WorkOrderEdit />} />
-                          <Route path="/inventory" element={<Inventory />} />
-                          <Route path="/equipment" element={<Equipment />} />
-                          <Route path="/equipment/:id" element={<EquipmentDetails />} />
-                          <Route path="/team" element={<Team />} />
-                          <Route path="/reports" element={<Reports />} />
-                          <Route path="/notifications" element={<Notifications />} />
-                          <Route path="/developer" element={<DeveloperPortal />} />
-                          <Route path="/developer/*" element={<DeveloperPortal />} />
-                          <Route path="/settings/company" element={<CompanySettings />} />
-                          <Route path="/settings/appearance" element={<AppearanceSettings />} />
-                          <Route path="*" element={<NotFound />} />
-                        </Routes>
-                      </Layout>
-                    </AuthGate>
-                  }
-                />
-              </Routes>
-              <Toaster />
-            </div>
-          </Router>
-        </ImpersonationProvider>
-      </QueryClientProvider>
-    </HelmetProvider>
+    <ReactErrorBoundary>
+      <ConsoleErrorLogger />
+      <HelmetProvider>
+        <QueryClientProvider client={queryClient}>
+          <ImpersonationProvider>
+            <Router>
+              <div className="App">
+                <Routes>
+                  {/* Public routes */}
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/client-booking" element={<ClientBooking />} />
+                  <Route path="/customer-portal" element={<ClientBooking />} />
+                  <Route path="/unauthorized" element={<Unauthorized />} />
+                  <Route path="/error" element={<ErrorPage />} />
+                  
+                  {/* Protected routes */}
+                  <Route
+                    path="/*"
+                    element={
+                      <AuthGate>
+                        <Layout>
+                          <Routes>
+                            <Route path="/" element={<Dashboard />} />
+                            <Route path="/customers" element={<CustomersPage />} />
+                            <Route path="/customers/create" element={<CreateCustomer />} />
+                            <Route path="/customers/:id" element={<CustomerDetails />} />
+                            <Route path="/customers/:id/edit" element={<EditCustomer />} />
+                            <Route path="/work-orders" element={<WorkOrders />} />
+                            <Route path="/work-orders/create" element={<WorkOrderCreate />} />
+                            <Route path="/work-orders/:id" element={<WorkOrderDetails />} />
+                            <Route path="/work-orders/:id/edit" element={<WorkOrderEdit />} />
+                            <Route path="/inventory" element={<Inventory />} />
+                            <Route path="/equipment" element={<Equipment />} />
+                            <Route path="/equipment/:id" element={<EquipmentDetails />} />
+                            <Route path="/team" element={<Team />} />
+                            <Route path="/reports" element={<Reports />} />
+                            <Route path="/notifications" element={<Notifications />} />
+                            <Route path="/developer" element={<DeveloperPortal />} />
+                            <Route path="/developer/*" element={<DeveloperPortal />} />
+                            <Route path="/settings/company" element={<CompanySettings />} />
+                            <Route path="/settings/appearance" element={<AppearanceSettings />} />
+                            <Route path="*" element={<NotFound />} />
+                          </Routes>
+                        </Layout>
+                      </AuthGate>
+                    }
+                  />
+                </Routes>
+                <Toaster />
+              </div>
+            </Router>
+          </ImpersonationProvider>
+        </QueryClientProvider>
+      </HelmetProvider>
+    </ReactErrorBoundary>
   );
 }
 
