@@ -8,8 +8,8 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { X, Plus } from "lucide-react";
 import { HierarchicalServiceSelector } from "@/components/work-orders/fields/services/HierarchicalServiceSelector";
@@ -25,8 +25,8 @@ interface ServicesSelectionProps {
 interface SelectedService {
   id: string;
   name: string;
-  categoryName: string;
-  subcategoryName: string;
+  category: string;
+  subcategory: string;
   estimatedTime?: number;
   price?: number;
 }
@@ -64,31 +64,33 @@ export const ServicesSection: React.FC<ServicesSelectionProps> = ({ form }) => {
     const newService: SelectedService = {
       id: service.id,
       name: service.name,
-      categoryName,
-      subcategoryName,
+      category: categoryName,
+      subcategory: subcategoryName,
       estimatedTime: service.estimatedTime,
       price: service.price
     };
 
-    const updatedServices = [...selectedServices, newService];
-    setSelectedServices(updatedServices);
-    
-    // Update the form with selected services
-    form.setValue("description", updatedServices.map(s => s.name).join(", "));
-    
+    setSelectedServices(prev => [...prev, newService]);
     setShowServiceSelector(false);
+    
+    // Update form description with selected services
+    const currentDescription = form.getValues("description") || "";
+    const serviceDescription = `${newService.name} (${newService.category} - ${newService.subcategory})`;
+    const updatedDescription = currentDescription 
+      ? `${currentDescription}, ${serviceDescription}`
+      : serviceDescription;
+    
+    form.setValue("description", updatedDescription);
   };
 
-  const handleRemoveService = (serviceId: string) => {
-    const updatedServices = selectedServices.filter(s => s.id !== serviceId);
-    setSelectedServices(updatedServices);
-    form.setValue("description", updatedServices.map(s => s.name).join(", "));
+  const removeService = (serviceId: string) => {
+    setSelectedServices(prev => prev.filter(service => service.id !== serviceId));
   };
 
   const totalEstimatedTime = selectedServices.reduce((total, service) => 
     total + (service.estimatedTime || 0), 0
   );
-
+  
   const totalPrice = selectedServices.reduce((total, service) => 
     total + (service.price || 0), 0
   );
@@ -125,43 +127,65 @@ export const ServicesSection: React.FC<ServicesSelectionProps> = ({ form }) => {
 
   return (
     <div className="bg-white p-4 rounded-lg border border-gray-200 space-y-4">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Services & Tasks</h3>
-        <Button
+        <Button 
           type="button"
-          variant="outline"
+          variant="outline" 
           size="sm"
           onClick={() => setShowServiceSelector(true)}
-          className="flex items-center gap-2"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-4 w-4 mr-2" />
           Add Service
         </Button>
       </div>
 
-      {/* Selected Services Display */}
+      {showServiceSelector && (
+        <Card className="border-blue-200">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium">Select Services</h4>
+              <Button 
+                type="button"
+                variant="ghost" 
+                size="sm"
+                onClick={() => setShowServiceSelector(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <HierarchicalServiceSelector
+              categories={serviceCategories}
+              onServiceSelect={handleServiceSelect}
+            />
+          </CardContent>
+        </Card>
+      )}
+
       {selectedServices.length > 0 && (
-        <Card className="p-4">
-          <h4 className="font-medium mb-3">Selected Services</h4>
+        <div className="space-y-3">
+          <h4 className="font-medium text-sm">Selected Services</h4>
           <div className="space-y-2">
             {selectedServices.map((service) => (
-              <div
+              <div 
                 key={service.id}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border"
               >
                 <div className="flex-1">
-                  <div className="font-medium">{service.name}</div>
-                  <div className="text-sm text-gray-600">
-                    {service.categoryName} → {service.subcategoryName}
+                  <div className="font-medium text-sm">{service.name}</div>
+                  <div className="text-xs text-gray-500">
+                    {service.category} → {service.subcategory}
                   </div>
                   <div className="flex gap-2 mt-1">
                     {service.estimatedTime && (
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="outline" className="text-xs">
                         {service.estimatedTime} min
                       </Badge>
                     )}
                     {service.price && (
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="outline" className="text-xs">
                         ${service.price}
                       </Badge>
                     )}
@@ -171,8 +195,8 @@ export const ServicesSection: React.FC<ServicesSelectionProps> = ({ form }) => {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() => handleRemoveService(service.id)}
-                  className="h-8 w-8 p-0"
+                  onClick={() => removeService(service.id)}
+                  className="text-red-600 hover:text-red-700"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -180,60 +204,22 @@ export const ServicesSection: React.FC<ServicesSelectionProps> = ({ form }) => {
             ))}
           </div>
           
-          {/* Summary */}
-          <div className="mt-4 pt-3 border-t">
-            <div className="flex justify-between text-sm">
-              <span>Total Estimated Time:</span>
-              <span className="font-medium">{totalEstimatedTime} minutes</span>
+          {(totalEstimatedTime > 0 || totalPrice > 0) && (
+            <div className="flex gap-4 pt-2 border-t">
+              {totalEstimatedTime > 0 && (
+                <div className="text-sm">
+                  <span className="text-gray-600">Total Time: </span>
+                  <span className="font-medium">{totalEstimatedTime} minutes</span>
+                </div>
+              )}
+              {totalPrice > 0 && (
+                <div className="text-sm">
+                  <span className="text-gray-600">Total Price: </span>
+                  <span className="font-medium">${totalPrice}</span>
+                </div>
+              )}
             </div>
-            <div className="flex justify-between text-sm">
-              <span>Total Estimated Cost:</span>
-              <span className="font-medium">${totalPrice.toFixed(2)}</span>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {/* Service Selector Modal/Popup */}
-      {showServiceSelector && (
-        <Card className="p-4 border-blue-200 bg-blue-50">
-          <div className="flex justify-between items-center mb-4">
-            <h4 className="font-medium">Select a Service</h4>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowServiceSelector(false)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-          
-          <HierarchicalServiceSelector
-            categories={serviceCategories}
-            onServiceSelect={handleServiceSelect}
-          />
-        </Card>
-      )}
-
-      {/* Hidden form field for validation */}
-      <FormField
-        control={form.control}
-        name="description"
-        render={({ field }) => (
-          <FormItem className="hidden">
-            <FormControl>
-              <input {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      {selectedServices.length === 0 && (
-        <div className="text-center py-6 text-gray-500 border-2 border-dashed border-gray-200 rounded-lg">
-          <p>No services selected</p>
-          <p className="text-sm">Click "Add Service" to select services for this work order</p>
+          )}
         </div>
       )}
     </div>
