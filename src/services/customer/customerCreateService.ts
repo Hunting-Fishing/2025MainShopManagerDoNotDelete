@@ -1,5 +1,4 @@
 
-
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, CustomerCreate, adaptCustomerForUI } from "@/types/customer";
 import { addCustomerNote } from "./customerNotesService";
@@ -51,9 +50,10 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
     phone: customerData.phone || '',
     address: customerData.address || '',
     shop_id: customerData.shop_id,
-    preferred_technician_id: customerData.preferred_technician_id || '',
-    referral_person_id: customerData.referral_person_id || '',
-    household_id: customerData.household_id || '',
+    // Convert empty strings to null for UUID fields
+    preferred_technician_id: customerData.preferred_technician_id || null,
+    referral_person_id: customerData.referral_person_id || null,
+    household_id: customerData.household_id || null,
     is_fleet: customerData.is_fleet || false,
     fleet_company: customerData.fleet_company || ''
   };
@@ -132,4 +132,3 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
 
   return adaptCustomerForUI(data as Customer);
 };
-
