@@ -23,9 +23,10 @@ interface StatusFieldsProps {
 
 export const StatusFields: React.FC<StatusFieldsProps> = ({ form }) => {
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-semibold">Status & Priority</h3>
+    <div className="bg-white p-4 rounded-lg border border-gray-200 space-y-4">
+      <h3 className="text-lg font-semibold mb-4">Status & Priority</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Status Field */}
         <FormField
           control={form.control}
           name="status"
@@ -51,6 +52,7 @@ export const StatusFields: React.FC<StatusFieldsProps> = ({ form }) => {
           )}
         />
 
+        {/* Priority Field */}
         <FormField
           control={form.control}
           name="priority"

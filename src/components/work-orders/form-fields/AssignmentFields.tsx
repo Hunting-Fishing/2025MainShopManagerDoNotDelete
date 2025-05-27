@@ -54,9 +54,6 @@ export const AssignmentFields: React.FC<AssignmentFieldsProps> = ({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="" disabled>
-                    Select a technician
-                  </SelectItem>
                   {technicians.map((tech) => (
                     <SelectItem key={tech} value={tech}>
                       {tech}

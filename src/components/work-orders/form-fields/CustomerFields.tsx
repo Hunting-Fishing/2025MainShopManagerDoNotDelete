@@ -18,9 +18,10 @@ interface CustomerFieldsProps {
 
 export const CustomerFields: React.FC<CustomerFieldsProps> = ({ form }) => {
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-semibold">Customer & Service Details</h3>
+    <div className="bg-white p-4 rounded-lg border border-gray-200 space-y-4">
+      <h3 className="text-lg font-semibold mb-4">Customer Information</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Customer Field */}
         <FormField
           control={form.control}
           name="customer"
@@ -34,25 +35,26 @@ export const CustomerFields: React.FC<CustomerFieldsProps> = ({ form }) => {
             </FormItem>
           )}
         />
+
+        {/* Description Field */}
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem className="md:col-span-2">
+              <FormLabel>Work Description</FormLabel>
+              <FormControl>
+                <Textarea 
+                  placeholder="Describe the work to be performed"
+                  className="min-h-[100px]"
+                  {...field} 
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       </div>
-      
-      <FormField
-        control={form.control}
-        name="description"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Service Description</FormLabel>
-            <FormControl>
-              <Textarea 
-                placeholder="Describe the service or repair needed..."
-                className="min-h-[100px]"
-                {...field} 
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
     </div>
   );
 };
