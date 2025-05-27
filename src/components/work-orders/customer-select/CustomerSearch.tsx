@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, User, Search, X } from "lucide-react";
+import { Loader2, User, Search, X, Phone } from "lucide-react";
 import { Customer } from "@/types/customer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -64,6 +64,11 @@ export function CustomerSearch({ onSelectCustomer, selectedCustomer }: CustomerS
   const handleSelectCustomer = (customer: Customer) => {
     onSelectCustomer(customer);
     setOpen(false);
+    setSearchQuery(`${customer.first_name} ${customer.last_name}`);
+  };
+
+  const handleClearSelection = () => {
+    onSelectCustomer(null);
     setSearchQuery("");
   };
 
@@ -71,18 +76,26 @@ export function CustomerSearch({ onSelectCustomer, selectedCustomer }: CustomerS
     <div className="customer-search-container relative w-full">
       {selectedCustomer ? (
         <div className="flex items-center bg-white dark:bg-slate-800 p-3 rounded-md shadow-sm border border-slate-200 dark:border-slate-700">
-          <div className="bg-slate-100 dark:bg-slate-700 rounded-full p-2 mr-3">
-            <User className="h-5 w-5 text-slate-600 dark:text-slate-300" />
+          <div className="bg-blue-100 dark:bg-blue-900 rounded-full p-2 mr-3">
+            <User className="h-5 w-5 text-blue-600 dark:text-blue-300" />
           </div>
           <div className="flex-1">
-            <p className="font-medium">
+            <p className="font-medium text-slate-900 dark:text-slate-100">
               {selectedCustomer.first_name} {selectedCustomer.last_name}
             </p>
-            <p className="text-sm text-muted-foreground">
-              {selectedCustomer.email || selectedCustomer.phone || "No contact info"}
-            </p>
+            <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
+              {selectedCustomer.phone && (
+                <div className="flex items-center gap-1">
+                  <Phone className="h-3 w-3" />
+                  <span>{selectedCustomer.phone}</span>
+                </div>
+              )}
+              {selectedCustomer.email && (
+                <span>{selectedCustomer.email}</span>
+              )}
+            </div>
             {selectedCustomer.company && (
-              <Badge variant="outline" className="mt-1">
+              <Badge variant="outline" className="mt-1 text-xs">
                 {selectedCustomer.company}
               </Badge>
             )}
@@ -90,8 +103,8 @@ export function CustomerSearch({ onSelectCustomer, selectedCustomer }: CustomerS
           <Button 
             variant="ghost" 
             size="icon" 
-            className="ml-2" 
-            onClick={() => onSelectCustomer(null)}
+            className="ml-2 h-8 w-8" 
+            onClick={handleClearSelection}
           >
             <X className="h-4 w-4" />
           </Button>
@@ -127,20 +140,35 @@ export function CustomerSearch({ onSelectCustomer, selectedCustomer }: CustomerS
                   {customers.map((customer) => (
                     <div
                       key={customer.id}
-                      className="px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
+                      className="px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border-b border-slate-100 dark:border-slate-700 last:border-b-0"
                       onClick={() => handleSelectCustomer(customer)}
                     >
-                      <div className="font-medium">
-                        {customer.first_name} {customer.last_name}
+                      <div className="flex items-center gap-3">
+                        <div className="bg-blue-100 dark:bg-blue-900 rounded-full p-2">
+                          <User className="h-4 w-4 text-blue-600 dark:text-blue-300" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-medium text-slate-900 dark:text-slate-100">
+                            {customer.first_name} {customer.last_name}
+                          </div>
+                          <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400 mt-1">
+                            {customer.phone && (
+                              <div className="flex items-center gap-1">
+                                <Phone className="h-3 w-3" />
+                                <span>{customer.phone}</span>
+                              </div>
+                            )}
+                            {customer.email && (
+                              <span>{customer.email}</span>
+                            )}
+                          </div>
+                          {customer.company && (
+                            <Badge variant="outline" className="mt-1 text-xs">
+                              {customer.company}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-sm text-slate-500 dark:text-slate-400">
-                        {customer.email || customer.phone || "No contact info"}
-                      </div>
-                      {customer.company && (
-                        <Badge variant="outline" className="mt-1">
-                          {customer.company}
-                        </Badge>
-                      )}
                     </div>
                   ))}
                 </div>
