@@ -1,37 +1,26 @@
 
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { Customer, adaptCustomerForUI } from "@/types/customer";
 import { getCustomerLoyalty } from "@/services/loyalty/customerLoyaltyService";
 
-// Fetch all customers
 export const getAllCustomers = async (): Promise<Customer[]> => {
   try {
-    console.log("Fetching all customers...");
-    // Fix the vehicles relationship query by selecting just the customers first
     const { data, error } = await supabase
       .from("customers")
       .select("*")
       .order("last_name", { ascending: true });
     
     if (error) {
-      console.error("Error fetching customers:", error);
       throw error;
     }
     
-    console.log("Customer data fetched:", data);
-    
-    // Handle null or undefined data
     if (!data) {
-      console.log("No customer data returned");
       return [];
     }
     
-    // Fix the type assertion by first converting to unknown
     const customers = data.map(customer => adaptCustomerForUI(customer as Customer));
     
-    console.log("Adapted customers:", customers);
-    
-    // Fetch vehicles for each customer separately to avoid relationship issues
+    // Fetch vehicles for each customer separately
     for (const customer of customers) {
       try {
         const { data: vehiclesData, error: vehiclesError } = await supabase
@@ -45,13 +34,11 @@ export const getAllCustomers = async (): Promise<Customer[]> => {
           customer.vehicles = vehiclesData || [];
         }
       } catch (error) {
-        console.error(`Error processing vehicles for customer ${customer.id}:`, error);
         customer.vehicles = [];
       }
     }
     
     // Fetch loyalty data for each customer
-    // This is done separately to keep the initial customer query simple
     try {
       for (const customer of customers) {
         try {
@@ -60,25 +47,21 @@ export const getAllCustomers = async (): Promise<Customer[]> => {
             customer.loyalty = loyalty;
           }
         } catch (error) {
-          console.error(`Error fetching loyalty for customer ${customer.id}:`, error);
+          // Continue without loyalty data
         }
       }
     } catch (error) {
-      console.error("Error fetching customer loyalty data:", error);
+      // Continue without loyalty data
     }
 
     return customers;
   } catch (error) {
-    console.error("Error in getAllCustomers:", error);
     return [];
   }
 };
 
-// Fetch a customer by ID
 export const getCustomerById = async (id: string): Promise<Customer | null> => {
   try {
-    console.log("Fetching customer by ID:", id);
-    
     const { data, error } = await supabase
       .from("customers")
       .select("*")
@@ -86,16 +69,13 @@ export const getCustomerById = async (id: string): Promise<Customer | null> => {
       .single();
 
     if (error) {
-      console.error("Error fetching customer:", error);
       throw error;
     }
 
     if (!data) {
-      console.log("No customer found with ID:", id);
       return null;
     }
     
-    console.log("Customer data from DB:", data);
     const customer = adaptCustomerForUI(data as Customer);
     
     // Fetch vehicles for this customer
@@ -111,7 +91,6 @@ export const getCustomerById = async (id: string): Promise<Customer | null> => {
         customer.vehicles = vehiclesData || [];
       }
     } catch (error) {
-      console.error(`Error processing vehicles for customer ${customer.id}:`, error);
       customer.vehicles = [];
     }
     
@@ -122,15 +101,13 @@ export const getCustomerById = async (id: string): Promise<Customer | null> => {
         customer.loyalty = loyalty;
       }
     } catch (error) {
-      console.error(`Error fetching loyalty for customer ${customer.id}:`, error);
+      // Continue without loyalty data
     }
 
     return customer;
   } catch (error) {
-    console.error("Error in getCustomerById:", error);
     return null;
   }
 };
 
-// Backward compatible function to maintain existing code compatibility
 export const getCustomer = getCustomerById;

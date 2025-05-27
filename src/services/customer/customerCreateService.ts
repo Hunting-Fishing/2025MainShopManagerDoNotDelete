@@ -2,7 +2,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Customer, CustomerCreate, adaptCustomerForUI } from "@/types/customer";
 import { addCustomerNote } from "./customerNotesService";
 
-// Create a new customer
 export const createCustomer = async (customer: CustomerCreate): Promise<Customer> => {
   // Remove any undefined values to prevent Supabase errors
   Object.keys(customer).forEach(key => {
@@ -12,22 +11,15 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
   });
 
   // Extract vehicles to handle separately
-  const { vehicles = [], notes, role, ...customerData } = customer;
-  
-  console.log("Processing customer creation with vehicles:", vehicles);
-  
-  // Remove role from customerData since it doesn't exist in the customers table
-  // The role field is not part of the customers table schema
+  const { vehicles = [], notes, ...customerData } = customer;
   
   // Handle special case for business_industry and other_business_industry
   if (customerData.business_industry === 'other' && customerData.other_business_industry) {
-    // We keep both fields to make reporting on "other" industries easier
-    console.log(`Other business industry specified: ${customerData.other_business_industry}`);
+    // Keep both fields to make reporting on "other" industries easier
   }
 
   // Handle shop_id fallback logic
   if (!customerData.shop_id) {
-    // Fetch the shop_id from the current user's profile
     const { data: { user } } = await supabase.auth.getUser();
     
     if (user) {
@@ -42,18 +34,14 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
       }
     }
     
-    // If still not set, use the default UUID as fallback
     if (!customerData.shop_id) {
       customerData.shop_id = '00000000-0000-0000-0000-000000000000';
     }
   }
   
-  // Convert "DEFAULT-SHOP-ID" to a valid UUID if it's still using the default
   if (customerData.shop_id === 'DEFAULT-SHOP-ID') {
     customerData.shop_id = '00000000-0000-0000-0000-000000000000';
   }
-
-  console.log("Submitting customer data:", customerData);
 
   const { data, error } = await supabase
     .from("customers")
@@ -62,22 +50,15 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
     .single();
 
   if (error) {
-    console.error("Error creating customer:", error);
     throw error;
   }
 
-  // Now that we have the customer ID, handle vehicles
+  // Handle vehicles
   if (vehicles && vehicles.length > 0) {
-    console.log(`Adding ${vehicles.length} vehicles for customer ${data.id}`);
-    
     for (const vehicle of vehicles) {
-      // Only add vehicle if it has at least make and model
       if (vehicle.make && vehicle.model) {
         try {
-          // Convert year to number or null, but store it correctly as a number
           const vehicleYear = vehicle.year ? parseInt(vehicle.year.toString(), 10) : null;
-          
-          console.log(`Adding vehicle: ${vehicleYear} ${vehicle.make} ${vehicle.model}`);
           
           const { error: vehicleError } = await supabase
             .from("vehicles")
@@ -95,19 +76,17 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
           }
         } catch (vehicleError) {
           console.error("Error adding vehicle:", vehicleError);
-          // Don't throw to allow customer creation to succeed
         }
       }
     }
   }
 
-  // If there's a note, add it to the customer_notes table
+  // Add customer note if provided
   if (notes && notes.trim()) {
     try {
       await addCustomerNote(data.id, notes, 'general', 'System');
     } catch (noteError) {
       console.error("Error adding initial customer note:", noteError);
-      // We don't throw here to avoid preventing customer creation
     }
   }
 
