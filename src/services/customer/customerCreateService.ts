@@ -1,4 +1,5 @@
 
+
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, CustomerCreate, adaptCustomerForUI } from "@/types/customer";
 import { addCustomerNote } from "./customerNotesService";
@@ -36,10 +37,6 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
     // Remove referral fields  
     referral_source,
     other_referral_details,
-    // Remove household fields
-    create_new_household,
-    new_household_name,
-    household_relationship,
     // Remove tags and segments
     tags,
     segments,
@@ -135,3 +132,4 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
 
   return adaptCustomerForUI(data as Customer);
 };
+
