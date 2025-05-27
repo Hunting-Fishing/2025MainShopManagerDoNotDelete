@@ -10,19 +10,19 @@ const audioCache: Record<string, HTMLAudioElement> = {};
  * @returns Promise that resolves when the sound is played
  */
 export const playNotificationSound = (sound: string): Promise<void> => {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     if (sound === 'none') {
       resolve();
       return;
     }
 
     try {
-      // In a real implementation, these paths would point to actual sound files
+      // Use data URLs for simple notification sounds instead of missing files
       const soundMap: Record<string, string> = {
-        'default': '/sounds/notification-default.mp3',
-        'bell': '/sounds/notification-bell.mp3',
-        'chime': '/sounds/notification-chime.mp3',
-        'alert': '/sounds/notification-alert.mp3',
+        'default': 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaAUON3/LaAiQFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaAUON3/LaAg==',
+        'bell': 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaAUON3/LaAiQFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaAUON3/LaAg==',
+        'chime': 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaAUON3/LaAiQFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaAUON3/LaAg==',
+        'alert': 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaAUON3/LaAiQFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaAUON3/LaAg==',
       };
 
       const soundPath = soundMap[sound] || soundMap.default;
@@ -30,6 +30,7 @@ export const playNotificationSound = (sound: string): Promise<void> => {
       // Check if we have a cached audio instance
       if (!audioCache[sound]) {
         audioCache[sound] = new Audio(soundPath);
+        audioCache[sound].volume = 0.3; // Set a reasonable volume
       }
 
       const audio = audioCache[sound];
@@ -66,15 +67,17 @@ export const preloadNotificationSounds = (): void => {
   
   sounds.forEach(sound => {
     try {
+      // Use the same data URLs as above
       const soundMap: Record<string, string> = {
-        'default': '/sounds/notification-default.mp3',
-        'bell': '/sounds/notification-bell.mp3',
-        'chime': '/sounds/notification-chime.mp3',
-        'alert': '/sounds/notification-alert.mp3',
+        'default': 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaAUON3/LaAiQFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaAUON3/LaAg==',
+        'bell': 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaAUON3/LaAiQFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaAUON3/LaAg==',
+        'chime': 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaAUON3/LaAiQFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaAUON3/LaAg==',
+        'alert': 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaAUON3/LaAiQFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaAUON3/LaAg==',
       };
 
       const audio = new Audio(soundMap[sound]);
       audio.preload = 'auto';
+      audio.volume = 0.3;
       audioCache[sound] = audio;
     } catch (error) {
       console.warn(`Failed to preload sound: ${sound}`, error);
