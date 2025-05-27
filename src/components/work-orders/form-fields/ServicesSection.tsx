@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 import {
   FormField,
@@ -14,8 +14,9 @@ import { Badge } from "@/components/ui/badge";
 import { X, Plus } from "lucide-react";
 import { HierarchicalServiceSelector } from "@/components/work-orders/fields/services/HierarchicalServiceSelector";
 import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
-import { ServiceJob } from "@/types/serviceHierarchy";
-import { getServiceCategories } from "@/lib/serviceHierarchy";
+import { ServiceJob, ServiceMainCategory } from "@/types/serviceHierarchy";
+import { fetchServiceCategories } from "@/lib/services/serviceApi";
+import { useToast } from "@/hooks/use-toast";
 
 interface ServicesSelectionProps {
   form: UseFormReturn<WorkOrderFormSchemaValues>;
@@ -33,8 +34,31 @@ interface SelectedService {
 export const ServicesSection: React.FC<ServicesSelectionProps> = ({ form }) => {
   const [showServiceSelector, setShowServiceSelector] = useState(false);
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
-  
-  const serviceCategories = getServiceCategories();
+  const [serviceCategories, setServiceCategories] = useState<ServiceMainCategory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  // Fetch real service categories from the database
+  useEffect(() => {
+    const loadServiceCategories = async () => {
+      try {
+        setLoading(true);
+        const categories = await fetchServiceCategories();
+        setServiceCategories(categories);
+      } catch (error) {
+        console.error("Error loading service categories:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load service categories. Please check if services are configured in the Developer portal.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadServiceCategories();
+  }, [toast]);
 
   const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
     const newService: SelectedService = {
@@ -68,6 +92,36 @@ export const ServicesSection: React.FC<ServicesSelectionProps> = ({ form }) => {
   const totalPrice = selectedServices.reduce((total, service) => 
     total + (service.price || 0), 0
   );
+
+  if (loading) {
+    return (
+      <div className="bg-white p-4 rounded-lg border border-gray-200 space-y-4">
+        <h3 className="text-lg font-semibold">Services & Tasks</h3>
+        <div className="text-center py-6 text-gray-500">
+          <p>Loading services...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (serviceCategories.length === 0) {
+    return (
+      <div className="bg-white p-4 rounded-lg border border-gray-200 space-y-4">
+        <h3 className="text-lg font-semibold">Services & Tasks</h3>
+        <div className="text-center py-6 text-gray-500 border-2 border-dashed border-gray-200 rounded-lg">
+          <p className="font-medium">No services configured</p>
+          <p className="text-sm">Please configure services in the Developer portal first</p>
+          <Button 
+            variant="outline" 
+            className="mt-2"
+            onClick={() => window.open('/developer/service-management', '_blank')}
+          >
+            Configure Services
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white p-4 rounded-lg border border-gray-200 space-y-4">
