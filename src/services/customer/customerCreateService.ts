@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, CustomerCreate, adaptCustomerForUI } from "@/types/customer";
 import { addCustomerNote } from "./customerNotesService";
@@ -10,16 +11,58 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
     }
   });
 
-  // Extract vehicles to handle separately
-  const { vehicles = [], notes, ...customerData } = customer;
-  
-  // Handle special case for business_industry and other_business_industry
-  if (customerData.business_industry === 'other' && customerData.other_business_industry) {
-    // Keep both fields to make reporting on "other" industries easier
-  }
+  // Extract vehicles and fields that don't belong in customers table
+  const { 
+    vehicles = [], 
+    notes,
+    // Remove business fields that have complex objects
+    business_type,
+    business_industry,
+    other_business_industry,
+    tax_id,
+    business_email,
+    business_phone,
+    // Remove payment fields
+    preferred_payment_method,
+    auto_billing,
+    credit_terms,
+    terms_agreed,
+    // Remove fleet fields
+    fleet_manager,
+    fleet_contact,
+    preferred_service_type,
+    // Remove preference fields
+    communication_preference,
+    // Remove referral fields  
+    referral_source,
+    other_referral_details,
+    // Remove household fields
+    create_new_household,
+    new_household_name,
+    household_relationship,
+    // Remove tags and segments
+    tags,
+    segments,
+    ...customerData 
+  } = customer;
+
+  // Only include fields that actually exist in the customers table
+  const cleanCustomerData = {
+    first_name: customerData.first_name,
+    last_name: customerData.last_name,
+    email: customerData.email || '',
+    phone: customerData.phone || '',
+    address: customerData.address || '',
+    shop_id: customerData.shop_id,
+    preferred_technician_id: customerData.preferred_technician_id || '',
+    referral_person_id: customerData.referral_person_id || '',
+    household_id: customerData.household_id || '',
+    is_fleet: customerData.is_fleet || false,
+    fleet_company: customerData.fleet_company || ''
+  };
 
   // Handle shop_id fallback logic
-  if (!customerData.shop_id) {
+  if (!cleanCustomerData.shop_id) {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (user) {
@@ -30,22 +73,22 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
         .single();
       
       if (profile && profile.shop_id) {
-        customerData.shop_id = profile.shop_id;
+        cleanCustomerData.shop_id = profile.shop_id;
       }
     }
     
-    if (!customerData.shop_id) {
-      customerData.shop_id = '00000000-0000-0000-0000-000000000000';
+    if (!cleanCustomerData.shop_id) {
+      cleanCustomerData.shop_id = '00000000-0000-0000-0000-000000000000';
     }
   }
   
-  if (customerData.shop_id === 'DEFAULT-SHOP-ID') {
-    customerData.shop_id = '00000000-0000-0000-0000-000000000000';
+  if (cleanCustomerData.shop_id === 'DEFAULT-SHOP-ID') {
+    cleanCustomerData.shop_id = '00000000-0000-0000-0000-000000000000';
   }
 
   const { data, error } = await supabase
     .from("customers")
-    .insert(customerData)
+    .insert(cleanCustomerData)
     .select()
     .single();
 
