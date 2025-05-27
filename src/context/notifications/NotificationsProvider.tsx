@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { Notification, NotificationPreferences } from '@/types/notification';
 import { notificationService } from '@/services/notificationService';
@@ -17,6 +18,7 @@ import {
 } from './preferenceHandlers';
 import { supabase } from '@/lib/supabase';
 import { preloadNotificationSounds } from '@/utils/notificationSounds';
+import { safeDOMOperation } from '@/utils/domSafetyUtils';
 
 export const NotificationsContext = createContext<NotificationsContextProps | undefined>(undefined);
 
@@ -28,30 +30,46 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
   
   const unreadCount = notifications.filter(notification => !notification.read).length;
 
-  // Get current user ID on mount
+  // Get current user ID on mount with error handling
   useEffect(() => {
     const getCurrentUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      const currentUserId = data?.user?.id;
-      setUserId(currentUserId);
+      try {
+        const { data } = await supabase.auth.getUser();
+        const currentUserId = data?.user?.id;
+        setUserId(currentUserId);
+      } catch (error) {
+        console.error('Error getting current user:', error);
+      }
     };
     
     getCurrentUser();
     
     // Listen for authentication changes
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      setUserId(session?.user?.id || null);
+      try {
+        setUserId(session?.user?.id || null);
+      } catch (error) {
+        console.error('Error handling auth state change:', error);
+      }
     });
     
-    // Preload notification sounds
-    preloadNotificationSounds();
+    // Preload notification sounds with error handling
+    safeDOMOperation(
+      () => preloadNotificationSounds(),
+      undefined,
+      'notification sound preloading'
+    );
     
     return () => {
-      authListener?.subscription.unsubscribe();
+      try {
+        authListener?.subscription.unsubscribe();
+      } catch (error) {
+        console.error('Error unsubscribing from auth listener:', error);
+      }
     };
   }, []);
 
-  // Create handlers
+  // Create handlers with error boundaries
   const handleNewNotification = useCallback(
     createHandleNewNotificationHandler(preferences, setNotifications),
     [preferences]
@@ -59,41 +77,61 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
   
   const addNotification = useCallback(
     async (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
-      const handler = createAddNotificationHandler(setNotifications, preferences);
-      handler(notification);
-      await notificationService.addNotification(notification);
+      try {
+        const handler = createAddNotificationHandler(setNotifications, preferences);
+        handler(notification);
+        await notificationService.addNotification(notification);
+      } catch (error) {
+        console.error('Error adding notification:', error);
+      }
     },
     [preferences]
   );
   
   const markAsRead = useCallback(
     async (id: string) => {
-      await notificationService.markAsRead(id);
-      createMarkAsReadHandler(setNotifications)(id);
+      try {
+        await notificationService.markAsRead(id);
+        createMarkAsReadHandler(setNotifications)(id);
+      } catch (error) {
+        console.error('Error marking notification as read:', error);
+      }
     },
     []
   );
   
   const markAllAsRead = useCallback(
     async () => {
-      await notificationService.markAllAsRead();
-      createMarkAllAsReadHandler(setNotifications)();
+      try {
+        await notificationService.markAllAsRead();
+        createMarkAllAsReadHandler(setNotifications)();
+      } catch (error) {
+        console.error('Error marking all notifications as read:', error);
+      }
     },
     []
   );
   
   const clearNotification = useCallback(
     async (id: string) => {
-      await notificationService.clearNotification(id);
-      createClearNotificationHandler(setNotifications)(id);
+      try {
+        await notificationService.clearNotification(id);
+        createClearNotificationHandler(setNotifications)(id);
+      } catch (error) {
+        console.error('Error clearing notification:', error);
+      }
     },
     []
   );
   
   const clearAllNotifications = useCallback(
     async () => {
-      await notificationService.clearAllNotifications();
-      createClearAllNotificationsHandler(setNotifications)();
+      try {
+        await notificationService.clearAllNotifications();
+        createClearAllNotificationsHandler(setNotifications)();
+      } catch (error) {
+        console.error('Error clearing all notifications:', error);
+      }
     },
     []
   );
@@ -116,29 +154,49 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
       return;
     }
 
-    // Connect to the notification service
-    notificationService.connect(userId);
-    
-    // Set up listener for connection status
-    const unsubscribeStatus = notificationService.onConnectionStatus((status) => {
-      setConnectionStatus(status);
-    });
-    
-    // Set up listener for new notifications
-    const unsubscribeNotifications = notificationService.onNotification((notification) => {
-      handleNewNotification(notification);
-    });
-    
-    // Clean up on unmount or userId change
-    return () => {
-      unsubscribeStatus();
-      unsubscribeNotifications();
-      notificationService.disconnect();
-    };
+    try {
+      // Connect to the notification service
+      notificationService.connect(userId);
+      
+      // Set up listener for connection status
+      const unsubscribeStatus = notificationService.onConnectionStatus((status) => {
+        try {
+          setConnectionStatus(status);
+        } catch (error) {
+          console.error('Error updating connection status:', error);
+        }
+      });
+      
+      // Set up listener for new notifications
+      const unsubscribeNotifications = notificationService.onNotification((notification) => {
+        try {
+          handleNewNotification(notification);
+        } catch (error) {
+          console.error('Error handling new notification:', error);
+        }
+      });
+      
+      // Clean up on unmount or userId change
+      return () => {
+        try {
+          unsubscribeStatus();
+          unsubscribeNotifications();
+          notificationService.disconnect();
+        } catch (error) {
+          console.error('Error cleaning up notification service:', error);
+        }
+      };
+    } catch (error) {
+      console.error('Error initializing notification service:', error);
+    }
   }, [userId, handleNewNotification]);
 
   const triggerTestNotification = useCallback(() => {
-    notificationService.triggerDemoNotification();
+    try {
+      notificationService.triggerDemoNotification();
+    } catch (error) {
+      console.error('Error triggering test notification:', error);
+    }
   }, []);
 
   return (

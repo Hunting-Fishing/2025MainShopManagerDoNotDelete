@@ -4,9 +4,18 @@ import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNotifications } from '@/context/notifications';
 import { NotificationsDropdown } from './NotificationsDropdown';
+import { NotificationErrorBoundary } from './NotificationErrorBoundary';
 import { cn } from '@/lib/utils';
 
 export function NotificationBell() {
+  return (
+    <NotificationErrorBoundary>
+      <NotificationBellContent />
+    </NotificationErrorBoundary>
+  );
+}
+
+function NotificationBellContent() {
   const { unreadCount, connectionStatus } = useNotifications();
 
   return (
