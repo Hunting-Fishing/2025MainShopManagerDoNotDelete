@@ -27,6 +27,19 @@ export const ConsoleErrorLogger = () => {
         if (errorCodeMatch) {
           const errorCode = errorCodeMatch[1];
           console.log(`📚 React Error #${errorCode} - Visit https://react.dev/errors/${errorCode} for details`);
+          
+          // Log specific known error patterns
+          switch (errorCode) {
+            case '418':
+              console.log('🔍 Error #418: This is usually caused by invalid React element type. Check for undefined components or incorrect imports.');
+              break;
+            case '425':
+              console.log('🔍 Error #425: This is usually caused by rendering non-React values. Check for null/undefined values being rendered.');
+              break;
+            case '423':
+              console.log('🔍 Error #423: This is usually caused by calling setState on an unmounted component.');
+              break;
+          }
         }
       }
       
@@ -50,6 +63,17 @@ export const ConsoleErrorLogger = () => {
           timestamp: new Date().toISOString(),
           message: errorMessage,
           context: 'dom_manipulation'
+        });
+      }
+
+      // Check for component lifecycle errors
+      if (errorMessage.includes('setState') || 
+          errorMessage.includes('useEffect') ||
+          errorMessage.includes('unmounted')) {
+        console.log('⚛️ Component Lifecycle Error:', {
+          timestamp: new Date().toISOString(),
+          message: errorMessage,
+          context: 'component_lifecycle'
         });
       }
     };

@@ -2,7 +2,8 @@
 import React, { useRef, useState } from 'react';
 import { useNotifications } from '@/context/notifications';
 import { NotificationItem } from './NotificationItem';
-import { NotificationErrorBoundary } from './NotificationErrorBoundary';
+import { SafeNotificationWrapper } from './SafeNotificationWrapper';
+import { useSafeState } from '@/hooks/useSafeState';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,11 +21,11 @@ interface NotificationsDropdownProps {
 
 export function NotificationsDropdown({ children, align = 'end' }: NotificationsDropdownProps) {
   return (
-    <NotificationErrorBoundary>
+    <SafeNotificationWrapper componentName="NotificationsDropdown">
       <NotificationsDropdownContent align={align}>
         {children}
       </NotificationsDropdownContent>
-    </NotificationErrorBoundary>
+    </SafeNotificationWrapper>
   );
 }
 
@@ -40,14 +41,23 @@ function NotificationsDropdownContent({ children, align }: NotificationsDropdown
     triggerTestNotification
   } = useNotifications();
   
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useSafeState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [activeTab, setActiveTab] = useState<string>('all');
+  const [activeTab, setActiveTab] = useSafeState<string>('all');
 
   // Filter notifications based on active tab with error handling
   const filteredNotifications = React.useMemo(() => {
     try {
+      if (!Array.isArray(notifications)) {
+        console.warn('Notifications is not an array:', notifications);
+        return [];
+      }
+      
       return notifications.filter(notification => {
+        if (!notification || typeof notification !== 'object') {
+          return false;
+        }
+        
         if (activeTab === 'all') return true;
         if (activeTab === 'unread') return !notification.read;
         return notification.category === activeTab;
@@ -61,7 +71,15 @@ function NotificationsDropdownContent({ children, align }: NotificationsDropdown
   // Count notifications by category with error handling
   const categoryCounts = React.useMemo(() => {
     try {
+      if (!Array.isArray(notifications)) {
+        return {};
+      }
+      
       return notifications.reduce((acc, notification) => {
+        if (!notification || typeof notification !== 'object') {
+          return acc;
+        }
+        
         const category = notification.category || 'system';
         acc[category] = (acc[category] || 0) + 1;
         return acc;
@@ -108,10 +126,10 @@ function NotificationsDropdownContent({ children, align }: NotificationsDropdown
       <DropdownMenuContent 
         ref={dropdownRef}
         align={align} 
-        className="w-96 p-0 max-h-[calc(100vh-100px)] flex flex-col" 
+        className="w-96 p-0 max-h-[calc(100vh-100px)] flex flex-col bg-white border shadow-lg z-50" 
         sideOffset={8}
       >
-        <NotificationErrorBoundary>
+        <SafeNotificationWrapper componentName="NotificationsDropdownHeader">
           <NotificationsDropdownHeader 
             unreadCount={unreadCount}
             connectionStatus={connectionStatus}
@@ -119,39 +137,39 @@ function NotificationsDropdownContent({ children, align }: NotificationsDropdown
             onMarkAllAsRead={handleMarkAllAsRead}
             onClearAllNotifications={handleClearAllNotifications}
           />
-        </NotificationErrorBoundary>
+        </SafeNotificationWrapper>
         
         {/* Tab navigation for filtering */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <NotificationErrorBoundary>
+          <SafeNotificationWrapper componentName="NotificationsTabNavigation">
             <NotificationsTabNavigation 
               activeTab={activeTab}
-              notificationsCount={notifications.length}
+              notificationsCount={notifications?.length || 0}
               unreadCount={unreadCount}
               categoryCounts={categoryCounts}
             />
-          </NotificationErrorBoundary>
+          </SafeNotificationWrapper>
           
           <TabsContent value={activeTab} className="m-0 overflow-y-auto max-h-[350px]">
-            <NotificationErrorBoundary>
+            <SafeNotificationWrapper componentName="NotificationsContent">
               {filteredNotifications.length === 0 ? (
                 <NotificationsEmptyState 
                   connectionStatus={connectionStatus}
-                  hasNotifications={notifications.length > 0}
+                  hasNotifications={(notifications?.length || 0) > 0}
                   onTriggerTest={handleTriggerTestNotification}
                 />
               ) : (
                 filteredNotifications.map(notification => (
-                  <NotificationErrorBoundary key={notification.id}>
+                  <SafeNotificationWrapper key={notification.id} componentName="NotificationItem">
                     <NotificationItem 
                       notification={notification} 
                       onMarkAsRead={markAsRead}
                       onClear={clearNotification}
                     />
-                  </NotificationErrorBoundary>
+                  </SafeNotificationWrapper>
                 ))
               )}
-            </NotificationErrorBoundary>
+            </SafeNotificationWrapper>
           </TabsContent>
         </Tabs>
       </DropdownMenuContent>
