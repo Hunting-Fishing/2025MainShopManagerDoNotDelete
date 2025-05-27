@@ -4,14 +4,18 @@ import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNotifications } from '@/context/notifications';
 import { NotificationsDropdown } from './NotificationsDropdown';
-import { SafeNotificationWrapper } from './SafeNotificationWrapper';
+import { SafeComponentWrapper } from '../safety/SafeComponentWrapper';
 import { cn } from '@/lib/utils';
 
 export function NotificationBell() {
   return (
-    <SafeNotificationWrapper componentName="NotificationBell">
+    <SafeComponentWrapper 
+      componentName="NotificationBell"
+      enableDOMProtection={true}
+      enableIsolation={true}
+    >
       <NotificationBellContent />
-    </SafeNotificationWrapper>
+    </SafeComponentWrapper>
   );
 }
 

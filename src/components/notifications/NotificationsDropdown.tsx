@@ -1,8 +1,8 @@
 
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import { useNotifications } from '@/context/notifications';
 import { NotificationItem } from './NotificationItem';
-import { SafeNotificationWrapper } from './SafeNotificationWrapper';
+import { SafeComponentWrapper } from '../safety/SafeComponentWrapper';
 import { useSafeState } from '@/hooks/useSafeState';
 import {
   DropdownMenu,
@@ -21,11 +21,15 @@ interface NotificationsDropdownProps {
 
 export function NotificationsDropdown({ children, align = 'end' }: NotificationsDropdownProps) {
   return (
-    <SafeNotificationWrapper componentName="NotificationsDropdown">
+    <SafeComponentWrapper 
+      componentName="NotificationsDropdown"
+      enableDOMProtection={true}
+      enableIsolation={true}
+    >
       <NotificationsDropdownContent align={align}>
         {children}
       </NotificationsDropdownContent>
-    </SafeNotificationWrapper>
+    </SafeComponentWrapper>
   );
 }
 
@@ -129,7 +133,7 @@ function NotificationsDropdownContent({ children, align }: NotificationsDropdown
         className="w-96 p-0 max-h-[calc(100vh-100px)] flex flex-col bg-white border shadow-lg z-50" 
         sideOffset={8}
       >
-        <SafeNotificationWrapper componentName="NotificationsDropdownHeader">
+        <SafeComponentWrapper componentName="NotificationsDropdownHeader">
           <NotificationsDropdownHeader 
             unreadCount={unreadCount}
             connectionStatus={connectionStatus}
@@ -137,21 +141,21 @@ function NotificationsDropdownContent({ children, align }: NotificationsDropdown
             onMarkAllAsRead={handleMarkAllAsRead}
             onClearAllNotifications={handleClearAllNotifications}
           />
-        </SafeNotificationWrapper>
+        </SafeComponentWrapper>
         
         {/* Tab navigation for filtering */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <SafeNotificationWrapper componentName="NotificationsTabNavigation">
+          <SafeComponentWrapper componentName="NotificationsTabNavigation">
             <NotificationsTabNavigation 
               activeTab={activeTab}
               notificationsCount={notifications?.length || 0}
               unreadCount={unreadCount}
               categoryCounts={categoryCounts}
             />
-          </SafeNotificationWrapper>
+          </SafeComponentWrapper>
           
           <TabsContent value={activeTab} className="m-0 overflow-y-auto max-h-[350px]">
-            <SafeNotificationWrapper componentName="NotificationsContent">
+            <SafeComponentWrapper componentName="NotificationsContent">
               {filteredNotifications.length === 0 ? (
                 <NotificationsEmptyState 
                   connectionStatus={connectionStatus}
@@ -160,16 +164,16 @@ function NotificationsDropdownContent({ children, align }: NotificationsDropdown
                 />
               ) : (
                 filteredNotifications.map(notification => (
-                  <SafeNotificationWrapper key={notification.id} componentName="NotificationItem">
+                  <SafeComponentWrapper key={notification.id} componentName="NotificationItem">
                     <NotificationItem 
                       notification={notification} 
                       onMarkAsRead={markAsRead}
                       onClear={clearNotification}
                     />
-                  </SafeNotificationWrapper>
+                  </SafeComponentWrapper>
                 ))
               )}
-            </SafeNotificationWrapper>
+            </SafeComponentWrapper>
           </TabsContent>
         </Tabs>
       </DropdownMenuContent>

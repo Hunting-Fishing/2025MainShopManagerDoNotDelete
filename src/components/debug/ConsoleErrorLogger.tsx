@@ -31,16 +31,33 @@ export const ConsoleErrorLogger = () => {
           // Log specific known error patterns
           switch (errorCode) {
             case '418':
-              console.log('🔍 Error #418: This is usually caused by invalid React element type. Check for undefined components or incorrect imports.');
+              console.log('🔍 Error #418: Invalid React element type. Check for undefined components or incorrect imports.');
+              console.log('💡 Common causes: Missing component exports, circular dependencies, extension interference');
               break;
             case '425':
-              console.log('🔍 Error #425: This is usually caused by rendering non-React values. Check for null/undefined values being rendered.');
+              console.log('🔍 Error #425: Rendering non-React values. Check for null/undefined values being rendered.');
+              console.log('💡 Common causes: Unguarded variable rendering, missing null checks');
               break;
             case '423':
-              console.log('🔍 Error #423: This is usually caused by calling setState on an unmounted component.');
+              console.log('🔍 Error #423: setState called on unmounted component.');
+              console.log('💡 Common causes: Async operations after unmount, missing cleanup in useEffect');
               break;
           }
         }
+      }
+      
+      // Enhanced extension conflict detection
+      if (errorMessage.includes('chrome-extension') || 
+          errorMessage.includes('moz-extension') ||
+          errorMessage.includes('Failed to execute \'querySelector\'') ||
+          errorMessage.includes('insertBefore') ||
+          errorMessage.includes('appendChild')) {
+        console.log('🔌 Extension Conflict Detected:', {
+          timestamp: new Date().toISOString(),
+          message: errorMessage,
+          context: 'extension_interference',
+          suggestion: 'Extension is modifying DOM or blocking operations'
+        });
       }
       
       // Check for notification-related errors
@@ -55,25 +72,15 @@ export const ConsoleErrorLogger = () => {
         });
       }
       
-      // Check for DOM manipulation errors (browser extension conflicts)
-      if (errorMessage.includes('querySelector') || 
-          errorMessage.includes('insertBefore') ||
-          errorMessage.includes('Failed to execute')) {
-        console.log('🌐 DOM Manipulation Error (possible extension conflict):', {
-          timestamp: new Date().toISOString(),
-          message: errorMessage,
-          context: 'dom_manipulation'
-        });
-      }
-
-      // Check for component lifecycle errors
+      // Component lifecycle errors
       if (errorMessage.includes('setState') || 
           errorMessage.includes('useEffect') ||
           errorMessage.includes('unmounted')) {
         console.log('⚛️ Component Lifecycle Error:', {
           timestamp: new Date().toISOString(),
           message: errorMessage,
-          context: 'component_lifecycle'
+          context: 'component_lifecycle',
+          suggestion: 'Check for proper cleanup and mounted state checks'
         });
       }
     };
@@ -94,12 +101,49 @@ export const ConsoleErrorLogger = () => {
           context: 'audio_system'
         });
       }
+      
+      // Log extension-related warnings
+      if (warnMessage.includes('extension') || 
+          warnMessage.includes('chrome-extension') ||
+          warnMessage.includes('content script')) {
+        console.log('🔌 Extension Warning:', {
+          timestamp: new Date().toISOString(),
+          message: warnMessage,
+          context: 'extension_system'
+        });
+      }
     };
+
+    // Enhanced unhandled error catching
+    const handleUnhandledError = (event: ErrorEvent) => {
+      console.log('🚨 Unhandled Error:', {
+        timestamp: new Date().toISOString(),
+        message: event.message,
+        filename: event.filename,
+        lineno: event.lineno,
+        colno: event.colno,
+        error: event.error,
+        context: 'unhandled_error'
+      });
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.log('🚨 Unhandled Promise Rejection:', {
+        timestamp: new Date().toISOString(),
+        reason: event.reason,
+        context: 'unhandled_rejection'
+      });
+    };
+
+    window.addEventListener('error', handleUnhandledError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
 
     // Cleanup on unmount
     return () => {
       console.error = originalError;
       console.warn = originalWarn;
+      window.removeEventListener('error', handleUnhandledError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
     };
   }, []);
 

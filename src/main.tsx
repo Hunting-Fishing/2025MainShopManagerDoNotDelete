@@ -9,18 +9,23 @@ import { LanguageProvider } from '@/context/LanguageContext';
 import { ImpersonationProvider } from '@/contexts/ImpersonationContext';
 import { NotificationsProvider } from '@/context/notifications';
 import { Toaster } from "sonner";
+import { ConsoleErrorLogger } from '@/components/debug/ConsoleErrorLogger';
+import { EnhancedErrorBoundary } from '@/components/error/EnhancedErrorBoundary';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <ThemeProvider>
-      <LanguageProvider>
-        <ImpersonationProvider>
-          <NotificationsProvider>
-            <App />
-            <Toaster position="top-right" richColors closeButton />
-          </NotificationsProvider>
-        </ImpersonationProvider>
-      </LanguageProvider>
-    </ThemeProvider>
+    <EnhancedErrorBoundary maxRetries={3} isolateOnError={true}>
+      <ConsoleErrorLogger />
+      <ThemeProvider>
+        <LanguageProvider>
+          <ImpersonationProvider>
+            <NotificationsProvider>
+              <App />
+              <Toaster position="top-right" richColors closeButton />
+            </NotificationsProvider>
+          </ImpersonationProvider>
+        </LanguageProvider>
+      </ThemeProvider>
+    </EnhancedErrorBoundary>
   </React.StrictMode>
 );
