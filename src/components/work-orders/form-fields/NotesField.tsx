@@ -17,17 +17,18 @@ interface NotesFieldProps {
 
 export const NotesField: React.FC<NotesFieldProps> = ({ form }) => {
   return (
-    <div className="col-span-full">
+    <div className="bg-white p-4 rounded-lg border border-gray-200 space-y-4">
+      <h3 className="text-lg font-semibold mb-4">Additional Notes</h3>
       <FormField
         control={form.control}
         name="notes"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Notes</FormLabel>
+            <FormLabel>Internal Notes</FormLabel>
             <FormControl>
               <Textarea 
-                placeholder="Add any additional notes about this work order..."
-                className="min-h-[100px]"
+                placeholder="Add any internal notes or special instructions..."
+                className="min-h-[80px]"
                 {...field} 
               />
             </FormControl>
