@@ -153,3 +153,129 @@ export const deleteServiceCategory = async (id: string): Promise<void> => {
     throw error;
   }
 };
+
+// Alias for backward compatibility
+export const saveServiceCategory = createServiceCategory;
+
+export const deleteServiceSubcategory = async (categoryId: string, subcategoryId: string): Promise<void> => {
+  try {
+    // Fetch the current category
+    const { data: category, error: fetchError } = await supabase
+      .from('service_hierarchy')
+      .select('subcategories')
+      .eq('id', categoryId)
+      .single();
+
+    if (fetchError) {
+      throw new Error(`Failed to fetch category: ${fetchError.message}`);
+    }
+
+    // Parse subcategories and remove the specified one
+    const subcategories = category.subcategories ? JSON.parse(category.subcategories) : [];
+    const updatedSubcategories = subcategories.filter((sub: any) => sub.id !== subcategoryId);
+
+    // Update the category with the new subcategories
+    const { error: updateError } = await supabase
+      .from('service_hierarchy')
+      .update({ subcategories: JSON.stringify(updatedSubcategories) })
+      .eq('id', categoryId);
+
+    if (updateError) {
+      throw new Error(`Failed to delete subcategory: ${updateError.message}`);
+    }
+  } catch (error) {
+    console.error('Error deleting service subcategory:', error);
+    throw error;
+  }
+};
+
+export const deleteServiceJob = async (categoryId: string, subcategoryId: string, jobId: string): Promise<void> => {
+  try {
+    // Fetch the current category
+    const { data: category, error: fetchError } = await supabase
+      .from('service_hierarchy')
+      .select('subcategories')
+      .eq('id', categoryId)
+      .single();
+
+    if (fetchError) {
+      throw new Error(`Failed to fetch category: ${fetchError.message}`);
+    }
+
+    // Parse subcategories and update the specified one
+    const subcategories = category.subcategories ? JSON.parse(category.subcategories) : [];
+    const updatedSubcategories = subcategories.map((sub: any) => {
+      if (sub.id === subcategoryId) {
+        return {
+          ...sub,
+          jobs: (sub.jobs || []).filter((job: any) => job.id !== jobId)
+        };
+      }
+      return sub;
+    });
+
+    // Update the category with the new subcategories
+    const { error: updateError } = await supabase
+      .from('service_hierarchy')
+      .update({ subcategories: JSON.stringify(updatedSubcategories) })
+      .eq('id', categoryId);
+
+    if (updateError) {
+      throw new Error(`Failed to delete job: ${updateError.message}`);
+    }
+  } catch (error) {
+    console.error('Error deleting service job:', error);
+    throw error;
+  }
+};
+
+export const removeDuplicateItem = async (itemId: string, type: 'category' | 'subcategory' | 'job'): Promise<void> => {
+  try {
+    if (type === 'category') {
+      await deleteServiceCategory(itemId);
+    } else {
+      // For subcategories and jobs, we need more context to identify which category they belong to
+      // This is a simplified implementation - in practice, you might need to search through all categories
+      throw new Error('Removing duplicates for subcategories and jobs requires category context');
+    }
+  } catch (error) {
+    console.error('Error removing duplicate item:', error);
+    throw error;
+  }
+};
+
+export const bulkImportServiceCategories = async (
+  categories: ServiceMainCategory[], 
+  onProgress?: (progress: number) => void
+): Promise<void> => {
+  try {
+    const total = categories.length;
+    
+    for (let i = 0; i < categories.length; i++) {
+      const category = categories[i];
+      
+      // Check if category already exists
+      const { data: existing } = await supabase
+        .from('service_hierarchy')
+        .select('id')
+        .eq('name', category.name)
+        .single();
+
+      if (existing) {
+        // Update existing category
+        await updateServiceCategory(existing.id, category);
+      } else {
+        // Create new category
+        await createServiceCategory(category);
+      }
+
+      // Report progress
+      if (onProgress) {
+        onProgress(((i + 1) / total) * 100);
+      }
+    }
+  } catch (error) {
+    console.error('Error during bulk import:', error);
+    throw error;
+  }
+};
