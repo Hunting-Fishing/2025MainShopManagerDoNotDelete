@@ -1,336 +1,173 @@
 
-import React, { useState, useEffect } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import ProductsList from './ProductsList';
-import { manufacturers } from '@/data/manufacturers';
-import { categories } from '@/data/toolCategories';
-import { Manufacturer, ToolCategory, AffiliateTool } from '@/types/affiliate';
-import { useProductsManager } from '@/hooks/affiliate/useProductsManager';
-import { ArrowUpDown, Search } from 'lucide-react';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Search, Edit, Trash2, Package } from 'lucide-react';
+import { toast } from 'sonner';
+
+interface Category {
+  id: string;
+  name: string;
+  description: string;
+  productCount: number;
+  isActive: boolean;
+  parentId?: string;
+}
 
 const CategoriesManagement: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<string>("tools");
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-  const [toolCategories, setToolCategories] = useState<ToolCategory[]>([]);
-  const [isLoadingCategories, setIsLoadingCategories] = useState<boolean>(true);
-  
-  // Load products by category to get actual counts
-  useEffect(() => {
-    const loadCategoriesWithCounts = async () => {
-      setIsLoadingCategories(true);
-      try {
-        // First get all categories from the database
-        const { data: dbCategories, error: categoriesError } = await supabase
-          .from('product_categories')
-          .select('id, name, slug, description');
-        
-        if (categoriesError) throw categoriesError;
-        
-        // Transform categories from the static data but use DB categories if available
-        const cats: ToolCategory[] = Object.entries(categories).map(([name, tools]) => {
-          // Look for matching category in DB
-          const dbCategory = dbCategories?.find(
-            cat => cat.name.toLowerCase() === name.toLowerCase()
-          );
-          
-          return {
-            id: dbCategory?.id || name.toLowerCase().replace(/\s+/g, '-'),
-            name,
-            productCount: 0, // Start with 0, we'll update this with actual counts
-            imageUrl: null,
-            slug: dbCategory?.slug || name.toLowerCase().replace(/\s+/g, '-'),
-            description: dbCategory?.description || `Tools for ${name}`,
-          };
-        });
-        
-        // For each category, get the product count
-        const categoriesWithCounts = await Promise.all(
-          cats.map(async (category) => {
-            const { data, error, count } = await supabase
-              .from('products')
-              .select('*', { count: 'exact', head: false })
-              .eq('category', category.name);
-              
-            if (error) {
-              console.error(`Error fetching products for ${category.name}:`, error);
-              return category;
-            }
-            
-            return {
-              ...category,
-              productCount: count || 0
-            };
-          })
-        );
-        
-        setToolCategories(categoriesWithCounts);
-      } catch (error) {
-        console.error("Error loading categories with counts:", error);
-        // Fallback to static data if there's an error
-        const staticCategories: ToolCategory[] = Object.entries(categories).map(([name, tools]) => ({
-          id: name.toLowerCase().replace(/\s+/g, '-'),
-          name,
-          productCount: 0, // Set to 0 since we don't know actual counts
-          imageUrl: null,
-          slug: name.toLowerCase().replace(/\s+/g, '-'),
-          description: `Tools for ${name}`,
-        }));
-        setToolCategories(staticCategories);
-        toast({
-          title: "Error",
-          description: "Failed to load product counts. Showing default categories.",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoadingCategories(false);
-      }
-    };
-    
-    loadCategoriesWithCounts();
-  }, []);
-  
-  // Group manufacturers by category
-  const manufacturersByCategory = manufacturers.reduce((acc, manufacturer) => {
-    if (!acc[manufacturer.category]) {
-      acc[manufacturer.category] = [];
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categories] = useState<Category[]>([
+    {
+      id: '1',
+      name: 'Power Tools',
+      description: 'Electric and battery-powered tools for automotive work',
+      productCount: 45,
+      isActive: true
+    },
+    {
+      id: '2',
+      name: 'Hand Tools',
+      description: 'Manual tools and precision instruments',
+      productCount: 78,
+      isActive: true
+    },
+    {
+      id: '3',
+      name: 'Diagnostic Equipment',
+      description: 'Advanced diagnostic and testing equipment',
+      productCount: 23,
+      isActive: true
+    },
+    {
+      id: '4',
+      name: 'Safety Equipment',
+      description: 'Personal protective equipment and safety gear',
+      productCount: 34,
+      isActive: true
+    },
+    {
+      id: '5',
+      name: 'Specialty Tools',
+      description: 'Specialized tools for specific automotive tasks',
+      productCount: 19,
+      isActive: false
     }
-    acc[manufacturer.category].push(manufacturer);
-    return acc;
-  }, {} as Record<string, Manufacturer[]>);
-  
-  // Get unique manufacturer categories
-  const manufacturerCategories = Object.keys(manufacturersByCategory).sort();
-  
-  const { products, loading, error, updateProduct, deleteProduct } = useProductsManager({
-    categoryType: activeTab === 'tools' ? 'tool' : 'manufacturer',
-    categoryName: selectedCategory || undefined
-  });
+  ]);
 
-  // Set default category when tab changes
-  useEffect(() => {
-    if (activeTab === 'tools' && toolCategories.length > 0) {
-      setSelectedCategory(toolCategories[0].name);
-    } else if (activeTab === 'manufacturers' && manufacturers.length > 0) {
-      setSelectedCategory(manufacturers[0].name);
-    } else {
-      setSelectedCategory(null);
-    }
-  }, [activeTab, toolCategories]);
-
-  const filteredToolCategories = toolCategories.filter(category => 
-    category.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredCategories = categories.filter(category =>
+    category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    category.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const filteredManufacturers = manufacturers.filter(manufacturer => 
-    manufacturer.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const sortedToolCategories = [...filteredToolCategories].sort((a, b) => {
-    if (sortDirection === 'asc') {
-      return a.name.localeCompare(b.name);
-    } else {
-      return b.name.localeCompare(a.name);
-    }
-  });
-
-  const sortedManufacturers = [...filteredManufacturers].sort((a, b) => {
-    if (sortDirection === 'asc') {
-      return a.name.localeCompare(b.name);
-    } else {
-      return b.name.localeCompare(a.name);
-    }
-  });
-
-  const handleSortToggle = () => {
-    setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+  const handleAddCategory = () => {
+    toast.info('Add Category functionality will be implemented');
   };
 
-  // Define the onEdit handler function
-  const handleEdit = (product: AffiliateTool) => {
-    // In a real app, you might open an edit dialog/form here
-    console.log("Edit product:", product);
-    toast({
-      title: "Edit Product",
-      description: `You selected to edit ${product.name}`,
-    });
+  const handleEditCategory = (categoryId: string) => {
+    toast.info(`Edit Category ${categoryId} functionality will be implemented`);
   };
 
-  // Define the onDelete handler function
-  const handleDelete = async (product: AffiliateTool) => {
-    try {
-      if (window.confirm(`Are you sure you want to delete ${product.name}?`)) {
-        await deleteProduct(product.id);
-        toast({
-          title: "Success",
-          description: `${product.name} was deleted successfully`,
-          variant: "success",
-        });
-      }
-    } catch (error) {
-      console.error("Error deleting product:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete the product",
-        variant: "destructive",
-      });
-    }
+  const handleDeleteCategory = (categoryId: string) => {
+    toast.info(`Delete Category ${categoryId} functionality will be implemented`);
   };
-
-  // Format category name for display
-  const formatCategoryName = (category: string): string => {
-    return category
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  };
-
-  const renderCategoryCard = (category: ToolCategory) => (
-    <Card 
-      key={category.id}
-      className={`cursor-pointer transition-all ${selectedCategory === category.name ? 'border-primary ring-1 ring-primary' : 'hover:border-primary/50'}`}
-      onClick={() => setSelectedCategory(category.name)}
-    >
-      <CardHeader className="pb-2">
-        <CardTitle className="text-md font-semibold">{category.name}</CardTitle>
-        <CardDescription className="text-xs">
-          {category.productCount || 0} products
-        </CardDescription>
-      </CardHeader>
-      {category.imageUrl && (
-        <CardContent className="pt-0">
-          <div className="h-24 w-full bg-gray-100 rounded flex items-center justify-center overflow-hidden">
-            <img 
-              src={category.imageUrl} 
-              alt={category.name} 
-              className="w-full h-full object-cover"
-            />
-          </div>
-        </CardContent>
-      )}
-    </Card>
-  );
-
-  const renderManufacturerCard = (manufacturer: Manufacturer) => (
-    <Card 
-      key={manufacturer.id}
-      className={`cursor-pointer transition-all ${selectedCategory === manufacturer.name ? 'border-primary ring-1 ring-primary' : 'hover:border-primary/50'}`}
-      onClick={() => setSelectedCategory(manufacturer.name)}
-    >
-      <CardHeader className="pb-2">
-        <CardTitle className="text-md font-semibold">{manufacturer.name}</CardTitle>
-        <CardDescription className="text-xs">
-          {manufacturer.category}
-        </CardDescription>
-      </CardHeader>
-      {manufacturer.logoUrl && (
-        <CardContent className="pt-0">
-          <div className="h-24 w-full bg-gray-100 rounded flex items-center justify-center overflow-hidden p-2">
-            <img 
-              src={manufacturer.logoUrl} 
-              alt={manufacturer.name} 
-              className="max-w-full max-h-full object-contain"
-            />
-          </div>
-        </CardContent>
-      )}
-    </Card>
-  );
 
   return (
-    <div className="space-y-6">
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="flex justify-between items-center">
-          <TabsList>
-            <TabsTrigger value="tools">Tool Categories</TabsTrigger>
-            <TabsTrigger value="manufacturers">Manufacturers</TabsTrigger>
-          </TabsList>
-          
-          <div className="flex items-center space-x-2">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={`Search ${activeTab === 'tools' ? 'categories' : 'manufacturers'}...`}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 w-[200px]"
-              />
-            </div>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleSortToggle}
-              title={`Sort ${sortDirection === 'asc' ? 'A-Z' : 'Z-A'}`}
-            >
-              <ArrowUpDown className="h-4 w-4" />
-            </Button>
+    <Card className="bg-white shadow-md rounded-xl border border-gray-100">
+      <CardHeader className="bg-gradient-to-r from-purple-50 to-indigo-50 border-b">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5 text-purple-600" />
+            Product Categories
+            <Badge variant="outline" className="ml-2 bg-purple-100 text-purple-700 border-purple-300">
+              {categories.length} categories
+            </Badge>
+          </CardTitle>
+          <Button onClick={handleAddCategory} className="bg-purple-600 hover:bg-purple-700">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Category
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="p-6">
+        <div className="mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search categories..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
           </div>
         </div>
 
-        <TabsContent value="tools" className="mt-6 space-y-6">
-          {isLoadingCategories ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {[...Array(10)].map((_, i) => (
-                <Card key={i} className="h-[100px] animate-pulse bg-gray-100 dark:bg-gray-800"></Card>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {sortedToolCategories.length > 0 ? (
-                sortedToolCategories.map(renderCategoryCard)
-              ) : (
-                <div className="col-span-full p-4 text-center text-muted-foreground">
-                  No tool categories found
+        <div className="space-y-4">
+          {filteredCategories.map((category) => (
+            <div key={category.id} className="border rounded-xl p-4 bg-gradient-to-r from-white to-gray-50 hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="font-semibold text-lg text-gray-900">{category.name}</h3>
+                    <Badge variant={category.isActive ? "default" : "secondary"} className={category.isActive ? "bg-green-100 text-green-800 border-green-200" : ""}>
+                      {category.isActive ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </div>
+                  
+                  <p className="text-gray-600 mb-3">{category.description}</p>
+                  
+                  <div className="flex items-center gap-4 text-sm">
+                    <div className="flex items-center gap-1">
+                      <Package className="h-4 w-4 text-blue-500" />
+                      <span className="text-gray-600">
+                        <span className="font-medium text-blue-600">{category.productCount}</span> products
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              )}
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="manufacturers" className="mt-6 space-y-6">
-          {/* Manufacturer categories accordion */}
-          <div className="space-y-6">
-            {manufacturerCategories.map(categoryKey => (
-              <div key={categoryKey} className="space-y-3">
-                <h3 className="text-xl font-semibold capitalize bg-blue-50 dark:bg-blue-900/20 p-2 rounded-lg">
-                  {formatCategoryName(categoryKey)}
-                </h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                  {manufacturersByCategory[categoryKey].map(manufacturer => renderManufacturerCard(manufacturer))}
+                
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleEditCategory(category.id)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleDeleteCategory(category.id)}
+                    className="text-red-600 border-red-200 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
-            ))}
-          </div>
-        </TabsContent>
-      </Tabs>
-
-      {selectedCategory && (
-        <div className="mt-8 p-4 border rounded-lg bg-card">
-          <h2 className="text-xl font-semibold mb-4">Products in {selectedCategory}</h2>
-          {loading ? (
-            <div className="p-8 text-center">Loading products...</div>
-          ) : error ? (
-            <div className="p-8 text-center text-destructive">
-              Error loading products: {error}
             </div>
-          ) : (
-            <ProductsList 
-              products={products} 
-              categoryName={selectedCategory}
-              loading={loading}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-          )}
+          ))}
         </div>
-      )}
-    </div>
+        
+        {filteredCategories.length === 0 && (
+          <div className="text-center py-12">
+            <div className="flex flex-col items-center gap-4">
+              <div className="p-4 bg-gray-100 rounded-full">
+                <Package className="h-8 w-8 text-gray-400" />
+              </div>
+              <div>
+                <p className="text-gray-500 font-medium">
+                  {searchTerm ? 'No categories match your search' : 'No categories found'}
+                </p>
+                <p className="text-sm text-gray-400 mt-1">
+                  {searchTerm ? 'Try adjusting your search terms' : 'Add your first category to get started'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

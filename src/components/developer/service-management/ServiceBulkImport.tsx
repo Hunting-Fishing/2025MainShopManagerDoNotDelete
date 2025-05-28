@@ -3,7 +3,6 @@ import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import { AlertDialogFooter, AlertDialogCancel } from '@/components/ui/alert-dialog';
 import { Upload } from 'lucide-react';
 import { parseExcelFile } from '@/lib/services/excelParser';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
@@ -67,61 +66,66 @@ const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onCancel, onCompl
   };
 
   return (
-    <div className="py-2">
-      <div className="space-y-4">
-        <div className="flex items-center gap-4">
-          <div className="flex-1">
-            <Input
-              type="text"
-              value={file?.name || ''}
-              placeholder="No file selected"
-              readOnly
-              className="bg-gray-50"
-            />
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={handleFileChange}
-              className="hidden"
-            />
+    <div className="bg-white rounded-xl border border-gray-100 p-6">
+      <div className="space-y-6">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Import Service Categories</h3>
+          <p className="text-gray-600 text-sm">Upload an Excel file to bulk import service categories, subcategories, and jobs.</p>
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
+              <Input
+                type="text"
+                value={file?.name || ''}
+                placeholder="No file selected"
+                readOnly
+                className="bg-gray-50"
+              />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+            </div>
+            <Button type="button" onClick={handleUploadClick} disabled={isProcessing} className="bg-indigo-600 hover:bg-indigo-700">
+              <Upload className="h-4 w-4 mr-2" />
+              Browse
+            </Button>
           </div>
-          <Button type="button" onClick={handleUploadClick} disabled={isProcessing} className="bg-indigo-600 hover:bg-indigo-700">
-            <Upload className="h-4 w-4 mr-2" />
-            Browse
+
+          {isProcessing && (
+            <div className="space-y-2">
+              <div className="text-sm text-gray-500">
+                Importing services... {Math.round(progress)}%
+              </div>
+              <Progress value={progress} className="h-2" />
+            </div>
+          )}
+
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-800">
+            <p className="font-medium mb-2">File Format Requirements:</p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>File should be in Excel format (.xlsx or .xls)</li>
+              <li>Required columns: category, subcategory, service</li>
+              <li>Optional columns: price, time, description</li>
+              <li>Existing services with the same names may be updated</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3 pt-4 border-t">
+          <Button variant="outline" onClick={onCancel} disabled={isProcessing}>
+            Cancel
+          </Button>
+          <Button onClick={handleImport} disabled={!file || isProcessing} className="bg-indigo-600 hover:bg-indigo-700">
+            {isProcessing ? 'Importing...' : 'Import Services'}
           </Button>
         </div>
-
-        {isProcessing && (
-          <div className="space-y-2">
-            <div className="text-sm text-gray-500">
-              Importing services... {Math.round(progress)}%
-            </div>
-            <Progress value={progress} className="h-2 bg-indigo-100">
-              <div className="h-full bg-indigo-600 transition-all" style={{ width: `${progress}%` }} />
-            </Progress>
-          </div>
-        )}
-
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 text-sm text-yellow-800">
-          <p className="font-medium">Important:</p>
-          <ul className="list-disc list-inside space-y-1 mt-1">
-            <li>File should be in Excel format (.xlsx or .xls)</li>
-            <li>Required columns: category, subcategory, service</li>
-            <li>Optional columns: price, time, description</li>
-            <li>Existing services with the same names may be updated</li>
-          </ul>
-        </div>
       </div>
-
-      <AlertDialogFooter className="mt-6">
-        <AlertDialogCancel onClick={onCancel} disabled={isProcessing}>
-          Cancel
-        </AlertDialogCancel>
-        <Button onClick={handleImport} disabled={!file || isProcessing} className="bg-indigo-600 hover:bg-indigo-700">
-          Import Services
-        </Button>
-      </AlertDialogFooter>
     </div>
   );
 };

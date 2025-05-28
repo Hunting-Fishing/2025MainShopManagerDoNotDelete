@@ -1,60 +1,47 @@
 
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { HelmetProvider } from 'react-helmet-async';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from '@/components/ui/toaster';
-import Layout from '@/components/layout/Layout';
-import AuthGate from '@/components/AuthGate';
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { Layout } from '@/components/layout/Layout';
+import { Toaster } from '@/components/ui/sonner';
+import { ThemeProvider } from '@/context/ThemeContext';
+import { LanguageProvider } from '@/context/LanguageContext';
+import { NotificationsProvider } from '@/context/NotificationsContext';
+import { CustomerDataProvider } from '@/contexts/CustomerDataProvider';
 import { ImpersonationProvider } from '@/contexts/ImpersonationContext';
 import { ReactErrorBoundary } from '@/components/error/ReactErrorBoundary';
-import { ConsoleErrorLogger } from '@/components/debug/ConsoleErrorLogger';
 
-// Pages
+// Page imports
 import Dashboard from '@/pages/Dashboard';
-import Login from '@/pages/Login';
-import CustomersPage from '@/pages/CustomersPage';
-import CreateCustomer from '@/pages/CreateCustomer';
-import CustomerDetails from '@/pages/CustomerDetails';
-import EditCustomer from '@/pages/EditCustomer';
-import WorkOrders from '@/pages/WorkOrders';
-import WorkOrderCreate from '@/pages/WorkOrderCreate';
-import WorkOrderDetails from '@/pages/WorkOrderDetails';
-import WorkOrderEdit from '@/pages/WorkOrderEdit';
-import Inventory from '@/pages/Inventory';
-import Equipment from '@/pages/Equipment';
-import EquipmentDetails from '@/pages/EquipmentDetails';
-import Team from '@/pages/Team';
-import Reports from '@/pages/Reports';
-import Notifications from '@/pages/Notifications';
-import DeveloperPortal from '@/pages/DeveloperPortal';
-import NotFound from '@/pages/NotFound';
-import Unauthorized from '@/pages/Unauthorized';
-import ErrorPage from '@/pages/error-page';
-import ClientBooking from '@/pages/ClientBooking';
-
-// Settings pages
+import CustomersPage from '@/pages/Customers';
+import CustomerDetailsPage from '@/pages/CustomerDetails';
+import EquipmentPage from '@/pages/Equipment';
+import InventoryPage from '@/pages/Inventory';
+import WorkOrdersPage from '@/pages/WorkOrders';
+import InvoicesPage from '@/pages/Invoices';
+import TeamPage from '@/pages/Team';
 import Settings from '@/pages/Settings';
-import CompanySettings from '@/pages/settings/CompanySettings';
-import AppearanceSettings from '@/pages/settings/AppearanceSettings';
-import IntegrationsSettings from '@/pages/settings/IntegrationsSettings';
+import DeveloperPortal from '@/pages/DeveloperPortal';
 
-// Developer portal pages
+// Developer Portal Pages
+import ServiceManagement from '@/pages/developer/ServiceManagement';
 import OrganizationManagement from '@/pages/developer/OrganizationManagement';
 import ShoppingControls from '@/pages/developer/ShoppingControls';
-import ServiceManagement from '@/pages/developer/ServiceManagement';
 import UserManagement from '@/pages/developer/UserManagement';
 import SystemSettings from '@/pages/developer/SystemSettings';
 import ToolsManagement from '@/pages/developer/ToolsManagement';
 import AnalyticsDashboard from '@/pages/developer/AnalyticsDashboard';
 import SecuritySettings from '@/pages/developer/SecuritySettings';
 
+// Settings Pages
+import IntegrationsSettings from '@/pages/settings/IntegrationsSettings';
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: false,
     },
   },
 });
@@ -62,73 +49,50 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <ReactErrorBoundary>
-      <ConsoleErrorLogger />
-      <HelmetProvider>
-        <QueryClientProvider client={queryClient}>
-          <ImpersonationProvider>
-            <Router>
-              <div className="App">
-                <Routes>
-                  {/* Public routes */}
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/client-booking" element={<ClientBooking />} />
-                  <Route path="/customer-portal" element={<ClientBooking />} />
-                  <Route path="/unauthorized" element={<Unauthorized />} />
-                  <Route path="/error" element={<ErrorPage />} />
-                  
-                  {/* Protected routes */}
-                  <Route
-                    path="/*"
-                    element={
-                      <AuthGate>
-                        <Layout>
-                          <Routes>
-                            <Route path="/" element={<Dashboard />} />
-                            <Route path="/customers" element={<CustomersPage />} />
-                            <Route path="/customers/create" element={<CreateCustomer />} />
-                            <Route path="/customers/:id" element={<CustomerDetails />} />
-                            <Route path="/customers/:id/edit" element={<EditCustomer />} />
-                            <Route path="/work-orders" element={<WorkOrders />} />
-                            <Route path="/work-orders/create" element={<WorkOrderCreate />} />
-                            <Route path="/work-orders/:id" element={<WorkOrderDetails />} />
-                            <Route path="/work-orders/:id/edit" element={<WorkOrderEdit />} />
-                            <Route path="/inventory" element={<Inventory />} />
-                            <Route path="/equipment" element={<Equipment />} />
-                            <Route path="/equipment/:id" element={<EquipmentDetails />} />
-                            <Route path="/team" element={<Team />} />
-                            <Route path="/reports" element={<Reports />} />
-                            <Route path="/notifications" element={<Notifications />} />
-                            
-                            {/* Developer Portal Routes */}
-                            <Route path="/developer" element={<DeveloperPortal />} />
-                            <Route path="/developer/organization-management" element={<OrganizationManagement />} />
-                            <Route path="/developer/shopping-controls" element={<ShoppingControls />} />
-                            <Route path="/developer/service-management" element={<ServiceManagement />} />
-                            <Route path="/developer/user-management" element={<UserManagement />} />
-                            <Route path="/developer/system-settings" element={<SystemSettings />} />
-                            <Route path="/developer/tools-management" element={<ToolsManagement />} />
-                            <Route path="/developer/analytics-dashboard" element={<AnalyticsDashboard />} />
-                            <Route path="/developer/security-settings" element={<SecuritySettings />} />
-                            
-                            {/* Settings Routes */}
-                            <Route path="/settings" element={<Settings />} />
-                            <Route path="/settings/company" element={<CompanySettings />} />
-                            <Route path="/settings/appearance" element={<AppearanceSettings />} />
-                            <Route path="/settings/integrations" element={<IntegrationsSettings />} />
-                            
-                            <Route path="*" element={<NotFound />} />
-                          </Routes>
-                        </Layout>
-                      </AuthGate>
-                    }
-                  />
-                </Routes>
-                <Toaster />
-              </div>
-            </Router>
-          </ImpersonationProvider>
-        </QueryClientProvider>
-      </HelmetProvider>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <LanguageProvider>
+            <NotificationsProvider>
+              <ImpersonationProvider>
+                <CustomerDataProvider>
+                  <Router>
+                    <Layout>
+                      <Routes>
+                        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                        <Route path="/dashboard" element={<Dashboard />} />
+                        <Route path="/customers" element={<CustomersPage />} />
+                        <Route path="/customers/:id" element={<CustomerDetailsPage />} />
+                        <Route path="/equipment" element={<EquipmentPage />} />
+                        <Route path="/inventory" element={<InventoryPage />} />
+                        <Route path="/work-orders" element={<WorkOrdersPage />} />
+                        <Route path="/invoices" element={<InvoicesPage />} />
+                        <Route path="/team" element={<TeamPage />} />
+                        <Route path="/settings" element={<Settings />} />
+                        
+                        {/* Settings Routes */}
+                        <Route path="/settings/integrations" element={<IntegrationsSettings />} />
+                        
+                        {/* Developer Portal Routes */}
+                        <Route path="/developer" element={<DeveloperPortal />} />
+                        <Route path="/developer/service-management" element={<ServiceManagement />} />
+                        <Route path="/developer/organization-management" element={<OrganizationManagement />} />
+                        <Route path="/developer/shopping-controls" element={<ShoppingControls />} />
+                        <Route path="/developer/user-management" element={<UserManagement />} />
+                        <Route path="/developer/system-settings" element={<SystemSettings />} />
+                        <Route path="/developer/tools-management" element={<ToolsManagement />} />
+                        <Route path="/developer/analytics-dashboard" element={<AnalyticsDashboard />} />
+                        <Route path="/developer/security-settings" element={<SecuritySettings />} />
+                      </Routes>
+                    </Layout>
+                    <Toaster />
+                  </Router>
+                </CustomerDataProvider>
+              </ImpersonationProvider>
+            </NotificationsProvider>
+          </LanguageProvider>
+        </ThemeProvider>
+        <ReactQueryDevtools initialIsOpen={false} />
+      </QueryClientProvider>
     </ReactErrorBoundary>
   );
 }

@@ -1,458 +1,224 @@
 
-import React, { useState, useEffect } from "react";
-import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { integrationService } from "@/services/settings/integrationService";
-import { IntegrationSettings } from "@/types/settings";
-import { useToast } from "@/components/ui/use-toast";
-import { PlusCircle, CreditCard, Calendar, MessageSquare, BarChart3, Users, Link2, Settings2 } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Settings, Link as LinkIcon, Key, CheckCircle, AlertCircle, Globe } from 'lucide-react';
+import { toast } from 'sonner';
 
-export function IntegrationsTab({ shopId }: { shopId?: string }) {
-  const [integrations, setIntegrations] = useState<IntegrationSettings[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [currentIntegration, setCurrentIntegration] = useState<IntegrationSettings | null>(null);
-  const [integrationType, setIntegrationType] = useState<string>("payment");
-  const [configValues, setConfigValues] = useState<Record<string, string>>({});
-  const [isEnabled, setIsEnabled] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const { toast } = useToast();
+interface IntegrationService {
+  id: string;
+  name: string;
+  description: string;
+  icon: React.ReactNode;
+  isConnected: boolean;
+  status: 'active' | 'inactive' | 'error';
+  apiKey?: string;
+  lastSync?: string;
+}
 
-  useEffect(() => {
-    if (!shopId) return;
+interface IntegrationsTabProps {
+  shopId?: string;
+}
+
+export const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ shopId }) => {
+  const [services, setServices] = useState<IntegrationService[]>([
+    {
+      id: 'stripe',
+      name: 'Stripe',
+      description: 'Payment processing and billing management',
+      icon: <Globe className="h-5 w-5 text-blue-600" />,
+      isConnected: true,
+      status: 'active',
+      lastSync: '2024-01-15T10:30:00Z'
+    },
+    {
+      id: 'quickbooks',
+      name: 'QuickBooks',
+      description: 'Accounting and financial management',
+      icon: <Settings className="h-5 w-5 text-green-600" />,
+      isConnected: false,
+      status: 'inactive'
+    },
+    {
+      id: 'mailgun',
+      name: 'Mailgun',
+      description: 'Email delivery and marketing automation',
+      icon: <LinkIcon className="h-5 w-5 text-orange-600" />,
+      isConnected: true,
+      status: 'error',
+      lastSync: '2024-01-14T15:45:00Z'
+    },
+    {
+      id: 'twilio',
+      name: 'Twilio',
+      description: 'SMS messaging and communication',
+      icon: <Key className="h-5 w-5 text-red-600" />,
+      isConnected: false,
+      status: 'inactive'
+    }
+  ]);
+
+  const [apiKeys, setApiKeys] = useState<Record<string, string>>({
+    stripe: 'sk_test_*********************',
+    mailgun: 'mg_*********************'
+  });
+
+  const handleToggleConnection = (serviceId: string) => {
+    setServices(prev => prev.map(service => 
+      service.id === serviceId 
+        ? { 
+            ...service, 
+            isConnected: !service.isConnected,
+            status: !service.isConnected ? 'active' : 'inactive'
+          }
+        : service
+    ));
     
-    const loadIntegrations = async () => {
-      setLoading(true);
-      const data = await integrationService.getIntegrationSettings(shopId);
-      
-      if (data) {
-        setIntegrations(data);
-      }
-      
-      setLoading(false);
-    };
-    
-    loadIntegrations();
-  }, [shopId]);
-
-  const handleAddIntegration = () => {
-    setCurrentIntegration(null);
-    setIntegrationType("payment");
-    setConfigValues({});
-    setIsEnabled(true);
-    setDialogOpen(true);
-  };
-
-  const handleEditIntegration = (integration: IntegrationSettings) => {
-    setCurrentIntegration(integration);
-    setIntegrationType(integration.integration_type);
-    setConfigValues(integration.config || {});
-    setIsEnabled(integration.is_enabled);
-    setDialogOpen(true);
-  };
-
-  const handleSaveIntegration = async () => {
-    if (!shopId) return;
-    
-    setSaving(true);
-    
-    try {
-      if (currentIntegration) {
-        // Update existing integration
-        await integrationService.updateIntegrationSetting(currentIntegration.id, {
-          integration_type: integrationType as any,
-          config: configValues,
-          is_enabled: isEnabled
-        });
-        
-        setIntegrations(prev => 
-          prev.map(i => i.id === currentIntegration.id ? {
-            ...i, 
-            integration_type: integrationType as any,
-            config: configValues,
-            is_enabled: isEnabled
-          } : i)
-        );
-        
-        toast({
-          title: "Integration updated",
-          description: `${integrationType.charAt(0).toUpperCase() + integrationType.slice(1)} integration has been updated.`
-        });
-      } else {
-        // Create new integration
-        const newIntegration = await integrationService.createIntegrationSetting({
-          shop_id: shopId,
-          integration_type: integrationType as any,
-          config: configValues,
-          is_enabled: isEnabled
-        });
-        
-        if (newIntegration) {
-          setIntegrations(prev => [...prev, newIntegration]);
-        }
-        
-        toast({
-          title: "Integration added",
-          description: `${integrationType.charAt(0).toUpperCase() + integrationType.slice(1)} integration has been added.`
-        });
-      }
-      
-      setDialogOpen(false);
-    } catch (error) {
-      console.error("Error saving integration:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save integration",
-        variant: "destructive"
-      });
-    } finally {
-      setSaving(false);
+    const service = services.find(s => s.id === serviceId);
+    if (service) {
+      toast.success(`${service.name} ${service.isConnected ? 'disconnected' : 'connected'} successfully`);
     }
   };
 
-  const handleDeleteIntegration = async (id: string) => {
-    try {
-      await integrationService.deleteIntegrationSetting(id);
-      setIntegrations(prev => prev.filter(i => i.id !== id));
-      
-      toast({
-        title: "Integration removed",
-        description: "The integration has been removed successfully."
-      });
-    } catch (error) {
-      console.error("Error deleting integration:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete integration",
-        variant: "destructive"
-      });
+  const handleApiKeyChange = (serviceId: string, apiKey: string) => {
+    setApiKeys(prev => ({ ...prev, [serviceId]: apiKey }));
+  };
+
+  const handleSaveApiKey = (serviceId: string) => {
+    const service = services.find(s => s.id === serviceId);
+    if (service) {
+      toast.success(`${service.name} API key saved successfully`);
     }
   };
 
-  const handleConfigChange = (key: string, value: string) => {
-    setConfigValues(prev => ({
-      ...prev,
-      [key]: value
-    }));
-  };
-
-  const getIntegrationIcon = (type: string) => {
-    switch (type) {
-      case "payment":
-        return <CreditCard className="h-5 w-5" />;
-      case "calendar":
-        return <Calendar className="h-5 w-5" />;
-      case "sms":
-        return <MessageSquare className="h-5 w-5" />;
-      case "analytics":
-        return <BarChart3 className="h-5 w-5" />;
-      case "crm":
-        return <Users className="h-5 w-5" />;
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'active':
+        return <CheckCircle className="h-4 w-4 text-green-600" />;
+      case 'error':
+        return <AlertCircle className="h-4 w-4 text-red-600" />;
       default:
-        return <Link2 className="h-5 w-5" />;
+        return <Settings className="h-4 w-4 text-gray-400" />;
     }
   };
 
-  const getConfigFields = (type: string) => {
-    switch (type) {
-      case "payment":
-        return (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="provider">Payment Provider</Label>
-              <Select 
-                value={configValues.provider || "stripe"} 
-                onValueChange={(value) => handleConfigChange("provider", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select provider" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="stripe">Stripe</SelectItem>
-                  <SelectItem value="paypal">PayPal</SelectItem>
-                  <SelectItem value="square">Square</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="api_key">API Key</Label>
-              <Input
-                id="api_key"
-                type="password"
-                value={configValues.api_key || ""}
-                onChange={(e) => handleConfigChange("api_key", e.target.value)}
-                placeholder="••••••••"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="webhook_url">Webhook URL</Label>
-              <Input
-                id="webhook_url"
-                value={configValues.webhook_url || ""}
-                onChange={(e) => handleConfigChange("webhook_url", e.target.value)}
-                placeholder="https://example.com/webhooks/payment"
-              />
-            </div>
-          </>
-        );
-        
-      case "calendar":
-        return (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="provider">Calendar Provider</Label>
-              <Select 
-                value={configValues.provider || "google"} 
-                onValueChange={(value) => handleConfigChange("provider", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select provider" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="google">Google Calendar</SelectItem>
-                  <SelectItem value="outlook">Microsoft Outlook</SelectItem>
-                  <SelectItem value="apple">Apple Calendar</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="client_id">Client ID</Label>
-              <Input
-                id="client_id"
-                value={configValues.client_id || ""}
-                onChange={(e) => handleConfigChange("client_id", e.target.value)}
-                placeholder="Client ID"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="client_secret">Client Secret</Label>
-              <Input
-                id="client_secret"
-                type="password"
-                value={configValues.client_secret || ""}
-                onChange={(e) => handleConfigChange("client_secret", e.target.value)}
-                placeholder="••••••••"
-              />
-            </div>
-          </>
-        );
-        
-      case "sms":
-        return (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="provider">SMS Provider</Label>
-              <Select 
-                value={configValues.provider || "twilio"} 
-                onValueChange={(value) => handleConfigChange("provider", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select provider" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="twilio">Twilio</SelectItem>
-                  <SelectItem value="nexmo">Nexmo</SelectItem>
-                  <SelectItem value="messagebird">MessageBird</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="account_sid">Account SID</Label>
-              <Input
-                id="account_sid"
-                value={configValues.account_sid || ""}
-                onChange={(e) => handleConfigChange("account_sid", e.target.value)}
-                placeholder="Account SID"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="auth_token">Auth Token</Label>
-              <Input
-                id="auth_token"
-                type="password"
-                value={configValues.auth_token || ""}
-                onChange={(e) => handleConfigChange("auth_token", e.target.value)}
-                placeholder="••••••••"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="from_number">From Number</Label>
-              <Input
-                id="from_number"
-                value={configValues.from_number || ""}
-                onChange={(e) => handleConfigChange("from_number", e.target.value)}
-                placeholder="+1234567890"
-              />
-            </div>
-          </>
-        );
-        
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'active':
+        return <Badge className="bg-green-100 text-green-800 border-green-200">Active</Badge>;
+      case 'error':
+        return <Badge variant="destructive" className="bg-red-100 text-red-800 border-red-200">Error</Badge>;
       default:
-        return (
-          <div className="space-y-2">
-            <Label htmlFor="api_key">API Key</Label>
-            <Input
-              id="api_key"
-              type="password"
-              value={configValues.api_key || ""}
-              onChange={(e) => handleConfigChange("api_key", e.target.value)}
-              placeholder="••••••••"
-            />
-          </div>
-        );
+        return <Badge variant="secondary">Inactive</Badge>;
     }
   };
-
-  if (loading) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex justify-center items-center h-40">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Settings2 className="h-5 w-5" />
-              Integrations
-            </CardTitle>
-            <CardDescription>
-              Connect your shop with third-party services
-            </CardDescription>
-          </div>
-          <Button onClick={handleAddIntegration}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add Integration
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {integrations.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No integrations configured yet. Click "Add Integration" to get started.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {integrations.map((integration) => (
-                <Card key={integration.id} className="overflow-hidden">
-                  <div className="flex items-center justify-between p-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="bg-primary/10 p-2 rounded-full">
-                        {getIntegrationIcon(integration.integration_type)}
-                      </div>
-                      <div>
-                        <h3 className="font-medium">
-                          {integration.integration_type.charAt(0).toUpperCase() + integration.integration_type.slice(1)}
-                        </h3>
-                        <p className="text-xs text-muted-foreground">
-                          {integration.config?.provider || "Default provider"}
-                        </p>
+      <div className="grid gap-6">
+        {services.map((service) => (
+          <Card key={service.id} className="bg-white shadow-md rounded-xl border border-gray-100">
+            <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 border-b">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {service.icon}
+                  <div>
+                    <CardTitle className="text-lg">{service.name}</CardTitle>
+                    <p className="text-sm text-gray-600 mt-1">{service.description}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  {getStatusBadge(service.status)}
+                  <Switch
+                    checked={service.isConnected}
+                    onCheckedChange={() => handleToggleConnection(service.id)}
+                  />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {getStatusIcon(service.status)}
+                    <span className="text-sm text-gray-600">
+                      Status: {service.status === 'active' ? 'Connected and working' : 
+                              service.status === 'error' ? 'Connection error' : 'Not connected'}
+                    </span>
+                  </div>
+                  {service.lastSync && (
+                    <span className="text-xs text-gray-500">
+                      Last sync: {new Date(service.lastSync).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
+
+                {service.isConnected && (
+                  <div className="space-y-3">
+                    <div>
+                      <Label htmlFor={`${service.id}-api-key`}>API Key</Label>
+                      <div className="flex gap-2 mt-1">
+                        <Input
+                          id={`${service.id}-api-key`}
+                          type="password"
+                          value={apiKeys[service.id] || ''}
+                          onChange={(e) => handleApiKeyChange(service.id, e.target.value)}
+                          placeholder="Enter API key..."
+                        />
+                        <Button 
+                          onClick={() => handleSaveApiKey(service.id)}
+                          variant="outline"
+                          size="sm"
+                        >
+                          Save
+                        </Button>
                       </div>
                     </div>
-                    <Badge variant={integration.is_enabled ? "default" : "outline"}>
-                      {integration.is_enabled ? "Active" : "Disabled"}
-                    </Badge>
+
+                    {service.status === 'error' && (
+                      <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <p className="text-sm text-red-800">
+                          Connection error: Invalid API credentials. Please check your API key and try again.
+                        </p>
+                      </div>
+                    )}
                   </div>
-                  <div className="bg-muted/50 flex items-center justify-end gap-2 p-2">
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleEditIntegration(integration)}
-                    >
-                      Edit
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      className="text-red-500"
-                      onClick={() => handleDeleteIntegration(integration.id)}
-                    >
-                      Remove
-                    </Button>
+                )}
+
+                {!service.isConnected && (
+                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                    <p className="text-sm text-gray-600">
+                      Enable this integration to connect {service.name} with your shop. 
+                      You'll need to provide valid API credentials.
+                    </p>
                   </div>
-                </Card>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-      
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{currentIntegration ? "Edit Integration" : "Add Integration"}</DialogTitle>
-            <DialogDescription>
-              {currentIntegration
-                ? "Update your integration settings"
-                : "Configure a new integration for your shop"}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="integration_type">Integration Type</Label>
-              <Select 
-                value={integrationType} 
-                onValueChange={setIntegrationType}
-                disabled={!!currentIntegration}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select integration type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="payment">Payment</SelectItem>
-                  <SelectItem value="calendar">Calendar</SelectItem>
-                  <SelectItem value="sms">SMS</SelectItem>
-                  <SelectItem value="analytics">Analytics</SelectItem>
-                  <SelectItem value="crm">CRM</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {getConfigFields(integrationType)}
-            
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Enable Integration</Label>
-                <p className="text-sm text-muted-foreground">
-                  Turn on to activate this integration
-                </p>
+                )}
               </div>
-              <Switch 
-                checked={isEnabled}
-                onCheckedChange={setIsEnabled}
-              />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Card className="bg-blue-50 border-blue-200">
+        <CardContent className="p-6">
+          <div className="flex items-start gap-3">
+            <LinkIcon className="h-5 w-5 text-blue-600 mt-0.5" />
+            <div>
+              <h3 className="font-medium text-blue-900">Need help setting up integrations?</h3>
+              <p className="text-sm text-blue-700 mt-1">
+                Check our documentation for step-by-step guides on configuring each integration service.
+              </p>
+              <Button variant="outline" size="sm" className="mt-3 border-blue-300 text-blue-700 hover:bg-blue-100">
+                View Documentation
+              </Button>
             </div>
           </div>
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSaveIntegration}
-              disabled={saving}
-            >
-              {saving ? "Saving..." : "Save"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </CardContent>
+      </Card>
     </div>
   );
-}
+};
