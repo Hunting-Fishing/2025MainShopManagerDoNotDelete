@@ -27,7 +27,7 @@ export interface ShoppingAnalyticsData {
 export function useShoppingAnalytics() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['shoppingAnalytics'],
-    queryFn: async (): Promise<ShoppingAnalyticsData> => {
+    queryFn: async () => {
       try {
         // Get total products
         const { count: totalProducts } = await supabase
@@ -60,7 +60,7 @@ export function useShoppingAnalytics() {
           `);
 
         // Process category data
-        const categoryProductMap = new Map<string, {name: string, count: number}>();
+        const categoryProductMap = new Map();
         
         if (productsWithCategories) {
           productsWithCategories.forEach(product => {
@@ -76,11 +76,11 @@ export function useShoppingAnalytics() {
         const colors = ['#4287f5', '#f54242', '#f5d442', '#42f554', '#8d42f5', '#f542b3', '#42f5d1'];
         
         const productsByCategory = Array.from(categoryProductMap.values())
-          .map((category, index) => ({
+          .map((category: any, index: number) => ({
             ...category,
             color: colors[index % colors.length]
           }))
-          .sort((a, b) => b.count - a.count);
+          .sort((a: any, b: any) => b.count - a.count);
 
         // Get submission data (using product_submissions if it exists)
         let totalSubmissions = 0;
@@ -98,7 +98,7 @@ export function useShoppingAnalytics() {
               .from('product_submissions')
               .select('status');
 
-            const statusMap = new Map<string, number>();
+            const statusMap = new Map();
             if (submissionStatusDataRaw) {
               submissionStatusDataRaw.forEach(submission => {
                 const status = submission.status || 'pending';
@@ -116,7 +116,7 @@ export function useShoppingAnalytics() {
             submissionStatusData = Array.from(statusMap.entries())
               .map(([name, value]) => ({
                 name,
-                value,
+                value: value as number,
                 color: statusColors[name] || '#cccccc'
               }));
           }
@@ -125,7 +125,7 @@ export function useShoppingAnalytics() {
           console.log('Product submissions table not found, using default values');
         }
         
-        return {
+        const result: ShoppingAnalyticsData = {
           totalProducts: totalProducts || 0,
           featuredProducts: featuredProducts || 0,
           totalCategories: totalCategories || 0,
@@ -134,6 +134,8 @@ export function useShoppingAnalytics() {
           submissionStatusData,
           totalSubmissions
         };
+
+        return result;
       } catch (error) {
         console.error("Error fetching shopping analytics data:", error);
         throw error;
