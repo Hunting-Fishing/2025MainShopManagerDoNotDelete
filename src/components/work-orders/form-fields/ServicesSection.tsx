@@ -168,7 +168,22 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ form }) => {
       )}
 
       {/* Service Selector */}
-      {serviceCategories.length > 0 ? (
+      {isLoading ? (
+        <div className="text-center py-8">
+          <p className="text-gray-500">Loading services...</p>
+        </div>
+      ) : error ? (
+        <div className="text-center py-8">
+          <p className="text-red-500">{error}</p>
+          <Button 
+            onClick={() => window.location.reload()} 
+            variant="outline" 
+            className="mt-2"
+          >
+            Retry
+          </Button>
+        </div>
+      ) : serviceCategories.length > 0 ? (
         <HierarchicalServiceSelector
           categories={serviceCategories}
           onServiceSelect={handleServiceSelect}
