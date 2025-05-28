@@ -4,9 +4,9 @@ import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { ServiceAnalytics } from '@/components/developer/service-management/ServiceAnalytics';
-import { ServiceBulkImport } from '@/components/developer/service-management/ServiceBulkImport';
-import { ServicesPriceReport } from '@/components/developer/service-management/ServicesPriceReport';
+import ServiceAnalytics from '@/components/developer/service-management/ServiceAnalytics';
+import ServiceBulkImport from '@/components/developer/service-management/ServiceBulkImport';
+import ServicesPriceReport from '@/components/developer/service-management/ServicesPriceReport';
 
 export default function ServiceManagement() {
   const [activeTab, setActiveTab] = useState("services");

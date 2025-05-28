@@ -4,8 +4,8 @@ import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { ProductsManagement } from '@/components/developer/shopping/ProductsManagement';
-import { AnalyticsTab } from '@/components/developer/shopping/AnalyticsTab';
+import ProductsManagement from '@/components/developer/shopping/ProductsManagement';
+import AnalyticsTab from '@/components/developer/shopping/AnalyticsTab';
 
 export default function ShoppingControls() {
   const [activeTab, setActiveTab] = useState("products");
