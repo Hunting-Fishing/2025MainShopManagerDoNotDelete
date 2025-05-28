@@ -25,7 +25,6 @@ export function CustomerCreateForm() {
 
   return (
     <CustomerForm
-      initialValues={defaultValues}
       onSubmit={onSubmit}
       isSubmitting={isSubmitting}
       isSuccess={isSuccess}

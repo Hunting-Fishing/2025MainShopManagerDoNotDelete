@@ -3,7 +3,7 @@ import React from "react";
 import { TagBadge } from "./TagBadge";
 import { TagSuggestions } from "./TagSuggestions";
 import { Input } from "@/components/ui/input";
-import { useTagSelector } from "./useTagSelector";
+import { useTagSelector } from "./useTagSelector.tsx";
 import { Loader2 } from "lucide-react";
 
 export interface TagSelectorProps {
@@ -65,10 +65,8 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
       
       {showSuggestions && !disabled && !loading && (
         <TagSuggestions
-          inputValue={inputValue}
-          tags={selectedTags}
-          onAddTag={handleAddTag}
-          suggestionsRef={suggestionsRef}
+          onSelectTag={handleAddTag}
+          selectedTags={selectedTags}
         />
       )}
     </div>

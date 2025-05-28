@@ -1,121 +1,133 @@
+
 import React, { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Plus, MessageCircle, Users, Wrench } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-interface NewChatDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onCreateChat: (name: string, type: 'direct' | 'group' | 'work_order', workOrderId?: string) => void;
-}
-
-export function NewChatDialog({ open, onOpenChange, onCreateChat }: NewChatDialogProps) {
+export function NewChatDialog() {
+  const [open, setOpen] = useState(false);
   const [chatName, setChatName] = useState('');
   const [chatType, setChatType] = useState<'direct' | 'group' | 'work_order'>('direct');
-  const [workOrderId, setWorkOrderId] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
+  const [isCreating, setIsCreating] = useState(false);
   const { toast } = useToast();
 
-  const handleSubmit = async () => {
-    if (!chatName.trim()) {
-      toast({
-        title: 'Error',
-        description: 'Chat name cannot be empty.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setIsLoading(true);
+  const handleCreateChat = async () => {
+    setIsCreating(true);
     try {
-      onCreateChat(chatName, chatType, workOrderId);
+      const { data, error } = await supabase
+        .from('chat_threads')
+        .insert({
+          name: chatName,
+          type: chatType,
+          participants: selectedParticipants,
+          created_by: (await supabase.auth.getUser()).data.user?.id,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
       toast({
-        title: 'Success',
-        description: 'Chat created successfully.',
+        title: "Chat created",
+        description: `${chatName} has been created successfully`,
       });
-      onOpenChange(false);
+
+      setOpen(false);
       setChatName('');
-      setChatType('direct');
-      setWorkOrderId('');
+      setSelectedParticipants([]);
     } catch (error) {
       console.error('Error creating chat:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to create chat. Please try again.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to create chat",
+        variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsCreating(false);
+    }
+  };
+
+  const getChatIcon = () => {
+    switch (chatType) {
+      case 'direct':
+        return <MessageCircle className="h-4 w-4" />;
+      case 'group':
+        return <Users className="h-4 w-4" />;
+      case 'work_order':
+        return <Wrench className="h-4 w-4" />;
+      default:
+        return <MessageCircle className="h-4 w-4" />;
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button>
+          <Plus className="mr-2 h-4 w-4" />
+          New Chat
+        </Button>
+      </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Create New Chat</DialogTitle>
           <DialogDescription>
-            Create a new chat room to start a conversation.
+            Start a new conversation with your team members.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="name" className="text-right">
-              Name
-            </Label>
-            <Input
-              id="name"
-              value={chatName}
-              onChange={(e) => setChatName(e.target.value)}
-              className="col-span-3"
-            />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="type" className="text-right">
-              Type
-            </Label>
-            <Select value={chatType} onValueChange={(value) => setChatType(value as 'direct' | 'group' | 'work_order')} className="col-span-3">
+          <div className="grid gap-2">
+            <Label htmlFor="chat-type">Chat Type</Label>
+            <Select value={chatType} onValueChange={(value: 'direct' | 'group' | 'work_order') => setChatType(value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select chat type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="direct">Direct</SelectItem>
-                <SelectItem value="group">Group</SelectItem>
-                <SelectItem value="work_order">Work Order</SelectItem>
+                <SelectItem value="direct">
+                  <div className="flex items-center">
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    Direct Message
+                  </div>
+                </SelectItem>
+                <SelectItem value="group">
+                  <div className="flex items-center">
+                    <Users className="mr-2 h-4 w-4" />
+                    Group Chat
+                  </div>
+                </SelectItem>
+                <SelectItem value="work_order">
+                  <div className="flex items-center">
+                    <Wrench className="mr-2 h-4 w-4" />
+                    Work Order Chat
+                  </div>
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
-          {chatType === 'work_order' && (
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="workOrderId" className="text-right">
-                Work Order ID
-              </Label>
-              <Input
-                id="workOrderId"
-                value={workOrderId}
-                onChange={(e) => setWorkOrderId(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
-          )}
+          
+          <div className="grid gap-2">
+            <Label htmlFor="chat-name">Chat Name</Label>
+            <Input
+              id="chat-name"
+              placeholder="Enter chat name"
+              value={chatName}
+              onChange={(e) => setChatName(e.target.value)}
+            />
+          </div>
         </div>
         <DialogFooter>
-          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button type="submit" onClick={handleSubmit} disabled={isLoading}>
-            {isLoading ? 'Creating...' : 'Create'}
+          <Button type="submit" onClick={handleCreateChat} disabled={isCreating || !chatName}>
+            {getChatIcon()}
+            <span className="ml-2">
+              {isCreating ? 'Creating...' : 'Create Chat'}
+            </span>
           </Button>
         </DialogFooter>
       </DialogContent>

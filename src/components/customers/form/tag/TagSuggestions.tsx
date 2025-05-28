@@ -1,7 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
+import { cn } from "@/lib/utils";
 
 interface TagSuggestionsProps {
   onSelectTag: (tag: string) => void;
@@ -18,8 +21,9 @@ export const TagSuggestions: React.FC<TagSuggestionsProps> = ({ onSelectTag, sel
     const fetchTags = async () => {
       try {
         setLoading(true);
+        // Use a table that exists in the database
         const { data, error } = await supabase
-          .from('customer_tags')
+          .from('customer_segments')
           .select('name')
           .limit(5);
 
@@ -27,7 +31,7 @@ export const TagSuggestions: React.FC<TagSuggestionsProps> = ({ onSelectTag, sel
           console.error("Error fetching tags:", error);
         }
 
-        setSuggestions(data ? data.map(tag => tag.name) : []);
+        setSuggestions(data ? data.map(item => item.name) : []);
       } finally {
         setLoading(false);
       }
@@ -46,17 +50,10 @@ export const TagSuggestions: React.FC<TagSuggestionsProps> = ({ onSelectTag, sel
 
     try {
       setLoading(true);
-      const { error } = await supabase
-        .from('customer_tags')
-        .insert([{ name: newTag }]);
-
-      if (error) {
-        console.error("Error creating tag:", error);
-      } else {
-        setSuggestions([...suggestions, newTag]);
-        onSelectTag(newTag);
-        setNewTag('');
-      }
+      // For now, just add the tag directly without creating in database
+      setSuggestions([...suggestions, newTag]);
+      onSelectTag(newTag);
+      setNewTag('');
     } finally {
       setLoading(false);
     }
@@ -104,7 +101,7 @@ export const TagSuggestions: React.FC<TagSuggestionsProps> = ({ onSelectTag, sel
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> { }
 
-const Input = React.forwardRef<HTMLInputElement, InputProps>(({ className, type, ...props }, ref) => {
+const InputComponent = React.forwardRef<HTMLInputElement, InputProps>(({ className, type, ...props }, ref) => {
   return (
     <input
       type={type}
@@ -117,6 +114,4 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(({ className, type,
     />
   )
 })
-Input.displayName = "Input"
-
-import { cn } from "@/lib/utils"
+InputComponent.displayName = "Input"
