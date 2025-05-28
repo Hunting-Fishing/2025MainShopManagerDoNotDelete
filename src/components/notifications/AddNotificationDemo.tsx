@@ -1,83 +1,155 @@
-import React from 'react';
-import { useNotifications } from '@/context/notifications';
+
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Bell } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 export function AddNotificationDemo() {
-  const { triggerTestNotification } = useNotifications();
-  const [isAuthenticated, setIsAuthenticated] = React.useState<boolean>(false);
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const [title, setTitle] = useState('');
+  const [message, setMessage] = useState('');
+  const [type, setType] = useState('info');
+  const [category, setCategory] = useState('');
+  const [priority, setPriority] = useState('medium');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
-  // Check authentication status
-  React.useEffect(() => {
-    const checkAuth = async () => {
-      const { data } = await supabase.auth.getUser();
-      setIsAuthenticated(!!data.user);
-    };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
 
-    checkAuth();
-    
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      setIsAuthenticated(!!session?.user);
-    });
-    
-    return () => {
-      authListener?.subscription.unsubscribe();
-    };
-  }, []);
-
-  const handleCreateNotification = async () => {
-    if (!isAuthenticated) {
-      alert('You need to be signed in to create notifications');
-      return;
-    }
-    
-    setIsLoading(true);
     try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) throw new Error('Not authenticated');
+      const { data: { user } } = await supabase.auth.getUser();
       
-      const { error } = await supabase.from('notifications').insert({
-        user_id: userData.user.id,
-        title: 'New Notification',
-        content: 'This is a real notification from the database.',
-        type: 'info',
-        read: false
-      });
-      
-      if (error) throw error;
-      
-      // Refresh notifications
-      if (triggerTestNotification) {
-        await triggerTestNotification();
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to create notifications",
+          variant: "destructive",
+        });
+        return;
       }
+
+      const { error } = await supabase
+        .from('notifications')
+        .insert({
+          title,
+          message,
+          type,
+          category: category || undefined,
+          priority,
+          recipient: user.id,
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Success",
+        description: "Demo notification created successfully!",
+      });
+
+      // Reset form
+      setTitle('');
+      setMessage('');
+      setType('info');
+      setCategory('');
+      setPriority('medium');
     } catch (error) {
       console.error('Error creating notification:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create notification",
+        variant: "destructive",
+      });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  if (!isAuthenticated) {
-    return (
-      <Button variant="outline" size="sm" className="ml-auto" disabled title="Sign in to create notifications">
-        <Bell className="mr-2 h-4 w-4" />
-        Create Notification
-      </Button>
-    );
-  }
-
   return (
-    <Button 
-      variant="outline" 
-      size="sm" 
-      className="ml-auto"
-      onClick={handleCreateNotification}
-      disabled={isLoading}
-    >
-      <Bell className="mr-2 h-4 w-4" />
-      Create Notification
-    </Button>
+    <Card className="max-w-md">
+      <CardHeader>
+        <CardTitle>Add Demo Notification</CardTitle>
+        <CardDescription>
+          Create a test notification to see how the system works
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="title">Title</Label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter notification title"
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="message">Message</Label>
+            <Textarea
+              id="message"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Enter notification message"
+              rows={3}
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="type">Type</Label>
+            <Select value={type} onValueChange={setType}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="info">Info</SelectItem>
+                <SelectItem value="success">Success</SelectItem>
+                <SelectItem value="warning">Warning</SelectItem>
+                <SelectItem value="error">Error</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="category">Category (Optional)</Label>
+            <Input
+              id="category"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              placeholder="e.g., work_order, inventory"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="priority">Priority</Label>
+            <Select value={priority} onValueChange={setPriority}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="urgent">Urgent</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Button type="submit" disabled={isSubmitting} className="w-full">
+            {isSubmitting ? 'Creating...' : 'Create Demo Notification'}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

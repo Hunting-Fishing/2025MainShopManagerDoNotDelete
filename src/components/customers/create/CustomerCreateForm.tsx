@@ -27,7 +27,7 @@ export function CustomerCreateForm() {
     <CustomerForm
       onSubmit={onSubmit}
       isSubmitting={isSubmitting}
-      newCustomerId={newCustomerId}
+      customerId={newCustomerId}
       availableShops={availableShops}
       onImportComplete={handleImportComplete}
     />
