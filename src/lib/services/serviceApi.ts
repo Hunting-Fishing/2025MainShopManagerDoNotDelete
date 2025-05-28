@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
 
@@ -20,6 +21,9 @@ export const getServiceCategories = async (): Promise<ServiceMainCategory[]> => 
     throw error;
   }
 };
+
+// Alias for backward compatibility
+export const fetchServiceCategories = getServiceCategories;
 
 export const updateServiceCategories = async (categories: ServiceMainCategory[]): Promise<void> => {
   try {
@@ -62,6 +66,102 @@ export const createServiceCategory = async (newCategory: ServiceMainCategory): P
     if (updateError) throw updateError;
   } catch (error) {
     console.error('Error creating service category:', error);
+    throw error;
+  }
+};
+
+// Alias for backward compatibility
+export const saveServiceCategory = createServiceCategory;
+
+export const deleteServiceCategory = async (categoryId: string): Promise<void> => {
+  try {
+    // Get current service categories
+    const { data: currentData, error: fetchError } = await supabase
+      .from('service_categories')
+      .select('categories')
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    const categories: ServiceMainCategory[] = currentData?.categories || [];
+
+    // Remove the category
+    const updatedCategories = categories.filter(cat => cat.id !== categoryId);
+
+    // Update the database
+    const { error: updateError } = await supabase
+      .from('service_categories')
+      .update({ categories: updatedCategories })
+      .single();
+
+    if (updateError) throw updateError;
+  } catch (error) {
+    console.error('Error deleting service category:', error);
+    throw error;
+  }
+};
+
+export const deleteServiceSubcategory = async (subcategoryId: string): Promise<void> => {
+  try {
+    // Get current service categories
+    const { data: currentData, error: fetchError } = await supabase
+      .from('service_categories')
+      .select('categories')
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    const categories: ServiceMainCategory[] = currentData?.categories || [];
+
+    // Find and remove the subcategory
+    const updatedCategories = categories.map(category => ({
+      ...category,
+      subcategories: category.subcategories.filter(sub => sub.id !== subcategoryId)
+    }));
+
+    // Update the database
+    const { error: updateError } = await supabase
+      .from('service_categories')
+      .update({ categories: updatedCategories })
+      .single();
+
+    if (updateError) throw updateError;
+  } catch (error) {
+    console.error('Error deleting service subcategory:', error);
+    throw error;
+  }
+};
+
+export const deleteServiceJob = async (jobId: string): Promise<void> => {
+  try {
+    // Get current service categories
+    const { data: currentData, error: fetchError } = await supabase
+      .from('service_categories')
+      .select('categories')
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    const categories: ServiceMainCategory[] = currentData?.categories || [];
+
+    // Find and remove the job
+    const updatedCategories = categories.map(category => ({
+      ...category,
+      subcategories: category.subcategories.map(subcategory => ({
+        ...subcategory,
+        jobs: subcategory.jobs.filter(job => job.id !== jobId)
+      }))
+    }));
+
+    // Update the database
+    const { error: updateError } = await supabase
+      .from('service_categories')
+      .update({ categories: updatedCategories })
+      .single();
+
+    if (updateError) throw updateError;
+  } catch (error) {
+    console.error('Error deleting service job:', error);
     throw error;
   }
 };
@@ -141,6 +241,29 @@ export const removeDuplicateItem = async (itemId: string, type: 'category' | 'su
     if (updateError) throw updateError;
   } catch (error) {
     console.error('Error removing duplicate item:', error);
+    throw error;
+  }
+};
+
+export const bulkImportServiceCategories = async (
+  categories: ServiceMainCategory[], 
+  progressCallback?: (progress: number) => void
+): Promise<void> => {
+  try {
+    // Simulate progress for bulk import
+    if (progressCallback) progressCallback(10);
+    
+    // Update the database with new categories
+    const { error: updateError } = await supabase
+      .from('service_categories')
+      .update({ categories: categories })
+      .single();
+
+    if (updateError) throw updateError;
+    
+    if (progressCallback) progressCallback(100);
+  } catch (error) {
+    console.error('Error bulk importing service categories:', error);
     throw error;
   }
 };
