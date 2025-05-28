@@ -1,23 +1,32 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Settings, Link as LinkIcon, Key, CheckCircle, AlertCircle, Globe } from 'lucide-react';
+import { 
+  Zap, 
+  Settings, 
+  Link as LinkIcon, 
+  CheckCircle, 
+  XCircle,
+  Mail,
+  MessageSquare,
+  CreditCard,
+  Phone
+} from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
-interface IntegrationService {
+interface Integration {
   id: string;
   name: string;
   description: string;
-  icon: React.ReactNode;
-  isConnected: boolean;
-  status: 'active' | 'inactive' | 'error';
-  apiKey?: string;
+  icon: React.ComponentType<any>;
+  status: 'connected' | 'disconnected' | 'error';
+  enabled: boolean;
   lastSync?: string;
+  category: 'communication' | 'payment' | 'productivity' | 'analytics';
 }
 
 interface IntegrationsTabProps {
@@ -25,200 +34,246 @@ interface IntegrationsTabProps {
 }
 
 export const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ shopId }) => {
-  const [services, setServices] = useState<IntegrationService[]>([
+  const [integrations, setIntegrations] = useState<Integration[]>([
     {
-      id: 'stripe',
-      name: 'Stripe',
-      description: 'Payment processing and billing management',
-      icon: <Globe className="h-5 w-5 text-blue-600" />,
-      isConnected: true,
-      status: 'active',
-      lastSync: '2024-01-15T10:30:00Z'
+      id: 'email',
+      name: 'Email Service',
+      description: 'Connect your email service for automated communications',
+      icon: Mail,
+      status: 'disconnected',
+      enabled: false,
+      category: 'communication'
     },
     {
-      id: 'quickbooks',
-      name: 'QuickBooks',
-      description: 'Accounting and financial management',
-      icon: <Settings className="h-5 w-5 text-green-600" />,
-      isConnected: false,
-      status: 'inactive'
+      id: 'sms',
+      name: 'SMS Service', 
+      description: 'Send SMS notifications and reminders to customers',
+      icon: MessageSquare,
+      status: 'disconnected',
+      enabled: false,
+      category: 'communication'
     },
     {
-      id: 'mailgun',
-      name: 'Mailgun',
-      description: 'Email delivery and marketing automation',
-      icon: <LinkIcon className="h-5 w-5 text-orange-600" />,
-      isConnected: true,
-      status: 'error',
-      lastSync: '2024-01-14T15:45:00Z'
+      id: 'payment',
+      name: 'Payment Gateway',
+      description: 'Process payments and manage transactions',
+      icon: CreditCard,
+      status: 'disconnected',
+      enabled: false,
+      category: 'payment'
     },
     {
-      id: 'twilio',
-      name: 'Twilio',
-      description: 'SMS messaging and communication',
-      icon: <Key className="h-5 w-5 text-red-600" />,
-      isConnected: false,
-      status: 'inactive'
+      id: 'phone',
+      name: 'Phone System',
+      description: 'Integrate with your phone system for call logging',
+      icon: Phone,
+      status: 'disconnected',
+      enabled: false,
+      category: 'communication'
     }
   ]);
 
-  const [apiKeys, setApiKeys] = useState<Record<string, string>>({
-    stripe: 'sk_test_*********************',
-    mailgun: 'mg_*********************'
-  });
+  const [loading, setLoading] = useState(true);
 
-  const handleToggleConnection = (serviceId: string) => {
-    setServices(prev => prev.map(service => 
-      service.id === serviceId 
-        ? { 
-            ...service, 
-            isConnected: !service.isConnected,
-            status: !service.isConnected ? 'active' : 'inactive'
-          }
-        : service
-    ));
-    
-    const service = services.find(s => s.id === serviceId);
-    if (service) {
-      toast.success(`${service.name} ${service.isConnected ? 'disconnected' : 'connected'} successfully`);
+  useEffect(() => {
+    if (shopId) {
+      fetchIntegrationSettings();
+    } else {
+      setLoading(false);
+    }
+  }, [shopId]);
+
+  const fetchIntegrationSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('company_settings')
+        .select('*')
+        .eq('shop_id', shopId)
+        .eq('settings_key', 'integrations')
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching integration settings:', error);
+        return;
+      }
+
+      if (data?.settings_value) {
+        const savedSettings = data.settings_value as any;
+        setIntegrations(prev => prev.map(integration => ({
+          ...integration,
+          ...savedSettings[integration.id]
+        })));
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleApiKeyChange = (serviceId: string, apiKey: string) => {
-    setApiKeys(prev => ({ ...prev, [serviceId]: apiKey }));
+  const handleToggleIntegration = async (integrationId: string, enabled: boolean) => {
+    try {
+      const updatedIntegrations = integrations.map(integration =>
+        integration.id === integrationId
+          ? { ...integration, enabled }
+          : integration
+      );
+
+      setIntegrations(updatedIntegrations);
+
+      if (shopId) {
+        const integrationsData = updatedIntegrations.reduce((acc, integration) => {
+          acc[integration.id] = {
+            status: integration.status,
+            enabled: integration.enabled,
+            lastSync: integration.lastSync
+          };
+          return acc;
+        }, {} as any);
+
+        const { error } = await supabase
+          .from('company_settings')
+          .upsert({
+            shop_id: shopId,
+            settings_key: 'integrations',
+            settings_value: integrationsData
+          });
+
+        if (error) throw error;
+      }
+
+      toast.success(`${integrations.find(i => i.id === integrationId)?.name} ${enabled ? 'enabled' : 'disabled'}`);
+    } catch (error) {
+      console.error('Error updating integration:', error);
+      toast.error('Failed to update integration settings');
+    }
   };
 
-  const handleSaveApiKey = (serviceId: string) => {
-    const service = services.find(s => s.id === serviceId);
-    if (service) {
-      toast.success(`${service.name} API key saved successfully`);
-    }
+  const handleConnect = (integrationId: string) => {
+    toast.info(`Connect ${integrations.find(i => i.id === integrationId)?.name} functionality will be implemented`);
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'active':
+      case 'connected':
         return <CheckCircle className="h-4 w-4 text-green-600" />;
       case 'error':
-        return <AlertCircle className="h-4 w-4 text-red-600" />;
+        return <XCircle className="h-4 w-4 text-red-600" />;
       default:
-        return <Settings className="h-4 w-4 text-gray-400" />;
+        return <XCircle className="h-4 w-4 text-gray-400" />;
     }
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'active':
-        return <Badge className="bg-green-100 text-green-800 border-green-200">Active</Badge>;
+      case 'connected':
+        return <Badge className="bg-green-100 text-green-800 border-green-200">Connected</Badge>;
       case 'error':
-        return <Badge variant="destructive" className="bg-red-100 text-red-800 border-red-200">Error</Badge>;
+        return <Badge variant="destructive">Error</Badge>;
       default:
-        return <Badge variant="secondary">Inactive</Badge>;
+        return <Badge variant="secondary">Disconnected</Badge>;
     }
   };
 
-  return (
-    <div className="space-y-6">
-      <div className="grid gap-6">
-        {services.map((service) => (
-          <Card key={service.id} className="bg-white shadow-md rounded-xl border border-gray-100">
-            <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 border-b">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {service.icon}
-                  <div>
-                    <CardTitle className="text-lg">{service.name}</CardTitle>
-                    <p className="text-sm text-gray-600 mt-1">{service.description}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  {getStatusBadge(service.status)}
-                  <Switch
-                    checked={service.isConnected}
-                    onCheckedChange={() => handleToggleConnection(service.id)}
-                  />
-                </div>
-              </div>
-            </CardHeader>
+  const categories = [
+    { id: 'communication', name: 'Communication', icon: MessageSquare },
+    { id: 'payment', name: 'Payment', icon: CreditCard },
+    { id: 'productivity', name: 'Productivity', icon: Zap },
+    { id: 'analytics', name: 'Analytics', icon: Settings }
+  ];
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        {[1, 2, 3].map(i => (
+          <Card key={i} className="animate-pulse">
             <CardContent className="p-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {getStatusIcon(service.status)}
-                    <span className="text-sm text-gray-600">
-                      Status: {service.status === 'active' ? 'Connected and working' : 
-                              service.status === 'error' ? 'Connection error' : 'Not connected'}
-                    </span>
-                  </div>
-                  {service.lastSync && (
-                    <span className="text-xs text-gray-500">
-                      Last sync: {new Date(service.lastSync).toLocaleDateString()}
-                    </span>
-                  )}
-                </div>
-
-                {service.isConnected && (
-                  <div className="space-y-3">
-                    <div>
-                      <Label htmlFor={`${service.id}-api-key`}>API Key</Label>
-                      <div className="flex gap-2 mt-1">
-                        <Input
-                          id={`${service.id}-api-key`}
-                          type="password"
-                          value={apiKeys[service.id] || ''}
-                          onChange={(e) => handleApiKeyChange(service.id, e.target.value)}
-                          placeholder="Enter API key..."
-                        />
-                        <Button 
-                          onClick={() => handleSaveApiKey(service.id)}
-                          variant="outline"
-                          size="sm"
-                        >
-                          Save
-                        </Button>
-                      </div>
-                    </div>
-
-                    {service.status === 'error' && (
-                      <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                        <p className="text-sm text-red-800">
-                          Connection error: Invalid API credentials. Please check your API key and try again.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {!service.isConnected && (
-                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                    <p className="text-sm text-gray-600">
-                      Enable this integration to connect {service.name} with your shop. 
-                      You'll need to provide valid API credentials.
-                    </p>
-                  </div>
-                )}
+              <div className="space-y-2">
+                <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+                <div className="h-6 bg-gray-200 rounded w-1/2"></div>
+                <div className="h-4 bg-gray-200 rounded w-2/3"></div>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
+    );
+  }
 
-      <Card className="bg-blue-50 border-blue-200">
-        <CardContent className="p-6">
-          <div className="flex items-start gap-3">
-            <LinkIcon className="h-5 w-5 text-blue-600 mt-0.5" />
-            <div>
-              <h3 className="font-medium text-blue-900">Need help setting up integrations?</h3>
-              <p className="text-sm text-blue-700 mt-1">
-                Check our documentation for step-by-step guides on configuring each integration service.
-              </p>
-              <Button variant="outline" size="sm" className="mt-3 border-blue-300 text-blue-700 hover:bg-blue-100">
-                View Documentation
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-2 mb-6">
+        <Zap className="h-5 w-5 text-blue-600" />
+        <h2 className="text-xl font-semibold">Integrations</h2>
+        <Badge variant="outline" className="ml-2">
+          {integrations.filter(i => i.status === 'connected').length} connected
+        </Badge>
+      </div>
+
+      {categories.map(category => {
+        const categoryIntegrations = integrations.filter(i => i.category === category.id);
+        if (categoryIntegrations.length === 0) return null;
+
+        const CategoryIcon = category.icon;
+
+        return (
+          <Card key={category.id} className="bg-white shadow-md rounded-xl border border-gray-100">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+              <CardTitle className="flex items-center gap-2">
+                <CategoryIcon className="h-5 w-5 text-blue-600" />
+                {category.name}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                {categoryIntegrations.map((integration) => {
+                  const IconComponent = integration.icon;
+                  return (
+                    <div
+                      key={integration.id}
+                      className="flex items-center justify-between p-4 border rounded-xl hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="p-2 bg-gray-100 rounded-lg">
+                          <IconComponent className="h-6 w-6 text-gray-600" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-1">
+                            <h3 className="font-semibold text-gray-900">{integration.name}</h3>
+                            {getStatusIcon(integration.status)}
+                            {getStatusBadge(integration.status)}
+                          </div>
+                          <p className="text-sm text-gray-600">{integration.description}</p>
+                          {integration.lastSync && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              Last synced: {new Date(integration.lastSync).toLocaleString()}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Switch
+                          checked={integration.enabled}
+                          onCheckedChange={(enabled) => handleToggleIntegration(integration.id, enabled)}
+                          disabled={integration.status !== 'connected'}
+                        />
+                        <Button
+                          variant={integration.status === 'connected' ? 'outline' : 'default'}
+                          size="sm"
+                          onClick={() => handleConnect(integration.id)}
+                        >
+                          <LinkIcon className="h-4 w-4 mr-2" />
+                          {integration.status === 'connected' ? 'Configure' : 'Connect'}
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 };

@@ -1,64 +1,81 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Search, Edit, Trash2, Package } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Category {
   id: string;
   name: string;
   description: string;
-  productCount: number;
-  isActive: boolean;
-  parentId?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 const CategoriesManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [categories] = useState<Category[]>([
-    {
-      id: '1',
-      name: 'Power Tools',
-      description: 'Electric and battery-powered tools for automotive work',
-      productCount: 45,
-      isActive: true
-    },
-    {
-      id: '2',
-      name: 'Hand Tools',
-      description: 'Manual tools and precision instruments',
-      productCount: 78,
-      isActive: true
-    },
-    {
-      id: '3',
-      name: 'Diagnostic Equipment',
-      description: 'Advanced diagnostic and testing equipment',
-      productCount: 23,
-      isActive: true
-    },
-    {
-      id: '4',
-      name: 'Safety Equipment',
-      description: 'Personal protective equipment and safety gear',
-      productCount: 34,
-      isActive: true
-    },
-    {
-      id: '5',
-      name: 'Specialty Tools',
-      description: 'Specialized tools for specific automotive tasks',
-      productCount: 19,
-      isActive: false
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [productCounts, setProductCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    fetchCategories();
+    fetchProductCounts();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('product_categories')
+        .select('*')
+        .order('name');
+
+      if (error) {
+        console.error('Error fetching categories:', error);
+        toast.error('Failed to load categories');
+        return;
+      }
+
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Failed to load categories');
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
+
+  const fetchProductCounts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('category_id');
+
+      if (error) {
+        console.error('Error fetching product counts:', error);
+        return;
+      }
+
+      const counts: Record<string, number> = {};
+      data?.forEach(product => {
+        if (product.category_id) {
+          counts[product.category_id] = (counts[product.category_id] || 0) + 1;
+        }
+      });
+
+      setProductCounts(counts);
+    } catch (error) {
+      console.error('Error fetching product counts:', error);
+    }
+  };
 
   const filteredCategories = categories.filter(category =>
     category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    category.description.toLowerCase().includes(searchTerm.toLowerCase())
+    (category.description && category.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const handleAddCategory = () => {
@@ -69,9 +86,47 @@ const CategoriesManagement: React.FC = () => {
     toast.info(`Edit Category ${categoryId} functionality will be implemented`);
   };
 
-  const handleDeleteCategory = (categoryId: string) => {
-    toast.info(`Delete Category ${categoryId} functionality will be implemented`);
+  const handleDeleteCategory = async (categoryId: string) => {
+    if (!window.confirm('Are you sure you want to delete this category?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('product_categories')
+        .delete()
+        .eq('id', categoryId);
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success('Category deleted successfully');
+      fetchCategories();
+      fetchProductCounts();
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      toast.error('Failed to delete category');
+    }
   };
+
+  if (loading) {
+    return (
+      <Card className="bg-white shadow-md rounded-xl border border-gray-100">
+        <CardContent className="p-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+            <div className="h-10 bg-gray-200 rounded"></div>
+            <div className="space-y-2">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-20 bg-gray-200 rounded"></div>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="bg-white shadow-md rounded-xl border border-gray-100">
@@ -110,19 +165,24 @@ const CategoriesManagement: React.FC = () => {
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <h3 className="font-semibold text-lg text-gray-900">{category.name}</h3>
-                    <Badge variant={category.isActive ? "default" : "secondary"} className={category.isActive ? "bg-green-100 text-green-800 border-green-200" : ""}>
-                      {category.isActive ? 'Active' : 'Inactive'}
+                    <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
+                      Active
                     </Badge>
                   </div>
                   
-                  <p className="text-gray-600 mb-3">{category.description}</p>
+                  {category.description && (
+                    <p className="text-gray-600 mb-3">{category.description}</p>
+                  )}
                   
                   <div className="flex items-center gap-4 text-sm">
                     <div className="flex items-center gap-1">
                       <Package className="h-4 w-4 text-blue-500" />
                       <span className="text-gray-600">
-                        <span className="font-medium text-blue-600">{category.productCount}</span> products
+                        <span className="font-medium text-blue-600">{productCounts[category.id] || 0}</span> products
                       </span>
+                    </div>
+                    <div className="text-gray-500">
+                      Created: {new Date(category.created_at).toLocaleDateString()}
                     </div>
                   </div>
                 </div>
