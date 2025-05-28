@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Download, Printer, FileText, LogOut } from "lucide-react";
 import { printElement } from "@/utils/printUtils";
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 

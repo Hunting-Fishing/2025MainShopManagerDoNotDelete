@@ -1,13 +1,14 @@
-
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
-import { Loader2, Mail, Phone, Home, Key } from "lucide-react";
+import React, { useEffect, useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuthUser } from '@/hooks/useAuthUser';
+import { toast } from '@/hooks/use-toast';
+import { User, Mail, Phone, MapPin, Save, Edit } from 'lucide-react';
 
 interface CustomerProfileInfoProps {
   customer: any;
@@ -193,7 +194,7 @@ export function CustomerProfileInfo({ customer }: CustomerProfileInfoProps) {
                       onChange={handleInputChange}
                       className="pl-10"
                     />
-                    <Home className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   </div>
                 </div>
                 

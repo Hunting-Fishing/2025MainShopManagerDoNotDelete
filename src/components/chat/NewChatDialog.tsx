@@ -1,227 +1,124 @@
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import React, { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { ChatNameInput } from './new-chat/ChatNameInput';
-import { SearchBar } from './new-chat/SearchBar';
-import { TeamMembersList } from './new-chat/TeamMembersList';
-import { ParticipantList } from './new-chat/ParticipantList';
-import { TeamMember } from '@/types/team';
-import { ShiftChatSettings } from './new-chat/ShiftChatSettings';
-import { useChatDialogState } from './new-chat/hooks/useChatDialogState';
-import { supabase } from '@/lib/supabase';
-import { useQuery } from '@tanstack/react-query';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface NewChatDialogProps {
   open: boolean;
-  onClose: () => void;
-  onCreate: (
-    name: string, 
-    type: "direct" | "group" | "work_order", 
-    participants: string[],
-    shiftMetadata?: {
-      isShiftChat: boolean;
-      shiftDate?: Date;
-      shiftName: string;
-      shiftTimeStart: string;
-      shiftTimeEnd: string;
-    }
-  ) => void;
+  onOpenChange: (open: boolean) => void;
+  onCreateChat: (name: string, type: 'direct' | 'group' | 'work_order', workOrderId?: string) => void;
 }
 
-export const NewChatDialog = ({ open, onClose, onCreate }: NewChatDialogProps) => {
-  const {
-    chatName,
-    setChatName,
-    chatType,
-    setChatType,
-    searchQuery,
-    setSearchQuery,
-    selectedParticipants,
-    addParticipant,
-    removeParticipant,
-    toggleParticipant,
-    isShiftChat,
-    setIsShiftChat,
-    shiftDate,
-    setShiftDate,
-    shiftName,
-    setShiftName,
-    shiftTimeStart,
-    setShiftTimeStart,
-    shiftTimeEnd,
-    setShiftTimeEnd,
-    resetState
-  } = useChatDialogState();
+export function NewChatDialog({ open, onOpenChange, onCreateChat }: NewChatDialogProps) {
+  const [chatName, setChatName] = useState('');
+  const [chatType, setChatType] = useState<'direct' | 'group' | 'work_order'>('direct');
+  const [workOrderId, setWorkOrderId] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
-  // Fetch team members from Supabase
-  const { data: teamMembers = [], isLoading } = useQuery({
-    queryKey: ['teamMembers'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name, email, phone, job_title, department, roles:user_roles(role:roles(name))')
-        .order('last_name');
-
-      if (error) throw error;
-
-      return data.map(profile => {
-        // Extract role name safely with proper type checking
-        let roleName = 'No Role';
-        
-        if (profile.roles && 
-            Array.isArray(profile.roles) && 
-            profile.roles.length > 0 && 
-            profile.roles[0]?.role && 
-            typeof profile.roles[0].role === 'object' &&
-            profile.roles[0].role !== null &&
-            'name' in profile.roles[0].role &&
-            typeof profile.roles[0].role.name === 'string') {
-          roleName = profile.roles[0].role.name;
-        }
-        
-        return {
-          id: profile.id,
-          name: `${profile.first_name} ${profile.last_name}`,
-          email: profile.email,
-          phone: profile.phone || '',
-          jobTitle: profile.job_title || '',
-          department: profile.department || '',
-          role: roleName
-        };
-      }) as TeamMember[];
-    }
-  });
-
-  // Filter team members based on search query
-  const filteredTeamMembers = teamMembers.filter(member => 
-    member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    member.role.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const handleSubmit = () => {
-    // Create the chat with the selected participants
-    const shiftMetadata = isShiftChat ? {
-      isShiftChat,
-      shiftDate,
-      shiftName,
-      shiftTimeStart,
-      shiftTimeEnd
-    } : undefined;
-
-    onCreate(
-      chatName || getDefaultChatName(),
-      chatType,
-      selectedParticipants,
-      shiftMetadata
-    );
-    
-    // Reset the form
-    resetState();
-  };
-
-  const getDefaultChatName = () => {
-    if (isShiftChat) {
-      return `${shiftName} - ${shiftDate ? new Date(shiftDate).toLocaleDateString() : 'Shift Chat'}`;
+  const handleSubmit = async () => {
+    if (!chatName.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Chat name cannot be empty.',
+        variant: 'destructive',
+      });
+      return;
     }
 
-    if (selectedParticipants.length === 1) {
-      const member = teamMembers.find(m => m.id === selectedParticipants[0]);
-      return member ? member.name : 'New Chat';
-    } else if (selectedParticipants.length > 1) {
-      return 'Group Chat';
+    setIsLoading(true);
+    try {
+      onCreateChat(chatName, chatType, workOrderId);
+      toast({
+        title: 'Success',
+        description: 'Chat created successfully.',
+      });
+      onOpenChange(false);
+      setChatName('');
+      setChatType('direct');
+      setWorkOrderId('');
+    } catch (error) {
+      console.error('Error creating chat:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create chat. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
     }
-    return 'New Chat';
-  };
-
-  const handleClose = () => {
-    resetState();
-    onClose();
   };
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>New Conversation</DialogTitle>
+          <DialogTitle>Create New Chat</DialogTitle>
+          <DialogDescription>
+            Create a new chat room to start a conversation.
+          </DialogDescription>
         </DialogHeader>
-        
-        <Tabs defaultValue="direct" onValueChange={(value) => setChatType(value as "direct" | "group")}>
-          <TabsList className="w-full">
-            <TabsTrigger value="direct" className="flex-1">Direct Message</TabsTrigger>
-            <TabsTrigger value="group" className="flex-1">Group Chat</TabsTrigger>
-          </TabsList>
-          
-          <div className="my-4">
-            <ChatNameInput 
-              chatName={chatName}
-              setChatName={setChatName}
-              chatType={chatType}
-              participants={selectedParticipants}
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="name" className="text-right">
+              Name
+            </Label>
+            <Input
+              id="name"
+              value={chatName}
+              onChange={(e) => setChatName(e.target.value)}
+              className="col-span-3"
             />
           </div>
-          
-          {chatType === "group" && (
-            <ShiftChatSettings
-              isShiftChat={isShiftChat}
-              setIsShiftChat={setIsShiftChat}
-              shiftDate={shiftDate}
-              setShiftDate={setShiftDate}
-              shiftName={shiftName}
-              setShiftName={setShiftName}
-              shiftTimeStart={shiftTimeStart}
-              setShiftTimeStart={setShiftTimeStart}
-              shiftTimeEnd={shiftTimeEnd}
-              setShiftTimeEnd={setShiftTimeEnd}
-            />
-          )}
-          
-          <div className="my-4">
-            <SearchBar 
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-            />
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="type" className="text-right">
+              Type
+            </Label>
+            <Select value={chatType} onValueChange={(value) => setChatType(value as 'direct' | 'group' | 'work_order')} className="col-span-3">
+              <SelectTrigger>
+                <SelectValue placeholder="Select chat type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="direct">Direct</SelectItem>
+                <SelectItem value="group">Group</SelectItem>
+                <SelectItem value="work_order">Work Order</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          
-          <div className="my-4">
-            {selectedParticipants.length > 0 && (
-              <div className="mb-4">
-                <Label className="text-sm font-medium">Selected members</Label>
-                <ParticipantList 
-                  participants={selectedParticipants}
-                  teamMembers={teamMembers}
-                  onRemoveParticipant={removeParticipant}
-                />
-              </div>
-            )}
-            
-            <Label className="text-sm font-medium">Team members</Label>
-            {isLoading ? (
-              <div className="p-4 text-center text-sm text-muted-foreground">
-                Loading team members...
-              </div>
-            ) : (
-              <TeamMembersList 
-                teamMembers={filteredTeamMembers}
-                selectedParticipants={selectedParticipants}
-                onToggleParticipant={toggleParticipant}
+          {chatType === 'work_order' && (
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="workOrderId" className="text-right">
+                Work Order ID
+              </Label>
+              <Input
+                id="workOrderId"
+                value={workOrderId}
+                onChange={(e) => setWorkOrderId(e.target.value)}
+                className="col-span-3"
               />
-            )}
-          </div>
-          
-          <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={handleClose}>Cancel</Button>
-            <Button 
-              onClick={handleSubmit}
-              disabled={selectedParticipants.length === 0}
-            >
-              Create
-            </Button>
-          </div>
-        </Tabs>
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button type="submit" onClick={handleSubmit} disabled={isLoading}>
+            {isLoading ? 'Creating...' : 'Create'}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-};
+}

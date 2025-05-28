@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar, AlertCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Skeleton } from "@/components/ui/skeleton";
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuthUser } from '@/hooks/useAuthUser';
 
 export function BookingLinkButton() {

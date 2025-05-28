@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { useNotifications } from '@/context/notifications';
 import { Button } from '@/components/ui/button';
 import { Bell } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 export function AddNotificationDemo() {
   const { triggerTestNotification } = useNotifications();

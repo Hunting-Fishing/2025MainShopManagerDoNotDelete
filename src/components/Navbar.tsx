@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Bell, ChevronDown, Search, Settings, User, LogOut } from 'lucide-react';
 import { useAuthUser } from '@/hooks/useAuthUser';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import {
   DropdownMenu,

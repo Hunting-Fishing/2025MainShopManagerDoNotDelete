@@ -1,123 +1,122 @@
-
-import React, { useEffect, useState } from "react";
-import { Plus } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/lib/supabase";
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TagSuggestionsProps {
-  inputValue: string;
-  tags: string[];
-  onAddTag: (tag: string) => void;
-  suggestionsRef: React.RefObject<HTMLDivElement>;
+  onSelectTag: (tag: string) => void;
+  selectedTags: string[];
 }
 
-export const TagSuggestions: React.FC<TagSuggestionsProps> = ({
-  inputValue,
-  tags,
-  onAddTag,
-  suggestionsRef
-}) => {
-  const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+export const TagSuggestions: React.FC<TagSuggestionsProps> = ({ onSelectTag, selectedTags }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newTag, setNewTag] = useState('');
 
-  // Fetch tags from the database
   useEffect(() => {
     const fetchTags = async () => {
-      setIsLoading(true);
       try {
+        setLoading(true);
         const { data, error } = await supabase
-          .from('document_tags')
+          .from('customer_tags')
           .select('name')
-          .order('usage_count', { ascending: false })
-          .limit(20);
-        
+          .limit(5);
+
         if (error) {
           console.error("Error fetching tags:", error);
-          return;
         }
-        
-        const tagNames = data?.map(tag => tag.name) || [];
-        setSuggestedTags(tagNames);
-      } catch (error) {
-        console.error("Error in tag fetching:", error);
+
+        setSuggestions(data ? data.map(tag => tag.name) : []);
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
-    
+
     fetchTags();
   }, []);
 
-  // Filter suggestions based on input
-  const filteredSuggestions = suggestedTags.filter(
-    (tag) => 
-      !tags.includes(tag) && 
-      tag.toLowerCase().includes(inputValue.toLowerCase())
-  );
+  const handleSelectTag = (tag: string) => {
+    onSelectTag(tag);
+    setIsOpen(false);
+  };
 
-  // Function to save a new custom tag to the database
-  const saveCustomTag = async (tag: string) => {
+  const handleCreateTag = async () => {
+    if (!newTag.trim()) return;
+
     try {
-      // This will trigger our trigger function to insert or update the tag
-      console.log('Saving custom tag:', tag);
-      // We don't need to manually save it, as it will be added when the document is saved
-    } catch (error) {
-      console.error('Error saving custom tag:', error);
+      setLoading(true);
+      const { error } = await supabase
+        .from('customer_tags')
+        .insert([{ name: newTag }]);
+
+      if (error) {
+        console.error("Error creating tag:", error);
+      } else {
+        setSuggestions([...suggestions, newTag]);
+        onSelectTag(newTag);
+        setNewTag('');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleAddCustomTag = (tag: string) => {
-    // Save to database first (handled by the trigger when document is saved)
-    saveCustomTag(tag);
-    // Then add to the UI
-    onAddTag(tag);
-  };
-
-  if (isLoading) {
-    return (
-      <div 
-        ref={suggestionsRef}
-        className="absolute z-10 mt-1 w-full bg-white border rounded-md shadow-lg p-3 text-center text-gray-500"
-      >
-        Loading tags...
-      </div>
-    );
-  }
-
   return (
-    <div 
-      ref={suggestionsRef}
-      className="absolute z-10 mt-1 w-full bg-white border rounded-md shadow-lg max-h-60 overflow-auto"
-    >
-      <div className="p-2 text-xs text-gray-500 border-b">
-        Click to add or type a custom tag
-      </div>
-      {filteredSuggestions.length > 0 ? (
-        filteredSuggestions.map((tag) => (
-          <div
-            key={tag}
-            className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-100"
-            onClick={() => onAddTag(tag)}
-          >
-            <Badge className="bg-blue-500 text-white w-2 h-2 p-0 rounded-full" />
-            <span>{tag}</span>
-          </div>
-        ))
-      ) : (
-        <div className="p-3 text-sm text-gray-500">
-          {inputValue ? (
-            <div 
-              className="flex items-center gap-2 cursor-pointer hover:text-blue-500"
-              onClick={() => handleAddCustomTag(inputValue)}
-            >
-              <Plus size={16} />
-              <span>Create "{inputValue}"</span>
-            </div>
-          ) : (
-            suggestedTags.length === 0 ? "No tags available" : "No matching tags"
-          )}
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" role="combobox" aria-expanded={isOpen} className="w-full justify-between">
+          Select Tags
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[200px] p-0">
+        <div className="p-2">
+          <Input
+            type="text"
+            placeholder="Create new tag"
+            value={newTag}
+            onChange={(e) => setNewTag(e.target.value)}
+            className="mb-2"
+          />
+          <Button onClick={handleCreateTag} disabled={loading} className="w-full">
+            Create Tag
+          </Button>
         </div>
-      )}
-    </div>
+        {loading ? (
+          <div className="p-2">Loading suggestions...</div>
+        ) : (
+          suggestions.map((tag) => (
+            <Button
+              key={tag}
+              variant="ghost"
+              className="justify-start w-full rounded-none px-2 hover:bg-slate-100 data-[state=checked]:bg-slate-500 data-[state=checked]:text-white"
+              onClick={() => handleSelectTag(tag)}
+              disabled={selectedTags.includes(tag)}
+            >
+              {tag}
+            </Button>
+          ))
+        )}
+      </PopoverContent>
+    </Popover>
   );
 };
+
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> { }
+
+const Input = React.forwardRef<HTMLInputElement, InputProps>(({ className, type, ...props }, ref) => {
+  return (
+    <input
+      type={type}
+      className={cn(
+        "flex h-9 w-full rounded-md border border-slate-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-950 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-950 dark:placeholder:text-slate-400 dark:focus-visible:ring-slate-300",
+        className
+      )}
+      {...props}
+      ref={ref}
+    />
+  )
+})
+Input.displayName = "Input"
+
+import { cn } from "@/lib/utils"

@@ -1,193 +1,223 @@
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from '@/hooks/use-toast';
+import { Loader2, Upload } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
-import React from 'react';
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "@/hooks/use-toast";
-import { isValidAmazonLink } from '@/utils/amazonUtils';
-import { supabase } from '@/lib/supabase';
+interface SubmitProductFormProps {
+  onSubmit: (data: any) => void;
+  isLoading: boolean;
+}
 
-const formSchema = z.object({
-  productName: z.string().min(3, {
-    message: "Product name must be at least 3 characters.",
-  }),
-  productUrl: z.string().url({
-    message: "Please enter a valid URL.",
-  }).refine(url => {
-    // Allow non-Amazon URLs but validate Amazon URLs 
-    return !url.includes('amazon') || isValidAmazonLink(url);
-  }, {
-    message: "Please enter a valid Amazon product URL."
-  }),
-  category: z.string().min(1, {
-    message: "Please select a category.",
-  }),
-  manufacturer: z.string().min(1, {
-    message: "Please enter a manufacturer name.",
-  }),
-  notes: z.string().optional(),
-});
+export function SubmitProductForm({ onSubmit, isLoading }: SubmitProductFormProps) {
+  const [productName, setProductName] = useState('');
+  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
 
-const SubmitProductForm = () => {
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      productName: "",
-      productUrl: "",
-      category: "",
-      manufacturer: "",
-      notes: "",
-    },
-  });
+  const categories = ['Electronics', 'Clothing', 'Home & Garden', 'Books', 'Other'];
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    try {
-      const { error } = await supabase.from('product_submissions').insert({
-        product_name: values.productName,
-        product_url: values.productUrl,
-        suggested_category: values.category,
-        manufacturer: values.manufacturer,
-        notes: values.notes,
-        status: 'pending',
-      });
-      
-      if (error) throw error;
-      
-      // Show success toast
-      toast({
-        title: "Product submitted successfully!",
-        description: "Thank you for your suggestion. We'll review it soon.",
-      });
-      
-      // Reset form
-      form.reset();
-    } catch (error) {
-      console.error("Error submitting product:", error);
-      toast({
-        title: "Submission failed",
-        description: "There was an error submitting your product. Please try again.",
-        variant: "destructive",
-      });
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0];
+    if (selectedFile) {
+      setFile(selectedFile);
     }
-  }
+  };
+
+  const handleUpload = async () => {
+    if (!file) {
+      toast({
+        title: 'Error',
+        description: 'Please select an image to upload.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setUploading(true);
+      const timestamp = new Date().getTime();
+      const fileExtension = file.name.split('.').pop();
+      const fileName = `${timestamp}-${productName.replace(/\s+/g, '_')}.${fileExtension}`;
+      const filePath = `products/${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+
+      if (error) {
+        console.error('Error uploading image:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to upload image. Please try again.',
+          variant: 'destructive',
+        });
+        setUploading(false);
+        return;
+      }
+
+      const publicURL = `${supabase.storageUrl}/object/public/${data.Key}`;
+      setImageUrl(publicURL);
+      toast({
+        title: 'Success',
+        description: 'Image uploaded successfully!',
+      });
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to upload image. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSubmit = () => {
+    if (!productName || !description || !category || !imageUrl) {
+      toast({
+        title: 'Error',
+        description: 'Please fill in all fields.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const productData = {
+      name: productName,
+      description,
+      category,
+      image_url: imageUrl,
+    };
+    onSubmit(productData);
+  };
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold mb-2">Submit a Tool Suggestion</h1>
-        <p className="text-slate-600 dark:text-slate-300">
-          Found a great tool that you think should be featured in our shop? Submit it here and we'll review it.
-        </p>
-      </div>
-      
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <FormField
-            control={form.control}
-            name="productName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Product Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g., Professional Socket Set" {...field} />
-                </FormControl>
-                <FormDescription>
-                  Enter the full name of the product as it appears on the website.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
+    <Card>
+      <CardHeader>
+        <CardTitle>Submit Your Product</CardTitle>
+        <CardDescription>
+          Help us expand our catalog by submitting your product for review.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="product-name">Product Name</Label>
+          <Input
+            id="product-name"
+            placeholder="Enter product name"
+            value={productName}
+            onChange={(e) => setProductName(e.target.value)}
           />
-          
-          <FormField
-            control={form.control}
-            name="productUrl"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Product URL</FormLabel>
-                <FormControl>
-                  <Input placeholder="https://www.amazon.com/product/..." {...field} />
-                </FormControl>
-                <FormDescription>
-                  Paste the direct link to the product (Amazon or other retail website).
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="description">Description</Label>
+          <Textarea
+            id="description"
+            placeholder="Enter product description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
           />
-          
-          <FormField
-            control={form.control}
-            name="manufacturer"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Manufacturer</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g., Toyota, Volvo, Polaris, DeWalt" {...field} />
-                </FormControl>
-                <FormDescription>
-                  Enter the manufacturer or brand name of the product.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="category">Category</Label>
+          <Select value={category} onValueChange={setCategory}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select a category" />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map((cat) => (
+                <SelectItem key={cat} value={cat}>
+                  {cat}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="image">Image Upload</Label>
+          <Input
+            type="file"
+            id="image"
+            className="hidden"
+            onChange={handleFileChange}
           />
-          
-          <FormField
-            control={form.control}
-            name="category"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Category</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="hand-tools">Hand Tools</SelectItem>
-                    <SelectItem value="power-tools">Power Tools</SelectItem>
-                    <SelectItem value="diagnostic">Diagnostic Tools</SelectItem>
-                    <SelectItem value="clips-fasteners">Body Clips & Fasteners</SelectItem>
-                    <SelectItem value="specialty">Specialty Tools</SelectItem>
-                    <SelectItem value="shop-equipment">Shop Equipment</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
+          <Button variant="outline" asChild>
+            <Label htmlFor="image" className="flex items-center justify-center">
+              {file ? file.name : (
+                <>
+                  <Upload className="h-4 w-4 mr-2" />
+                  <span>Select Image</span>
+                </>
+              )}
+            </Label>
+          </Button>
+          {file && (
+            <div className="flex items-center justify-between">
+              <span>{file.name}</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setFile(null)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+          <Button
+            variant="secondary"
+            className="mt-2"
+            onClick={handleUpload}
+            disabled={uploading || !file}
+          >
+            {uploading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Uploading...
+              </>
+            ) : (
+              <>
+                <Upload className="h-4 w-4 mr-2" />
+                Upload to Storage
+              </>
             )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="notes"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Additional Notes</FormLabel>
-                <FormControl>
-                  <Textarea 
-                    placeholder="Why do you recommend this tool? What makes it special?" 
-                    className="min-h-[100px]"
-                    {...field} 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <Button type="submit" className="w-full sm:w-auto">Submit Suggestion</Button>
-        </form>
-      </Form>
-    </div>
+          </Button>
+          {imageUrl && (
+            <div className="flex items-center space-x-2">
+              <ImageIcon className="h-4 w-4 text-green-500" />
+              <a
+                href={imageUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-blue-500 hover:underline"
+              >
+                View Image
+              </a>
+            </div>
+          )}
+        </div>
+        <Button onClick={handleSubmit} disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Submitting...
+            </>
+          ) : (
+            'Submit Product'
+          )}
+        </Button>
+      </CardContent>
+    </Card>
   );
-};
-
-export default SubmitProductForm;
+}

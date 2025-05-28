@@ -1,204 +1,187 @@
-
 import React, { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Upload, X, Check, Loader2, Image as ImageIcon } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
-import { supabase } from '@/lib/supabase';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+import { Upload, X, Image as ImageIcon } from 'lucide-react';
 
 interface ImageUploaderProps {
   onImageUploaded: (url: string) => void;
-  currentImageUrl?: string;
-  className?: string;
+  existingImageUrl?: string;
+  bucketName?: string;
+  folderPath?: string;
 }
 
-const ImageUploader = ({ onImageUploaded, currentImageUrl, className = "" }: ImageUploaderProps) => {
+export function ImageUploader({
+  onImageUploaded,
+  existingImageUrl,
+  bucketName = 'product-images',
+  folderPath = 'products'
+}: ImageUploaderProps) {
   const [isUploading, setIsUploading] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(currentImageUrl || null);
-  
+  const [previewUrl, setPreviewUrl] = useState<string | null>(existingImageUrl || null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
-    
-    const file = e.target.files[0];
-    const fileSize = file.size / 1024 / 1024; // size in MB
-    
-    if (fileSize > 5) {
-      toast({
-        title: "File too large",
-        description: "Please select an image smaller than 5MB",
-        variant: "destructive"
-      });
-      return;
-    }
-    
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
     if (!file.type.startsWith('image/')) {
       toast({
         title: "Invalid file type",
-        description: "Please select an image file",
+        description: "Please select an image file (JPEG, PNG, etc.)",
         variant: "destructive"
       });
       return;
     }
-    
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Image must be less than 5MB",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       setIsUploading(true);
-      
-      // Create temporary preview
-      const tempPreview = URL.createObjectURL(file);
-      setPreviewUrl(tempPreview);
-      
-      // Generate a unique file name
+      setUploadProgress(0);
+
+      // Create a local preview
+      const objectUrl = URL.createObjectURL(file);
+      setPreviewUrl(objectUrl);
+
+      // Generate a unique filename
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
-      const filePath = `product-images/${fileName}`;
-      
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+      const filePath = `${folderPath}/${fileName}`;
+
       // Upload to Supabase Storage
       const { data, error } = await supabase.storage
-        .from('products')
-        .upload(filePath, file);
-        
-      if (error) {
-        console.error("Storage upload error:", error);
-        
-        // Check if bucket doesn't exist
-        if (error.message?.includes("bucket") || error.message?.includes("not found")) {
-          toast({
-            title: "Storage not initialized",
-            description: "Please try again in a moment as we set up storage",
-            variant: "destructive"
-          });
-          
-          // Try to initialize storage and retry upload
-          try {
-            const initResponse = await supabase.functions.invoke('initialize-storage');
-            if (initResponse.error) throw initResponse.error;
-            
-            // Retry upload after initialization
-            const { data: retryData, error: retryError } = await supabase.storage
-              .from('products')
-              .upload(filePath, file);
-              
-            if (retryError) throw retryError;
-            
-            const { data: publicUrlData } = supabase.storage
-              .from('products')
-              .getPublicUrl(filePath);
-              
-            onImageUploaded(publicUrlData.publicUrl);
-            toast({
-              title: "Image uploaded",
-              description: "Your image has been uploaded successfully after storage initialization",
-              variant: "success"
-            });
-            return;
-          } catch (initError) {
-            console.error("Error initializing storage:", initError);
-            throw initError;
-          }
-        } else {
-          throw error;
-        }
-      }
-      
-      // Get public URL
-      const { data: publicUrlData } = supabase.storage
-        .from('products')
+        .from(bucketName)
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) throw error;
+
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from(bucketName)
         .getPublicUrl(filePath);
-        
-      // Call the callback with the new URL
-      onImageUploaded(publicUrlData.publicUrl);
+
+      // Call the callback with the URL
+      onImageUploaded(publicUrl);
       
       toast({
-        title: "Image uploaded",
-        description: "Your image has been uploaded successfully",
-        variant: "success"
+        title: "Upload successful",
+        description: "Image has been uploaded successfully"
       });
-      
+
+      setUploadProgress(100);
     } catch (error) {
       console.error('Error uploading image:', error);
       toast({
         title: "Upload failed",
-        description: error instanceof Error ? error.message : "Could not upload image",
+        description: "There was a problem uploading your image",
         variant: "destructive"
       });
-      
-      // Clear preview on error
-      if (!currentImageUrl) {
-        setPreviewUrl(null);
-      }
     } finally {
       setIsUploading(false);
     }
   };
-  
+
   const handleRemoveImage = () => {
-    onImageUploaded('');
     setPreviewUrl(null);
+    onImageUploaded('');
   };
-  
+
   return (
-    <div className={`border rounded-md overflow-hidden ${className}`}>
-      {!previewUrl ? (
-        <div className="p-4 flex flex-col items-center justify-center min-h-[140px] bg-slate-50 dark:bg-slate-900">
-          <div className="mb-4 text-slate-400">
-            <ImageIcon className="h-12 w-12 mx-auto mb-2" />
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              Upload a product image (max 5MB)
-            </p>
+    <div className="space-y-4">
+      <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6 bg-gray-50">
+        {previewUrl ? (
+          <div className="relative w-full">
+            <img 
+              src={previewUrl} 
+              alt="Preview" 
+              className="mx-auto max-h-64 object-contain rounded-md"
+            />
+            <Button
+              type="button"
+              variant="destructive"
+              size="icon"
+              className="absolute top-2 right-2 h-8 w-8"
+              onClick={handleRemoveImage}
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
-          <Button variant="outline" asChild className="bg-white dark:bg-slate-800">
-            <label className="cursor-pointer flex gap-2 items-center">
-              <Upload className="h-4 w-4" />
-              <span>Select Image</span>
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleFileChange}
-                disabled={isUploading}
-              />
-            </label>
-          </Button>
+        ) : (
+          <div className="text-center">
+            <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
+            <div className="mt-4 flex text-sm leading-6 text-gray-600">
+              <Label
+                htmlFor="file-upload"
+                className="relative cursor-pointer rounded-md bg-white font-semibold text-blue-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-blue-600 focus-within:ring-offset-2 hover:text-blue-500"
+              >
+                <span>Upload a file</span>
+                <Input
+                  id="file-upload"
+                  name="file-upload"
+                  type="file"
+                  className="sr-only"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  disabled={isUploading}
+                />
+              </Label>
+              <p className="pl-1">or drag and drop</p>
+            </div>
+            <p className="text-xs text-gray-500">PNG, JPG, GIF up to 5MB</p>
+          </div>
+        )}
+      </div>
+
+      {isUploading && (
+        <div className="w-full bg-gray-200 rounded-full h-2.5">
+          <div 
+            className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
+            style={{ width: `${uploadProgress}%` }}
+          ></div>
         </div>
-      ) : (
-        <div className="relative">
-          {/* Preview image */}
-          <img
-            src={previewUrl}
-            alt="Product image preview"
-            className="w-full object-contain max-h-[200px]"
-          />
-          
-          {/* Uploading indicator */}
-          {isUploading && (
-            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-              <Loader2 className="h-6 w-6 text-white animate-spin" />
-            </div>
-          )}
-          
-          {/* Success indicator */}
-          {!isUploading && (
-            <div className="absolute top-0 right-0 m-2 flex gap-2">
-              <Button 
-                size="icon"
-                variant="destructive" 
-                className="h-8 w-8 rounded-full"
-                onClick={handleRemoveImage}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-              <Button 
-                size="icon"
-                variant="default" 
-                className="h-8 w-8 rounded-full bg-green-600 hover:bg-green-700"
-              >
-                <Check className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
+      )}
+
+      {!previewUrl && (
+        <div className="flex justify-center">
+          <Label
+            htmlFor="file-upload-button"
+            className="cursor-pointer"
+          >
+            <Button 
+              type="button" 
+              variant="outline" 
+              disabled={isUploading}
+              className="flex items-center"
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              {isUploading ? 'Uploading...' : 'Select Image'}
+            </Button>
+            <Input
+              id="file-upload-button"
+              type="file"
+              className="sr-only"
+              accept="image/*"
+              onChange={handleFileChange}
+              disabled={isUploading}
+            />
+          </Label>
         </div>
       )}
     </div>
   );
-};
-
-export default ImageUploader;
+}
