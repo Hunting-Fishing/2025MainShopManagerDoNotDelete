@@ -31,7 +31,7 @@ const transformProductToAffiliateTool = (product: ProductData): AffiliateTool =>
   id: product.id,
   name: product.name,
   description: product.description,
-  slug: product.slug || product.id,
+  slug: product.id, // Use ID since slug might not exist
   price: product.price,
   imageUrl: product.image_url,
   category: product.category,

@@ -35,17 +35,25 @@ const StatsCards: React.FC = () => {
         console.error('Error fetching products count:', productError);
       }
 
-      // For now, set static values since we don't have the exact schema
-      // In a real implementation, these would be calculated from actual data
-      const featuredProducts = 0; // No featured column in current schema
-      const totalCategories = 5; // Placeholder
-      const totalManufacturers = 10; // Placeholder
+      // Count unique manufacturers
+      const { data: manufacturerData, error: manufacturerError } = await supabase
+        .from('products')
+        .select('manufacturer')
+        .not('manufacturer', 'is', null);
+
+      const uniqueManufacturers = manufacturerData 
+        ? new Set(manufacturerData.map(item => item.manufacturer)).size 
+        : 0;
+
+      if (manufacturerError) {
+        console.error('Error fetching manufacturers:', manufacturerError);
+      }
 
       setStats({
         totalProducts: totalProducts || 0,
-        featuredProducts,
-        totalCategories,
-        totalManufacturers
+        featuredProducts: 0, // No featured column in current schema
+        totalCategories: 5, // Placeholder
+        totalManufacturers: uniqueManufacturers
       });
     } catch (error) {
       console.error('Error fetching stats:', error);

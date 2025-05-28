@@ -44,7 +44,7 @@ export interface ProductData {
 }
 
 // Transform database product to our ProductData interface
-const transformDatabaseProduct = (dbProduct: DatabaseProduct): ProductData => ({
+const transformDatabaseProduct = (dbProduct: any): ProductData => ({
   id: dbProduct.id,
   name: dbProduct.name || 'Unnamed Product',
   slug: dbProduct.id, // Use ID as slug since slug column doesn't exist
@@ -54,7 +54,7 @@ const transformDatabaseProduct = (dbProduct: DatabaseProduct): ProductData => ({
   affiliate_link: dbProduct.affiliate_link || '',
   average_rating: dbProduct.average_rating || 0,
   review_count: dbProduct.review_count || 0,
-  category: 'General', // Default category since product_category doesn't exist
+  category: 'General', // Default category since we're using category_id
   manufacturer: dbProduct.manufacturer || 'Unknown',
   featured: false, // Default since featured column doesn't exist
   subcategory: undefined,
