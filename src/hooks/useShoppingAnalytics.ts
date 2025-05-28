@@ -24,27 +24,15 @@ export interface ShoppingAnalyticsData {
   totalSubmissions: number;
 }
 
-export function useShoppingAnalytics() {
-  const queryResult = useQuery<ShoppingAnalyticsData>({
-    queryKey: ['shoppingAnalytics'],
-    queryFn: fetchShoppingAnalytics,
-    initialData: {
-      totalProducts: 0,
-      featuredProducts: 0,
-      totalCategories: 0,
-      totalManufacturers: 0,
-      productsByCategory: [],
-      submissionStatusData: [],
-      totalSubmissions: 0
-    }
-  });
-
-  return {
-    analyticsData: queryResult.data,
-    isLoading: queryResult.isLoading,
-    error: queryResult.error
-  };
-}
+const defaultAnalyticsData: ShoppingAnalyticsData = {
+  totalProducts: 0,
+  featuredProducts: 0,
+  totalCategories: 0,
+  totalManufacturers: 0,
+  productsByCategory: [],
+  submissionStatusData: [],
+  totalSubmissions: 0
+};
 
 async function fetchShoppingAnalytics(): Promise<ShoppingAnalyticsData> {
   try {
@@ -79,16 +67,15 @@ async function fetchShoppingAnalytics(): Promise<ShoppingAnalyticsData> {
       `);
 
     // Process category data
-    const categoryMap: Record<string, { name: string; count: number }> = {};
+    const categoryCount: Record<string, number> = {};
     
     if (productsWithCategories) {
       productsWithCategories.forEach(product => {
         if (product.product_categories) {
           const categoryName = (product.product_categories as any).name;
-          if (!categoryMap[categoryName]) {
-            categoryMap[categoryName] = { name: categoryName, count: 0 };
+          if (categoryName) {
+            categoryCount[categoryName] = (categoryCount[categoryName] || 0) + 1;
           }
-          categoryMap[categoryName].count += 1;
         }
       });
     }
@@ -96,9 +83,10 @@ async function fetchShoppingAnalytics(): Promise<ShoppingAnalyticsData> {
     // Colors for category visualization
     const colors = ['#4287f5', '#f54242', '#f5d442', '#42f554', '#8d42f5', '#f542b3', '#42f5d1'];
     
-    const productsByCategory: ProductByCategoryData[] = Object.values(categoryMap)
-      .map((category, index) => ({
-        ...category,
+    const productsByCategory: ProductByCategoryData[] = Object.entries(categoryCount)
+      .map(([name, count], index) => ({
+        name,
+        count,
         color: colors[index % colors.length]
       }))
       .sort((a, b) => b.count - a.count);
@@ -119,11 +107,11 @@ async function fetchShoppingAnalytics(): Promise<ShoppingAnalyticsData> {
           .from('product_submissions')
           .select('status');
 
-        const statusMap: Record<string, number> = {};
+        const statusCount: Record<string, number> = {};
         if (submissionStatusDataRaw) {
           submissionStatusDataRaw.forEach(submission => {
             const status = submission.status || 'pending';
-            statusMap[status] = (statusMap[status] || 0) + 1;
+            statusCount[status] = (statusCount[status] || 0) + 1;
           });
         }
 
@@ -134,7 +122,7 @@ async function fetchShoppingAnalytics(): Promise<ShoppingAnalyticsData> {
           'modifications_requested': '#4287f5'
         };
 
-        submissionStatusData = Object.entries(statusMap)
+        submissionStatusData = Object.entries(statusCount)
           .map(([name, value]) => ({
             name,
             value,
@@ -159,4 +147,18 @@ async function fetchShoppingAnalytics(): Promise<ShoppingAnalyticsData> {
     console.error("Error fetching shopping analytics data:", error);
     throw error;
   }
+}
+
+export function useShoppingAnalytics() {
+  const query = useQuery({
+    queryKey: ['shoppingAnalytics'],
+    queryFn: fetchShoppingAnalytics,
+    initialData: defaultAnalyticsData
+  });
+
+  return {
+    analyticsData: query.data,
+    isLoading: query.isLoading,
+    error: query.error
+  };
 }
