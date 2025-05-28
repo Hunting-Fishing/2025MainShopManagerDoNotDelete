@@ -39,6 +39,11 @@ import Settings from '@/pages/Settings';
 import CompanySettings from '@/pages/settings/CompanySettings';
 import AppearanceSettings from '@/pages/settings/AppearanceSettings';
 
+// Developer portal pages
+import OrganizationManagement from '@/pages/developer/OrganizationManagement';
+import ShoppingControls from '@/pages/developer/ShoppingControls';
+import ServiceManagement from '@/pages/developer/ServiceManagement';
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -88,7 +93,9 @@ function App() {
                             <Route path="/reports" element={<Reports />} />
                             <Route path="/notifications" element={<Notifications />} />
                             <Route path="/developer" element={<DeveloperPortal />} />
-                            <Route path="/developer/*" element={<DeveloperPortal />} />
+                            <Route path="/developer/organization-management" element={<OrganizationManagement />} />
+                            <Route path="/developer/shopping-controls" element={<ShoppingControls />} />
+                            <Route path="/developer/service-management" element={<ServiceManagement />} />
                             <Route path="/settings" element={<Settings />} />
                             <Route path="/settings/company" element={<CompanySettings />} />
                             <Route path="/settings/appearance" element={<AppearanceSettings />} />
