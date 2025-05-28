@@ -6,8 +6,8 @@ import ProductCard from '@/components/affiliate/ProductCard';
 
 interface Product {
   id: string;
-  name: string;
-  category: string;
+  product_name: string;
+  product_category: string;
   brand: string;
   featured: boolean;
   affiliate_link: string;
@@ -20,7 +20,7 @@ interface Product {
   is_available: boolean;
   price: number;
   review_count: number;
-  product_tier: string;
+  product_type: string;
   updated_at: string;
 }
 
@@ -46,16 +46,16 @@ export default function ManufacturerPage() {
         .select('*')
         .eq('is_approved', true)
         .eq('is_available', true)
-        .or(`manufacturer.ilike.%${manufacturer}%,name.ilike.%${manufacturer}%`);
+        .or(`brand.ilike.%${manufacturer}%,product_name.ilike.%${manufacturer}%`);
 
       if (error) throw error;
 
       // Transform database data to match Product interface
       const transformedProducts: Product[] = (data || []).map(product => ({
         id: product.id,
-        name: product.name || 'Unnamed Product',
-        category: product.category || 'Uncategorized',
-        brand: product.manufacturer || manufacturer || 'Unknown',
+        product_name: product.product_name || 'Unnamed Product',
+        product_category: product.product_category || 'Uncategorized',
+        brand: product.brand || manufacturer || 'Unknown',
         featured: product.featured || false,
         affiliate_link: product.affiliate_link || '',
         average_rating: product.average_rating || 0,
@@ -67,7 +67,7 @@ export default function ManufacturerPage() {
         is_available: product.is_available || false,
         price: product.price || 0,
         review_count: product.review_count || 0,
-        product_tier: product.product_type || 'standard',
+        product_type: product.product_type || 'standard',
         updated_at: product.updated_at || product.created_at || ''
       }));
 
@@ -110,13 +110,13 @@ export default function ManufacturerPage() {
             // Transform to AffiliateProduct for ProductCard
             const affiliateProduct = {
               id: product.id,
-              name: product.name,
+              name: product.product_name,
               description: product.description,
               imageUrl: product.image_url,
               retailPrice: product.price,
               affiliateUrl: product.affiliate_link,
-              category: product.category,
-              tier: product.product_tier as any,
+              category: product.product_category,
+              tier: product.product_type as any,
               rating: product.average_rating,
               reviewCount: product.review_count,
               manufacturer: product.brand,

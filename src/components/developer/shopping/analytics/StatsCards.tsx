@@ -26,56 +26,39 @@ const StatsCards: React.FC = () => {
 
   const fetchStats = async () => {
     try {
-      // Fetch total products
-      const { count: totalProducts, error: productsError } = await supabase
+      // Fetch total products count
+      const { count: totalProducts } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true });
 
-      if (productsError) {
-        console.error('Error fetching products count:', productsError);
-      }
-
-      // Fetch featured products
-      const { count: featuredProducts, error: featuredError } = await supabase
+      // Fetch featured products count
+      const { count: featuredProducts } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true })
         .eq('featured', true);
 
-      if (featuredError) {
-        console.error('Error fetching featured products count:', featuredError);
-      }
+      // For categories and manufacturers, we'll get unique values
+      const { data: products } = await supabase
+        .from('products')
+        .select('product_category, brand');
 
-      // For categories and manufacturers, we'll use simple counts
-      // to avoid the complex type instantiation issues
       let totalCategories = 0;
       let totalManufacturers = 0;
 
-      try {
-        const { data: categoryData } = await supabase
-          .from('products')
-          .select('category')
-          .not('category', 'is', null);
+      if (products) {
+        const uniqueCategories = new Set(
+          products
+            .map(p => p.product_category)
+            .filter(category => category && category.trim() !== '')
+        );
+        totalCategories = uniqueCategories.size;
 
-        if (categoryData) {
-          const uniqueCategories = new Set(categoryData.map(item => item.category));
-          totalCategories = uniqueCategories.size;
-        }
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-      }
-
-      try {
-        const { data: manufacturerData } = await supabase
-          .from('products')
-          .select('manufacturer')
-          .not('manufacturer', 'is', null);
-
-        if (manufacturerData) {
-          const uniqueManufacturers = new Set(manufacturerData.map(item => item.manufacturer));
-          totalManufacturers = uniqueManufacturers.size;
-        }
-      } catch (error) {
-        console.error('Error fetching manufacturers:', error);
+        const uniqueManufacturers = new Set(
+          products
+            .map(p => p.brand)
+            .filter(brand => brand && brand.trim() !== '')
+        );
+        totalManufacturers = uniqueManufacturers.size;
       }
 
       setStats({

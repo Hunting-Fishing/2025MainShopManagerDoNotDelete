@@ -1,219 +1,168 @@
 
 import { useState, useEffect } from 'react';
-import { AffiliateTool, AffiliateProduct } from '@/types/affiliate';
-import * as productService from '@/services/affiliate/productService';
-import { toast } from "@/hooks/use-toast";
+import { 
+  getProducts, 
+  getProductsByCategory, 
+  getProductsByManufacturer,
+  getProductsByFeaturedGroup,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  ProductData 
+} from '@/services/affiliate/productService';
+import { AffiliateTool } from '@/types/affiliate';
+import { toast } from 'sonner';
 
-interface UseProductsManagerProps {
-  categoryType: 'tool' | 'manufacturer' | 'featured';
-  categoryId?: string;
-  categoryName?: string;
+interface UseProductsManagerReturn {
+  products: AffiliateTool[];
+  loading: boolean;
+  error: string | null;
+  fetchProducts: () => Promise<void>;
+  fetchProductsByCategory: (category: string) => Promise<void>;
+  fetchProductsByManufacturer: (manufacturer: string) => Promise<void>;
+  fetchProductsByFeaturedGroup: (groupId: string) => Promise<void>;
+  handleCreateProduct: (productData: Partial<ProductData>) => Promise<void>;
+  handleUpdateProduct: (id: string, productData: Partial<ProductData>) => Promise<void>;
+  handleDeleteProduct: (id: string) => Promise<void>;
 }
 
-export const useProductsManager = ({ categoryType, categoryId, categoryName }: UseProductsManagerProps) => {
+// Transform ProductData to AffiliateTool
+const transformProductToAffiliateTool = (product: ProductData): AffiliateTool => ({
+  id: product.id,
+  name: product.product_name,
+  description: product.description,
+  slug: product.slug || product.id,
+  price: product.price,
+  imageUrl: product.image_url,
+  category: product.product_category,
+  subcategory: product.subcategory,
+  manufacturer: product.brand,
+  rating: product.average_rating,
+  reviewCount: product.review_count,
+  featured: product.featured,
+  bestSeller: false,
+  affiliateLink: product.affiliate_link,
+  seller: product.seller || 'Unknown',
+  tags: product.tags || []
+});
+
+export function useProductsManager(): UseProductsManagerReturn {
   const [products, setProducts] = useState<AffiliateTool[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!categoryName && !categoryId) return;
-
-    const fetchProducts = async () => {
+  const fetchProducts = async () => {
+    try {
       setLoading(true);
       setError(null);
-      try {
-        let fetchedProducts: AffiliateTool[] = [];
+      const data = await getProducts();
+      setProducts(data.map(transformProductToAffiliateTool));
+    } catch (err: any) {
+      setError(err.message);
+      toast.error('Failed to fetch products');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        if (categoryType === 'tool' && categoryName) {
-          const data = await productService.getProductsByCategory(categoryName);
-          // Transform ProductData to AffiliateTool
-          fetchedProducts = data.map(product => ({
-            id: product.id,
-            name: product.name,
-            description: product.description,
-            slug: product.slug,
-            price: product.price,
-            imageUrl: product.image_url,
-            category: product.category,
-            manufacturer: product.manufacturer,
-            rating: product.average_rating,
-            reviewCount: product.review_count,
-            affiliateLink: product.affiliate_link,
-            featured: product.featured,
-            subcategory: undefined,
-            bestSeller: false,
-            seller: 'Shop',
-            tags: []
-          }));
-        } else if (categoryType === 'manufacturer' && categoryName) {
-          const data = await productService.getProductsByManufacturer(categoryName);
-          fetchedProducts = data.map(product => ({
-            id: product.id,
-            name: product.name,
-            description: product.description,
-            slug: product.slug,
-            price: product.price,
-            imageUrl: product.image_url,
-            category: product.category,
-            manufacturer: product.manufacturer,
-            rating: product.average_rating,
-            reviewCount: product.review_count,
-            affiliateLink: product.affiliate_link,
-            featured: product.featured,
-            subcategory: undefined,
-            bestSeller: false,
-            seller: 'Shop',
-            tags: []
-          }));
-        } else if (categoryType === 'featured' && categoryId) {
-          const data = await productService.getProductsByFeaturedGroup(categoryId);
-          fetchedProducts = data.map(product => ({
-            id: product.id,
-            name: product.name,
-            description: product.description,
-            slug: product.slug,
-            price: product.price,
-            imageUrl: product.image_url,
-            category: product.category,
-            manufacturer: product.manufacturer,
-            rating: product.average_rating,
-            reviewCount: product.review_count,
-            affiliateLink: product.affiliate_link,
-            featured: product.featured,
-            subcategory: undefined,
-            bestSeller: false,
-            seller: 'Shop',
-            tags: []
-          }));
-        }
-
-        setProducts(fetchedProducts);
-      } catch (err) {
-        console.error('Error fetching products:', err);
-        setError('Failed to load products. Please try again.');
-        toast({
-          title: 'Error',
-          description: 'Failed to load products. Please try again.',
-          variant: 'destructive',
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProducts();
-  }, [categoryType, categoryId, categoryName]);
-
-  const updateProduct = async (updatedProduct: AffiliateTool | AffiliateProduct): Promise<void> => {
+  const fetchProductsByCategory = async (category: string) => {
     try {
-      const result = await productService.updateProduct(updatedProduct);
-      
-      // Update the local state
-      setProducts(prevProducts => 
-        prevProducts.map(p => p.id === result.id ? {
-          id: result.id,
-          name: result.name,
-          description: result.description,
-          slug: result.slug,
-          price: result.price,
-          imageUrl: result.image_url,
-          category: result.category,
-          manufacturer: result.manufacturer,
-          rating: result.average_rating,
-          reviewCount: result.review_count,
-          affiliateLink: result.affiliate_link,
-          featured: result.featured,
-          subcategory: undefined,
-          bestSeller: false,
-          seller: 'Shop',
-          tags: []
-        } : p)
+      setLoading(true);
+      setError(null);
+      const data = await getProductsByCategory(category);
+      setProducts(data.map(transformProductToAffiliateTool));
+    } catch (err: any) {
+      setError(err.message);
+      toast.error('Failed to fetch products by category');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchProductsByManufacturer = async (manufacturer: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getProductsByManufacturer(manufacturer);
+      setProducts(data.map(transformProductToAffiliateTool));
+    } catch (err: any) {
+      setError(err.message);
+      toast.error('Failed to fetch products by manufacturer');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchProductsByFeaturedGroup = async (groupId: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getProductsByFeaturedGroup(groupId);
+      setProducts(data.map(transformProductToAffiliateTool));
+    } catch (err: any) {
+      setError(err.message);
+      toast.error('Failed to fetch products by featured group');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateProduct = async (productData: Partial<ProductData>) => {
+    try {
+      const newProduct = await createProduct(productData);
+      setProducts(prev => [...prev, transformProductToAffiliateTool(newProduct)]);
+      toast.success(`Product "${newProduct.product_name}" created successfully`);
+    } catch (err: any) {
+      setError(err.message);
+      toast.error('Failed to create product');
+      throw err;
+    }
+  };
+
+  const handleUpdateProduct = async (id: string, productData: Partial<ProductData>) => {
+    try {
+      const updatedProduct = await updateProduct(id, productData);
+      setProducts(prev => 
+        prev.map(product => 
+          product.id === id 
+            ? transformProductToAffiliateTool(updatedProduct)
+            : product
+        )
       );
-
-      toast({
-        title: 'Success',
-        description: `${result.name} has been updated successfully.`,
-      });
-    } catch (err) {
-      console.error('Error updating product:', err);
-      toast({
-        title: 'Error',
-        description: 'Failed to update product. Please try again.',
-        variant: 'destructive',
-      });
+      toast.success(`Product "${updatedProduct.product_name}" updated successfully`);
+    } catch (err: any) {
+      setError(err.message);
+      toast.error('Failed to update product');
       throw err;
     }
   };
 
-  const createProduct = async (product: Partial<AffiliateTool>): Promise<void> => {
+  const handleDeleteProduct = async (id: string) => {
     try {
-      const newProduct = await productService.createProduct(product);
-      
-      // Update local state with the new product
-      const newAffiliateTool: AffiliateTool = {
-        id: newProduct.id,
-        name: newProduct.name,
-        description: newProduct.description,
-        slug: newProduct.slug,
-        price: newProduct.price,
-        imageUrl: newProduct.image_url,
-        category: newProduct.category,
-        manufacturer: newProduct.manufacturer,
-        rating: newProduct.average_rating,
-        reviewCount: newProduct.review_count,
-        affiliateLink: newProduct.affiliate_link,
-        featured: newProduct.featured,
-        subcategory: undefined,
-        bestSeller: false,
-        seller: 'Shop',
-        tags: []
-      };
-      
-      setProducts(prevProducts => [...prevProducts, newAffiliateTool]);
-
-      toast({
-        title: 'Success',
-        description: `${newProduct.name} has been added successfully.`,
-      });
-    } catch (err) {
-      console.error('Error creating product:', err);
-      toast({
-        title: 'Error',
-        description: 'Failed to create product. Please try again.',
-        variant: 'destructive',
-      });
+      await deleteProduct(id);
+      setProducts(prev => prev.filter(product => product.id !== id));
+      toast.success('Product deleted successfully');
+    } catch (err: any) {
+      setError(err.message);
+      toast.error('Failed to delete product');
       throw err;
     }
   };
 
-  const deleteProduct = async (productId: string): Promise<void> => {
-    try {
-      await productService.deleteProduct(productId);
-      
-      // Remove the product from local state
-      setProducts(prevProducts => prevProducts.filter(p => p.id !== productId));
-
-      toast({
-        title: 'Success',
-        description: 'Product has been deleted successfully.',
-      });
-    } catch (err) {
-      console.error('Error deleting product:', err);
-      toast({
-        title: 'Error',
-        description: 'Failed to delete product. Please try again.',
-        variant: 'destructive',
-      });
-      throw err;
-    }
-  };
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
   return {
     products,
     loading,
     error,
-    updateProduct,
-    createProduct,
-    deleteProduct
+    fetchProducts,
+    fetchProductsByCategory,
+    fetchProductsByManufacturer,
+    fetchProductsByFeaturedGroup,
+    handleCreateProduct,
+    handleUpdateProduct,
+    handleDeleteProduct
   };
-};
+}
