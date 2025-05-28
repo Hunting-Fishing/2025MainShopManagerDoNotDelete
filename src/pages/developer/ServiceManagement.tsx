@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import ServiceAnalytics from '@/components/developer/service-management/ServiceAnalytics';
 import ServiceBulkImport from '@/components/developer/service-management/ServiceBulkImport';
 import ServicesPriceReport from '@/components/developer/service-management/ServicesPriceReport';
-import ServiceCategoriesManager from '@/components/developer/service-management/ServiceCategoriesManager';
+import ServiceHierarchyBrowser from '@/components/developer/service-management/ServiceHierarchyBrowser';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
 import { fetchServiceCategories } from '@/lib/services/serviceApi';
 import { toast } from 'sonner';
@@ -125,7 +125,7 @@ export default function ServiceManagement() {
 
         <div className="mt-6 space-y-6">
           <TabsContent value="services" className="space-y-6">
-            <ServiceCategoriesManager 
+            <ServiceHierarchyBrowser 
               categories={categories} 
               isLoading={isLoading}
               onRefresh={handleRefresh}

@@ -8,9 +8,9 @@ import { Clock, DollarSign } from 'lucide-react';
 import { 
   ServiceMainCategory, 
   ServiceSubcategory, 
-  ServiceJob,
-  getServiceCategories // Fixed: use getServiceCategories instead of fetchServiceCategories
-} from '@/lib/serviceHierarchy';
+  ServiceJob
+} from '@/types/serviceHierarchy';
+import { fetchServiceCategories } from '@/lib/services/serviceApi';
 
 interface CommonServicesChecklistProps {
   selectedServices: string[];
@@ -23,16 +23,27 @@ export const CommonServicesChecklist: React.FC<CommonServicesChecklistProps> = (
 }) => {
   const [categories, setCategories] = useState<ServiceMainCategory[]>([]);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Load service categories
-    const serviceCategories = getServiceCategories();
-    setCategories(serviceCategories);
-    
-    // Expand first category by default
-    if (serviceCategories.length > 0) {
-      setExpandedCategories(new Set([serviceCategories[0].id]));
-    }
+    const loadCategories = async () => {
+      try {
+        setIsLoading(true);
+        const serviceCategories = await fetchServiceCategories();
+        setCategories(serviceCategories);
+        
+        // Expand first category by default
+        if (serviceCategories.length > 0) {
+          setExpandedCategories(new Set([serviceCategories[0].id]));
+        }
+      } catch (error) {
+        console.error('Failed to load service categories:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadCategories();
   }, []);
 
   const handleServiceToggle = (serviceId: string) => {
@@ -93,6 +104,32 @@ export const CommonServicesChecklist: React.FC<CommonServicesChecklistProps> = (
       </div>
     </div>
   );
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Common Services</h3>
+        </div>
+        <div className="space-y-4">
+          {[1, 2, 3].map(i => (
+            <Card key={i}>
+              <CardHeader>
+                <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {[1, 2].map(j => (
+                    <div key={j} className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
