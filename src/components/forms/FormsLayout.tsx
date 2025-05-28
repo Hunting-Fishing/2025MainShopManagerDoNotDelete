@@ -1,33 +1,34 @@
 
-import React, { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { EnhancedFormTemplatesList } from "./EnhancedFormTemplatesList";
-import { FormUploads } from "./FormUploads";
-import { FormCategories } from "./FormCategories";
-import { useTranslation } from 'react-i18next';
+import React from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { FormTemplatesList } from './FormTemplatesList';
+import { FormUploads } from './FormUploads';
 
-export const FormsLayout = () => {
-  const [activeTab, setActiveTab] = useState("templates");
-  const { t } = useTranslation();
+interface FormsLayoutProps {
+  formId?: string;
+}
 
+export function FormsLayout({ formId = 'default' }: FormsLayoutProps) {
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab}>
-      <TabsList className="grid grid-cols-3 w-full max-w-md mb-6">
-        <TabsTrigger value="templates">Templates</TabsTrigger>
-        <TabsTrigger value="uploads">Uploads</TabsTrigger>
-        <TabsTrigger value="categories">Categories</TabsTrigger>
-      </TabsList>
-      <div>
-        <TabsContent value="templates">
-          <EnhancedFormTemplatesList />
-        </TabsContent>
-        <TabsContent value="uploads">
-          <FormUploads />
-        </TabsContent>
-        <TabsContent value="categories">
-          <FormCategories />
-        </TabsContent>
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Forms Management</h1>
       </div>
-    </Tabs>
+
+      <Tabs defaultValue="templates" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="templates">Form Templates</TabsTrigger>
+          <TabsTrigger value="uploads">File Uploads</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="templates" className="mt-6">
+          <FormTemplatesList />
+        </TabsContent>
+        
+        <TabsContent value="uploads" className="mt-6">
+          <FormUploads formId={formId} />
+        </TabsContent>
+      </Tabs>
+    </div>
   );
-};
+}
