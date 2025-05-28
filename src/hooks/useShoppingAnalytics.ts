@@ -159,7 +159,7 @@ async function fetchShoppingAnalytics(): Promise<ShoppingAnalyticsData> {
 }
 
 export function useShoppingAnalytics() {
-  const query = useQuery<ShoppingAnalyticsData, Error>({
+  const query = useQuery({
     queryKey: ['shoppingAnalytics'],
     queryFn: fetchShoppingAnalytics,
     initialData: defaultAnalyticsData
