@@ -1,82 +1,73 @@
 
 import { supabase } from '@/lib/supabase';
 
-/**
- * Saves metadata to a user's profile_metadata record
- * @param profileId - The ID of the profile
- * @param notes - Notes to save in the metadata
- */
-export async function saveProfileMetadata(profileId: string, notes: string): Promise<boolean> {
+export interface ProfileMetadata {
+  is_active?: boolean;
+  status?: string;
+  last_login?: string;
+  preferences?: Record<string, any>;
+  notes?: string;
+  [key: string]: any;
+}
+
+export async function updateProfileMetadata(profileId: string, metadata: ProfileMetadata) {
   try {
-    // Check if metadata record exists
-    const { data: existing, error: checkError } = await supabase
+    const { data, error } = await supabase
       .from('profile_metadata')
-      .select('id')
-      .eq('profile_id', profileId)
-      .maybeSingle();
-    
-    if (checkError) {
-      throw checkError;
-    }
-    
-    if (existing) {
-      // Update existing record
-      const { error: updateError } = await supabase
-        .from('profile_metadata')
-        .update({
-          metadata: {
-            notes,
-            updated_at: new Date().toISOString()
-          }
-        })
-        .eq('id', existing.id);
-        
-      if (updateError) {
-        throw updateError;
-      }
-    } else {
-      // Create new record
-      const { error: insertError } = await supabase
-        .from('profile_metadata')
-        .insert({
-          profile_id: profileId,
-          metadata: {
-            notes,
-            created_at: new Date().toISOString()
-          }
-        });
-        
-      if (insertError) {
-        throw insertError;
-      }
-    }
-    
-    return true;
-  } catch (err) {
-    console.error('Error saving profile metadata:', err);
-    return false;
+      .upsert({
+        profile_id: profileId,
+        metadata: metadata as any
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { success: true, data };
+  } catch (error: any) {
+    console.error('Error updating profile metadata:', error);
+    return { success: false, error: error.message };
   }
 }
 
-/**
- * Retrieves metadata for a user's profile
- * @param profileId - The ID of the profile
- */
-export async function getProfileMetadata(profileId: string): Promise<Record<string, any> | null> {
+export async function getProfileMetadata(profileId: string): Promise<ProfileMetadata | null> {
   try {
     const { data, error } = await supabase
       .from('profile_metadata')
       .select('metadata')
       .eq('profile_id', profileId)
-      .maybeSingle();
-    
+      .single();
+
     if (error) {
+      if (error.code === 'PGRST116') {
+        // No record found
+        return null;
+      }
       throw error;
     }
-    
-    return data?.metadata || null;
-  } catch (err) {
-    console.error('Error retrieving profile metadata:', err);
+
+    // Safely handle the metadata property
+    if (data && data.metadata && typeof data.metadata === 'object' && data.metadata !== null) {
+      return data.metadata as ProfileMetadata;
+    }
+
     return null;
+  } catch (error: any) {
+    console.error('Error fetching profile metadata:', error);
+    return null;
+  }
+}
+
+export async function deleteProfileMetadata(profileId: string) {
+  try {
+    const { error } = await supabase
+      .from('profile_metadata')
+      .delete()
+      .eq('profile_id', profileId);
+
+    if (error) throw error;
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error deleting profile metadata:', error);
+    return { success: false, error: error.message };
   }
 }

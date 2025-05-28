@@ -30,23 +30,23 @@ export function useInvoices() {
       // Transform data to match expected interface
       const transformedData = (data || []).map(invoice => ({
         ...invoice,
-        number: invoice.id, // Use id as number if number field doesn't exist
+        number: invoice.number || invoice.id, // Use existing number or fallback to id
         customer_id: invoice.customer_id || '',
         customer_email: invoice.customer_email || '',
         customer_address: invoice.customer_address || '',
-        issue_date: invoice.date, // Map date to issue_date
-        tax_rate: 0.08, // Default tax rate if not in database
-        items: [], // Default to empty array if not in database
+        issue_date: invoice.issue_date || invoice.date, // Use existing issue_date or fallback to date
+        tax_rate: invoice.tax_rate || 0.08, // Use existing tax_rate or default
+        items: invoice.items || [], // Use existing items or default to empty array
         notes: invoice.notes || '',
         description: invoice.description || '',
         payment_method: invoice.payment_method || '',
         work_order_id: invoice.work_order_id || '',
-        assignedStaff: [], // Default to empty array if not in database
+        assignedStaff: invoice.assignedStaff || [], // Use existing assignedStaff or default to empty array
         created_by: invoice.created_by || '',
-        updated_at: invoice.created_at, // Use created_at if updated_at doesn't exist
-        status: (invoice.status === 'pending' || invoice.status === 'draft' || invoice.status === 'paid' || invoice.status === 'overdue' || invoice.status === 'cancelled') 
+        updated_at: invoice.updated_at || invoice.created_at, // Use existing updated_at or fallback to created_at
+        status: (['pending', 'draft', 'paid', 'overdue', 'cancelled'].includes(invoice.status) 
           ? invoice.status 
-          : 'pending' // Default to pending if status is not valid
+          : 'pending') as 'pending' | 'draft' | 'paid' | 'overdue' | 'cancelled'
       }));
       
       setInvoices(transformedData);
