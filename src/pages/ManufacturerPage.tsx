@@ -46,16 +46,16 @@ export default function ManufacturerPage() {
         .select('*')
         .eq('is_approved', true)
         .eq('is_available', true)
-        .or(`manufacturer.ilike.%${manufacturer}%,brand.ilike.%${manufacturer}%`);
+        .or(`manufacturer.ilike.%${manufacturer}%,name.ilike.%${manufacturer}%`);
 
       if (error) throw error;
 
       // Transform database data to match Product interface
       const transformedProducts: Product[] = (data || []).map(product => ({
         id: product.id,
-        name: product.name || product.title || 'Unnamed Product',
+        name: product.name || 'Unnamed Product',
         category: product.category || 'Uncategorized',
-        brand: product.manufacturer || product.brand || manufacturer || 'Unknown',
+        brand: product.manufacturer || manufacturer || 'Unknown',
         featured: product.featured || false,
         affiliate_link: product.affiliate_link || '',
         average_rating: product.average_rating || 0,

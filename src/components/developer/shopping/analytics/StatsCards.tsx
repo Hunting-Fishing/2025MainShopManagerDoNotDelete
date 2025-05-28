@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, Star, Users, TrendingUp } from "lucide-react";
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 interface StatsData {
   totalProducts: number;
@@ -27,31 +27,62 @@ const StatsCards: React.FC = () => {
   const fetchStats = async () => {
     try {
       // Fetch total products
-      const { count: totalProducts } = await supabase
+      const { count: totalProducts, error: productsError } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true });
 
+      if (productsError) {
+        console.error('Error fetching products count:', productsError);
+      }
+
       // Fetch featured products
-      const { count: featuredProducts } = await supabase
+      const { count: featuredProducts, error: featuredError } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true })
         .eq('featured', true);
 
-      // Fetch total categories
-      const { count: totalCategories } = await supabase
-        .from('product_categories')
-        .select('*', { count: 'exact', head: true });
+      if (featuredError) {
+        console.error('Error fetching featured products count:', featuredError);
+      }
 
-      // Fetch total manufacturers
-      const { count: totalManufacturers } = await supabase
-        .from('manufacturers')
-        .select('*', { count: 'exact', head: true });
+      // For categories and manufacturers, we'll use simple counts
+      // to avoid the complex type instantiation issues
+      let totalCategories = 0;
+      let totalManufacturers = 0;
+
+      try {
+        const { data: categoryData } = await supabase
+          .from('products')
+          .select('category')
+          .not('category', 'is', null);
+
+        if (categoryData) {
+          const uniqueCategories = new Set(categoryData.map(item => item.category));
+          totalCategories = uniqueCategories.size;
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+
+      try {
+        const { data: manufacturerData } = await supabase
+          .from('products')
+          .select('manufacturer')
+          .not('manufacturer', 'is', null);
+
+        if (manufacturerData) {
+          const uniqueManufacturers = new Set(manufacturerData.map(item => item.manufacturer));
+          totalManufacturers = uniqueManufacturers.size;
+        }
+      } catch (error) {
+        console.error('Error fetching manufacturers:', error);
+      }
 
       setStats({
         totalProducts: totalProducts || 0,
         featuredProducts: featuredProducts || 0,
-        totalCategories: totalCategories || 0,
-        totalManufacturers: totalManufacturers || 0
+        totalCategories,
+        totalManufacturers
       });
     } catch (error) {
       console.error('Error fetching stats:', error);

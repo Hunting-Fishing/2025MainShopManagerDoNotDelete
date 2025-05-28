@@ -1,7 +1,7 @@
 
 import React, { useEffect, createContext, useContext } from 'react';
 import { AffiliateProduct } from '@/types/affiliate';
-import * as productService from '@/services/affiliate/productService';
+import { trackProductAnalytics } from '@/services/affiliate/productService';
 import { useToast } from '@/hooks/use-toast';
 
 // Enum for different types of interactions
@@ -41,7 +41,7 @@ export const ProductAnalyticsProvider: React.FC<{ children: React.ReactNode }> =
   // Function to track product interactions
   const trackInteraction = async (interaction: ProductInteraction) => {
     try {
-      await productService.trackProductAnalytics({
+      await trackProductAnalytics({
         productId: interaction.productId,
         productName: interaction.productName,
         category: interaction.category,
@@ -81,7 +81,7 @@ export const ProductViewTracker: React.FC<{ product: AffiliateProduct }> = ({ pr
       interactionType: ProductInteractionType.VIEW,
       category: product.category
     });
-  }, [product.id, product.name, product.category]);
+  }, [product.id, product.name, product.category, trackInteraction]);
 
   // This component doesn't render anything
   return null;
