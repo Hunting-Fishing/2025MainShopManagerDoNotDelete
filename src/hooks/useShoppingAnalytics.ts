@@ -150,14 +150,14 @@ async function fetchShoppingAnalytics(): Promise<ShoppingAnalyticsData> {
 }
 
 export function useShoppingAnalytics() {
-  const query = useQuery({
+  const query = useQuery<ShoppingAnalyticsData, Error>({
     queryKey: ['shoppingAnalytics'],
     queryFn: fetchShoppingAnalytics,
     initialData: defaultAnalyticsData
   });
 
   return {
-    analyticsData: query.data,
+    analyticsData: query.data || defaultAnalyticsData,
     isLoading: query.isLoading,
     error: query.error
   };
