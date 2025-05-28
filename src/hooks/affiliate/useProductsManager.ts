@@ -25,11 +25,45 @@ export const useProductsManager = ({ categoryType, categoryId, categoryName }: U
         let fetchedProducts: AffiliateTool[] = [];
 
         if (categoryType === 'tool' && categoryName) {
-          fetchedProducts = await productService.getProductsByCategory(categoryName);
+          const data = await productService.getProductsByCategory(categoryName);
+          // Transform ProductData to AffiliateTool
+          fetchedProducts = data.map(product => ({
+            ...product,
+            affiliateLink: product.affiliate_link, // Map affiliate_link to affiliateLink
+            slug: product.slug || product.id,
+            subcategory: undefined,
+            rating: product.average_rating,
+            reviewCount: product.review_count,
+            bestSeller: false,
+            seller: 'Shop',
+            tags: []
+          }));
         } else if (categoryType === 'manufacturer' && categoryName) {
-          fetchedProducts = await productService.getProductsByManufacturer(categoryName);
+          const data = await productService.getProductsByManufacturer(categoryName);
+          fetchedProducts = data.map(product => ({
+            ...product,
+            affiliateLink: product.affiliate_link,
+            slug: product.slug || product.id,
+            subcategory: undefined,
+            rating: product.average_rating,
+            reviewCount: product.review_count,
+            bestSeller: false,
+            seller: 'Shop',
+            tags: []
+          }));
         } else if (categoryType === 'featured' && categoryId) {
-          fetchedProducts = await productService.getProductsByFeaturedGroup(categoryId);
+          const data = await productService.getProductsByFeaturedGroup(categoryId);
+          fetchedProducts = data.map(product => ({
+            ...product,
+            affiliateLink: product.affiliate_link,
+            slug: product.slug || product.id,
+            subcategory: undefined,
+            rating: product.average_rating,
+            reviewCount: product.review_count,
+            bestSeller: false,
+            seller: 'Shop',
+            tags: []
+          }));
         }
 
         setProducts(fetchedProducts);
@@ -55,13 +89,22 @@ export const useProductsManager = ({ categoryType, categoryId, categoryName }: U
       
       // Update the local state
       setProducts(prevProducts => 
-        prevProducts.map(p => p.id === result.id ? result as AffiliateTool : p)
+        prevProducts.map(p => p.id === result.id ? {
+          ...result,
+          affiliateLink: result.affiliate_link,
+          slug: result.slug || result.id,
+          subcategory: undefined,
+          rating: result.average_rating,
+          reviewCount: result.review_count,
+          bestSeller: false,
+          seller: 'Shop',
+          tags: []
+        } : p)
       );
 
       toast({
         title: 'Success',
         description: `${result.name} has been updated successfully.`,
-        variant: 'success',
       });
     } catch (err) {
       console.error('Error updating product:', err);
@@ -79,12 +122,23 @@ export const useProductsManager = ({ categoryType, categoryId, categoryName }: U
       const newProduct = await productService.createProduct(product);
       
       // Update local state with the new product
-      setProducts(prevProducts => [...prevProducts, newProduct]);
+      const newAffiliateTool: AffiliateTool = {
+        ...newProduct,
+        affiliateLink: newProduct.affiliate_link,
+        slug: newProduct.slug || newProduct.id,
+        subcategory: undefined,
+        rating: newProduct.average_rating,
+        reviewCount: newProduct.review_count,
+        bestSeller: false,
+        seller: 'Shop',
+        tags: []
+      };
+      
+      setProducts(prevProducts => [...prevProducts, newAffiliateTool]);
 
       toast({
         title: 'Success',
         description: `${newProduct.name} has been added successfully.`,
-        variant: 'success',
       });
     } catch (err) {
       console.error('Error creating product:', err);
@@ -107,7 +161,6 @@ export const useProductsManager = ({ categoryType, categoryId, categoryName }: U
       toast({
         title: 'Success',
         description: 'Product has been deleted successfully.',
-        variant: 'success',
       });
     } catch (err) {
       console.error('Error deleting product:', err);

@@ -1,10 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { CustomerPortalHeader } from '@/components/customer-portal/CustomerPortalHeader';
-import { CustomerAccountCard } from '@/components/customer-portal/CustomerAccountCard';
-import { CustomerVehicles } from '@/components/customer-portal/CustomerVehicles';
-import { CustomerWorkOrders } from '@/components/customer-portal/CustomerWorkOrders';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 
@@ -71,17 +67,36 @@ export default function CustomerPortal() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <CustomerPortalHeader customerName={customerName} />
+      <div className="bg-white shadow-sm border-b">
+        <div className="container mx-auto px-4 py-6">
+          <h1 className="text-2xl font-bold">{customerName}</h1>
+          <p className="text-gray-600">Customer Portal</p>
+        </div>
+      </div>
       
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1">
-            <CustomerAccountCard customer={customer} />
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h2 className="text-lg font-semibold mb-4">Account Information</h2>
+              <div className="space-y-2">
+                <p><strong>Name:</strong> {customerName}</p>
+                <p><strong>Email:</strong> {customer.email}</p>
+                {customer.phone && <p><strong>Phone:</strong> {customer.phone}</p>}
+              </div>
+            </div>
           </div>
           
           <div className="lg:col-span-2 space-y-8">
-            <CustomerWorkOrders customerId={customerId!} />
-            <CustomerVehicles customer={customer} />
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h2 className="text-lg font-semibold mb-4">Work Orders</h2>
+              <p className="text-gray-600">No work orders found.</p>
+            </div>
+            
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h2 className="text-lg font-semibold mb-4">Vehicles</h2>
+              <p className="text-gray-600">No vehicles found.</p>
+            </div>
           </div>
         </div>
       </div>

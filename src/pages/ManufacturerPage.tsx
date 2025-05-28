@@ -52,8 +52,8 @@ export default function ManufacturerPage() {
       // Transform database data to match Product interface
       const transformedProducts: Product[] = (data || []).map(product => ({
         id: product.id,
-        name: product.product_name || 'Unnamed Product',
-        category: product.product_category || 'Uncategorized',
+        name: product.name || 'Unnamed Product',
+        category: product.category || 'Uncategorized',
         manufacturer: product.brand || manufacturer || 'Unknown',
         featured: product.featured || false,
         affiliate_link: product.affiliate_link,
@@ -66,7 +66,7 @@ export default function ManufacturerPage() {
         is_available: product.is_available,
         price: product.price,
         review_count: product.review_count,
-        tier: product.product_tier || 'standard',
+        tier: product.tier || 'standard',
         updated_at: product.updated_at
       }));
 
@@ -105,9 +105,27 @@ export default function ManufacturerPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+          {products.map((product) => {
+            // Transform to AffiliateProduct for ProductCard
+            const affiliateProduct = {
+              id: product.id,
+              name: product.name,
+              description: product.description,
+              imageUrl: product.image_url,
+              retailPrice: product.price,
+              affiliateUrl: product.affiliate_link,
+              category: product.category,
+              tier: product.tier as any,
+              rating: product.average_rating,
+              reviewCount: product.review_count,
+              manufacturer: product.manufacturer,
+              isFeatured: product.featured
+            };
+            
+            return (
+              <ProductCard key={product.id} product={affiliateProduct} />
+            );
+          })}
         </div>
       )}
     </div>

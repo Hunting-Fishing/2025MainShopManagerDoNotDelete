@@ -1,17 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { RepairPlanDetailsCard } from '@/components/repair-plan/detail/RepairPlanDetailsCard';
-import { RepairPlanTasksCard } from '@/components/repair-plan/detail/RepairPlanTasksCard';
-import { RepairPlanActionsCard } from '@/components/repair-plan/detail/RepairPlanActionsCard';
-import { RepairPlanActivityCard } from '@/components/repair-plan/detail/RepairPlanActivityCard';
 import { useToast } from '@/hooks/use-toast';
 
 interface RepairPlan {
   id: string;
   title: string;
   description: string;
-  status: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
   priority: string;
   estimated_cost: number;
   actual_cost: number;
@@ -158,19 +154,62 @@ export default function RepairPlanDetails() {
     <div className="container mx-auto px-4 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
-          <RepairPlanDetailsCard repairPlan={repairPlan} />
-          <RepairPlanTasksCard 
-            tasks={tasks} 
-            onTaskUpdate={handleTaskUpdate}
-          />
-          <RepairPlanActivityCard repairPlan={repairPlan} />
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h1 className="text-2xl font-bold mb-4">{repairPlan.title}</h1>
+            <p className="text-gray-600 mb-4">{repairPlan.description}</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <span className="font-medium">Status:</span> {repairPlan.status}
+              </div>
+              <div>
+                <span className="font-medium">Priority:</span> {repairPlan.priority}
+              </div>
+              <div>
+                <span className="font-medium">Estimated Cost:</span> ${repairPlan.estimated_cost}
+              </div>
+              <div>
+                <span className="font-medium">Duration:</span> {repairPlan.estimatedDuration} hours
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h2 className="text-lg font-semibold mb-4">Tasks</h2>
+            <div className="space-y-4">
+              {tasks.map((task) => (
+                <div key={task.id} className="border rounded-lg p-4">
+                  <h3 className="font-medium">{task.title}</h3>
+                  <p className="text-gray-600 text-sm">{task.description}</p>
+                  <div className="mt-2 flex justify-between text-sm">
+                    <span>Status: {task.status}</span>
+                    <span>Assigned to: {task.assigned_to}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h2 className="text-lg font-semibold mb-4">Activity</h2>
+            <p className="text-gray-600">No recent activity.</p>
+          </div>
         </div>
         
         <div className="lg:col-span-1">
-          <RepairPlanActionsCard 
-            repairPlan={repairPlan}
-            onUpdate={fetchRepairPlanData}
-          />
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h2 className="text-lg font-semibold mb-4">Actions</h2>
+            <div className="space-y-2">
+              <button className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
+                Update Status
+              </button>
+              <button className="w-full border border-gray-300 py-2 px-4 rounded hover:bg-gray-50">
+                Add Task
+              </button>
+              <button className="w-full border border-gray-300 py-2 px-4 rounded hover:bg-gray-50">
+                Generate Report
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
