@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { AlertDialogFooter, AlertDialogCancel } from '@/components/ui/alert-dialog';
 import { Upload } from 'lucide-react';
-import { parseExcelData } from '@/lib/services/excelParser';
+import { parseExcelFile } from '@/lib/services/excelParser';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
 import { toast } from 'sonner';
 import { bulkImportServiceCategories } from '@/lib/services/serviceApi';
@@ -42,18 +42,23 @@ const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onCancel, onCompl
       setProgress(10);
       
       // Parse the Excel file
-      const categories = await parseExcelData(file);
+      const result = await parseExcelFile(file);
+      if (result.errors.length > 0) {
+        toast.error(`Import errors: ${result.errors.join(', ')}`);
+        return;
+      }
+      
       setProgress(50);
       
       // Perform the bulk import
-      await bulkImportServiceCategories(categories, (importProgress) => {
+      await bulkImportServiceCategories(result.categories, (importProgress) => {
         setProgress(50 + importProgress * 50);
       });
       
       setProgress(100);
       
       // Notify completion
-      onComplete(categories);
+      onComplete(result.categories);
     } catch (error) {
       console.error('Import error:', error);
       toast.error('Failed to import services: ' + (error instanceof Error ? error.message : 'Unknown error'));
