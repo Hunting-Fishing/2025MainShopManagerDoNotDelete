@@ -10,24 +10,34 @@ import ServicesPriceReport from '@/components/developer/service-management/Servi
 import ServiceCategoriesManager from '@/components/developer/service-management/ServiceCategoriesManager';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
 import { fetchServiceCategories } from '@/lib/services/serviceApi';
+import { toast } from 'sonner';
 
 export default function ServiceManagement() {
   const [activeTab, setActiveTab] = useState("services");
   const [categories, setCategories] = useState<ServiceMainCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const serviceCategories = await fetchServiceCategories();
-        setCategories(serviceCategories);
-      } catch (error) {
-        console.error('Failed to load service categories:', error);
-      } finally {
-        setIsLoading(false);
+  const loadCategories = async () => {
+    try {
+      setIsLoading(true);
+      console.log('Loading service categories from database...');
+      const serviceCategories = await fetchServiceCategories();
+      console.log('Loaded categories:', serviceCategories);
+      setCategories(serviceCategories);
+      
+      if (serviceCategories.length === 0) {
+        console.log('No categories found - user may need to import data');
       }
-    };
+    } catch (error) {
+      console.error('Failed to load service categories:', error);
+      toast.error('Failed to load service categories');
+      setCategories([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     loadCategories();
   }, []);
 
@@ -36,8 +46,18 @@ export default function ServiceManagement() {
   };
 
   const handleBulkImportComplete = (importedCategories: ServiceMainCategory[]) => {
+    console.log('Import completed, refreshing categories...');
     setCategories(importedCategories);
     setActiveTab("services");
+    // Refresh the data from database after import
+    setTimeout(() => {
+      loadCategories();
+    }, 1000);
+    toast.success('Service categories imported successfully');
+  };
+
+  const handleRefresh = async () => {
+    await loadCategories();
   };
 
   return (
@@ -74,7 +94,8 @@ export default function ServiceManagement() {
           <TabsContent value="services" className="space-y-6">
             <ServiceCategoriesManager 
               categories={categories} 
-              isLoading={isLoading} 
+              isLoading={isLoading}
+              onRefresh={handleRefresh}
             />
           </TabsContent>
 
