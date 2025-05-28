@@ -17,8 +17,8 @@ export function useDIYBayOperations(
     setSaveError(null);
     
     try {
-      // Create a new bay with default values
-      const newBay: Partial<Bay> = {
+      // Create a new bay with default values - ensure all required fields are present
+      const newBayData = {
         bay_name: `Bay ${bays.length + 1}`,
         bay_location: "",
         hourly_rate: 65, // Default hourly rate
@@ -28,15 +28,24 @@ export function useDIYBayOperations(
       // Insert new bay into database
       const { data, error } = await supabase
         .from('diy_bay_rates')
-        .insert(newBay)
+        .insert(newBayData)
         .select('*')
         .single();
         
       if (error) throw error;
       
-      // Update local state with the new bay
+      // Update local state with the new bay, mapping to Bay interface
       if (data) {
-        setBays([...bays, data]);
+        const newBay: Bay = {
+          ...data,
+          // Ensure backward compatibility with legacy fields
+          name: data.bay_name,
+          description: data.bay_location,
+          bay_number: bays.length + 1,
+          bay_type: 'standard',
+          features: null
+        };
+        setBays([...bays, newBay]);
         toast({
           title: "Bay added",
           description: `${data.bay_name} has been added successfully.`

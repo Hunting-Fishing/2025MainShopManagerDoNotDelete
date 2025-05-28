@@ -46,10 +46,19 @@ export function useDIYBayState() {
         
       if (settingsError && settingsError.code !== 'PGRST116') throw settingsError;
       
-      // Update state with fetched data
+      // Update state with fetched data, mapping database fields to Bay interface
       if (baysData) {
         console.log("Loaded bays data:", baysData);
-        setBays(baysData);
+        const mappedBays: Bay[] = baysData.map(dbBay => ({
+          ...dbBay,
+          // Ensure backward compatibility with legacy fields
+          name: dbBay.bay_name,
+          description: dbBay.bay_location,
+          bay_number: dbBay.display_order || 0,
+          bay_type: 'standard',
+          features: null
+        }));
+        setBays(mappedBays);
       } else {
         console.log("No bays data found");
       }

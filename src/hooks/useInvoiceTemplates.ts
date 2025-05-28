@@ -27,7 +27,7 @@ export function useInvoiceTemplates() {
       const transformedData = (data || []).map(template => ({
         ...template,
         last_used: template.last_used || null,
-        default_items: template.default_items || []
+        default_items: [] as InvoiceItem[] // Default to empty array since database doesn't have this field
       }));
       
       setTemplates(transformedData);
@@ -45,23 +45,25 @@ export function useInvoiceTemplates() {
 
   const createTemplate = async (templateData: Omit<InvoiceTemplate, 'id' | 'created_at' | 'usage_count'>) => {
     try {
+      // Prepare data for database (exclude default_items since it's not a database field)
+      const { default_items, ...dbTemplateData } = templateData;
+      
       const { data, error } = await supabase
         .from('invoice_templates')
         .insert([{
-          ...templateData,
+          ...dbTemplateData,
           usage_count: 0,
-          last_used: templateData.last_used || null,
-          default_items: templateData.default_items || []
+          last_used: templateData.last_used || null
         }])
         .select()
         .single();
 
       if (error) throw error;
 
-      const newTemplate = {
+      const newTemplate: InvoiceTemplate = {
         ...data,
         last_used: data.last_used || null,
-        default_items: data.default_items || []
+        default_items: default_items || []
       };
 
       setTemplates(prev => [newTemplate, ...prev]);

@@ -17,7 +17,15 @@ export function useInventoryCrud() {
         
       if (error) throw error;
       
-      const formattedItems = data as InventoryItemExtended[];
+      // Map database fields to InventoryItemExtended, ensuring price field exists
+      const formattedItems: InventoryItemExtended[] = (data || []).map(item => ({
+        ...item,
+        price: item.unit_price, // Map unit_price to price for UI compatibility
+        category: item.category || '',
+        supplier: item.supplier || '',
+        status: item.status || 'active'
+      }));
+      
       setItems(formattedItems);
       return formattedItems;
     } catch (error: any) {
@@ -28,18 +36,37 @@ export function useInventoryCrud() {
     }
   };
 
-  const addItem = async (item: Partial<InventoryItemExtended>): Promise<InventoryItemExtended> => {
+  const addItem = async (item: Omit<InventoryItemExtended, 'id'>): Promise<InventoryItemExtended> => {
     setIsLoading(true);
     try {
+      // Prepare item for database insert, ensuring required fields
+      const dbItem = {
+        name: item.name || '',
+        sku: item.sku || '',
+        category: item.category || '',
+        supplier: item.supplier || '',
+        unit_price: item.unit_price || item.price || 0,
+        quantity: item.quantity || 0,
+        reorder_point: item.reorder_point || 0,
+        status: item.status || 'active',
+        description: item.description,
+        location: item.location
+      };
+      
       const { data, error } = await supabase
         .from('inventory_items')
-        .insert([item])
+        .insert([dbItem])
         .select()
         .single();
         
       if (error) throw error;
       
-      const newItem = data as InventoryItemExtended;
+      // Map response back to InventoryItemExtended
+      const newItem: InventoryItemExtended = {
+        ...data,
+        price: data.unit_price // Ensure price field exists
+      };
+      
       setItems(prevItems => [...prevItems, newItem]);
       return newItem;
     } catch (error: any) {
@@ -53,16 +80,28 @@ export function useInventoryCrud() {
   const updateItem = async (id: string, updates: Partial<InventoryItemExtended>): Promise<InventoryItemExtended> => {
     setIsLoading(true);
     try {
+      // Prepare updates for database
+      const dbUpdates: any = { ...updates };
+      if (dbUpdates.price !== undefined) {
+        dbUpdates.unit_price = dbUpdates.price;
+        delete dbUpdates.price; // Remove price since it's not a database field
+      }
+      
       const { data, error } = await supabase
         .from('inventory_items')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', id)
         .select()
         .single();
         
       if (error) throw error;
       
-      const updatedItem = data as InventoryItemExtended;
+      // Map response back to InventoryItemExtended
+      const updatedItem: InventoryItemExtended = {
+        ...data,
+        price: data.unit_price // Ensure price field exists
+      };
+      
       setItems(prevItems => 
         prevItems.map(item => item.id === id ? updatedItem : item)
       );

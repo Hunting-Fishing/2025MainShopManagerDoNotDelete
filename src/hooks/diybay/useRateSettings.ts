@@ -47,44 +47,22 @@ export function useRateSettings(
         return true;
       }
       
-      // Prepare data for update
-      const updateData: Partial<RateSettings> = {};
+      // Prepare data for update - ensure all values are numbers
+      const updateData = {
+        daily_hours: Number(newSettings.daily_hours),
+        daily_discount_percent: Number(newSettings.daily_discount_percent),
+        weekly_multiplier: Number(newSettings.weekly_multiplier),
+        monthly_multiplier: Number(newSettings.monthly_multiplier),
+        hourly_base_rate: Number(newSettings.hourly_base_rate)
+      };
       
-      // Only include fields that have changed, using proper type handling
-      if (Number(newSettings.daily_hours) !== Number(settings.daily_hours)) {
-        const value = newSettings.daily_hours === '' ? 0 : Number(newSettings.daily_hours);
-        updateData.daily_hours = value;
-      }
-      
-      if (Number(newSettings.daily_discount_percent) !== Number(settings.daily_discount_percent)) {
-        const value = newSettings.daily_discount_percent === '' ? 0 : Number(newSettings.daily_discount_percent);
-        updateData.daily_discount_percent = value;
-      }
-      
-      if (Number(newSettings.weekly_multiplier) !== Number(settings.weekly_multiplier)) {
-        const value = newSettings.weekly_multiplier === '' ? 0 : Number(newSettings.weekly_multiplier);
-        updateData.weekly_multiplier = value;
-      }
-      
-      if (Number(newSettings.monthly_multiplier) !== Number(settings.monthly_multiplier)) {
-        const value = newSettings.monthly_multiplier === '' ? 0 : Number(newSettings.monthly_multiplier);
-        updateData.monthly_multiplier = value;
-      }
-      
-      if (Number(newSettings.hourly_base_rate) !== Number(settings.hourly_base_rate)) {
-        const value = newSettings.hourly_base_rate === '' ? 0 : Number(newSettings.hourly_base_rate);
-        updateData.hourly_base_rate = value;
-      }
-      
-      // Update settings in database if there are changes
-      if (Object.keys(updateData).length > 0) {
-        const { error } = await supabase
-          .from('diy_bay_rate_settings')
-          .update(updateData)
-          .eq('id', settings.id);
-          
-        if (error) throw error;
-      }
+      // Update settings in database
+      const { error } = await supabase
+        .from('diy_bay_rate_settings')
+        .update(updateData)
+        .eq('id', settings.id);
+        
+      if (error) throw error;
       
       // Update local settings state
       setSettings(prev => ({
@@ -93,29 +71,15 @@ export function useRateSettings(
       }));
       
       // Recalculate rates for all bays using new settings
-      const normalizedSettings = {
+      const normalizedSettings: RateSettings = {
         ...settings,
         ...updateData
       };
       
-      // Convert any string values to numbers for calculation
-      const calculationSettings: RateSettings = { ...normalizedSettings };
-      Object.keys(calculationSettings).forEach(key => {
-        const field = key as keyof RateSettings;
-        if (field === 'id') return; // Skip the id field
-        
-        if (typeof calculationSettings[field] === 'string' && calculationSettings[field] !== '') {
-          calculationSettings[field] = Number(calculationSettings[field]);
-        }
-        if (calculationSettings[field] === '') {
-          calculationSettings[field] = 0;
-        }
-      });
-      
       const updatedBays = bays.map(bay => {
         if (!bay.hourly_rate) return bay;
         
-        const calculatedRates = calculateRates(bay.hourly_rate, calculationSettings);
+        const calculatedRates = calculateRates(bay.hourly_rate, normalizedSettings);
         
         return {
           ...bay,
