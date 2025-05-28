@@ -23,3 +23,18 @@ export const bulkImportServiceCategories = async (
   console.log('Bulk import completed for', categories.length, 'categories');
   // In a real implementation, this would save to your API/database
 };
+
+export const saveServiceCategory = async (category: ServiceMainCategory): Promise<void> => {
+  console.log('Saving service category:', category.name);
+  // In a real implementation, this would save to your API/database
+  await new Promise(resolve => setTimeout(resolve, 500));
+};
+
+export const removeDuplicateItem = async (
+  itemId: string, 
+  type: 'category' | 'subcategory' | 'job'
+): Promise<void> => {
+  console.log(`Removing duplicate ${type} with id:`, itemId);
+  // In a real implementation, this would remove from your API/database
+  await new Promise(resolve => setTimeout(resolve, 300));
+};
