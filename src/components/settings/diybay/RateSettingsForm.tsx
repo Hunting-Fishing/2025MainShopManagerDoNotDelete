@@ -13,34 +13,42 @@ interface RateSettingsFormProps {
   isSaving: boolean;
 }
 
+interface LocalSettings {
+  daily_hours: string;
+  daily_discount_percent: string;
+  weekly_multiplier: string;
+  monthly_multiplier: string;
+  hourly_base_rate: string;
+}
+
 export const RateSettingsForm: React.FC<RateSettingsFormProps> = ({
   settings,
   onSettingsChange,
   onSaveSettings,
   isSaving,
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false); // Changed to false so it's collapsed by default
-  const [localSettings, setLocalSettings] = useState<RateSettings>({
-    daily_hours: settings.daily_hours.toString(),
-    daily_discount_percent: settings.daily_discount_percent.toString(),
-    weekly_multiplier: settings.weekly_multiplier.toString(),
-    monthly_multiplier: settings.monthly_multiplier.toString(),
-    hourly_base_rate: settings.hourly_base_rate.toString()
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [localSettings, setLocalSettings] = useState<LocalSettings>({
+    daily_hours: String(settings.daily_hours || 8),
+    daily_discount_percent: String(settings.daily_discount_percent || 25),
+    weekly_multiplier: String(settings.weekly_multiplier || 20),
+    monthly_multiplier: String(settings.monthly_multiplier || 40),
+    hourly_base_rate: String(settings.hourly_base_rate || 65)
   });
 
   // Update local settings when props change
   useEffect(() => {
     setLocalSettings({
-      daily_hours: settings.daily_hours.toString(),
-      daily_discount_percent: settings.daily_discount_percent.toString(),
-      weekly_multiplier: settings.weekly_multiplier.toString(),
-      monthly_multiplier: settings.monthly_multiplier.toString(),
-      hourly_base_rate: settings.hourly_base_rate.toString()
+      daily_hours: String(settings.daily_hours || 8),
+      daily_discount_percent: String(settings.daily_discount_percent || 25),
+      weekly_multiplier: String(settings.weekly_multiplier || 20),
+      monthly_multiplier: String(settings.monthly_multiplier || 40),
+      hourly_base_rate: String(settings.hourly_base_rate || 65)
     });
   }, [settings]);
 
   // Handle local form input changes
-  const handleInputChange = (field: keyof RateSettings, value: string) => {
+  const handleInputChange = (field: keyof LocalSettings, value: string) => {
     setLocalSettings(prev => ({
       ...prev,
       [field]: value
@@ -50,9 +58,10 @@ export const RateSettingsForm: React.FC<RateSettingsFormProps> = ({
   // Save changes
   const handleSave = async () => {
     // Convert all string values to numbers for the parent component
-    Object.keys(localSettings).forEach(key => {
+    Object.entries(localSettings).forEach(([key, value]) => {
       const field = key as keyof RateSettings;
-      onSettingsChange(field, localSettings[field]);
+      const numericValue = parseFloat(value) || 0;
+      onSettingsChange(field, numericValue);
     });
     
     const success = await onSaveSettings();

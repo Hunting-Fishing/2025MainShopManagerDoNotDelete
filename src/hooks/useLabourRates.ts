@@ -146,14 +146,14 @@ export function useLabourRates() {
     setSaving(true);
     
     try {
-      // Convert any empty strings to 0 before saving to the database
-      const ratesToSave = Object.keys(rates).reduce((acc, key) => {
-        if (key !== 'id' && key !== 'shop_id') {
-          const field = key as keyof Omit<LabourRates, 'id' | 'shop_id'>;
-          acc[field] = rates[field] === '' ? 0 : rates[field];
-        }
-        return acc;
-      }, {} as Partial<LabourRates>);
+      // Convert any empty strings to 0 and ensure all values are numbers before saving
+      const ratesToSave = {
+        standard_rate: typeof rates.standard_rate === 'string' ? (parseFloat(rates.standard_rate) || 0) : rates.standard_rate,
+        diagnostic_rate: typeof rates.diagnostic_rate === 'string' ? (parseFloat(rates.diagnostic_rate) || 0) : rates.diagnostic_rate,
+        emergency_rate: typeof rates.emergency_rate === 'string' ? (parseFloat(rates.emergency_rate) || 0) : rates.emergency_rate,
+        warranty_rate: typeof rates.warranty_rate === 'string' ? (parseFloat(rates.warranty_rate) || 0) : rates.warranty_rate,
+        internal_rate: typeof rates.internal_rate === 'string' ? (parseFloat(rates.internal_rate) || 0) : rates.internal_rate
+      };
       
       const { error } = await supabase
         .from('labor_rates')

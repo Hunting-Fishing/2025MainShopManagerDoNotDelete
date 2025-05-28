@@ -25,7 +25,7 @@ export function useInvoiceTemplates() {
       const transformedData = (data || []).map(template => ({
         ...template,
         last_used: template.last_used || null,
-        default_items: template.default_items || []
+        default_items: [] // Database doesn't have this field, so default to empty array
       }));
       
       setTemplates(transformedData);
@@ -38,13 +38,15 @@ export function useInvoiceTemplates() {
 
   const createTemplate = async (templateData: Omit<InvoiceTemplate, 'id' | 'created_at' | 'usage_count'>) => {
     try {
+      // Prepare data for database (exclude default_items since it's not a database field)
+      const { default_items, ...dbTemplateData } = templateData;
+      
       const { data, error } = await supabase
         .from('invoice_templates')
         .insert([{
-          ...templateData,
+          ...dbTemplateData,
           usage_count: 0,
-          last_used: templateData.last_used || null,
-          default_items: templateData.default_items || []
+          last_used: templateData.last_used || null
         }])
         .select()
         .single();
@@ -54,7 +56,7 @@ export function useInvoiceTemplates() {
       const newTemplate = {
         ...data,
         last_used: data.last_used || null,
-        default_items: data.default_items || []
+        default_items: default_items || []
       };
 
       setTemplates(prev => [newTemplate, ...prev]);
@@ -85,9 +87,12 @@ export function useInvoiceTemplates() {
 
   const updateTemplate = async (id: string, updates: Partial<InvoiceTemplate>) => {
     try {
+      // Prepare updates for database (exclude default_items)
+      const { default_items, ...dbUpdates } = updates;
+      
       const { data, error } = await supabase
         .from('invoice_templates')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', id)
         .select()
         .single();
@@ -97,7 +102,7 @@ export function useInvoiceTemplates() {
       const updatedTemplate = {
         ...data,
         last_used: data.last_used || null,
-        default_items: data.default_items || []
+        default_items: default_items || []
       };
 
       setTemplates(prev => 

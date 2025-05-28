@@ -34,7 +34,7 @@ export function useBusinessConstants() {
       if (typesData && typesData.length > 0) {
         setBusinessTypes(typesData.map(item => ({
           value: item.value || item.id,
-          label: item.label || item.name
+          label: item.label
         })));
       } else {
         // Fallback defaults if no data exists
@@ -61,7 +61,7 @@ export function useBusinessConstants() {
       if (industriesData && industriesData.length > 0) {
         industriesList = industriesData.map(item => ({
           value: item.value || item.id,
-          label: item.label || item.name
+          label: item.label
         }));
       } else {
         // Fallback defaults if no data exists
@@ -94,7 +94,7 @@ export function useBusinessConstants() {
       if (methodsData && methodsData.length > 0) {
         setPaymentMethods(methodsData.map(item => ({
           value: item.value || item.id,
-          label: item.label || item.name
+          label: item.label
         })));
       } else {
         // Fallback defaults if no data exists
