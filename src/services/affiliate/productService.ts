@@ -3,22 +3,20 @@ import { supabase } from '@/lib/supabase';
 
 export interface ProductData {
   id: string;
-  product_name: string;
+  name: string;
+  slug: string;
   description: string;
   price: number;
   image_url: string;
-  product_category: string;
-  brand: string;
-  affiliate_link: string;
+  category: string;
+  manufacturer: string;
   average_rating: number;
   review_count: number;
-  product_tier: string;
+  affiliate_link: string;
+  tier: string;
   featured: boolean;
-  is_approved: boolean;
-  is_available: boolean;
   created_at: string;
   updated_at: string;
-  slug?: string;
 }
 
 export const getProductsByCategory = async (categoryName: string): Promise<ProductData[]> => {
@@ -28,28 +26,26 @@ export const getProductsByCategory = async (categoryName: string): Promise<Produ
       .select('*')
       .eq('is_approved', true)
       .eq('is_available', true)
-      .ilike('product_category', `%${categoryName}%`);
+      .ilike('category', `%${categoryName}%`);
 
     if (error) throw error;
 
     return (data || []).map(product => ({
       id: product.id,
-      product_name: product.product_name || 'Unnamed Product',
+      name: product.name || product.title || 'Unnamed Product',
       slug: product.slug || product.id,
-      price: product.price || 0,
       description: product.description || '',
-      product_category: product.product_category || 'Uncategorized',
-      brand: product.brand || manufacturer || 'Unknown',
+      price: product.price || 0,
       image_url: product.image_url || '',
-      affiliate_link: product.affiliate_link || '',
-      product_tier: product.product_tier || 'standard',
-      featured: product.featured || false,
+      category: product.category || 'Uncategorized',
+      manufacturer: product.manufacturer || product.brand || 'Unknown',
       average_rating: product.average_rating || 0,
       review_count: product.review_count || 0,
-      is_approved: product.is_approved,
-      is_available: product.is_available,
-      created_at: product.created_at,
-      updated_at: product.updated_at
+      affiliate_link: product.affiliate_link || '',
+      tier: product.product_type || 'standard',
+      featured: product.featured || false,
+      created_at: product.created_at || '',
+      updated_at: product.updated_at || product.created_at || ''
     }));
   } catch (error) {
     console.error('Error fetching products by category:', error);
@@ -64,28 +60,26 @@ export const getProductsByManufacturer = async (manufacturerName: string): Promi
       .select('*')
       .eq('is_approved', true)
       .eq('is_available', true)
-      .ilike('brand', `%${manufacturerName}%`);
+      .or(`manufacturer.ilike.%${manufacturerName}%,brand.ilike.%${manufacturerName}%`);
 
     if (error) throw error;
 
     return (data || []).map(product => ({
       id: product.id,
-      product_name: product.product_name || 'Unnamed Product',
+      name: product.name || product.title || 'Unnamed Product',
       slug: product.slug || product.id,
-      price: product.price || 0,
       description: product.description || '',
-      product_category: product.product_category || 'Uncategorized',
-      brand: product.brand || manufacturerName || 'Unknown',
+      price: product.price || 0,
       image_url: product.image_url || '',
-      affiliate_link: product.affiliate_link || '',
-      product_tier: product.product_tier || 'standard',
-      featured: product.featured || false,
+      category: product.category || 'Uncategorized',
+      manufacturer: product.manufacturer || product.brand || manufacturerName,
       average_rating: product.average_rating || 0,
       review_count: product.review_count || 0,
-      is_approved: product.is_approved,
-      is_available: product.is_available,
-      created_at: product.created_at,
-      updated_at: product.updated_at
+      affiliate_link: product.affiliate_link || '',
+      tier: product.product_type || 'standard',
+      featured: product.featured || false,
+      created_at: product.created_at || '',
+      updated_at: product.updated_at || product.created_at || ''
     }));
   } catch (error) {
     console.error('Error fetching products by manufacturer:', error);
@@ -106,45 +100,41 @@ export const getProductsByFeaturedGroup = async (groupId: string): Promise<Produ
 
     return (data || []).map(product => ({
       id: product.id,
-      product_name: product.product_name || 'Unnamed Product',
+      name: product.name || product.title || 'Unnamed Product',
       slug: product.slug || product.id,
-      price: product.price || 0,
       description: product.description || '',
-      product_category: product.product_category || 'Uncategorized',
-      brand: product.brand || 'Unknown',
+      price: product.price || 0,
       image_url: product.image_url || '',
-      affiliate_link: product.affiliate_link || '',
-      product_tier: product.product_tier || 'standard',
-      featured: product.featured || false,
+      category: product.category || 'Uncategorized',
+      manufacturer: product.manufacturer || product.brand || 'Unknown',
       average_rating: product.average_rating || 0,
       review_count: product.review_count || 0,
-      is_approved: product.is_approved,
-      is_available: product.is_available,
-      created_at: product.created_at,
-      updated_at: product.updated_at
+      affiliate_link: product.affiliate_link || '',
+      tier: product.product_type || 'standard',
+      featured: product.featured || false,
+      created_at: product.created_at || '',
+      updated_at: product.updated_at || product.created_at || ''
     }));
   } catch (error) {
-    console.error('Error fetching featured products:', error);
+    console.error('Error fetching products by featured group:', error);
     throw error;
   }
 };
 
-export const updateProduct = async (product: any): Promise<ProductData> => {
+export const updateProduct = async (updatedProduct: any): Promise<ProductData> => {
   try {
     const { data, error } = await supabase
       .from('products')
       .update({
-        product_name: product.name || product.product_name,
-        description: product.description,
-        price: product.price,
-        image_url: product.imageUrl || product.image_url,
-        product_category: product.category || product.product_category,
-        brand: product.manufacturer || product.brand,
-        affiliate_link: product.affiliateLink || product.affiliate_link,
-        product_tier: product.tier || product.product_tier,
-        featured: product.featured
+        name: updatedProduct.name,
+        description: updatedProduct.description,
+        price: updatedProduct.price,
+        category: updatedProduct.category,
+        manufacturer: updatedProduct.manufacturer,
+        featured: updatedProduct.featured,
+        updated_at: new Date().toISOString()
       })
-      .eq('id', product.id)
+      .eq('id', updatedProduct.id)
       .select()
       .single();
 
@@ -152,22 +142,20 @@ export const updateProduct = async (product: any): Promise<ProductData> => {
 
     return {
       id: data.id,
-      product_name: data.product_name || 'Unnamed Product',
+      name: data.name || 'Unnamed Product',
       slug: data.slug || data.id,
-      price: data.price || 0,
       description: data.description || '',
-      product_category: data.product_category || 'Uncategorized',
-      brand: data.brand || 'Unknown',
+      price: data.price || 0,
       image_url: data.image_url || '',
-      affiliate_link: data.affiliate_link || '',
-      product_tier: data.product_tier || 'standard',
-      featured: data.featured || false,
+      category: data.category || 'Uncategorized',
+      manufacturer: data.manufacturer || data.brand || 'Unknown',
       average_rating: data.average_rating || 0,
       review_count: data.review_count || 0,
-      is_approved: data.is_approved,
-      is_available: data.is_available,
-      created_at: data.created_at,
-      updated_at: data.updated_at
+      affiliate_link: data.affiliate_link || '',
+      tier: data.product_type || 'standard',
+      featured: data.featured || false,
+      created_at: data.created_at || '',
+      updated_at: data.updated_at || ''
     };
   } catch (error) {
     console.error('Error updating product:', error);
@@ -180,17 +168,16 @@ export const createProduct = async (product: any): Promise<ProductData> => {
     const { data, error } = await supabase
       .from('products')
       .insert({
-        product_name: product.name || 'Unnamed Product',
-        description: product.description || '',
-        price: product.price || 0,
-        image_url: product.imageUrl || '',
-        product_category: product.category || 'Uncategorized',
-        brand: product.manufacturer || 'Unknown',
-        affiliate_link: product.affiliateLink || '',
-        product_tier: product.tier || 'standard',
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        category: product.category,
+        manufacturer: product.manufacturer,
         featured: product.featured || false,
         is_approved: true,
-        is_available: true
+        is_available: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       })
       .select()
       .single();
@@ -199,22 +186,20 @@ export const createProduct = async (product: any): Promise<ProductData> => {
 
     return {
       id: data.id,
-      product_name: data.product_name || 'Unnamed Product',
+      name: data.name || 'Unnamed Product',
       slug: data.slug || data.id,
-      price: data.price || 0,
       description: data.description || '',
-      product_category: data.product_category || 'Uncategorized',
-      brand: data.brand || 'Unknown',
+      price: data.price || 0,
       image_url: data.image_url || '',
-      affiliate_link: data.affiliate_link || '',
-      product_tier: data.product_tier || 'standard',
-      featured: data.featured || false,
+      category: data.category || 'Uncategorized',
+      manufacturer: data.manufacturer || 'Unknown',
       average_rating: data.average_rating || 0,
       review_count: data.review_count || 0,
-      is_approved: data.is_approved,
-      is_available: data.is_available,
-      created_at: data.created_at,
-      updated_at: data.updated_at
+      affiliate_link: data.affiliate_link || '',
+      tier: data.product_type || 'standard',
+      featured: data.featured || false,
+      created_at: data.created_at || '',
+      updated_at: data.updated_at || ''
     };
   } catch (error) {
     console.error('Error creating product:', error);
@@ -236,8 +221,11 @@ export const deleteProduct = async (productId: string): Promise<void> => {
   }
 };
 
-export const trackProductAnalytics = async (data: any): Promise<void> => {
-  console.log('Tracking product analytics:', data);
-  // This is a placeholder for analytics tracking
-  // In a real implementation, you would save this to an analytics table
+export const trackProductAnalytics = async (productId: string, interactionType: string): Promise<void> => {
+  try {
+    // Mock implementation for analytics tracking
+    console.log(`Tracking ${interactionType} for product ${productId}`);
+  } catch (error) {
+    console.error('Error tracking product analytics:', error);
+  }
 };

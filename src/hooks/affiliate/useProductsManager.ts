@@ -28,12 +28,19 @@ export const useProductsManager = ({ categoryType, categoryId, categoryName }: U
           const data = await productService.getProductsByCategory(categoryName);
           // Transform ProductData to AffiliateTool
           fetchedProducts = data.map(product => ({
-            ...product,
-            affiliateLink: product.affiliate_link, // Map affiliate_link to affiliateLink
-            slug: product.slug || product.id,
-            subcategory: undefined,
+            id: product.id,
+            name: product.name,
+            description: product.description,
+            slug: product.slug,
+            price: product.price,
+            imageUrl: product.image_url,
+            category: product.category,
+            manufacturer: product.manufacturer,
             rating: product.average_rating,
             reviewCount: product.review_count,
+            affiliateLink: product.affiliate_link,
+            featured: product.featured,
+            subcategory: undefined,
             bestSeller: false,
             seller: 'Shop',
             tags: []
@@ -41,12 +48,19 @@ export const useProductsManager = ({ categoryType, categoryId, categoryName }: U
         } else if (categoryType === 'manufacturer' && categoryName) {
           const data = await productService.getProductsByManufacturer(categoryName);
           fetchedProducts = data.map(product => ({
-            ...product,
-            affiliateLink: product.affiliate_link,
-            slug: product.slug || product.id,
-            subcategory: undefined,
+            id: product.id,
+            name: product.name,
+            description: product.description,
+            slug: product.slug,
+            price: product.price,
+            imageUrl: product.image_url,
+            category: product.category,
+            manufacturer: product.manufacturer,
             rating: product.average_rating,
             reviewCount: product.review_count,
+            affiliateLink: product.affiliate_link,
+            featured: product.featured,
+            subcategory: undefined,
             bestSeller: false,
             seller: 'Shop',
             tags: []
@@ -54,12 +68,19 @@ export const useProductsManager = ({ categoryType, categoryId, categoryName }: U
         } else if (categoryType === 'featured' && categoryId) {
           const data = await productService.getProductsByFeaturedGroup(categoryId);
           fetchedProducts = data.map(product => ({
-            ...product,
-            affiliateLink: product.affiliate_link,
-            slug: product.slug || product.id,
-            subcategory: undefined,
+            id: product.id,
+            name: product.name,
+            description: product.description,
+            slug: product.slug,
+            price: product.price,
+            imageUrl: product.image_url,
+            category: product.category,
+            manufacturer: product.manufacturer,
             rating: product.average_rating,
             reviewCount: product.review_count,
+            affiliateLink: product.affiliate_link,
+            featured: product.featured,
+            subcategory: undefined,
             bestSeller: false,
             seller: 'Shop',
             tags: []
@@ -90,12 +111,19 @@ export const useProductsManager = ({ categoryType, categoryId, categoryName }: U
       // Update the local state
       setProducts(prevProducts => 
         prevProducts.map(p => p.id === result.id ? {
-          ...result,
-          affiliateLink: result.affiliate_link,
-          slug: result.slug || result.id,
-          subcategory: undefined,
+          id: result.id,
+          name: result.name,
+          description: result.description,
+          slug: result.slug,
+          price: result.price,
+          imageUrl: result.image_url,
+          category: result.category,
+          manufacturer: result.manufacturer,
           rating: result.average_rating,
           reviewCount: result.review_count,
+          affiliateLink: result.affiliate_link,
+          featured: result.featured,
+          subcategory: undefined,
           bestSeller: false,
           seller: 'Shop',
           tags: []
@@ -123,12 +151,19 @@ export const useProductsManager = ({ categoryType, categoryId, categoryName }: U
       
       // Update local state with the new product
       const newAffiliateTool: AffiliateTool = {
-        ...newProduct,
-        affiliateLink: newProduct.affiliate_link,
-        slug: newProduct.slug || newProduct.id,
-        subcategory: undefined,
+        id: newProduct.id,
+        name: newProduct.name,
+        description: newProduct.description,
+        slug: newProduct.slug,
+        price: newProduct.price,
+        imageUrl: newProduct.image_url,
+        category: newProduct.category,
+        manufacturer: newProduct.manufacturer,
         rating: newProduct.average_rating,
         reviewCount: newProduct.review_count,
+        affiliateLink: newProduct.affiliate_link,
+        featured: newProduct.featured,
+        subcategory: undefined,
         bestSeller: false,
         seller: 'Shop',
         tags: []
