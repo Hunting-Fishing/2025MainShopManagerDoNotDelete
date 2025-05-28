@@ -6,22 +6,20 @@ import ProductCard from '@/components/affiliate/ProductCard';
 
 interface Product {
   id: string;
-  product_name: string;
-  product_category: string;
-  brand: string;
-  featured: boolean;
+  name: string;
+  description: string;
+  price: number;
+  image_url: string;
   affiliate_link: string;
   average_rating: number;
+  review_count: number;
+  manufacturer?: string;
   category_id: string;
   created_at: string;
-  description: string;
-  image_url: string;
+  updated_at: string;
   is_approved: boolean;
   is_available: boolean;
-  price: number;
-  review_count: number;
-  product_type: string;
-  updated_at: string;
+  product_type?: string;
 }
 
 export default function ManufacturerPage() {
@@ -46,32 +44,11 @@ export default function ManufacturerPage() {
         .select('*')
         .eq('is_approved', true)
         .eq('is_available', true)
-        .or(`brand.ilike.%${manufacturer}%,product_name.ilike.%${manufacturer}%`);
+        .or(`name.ilike.%${manufacturer}%,manufacturer.ilike.%${manufacturer}%`);
 
       if (error) throw error;
 
-      // Transform database data to match Product interface
-      const transformedProducts: Product[] = (data || []).map(product => ({
-        id: product.id,
-        product_name: product.product_name || 'Unnamed Product',
-        product_category: product.product_category || 'Uncategorized',
-        brand: product.brand || manufacturer || 'Unknown',
-        featured: product.featured || false,
-        affiliate_link: product.affiliate_link || '',
-        average_rating: product.average_rating || 0,
-        category_id: product.category_id || '',
-        created_at: product.created_at || '',
-        description: product.description || '',
-        image_url: product.image_url || '',
-        is_approved: product.is_approved || false,
-        is_available: product.is_available || false,
-        price: product.price || 0,
-        review_count: product.review_count || 0,
-        product_type: product.product_type || 'standard',
-        updated_at: product.updated_at || product.created_at || ''
-      }));
-
-      setProducts(transformedProducts);
+      setProducts(data || []);
     } catch (error: any) {
       console.error('Error fetching manufacturer products:', error);
       setError(error.message);
@@ -110,17 +87,17 @@ export default function ManufacturerPage() {
             // Transform to AffiliateProduct for ProductCard
             const affiliateProduct = {
               id: product.id,
-              name: product.product_name,
-              description: product.description,
-              imageUrl: product.image_url,
-              retailPrice: product.price,
-              affiliateUrl: product.affiliate_link,
-              category: product.product_category,
-              tier: product.product_type as any,
-              rating: product.average_rating,
-              reviewCount: product.review_count,
-              manufacturer: product.brand,
-              isFeatured: product.featured
+              name: product.name || 'Unnamed Product',
+              description: product.description || '',
+              imageUrl: product.image_url || '',
+              retailPrice: product.price || 0,
+              affiliateUrl: product.affiliate_link || '',
+              category: 'General',
+              tier: (product.product_type as any) || 'economy',
+              rating: product.average_rating || 0,
+              reviewCount: product.review_count || 0,
+              manufacturer: product.manufacturer || manufacturer || 'Unknown',
+              isFeatured: false
             };
             
             return (

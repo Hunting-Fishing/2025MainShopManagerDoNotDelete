@@ -29,14 +29,14 @@ interface UseProductsManagerReturn {
 // Transform ProductData to AffiliateTool
 const transformProductToAffiliateTool = (product: ProductData): AffiliateTool => ({
   id: product.id,
-  name: product.product_name,
+  name: product.name,
   description: product.description,
   slug: product.slug || product.id,
   price: product.price,
   imageUrl: product.image_url,
-  category: product.product_category,
+  category: product.category,
   subcategory: product.subcategory,
-  manufacturer: product.brand,
+  manufacturer: product.manufacturer,
   rating: product.average_rating,
   reviewCount: product.review_count,
   featured: product.featured,
@@ -111,7 +111,7 @@ export function useProductsManager(): UseProductsManagerReturn {
     try {
       const newProduct = await createProduct(productData);
       setProducts(prev => [...prev, transformProductToAffiliateTool(newProduct)]);
-      toast.success(`Product "${newProduct.product_name}" created successfully`);
+      toast.success(`Product "${newProduct.name}" created successfully`);
     } catch (err: any) {
       setError(err.message);
       toast.error('Failed to create product');
@@ -129,7 +129,7 @@ export function useProductsManager(): UseProductsManagerReturn {
             : product
         )
       );
-      toast.success(`Product "${updatedProduct.product_name}" updated successfully`);
+      toast.success(`Product "${updatedProduct.name}" updated successfully`);
     } catch (err: any) {
       setError(err.message);
       toast.error('Failed to update product');
