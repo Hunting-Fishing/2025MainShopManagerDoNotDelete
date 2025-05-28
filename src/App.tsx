@@ -14,7 +14,7 @@ import { ReactErrorBoundary } from '@/components/error/ReactErrorBoundary';
 
 // Page imports
 import Dashboard from '@/pages/Dashboard';
-import CustomersPage from '@/pages/Customers';
+import CustomersPage from '@/pages/CustomersPage';
 import CustomerDetailsPage from '@/pages/CustomerDetails';
 import EquipmentPage from '@/pages/Equipment';
 import InventoryPage from '@/pages/Inventory';
