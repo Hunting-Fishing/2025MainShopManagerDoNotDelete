@@ -1,214 +1,104 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState, useEffect } from "react";
+import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Check, X } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { HierarchicalServiceSelector } from './services/HierarchicalServiceSelector';
-import { ServiceItem } from '@/types/services';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { HierarchicalServiceSelector } from "@/components/work-orders/fields/services/HierarchicalServiceSelector";
+import { ServiceMainCategory, ServiceJob } from "@/types/serviceHierarchy";
+import { fetchServiceCategories } from "@/lib/services/serviceApi";
+import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
 
 interface ServicesSectionProps {
-  services: ServiceItem[];
-  setServices: (services: ServiceItem[]) => void;
+  form: UseFormReturn<WorkOrderFormSchemaValues>;
 }
 
-export function ServicesSection({ services, setServices }: ServicesSectionProps) {
-  const [isAdding, setIsAdding] = useState(false);
-  const [customService, setCustomService] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('General');
-  
-  // Add a new custom service
-  const handleAddCustomService = (e: React.FormEvent) => {
-    // Prevent default form submission behavior which causes page jumps
-    e.preventDefault();
-    
-    if (customService.trim()) {
-      const newService: ServiceItem = {
-        name: customService.trim(),
-        services: [],
-        quantity: 1
-      };
-      setServices([...services, newService]);
-      setCustomService('');
-      // Don't close the add panel to allow adding multiple services
-      // setIsAdding(false);
-    }
-  };
-  
-  // Delete a service
-  const handleDeleteService = (e: React.MouseEvent, index: number) => {
-    // Prevent default button behavior
-    e.preventDefault();
-    
-    const updatedServices = [...services];
-    updatedServices.splice(index, 1);
-    setServices(updatedServices);
-  };
-  
-  // Handle service selection from the hierarchical selector
-  const handleServiceSelect = (service: ServiceItem) => {
-    // Add quantity property to the service if it doesn't exist
-    const serviceWithQuantity = {
-      ...service,
-      quantity: service.quantity || 1
+export const ServicesSection: React.FC<ServicesSectionProps> = ({ form }) => {
+  const [serviceCategories, setServiceCategories] = useState<ServiceMainCategory[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadServiceCategories = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const categories = await fetchServiceCategories();
+        setServiceCategories(categories);
+      } catch (err) {
+        console.error("Failed to load service categories:", err);
+        setError("Failed to load service categories. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
     };
-    setServices([...services, serviceWithQuantity]);
-    // Don't close the add panel to allow adding multiple services
-    // setIsAdding(false);
+
+    loadServiceCategories();
+  }, []);
+
+  const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
+    const currentDescription = form.getValues("description") || "";
+    const serviceDescription = `${categoryName} - ${subcategoryName} - ${service.name}`;
+    
+    // Update form description with selected service
+    const newDescription = currentDescription 
+      ? `${currentDescription}\n${serviceDescription}`
+      : serviceDescription;
+    
+    form.setValue("description", newDescription);
   };
-  
+
   return (
-    <Card className="shadow-sm">
-      <CardHeader className="bg-blue-50/70 border-b px-4 py-3 flex flex-row justify-between items-center space-y-0">
-        <CardTitle className="text-lg font-medium">Services</CardTitle>
-        {!isAdding && (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-slate-900">Services</h3>
+      </div>
+
+      <FormField
+        control={form.control}
+        name="description"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Service Description</FormLabel>
+            <FormControl>
+              <textarea
+                {...field}
+                placeholder="Enter service description..."
+                className="w-full p-3 border border-gray-300 rounded-md min-h-[100px]"
+                rows={4}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      {/* Service Selector */}
+      {isLoading ? (
+        <div className="text-center py-8">
+          <p className="text-gray-500">Loading services...</p>
+        </div>
+      ) : error ? (
+        <div className="text-center py-8">
+          <p className="text-red-500">{error}</p>
           <Button 
+            onClick={() => window.location.reload()} 
             variant="outline" 
-            size="sm" 
-            onClick={(e) => {
-              e.preventDefault(); // Prevent page jumping
-              setIsAdding(true);
-            }}
-            className="h-8 rounded-full text-sm bg-white border-blue-200"
+            className="mt-2"
           >
-            <PlusCircle className="mr-1 h-3.5 w-3.5" />
-            Add Service
+            Retry
           </Button>
-        )}
-      </CardHeader>
-      
-      <CardContent className="p-0">
-        {isAdding && (
-          <div className="p-4 border-b">
-            <HierarchicalServiceSelector onSelectService={handleServiceSelect} />
-            
-            <div className="mt-4 pt-4 border-t">
-              <p className="text-sm font-medium mb-2">Or add a custom service:</p>
-              <form onSubmit={handleAddCustomService} className="flex space-x-2">
-                <div className="flex-1">
-                  <Input
-                    placeholder="Enter custom service name"
-                    value={customService}
-                    onChange={(e) => setCustomService(e.target.value)}
-                    className="h-9"
-                  />
-                </div>
-                <Button 
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setIsAdding(false);
-                  }}
-                  className="h-9 px-2"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-                <Button 
-                  type="submit"
-                  size="sm"
-                  variant="default"
-                  disabled={!customService.trim()}
-                  className="h-9"
-                >
-                  <Check className="h-4 w-4 mr-1" />
-                  Add
-                </Button>
-              </form>
-            </div>
-            
-            {/* Show selected services even while adding mode is active */}
-            {services.length > 0 && (
-              <div className="mt-4 pt-4 border-t">
-                <h3 className="text-sm font-medium mb-2">Selected Services:</h3>
-                <ul className="divide-y border rounded-md">
-                  {services.map((service, index) => (
-                    <li key={index} className="px-4 py-3 flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">{service.name}</h4>
-                        {service.category && (
-                          <p className="text-sm text-muted-foreground">{service.category}</p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {service.price !== undefined && (
-                          <span className="text-blue-600 font-medium">${service.price}</span>
-                        )}
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-8 w-8 p-0" 
-                          onClick={(e) => handleDeleteService(e, index)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-4 flex justify-end">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setIsAdding(false);
-                    }}
-                    className="h-8"
-                  >
-                    Done Adding Services
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-        
-        {!isAdding && (
-          services.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">
-              <p>No services have been added yet</p>
-              <Button 
-                variant="link" 
-                onClick={(e) => {
-                  e.preventDefault(); // Prevent page jumping
-                  setIsAdding(true);
-                }}
-                className="mt-2"
-              >
-                Add your first service
-              </Button>
-            </div>
-          ) : (
-            <ul className="divide-y">
-              {services.map((service, index) => (
-                <li key={index} className="px-4 py-3 flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium">{service.name}</h4>
-                    {service.category && (
-                      <p className="text-sm text-muted-foreground">{service.category}</p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {service.price !== undefined && (
-                      <span className="text-blue-600 font-medium">${service.price}</span>
-                    )}
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-8 w-8 p-0" 
-                      onClick={(e) => handleDeleteService(e, index)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )
-        )}
-      </CardContent>
-    </Card>
+        </div>
+      ) : serviceCategories.length > 0 ? (
+        <HierarchicalServiceSelector
+          categories={serviceCategories}
+          onServiceSelect={handleServiceSelect}
+        />
+      ) : (
+        <div className="text-center py-8 border rounded-md bg-gray-50">
+          <p className="text-gray-500">No services available</p>
+          <p className="text-sm text-gray-400">Contact your administrator to set up services</p>
+        </div>
+      )}
+    </div>
   );
-}
+};

@@ -7,6 +7,7 @@ import { ArrowLeft } from "lucide-react";
 import ServiceAnalytics from '@/components/developer/service-management/ServiceAnalytics';
 import ServiceBulkImport from '@/components/developer/service-management/ServiceBulkImport';
 import ServicesPriceReport from '@/components/developer/service-management/ServicesPriceReport';
+import ServiceCategoriesManager from '@/components/developer/service-management/ServiceCategoriesManager';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
 import { fetchServiceCategories } from '@/lib/services/serviceApi';
 
@@ -71,36 +72,10 @@ export default function ServiceManagement() {
 
         <div className="mt-6 space-y-6">
           <TabsContent value="services" className="space-y-6">
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border">
-              <h2 className="text-xl font-semibold mb-4">Service Categories</h2>
-              <p className="text-slate-600 dark:text-slate-300 mb-4">
-                Manage your service hierarchy including main categories, subcategories, and individual service jobs.
-              </p>
-              {isLoading ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">Loading services...</p>
-                </div>
-              ) : categories.length > 0 ? (
-                <div className="space-y-4">
-                  <p className="text-sm text-green-600">{categories.length} categories loaded</p>
-                  <div className="grid gap-4">
-                    {categories.map((category) => (
-                      <div key={category.id} className="p-4 border rounded-lg">
-                        <h3 className="font-medium">{category.name}</h3>
-                        <p className="text-sm text-gray-600">{category.subcategories.length} subcategories</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-                  <p className="text-gray-500">No services configured yet</p>
-                  <p className="text-sm text-gray-400 mt-2">
-                    Use the Import/Export tab to set up your services
-                  </p>
-                </div>
-              )}
-            </div>
+            <ServiceCategoriesManager 
+              categories={categories} 
+              isLoading={isLoading} 
+            />
           </TabsContent>
 
           <TabsContent value="pricing" className="space-y-6">
