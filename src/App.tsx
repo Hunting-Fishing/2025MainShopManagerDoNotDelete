@@ -92,13 +92,18 @@ function App() {
                             <Route path="/team" element={<Team />} />
                             <Route path="/reports" element={<Reports />} />
                             <Route path="/notifications" element={<Notifications />} />
+                            
+                            {/* Developer Portal Routes */}
                             <Route path="/developer" element={<DeveloperPortal />} />
                             <Route path="/developer/organization-management" element={<OrganizationManagement />} />
                             <Route path="/developer/shopping-controls" element={<ShoppingControls />} />
                             <Route path="/developer/service-management" element={<ServiceManagement />} />
+                            
+                            {/* Settings Routes */}
                             <Route path="/settings" element={<Settings />} />
                             <Route path="/settings/company" element={<CompanySettings />} />
                             <Route path="/settings/appearance" element={<AppearanceSettings />} />
+                            
                             <Route path="*" element={<NotFound />} />
                           </Routes>
                         </Layout>

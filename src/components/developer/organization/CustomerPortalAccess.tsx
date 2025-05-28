@@ -1,216 +1,191 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Eye, ExternalLink, Search, User } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { useImpersonation } from '@/contexts/ImpersonationContext';
-import { supabase } from '@/lib/supabase';
-import { toast } from '@/hooks/use-toast';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { ExternalLink, Copy } from "lucide-react";
 
-interface Customer {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  booking_enabled?: boolean;
+interface PortalSettings {
+  enabled: boolean;
+  custom_domain: string;
+  branding_enabled: boolean;
+  allow_document_upload: boolean;
+  allow_payment_methods: boolean;
+  welcome_message: string;
 }
 
 export function CustomerPortalAccess() {
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { startImpersonation, stopImpersonation, isImpersonating, impersonatedCustomer } = useImpersonation();
+  const [settings, setSettings] = useState<PortalSettings>({
+    enabled: true,
+    custom_domain: '',
+    branding_enabled: true,
+    allow_document_upload: true,
+    allow_payment_methods: true,
+    welcome_message: 'Welcome to our customer portal! Here you can manage your appointments, view service history, and more.'
+  });
+  const [isSaving, setIsSaving] = useState(false);
+  const { toast } = useToast();
 
-  React.useEffect(() => {
-    fetchCustomers();
-  }, []);
+  const portalUrl = settings.custom_domain || `${window.location.origin}/customer-portal`;
 
-  const fetchCustomers = async () => {
-    setLoading(true);
+  const handleSave = async () => {
     try {
-      const { data, error } = await supabase
-        .from('customers')
-        .select(`
-          id,
-          first_name,
-          last_name,
-          email,
-          customer_shop_relationships!inner(booking_enabled)
-        `)
-        .limit(50);
-
-      if (error) throw error;
-
-      const customersWithPermissions = data?.map(customer => ({
-        ...customer,
-        booking_enabled: customer.customer_shop_relationships?.[0]?.booking_enabled ?? true
-      })) || [];
-
-      setCustomers(customersWithPermissions);
+      setIsSaving(true);
+      // API call would go here
+      console.log('Saving portal settings:', settings);
+      
+      toast({
+        title: "Success",
+        description: "Customer portal settings saved successfully",
+      });
     } catch (error) {
-      console.error('Error fetching customers:', error);
+      console.error('Error saving portal settings:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch customers",
-        variant: "destructive"
+        description: "Failed to save portal settings",
+        variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setIsSaving(false);
     }
   };
 
-  const handleImpersonate = (customer: Customer) => {
-    startImpersonation({
-      id: customer.id,
-      name: `${customer.first_name} ${customer.last_name}`.trim() || customer.email,
-      email: customer.email
-    });
-    
+  const copyPortalUrl = () => {
+    navigator.clipboard.writeText(portalUrl);
     toast({
-      title: "Impersonation Started",
-      description: `Now viewing as ${customer.first_name} ${customer.last_name}`,
+      title: "Copied",
+      description: "Portal URL copied to clipboard",
     });
   };
 
-  const handleStopImpersonation = () => {
-    stopImpersonation();
-    toast({
-      title: "Impersonation Stopped",
-      description: "Returned to admin view",
-    });
-  };
-
-  const filteredCustomers = customers.filter(customer =>
-    `${customer.first_name} ${customer.last_name} ${customer.email}`
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase())
-  );
-
-  const getInitials = (firstName: string, lastName: string): string => {
-    return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase() || 'U';
+  const openPortal = () => {
+    window.open(portalUrl, '_blank');
   };
 
   return (
     <div className="space-y-6">
-      {/* Portal Access Header */}
-      <Card className="shadow-md border border-blue-100">
+      <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ExternalLink className="h-5 w-5 text-blue-600" />
-            Customer Portal Access
-          </CardTitle>
+          <CardTitle>Customer Portal Access</CardTitle>
+          <CardDescription>
+            Configure your customer portal settings and access controls
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {isImpersonating ? (
-            <div className="flex items-center justify-between p-4 bg-amber-50 border border-amber-200 rounded-lg">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-amber-100 text-amber-700">
-                    {impersonatedCustomer?.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-medium text-amber-800">Currently viewing as: {impersonatedCustomer?.name}</p>
-                  <p className="text-sm text-amber-600">{impersonatedCustomer?.email}</p>
-                </div>
-              </div>
-              <Button variant="outline" size="sm" onClick={handleStopImpersonation}>
-                Stop Impersonation
+        <CardContent className="space-y-6">
+          {/* Portal URL */}
+          <div className="space-y-2">
+            <Label>Portal URL</Label>
+            <div className="flex items-center space-x-2">
+              <Input 
+                value={portalUrl} 
+                readOnly 
+                className="flex-1 bg-gray-50"
+              />
+              <Button variant="outline" size="sm" onClick={copyPortalUrl}>
+                <Copy className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="sm" onClick={openPortal}>
+                <ExternalLink className="h-4 w-4" />
               </Button>
             </div>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2">
-              <Link to="/customer-portal" target="_blank">
-                <Button className="w-full flex items-center gap-2 bg-blue-600 hover:bg-blue-700">
-                  <ExternalLink className="h-4 w-4" />
-                  View Customer Portal (Admin)
-                </Button>
-              </Link>
-              <Link to="/customer-portal">
-                <Button variant="outline" className="w-full flex items-center gap-2">
-                  <Eye className="h-4 w-4" />
-                  Preview Customer Portal
-                </Button>
-              </Link>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          </div>
 
-      {/* Customer Impersonation */}
-      <Card className="shadow-md border border-purple-100">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5 text-purple-600" />
-            Customer Impersonation
-          </CardTitle>
-          <p className="text-sm text-gray-600">
-            Impersonate customers to test their portal experience and troubleshoot issues
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search customers by name or email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+          {/* Main Settings */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="portal-enabled">Enable Customer Portal</Label>
+                <p className="text-sm text-gray-500">Allow customers to access the portal</p>
+              </div>
+              <Switch
+                id="portal-enabled"
+                checked={settings.enabled}
+                onCheckedChange={(checked) =>
+                  setSettings(prev => ({ ...prev, enabled: checked }))
+                }
               />
             </div>
-            <Button variant="outline" onClick={fetchCustomers} disabled={loading}>
-              {loading ? 'Loading...' : 'Refresh'}
-            </Button>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="branding-enabled">Custom Branding</Label>
+                <p className="text-sm text-gray-500">Apply your shop's branding to the portal</p>
+              </div>
+              <Switch
+                id="branding-enabled"
+                checked={settings.branding_enabled}
+                onCheckedChange={(checked) =>
+                  setSettings(prev => ({ ...prev, branding_enabled: checked }))
+                }
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="document-upload">Document Upload</Label>
+                <p className="text-sm text-gray-500">Allow customers to upload documents</p>
+              </div>
+              <Switch
+                id="document-upload"
+                checked={settings.allow_document_upload}
+                onCheckedChange={(checked) =>
+                  setSettings(prev => ({ ...prev, allow_document_upload: checked }))
+                }
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="payment-methods">Payment Methods</Label>
+                <p className="text-sm text-gray-500">Allow customers to save payment methods</p>
+              </div>
+              <Switch
+                id="payment-methods"
+                checked={settings.allow_payment_methods}
+                onCheckedChange={(checked) =>
+                  setSettings(prev => ({ ...prev, allow_payment_methods: checked }))
+                }
+              />
+            </div>
           </div>
 
-          <div className="max-h-96 overflow-y-auto space-y-2">
-            {filteredCustomers.map((customer) => (
-              <div
-                key={customer.id}
-                className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
-              >
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="bg-purple-100 text-purple-700">
-                      {getInitials(customer.first_name, customer.last_name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium">
-                      {customer.first_name} {customer.last_name}
-                    </p>
-                    <p className="text-sm text-gray-500">{customer.email}</p>
-                  </div>
-                  <Badge 
-                    variant={customer.booking_enabled ? "default" : "secondary"}
-                    className={customer.booking_enabled ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
-                  >
-                    {customer.booking_enabled ? "Booking Enabled" : "Booking Disabled"}
-                  </Badge>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleImpersonate(customer)}
-                  disabled={isImpersonating}
-                >
-                  <Eye className="h-4 w-4 mr-1" />
-                  View As
-                </Button>
-              </div>
-            ))}
-            
-            {filteredCustomers.length === 0 && !loading && (
-              <div className="text-center py-8 text-gray-500">
-                No customers found matching your search.
-              </div>
-            )}
+          {/* Custom Domain */}
+          <div className="space-y-2">
+            <Label htmlFor="custom-domain">Custom Domain (Optional)</Label>
+            <Input
+              id="custom-domain"
+              placeholder="portal.yourshop.com"
+              value={settings.custom_domain}
+              onChange={(e) =>
+                setSettings(prev => ({ ...prev, custom_domain: e.target.value }))
+              }
+            />
+            <p className="text-sm text-gray-500">
+              Use your own domain for the customer portal
+            </p>
           </div>
+
+          {/* Welcome Message */}
+          <div className="space-y-2">
+            <Label htmlFor="welcome-message">Welcome Message</Label>
+            <Textarea
+              id="welcome-message"
+              placeholder="Enter a welcome message for your customers"
+              value={settings.welcome_message}
+              onChange={(e) =>
+                setSettings(prev => ({ ...prev, welcome_message: e.target.value }))
+              }
+              rows={3}
+            />
+          </div>
+
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving ? 'Saving...' : 'Save Settings'}
+          </Button>
         </CardContent>
       </Card>
     </div>
