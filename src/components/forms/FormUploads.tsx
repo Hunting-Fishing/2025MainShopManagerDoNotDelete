@@ -1,243 +1,222 @@
 
-import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { FileUp, FileText, Trash2, Eye } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
-import { supabase } from '@/lib/supabase';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
+import { Upload, FileText, Download, Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface FormUpload {
   id: string;
   filename: string;
   filetype: string;
   filesize: string;
-  uploaded_at: string;
+  uploadedAt: string;
 }
 
-export const FormUploads = () => {
+interface FormUploadsProps {
+  formId: string;
+}
+
+export function FormUploads({ formId }: FormUploadsProps) {
   const [uploads, setUploads] = useState<FormUpload[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  
-  // Fetch form uploads from Supabase
-  useEffect(() => {
-    const fetchUploads = async () => {
-      setIsLoading(true);
-      try {
-        // Query form uploads from the document_uploads table
-        const { data, error } = await supabase
-          .from('document_uploads')
-          .select('*')
-          .eq('document_type', 'form')
-          .order('created_at', { ascending: false });
-          
-        if (error) throw error;
-        
-        if (data) {
-          const formattedUploads = data.map(upload => ({
-            id: upload.id,
-            filename: upload.filename || 'Unknown File',
-            filetype: upload.filetype || 'Unknown Type',
-            filesize: upload.filesize ? formatFileSize(upload.filesize) : 'Unknown Size',
-            uploaded_at: upload.created_at
-          }));
-          
-          setUploads(formattedUploads);
-        }
-      } catch (err) {
-        console.error('Error fetching form uploads:', err);
-        toast({
-          title: "Error",
-          description: "Failed to load form uploads.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const { toast } = useToast();
+
+  const fetchUploads = async () => {
+    try {
+      // Using customer_documents as a fallback since document_uploads doesn't exist
+      const { data, error } = await supabase
+        .from('customer_documents')
+        .select('*')
+        .eq('category', formId);
+
+      if (error) {
+        console.error('Error fetching uploads:', error);
+        setUploads([]);
+      } else {
+        const formattedUploads = data?.map(upload => ({
+          id: upload.id,
+          filename: upload.file_name,
+          filetype: upload.file_type,
+          filesize: `${upload.file_size} bytes`,
+          uploadedAt: upload.created_at,
+        })) || [];
+        setUploads(formattedUploads);
       }
-    };
-    
+    } catch (error) {
+      console.error('Error fetching uploads:', error);
+      setUploads([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchUploads();
-  }, []);
-  
-  // Format file size to human-readable string
-  const formatFileSize = (size: number): string => {
+  }, [formId]);
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      // Create a simple upload record in customer_documents table
+      const { data, error } = await supabase
+        .from('customer_documents')
+        .insert({
+          file_name: file.name,
+          file_type: file.type,
+          file_size: file.size,
+          title: file.name,
+          description: `Form upload for ${formId}`,
+          category: formId,
+          file_path: `/uploads/${file.name}`,
+          original_name: file.name,
+          uploaded_by: 'system',
+          uploaded_by_name: 'System',
+          customer_id: '00000000-0000-0000-0000-000000000000' // Placeholder
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Upload successful",
+        description: `${file.name} has been uploaded.`,
+      });
+
+      fetchUploads();
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast({
+        title: "Upload failed",
+        description: "There was an error uploading your file.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDelete = async (uploadId: string) => {
+    try {
+      const { error } = await supabase
+        .from('customer_documents')
+        .delete()
+        .eq('id', uploadId);
+
+      if (error) throw error;
+
+      toast({
+        title: "File deleted",
+        description: "The file has been successfully deleted.",
+      });
+
+      fetchUploads();
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      toast({
+        title: "Delete failed",
+        description: "There was an error deleting the file.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const formatFileSize = (bytes: string) => {
+    const size = parseInt(bytes);
     if (size < 1024) return `${size} B`;
     if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
     return `${(size / (1024 * 1024)).toFixed(1)} MB`;
   };
-  
-  // Handle file upload
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
-    
-    const file = e.target.files[0];
-    
-    // Check file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      toast({
-        title: "File too large",
-        description: "Maximum file size is 10MB.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Upload file to Supabase Storage
-    try {
-      // Upload to storage
-      const { data: storageData, error: storageError } = await supabase
-        .storage
-        .from('form_uploads')
-        .upload(`forms/${Date.now()}_${file.name}`, file);
-        
-      if (storageError) throw storageError;
-      
-      if (storageData) {
-        // Create database record
-        const { data, error } = await supabase
-          .from('document_uploads')
-          .insert({
-            filename: file.name,
-            filetype: file.type,
-            filesize: file.size,
-            document_type: 'form',
-            storage_path: storageData.path
-          })
-          .select();
-          
-        if (error) throw error;
-        
-        if (data && data[0]) {
-          // Add to local state
-          setUploads([
-            {
-              id: data[0].id,
-              filename: file.name,
-              filetype: file.type,
-              filesize: formatFileSize(file.size),
-              uploaded_at: new Date().toISOString()
-            },
-            ...uploads
-          ]);
-          
-          toast({
-            title: "File uploaded",
-            description: "Form has been uploaded successfully.",
-          });
-        }
-      }
-    } catch (err) {
-      console.error('Error uploading file:', err);
-      toast({
-        title: "Upload failed",
-        description: "Failed to upload the form.",
-        variant: "destructive",
-      });
-    }
-  };
 
-  // Handle deleting a form upload
-  const handleDeleteUpload = async (id: string) => {
-    try {
-      // Find the upload to get storage path
-      const upload = uploads.find(u => u.id === id);
-      if (!upload) return;
-      
-      // Delete from database
-      const { error: dbError } = await supabase
-        .from('document_uploads')
-        .delete()
-        .eq('id', id);
-        
-      if (dbError) throw dbError;
-      
-      // Remove from local state
-      setUploads(uploads.filter(upload => upload.id !== id));
-      
-      toast({
-        title: "Form deleted",
-        description: "The form has been removed successfully."
-      });
-    } catch (err) {
-      console.error('Error deleting form upload:', err);
-      toast({
-        title: "Delete failed",
-        description: "Failed to remove the form.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  return (
-    <div className="space-y-6">
+  if (loading) {
+    return (
       <Card>
-        <CardContent className="pt-6">
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-            <FileUp className="mx-auto h-12 w-12 text-gray-400" />
-            <div className="mt-4 flex text-sm justify-center">
-              <label
-                htmlFor="file-upload"
-                className="relative cursor-pointer rounded-md font-medium text-primary"
-              >
-                <span>Upload a file</span>
-                <input
-                  id="file-upload"
-                  name="file-upload"
-                  type="file"
-                  className="sr-only"
-                  accept=".pdf,.doc,.docx"
-                  onChange={handleFileUpload}
-                />
-              </label>
-              <p className="pl-1 text-gray-500">or drag and drop</p>
-            </div>
-            <p className="text-xs text-gray-500">
-              PDF, Word Documents up to 10MB
-            </p>
-          </div>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Upload className="h-5 w-5" />
+            Form Uploads
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-4">Loading uploads...</div>
         </CardContent>
       </Card>
+    );
+  }
 
-      <div className="space-y-4">
-        <h3 className="font-medium text-lg">Uploaded Forms</h3>
-        
-        {isLoading ? (
-          <div className="text-center p-6">
-            <p className="text-muted-foreground">Loading...</p>
-          </div>
-        ) : uploads.length === 0 ? (
-          <div className="text-center p-6">
-            <p className="text-muted-foreground">No forms uploaded yet</p>
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Upload className="h-5 w-5" />
+          Form Uploads
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div>
+          <Label htmlFor="file-upload">Upload File</Label>
+          <Input
+            id="file-upload"
+            type="file"
+            onChange={handleFileUpload}
+            disabled={uploading}
+            className="mt-1"
+          />
+          {uploading && (
+            <p className="text-sm text-muted-foreground mt-1">Uploading...</p>
+          )}
+        </div>
+
+        {uploads.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
+            <p>No files uploaded yet</p>
           </div>
         ) : (
-          uploads.map((upload) => (
-            <div key={upload.id} className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center space-x-4">
-                <div className="bg-primary-50 p-2 rounded">
-                  <FileText className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <p className="font-medium">{upload.filename}</p>
-                  <div className="flex gap-2 text-sm text-muted-foreground">
-                    <span>{upload.filetype}</span>
-                    <span>·</span>
-                    <span>{upload.filesize}</span>
-                    <span>·</span>
-                    <span>Uploaded {new Date(upload.uploaded_at).toLocaleDateString()}</span>
+          <div className="space-y-2">
+            {uploads.map((upload) => (
+              <div
+                key={upload.id}
+                className="flex items-center justify-between p-3 border rounded-lg"
+              >
+                <div className="flex items-center gap-3">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">{upload.filename}</p>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Badge variant="secondary">{upload.filetype}</Badge>
+                      <span>{formatFileSize(upload.filesize)}</span>
+                      <span>•</span>
+                      <span>{new Date(upload.uploadedAt).toLocaleDateString()}</span>
+                    </div>
                   </div>
                 </div>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="ghost">
+                    <Download className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleDelete(upload.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <Button size="sm" variant="ghost">
-                  <Eye className="h-4 w-4" />
-                </Button>
-                <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => handleDeleteUpload(upload.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          ))
+            ))}
+          </div>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
-};
+}

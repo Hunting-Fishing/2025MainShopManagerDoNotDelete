@@ -29,7 +29,6 @@ export function CustomerCreateForm() {
       isSubmitting={isSubmitting}
       customerId={newCustomerId}
       availableShops={availableShops}
-      onImportComplete={handleImportComplete}
     />
   );
 }

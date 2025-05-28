@@ -1,94 +1,111 @@
 
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DashboardStats } from "@/types/dashboard";
-import { UsersRound, PackageOpen, ClipboardCheckIcon, Clock, Star, BarChart3 } from "lucide-react";
+import { Users, Wrench, Package, Clock, Star, TrendingUp } from "lucide-react";
 
 interface StatsCardsProps {
-  stats: DashboardStats;
-  isLoading: boolean;
+  stats?: {
+    activeWorkOrders: number;
+    workOrderChange: string;
+    teamMembers: number;
+    teamChange: string;
+    inventoryItems: number;
+    inventoryChange: string;
+    avgCompletionTime: string;
+    completionTimeChange: string;
+    customerSatisfaction: number;
+    schedulingEfficiency: string;
+  };
+  isLoading?: boolean;
 }
 
 export function StatsCards({ stats, isLoading }: StatsCardsProps) {
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                <div className="h-4 bg-gray-200 rounded animate-pulse" />
+              </CardTitle>
+              <div className="h-4 w-4 bg-gray-200 rounded animate-pulse" />
+            </CardHeader>
+            <CardContent>
+              <div className="h-8 bg-gray-200 rounded animate-pulse mb-2" />
+              <div className="h-3 bg-gray-200 rounded animate-pulse w-16" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  const defaultStats = {
+    activeWorkOrders: 0,
+    workOrderChange: "No change",
+    teamMembers: 0,
+    teamChange: "No change",
+    inventoryItems: 0,
+    inventoryChange: "No change",
+    avgCompletionTime: "0 hours",
+    completionTimeChange: "No change",
+    customerSatisfaction: 0,
+    schedulingEfficiency: "0%",
+  };
+
+  const currentStats = stats || defaultStats;
+
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Active Work Orders</CardTitle>
-          <ClipboardCheckIcon className="h-4 w-4 text-muted-foreground" />
+          <Wrench className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{isLoading ? "—" : stats.activeWorkOrders}</div>
+          <div className="text-2xl font-bold">{currentStats.activeWorkOrders}</div>
           <p className="text-xs text-muted-foreground">
-            {isLoading ? "" : `${stats.workOrderChange} from last month`}
-          </p>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Team Members</CardTitle>
-          <UsersRound className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{isLoading ? "—" : stats.teamMembers}</div>
-          <p className="text-xs text-muted-foreground">
-            {isLoading ? "" : `${stats.teamChange} change`}
-          </p>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Inventory Items</CardTitle>
-          <PackageOpen className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{isLoading ? "—" : stats.inventoryItems}</div>
-          <p className="text-xs text-muted-foreground">
-            {isLoading ? "" : `${stats.inventoryChange} from last month`}
+            {currentStats.workOrderChange} from last month
           </p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Avg. Completion Time</CardTitle>
+          <CardTitle className="text-sm font-medium">Team Members</CardTitle>
+          <Users className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{currentStats.teamMembers}</div>
+          <p className="text-xs text-muted-foreground">
+            {currentStats.teamChange} from last month
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Inventory Items</CardTitle>
+          <Package className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{currentStats.inventoryItems}</div>
+          <p className="text-xs text-muted-foreground">
+            {currentStats.inventoryChange} from last month
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Avg Completion Time</CardTitle>
           <Clock className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{isLoading ? "—" : stats.avgCompletionTime}</div>
+          <div className="text-2xl font-bold">{currentStats.avgCompletionTime}</div>
           <p className="text-xs text-muted-foreground">
-            {isLoading ? "" : `${stats.completionTimeChange} from previous period`}
-          </p>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Customer Satisfaction</CardTitle>
-          <Star className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {isLoading ? "—" : stats.customerSatisfaction ? `${stats.customerSatisfaction}/5` : "N/A"}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Based on customer feedback
-          </p>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Scheduling Efficiency</CardTitle>
-          <BarChart3 className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {isLoading ? "—" : stats.schedulingEfficiency || "N/A"}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Resource utilization rate
+            {currentStats.completionTimeChange} from last month
           </p>
         </CardContent>
       </Card>

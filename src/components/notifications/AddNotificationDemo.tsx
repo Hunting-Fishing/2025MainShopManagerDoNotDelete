@@ -42,7 +42,7 @@ export function AddNotificationDemo() {
           type,
           category: category || undefined,
           priority,
-          recipient: user.id,
+          user_id: user.id,
         });
 
       if (error) {

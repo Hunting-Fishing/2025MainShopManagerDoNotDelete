@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { DragEndEvent } from '@dnd-kit/core';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { Bay } from '@/services/diybay/diybayService';
 import { useToast } from '@/hooks/use-toast';
 
@@ -32,24 +32,16 @@ export function useBayOrder(bays: Bay[], setBays: React.Dispatch<React.SetStateA
     setIsSavingOrder(true);
     
     try {
-      // Update display_order for all affected items
-      const updates = newOrder.map((bay, index) => ({
-        id: bay.id,
-        display_order: index
-      }));
-      
-      // Use transaction to update all orders at once
-      const { error } = await supabase
-        .from('diy_bay_rates')
-        .upsert(
-          updates.map(update => ({
-            id: update.id,
-            display_order: update.display_order
-          })),
-          { onConflict: 'id' }
-        );
-        
-      if (error) throw error;
+      // Update display_order for each bay individually
+      for (let i = 0; i < newOrder.length; i++) {
+        const bay = newOrder[i];
+        const { error } = await supabase
+          .from('diy_bay_rates')
+          .update({ display_order: i })
+          .eq('id', bay.id);
+          
+        if (error) throw error;
+      }
       
       toast({
         title: "Bay order updated",
