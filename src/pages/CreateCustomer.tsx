@@ -10,16 +10,19 @@ export default function CreateCustomer() {
     availableShops,
     isLoading,
     isSubmitting,
-    handleSubmit
+    onSubmit
   } = useCustomerCreate();
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <CreateCustomerHeader />
+      <CreateCustomerHeader 
+        onImportComplete={() => {}}
+        isSubmitting={isSubmitting}
+      />
       <div className="mt-8">
         <CustomerCreateForm
           defaultValues={defaultValues}
-          onSubmit={handleSubmit}
+          onSubmit={onSubmit}
           isSubmitting={isSubmitting}
           isLoading={isLoading}
           availableShops={availableShops}

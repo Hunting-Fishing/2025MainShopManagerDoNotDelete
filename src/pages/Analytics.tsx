@@ -22,15 +22,12 @@ export default function Analytics() {
   });
 
   // Initialize with current date range
-  const { reportData, isLoading, error, fetchReportData } = useReportData();
+  const { reportData, loading, error, refetch } = useReportData();
 
   // Handle date range changes
   const handleDateRangeChange = (range: { from: Date; to: Date }) => {
     setTimeRange(range);
-    fetchReportData({
-      start: range.from,
-      end: range.to
-    });
+    refetch();
   };
 
   // Predefined ranges
@@ -38,7 +35,7 @@ export default function Analytics() {
     const to = new Date();
     const from = subDays(to, days);
     setTimeRange({ from, to });
-    fetchReportData({ start: from, end: to });
+    refetch();
   };
 
   return (
@@ -63,10 +60,7 @@ export default function Analytics() {
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={() => fetchReportData({ 
-              start: timeRange.from, 
-              end: timeRange.to 
-            })}
+            onClick={refetch}
           >
             <RefreshCw className="h-4 w-4 mr-1" />
             Refresh
@@ -87,7 +81,7 @@ export default function Analytics() {
         </Alert>
       )}
 
-      {isLoading ? (
+      {loading ? (
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
         </div>

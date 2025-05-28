@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
-import { ProductCard } from '@/components/affiliate/ProductCard';
+import ProductCard from '@/components/affiliate/ProductCard';
 
 interface Product {
   id: string;
@@ -15,7 +15,6 @@ interface Product {
   category_id: string;
   created_at: string;
   description: string;
-  id: string;
   image_url: string;
   is_approved: boolean;
   is_available: boolean;
@@ -45,7 +44,6 @@ export default function ManufacturerPage() {
       const { data, error } = await supabase
         .from('products')
         .select('*')
-        .eq('manufacturer', manufacturer)
         .eq('is_approved', true)
         .eq('is_available', true);
 
@@ -54,9 +52,9 @@ export default function ManufacturerPage() {
       // Transform database data to match Product interface
       const transformedProducts: Product[] = (data || []).map(product => ({
         id: product.id,
-        name: product.name || 'Unnamed Product',
-        category: product.category || 'Uncategorized',
-        manufacturer: product.manufacturer || manufacturer || 'Unknown',
+        name: product.product_name || 'Unnamed Product',
+        category: product.product_category || 'Uncategorized',
+        manufacturer: product.brand || manufacturer || 'Unknown',
         featured: product.featured || false,
         affiliate_link: product.affiliate_link,
         average_rating: product.average_rating,
@@ -68,7 +66,7 @@ export default function ManufacturerPage() {
         is_available: product.is_available,
         price: product.price,
         review_count: product.review_count,
-        tier: product.tier,
+        tier: product.product_tier || 'standard',
         updated_at: product.updated_at
       }));
 

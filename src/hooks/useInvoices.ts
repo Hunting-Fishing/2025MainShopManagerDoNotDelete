@@ -30,20 +30,20 @@ export function useInvoices() {
       // Transform data to match expected interface
       const transformedData = (data || []).map(invoice => ({
         ...invoice,
-        number: invoice.number || invoice.id, // Use existing number or fallback to id
+        number: invoice.id || '', // Use id as number since number field doesn't exist
         customer_id: invoice.customer_id || '',
         customer_email: invoice.customer_email || '',
         customer_address: invoice.customer_address || '',
-        issue_date: invoice.issue_date || invoice.date, // Use existing issue_date or fallback to date
-        tax_rate: invoice.tax_rate || 0.08, // Use existing tax_rate or default
-        items: invoice.items || [], // Use existing items or default to empty array
+        issue_date: invoice.date || invoice.created_at, // Use date as issue_date
+        tax_rate: 0.08, // Default tax rate since field doesn't exist
+        items: [], // Default empty array since field doesn't exist
         notes: invoice.notes || '',
         description: invoice.description || '',
         payment_method: invoice.payment_method || '',
         work_order_id: invoice.work_order_id || '',
-        assignedStaff: invoice.assignedStaff || [], // Use existing assignedStaff or default to empty array
+        assignedStaff: [], // Default empty array since field doesn't exist
         created_by: invoice.created_by || '',
-        updated_at: invoice.updated_at || invoice.created_at, // Use existing updated_at or fallback to created_at
+        updated_at: invoice.created_at, // Use created_at as updated_at fallback
         status: (['pending', 'draft', 'paid', 'overdue', 'cancelled'].includes(invoice.status) 
           ? invoice.status 
           : 'pending') as 'pending' | 'draft' | 'paid' | 'overdue' | 'cancelled'

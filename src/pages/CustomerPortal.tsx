@@ -67,9 +67,11 @@ export default function CustomerPortal() {
     );
   }
 
+  const customerName = `${customer.first_name} ${customer.last_name}`;
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <CustomerPortalHeader />
+      <CustomerPortalHeader customerName={customerName} />
       
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

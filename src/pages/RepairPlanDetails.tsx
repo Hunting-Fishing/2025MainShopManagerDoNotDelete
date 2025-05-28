@@ -17,6 +17,11 @@ interface RepairPlan {
   actual_cost: number;
   created_at: string;
   updated_at: string;
+  equipmentId: string;
+  createdAt: string;
+  updatedAt: string;
+  estimatedDuration: number;
+  tasks: RepairTask[];
 }
 
 interface RepairTask {
@@ -60,7 +65,12 @@ export default function RepairPlanDetails() {
         estimated_cost: 2500,
         actual_cost: 0,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        equipmentId: 'mock-equipment-id',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        estimatedDuration: 8,
+        tasks: []
       };
 
       const mockTasks: RepairTask[] = [
@@ -153,7 +163,7 @@ export default function RepairPlanDetails() {
             tasks={tasks} 
             onTaskUpdate={handleTaskUpdate}
           />
-          <RepairPlanActivityCard repairPlanId={repairPlan.id} />
+          <RepairPlanActivityCard repairPlan={repairPlan} />
         </div>
         
         <div className="lg:col-span-1">

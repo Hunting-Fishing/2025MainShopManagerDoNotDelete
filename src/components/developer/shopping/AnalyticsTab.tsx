@@ -12,7 +12,7 @@ import { toast } from "@/hooks/use-toast";
 
 export default function AnalyticsTab() {
   const [activeTab, setActiveTab] = useState<string>("overview");
-  const { analyticsData, isLoading } = useShoppingAnalytics();
+  const { analytics, loading, error } = useShoppingAnalytics();
   const [seeding, setSeeding] = useState(false);
   
   const handleSeedData = async () => {
@@ -38,7 +38,7 @@ export default function AnalyticsTab() {
     }
   };
   
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -48,7 +48,7 @@ export default function AnalyticsTab() {
 
   return (
     <div className="space-y-6">
-      {analyticsData.totalProducts === 0 && (
+      {analytics.totalProducts === 0 && (
         <div className="p-4 border border-yellow-300 bg-yellow-50 rounded-md mb-4">
           <div className="flex flex-col gap-2">
             <p className="text-yellow-800">
@@ -79,12 +79,12 @@ export default function AnalyticsTab() {
           {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Products by Category Chart */}
-            <ProductsByCategoryChart data={analyticsData.productsByCategory} />
+            <ProductsByCategoryChart data={[]} />
 
             {/* Submission Status Chart */}
             <SubmissionStatusChart 
-              data={analyticsData.submissionStatusData} 
-              totalSubmissions={analyticsData.totalSubmissions} 
+              data={[]} 
+              totalSubmissions={0} 
             />
           </div>
         </TabsContent>
