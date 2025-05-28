@@ -1,288 +1,438 @@
+
 import React, { useState, useEffect } from 'react';
-import { ServiceHierarchyBrowser } from './ServiceHierarchyBrowser';
-import { fetchServiceCategories, saveServiceCategory } from '@/lib/services/serviceApi';
-import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
-import { SearchAndFilterBar } from './SearchAndFilterBar';
-import { categoryColors, assignCategoryColors } from './CategoryColorConfig';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, Download, Upload, RefreshCcw } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Plus, Trash2, Edit3, Save, X, ChevronDown, ChevronRight } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
+import { saveServiceCategories, deleteServiceCategory, deleteServiceSubcategory, deleteServiceJob } from '@/lib/services/serviceApi';
 import { toast } from 'sonner';
-import { DuplicateSearchButton } from './DuplicateSearchButton';
 
-export const ServiceHierarchyManager: React.FC = () => {
-  const [categories, setCategories] = useState<ServiceMainCategory[]>([]);
-  const [filteredCategories, setFilteredCategories] = useState<ServiceMainCategory[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
-  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string | null>(null);
-  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilters, setActiveFilters] = useState<string[]>([]);
-  const [categoryColorMap, setCategoryColorMap] = useState<Record<string, string>>({});
-  
-  // Load service categories
-  const loadCategories = async () => {
-    setLoading(true);
-    try {
-      const data = await fetchServiceCategories();
-      setCategories(data);
-      setFilteredCategories(data);
-      
-      // Create color map for categories
-      const categoryIds = data.map(cat => cat.id);
-      setCategoryColorMap(assignCategoryColors(categoryIds));
-      
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load service categories');
-      toast.error('Failed to load service categories');
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  // Initial load
+interface ServiceHierarchyManagerProps {
+  categories: ServiceMainCategory[];
+  isLoading: boolean;
+  onRefresh: () => Promise<void>;
+}
+
+export default function ServiceHierarchyManager({ categories, isLoading, onRefresh }: ServiceHierarchyManagerProps) {
+  const [editingCategory, setEditingCategory] = useState<string | null>(null);
+  const [editingSubcategory, setEditingSubcategory] = useState<string | null>(null);
+  const [editingJob, setEditingJob] = useState<string | null>(null);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [expandedSubcategories, setExpandedSubcategories] = useState<Set<string>>(new Set());
+  const [localCategories, setLocalCategories] = useState<ServiceMainCategory[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+
   useEffect(() => {
-    loadCategories();
-  }, []);
-  
-  // Handle search functionality
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    applyFiltersAndSearch(query, activeFilters);
+    setLocalCategories(categories);
+  }, [categories]);
+
+  const toggleCategoryExpansion = (categoryId: string) => {
+    const newExpanded = new Set(expandedCategories);
+    if (newExpanded.has(categoryId)) {
+      newExpanded.delete(categoryId);
+    } else {
+      newExpanded.add(categoryId);
+    }
+    setExpandedCategories(newExpanded);
   };
-  
-  // Handle filter changes
-  const handleFilterChange = (filters: string[]) => {
-    setActiveFilters(filters);
-    applyFiltersAndSearch(searchQuery, filters);
+
+  const toggleSubcategoryExpansion = (subcategoryId: string) => {
+    const newExpanded = new Set(expandedSubcategories);
+    if (newExpanded.has(subcategoryId)) {
+      newExpanded.delete(subcategoryId);
+    } else {
+      newExpanded.add(subcategoryId);
+    }
+    setExpandedSubcategories(newExpanded);
   };
-  
-  // Apply both search and filters
-  const applyFiltersAndSearch = (query: string, filters: string[]) => {
-    let filtered = [...categories];
+
+  const addNewCategory = () => {
+    const newCategory: ServiceMainCategory = {
+      id: `temp-cat-${Date.now()}`,
+      name: 'New Category',
+      description: '',
+      subcategories: [],
+      position: localCategories.length
+    };
+    setLocalCategories([...localCategories, newCategory]);
+    setEditingCategory(newCategory.id);
+    setExpandedCategories(new Set([...expandedCategories, newCategory.id]));
+  };
+
+  const addNewSubcategory = (categoryId: string) => {
+    const newSubcategory: ServiceSubcategory = {
+      id: `temp-sub-${Date.now()}`,
+      name: 'New Subcategory',
+      description: '',
+      jobs: []
+    };
     
-    // Apply search if there is a query
-    if (query) {
-      const lowercaseQuery = query.toLowerCase();
-      filtered = filtered.filter(category => {
-        // Search in category name or description
-        if (
-          category.name.toLowerCase().includes(lowercaseQuery) ||
-          (category.description && category.description.toLowerCase().includes(lowercaseQuery))
-        ) {
-          return true;
-        }
-        
-        // Search in subcategories
-        const hasMatchingSubcategory = category.subcategories.some(subcategory => {
-          if (
-            subcategory.name.toLowerCase().includes(lowercaseQuery) ||
-            (subcategory.description && subcategory.description.toLowerCase().includes(lowercaseQuery))
-          ) {
-            return true;
+    setLocalCategories(prev => prev.map(cat => 
+      cat.id === categoryId 
+        ? { ...cat, subcategories: [...cat.subcategories, newSubcategory] }
+        : cat
+    ));
+    setEditingSubcategory(newSubcategory.id);
+    setExpandedSubcategories(new Set([...expandedSubcategories, newSubcategory.id]));
+  };
+
+  const addNewJob = (categoryId: string, subcategoryId: string) => {
+    const newJob: ServiceJob = {
+      id: `temp-job-${Date.now()}`,
+      name: 'New Service',
+      description: '',
+      price: 0,
+      estimatedTime: 60
+    };
+    
+    setLocalCategories(prev => prev.map(cat => 
+      cat.id === categoryId 
+        ? {
+            ...cat, 
+            subcategories: cat.subcategories.map(sub => 
+              sub.id === subcategoryId 
+                ? { ...sub, jobs: [...sub.jobs, newJob] }
+                : sub
+            )
           }
-          
-          // Search in jobs
-          return subcategory.jobs.some(job => 
-            job.name.toLowerCase().includes(lowercaseQuery) ||
-            (job.description && job.description.toLowerCase().includes(lowercaseQuery))
-          );
-        });
-        
-        return hasMatchingSubcategory;
-      });
-    }
-    
-    // Apply category filters if there are any
-    if (filters.length > 0) {
-      filtered = filtered.filter(category => filters.includes(category.name));
-    }
-    
-    setFilteredCategories(filtered);
+        : cat
+    ));
+    setEditingJob(newJob.id);
   };
-  
-  // Handle selection of items in the browser
-  const handleSelectItem = (type: 'category' | 'subcategory' | 'job', id: string | null) => {
-    if (type === 'category') {
-      setSelectedCategoryId(id);
-      setSelectedSubcategoryId(null);
-      setSelectedJobId(null);
-    } else if (type === 'subcategory') {
-      setSelectedSubcategoryId(id);
-      setSelectedJobId(null);
-    } else if (type === 'job') {
-      setSelectedJobId(id);
+
+  const updateCategory = (categoryId: string, field: string, value: string) => {
+    setLocalCategories(prev => prev.map(cat => 
+      cat.id === categoryId ? { ...cat, [field]: value } : cat
+    ));
+  };
+
+  const updateSubcategory = (categoryId: string, subcategoryId: string, field: string, value: string) => {
+    setLocalCategories(prev => prev.map(cat => 
+      cat.id === categoryId 
+        ? {
+            ...cat, 
+            subcategories: cat.subcategories.map(sub => 
+              sub.id === subcategoryId ? { ...sub, [field]: value } : sub
+            )
+          }
+        : cat
+    ));
+  };
+
+  const updateJob = (categoryId: string, subcategoryId: string, jobId: string, field: string, value: string | number) => {
+    setLocalCategories(prev => prev.map(cat => 
+      cat.id === categoryId 
+        ? {
+            ...cat, 
+            subcategories: cat.subcategories.map(sub => 
+              sub.id === subcategoryId 
+                ? {
+                    ...sub, 
+                    jobs: sub.jobs.map(job => 
+                      job.id === jobId ? { ...job, [field]: value } : job
+                    )
+                  }
+                : sub
+            )
+          }
+        : cat
+    ));
+  };
+
+  const deleteCategory = async (categoryId: string) => {
+    try {
+      await deleteServiceCategory(categoryId);
+      setLocalCategories(prev => prev.filter(cat => cat.id !== categoryId));
+      toast.success('Category deleted successfully');
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      toast.error('Failed to delete category');
     }
   };
 
-  // Handle inline updates from double-click editing
-  const handleUpdateItem = async (type: 'category' | 'subcategory' | 'job', id: string, newName: string) => {
+  const deleteSubcategory = async (categoryId: string, subcategoryId: string) => {
     try {
-      // Create a deep copy of the categories for updating
-      const updatedCategories = JSON.parse(JSON.stringify(categories)) as ServiceMainCategory[];
-      
-      if (type === 'category') {
-        const categoryIndex = updatedCategories.findIndex(cat => cat.id === id);
-        if (categoryIndex !== -1) {
-          updatedCategories[categoryIndex].name = newName;
-          
-          // Save to database
-          await saveServiceCategory(updatedCategories[categoryIndex]);
-          toast.success(`Category "${newName}" updated successfully`);
-        }
-      } else if (type === 'subcategory') {
-        const categoryIndex = updatedCategories.findIndex(cat => 
-          cat.subcategories.some(sub => sub.id === id)
-        );
-        
-        if (categoryIndex !== -1) {
-          const subcategoryIndex = updatedCategories[categoryIndex].subcategories.findIndex(
-            sub => sub.id === id
-          );
-          
-          if (subcategoryIndex !== -1) {
-            updatedCategories[categoryIndex].subcategories[subcategoryIndex].name = newName;
-            
-            // Save to database
-            await saveServiceCategory(updatedCategories[categoryIndex]);
-            toast.success(`Subcategory "${newName}" updated successfully`);
-          }
-        }
-      } else if (type === 'job') {
-        for (const category of updatedCategories) {
-          for (const subcategory of category.subcategories) {
-            const jobIndex = subcategory.jobs.findIndex(job => job.id === id);
-            if (jobIndex !== -1) {
-              subcategory.jobs[jobIndex].name = newName;
-              
-              // Save parent category to database
-              await saveServiceCategory(category);
-              toast.success(`Service "${newName}" updated successfully`);
-              break;
-            }
-          }
-        }
-      }
-      
-      // Update local state
-      setCategories(updatedCategories);
-      
-      // Update filtered categories while preserving filters
-      if (searchQuery || activeFilters.length > 0) {
-        applyFiltersAndSearch(searchQuery, activeFilters);
-      } else {
-        setFilteredCategories(updatedCategories);
-      }
-      
+      await deleteServiceSubcategory(subcategoryId);
+      setLocalCategories(prev => prev.map(cat => 
+        cat.id === categoryId 
+          ? { ...cat, subcategories: cat.subcategories.filter(sub => sub.id !== subcategoryId) }
+          : cat
+      ));
+      toast.success('Subcategory deleted successfully');
     } catch (error) {
-      console.error('Error updating item:', error);
-      toast.error(`Failed to update item: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('Error deleting subcategory:', error);
+      toast.error('Failed to delete subcategory');
     }
   };
-  
-  // Get category names for filtering
-  const categoryNames = categories.map(cat => cat.name);
-  
-  // Count total services
-  const totalServices = categories.reduce((total, category) => {
-    return total + category.subcategories.reduce((subTotal, subcategory) => {
-      return subTotal + subcategory.jobs.length;
-    }, 0);
-  }, 0);
-  
+
+  const deleteJob = async (categoryId: string, subcategoryId: string, jobId: string) => {
+    try {
+      await deleteServiceJob(jobId);
+      setLocalCategories(prev => prev.map(cat => 
+        cat.id === categoryId 
+          ? {
+              ...cat, 
+              subcategories: cat.subcategories.map(sub => 
+                sub.id === subcategoryId 
+                  ? { ...sub, jobs: sub.jobs.filter(job => job.id !== jobId) }
+                  : sub
+              )
+            }
+          : cat
+      ));
+      toast.success('Service deleted successfully');
+    } catch (error) {
+      console.error('Error deleting service:', error);
+      toast.error('Failed to delete service');
+    }
+  };
+
+  const saveChanges = async () => {
+    try {
+      setIsSaving(true);
+      await saveServiceCategories(localCategories);
+      await onRefresh();
+      setEditingCategory(null);
+      setEditingSubcategory(null);
+      setEditingJob(null);
+      toast.success('Changes saved successfully');
+    } catch (error) {
+      console.error('Error saving changes:', error);
+      toast.error('Failed to save changes');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Service Categories</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">Loading service categories...</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <div>
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <div>
-          <h2 className="text-lg font-semibold mb-1">Service Hierarchy</h2>
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="bg-gray-100">
-              {categories.length} Categories
-            </Badge>
-            <Badge variant="secondary" className="bg-gray-100">
-              {totalServices} Services
-            </Badge>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>Service Categories</CardTitle>
+        <div className="flex gap-2">
+          <Button onClick={addNewCategory} variant="outline" size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Category
+          </Button>
+          <Button onClick={saveChanges} disabled={isSaving} size="sm">
+            <Save className="h-4 w-4 mr-2" />
+            {isSaving ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {localCategories.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            No service categories found. Add your first category to get started.
           </div>
-        </div>
-        
-        <div className="flex flex-wrap gap-2">
-          <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-            <Plus className="h-4 w-4 mr-1" /> Add Category
-          </Button>
-          <Button size="sm" variant="outline">
-            <Upload className="h-4 w-4 mr-1" /> Import
-          </Button>
-          <Button size="sm" variant="outline">
-            <Download className="h-4 w-4 mr-1" /> Export
-          </Button>
-          <DuplicateSearchButton 
-            categories={categories} 
-            loading={loading} 
-            onCategoriesUpdated={loadCategories}
-          />
-          <Button size="sm" variant="ghost" onClick={() => {
-            setLoading(true);
-            fetchServiceCategories()
-              .then(data => {
-                setCategories(data);
-                setFilteredCategories(data);
-                toast.success('Service categories refreshed');
-              })
-              .catch(err => {
-                setError(err instanceof Error ? err.message : 'Failed to refresh categories');
-                toast.error('Failed to refresh categories');
-              })
-              .finally(() => setLoading(false));
-          }}>
-            <RefreshCcw className="h-4 w-4 mr-1" /> Refresh
-          </Button>
-        </div>
-      </div>
-      
-      <SearchAndFilterBar
-        onSearch={handleSearch}
-        onFilterChange={handleFilterChange}
-        categories={categoryNames}
-      />
-      
-      <ServiceHierarchyBrowser
-        categories={filteredCategories}
-        loading={loading}
-        error={error}
-        selectedCategoryId={selectedCategoryId}
-        selectedSubcategoryId={selectedSubcategoryId}
-        selectedJobId={selectedJobId}
-        onSelectItem={handleSelectItem}
-        categoryColorMap={categoryColorMap}
-        categoryColors={categoryColors}
-        onUpdateItem={handleUpdateItem}
-      />
-      
-      {filteredCategories.length === 0 && !loading && (
-        <div className="mt-8 p-8 text-center bg-gray-50 border border-gray-200 rounded-lg">
-          <h3 className="text-lg font-medium text-gray-700">No services found</h3>
-          <p className="mt-2 text-gray-500">
-            {searchQuery || activeFilters.length > 0
-              ? 'Try adjusting your search or filters to find what you\'re looking for.'
-              : 'No services have been configured yet. Use the "Add Category" button to create your first service category.'}
-          </p>
-          {(searchQuery || activeFilters.length > 0) && (
-            <Button 
-              className="mt-4" 
-              variant="outline" 
-              onClick={() => {
-                setSearchQuery('');
-                setActiveFilters([]);
-                setFilteredCategories(categories);
-              }}
-            >
-              Clear all filters
-            </Button>
-          )}
-        </div>
-      )}
-    </div>
+        ) : (
+          <div className="space-y-4">
+            {localCategories.map((category) => (
+              <div key={category.id} className="border rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleCategoryExpansion(category.id)}
+                    >
+                      {expandedCategories.has(category.id) ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </Button>
+                    {editingCategory === category.id ? (
+                      <Input
+                        value={category.name}
+                        onChange={(e) => updateCategory(category.id, 'name', e.target.value)}
+                        className="font-semibold"
+                        autoFocus
+                      />
+                    ) : (
+                      <h3 className="font-semibold text-lg">{category.name}</h3>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditingCategory(editingCategory === category.id ? null : category.id)}
+                    >
+                      {editingCategory === category.id ? <X className="h-4 w-4" /> : <Edit3 className="h-4 w-4" />}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addNewSubcategory(category.id)}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => deleteCategory(category.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {editingCategory === category.id && (
+                  <Textarea
+                    value={category.description || ''}
+                    onChange={(e) => updateCategory(category.id, 'description', e.target.value)}
+                    placeholder="Category description..."
+                    className="mb-2"
+                  />
+                )}
+
+                {expandedCategories.has(category.id) && (
+                  <div className="ml-6 space-y-3">
+                    {category.subcategories.map((subcategory) => (
+                      <div key={subcategory.id} className="border rounded-md p-3 bg-gray-50">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => toggleSubcategoryExpansion(subcategory.id)}
+                            >
+                              {expandedSubcategories.has(subcategory.id) ? (
+                                <ChevronDown className="h-4 w-4" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4" />
+                              )}
+                            </Button>
+                            {editingSubcategory === subcategory.id ? (
+                              <Input
+                                value={subcategory.name}
+                                onChange={(e) => updateSubcategory(category.id, subcategory.id, 'name', e.target.value)}
+                                className="font-medium"
+                                autoFocus
+                              />
+                            ) : (
+                              <h4 className="font-medium">{subcategory.name}</h4>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setEditingSubcategory(editingSubcategory === subcategory.id ? null : subcategory.id)}
+                            >
+                              {editingSubcategory === subcategory.id ? <X className="h-4 w-4" /> : <Edit3 className="h-4 w-4" />}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => addNewJob(category.id, subcategory.id)}
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => deleteSubcategory(category.id, subcategory.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        {editingSubcategory === subcategory.id && (
+                          <Textarea
+                            value={subcategory.description || ''}
+                            onChange={(e) => updateSubcategory(category.id, subcategory.id, 'description', e.target.value)}
+                            placeholder="Subcategory description..."
+                            className="mb-2"
+                          />
+                        )}
+
+                        {expandedSubcategories.has(subcategory.id) && (
+                          <div className="ml-6 space-y-2">
+                            {subcategory.jobs.map((job) => (
+                              <div key={job.id} className="border rounded-sm p-2 bg-white">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex-1">
+                                    {editingJob === job.id ? (
+                                      <div className="grid grid-cols-2 gap-2">
+                                        <Input
+                                          value={job.name}
+                                          onChange={(e) => updateJob(category.id, subcategory.id, job.id, 'name', e.target.value)}
+                                          placeholder="Service name"
+                                        />
+                                        <Input
+                                          type="number"
+                                          value={job.price || 0}
+                                          onChange={(e) => updateJob(category.id, subcategory.id, job.id, 'price', parseFloat(e.target.value))}
+                                          placeholder="Price"
+                                        />
+                                        <Input
+                                          type="number"
+                                          value={job.estimatedTime || 0}
+                                          onChange={(e) => updateJob(category.id, subcategory.id, job.id, 'estimatedTime', parseInt(e.target.value))}
+                                          placeholder="Time (minutes)"
+                                        />
+                                        <Textarea
+                                          value={job.description || ''}
+                                          onChange={(e) => updateJob(category.id, subcategory.id, job.id, 'description', e.target.value)}
+                                          placeholder="Description"
+                                          className="col-span-2"
+                                        />
+                                      </div>
+                                    ) : (
+                                      <div>
+                                        <span className="font-medium">{job.name}</span>
+                                        {job.price && <span className="ml-2 text-green-600">${job.price}</span>}
+                                        {job.estimatedTime && <span className="ml-2 text-blue-600">{job.estimatedTime}min</span>}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex gap-1">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => setEditingJob(editingJob === job.id ? null : job.id)}
+                                    >
+                                      {editingJob === job.id ? <X className="h-3 w-3" /> : <Edit3 className="h-3 w-3" />}
+                                    </Button>
+                                    <Button
+                                      variant="destructive"
+                                      size="sm"
+                                      onClick={() => deleteJob(category.id, subcategory.id, job.id)}
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
-};
+}
