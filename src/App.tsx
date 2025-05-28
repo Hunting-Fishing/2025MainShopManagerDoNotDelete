@@ -38,11 +38,17 @@ import ClientBooking from '@/pages/ClientBooking';
 import Settings from '@/pages/Settings';
 import CompanySettings from '@/pages/settings/CompanySettings';
 import AppearanceSettings from '@/pages/settings/AppearanceSettings';
+import IntegrationsSettings from '@/pages/settings/IntegrationsSettings';
 
 // Developer portal pages
 import OrganizationManagement from '@/pages/developer/OrganizationManagement';
 import ShoppingControls from '@/pages/developer/ShoppingControls';
 import ServiceManagement from '@/pages/developer/ServiceManagement';
+import UserManagement from '@/pages/developer/UserManagement';
+import SystemSettings from '@/pages/developer/SystemSettings';
+import ToolsManagement from '@/pages/developer/ToolsManagement';
+import AnalyticsDashboard from '@/pages/developer/AnalyticsDashboard';
+import SecuritySettings from '@/pages/developer/SecuritySettings';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -98,11 +104,17 @@ function App() {
                             <Route path="/developer/organization-management" element={<OrganizationManagement />} />
                             <Route path="/developer/shopping-controls" element={<ShoppingControls />} />
                             <Route path="/developer/service-management" element={<ServiceManagement />} />
+                            <Route path="/developer/user-management" element={<UserManagement />} />
+                            <Route path="/developer/system-settings" element={<SystemSettings />} />
+                            <Route path="/developer/tools-management" element={<ToolsManagement />} />
+                            <Route path="/developer/analytics-dashboard" element={<AnalyticsDashboard />} />
+                            <Route path="/developer/security-settings" element={<SecuritySettings />} />
                             
                             {/* Settings Routes */}
                             <Route path="/settings" element={<Settings />} />
                             <Route path="/settings/company" element={<CompanySettings />} />
                             <Route path="/settings/appearance" element={<AppearanceSettings />} />
+                            <Route path="/settings/integrations" element={<IntegrationsSettings />} />
                             
                             <Route path="*" element={<NotFound />} />
                           </Routes>
