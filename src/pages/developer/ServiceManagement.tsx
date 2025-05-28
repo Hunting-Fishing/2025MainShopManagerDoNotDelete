@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Database, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import ServiceAnalytics from '@/components/developer/service-management/ServiceAnalytics';
 import ServiceBulkImport from '@/components/developer/service-management/ServiceBulkImport';
 import ServicesPriceReport from '@/components/developer/service-management/ServicesPriceReport';
@@ -16,21 +17,29 @@ export default function ServiceManagement() {
   const [activeTab, setActiveTab] = useState("services");
   const [categories, setCategories] = useState<ServiceMainCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const loadCategories = async () => {
     try {
       setIsLoading(true);
+      setError(null);
       console.log('Loading service categories from database...');
+      
       const serviceCategories = await fetchServiceCategories();
       console.log('Loaded categories:', serviceCategories);
       setCategories(serviceCategories);
       
       if (serviceCategories.length === 0) {
-        console.log('No categories found - user may need to import data');
+        console.log('No categories found in database');
+        setError('No service categories found in database. Check your service_hierarchy table.');
+      } else {
+        toast.success(`Loaded ${serviceCategories.length} service categories from database`);
       }
     } catch (error) {
       console.error('Failed to load service categories:', error);
-      toast.error('Failed to load service categories');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setError(`Failed to load service categories: ${errorMessage}`);
+      toast.error('Failed to load service categories from database');
       setCategories([]);
     } finally {
       setIsLoading(false);
@@ -68,24 +77,48 @@ export default function ServiceManagement() {
             <ArrowLeft className="h-4 w-4 mr-2" /> Back to Developer Portal
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold">Service Management</h1>
+        <div className="flex items-center gap-3 mb-2">
+          <Database className="h-8 w-8 text-indigo-600" />
+          <h1 className="text-3xl font-bold">Service Management</h1>
+        </div>
         <p className="text-slate-600 dark:text-slate-300">
-          Configure available services, subcategories, and jobs with pricing
+          Manage service categories, subcategories, and jobs with real-time database integration
         </p>
       </div>
 
+      {error && (
+        <Alert className="mb-6 border-red-200 bg-red-50">
+          <AlertCircle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-red-700">
+            {error}
+          </AlertDescription>
+        </Alert>
+      )}
+
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="bg-white dark:bg-slate-800 rounded-full p-1 border shadow-sm">
-          <TabsTrigger value="services" className="rounded-full text-sm px-4 py-2">
+          <TabsTrigger 
+            value="services" 
+            className="rounded-full text-sm px-4 py-2 data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
+          >
             Services
           </TabsTrigger>
-          <TabsTrigger value="pricing" className="rounded-full text-sm px-4 py-2">
+          <TabsTrigger 
+            value="pricing" 
+            className="rounded-full text-sm px-4 py-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+          >
             Pricing
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="rounded-full text-sm px-4 py-2">
+          <TabsTrigger 
+            value="analytics" 
+            className="rounded-full text-sm px-4 py-2 data-[state=active]:bg-green-600 data-[state=active]:text-white"
+          >
             Analytics
           </TabsTrigger>
-          <TabsTrigger value="import" className="rounded-full text-sm px-4 py-2">
+          <TabsTrigger 
+            value="import" 
+            className="rounded-full text-sm px-4 py-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white"
+          >
             Import/Export
           </TabsTrigger>
         </TabsList>
