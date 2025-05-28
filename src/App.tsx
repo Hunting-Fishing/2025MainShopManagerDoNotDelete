@@ -35,6 +35,7 @@ import ErrorPage from '@/pages/error-page';
 import ClientBooking from '@/pages/ClientBooking';
 
 // Settings pages
+import Settings from '@/pages/Settings';
 import CompanySettings from '@/pages/settings/CompanySettings';
 import AppearanceSettings from '@/pages/settings/AppearanceSettings';
 
@@ -88,6 +89,7 @@ function App() {
                             <Route path="/notifications" element={<Notifications />} />
                             <Route path="/developer" element={<DeveloperPortal />} />
                             <Route path="/developer/*" element={<DeveloperPortal />} />
+                            <Route path="/settings" element={<Settings />} />
                             <Route path="/settings/company" element={<CompanySettings />} />
                             <Route path="/settings/appearance" element={<AppearanceSettings />} />
                             <Route path="*" element={<NotFound />} />
