@@ -1,13 +1,13 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
-import { getServiceCategories } from '@/lib/serviceHierarchy';
+import { getServiceCategories as getStaticServiceCategories } from '@/lib/serviceHierarchy';
 
 export const fetchServiceCategories = async (): Promise<ServiceMainCategory[]> => {
   try {
     // For now, return the static service categories from serviceHierarchy
     // In the future, this could be enhanced to fetch from database
-    return getServiceCategories();
+    return getStaticServiceCategories();
   } catch (error) {
     console.error('Error fetching service categories:', error);
     throw new Error('Failed to fetch service categories');
