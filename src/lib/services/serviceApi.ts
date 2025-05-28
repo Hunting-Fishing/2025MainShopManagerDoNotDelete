@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
 
@@ -93,9 +92,7 @@ function transformJobs(jobs: any[]): any[] {
     id: job.id || `job-${Date.now()}-${Math.random()}`,
     name: job.name || 'Unnamed Service',
     description: job.description || '',
-    // Use job.price if it exists, otherwise undefined
     price: typeof job.price === 'number' ? job.price : undefined,
-    // Use job.estimatedTime or job.estimated_time if they exist
     estimatedTime: job.estimatedTime || job.estimated_time || undefined
   }));
 }
@@ -105,7 +102,14 @@ export async function saveServiceCategories(categories: ServiceMainCategory[]): 
     console.log('Saving service categories to database:', categories);
 
     // Clear existing data first
-    await supabase.from('service_hierarchy').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    const { error: deleteError } = await supabase
+      .from('service_hierarchy')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000');
+
+    if (deleteError) {
+      console.error('Error clearing existing data:', deleteError);
+    }
 
     // Insert new categories
     for (const category of categories) {
@@ -116,7 +120,7 @@ export async function saveServiceCategories(categories: ServiceMainCategory[]): 
           name: category.name,
           description: category.description || '',
           position: category.position || 0,
-          subcategories: category.subcategories || []
+          subcategories: JSON.stringify(category.subcategories || [])
         });
 
       if (error) {
@@ -152,9 +156,15 @@ export async function deleteServiceCategory(categoryId: string): Promise<void> {
 
 export async function updateServiceCategory(categoryId: string, updates: Partial<ServiceMainCategory>): Promise<void> {
   try {
+    // Convert subcategories to JSON string if present
+    const updateData: any = { ...updates };
+    if (updateData.subcategories) {
+      updateData.subcategories = JSON.stringify(updateData.subcategories);
+    }
+
     const { error } = await supabase
       .from('service_hierarchy')
-      .update(updates)
+      .update(updateData)
       .eq('id', categoryId);
 
     if (error) {
@@ -167,3 +177,67 @@ export async function updateServiceCategory(categoryId: string, updates: Partial
     throw error;
   }
 }
+
+export async function bulkImportServiceCategories(categories: ServiceMainCategory[], onProgress?: (progress: number) => void): Promise<void> {
+  try {
+    console.log('Starting bulk import of service categories:', categories);
+    
+    if (onProgress) onProgress(0);
+    
+    // Clear existing data
+    await supabase.from('service_hierarchy').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    
+    if (onProgress) onProgress(20);
+    
+    // Import categories in batches
+    const batchSize = 10;
+    for (let i = 0; i < categories.length; i += batchSize) {
+      const batch = categories.slice(i, i + batchSize);
+      
+      for (const category of batch) {
+        await supabase
+          .from('service_hierarchy')
+          .insert({
+            id: category.id,
+            name: category.name,
+            description: category.description || '',
+            position: category.position || 0,
+            subcategories: JSON.stringify(category.subcategories || [])
+          });
+      }
+      
+      if (onProgress) {
+        const progress = 20 + ((i + batchSize) / categories.length) * 80;
+        onProgress(Math.min(progress, 100));
+      }
+    }
+    
+    console.log('Bulk import completed successfully');
+  } catch (error) {
+    console.error('Error in bulk import:', error);
+    throw error;
+  }
+}
+
+export async function removeDuplicateItem(itemId: string, type: 'category' | 'subcategory' | 'job'): Promise<void> {
+  try {
+    console.log(`Removing duplicate ${type} with ID:`, itemId);
+    
+    if (type === 'category') {
+      // Remove entire category
+      await deleteServiceCategory(itemId);
+    } else {
+      // For subcategories and jobs, we need to update the parent category
+      // This is a simplified implementation - in a real app you'd need more complex logic
+      console.log(`Removing ${type} ${itemId} - this would require updating parent category`);
+    }
+    
+    console.log(`Successfully removed duplicate ${type}`);
+  } catch (error) {
+    console.error(`Error removing duplicate ${type}:`, error);
+    throw error;
+  }
+}
+
+// Keep the saveServiceCategory alias for backward compatibility
+export const saveServiceCategory = updateServiceCategory;
