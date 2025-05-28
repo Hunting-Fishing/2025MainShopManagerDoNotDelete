@@ -20,29 +20,62 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [recentActivity, setRecentActivity] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    activeWorkOrders: 0,
+    workOrderChange: "+12%",
+    teamMembers: 0,
+    teamChange: "No change",
+    inventoryItems: 0,
+    inventoryChange: "+5%",
+    avgCompletionTime: "2.4 hours",
+    completionTimeChange: "-10%",
+    customerSatisfaction: 4.8,
+    schedulingEfficiency: "89%"
+  });
 
   useEffect(() => {
-    const fetchRecentActivity = async () => {
+    const fetchDashboardData = async () => {
       try {
-        const { data, error } = await supabase
+        // Fetch work orders count
+        const { data: workOrders, error: workOrdersError } = await supabase
+          .from('work_orders')
+          .select('id')
+          .eq('status', 'active');
+
+        // Fetch team members count
+        const { data: teamMembers, error: teamError } = await supabase
+          .from('profiles')
+          .select('id');
+
+        // Fetch inventory items count
+        const { data: inventory, error: inventoryError } = await supabase
+          .from('parts_inventory')
+          .select('id');
+
+        // Fetch recent activity
+        const { data: activity, error: activityError } = await supabase
           .from('work_orders')
           .select('*')
           .order('created_at', { ascending: false })
           .limit(5);
 
-        if (error) {
-          console.error('Error fetching recent activity:', error);
-        } else {
-          setRecentActivity(data || []);
+        if (!workOrdersError && !teamError && !inventoryError && !activityError) {
+          setStats(prev => ({
+            ...prev,
+            activeWorkOrders: workOrders?.length || 0,
+            teamMembers: teamMembers?.length || 0,
+            inventoryItems: inventory?.length || 0
+          }));
+          setRecentActivity(activity || []);
         }
       } catch (error) {
-        console.error('Error fetching recent activity:', error);
+        console.error('Error fetching dashboard data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchRecentActivity();
+    fetchDashboardData();
   }, []);
 
   const handleCreateWorkOrder = () => {
@@ -67,7 +100,7 @@ const Dashboard: React.FC = () => {
       <div className="space-y-6">
         <DashboardHeader />
         
-        <StatsCards />
+        <StatsCards stats={stats} isLoading={loading} />
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <Card>
