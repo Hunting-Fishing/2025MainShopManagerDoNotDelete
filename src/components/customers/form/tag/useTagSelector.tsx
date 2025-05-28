@@ -1,6 +1,6 @@
 
 import { useState, useRef, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useTagSelector = (selectedTags: string[], onChange: (tags: string[]) => void) => {
   const [inputValue, setInputValue] = useState("");
@@ -28,29 +28,6 @@ export const useTagSelector = (selectedTags: string[], onChange: (tags: string[]
     };
   }, []);
 
-  // Fetch popular tags from the database
-  const fetchPopularTags = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('document_tags')
-        .select('name')
-        .order('usage_count', { ascending: false })
-        .limit(20);
-      
-      if (error) {
-        console.error("Error fetching tags:", error);
-      }
-      
-      return data?.map(tag => tag.name) || [];
-    } catch (error) {
-      console.error("Error in tag fetching:", error);
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
     setShowSuggestions(true);
@@ -63,15 +40,13 @@ export const useTagSelector = (selectedTags: string[], onChange: (tags: string[]
   const handleAddTag = async (tag: string) => {
     const trimmedTag = tag.trim();
     if (trimmedTag && !selectedTags.includes(trimmedTag)) {
-      const newTags = [...selectedTags, trimmedTag];
-      onChange(newTags);
+      onChange([...selectedTags, trimmedTag]);
       setInputValue("");
     }
   };
 
   const handleRemoveTag = (tagToRemove: string) => {
-    const newTags = selectedTags.filter((tag) => tag !== tagToRemove);
-    onChange(newTags);
+    onChange(selectedTags.filter((tag) => tag !== tagToRemove));
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -93,7 +68,6 @@ export const useTagSelector = (selectedTags: string[], onChange: (tags: string[]
     handleKeyDown,
     inputRef,
     suggestionsRef,
-    loading,
-    fetchPopularTags
+    loading
   };
 };

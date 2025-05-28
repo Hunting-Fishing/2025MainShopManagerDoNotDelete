@@ -1,10 +1,9 @@
+
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { Customer } from '@/types/customer';
 import { supabase } from '@/integrations/supabase/client';
 
-export const useTagSelector = (customer?: Customer) => {
-  const [tags, setTags] = useState<string[]>([]);
+export const useTagSelector = (selectedTags: string[], onChange: (tags: string[]) => void) => {
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -13,8 +12,10 @@ export const useTagSelector = (customer?: Customer) => {
     const fetchTags = async () => {
       setIsLoading(true);
       try {
+        // Since customer_tags table doesn't exist, use a fallback approach
+        // Try to get tags from customer_segments instead
         const { data, error } = await supabase
-          .from('customer_tags')
+          .from('customer_segments')
           .select('name')
           .order('name', { ascending: true });
         
@@ -26,13 +27,8 @@ export const useTagSelector = (customer?: Customer) => {
             variant: "destructive"
           });
         } else {
-          const tagNames = data.map(tag => tag.name);
+          const tagNames = data?.map(segment => segment.name) || [];
           setAvailableTags(tagNames);
-          
-          // If customer exists, initialize with their tags
-          if (customer && customer.tags) {
-            setTags(customer.tags);
-          }
         }
       } finally {
         setIsLoading(false);
@@ -40,20 +36,19 @@ export const useTagSelector = (customer?: Customer) => {
     };
     
     fetchTags();
-  }, [customer]);
+  }, [toast]);
   
   const addTag = (tag: string) => {
-    if (!tags.includes(tag)) {
-      setTags([...tags, tag]);
+    if (!selectedTags.includes(tag)) {
+      onChange([...selectedTags, tag]);
     }
   };
   
   const removeTag = (tag: string) => {
-    setTags(tags.filter(t => t !== tag));
+    onChange(selectedTags.filter(t => t !== tag));
   };
   
   return {
-    tags,
     availableTags,
     isLoading,
     addTag,

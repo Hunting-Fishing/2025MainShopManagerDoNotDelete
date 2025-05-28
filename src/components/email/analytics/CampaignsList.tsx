@@ -25,7 +25,6 @@ export function CampaignsList() {
     const fetchCampaigns = async () => {
       try {
         setLoading(true);
-        // Replace with your actual Supabase table name and query
         const { data, error } = await supabase
           .from('email_campaigns')
           .select('*')
@@ -34,7 +33,17 @@ export function CampaignsList() {
         if (error) {
           console.error('Error fetching campaigns:', error);
         } else {
-          setCampaigns(data || []);
+          // Transform data to match Campaign interface
+          const transformedCampaigns: Campaign[] = (data || []).map(campaign => ({
+            id: campaign.id,
+            name: campaign.name,
+            subject: campaign.subject || '',
+            sent_date: campaign.sent_date || campaign.created_at,
+            open_rate: Math.round((campaign.opened / Math.max(campaign.total_recipients, 1)) * 100),
+            click_rate: Math.round((campaign.clicked / Math.max(campaign.total_recipients, 1)) * 100),
+            total_emails: campaign.total_recipients || 0
+          }));
+          setCampaigns(transformedCampaigns);
         }
       } finally {
         setLoading(false);
