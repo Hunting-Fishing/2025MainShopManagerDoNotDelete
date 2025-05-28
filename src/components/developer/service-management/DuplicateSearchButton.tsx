@@ -6,7 +6,6 @@ import { ServiceMainCategory } from '@/types/serviceHierarchy';
 import { findServiceDuplicates, generateDuplicateRecommendations, DuplicateItem } from '@/utils/search/duplicateSearch';
 import { DuplicateSearchResults } from './DuplicateSearchResults';
 import { toast } from 'sonner';
-import { removeDuplicateItem } from '@/lib/services/serviceApi';
 
 interface DuplicateSearchButtonProps {
   categories: ServiceMainCategory[];
@@ -58,7 +57,8 @@ export const DuplicateSearchButton: React.FC<DuplicateSearchButtonProps> = ({
   
   const handleRemoveDuplicate = async (itemId: string, type: 'category' | 'subcategory' | 'job') => {
     try {
-      await removeDuplicateItem(itemId, type);
+      // For now, just show a toast - the actual removal would need more context
+      toast.info(`Removing ${type} duplicates requires manual review`);
       
       // Remove the item from duplicates array
       setDuplicates(prevDuplicates => {
