@@ -34,6 +34,15 @@ const defaultAnalyticsData: ShoppingAnalyticsData = {
   totalSubmissions: 0
 };
 
+// Explicit type for product with category data
+interface ProductWithCategory {
+  id: string;
+  category_id: string | null;
+  product_categories: {
+    name: string;
+  } | null;
+}
+
 async function fetchShoppingAnalytics(): Promise<ShoppingAnalyticsData> {
   try {
     // Get total products
@@ -57,8 +66,8 @@ async function fetchShoppingAnalytics(): Promise<ShoppingAnalyticsData> {
       .from('manufacturers')
       .select('*', { count: 'exact', head: true });
 
-    // Get products by category with category names
-    const { data: productsWithCategories } = await supabase
+    // Get products by category with explicit typing
+    const productsResponse = await supabase
       .from('products')
       .select(`
         id,
@@ -66,16 +75,16 @@ async function fetchShoppingAnalytics(): Promise<ShoppingAnalyticsData> {
         product_categories!inner(name)
       `);
 
+    const productsWithCategories = productsResponse.data as ProductWithCategory[] | null;
+
     // Process category data
     const categoryCount: Record<string, number> = {};
     
     if (productsWithCategories) {
       productsWithCategories.forEach(product => {
-        if (product.product_categories) {
-          const categoryName = (product.product_categories as any).name;
-          if (categoryName) {
-            categoryCount[categoryName] = (categoryCount[categoryName] || 0) + 1;
-          }
+        if (product.product_categories?.name) {
+          const categoryName = product.product_categories.name;
+          categoryCount[categoryName] = (categoryCount[categoryName] || 0) + 1;
         }
       });
     }
