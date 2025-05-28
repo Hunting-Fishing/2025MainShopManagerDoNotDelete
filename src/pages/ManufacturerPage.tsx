@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Badge } from "@/components/ui/badge";
@@ -10,37 +11,87 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { manufacturers } from '@/data/manufacturers';
-import { generateManufacturerProducts } from '@/data/manufacturers/productGenerator';
-import { AffiliateProduct, Manufacturer } from '@/types/affiliate';
-import { Car, Grid3X3, Home, List, ChevronRight, ArrowUpDown } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Car, Grid3X3, Home, List, ChevronRight } from 'lucide-react';
 
-// Fix the interface to use a string type for the manufacturerSlug
-interface ManufacturerParams {
-  manufacturerSlug: string;
+interface Manufacturer {
+  id: string;
+  name: string;
+  category: string;
+  slug: string;
+}
+
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  manufacturer: string;
+  image_url?: string;
+  featured: boolean;
 }
 
 const ManufacturerPage = () => {
   const [view, setView] = useState<"grid" | "list">("grid");
-  const [sortBy, setSortBy] = useState<"name" | "rating" | "price">("name");
-  const [manufacturer, setManufacturer] = useState<Manufacturer | undefined>(undefined);
-  const [products, setProducts] = useState<AffiliateProduct[]>([]);
+  const [sortBy, setSortBy] = useState<"name" | "price">("name");
+  const [manufacturer, setManufacturer] = useState<Manufacturer | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   
-  // Use the correct type with React Router's useParams
   const { manufacturerSlug } = useParams<Record<string, string>>();
 
   useEffect(() => {
-    if (manufacturerSlug) {
-      const foundManufacturer = manufacturers.find(m => m.slug === manufacturerSlug);
-      if (foundManufacturer) {
-        setManufacturer(foundManufacturer);
-        setProducts(generateManufacturerProducts(foundManufacturer.id, 12));
-      } else {
-        setManufacturer(undefined);
-        setProducts([]);
-      }
-    }
+    fetchManufacturerAndProducts();
   }, [manufacturerSlug]);
+
+  const fetchManufacturerAndProducts = async () => {
+    if (!manufacturerSlug) return;
+    
+    setLoading(true);
+    try {
+      // Fetch manufacturer by slug
+      const { data: manufacturerData, error: manufacturerError } = await supabase
+        .from('manufacturers')
+        .select('*')
+        .eq('slug', manufacturerSlug)
+        .single();
+
+      if (manufacturerError || !manufacturerData) {
+        setManufacturer(null);
+        setProducts([]);
+        return;
+      }
+
+      setManufacturer(manufacturerData);
+
+      // Fetch products for this manufacturer
+      const { data: productsData, error: productsError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('manufacturer_id', manufacturerData.id);
+
+      if (!productsError && productsData) {
+        setProducts(productsData);
+      }
+    } catch (error) {
+      console.error('Error fetching manufacturer data:', error);
+      setManufacturer(null);
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      </div>
+    );
+  }
 
   if (!manufacturer) {
     return (
@@ -59,10 +110,8 @@ const ManufacturerPage = () => {
   const sortedProducts = [...products].sort((a, b) => {
     if (sortBy === "name") {
       return a.name.localeCompare(b.name);
-    } else if (sortBy === "rating") {
-      return b.rating - a.rating;
     } else if (sortBy === "price") {
-      return a.retailPrice - b.retailPrice;
+      return a.price - b.price;
     }
     return 0;
   });
@@ -89,56 +138,61 @@ const ManufacturerPage = () => {
       </div>
 
       <div className="flex items-center space-x-4 mb-4">
-        <Select onValueChange={value => setSortBy(value as "name" | "rating" | "price")}>
+        <Select onValueChange={value => setSortBy(value as "name" | "price")}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Sort by..." />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="name">Name</SelectItem>
-            <SelectItem value="rating">Rating</SelectItem>
             <SelectItem value="price">Price</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {view === "grid" ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {sortedProducts.map(product => (
-            <Card key={product.id}>
-              <CardContent className="p-4">
-                <img src={product.imageUrl} alt={product.name} className="w-full h-32 object-cover mb-2" />
-                <h3 className="text-sm font-medium">{product.name}</h3>
-                <p className="text-gray-500 text-xs">{product.description.substring(0, 50)}...</p>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-blue-600 font-bold">${product.retailPrice}</span>
-                  <Badge variant="outline">{product.tier}</Badge>
-                </div>
-                <Link to={product.affiliateUrl} className="text-blue-600 hover:text-blue-800 text-xs">
-                  View Product <ChevronRight className="inline-block h-4 w-4" />
-                </Link>
-              </CardContent>
-            </Card>
-          ))}
+      {products.length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-gray-500">No products found for this manufacturer.</p>
         </div>
       ) : (
-        <div className="divide-y divide-gray-200">
-          {sortedProducts.map(product => (
-            <div key={product.id} className="py-4 flex items-center">
-              <img src={product.imageUrl} alt={product.name} className="w-24 h-24 object-cover mr-4" />
-              <div>
-                <h3 className="text-lg font-medium">{product.name}</h3>
-                <p className="text-gray-500">{product.description}</p>
-                <div className="flex items-center space-x-4 mt-2">
-                  <span className="text-blue-600 font-bold">${product.retailPrice}</span>
-                  <Badge variant="outline">{product.tier}</Badge>
-                  <Link to={product.affiliateUrl} className="text-blue-600 hover:text-blue-800">
-                    View Product <ChevronRight className="inline-block h-4 w-4" />
-                  </Link>
-                </div>
-              </div>
+        <>
+          {view === "grid" ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {sortedProducts.map(product => (
+                <Card key={product.id}>
+                  <CardContent className="p-4">
+                    {product.image_url && (
+                      <img src={product.image_url} alt={product.name} className="w-full h-32 object-cover mb-2" />
+                    )}
+                    <h3 className="text-sm font-medium">{product.name}</h3>
+                    <p className="text-gray-500 text-xs">{product.description?.substring(0, 50)}...</p>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-blue-600 font-bold">${product.price.toFixed(2)}</span>
+                      {product.featured && <Badge variant="outline">Featured</Badge>}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-          ))}
-        </div>
+          ) : (
+            <div className="divide-y divide-gray-200">
+              {sortedProducts.map(product => (
+                <div key={product.id} className="py-4 flex items-center">
+                  {product.image_url && (
+                    <img src={product.image_url} alt={product.name} className="w-24 h-24 object-cover mr-4" />
+                  )}
+                  <div>
+                    <h3 className="text-lg font-medium">{product.name}</h3>
+                    <p className="text-gray-500">{product.description}</p>
+                    <div className="flex items-center space-x-4 mt-2">
+                      <span className="text-blue-600 font-bold">${product.price.toFixed(2)}</span>
+                      {product.featured && <Badge variant="outline">Featured</Badge>}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -1,41 +1,37 @@
 
-import React from "react";
-import { CustomerForm } from "@/components/customers/form/CustomerForm";
-import { CustomerFormValues } from "@/components/customers/form/schemas/customerSchema";
-import { Skeleton } from "@/components/ui/skeleton";
+import React from 'react';
+import { CustomerForm } from '@/components/customers/form/CustomerForm';
+import { useCustomerCreate } from './hooks/useCustomerCreate';
 
-interface CustomerCreateFormProps {
-  defaultValues: CustomerFormValues;
-  onSubmit: (data: CustomerFormValues) => Promise<void>;
-  isSubmitting: boolean;
-  isLoading: boolean;
-  availableShops: Array<{id: string, name: string}>;
-}
+export function CustomerCreateForm() {
+  const {
+    isSubmitting,
+    isSuccess,
+    isLoading,
+    newCustomerId,
+    defaultValues,
+    availableShops,
+    onSubmit,
+    handleImportComplete,
+  } = useCustomerCreate();
 
-export const CustomerCreateForm: React.FC<CustomerCreateFormProps> = ({
-  defaultValues,
-  onSubmit,
-  isSubmitting,
-  isLoading,
-  availableShops
-}) => {
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-64 w-full" />
-        <Skeleton className="h-32 w-full" />
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   return (
-    <CustomerForm 
-      defaultValues={defaultValues}
+    <CustomerForm
+      initialValues={defaultValues}
       onSubmit={onSubmit}
       isSubmitting={isSubmitting}
+      isSuccess={isSuccess}
+      newCustomerId={newCustomerId}
       availableShops={availableShops}
-      singleShopMode={availableShops.length === 1}
+      onImportComplete={handleImportComplete}
     />
   );
-};
+}
