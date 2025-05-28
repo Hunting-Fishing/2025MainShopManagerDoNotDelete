@@ -31,7 +31,7 @@ export default function ServiceManagement() {
       
       if (serviceCategories.length === 0) {
         console.log('No categories found in database');
-        setError('No service categories found in database. Check your service_hierarchy table.');
+        // Don't set this as an error, just an empty state
       } else {
         toast.success(`Loaded ${serviceCategories.length} service categories from database`);
       }
