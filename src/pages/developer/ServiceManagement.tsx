@@ -31,15 +31,14 @@ export default function ServiceManagement() {
       
       if (serviceCategories.length === 0) {
         console.log('No categories found in database');
-        // Don't set this as an error, just an empty state
       } else {
-        toast.success(`Loaded ${serviceCategories.length} service categories from database`);
+        toast.success(`Loaded ${serviceCategories.length} service categories`);
       }
     } catch (error) {
       console.error('Failed to load service categories:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       setError(`Failed to load service categories: ${errorMessage}`);
-      toast.error('Failed to load service categories from database');
+      toast.error('Failed to load service categories');
       setCategories([]);
     } finally {
       setIsLoading(false);
