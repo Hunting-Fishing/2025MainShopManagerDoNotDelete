@@ -1,22 +1,16 @@
 
-import { WorkOrder, WorkOrderStatusType, WorkOrderTemplate } from "@/types/workOrder";
+import { WorkOrderTemplate } from "@/types/workOrder";
 
-// All work order templates should come from the database
+// All work order templates should come from the database - no mock data
 export const workOrderTemplates: WorkOrderTemplate[] = [];
 
 export const updateTemplateUsage = async (templateId: string) => {
-  console.warn('Using deprecated function. Please use useWorkOrderTemplates hook instead.');
-  // This is a no-op for compatibility
+  console.warn('Template usage tracking should be implemented with real database calls.');
+  // This is a no-op for compatibility - implement with real database calls
 };
 
-export const createTemplate = async () => {
-  console.warn('Using deprecated function. Please use useWorkOrderTemplates hook instead.');
-  // Return a valid WorkOrderTemplate object for backward compatibility
-  return { 
-    id: '', 
-    name: '',
-    status: 'pending' as WorkOrderStatusType,
-    created_at: '', 
-    usage_count: 0 
-  } as WorkOrderTemplate;
+export const createTemplate = async (): Promise<WorkOrderTemplate | null> => {
+  console.warn('Template creation should be implemented with real database calls.');
+  // Return null instead of mock data - implement with real database calls
+  return null;
 };

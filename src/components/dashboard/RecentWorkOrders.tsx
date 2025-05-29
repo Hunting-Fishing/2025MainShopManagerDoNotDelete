@@ -1,11 +1,12 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getRecentWorkOrders } from "@/services/dashboard"; // Updated import
+import { getRecentWorkOrders } from "@/services/dashboard/workOrderService";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Eye } from "lucide-react";
+import { Loader2, Eye, ClipboardList, Plus } from "lucide-react";
 import { RecentWorkOrder } from "@/types/dashboard";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 export function RecentWorkOrders() {
   const [workOrders, setWorkOrders] = useState<RecentWorkOrder[]>([]);
@@ -23,6 +24,7 @@ export function RecentWorkOrders() {
       } catch (err) {
         console.error("Error fetching recent work orders:", err);
         setError("Failed to load recent work orders");
+        setWorkOrders([]); // No fallback to mock data
       } finally {
         setLoading(false);
       }
@@ -92,8 +94,16 @@ export function RecentWorkOrders() {
       <CardContent>
         <div className="space-y-4">
           {workOrders.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No recent work orders
+            <div className="text-center py-12">
+              <ClipboardList className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium mb-2">No Work Orders Yet</h3>
+              <p className="text-muted-foreground mb-6">
+                Start by creating your first work order to track service jobs.
+              </p>
+              <Button onClick={() => navigate('/work-orders/create')}>
+                <Plus className="mr-2 h-4 w-4" />
+                Create Work Order
+              </Button>
             </div>
           ) : (
             workOrders.map((order) => (

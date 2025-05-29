@@ -4,18 +4,17 @@ import { PhaseProgressItem, RecentWorkOrder } from "@/types/dashboard";
 
 export const getPhaseProgress = async (): Promise<PhaseProgressItem[]> => {
   try {
-    // For now, return sample data since we don't have phase tracking implemented
-    // In a real implementation, this would query work orders with phase information
-    const { data: workOrders } = await supabase
+    // Only return real work orders with phase tracking - no mock data
+    const { data: workOrders, error } = await supabase
       .from('work_orders')
-      .select('id, description, status')
-      .in('status', ['in-progress', 'pending'])
-      .limit(5);
+      .select('id, description, status, created_at')
+      .in('status', ['in-progress', 'pending']);
 
-    if (!workOrders) return [];
+    if (error) throw error;
+    if (!workOrders || workOrders.length === 0) return [];
 
-    // Mock phase progress data based on work orders
-    return workOrders.map((order, index) => ({
+    // Convert real work orders to phase progress format
+    return workOrders.map((order) => ({
       id: order.id,
       name: order.description || `Work Order ${order.id.slice(0, 8)}`,
       totalPhases: 4,
@@ -47,8 +46,9 @@ export const getRecentWorkOrders = async (): Promise<RecentWorkOrder[]> => {
       .limit(10);
 
     if (error) throw error;
+    if (!workOrders || workOrders.length === 0) return [];
 
-    return workOrders?.map(order => ({
+    return workOrders.map(order => ({
       id: order.id,
       customer: order.customers 
         ? `${(order.customers as any).first_name} ${(order.customers as any).last_name}` 
@@ -57,7 +57,7 @@ export const getRecentWorkOrders = async (): Promise<RecentWorkOrder[]> => {
       status: order.status,
       date: new Date(order.created_at).toLocaleDateString(),
       priority: 'medium' // Default priority since we don't have this field yet
-    })) || [];
+    }));
   } catch (error) {
     console.error("Error fetching recent work orders:", error);
     return [];

@@ -1,8 +1,11 @@
 
-import { useInvoiceData } from "@/hooks/useInvoiceData";
+import { Invoice } from "@/types/invoice";
 
-// This file now re-exports the hook that fetches data from the database
-export { useInvoiceData };
+// All invoice data should come from the database - no mock data
+export const sampleInvoices: Invoice[] = [];
 
-// For backwards compatibility - but no mock data fallbacks
-export const invoices = [];
+// Export empty default for backward compatibility
+export const invoiceData: Invoice[] = [];
+
+// Remove all mock data exports
+export default [];

@@ -1,12 +1,11 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Wrench } from 'lucide-react';
+import { Plus, Wrench, ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { EmptyState } from '@/components/ui/empty-state';
 import { useWorkOrders } from '@/hooks/useWorkOrders';
 
 const statusColors = {
@@ -27,12 +26,44 @@ export default function WorkOrders() {
   const { workOrders, loading, error, updateWorkOrderStatus } = useWorkOrders();
 
   if (loading) {
-    return <LoadingSpinner size="lg" text="Loading work orders..." className="mt-8" />;
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Work Orders</h1>
+            <p className="text-muted-foreground">
+              Manage and track service work orders
+            </p>
+          </div>
+          <Button asChild>
+            <Link to="/work-orders/create">
+              <Plus className="mr-2 h-4 w-4" />
+              New Work Order
+            </Link>
+          </Button>
+        </div>
+        <LoadingSpinner size="lg" text="Loading work orders..." className="mt-8" />
+      </div>
+    );
   }
 
   if (error) {
     return (
-      <div className="p-6">
+      <div className="space-y-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Work Orders</h1>
+            <p className="text-muted-foreground">
+              Manage and track service work orders
+            </p>
+          </div>
+          <Button asChild>
+            <Link to="/work-orders/create">
+              <Plus className="mr-2 h-4 w-4" />
+              New Work Order
+            </Link>
+          </Button>
+        </div>
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-red-600">Error loading work orders: {error}</p>
         </div>
@@ -58,17 +89,21 @@ export default function WorkOrders() {
         </Button>
       </div>
 
-      {/* Work Orders List */}
+      {/* Work Orders List or Empty State */}
       {workOrders.length === 0 ? (
-        <EmptyState
-          icon={<Wrench className="h-8 w-8 text-gray-400" />}
-          title="No work orders found"
-          description="Create your first work order to start tracking service jobs."
-          action={{
-            label: "Create Work Order",
-            onClick: () => window.location.href = "/work-orders/create"
-          }}
-        />
+        <div className="flex flex-col items-center justify-center py-12">
+          <ClipboardList className="h-24 w-24 text-gray-300 mb-6" />
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">No Work Orders Yet</h3>
+          <p className="text-gray-600 mb-6 text-center max-w-md">
+            Get started by creating your first work order to track service jobs and manage customer requests.
+          </p>
+          <Button asChild size="lg">
+            <Link to="/work-orders/create">
+              <Plus className="mr-2 h-5 w-5" />
+              Create Your First Work Order
+            </Link>
+          </Button>
+        </div>
       ) : (
         <div className="space-y-4">
           {workOrders.map((workOrder) => (
@@ -83,9 +118,11 @@ export default function WorkOrders() {
                       <Badge className={statusColors[workOrder.status]}>
                         {workOrder.status.charAt(0).toUpperCase() + workOrder.status.slice(1)}
                       </Badge>
-                      <Badge variant="outline" className={priorityColors[workOrder.priority]}>
-                        {workOrder.priority.charAt(0).toUpperCase() + workOrder.priority.slice(1)} Priority
-                      </Badge>
+                      {workOrder.priority && (
+                        <Badge variant="outline" className={priorityColors[workOrder.priority]}>
+                          {workOrder.priority.charAt(0).toUpperCase() + workOrder.priority.slice(1)} Priority
+                        </Badge>
+                      )}
                     </div>
                     
                     <p className="text-gray-600">{workOrder.description}</p>

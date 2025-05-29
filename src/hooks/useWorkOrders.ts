@@ -18,8 +18,9 @@ export function useWorkOrders() {
       setLoading(true);
       setError(null);
       
+      // Only fetch from database - no mock data
       const data = await getAllWorkOrders();
-      setWorkOrders(data);
+      setWorkOrders(data || []);
     } catch (err: any) {
       setError(err.message);
       toast({
@@ -27,6 +28,8 @@ export function useWorkOrders() {
         description: "Failed to load work orders",
         variant: "destructive"
       });
+      // Set empty array on error, no fallback to mock data
+      setWorkOrders([]);
     } finally {
       setLoading(false);
     }
