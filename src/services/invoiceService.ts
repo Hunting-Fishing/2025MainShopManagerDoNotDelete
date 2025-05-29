@@ -2,6 +2,35 @@
 import { supabase } from '@/lib/supabase';
 import { Invoice } from '@/types/invoice';
 
+// Transform database invoice to our Invoice type
+const transformDatabaseInvoice = (dbInvoice: any): Invoice => ({
+  id: dbInvoice.id,
+  number: dbInvoice.id, // Use ID as number since number field doesn't exist
+  customer_id: dbInvoice.customer_id || '',
+  customer: dbInvoice.customer,
+  customer_email: dbInvoice.customer_email || '',
+  customer_address: dbInvoice.customer_address || '',
+  date: dbInvoice.date,
+  due_date: dbInvoice.due_date,
+  issue_date: dbInvoice.date, // Use date as issue_date since issue_date doesn't exist
+  status: dbInvoice.status as 'draft' | 'pending' | 'paid' | 'overdue' | 'cancelled',
+  subtotal: dbInvoice.subtotal || 0,
+  tax: dbInvoice.tax || 0,
+  tax_rate: 0.08, // Default tax rate since field doesn't exist
+  total: dbInvoice.total || 0,
+  created_at: dbInvoice.created_at,
+  updated_at: dbInvoice.updated_at,
+  items: [], // Will be populated separately
+  notes: dbInvoice.notes,
+  description: dbInvoice.description,
+  payment_method: dbInvoice.payment_method,
+  work_order_id: dbInvoice.work_order_id,
+  assignedStaff: [], // Default empty array since this doesn't exist in DB
+  created_by: dbInvoice.created_by || '',
+  last_updated_by: dbInvoice.created_by,
+  last_updated_at: dbInvoice.updated_at
+});
+
 export const invoiceService = {
   async getInvoices(): Promise<Invoice[]> {
     const { data, error } = await supabase
@@ -13,7 +42,7 @@ export const invoiceService = {
       throw new Error(`Failed to fetch invoices: ${error.message}`);
     }
 
-    return data || [];
+    return (data || []).map(transformDatabaseInvoice);
   },
 
   async getInvoice(id: string): Promise<Invoice | null> {
@@ -30,10 +59,10 @@ export const invoiceService = {
       throw new Error(`Failed to fetch invoice: ${error.message}`);
     }
 
-    return data;
+    return transformDatabaseInvoice(data);
   },
 
-  async createInvoice(invoice: Omit<Invoice, 'id' | 'created_at' | 'updated_at'>): Promise<Invoice> {
+  async createInvoice(invoice: Omit<Invoice, 'id' | 'created_at' | 'updated_at' | 'number' | 'issue_date' | 'tax_rate' | 'items' | 'assignedStaff' | 'last_updated_by' | 'last_updated_at'>): Promise<Invoice> {
     const { data, error } = await supabase
       .from('invoices')
       .insert({
@@ -50,7 +79,6 @@ export const invoiceService = {
         notes: invoice.notes,
         payment_method: invoice.payment_method,
         work_order_id: invoice.work_order_id,
-        template_id: invoice.template_id,
         description: invoice.description,
         created_by: invoice.created_by
       })
@@ -61,7 +89,7 @@ export const invoiceService = {
       throw new Error(`Failed to create invoice: ${error.message}`);
     }
 
-    return data;
+    return transformDatabaseInvoice(data);
   },
 
   async updateInvoice(id: string, updates: Partial<Invoice>): Promise<Invoice> {
@@ -81,7 +109,6 @@ export const invoiceService = {
     if (updates.notes !== undefined) validUpdates.notes = updates.notes;
     if (updates.payment_method !== undefined) validUpdates.payment_method = updates.payment_method;
     if (updates.work_order_id !== undefined) validUpdates.work_order_id = updates.work_order_id;
-    if (updates.template_id !== undefined) validUpdates.template_id = updates.template_id;
     if (updates.description !== undefined) validUpdates.description = updates.description;
 
     const { data, error } = await supabase
@@ -95,7 +122,7 @@ export const invoiceService = {
       throw new Error(`Failed to update invoice: ${error.message}`);
     }
 
-    return data;
+    return transformDatabaseInvoice(data);
   },
 
   async deleteInvoice(id: string): Promise<void> {
@@ -109,3 +136,11 @@ export const invoiceService = {
     }
   }
 };
+
+// Export individual functions for backwards compatibility
+export const getInvoices = invoiceService.getInvoices;
+export const getInvoice = invoiceService.getInvoice;
+export const getInvoiceById = invoiceService.getInvoice; // Alias for backwards compatibility
+export const createInvoice = invoiceService.createInvoice;
+export const updateInvoice = invoiceService.updateInvoice;
+export const deleteInvoice = invoiceService.deleteInvoice;

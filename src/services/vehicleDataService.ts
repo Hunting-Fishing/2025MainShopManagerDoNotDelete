@@ -44,7 +44,16 @@ export const fetchModels = async (makeId: string): Promise<CarModel[]> => {
       return [];
     }
 
-    return data || [];
+    // Transform database fields to match CarModel interface
+    return (data || []).map(model => ({
+      id: model.id,
+      make_id: model.make_id,
+      model_id: model.model_id,
+      model_name: model.model_display, // Use model_display as model_name
+      model_display: model.model_display,
+      created_at: model.created_at,
+      updated_at: model.updated_at
+    }));
   } catch (error) {
     console.error('Error fetching models:', error);
     return [];

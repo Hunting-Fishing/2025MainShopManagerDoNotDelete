@@ -23,7 +23,8 @@ export const integrationService = {
 
       return (data || []).map(item => ({
         ...item,
-        integration_type: item.integration_type as 'sms' | 'payment' | 'calendar' | 'analytics' | 'crm' | 'other'
+        integration_type: item.integration_type as 'sms' | 'payment' | 'calendar' | 'analytics' | 'crm' | 'other',
+        config: (typeof item.config === 'string' ? JSON.parse(item.config) : item.config) as Record<string, any> || {}
       }));
     } catch (error) {
       console.error("Failed to fetch integration settings:", error);
@@ -54,7 +55,8 @@ export const integrationService = {
 
       return {
         ...data,
-        integration_type: data.integration_type as 'sms' | 'payment' | 'calendar' | 'analytics' | 'crm' | 'other'
+        integration_type: data.integration_type as 'sms' | 'payment' | 'calendar' | 'analytics' | 'crm' | 'other',
+        config: (typeof data.config === 'string' ? JSON.parse(data.config) : data.config) as Record<string, any> || {}
       };
     } catch (error) {
       console.error("Failed to create integration setting:", error);
@@ -78,7 +80,8 @@ export const integrationService = {
 
       return {
         ...data,
-        integration_type: data.integration_type as 'sms' | 'payment' | 'calendar' | 'analytics' | 'crm' | 'other'
+        integration_type: data.integration_type as 'sms' | 'payment' | 'calendar' | 'analytics' | 'crm' | 'other',
+        config: (typeof data.config === 'string' ? JSON.parse(data.config) : data.config) as Record<string, any> || {}
       };
     } catch (error) {
       console.error("Failed to update integration setting:", error);

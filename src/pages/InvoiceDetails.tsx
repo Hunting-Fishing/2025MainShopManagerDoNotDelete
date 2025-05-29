@@ -3,14 +3,13 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getInvoiceById } from "@/services/invoiceService";
+import { getInvoice } from "@/services/invoiceService";
 import { Loader2, Mail, Download, Printer, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/utils/formatters";
 import InvoiceView from "@/components/invoices/InvoiceView";
 import InvoicePDF from "@/components/invoices/InvoicePDF";
 import { Invoice } from "@/types/invoice";
-import { formatApiInvoice } from "@/utils/invoiceUtils";
 
 export default function InvoiceDetails() {
   const { id } = useParams<{ id: string }>();
@@ -20,13 +19,12 @@ export default function InvoiceDetails() {
   const [loading, setLoading] = useState<boolean>(true);
   
   useEffect(() => {
-    const getInvoice = async () => {
+    const fetchInvoice = async () => {
       try {
         if (id) {
-          const data = await getInvoiceById(id);
+          const data = await getInvoice(id);
           if (data) {
-            // Convert API response to our Invoice type
-            setInvoice(formatApiInvoice(data));
+            setInvoice(data);
           } else {
             toast({
               title: "Error",
@@ -48,7 +46,7 @@ export default function InvoiceDetails() {
       }
     };
 
-    getInvoice();
+    fetchInvoice();
   }, [id, toast, navigate]);
 
   const handlePrint = () => {

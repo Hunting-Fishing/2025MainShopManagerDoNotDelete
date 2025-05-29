@@ -16,7 +16,12 @@ export const securityService = {
         return null;
       }
 
-      return data;
+      return {
+        ...data,
+        password_policy: (typeof data.password_policy === 'string' 
+          ? JSON.parse(data.password_policy) 
+          : data.password_policy) as { min_length: number; require_numbers: boolean; require_special: boolean; }
+      };
     } catch (error) {
       console.error("Failed to fetch security settings:", error);
       return null;
@@ -36,7 +41,12 @@ export const securityService = {
         return null;
       }
 
-      return data;
+      return {
+        ...data,
+        password_policy: (typeof data.password_policy === 'string' 
+          ? JSON.parse(data.password_policy) 
+          : data.password_policy) as { min_length: number; require_numbers: boolean; require_special: boolean; }
+      };
     } catch (error) {
       console.error("Failed to create security settings:", error);
       return null;
@@ -57,7 +67,12 @@ export const securityService = {
         return null;
       }
 
-      return data;
+      return {
+        ...data,
+        password_policy: (typeof data.password_policy === 'string' 
+          ? JSON.parse(data.password_policy) 
+          : data.password_policy) as { min_length: number; require_numbers: boolean; require_special: boolean; }
+      };
     } catch (error) {
       console.error("Failed to update security settings:", error);
       return null;
