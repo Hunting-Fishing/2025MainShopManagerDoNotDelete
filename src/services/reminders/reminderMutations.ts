@@ -31,7 +31,10 @@ export const createReminder = async (reminderData: CreateReminderData): Promise<
         description: reminderData.description || reminderData.title,
         created_by: (await supabase.auth.getUser()).data.user?.id || '',
         status: reminderData.status || 'pending',
-        priority: reminderData.priority || 'medium'
+        priority: reminderData.priority || 'medium',
+        notification_sent: false,
+        is_recurring: false,
+        updated_at: new Date().toISOString()
       }])
       .select(`
         *,
@@ -48,7 +51,7 @@ export const createReminder = async (reminderData: CreateReminderData): Promise<
       .single();
 
     if (error) throw error;
-    return data;
+    return { ...data, updated_at: data.updated_at || new Date().toISOString() };
   } catch (error) {
     console.error("Error creating reminder:", error);
     throw error;
@@ -114,11 +117,11 @@ export const completeReminder = async (id: string): Promise<ServiceReminder> => 
     if (error) throw error;
 
     // If this is a recurring reminder, generate the next occurrence
-    if (data.recurrence_pattern) {
+    if (data.is_recurring && data.recurrence_pattern) {
       await generateNextRecurringReminder(data);
     }
 
-    return data;
+    return { ...data, updated_at: data.updated_at || new Date().toISOString() };
   } catch (error) {
     console.error("Error completing reminder:", error);
     throw error;
@@ -163,7 +166,7 @@ export const bulkUpdateReminders = async (ids: string[], updates: Partial<Create
       `);
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(item => ({ ...item, updated_at: item.updated_at || new Date().toISOString() }));
   } catch (error) {
     console.error("Error bulk updating reminders:", error);
     throw error;
@@ -176,7 +179,7 @@ const generateNextRecurringReminder = async (completedReminder: ServiceReminder)
 
     // Call the database function to generate the next recurring reminder
     const { error } = await supabase.rpc('generate_recurring_reminder', {
-      reminder_id: completedReminder.id
+      parent_id: completedReminder.id
     });
 
     if (error) {
@@ -211,9 +214,28 @@ export const snoozeReminder = async (id: string, snoozeUntil: string): Promise<S
       .single();
 
     if (error) throw error;
-    return data;
+    return { ...data, updated_at: data.updated_at || new Date().toISOString() };
   } catch (error) {
     console.error("Error snoozing reminder:", error);
+    throw error;
+  }
+};
+
+export const createReminderTag = async (name: string): Promise<{ id: string; name: string; color?: string }> => {
+  try {
+    const { data, error } = await supabase
+      .from('reminder_tags')
+      .insert([{
+        name: name.trim(),
+        color: '#9CA3AF' // Default gray color
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error("Error creating reminder tag:", error);
     throw error;
   }
 };

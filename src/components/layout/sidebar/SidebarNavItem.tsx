@@ -1,158 +1,38 @@
 
-import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { cn } from "@/lib/utils";
-import { ChevronDown, ChevronRight } from "lucide-react";
-import { useSidebarContext } from "@/hooks/use-sidebar";
+import { NavLink } from "react-router-dom";
+import { LucideIcon } from "lucide-react";
 
 export interface NavItem {
-  title: string;
+  name: string;
   href: string;
-  icon: React.ReactNode;
-  disabled?: boolean;
-  submenu?: NavItem[];
+  icon: LucideIcon;
+  title: string;
 }
 
 interface SidebarNavItemProps {
   item: NavItem;
-  to?: never;
-  icon?: never;
-  label?: never;
-  disabled?: never;
-  submenu?: never;
 }
 
-// Additional interface for direct prop passing
-interface DirectNavItemProps {
-  item?: never;
-  to: string;
-  icon: React.ReactNode;
-  label: string;
-  disabled?: boolean;
-  submenu?: NavItem[];
-}
-
-// Component accepts either item object or direct props
-export function SidebarNavItem(props: SidebarNavItemProps | DirectNavItemProps) {
-  const location = useLocation();
-  const [isSubmenuOpen, setIsSubmenuOpen] = useState(false);
-  const { collapsed } = useSidebarContext();
+export function SidebarNavItem({ item }: SidebarNavItemProps) {
+  const IconComponent = item.icon;
   
-  // Handle both formats (backward compatibility)
-  const navItem: NavItem = props.item || {
-    title: props.label || "",
-    href: props.to || "",
-    icon: props.icon,
-    disabled: props.disabled,
-    submenu: props.submenu
-  };
-  
-  const isActive = location.pathname === navItem.href || 
-                  (navItem.href !== '/' && location.pathname.startsWith(navItem.href));
-  
-  const hasSubmenu = navItem.submenu && navItem.submenu.length > 0;
-  const hasActiveSubmenu = hasSubmenu && navItem.submenu.some(subItem => 
-    location.pathname === subItem.href || location.pathname.startsWith(subItem.href)
-  );
-  
-  // Auto-open submenu when it contains the active page
-  useEffect(() => {
-    if (hasActiveSubmenu && !isSubmenuOpen) {
-      setIsSubmenuOpen(true);
-    }
-  }, [location.pathname, hasActiveSubmenu]);
-  
-  // Determine whether to show submenu - either explicitly opened OR if it contains the active page
-  const showSubmenu = hasSubmenu && !collapsed && (isSubmenuOpen || hasActiveSubmenu);
-
-  // Handle click on parent item with submenu
-  const handleParentClick = (e: React.MouseEvent) => {
-    if (hasSubmenu && !collapsed) {
-      setIsSubmenuOpen(!isSubmenuOpen);
-      
-      // If the item is disabled, prevent navigation
-      if (navItem.disabled) {
-        e.preventDefault();
-        return;
-      }
-    }
-  };
-
   return (
-    <div key={navItem.title} className="mb-1">
-      <div
-        className={cn(
-          "relative flex cursor-pointer items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-          isActive || hasActiveSubmenu
-            ? "bg-white/15 text-white font-semibold shadow-sm"
-            : "text-white/80 hover:bg-white/10",
-          navItem.disabled && "cursor-not-allowed opacity-60"
-        )}
-      >
-        {hasSubmenu ? (
-          <div className="flex w-full items-center justify-between">
-            {/* Link wrapper for parent items with submenu */}
-            <Link 
-              to={navItem.href} 
-              className="flex items-center gap-2.5 flex-1" 
-              onClick={(e) => {
-                if (navItem.disabled) {
-                  e.preventDefault();
-                }
-              }}
-            >
-              <span className="text-xl">{navItem.icon}</span>
-              {!collapsed && <span className="text-white">{navItem.title}</span>}
-            </Link>
-            
-            {/* Chevron icon that toggles submenu */}
-            {!collapsed && (
-              <div onClick={handleParentClick} className="cursor-pointer p-1">
-                {showSubmenu ? (
-                  <ChevronDown className="h-4 w-4" />
-                ) : (
-                  <ChevronRight className="h-4 w-4" />
-                )}
-              </div>
-            )}
-          </div>
-        ) : (
-          <Link 
-            to={navItem.href} 
-            className="flex items-center gap-2.5 w-full" 
-            onClick={(e) => {
-              if (navItem.disabled) {
-                e.preventDefault();
-              }
-            }}
-          >
-            <span className="text-xl">{navItem.icon}</span>
-            {!collapsed && <span className="text-white">{navItem.title}</span>}
-          </Link>
-        )}
-      </div>
-
-      {hasSubmenu && showSubmenu && (
-        <div className="mt-1 ml-3 pl-3 border-l border-white/20">
-          {navItem.submenu.map((subItem) => (
-            <Link
-              key={subItem.title}
-              to={subItem.href}
-              className={cn(
-                "flex items-center gap-2 py-2 px-3 my-1 text-sm rounded-md transition-colors",
-                location.pathname === subItem.href || location.pathname.startsWith(subItem.href)
-                  ? "bg-white/15 text-white font-medium"
-                  : "text-white/70 hover:bg-white/10 hover:text-white"
-              )}
-            >
-              {subItem.icon && (
-                <span className="text-sm">{subItem.icon}</span>
-              )}
-              <span className="text-white">{subItem.title}</span>
-            </Link>
-          ))}
-        </div>
-      )}
-    </div>
+    <NavLink
+      to={item.href}
+      className={({ isActive }) =>
+        `group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
+          isActive
+            ? "bg-blue-100 text-blue-900"
+            : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+        }`
+      }
+      title={item.title}
+    >
+      <IconComponent
+        className="mr-3 h-5 w-5 flex-shrink-0 transition-colors"
+        aria-hidden="true"
+      />
+      {item.name}
+    </NavLink>
   );
 }
