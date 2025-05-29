@@ -9,6 +9,7 @@ import ServiceAnalytics from '@/components/developer/service-management/ServiceA
 import ServiceBulkImport from '@/components/developer/service-management/ServiceBulkImport';
 import ServicesPriceReport from '@/components/developer/service-management/ServicesPriceReport';
 import ServiceHierarchyBrowser from '@/components/developer/service-management/ServiceHierarchyBrowser';
+import ServiceDebugInfo from '@/components/developer/service-management/ServiceDebugInfo';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
 import { fetchServiceCategories } from '@/lib/services/serviceApi';
 import { toast } from 'sonner';
@@ -93,6 +94,11 @@ export default function ServiceManagement() {
           </AlertDescription>
         </Alert>
       )}
+
+      {/* Debug Information */}
+      <div className="mb-6">
+        <ServiceDebugInfo />
+      </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="bg-white dark:bg-slate-800 rounded-full p-1 border shadow-sm">
