@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, Star, Users, TrendingUp } from "lucide-react";
@@ -35,25 +34,13 @@ const StatsCards: React.FC = () => {
         console.error('Error fetching products count:', productError);
       }
 
-      // Count unique manufacturers
-      const { data: manufacturerData, error: manufacturerError } = await supabase
-        .from('products')
-        .select('manufacturer')
-        .not('manufacturer', 'is', null);
-
-      const uniqueManufacturers = manufacturerData 
-        ? new Set(manufacturerData.map(item => item.manufacturer)).size 
-        : 0;
-
-      if (manufacturerError) {
-        console.error('Error fetching manufacturers:', manufacturerError);
-      }
-
+      // Since manufacturer column doesn't exist, we'll use placeholder values
+      // In a real implementation, you would need to add the manufacturer column to the database
       setStats({
         totalProducts: totalProducts || 0,
         featuredProducts: 0, // No featured column in current schema
         totalCategories: 5, // Placeholder
-        totalManufacturers: uniqueManufacturers
+        totalManufacturers: 0 // Can't count without manufacturer column
       });
     } catch (error) {
       console.error('Error fetching stats:', error);

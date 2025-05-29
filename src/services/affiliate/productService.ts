@@ -1,10 +1,9 @@
 
 import { supabase } from '@/lib/supabase';
 
-// Define a simple interface that matches the actual database schema
+// Define interfaces that match the actual database schema
 interface DatabaseProduct {
   id: string;
-  name: string;
   description: string;
   price: number;
   image_url: string;
@@ -19,7 +18,6 @@ interface DatabaseProduct {
   dimensions?: any;
   weight?: number;
   tags?: string[];
-  manufacturer?: string;
   product_type?: string;
 }
 
@@ -44,9 +42,9 @@ export interface ProductData {
 }
 
 // Transform database product to our ProductData interface
-const transformDatabaseProduct = (dbProduct: any): ProductData => ({
+const transformDatabaseProduct = (dbProduct: DatabaseProduct): ProductData => ({
   id: dbProduct.id,
-  name: dbProduct.name || 'Unnamed Product',
+  name: 'Product', // Default since name column doesn't exist
   slug: dbProduct.id, // Use ID as slug since slug column doesn't exist
   description: dbProduct.description || '',
   price: dbProduct.price || 0,
@@ -55,7 +53,7 @@ const transformDatabaseProduct = (dbProduct: any): ProductData => ({
   average_rating: dbProduct.average_rating || 0,
   review_count: dbProduct.review_count || 0,
   category: 'General', // Default category since we're using category_id
-  manufacturer: dbProduct.manufacturer || 'Unknown',
+  manufacturer: 'Unknown', // Default since manufacturer column doesn't exist
   featured: false, // Default since featured column doesn't exist
   subcategory: undefined,
   seller: 'Unknown',
@@ -90,12 +88,13 @@ export async function getProductsByCategory(category: string): Promise<ProductDa
 }
 
 export async function getProductsByManufacturer(manufacturer: string): Promise<ProductData[]> {
+  // Since manufacturer column doesn't exist, search in description
   const { data, error } = await supabase
     .from('products')
     .select('*')
     .eq('is_approved', true)
     .eq('is_available', true)
-    .ilike('manufacturer', `%${manufacturer}%`);
+    .ilike('description', `%${manufacturer}%`);
 
   if (error) throw error;
   
@@ -111,12 +110,10 @@ export async function createProduct(productData: Partial<ProductData>): Promise<
   const { data, error } = await supabase
     .from('products')
     .insert({
-      name: productData.name || '',
       description: productData.description || '',
       price: productData.price || 0,
       image_url: productData.image_url || '',
       affiliate_link: productData.affiliate_link || '',
-      manufacturer: productData.manufacturer || '',
       is_approved: true,
       is_available: true
     })
@@ -132,12 +129,10 @@ export async function updateProduct(id: string, productData: Partial<ProductData
   const { data, error } = await supabase
     .from('products')
     .update({
-      name: productData.name,
       description: productData.description,
       price: productData.price,
       image_url: productData.image_url,
       affiliate_link: productData.affiliate_link,
-      manufacturer: productData.manufacturer,
       updated_at: new Date().toISOString()
     })
     .eq('id', id)

@@ -4,27 +4,29 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import ProductCard from '@/components/affiliate/ProductCard';
 
-interface Product {
+// Define interface that matches the actual database schema
+interface DatabaseProduct {
   id: string;
-  name: string;
   description: string;
   price: number;
   image_url: string;
   affiliate_link: string;
   average_rating: number;
   review_count: number;
-  manufacturer?: string;
   category_id: string;
   created_at: string;
   updated_at: string;
   is_approved: boolean;
   is_available: boolean;
   product_type?: string;
+  dimensions?: any;
+  weight?: number;
+  tags?: string[];
 }
 
 export default function ManufacturerPage() {
   const { manufacturer } = useParams<{ manufacturer: string }>();
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<DatabaseProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,12 +41,13 @@ export default function ManufacturerPage() {
       setLoading(true);
       setError(null);
 
+      // Since manufacturer column doesn't exist, we'll search in description for now
       const { data, error } = await supabase
         .from('products')
         .select('*')
         .eq('is_approved', true)
         .eq('is_available', true)
-        .or(`name.ilike.%${manufacturer}%,manufacturer.ilike.%${manufacturer}%`);
+        .ilike('description', `%${manufacturer}%`);
 
       if (error) throw error;
 
@@ -87,7 +90,7 @@ export default function ManufacturerPage() {
             // Transform to AffiliateProduct for ProductCard
             const affiliateProduct = {
               id: product.id,
-              name: product.name || 'Unnamed Product',
+              name: 'Product', // Default since name column doesn't exist
               description: product.description || '',
               imageUrl: product.image_url || '',
               retailPrice: product.price || 0,
@@ -96,7 +99,7 @@ export default function ManufacturerPage() {
               tier: (product.product_type as any) || 'economy',
               rating: product.average_rating || 0,
               reviewCount: product.review_count || 0,
-              manufacturer: product.manufacturer || manufacturer || 'Unknown',
+              manufacturer: manufacturer || 'Unknown',
               isFeatured: false
             };
             
@@ -108,4 +111,4 @@ export default function ManufacturerPage() {
       )}
     </div>
   );
-}
+};
