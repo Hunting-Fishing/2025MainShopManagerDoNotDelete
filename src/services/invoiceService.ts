@@ -97,7 +97,7 @@ export const invoiceService = {
 
   async updateInvoice(id: string, updates: Partial<Invoice>): Promise<Invoice> {
     // Only include valid database fields in the update
-    const validUpdates: any = {};
+    const validUpdates: Record<string, any> = {};
     
     if (updates.customer !== undefined) validUpdates.customer = updates.customer;
     if (updates.date !== undefined) validUpdates.date = updates.date;
