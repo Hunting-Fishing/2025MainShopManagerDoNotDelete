@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Building2, MapPin, Phone, Mail, FileText, Briefcase, Globe } from 'lucide-react';
-import { companyService, type CompanyInfo } from '@/services/settings/companyService';
+import { useShopData } from '@/hooks/useShopData';
 
 interface StepProps {
   onNext: () => void;
@@ -13,27 +13,9 @@ interface StepProps {
 }
 
 export function CompletionStep({ onNext, onPrevious, data, updateData }: StepProps) {
-  const [shopData, setShopData] = useState<{ shopId: string; companyInfo: CompanyInfo } | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchShopData = async () => {
-      try {
-        setIsLoading(true);
-        const result = await companyService.getShopInfo();
-        console.log('Fetched shop data:', result);
-        setShopData(result);
-      } catch (error) {
-        console.error('Error fetching shop info:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchShopData();
-  }, []);
-
-  if (isLoading) {
+  const { shopData, companyInfo, loading } = useShopData();
+  
+  if (loading) {
     return (
       <div className="space-y-6">
         <div className="text-center">
@@ -44,22 +26,25 @@ export function CompletionStep({ onNext, onPrevious, data, updateData }: StepPro
     );
   }
 
-  // Combine form data with fetched data, prioritizing form data
+  // Combine onboarding form data with existing shop data, prioritizing form data
   const displayData = {
-    name: data?.name || shopData?.companyInfo?.name || 'Not provided',
-    address: data?.address || shopData?.companyInfo?.address || 'Not provided',
-    city: data?.city || shopData?.companyInfo?.city || 'Not provided',
-    state: data?.state || shopData?.companyInfo?.state || 'Not provided',
-    zip: data?.zip || shopData?.companyInfo?.zip || 'Not provided',
-    phone: data?.phone || shopData?.companyInfo?.phone || 'Not provided',
-    email: data?.email || shopData?.companyInfo?.email || 'Not provided',
-    taxId: data?.taxId || shopData?.companyInfo?.taxId || 'Not provided',
-    businessType: data?.businessType || shopData?.companyInfo?.businessType || 'Not provided',
-    industry: data?.industry || shopData?.companyInfo?.industry || 'Not provided',
-    logoUrl: data?.logoUrl || shopData?.companyInfo?.logoUrl || ''
+    name: data?.name || companyInfo?.name || shopData?.name || 'Not provided',
+    address: data?.address || companyInfo?.address || shopData?.address || 'Not provided',
+    city: data?.city || companyInfo?.city || shopData?.city || 'Not provided',
+    state: data?.state || companyInfo?.state || shopData?.state || 'Not provided',
+    zip: data?.zip || companyInfo?.zip || shopData?.zip || 'Not provided',
+    phone: data?.phone || companyInfo?.phone || shopData?.phone || 'Not provided',
+    email: data?.email || companyInfo?.email || shopData?.email || 'Not provided',
+    taxId: data?.taxId || companyInfo?.taxId || shopData?.taxId || 'Not provided',
+    businessType: data?.businessType || companyInfo?.businessType || shopData?.businessType || 'Not provided',
+    industry: data?.industry || companyInfo?.industry || shopData?.industry || 'Not provided',
+    logoUrl: data?.logoUrl || companyInfo?.logoUrl || shopData?.logoUrl || ''
   };
 
-  console.log('Display data:', displayData);
+  console.log('CompletionStep - Form data:', data);
+  console.log('CompletionStep - Company info:', companyInfo);
+  console.log('CompletionStep - Shop data:', shopData);
+  console.log('CompletionStep - Display data:', displayData);
 
   return (
     <div className="space-y-6">
