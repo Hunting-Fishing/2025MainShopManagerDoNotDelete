@@ -1,140 +1,137 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { ServiceReminder, CreateReminderParams, ReminderStatus, ReminderTag } from "@/types/reminder";
-import { mapReminderToDb, mapReminderFromDb } from "./reminderMapper";
+import { supabase } from "@/lib/supabase";
+import { ServiceReminder } from "./reminderQueries";
 
-/**
- * Create a new reminder
- * @param reminderData The reminder data to create
- */
-export const createReminder = async (reminderData: CreateReminderParams): Promise<ServiceReminder> => {
+export interface CreateReminderData {
+  customer_id: string;
+  vehicle_id?: string;
+  type: string;
+  title: string;
+  description?: string;
+  due_date: string;
+  status?: 'pending' | 'completed' | 'overdue' | 'cancelled';
+  priority?: 'low' | 'medium' | 'high';
+  assigned_to?: string;
+  category_id?: string;
+  recurrence_pattern?: string;
+  notes?: string;
+  work_order_id?: string;
+}
+
+export interface UpdateReminderData extends Partial<CreateReminderData> {
+  id: string;
+}
+
+export const createReminder = async (reminderData: CreateReminderData): Promise<ServiceReminder> => {
   try {
-    const dbData = mapReminderToDb(reminderData);
-    
-    // Add created_by field if user info is available
-    const { data: userData } = await supabase.auth.getUser();
-    if (userData?.user) {
-      dbData.created_by = userData.user.id || 'unknown';
-    } else {
-      dbData.created_by = 'unknown'; // Ensure required field has a value
-    }
-    
-    // Ensure all required fields are present
-    if (!dbData.customer_id) {
-      throw new Error("Customer ID is required");
-    }
-    if (!dbData.title) {
-      throw new Error("Title is required");
-    }
-    if (!dbData.due_date) {
-      throw new Error("Due date is required");
-    }
-    if (!dbData.type) {
-      throw new Error("Type is required");
-    }
-    
-    // Insert the reminder - explicitly cast the object to any to satisfy TypeScript
-    const { data: newReminder, error } = await supabase
+    const { data, error } = await supabase
       .from('service_reminders')
-      .insert(dbData as any)
+      .insert([{
+        ...reminderData,
+        created_by: (await supabase.auth.getUser()).data.user?.id || '',
+        status: reminderData.status || 'pending',
+        priority: reminderData.priority || 'medium'
+      }])
       .select(`
         *,
-        categories:category_id(*),
-        tags:service_reminder_tags(tag_id(*))
+        customers (
+          first_name,
+          last_name
+        ),
+        vehicles (
+          year,
+          make,
+          model
+        )
       `)
       .single();
-    
+
     if (error) throw error;
-    
-    // If tags were specified, create the tag relationships
-    if (reminderData.tagIds && reminderData.tagIds.length > 0) {
-      const tagRelations = reminderData.tagIds.map(tagId => ({
-        reminder_id: newReminder.id,
-        tag_id: tagId
-      }));
-      
-      const { error: tagError } = await supabase
-        .from('service_reminder_tags')
-        .insert(tagRelations);
-      
-      if (tagError) {
-        console.error("Failed to add tags to reminder:", tagError);
-        // Continue anyway, the reminder is created
-      }
-    }
-    
-    return mapReminderFromDb(newReminder);
+    return data;
   } catch (error) {
     console.error("Error creating reminder:", error);
     throw error;
   }
 };
 
-/**
- * Update a reminder's status
- * @param reminderId The ID of the reminder to update
- * @param status The new status
- * @param notes Optional notes to add
- */
-export const updateReminderStatus = async (
-  reminderId: string, 
-  status: ReminderStatus,
-  notes?: string
-): Promise<ServiceReminder> => {
+export const updateReminder = async (updateData: UpdateReminderData): Promise<ServiceReminder> => {
   try {
-    const updateData: any = { status };
-    
-    // Add completed information if the status is completed
-    if (status === 'completed') {
-      updateData.completed_at = new Date().toISOString();
-      
-      // Add completed_by if user info is available
-      const { data: userData } = await supabase.auth.getUser();
-      if (userData?.user) {
-        updateData.completed_by = userData.user.id || 'unknown';
-      }
-    }
-    
-    // Add notes if provided
-    if (notes !== undefined) {
-      updateData.notes = notes;
-    }
-    
-    // Update the reminder
+    const { id, ...updates } = updateData;
     const { data, error } = await supabase
       .from('service_reminders')
-      .update(updateData)
-      .eq('id', reminderId)
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
       .select(`
         *,
-        categories:category_id(*),
-        tags:service_reminder_tags(tag_id(*))
+        customers (
+          first_name,
+          last_name
+        ),
+        vehicles (
+          year,
+          make,
+          model
+        )
       `)
       .single();
-    
+
     if (error) throw error;
-    
-    return mapReminderFromDb(data);
+    return data;
   } catch (error) {
-    console.error("Error updating reminder status:", error);
+    console.error("Error updating reminder:", error);
     throw error;
   }
 };
 
-/**
- * Delete a reminder
- * @param reminderId The ID of the reminder to delete
- */
-export const deleteReminder = async (reminderId: string): Promise<boolean> => {
+export const completeReminder = async (id: string): Promise<ServiceReminder> => {
   try {
-    // Delete the reminder
+    const { data, error } = await supabase
+      .from('service_reminders')
+      .update({
+        status: 'completed',
+        last_completed_date: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select(`
+        *,
+        customers (
+          first_name,
+          last_name
+        ),
+        vehicles (
+          year,
+          make,
+          model
+        )
+      `)
+      .single();
+
+    if (error) throw error;
+
+    // If this is a recurring reminder, generate the next occurrence
+    if (data.recurrence_pattern) {
+      await generateNextRecurringReminder(data);
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Error completing reminder:", error);
+    throw error;
+  }
+};
+
+export const deleteReminder = async (id: string): Promise<boolean> => {
+  try {
     const { error } = await supabase
       .from('service_reminders')
       .delete()
-      .eq('id', reminderId);
-    
+      .eq('id', id);
+
     if (error) throw error;
-    
     return true;
   } catch (error) {
     console.error("Error deleting reminder:", error);
@@ -142,33 +139,80 @@ export const deleteReminder = async (reminderId: string): Promise<boolean> => {
   }
 };
 
-/**
- * Create a new reminder tag
- * @param tagName Name of the tag to create
- * @param color Optional color for the tag
- */
-export const createReminderTag = async (tagName: string, color?: string): Promise<ReminderTag> => {
+export const bulkUpdateReminders = async (ids: string[], updates: Partial<CreateReminderData>): Promise<ServiceReminder[]> => {
   try {
-    const tagData = {
-      name: tagName,
-      color: color || '#' + Math.floor(Math.random()*16777215).toString(16) // Generate random color if not provided
-    };
-    
     const { data, error } = await supabase
-      .from('reminder_tags')
-      .insert(tagData)
-      .select()
-      .single();
-    
+      .from('service_reminders')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .in('id', ids)
+      .select(`
+        *,
+        customers (
+          first_name,
+          last_name
+        ),
+        vehicles (
+          year,
+          make,
+          model
+        )
+      `);
+
     if (error) throw error;
-    
-    return {
-      id: data.id,
-      name: data.name,
-      color: data.color
-    };
+    return data || [];
   } catch (error) {
-    console.error("Error creating reminder tag:", error);
+    console.error("Error bulk updating reminders:", error);
+    throw error;
+  }
+};
+
+const generateNextRecurringReminder = async (completedReminder: ServiceReminder): Promise<void> => {
+  try {
+    if (!completedReminder.recurrence_pattern) return;
+
+    // Call the database function to generate the next recurring reminder
+    const { error } = await supabase.rpc('generate_recurring_reminder', {
+      reminder_id: completedReminder.id
+    });
+
+    if (error) {
+      console.error("Error generating next recurring reminder:", error);
+    }
+  } catch (error) {
+    console.error("Error in generateNextRecurringReminder:", error);
+  }
+};
+
+export const snoozeReminder = async (id: string, snoozeUntil: string): Promise<ServiceReminder> => {
+  try {
+    const { data, error } = await supabase
+      .from('service_reminders')
+      .update({
+        due_date: snoozeUntil,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select(`
+        *,
+        customers (
+          first_name,
+          last_name
+        ),
+        vehicles (
+          year,
+          make,
+          model
+        )
+      `)
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error("Error snoozing reminder:", error);
     throw error;
   }
 };

@@ -1,13 +1,11 @@
 
 import { useState, useEffect } from 'react';
 import { getInventoryItems } from '@/services/inventory/crudService';
-import { getAutoReorderSettings } from '@/services/inventory/autoReorderService';
-import { InventoryItemExtended, AutoReorderSettings } from '@/types/inventory';
+import { InventoryItemExtended } from '@/types/inventory';
 
 export function useInventoryManager() {
   const [lowStockItems, setLowStockItems] = useState<InventoryItemExtended[]>([]);
   const [outOfStockItems, setOutOfStockItems] = useState<InventoryItemExtended[]>([]);
-  const [autoReorderSettings, setAutoReorderSettings] = useState<Record<string, AutoReorderSettings>>({});
   const [loading, setLoading] = useState(true);
 
   const checkInventoryAlerts = async () => {
@@ -25,10 +23,6 @@ export function useInventoryManager() {
       
       setLowStockItems(lowStock);
       setOutOfStockItems(outOfStock);
-
-      // Fetch auto-reorder settings
-      const settings = await getAutoReorderSettings();
-      setAutoReorderSettings(settings);
     } catch (error) {
       console.error('Error checking inventory alerts:', error);
     } finally {
@@ -43,7 +37,6 @@ export function useInventoryManager() {
   return {
     lowStockItems,
     outOfStockItems,
-    autoReorderSettings,
     loading,
     checkInventoryAlerts
   };

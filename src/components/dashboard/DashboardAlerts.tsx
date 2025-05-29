@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Package, User, Clock } from "lucide-react";
+import { AlertTriangle, Package, User, Clock, Bell } from "lucide-react";
 import { getDashboardAlerts, DashboardAlert } from "@/services/dashboard/alertsService";
 
 export function DashboardAlerts() {
@@ -32,6 +32,8 @@ export function DashboardAlerts() {
         return <User className="h-4 w-4" />;
       case 'maintenance':
         return <Clock className="h-4 w-4" />;
+      case 'reminder':
+        return <Bell className="h-4 w-4" />;
       default:
         return <AlertTriangle className="h-4 w-4" />;
     }

@@ -1,9 +1,10 @@
 
 import { supabase } from "@/lib/supabase";
+import { getOverdueReminders, getTodaysReminders } from "@/services/reminders/reminderQueries";
 
 export interface DashboardAlert {
   id: string;
-  type: 'inventory' | 'follow_up' | 'maintenance';
+  type: 'inventory' | 'follow_up' | 'maintenance' | 'reminder';
   title: string;
   message: string;
   priority: 'low' | 'medium' | 'high';
@@ -73,6 +74,38 @@ export const getDashboardAlerts = async (): Promise<DashboardAlert[]> => {
         });
       });
     }
+
+    // Get overdue service reminders using live data
+    const overdueReminders = await getOverdueReminders();
+    overdueReminders.forEach(reminder => {
+      const customer = reminder.customers as any;
+      const customerName = customer ? `${customer.first_name} ${customer.last_name}` : 'Unknown Customer';
+      
+      alerts.push({
+        id: `reminder-${reminder.id}`,
+        type: 'reminder',
+        title: 'Overdue Service Reminder',
+        message: `${reminder.title} for ${customerName} is overdue`,
+        priority: reminder.priority as 'low' | 'medium' | 'high',
+        created_at: reminder.due_date
+      });
+    });
+
+    // Get today's service reminders using live data
+    const todaysReminders = await getTodaysReminders();
+    todaysReminders.forEach(reminder => {
+      const customer = reminder.customers as any;
+      const customerName = customer ? `${customer.first_name} ${customer.last_name}` : 'Unknown Customer';
+      
+      alerts.push({
+        id: `reminder-today-${reminder.id}`,
+        type: 'reminder',
+        title: 'Service Reminder Due Today',
+        message: `${reminder.title} for ${customerName} is due today`,
+        priority: reminder.priority as 'low' | 'medium' | 'high',
+        created_at: reminder.due_date
+      });
+    });
 
     return alerts.sort((a, b) => {
       const priorityOrder = { high: 3, medium: 2, low: 1 };

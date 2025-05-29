@@ -1,112 +1,149 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { ServiceReminder } from "@/types/reminder";
-import { mapReminderFromDb } from "./reminderMapper";
-import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
+import { ServiceReminder } from "./reminderQueries";
 
-/**
- * Get reminders that need notifications sent
- * This would typically be used by a background job or cron task
- */
-export const getRemindersForNotification = async (): Promise<ServiceReminder[]> => {
+export interface ReminderNotification {
+  id: string;
+  reminder_id: string;
+  notification_type: 'email' | 'sms' | 'push' | 'in_app';
+  recipient: string;
+  sent_at?: string;
+  status: 'pending' | 'sent' | 'failed';
+  created_at: string;
+}
+
+export const createReminderNotification = async (
+  reminderId: string,
+  notificationType: 'email' | 'sms' | 'push' | 'in_app',
+  recipient: string
+): Promise<ReminderNotification> => {
   try {
-    // Get current date
-    const today = new Date().toISOString().split('T')[0];
-    
-    // Query for pending reminders due soon that haven't had notifications sent
     const { data, error } = await supabase
-      .from('service_reminders')
-      .select(`
-        *,
-        categories:category_id(*),
-        tags:service_reminder_tags(tag_id(*))
-      `)
-      .eq('status', 'pending')
-      .eq('notification_sent', false)
-      .lte('due_date', today) // Due today or in the past
-      .order('due_date', { ascending: true });
-    
-    if (error) throw error;
-    
-    return (data || []).map(mapReminderFromDb);
-  } catch (error) {
-    console.error("Error getting reminders for notification:", error);
-    return [];
-  }
-};
+      .from('reminder_notifications')
+      .insert([{
+        reminder_id: reminderId,
+        notification_type: notificationType,
+        recipient,
+        status: 'pending'
+      }])
+      .select()
+      .single();
 
-/**
- * Mark a reminder as having a notification sent
- */
-export const markNotificationSent = async (reminderId: string): Promise<boolean> => {
-  try {
-    const { error } = await supabase
-      .from('service_reminders')
-      .update({
-        notification_sent: true,
-        notification_date: new Date().toISOString()
-      })
-      .eq('id', reminderId);
-    
     if (error) throw error;
-    
-    return true;
+    return data;
   } catch (error) {
-    console.error(`Error marking notification sent for reminder ${reminderId}:`, error);
-    return false;
-  }
-};
-
-/**
- * Send notifications for all due reminders
- * This is a demo function that would be replaced with actual notification logic
- */
-export const sendReminderNotifications = async (): Promise<void> => {
-  try {
-    // Get reminders that need notifications
-    const reminders = await getRemindersForNotification();
-    
-    if (reminders.length === 0) {
-      console.log("No reminders needing notifications");
-      return;
-    }
-    
-    // In a real application, this would integrate with email/SMS/push notification services
-    for (const reminder of reminders) {
-      console.log(`Sending notification for reminder: ${reminder.title} (${reminder.id})`);
-      
-      // Demo: Just mark the notification as sent
-      await markNotificationSent(reminder.id);
-      
-      // Show a toast for demo purposes
-      toast({
-        title: "Reminder notification sent",
-        description: `For: ${reminder.title} (due: ${reminder.dueDate})`,
-      });
-    }
-    
-    console.log(`Processed ${reminders.length} reminder notifications`);
-  } catch (error) {
-    console.error("Error sending reminder notifications:", error);
+    console.error("Error creating reminder notification:", error);
     throw error;
   }
 };
 
-/**
- * Check if a reminder is due for notification
- */
-export const isReminderDueForNotification = (reminder: ServiceReminder): boolean => {
-  if (reminder.status !== 'pending' || reminder.notificationSent) {
-    return false;
+export const sendReminderNotifications = async (reminder: ServiceReminder): Promise<void> => {
+  try {
+    // Get the assigned user's notification preferences
+    if (reminder.assigned_to) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('notification_preferences, email, phone')
+        .eq('id', reminder.assigned_to)
+        .single();
+
+      if (profile?.notification_preferences) {
+        const prefs = profile.notification_preferences;
+        
+        // Send email notification if enabled
+        if (prefs.email && profile.email) {
+          await createReminderNotification(reminder.id, 'email', profile.email);
+        }
+
+        // Send SMS notification if enabled
+        if (prefs.sms && profile.phone) {
+          await createReminderNotification(reminder.id, 'sms', profile.phone);
+        }
+
+        // Send push notification if enabled
+        if (prefs.push) {
+          await createReminderNotification(reminder.id, 'push', reminder.assigned_to);
+        }
+
+        // Always send in-app notification
+        await createReminderNotification(reminder.id, 'in_app', reminder.assigned_to);
+      }
+    }
+  } catch (error) {
+    console.error("Error sending reminder notifications:", error);
   }
-  
-  const dueDate = new Date(reminder.dueDate);
-  const today = new Date();
-  
-  // Set hours/minutes/seconds to 0 for date comparison
-  today.setHours(0, 0, 0, 0);
-  dueDate.setHours(0, 0, 0, 0);
-  
-  // Due today or in the past
-  return dueDate <= today;
+};
+
+export const getReminderNotifications = async (reminderId: string): Promise<ReminderNotification[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('reminder_notifications')
+      .select('*')
+      .eq('reminder_id', reminderId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error("Error fetching reminder notifications:", error);
+    return [];
+  }
+};
+
+export const markNotificationAsSent = async (notificationId: string): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('reminder_notifications')
+      .update({
+        status: 'sent',
+        sent_at: new Date().toISOString()
+      })
+      .eq('id', notificationId);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error("Error marking notification as sent:", error);
+  }
+};
+
+export const markNotificationAsFailed = async (notificationId: string): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('reminder_notifications')
+      .update({
+        status: 'failed'
+      })
+      .eq('id', notificationId);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error("Error marking notification as failed:", error);
+  }
+};
+
+export const getPendingNotifications = async (): Promise<ReminderNotification[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('reminder_notifications')
+      .select(`
+        *,
+        service_reminders (
+          title,
+          due_date,
+          customer_id,
+          customers (
+            first_name,
+            last_name
+          )
+        )
+      `)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error("Error fetching pending notifications:", error);
+    return [];
+  }
 };
