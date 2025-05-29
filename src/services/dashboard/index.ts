@@ -12,5 +12,5 @@ export * from './alertsService';
 // Export specific functions with their correct names
 export { getPhaseProgress } from './workOrderService';
 export { getRecentWorkOrders } from './workOrderService';
-export { getTechnicianEfficiency } from './technicianService';
+export { getTechnicianEfficiency, getTechnicianPerformance } from './technicianService';
 export { getChecklistStats } from './checklistService';
