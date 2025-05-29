@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Building, CircleDollarSign, Clock, Save } from "lucide-react";
 import { BasicInfoSection } from "./BasicInfoSection";
-import { BusinessInfoSection } from "./BusinessInfoSection";
+import { BusinessInfoSection } from "../BusinessInfoSection";
 import { BusinessHoursSection } from "./BusinessHoursSection";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { CompanyTabSkeleton } from "./CompanyTabSkeleton";
@@ -64,6 +64,14 @@ export function CompanyTabContainer() {
     console.log("Active tab changed to:", activeTab);
   }, [activeTab]);
 
+  // Transform companyInfo to match BusinessInfoSection expected props
+  const businessInfoProps = {
+    tax_id: companyInfo.tax_id,
+    business_type: companyInfo.business_type,
+    industry: companyInfo.industry,
+    other_industry: companyInfo.other_industry
+  };
+
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -102,7 +110,7 @@ export function CompanyTabContainer() {
 
                 <TabsContent value="business" className="mt-0">
                   <BusinessInfoSection
-                    companyInfo={companyInfo}
+                    companyInfo={businessInfoProps}
                     businessTypes={businessTypes}
                     businessIndustries={businessIndustries}
                     isLoadingConstants={isLoadingConstants}
