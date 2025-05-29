@@ -10,6 +10,7 @@ interface StepProps {
   onPrevious: () => void;
   data: any;
   updateData: (data: any) => void;
+  onComplete?: () => void; // Add optional completion handler
 }
 
 export function BusinessDetailsStep({ onNext, onPrevious, data, updateData }: StepProps) {
