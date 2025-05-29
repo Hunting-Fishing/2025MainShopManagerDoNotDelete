@@ -64,7 +64,7 @@ export const invoiceService = {
 
   async createInvoice(invoice: Omit<Invoice, 'id' | 'created_at' | 'updated_at' | 'number' | 'issue_date' | 'tax_rate' | 'items' | 'assignedStaff' | 'last_updated_by' | 'last_updated_at'>): Promise<Invoice> {
     // Only include fields that exist in the database schema
-    const dbInvoice = {
+    const dbInvoice: any = {
       customer: invoice.customer || '',
       date: invoice.date,
       due_date: invoice.due_date,
