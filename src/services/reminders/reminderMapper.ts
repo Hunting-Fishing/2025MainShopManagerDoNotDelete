@@ -95,11 +95,7 @@ export function mapDbServiceReminderToType(dbReminder: DbServiceReminder): Servi
     parentReminderId: dbReminder.parent_reminder_id,
     lastOccurredAt: dbReminder.last_occurred_at,
     nextOccurrenceDate: dbReminder.next_occurrence_date,
-    customer: dbReminder.customers ? {
-      id: dbReminder.customer_id,
-      first_name: dbReminder.customers.first_name,
-      last_name: dbReminder.customers.last_name,
-    } : undefined,
+    updatedAt: dbReminder.updated_at,
     vehicle: dbReminder.vehicles
   };
 }

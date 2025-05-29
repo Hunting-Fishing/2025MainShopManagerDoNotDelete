@@ -14,6 +14,19 @@ export interface Alert {
   metadata?: Record<string, any>;
 }
 
+// Add DashboardAlert type alias for compatibility
+export interface DashboardAlert {
+  id: string;
+  type: string;
+  priority: string;
+  title: string;
+  message: string;
+  timestamp: string;
+  resolved: boolean;
+  link?: string;
+  metadata?: Record<string, any>;
+}
+
 export interface AlertSummary {
   total: number;
   byType: Record<string, number>;
@@ -50,6 +63,22 @@ export const getActiveAlerts = async (): Promise<Alert[]> => {
     console.error("Error fetching active alerts:", error);
     return [];
   }
+};
+
+// Export as getDashboardAlerts for compatibility
+export const getDashboardAlerts = async (): Promise<DashboardAlert[]> => {
+  const alerts = await getActiveAlerts();
+  return alerts.map(alert => ({
+    id: alert.id,
+    type: alert.type,
+    priority: alert.severity,
+    title: alert.title,
+    message: alert.message,
+    timestamp: alert.timestamp,
+    resolved: alert.resolved,
+    link: alert.link,
+    metadata: alert.metadata
+  }));
 };
 
 // Get summary of alerts

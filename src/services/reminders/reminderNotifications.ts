@@ -3,7 +3,6 @@
 // In a real implementation, you would need to create this table or handle notifications differently
 
 import { supabase } from "@/lib/supabase";
-import { ServiceReminder } from "./reminderQueries";
 
 export interface ReminderNotification {
   id: string;

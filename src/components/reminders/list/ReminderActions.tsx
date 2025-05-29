@@ -42,7 +42,7 @@ export function ReminderActions({ reminder, onStatusUpdate }: ReminderActionsPro
       // After sending the notification, fetch the updated reminder
       const updatedReminder = await updateReminder({
         id: reminderId,
-        status: reminder.status
+        status: reminder.status === 'sent' ? 'pending' : reminder.status
       });
       
       onStatusUpdate(reminderId, updatedReminder);
