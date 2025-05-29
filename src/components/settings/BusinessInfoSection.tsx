@@ -10,10 +10,10 @@ import { AlertCircle } from "lucide-react";
 
 interface BusinessInfoSectionProps {
   companyInfo: {
-    taxId: string;
-    businessType: string;
+    tax_id: string;
+    business_type: string;
     industry: string;
-    otherIndustry?: string;
+    other_industry?: string;
   };
   businessTypes: BusinessConstant[];
   businessIndustries: BusinessConstant[];
@@ -50,8 +50,8 @@ export function BusinessInfoSection({
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <FormField
         label="Tax ID / EIN"
-        id="company-taxId"
-        value={companyInfo.taxId}
+        id="company-tax_id"
+        value={companyInfo.tax_id}
         onChange={onInputChange}
         description="Your business tax identification number"
       />
@@ -59,8 +59,8 @@ export function BusinessInfoSection({
       <div className="space-y-2">
         <Label htmlFor="business-type">Business Type</Label>
         <Select 
-          value={companyInfo.businessType} 
-          onValueChange={(value) => onSelectChange('businessType', value)}
+          value={companyInfo.business_type} 
+          onValueChange={(value) => onSelectChange('business_type', value)}
           disabled={isLoadingConstants}
         >
           <SelectTrigger id="business-type">
@@ -98,8 +98,8 @@ export function BusinessInfoSection({
       {showOtherIndustry && (
         <FormField
           label="Specify Industry"
-          id="company-otherIndustry"
-          value={companyInfo.otherIndustry || ""}
+          id="company-other_industry"
+          value={companyInfo.other_industry || ""}
           onChange={onInputChange}
           placeholder="Enter your industry"
           required
