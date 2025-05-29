@@ -57,7 +57,7 @@ export const processSegmentAssignments = async (
  * Record technician preference
  */
 export const recordTechnicianPreference = async (technicianId: string) => {
-  // Placeholder: In a real app, you might want to track this in a separate table
+  // In a real app, you might want to track this in a separate table
   console.log("Recording technician preference:", technicianId);
   return true;
 };
@@ -67,9 +67,7 @@ export const recordTechnicianPreference = async (technicianId: string) => {
  */
 export const prepareCustomerData = (data: CustomerFormValues): CustomerCreate => {
   // Transform vehicles to match CustomerVehicle type
-  // In a real app, IDs would be assigned by the database, so we'll leave them undefined here
   const formattedVehicles = data.vehicles?.map(vehicle => ({
-    // id is not required when creating new vehicles, it will be assigned by the database
     make: vehicle.make,
     model: vehicle.model,
     year: vehicle.year ? parseInt(vehicle.year, 10) : undefined,
@@ -101,7 +99,7 @@ export const prepareCustomerData = (data: CustomerFormValues): CustomerCreate =>
     fleet_company: data.fleet_company || "",
     
     // Safely pass vehicles data with the right structure
-    vehicles: formattedVehicles as any, // Using 'any' to bypass the strict type check temporarily
+    vehicles: formattedVehicles as any,
     
     segments: data.segments || [],
     

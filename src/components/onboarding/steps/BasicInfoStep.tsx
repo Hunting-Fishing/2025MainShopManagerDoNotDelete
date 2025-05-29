@@ -10,7 +10,7 @@ interface StepProps {
   data: any;
   updateData: (data: any) => void;
   onComplete?: () => void;
-  loading?: boolean; // Add loading property
+  loading?: boolean;
 }
 
 export function BasicInfoStep({ onNext, onPrevious, data, updateData, loading = false }: StepProps) {
@@ -48,6 +48,7 @@ export function BasicInfoStep({ onNext, onPrevious, data, updateData, loading = 
           id="company-name"
           value={formData.name}
           onChange={handleInputChange}
+          placeholder="Enter your shop name"
           required
         />
         
@@ -57,6 +58,7 @@ export function BasicInfoStep({ onNext, onPrevious, data, updateData, loading = 
           type="email"
           value={formData.email}
           onChange={handleInputChange}
+          placeholder="your-email@domain.com"
           required
         />
         
@@ -66,6 +68,7 @@ export function BasicInfoStep({ onNext, onPrevious, data, updateData, loading = 
           type="tel"
           value={formData.phone}
           onChange={handleInputChange}
+          placeholder="(555) 123-4567"
           required
         />
         
@@ -74,6 +77,7 @@ export function BasicInfoStep({ onNext, onPrevious, data, updateData, loading = 
           id="company-address"
           value={formData.address}
           onChange={handleInputChange}
+          placeholder="123 Main Street"
           required
         />
         
@@ -82,6 +86,7 @@ export function BasicInfoStep({ onNext, onPrevious, data, updateData, loading = 
           id="company-city"
           value={formData.city}
           onChange={handleInputChange}
+          placeholder="Your City"
           required
         />
         
@@ -91,6 +96,7 @@ export function BasicInfoStep({ onNext, onPrevious, data, updateData, loading = 
             id="company-state"
             value={formData.state}
             onChange={handleInputChange}
+            placeholder="State"
             required
           />
           
@@ -99,6 +105,7 @@ export function BasicInfoStep({ onNext, onPrevious, data, updateData, loading = 
             id="company-zip"
             value={formData.zip}
             onChange={handleInputChange}
+            placeholder="12345"
             required
           />
         </div>

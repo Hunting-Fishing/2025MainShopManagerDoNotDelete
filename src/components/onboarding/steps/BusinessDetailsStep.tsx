@@ -11,7 +11,7 @@ interface StepProps {
   data: any;
   updateData: (data: any) => void;
   onComplete?: () => void;
-  loading?: boolean; // Add loading property
+  loading?: boolean;
 }
 
 export function BusinessDetailsStep({ onNext, onPrevious, data, updateData, loading = false }: StepProps) {
@@ -55,6 +55,31 @@ export function BusinessDetailsStep({ onNext, onPrevious, data, updateData, load
     
     onNext();
   };
+
+  // Show empty state if no business types are available
+  if (!isLoadingConstants && businessTypes.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-8">
+          <p className="text-gray-600 mb-4">
+            Business information setup is ready for configuration.
+          </p>
+          <p className="text-sm text-gray-500">
+            You can add business types and industries through the admin settings.
+          </p>
+        </div>
+
+        <div className="flex justify-between">
+          <Button variant="outline" onClick={onPrevious} disabled={loading}>
+            Back
+          </Button>
+          <Button onClick={handleNext} disabled={loading}>
+            {loading ? 'Saving...' : 'Next'}
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

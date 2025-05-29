@@ -33,6 +33,11 @@ export const useCustomerSubmit = () => {
       if (currentUserShopId && (!data.shop_id || data.shop_id === "")) {
         data.shop_id = currentUserShopId;
       }
+
+      // Validate required shop_id
+      if (!data.shop_id) {
+        throw new Error("Shop ID is required. Please ensure you have a valid shop setup.");
+      }
       
       // Process household logic
       const householdId = await processHouseholdData(data);

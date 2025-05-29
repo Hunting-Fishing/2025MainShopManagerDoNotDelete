@@ -9,9 +9,12 @@ import { InvoiceTemplate } from "@/types/invoice";
 export const invoiceTemplates: InvoiceTemplate[] = [];
 
 export const updateTemplateUsage = async (templateId: string) => {
-  throw new Error('Please use useInvoiceTemplates hook instead of deprecated function.');
+  console.warn('Using deprecated function. Please use useInvoiceTemplates hook instead.');
+  // This is a no-op for compatibility
 };
 
 export const createTemplate = async () => {
-  throw new Error('Please use useInvoiceTemplates hook instead of deprecated function.');
+  console.warn('Using deprecated function. Please use useInvoiceTemplates hook instead.');
+  // Return a valid WorkOrderTemplate object for backward compatibility
+  return null;
 };

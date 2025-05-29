@@ -12,7 +12,7 @@ export const showSuccessNotification = (
   toast({
     title: "Customer Created Successfully",
     description: `${firstName} ${lastName} has been added to your customers.`,
-    variant: "success",
+    variant: "default",
   });
 };
 
@@ -43,7 +43,7 @@ export const showWarningNotification = (
   toast({
     title: warning.title,
     description: warning.description,
-    variant: "warning",
+    variant: "destructive",
   });
 };
 
@@ -56,6 +56,6 @@ export const showImportCompleteNotification = (
   toast({
     title: "Import Complete",
     description: "Navigate to the Customers page to see imported customers.",
-    variant: "success",
+    variant: "default",
   });
 };

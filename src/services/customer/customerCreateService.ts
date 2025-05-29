@@ -58,7 +58,7 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
     fleet_company: customerData.fleet_company || ''
   };
 
-  // Handle shop_id fallback logic
+  // Handle shop_id fallback logic - get real shop data
   if (!cleanCustomerData.shop_id) {
     const { data: { user } } = await supabase.auth.getUser();
     
@@ -71,16 +71,24 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
       
       if (profile && profile.shop_id) {
         cleanCustomerData.shop_id = profile.shop_id;
+      } else {
+        // Get the first available shop from the database
+        const { data: shops } = await supabase
+          .from('shops')
+          .select('id')
+          .limit(1);
+        
+        if (shops && shops.length > 0) {
+          cleanCustomerData.shop_id = shops[0].id;
+        } else {
+          throw new Error('No shops found. Please create a shop first.');
+        }
       }
     }
     
     if (!cleanCustomerData.shop_id) {
-      cleanCustomerData.shop_id = '00000000-0000-0000-0000-000000000000';
+      throw new Error('Unable to determine shop_id. Please ensure you have a valid shop setup.');
     }
-  }
-  
-  if (cleanCustomerData.shop_id === 'DEFAULT-SHOP-ID') {
-    cleanCustomerData.shop_id = '00000000-0000-0000-0000-000000000000';
   }
 
   const { data, error } = await supabase

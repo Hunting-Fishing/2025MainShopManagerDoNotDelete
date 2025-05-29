@@ -11,7 +11,7 @@ export function EmptyState({ hasActivities }: EmptyStateProps) {
       {hasActivities ? (
         <>No activities match your filters.</>
       ) : (
-        <>No activities recorded for this team member.</>
+        <>No activities recorded for this team member yet.</>
       )}
     </div>
   );

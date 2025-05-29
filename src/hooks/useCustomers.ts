@@ -50,7 +50,7 @@ export const useCustomers = () => {
         setError(errorMessage);
         toast({
           title: "Error",
-          description: "Failed to load customers. Please try again.",
+          description: "Failed to load customers. Please check your connection and try again.",
           variant: "destructive",
         });
       } finally {

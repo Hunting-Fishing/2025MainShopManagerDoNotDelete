@@ -22,8 +22,8 @@ export const useShopData = () => {
         
         if (!user) {
           toast({
-            title: "Authentication Error",
-            description: "You must be logged in to create customers.",
+            title: "Authentication Required",
+            description: "Please log in to continue.",
             variant: "destructive"
           });
           navigate('/login');
@@ -48,11 +48,17 @@ export const useShopData = () => {
           console.log("Available shops from getAllShops:", shops);
           setAvailableShops(shops.map(shop => ({ id: shop.id, name: shop.name })));
           
-          // Get default shop
-          const defaultShop = await getDefaultShop();
-          console.log("Default shop:", defaultShop);
-          setCurrentUserShopId(defaultShop.id);
+          // Get default shop if no shops are available, show helpful message
+          if (shops.length === 0) {
+            toast({
+              title: "No Shops Found",
+              description: "Please create a shop first before adding customers.",
+              variant: "destructive"
+            });
+            return;
+          }
           
+          setCurrentUserShopId(shops[0].id);
           return;
         }
         
@@ -65,12 +71,22 @@ export const useShopData = () => {
         console.log("Fetching all shops");
         const shops = await getAllShops();
         console.log("All shops:", shops);
+        
+        if (shops.length === 0) {
+          toast({
+            title: "No Shops Available",
+            description: "Please contact your administrator to set up shops.",
+            variant: "destructive"
+          });
+          return;
+        }
+        
         setAvailableShops(shops.map(shop => ({ id: shop.id, name: shop.name })));
       } catch (error) {
         console.error("Error fetching shop data:", error);
         toast({
           title: "Error",
-          description: "Failed to load shop data. Using default values.",
+          description: "Failed to load shop data. Please refresh the page and try again.",
           variant: "destructive"
         });
       } finally {

@@ -1,5 +1,5 @@
 
-// Export all sequence-related services
+// Export all sequence-related services - all using real data
 export * from './sequenceCoreService';
 export * from './sequenceStepService';
 export * from './sequenceEnrollmentService';

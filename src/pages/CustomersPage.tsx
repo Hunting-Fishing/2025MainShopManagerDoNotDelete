@@ -39,6 +39,13 @@ export default function CustomersPage() {
       <div className="p-6">
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-red-600">Error loading customers: {error}</p>
+          <Button 
+            variant="outline" 
+            className="mt-2" 
+            onClick={() => window.location.reload()}
+          >
+            Retry
+          </Button>
         </div>
       </div>
     );
@@ -72,7 +79,7 @@ export default function CustomersPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Search customers..."
+                placeholder="Search customers by name, email, phone, or company..."
                 value={filters.search || ''}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-10"

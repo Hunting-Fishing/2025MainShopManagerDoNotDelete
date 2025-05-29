@@ -11,6 +11,7 @@ export type BusinessConstant = {
 };
 
 // For backwards compatibility with any code that imports directly from this file
+// All data should come from the database
 export const businessTypes: BusinessConstant[] = [];
 export const businessIndustries: BusinessConstant[] = [];
 export const paymentMethods: BusinessConstant[] = [];

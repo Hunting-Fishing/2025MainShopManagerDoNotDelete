@@ -1,5 +1,5 @@
 
-// Base customer types
+// Base customer types - no sample data
 export interface Customer {
   id: string;
   first_name: string;

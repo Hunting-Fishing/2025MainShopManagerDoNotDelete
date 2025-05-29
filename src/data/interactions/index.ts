@@ -2,4 +2,5 @@
 // Export interaction types and utilities
 export * from './types';
 
-// Note: We no longer use mock data as we've migrated to the database
+// All interaction data should come from the database
+console.log('Interaction data is now sourced from the database only.');

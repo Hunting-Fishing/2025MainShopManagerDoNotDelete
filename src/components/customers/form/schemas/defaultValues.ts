@@ -1,7 +1,7 @@
 
 import { CustomerFormValues } from "./customerSchema";
 
-// Default values for the form
+// Default values for the form - no sample data
 export const defaultCustomerFormValues: CustomerFormValues = {
   first_name: "",
   last_name: "",
