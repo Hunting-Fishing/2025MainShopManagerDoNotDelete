@@ -94,8 +94,7 @@ export function mapDbServiceReminderToType(dbReminder: DbServiceReminder): Servi
     recurrenceUnit: dbReminder.recurrence_unit as any,
     parentReminderId: dbReminder.parent_reminder_id,
     lastOccurredAt: dbReminder.last_occurred_at,
-    nextOccurrenceDate: dbReminder.next_occurrence_date,
-    vehicle: dbReminder.vehicles
+    nextOccurrenceDate: dbReminder.next_occurrence_date
   };
 }
 

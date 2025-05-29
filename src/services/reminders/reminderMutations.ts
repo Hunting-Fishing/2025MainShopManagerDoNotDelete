@@ -60,10 +60,7 @@ export const createReminder = async (reminderData: CreateReminderData): Promise<
 
     if (error) throw error;
     
-    return {
-      ...mapDbServiceReminderToType(data),
-      updated_at: new Date().toISOString()
-    };
+    return mapDbServiceReminderToType(data);
   } catch (error) {
     console.error("Error creating reminder:", error);
     throw error;
@@ -98,10 +95,7 @@ export const updateReminder = async (updateData: UpdateReminderData): Promise<Se
 
     if (error) throw error;
     
-    return {
-      ...mapDbServiceReminderToType(data),
-      updated_at: new Date().toISOString()
-    };
+    return mapDbServiceReminderToType(data);
   } catch (error) {
     console.error("Error updating reminder:", error);
     throw error;
@@ -139,10 +133,7 @@ export const completeReminder = async (reminderId: string, notes?: string): Prom
 
     if (error) throw error;
     
-    return {
-      ...mapDbServiceReminderToType(data),
-      updated_at: new Date().toISOString()
-    };
+    return mapDbServiceReminderToType(data);
   } catch (error) {
     console.error("Error completing reminder:", error);
     throw error;
@@ -190,10 +181,7 @@ export const bulkUpdateReminders = async (reminderIds: string[], updateData: Par
 
     if (error) throw error;
     
-    return data.map(reminder => ({
-      ...mapDbServiceReminderToType(reminder),
-      updated_at: new Date().toISOString()
-    }));
+    return data.map(reminder => mapDbServiceReminderToType(reminder));
   } catch (error) {
     console.error("Error bulk updating reminders:", error);
     throw error;
