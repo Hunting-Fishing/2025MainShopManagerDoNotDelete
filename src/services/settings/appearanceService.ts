@@ -16,7 +16,10 @@ export const appearanceService = {
         return null;
       }
 
-      return data;
+      return {
+        ...data,
+        theme_mode: data.theme_mode as 'light' | 'dark' | 'auto'
+      };
     } catch (error) {
       console.error("Failed to fetch appearance settings:", error);
       return null;
@@ -36,7 +39,10 @@ export const appearanceService = {
         return null;
       }
 
-      return data;
+      return {
+        ...data,
+        theme_mode: data.theme_mode as 'light' | 'dark' | 'auto'
+      };
     } catch (error) {
       console.error("Failed to create appearance settings:", error);
       return null;
@@ -57,7 +63,10 @@ export const appearanceService = {
         return null;
       }
 
-      return data;
+      return {
+        ...data,
+        theme_mode: data.theme_mode as 'light' | 'dark' | 'auto'
+      };
     } catch (error) {
       console.error("Failed to update appearance settings:", error);
       return null;

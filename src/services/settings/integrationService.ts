@@ -21,7 +21,10 @@ export const integrationService = {
         return [];
       }
 
-      return data || [];
+      return (data || []).map(item => ({
+        ...item,
+        integration_type: item.integration_type as 'sms' | 'payment' | 'calendar' | 'analytics' | 'crm' | 'other'
+      }));
     } catch (error) {
       console.error("Failed to fetch integration settings:", error);
       return [];
@@ -30,9 +33,17 @@ export const integrationService = {
 
   async createIntegrationSetting(settings: Partial<IntegrationSettings>): Promise<IntegrationSettings | null> {
     try {
+      // Ensure required fields are present
+      const completeSettings = {
+        integration_type: settings.integration_type || 'other',
+        shop_id: settings.shop_id,
+        is_enabled: settings.is_enabled ?? false,
+        config: settings.config || {}
+      };
+
       const { data, error } = await supabase
         .from("integration_settings")
-        .insert(settings)
+        .insert(completeSettings)
         .select()
         .single();
 
@@ -41,7 +52,10 @@ export const integrationService = {
         return null;
       }
 
-      return data;
+      return {
+        ...data,
+        integration_type: data.integration_type as 'sms' | 'payment' | 'calendar' | 'analytics' | 'crm' | 'other'
+      };
     } catch (error) {
       console.error("Failed to create integration setting:", error);
       return null;
@@ -62,7 +76,10 @@ export const integrationService = {
         return null;
       }
 
-      return data;
+      return {
+        ...data,
+        integration_type: data.integration_type as 'sms' | 'payment' | 'calendar' | 'analytics' | 'crm' | 'other'
+      };
     } catch (error) {
       console.error("Failed to update integration setting:", error);
       return null;

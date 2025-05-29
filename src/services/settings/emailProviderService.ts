@@ -16,7 +16,10 @@ export const emailProviderService = {
         return null;
       }
 
-      return data;
+      return {
+        ...data,
+        provider: data.provider as 'smtp' | 'sendgrid' | 'mailgun' | 'ses' | 'other'
+      };
     } catch (error) {
       console.error("Failed to fetch email provider settings:", error);
       return null;
@@ -25,9 +28,22 @@ export const emailProviderService = {
 
   async createEmailProviderSettings(settings: Partial<EmailProviderSettings>): Promise<EmailProviderSettings | null> {
     try {
+      // Ensure required fields are present
+      const completeSettings = {
+        provider: settings.provider || 'smtp',
+        shop_id: settings.shop_id,
+        from_email: settings.from_email || '',
+        smtp_host: settings.smtp_host || '',
+        smtp_port: settings.smtp_port || 587,
+        smtp_username: settings.smtp_username || '',
+        smtp_password: settings.smtp_password || '',
+        api_key: settings.api_key || '',
+        is_enabled: settings.is_enabled ?? false
+      };
+
       const { data, error } = await supabase
         .from("email_provider_settings")
-        .insert(settings)
+        .insert(completeSettings)
         .select()
         .single();
 
@@ -36,7 +52,10 @@ export const emailProviderService = {
         return null;
       }
 
-      return data;
+      return {
+        ...data,
+        provider: data.provider as 'smtp' | 'sendgrid' | 'mailgun' | 'ses' | 'other'
+      };
     } catch (error) {
       console.error("Failed to create email provider settings:", error);
       return null;
@@ -57,7 +76,10 @@ export const emailProviderService = {
         return null;
       }
 
-      return data;
+      return {
+        ...data,
+        provider: data.provider as 'smtp' | 'sendgrid' | 'mailgun' | 'ses' | 'other'
+      };
     } catch (error) {
       console.error("Failed to update email provider settings:", error);
       return null;
