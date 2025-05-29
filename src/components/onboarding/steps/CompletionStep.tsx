@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,13 +32,13 @@ export function CompletionStep({ onNext, onPrevious, data, updateData }: StepPro
     address: data?.address || companyInfo?.address || shopData?.address || 'Not provided',
     city: data?.city || companyInfo?.city || shopData?.city || 'Not provided',
     state: data?.state || companyInfo?.state || shopData?.state || 'Not provided',
-    zip: data?.zip || companyInfo?.zipCode || shopData?.postal_code || 'Not provided',
+    zip: data?.zip || companyInfo?.zip || shopData?.postal_code || 'Not provided',
     phone: data?.phone || companyInfo?.phone || shopData?.phone || 'Not provided',
     email: data?.email || companyInfo?.email || shopData?.email || 'Not provided',
     taxId: data?.taxId || companyInfo?.taxId || shopData?.tax_id || 'Not provided',
     businessType: data?.businessType || companyInfo?.businessType || shopData?.business_type || 'Not provided',
     industry: data?.industry || companyInfo?.industry || shopData?.industry || 'Not provided',
-    logoUrl: data?.logoUrl || companyInfo?.logo || shopData?.logo_url || ''
+    logoUrl: data?.logoUrl || companyInfo?.logoUrl || shopData?.logo_url || ''
   };
 
   console.log('CompletionStep - Form data:', data);
