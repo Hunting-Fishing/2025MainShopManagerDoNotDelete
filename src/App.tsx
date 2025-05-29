@@ -1,99 +1,124 @@
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { ReactErrorBoundary } from "@/components/error/ReactErrorBoundary";
+import AuthGate from "@/components/AuthGate";
+import OnboardingGate from "@/components/onboarding/OnboardingGate";
+import Layout from "@/components/layout/Layout";
 
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { Layout } from '@/components/layout/Layout';
-import { Toaster } from '@/components/ui/sonner';
-import { ThemeProvider } from '@/context/ThemeContext';
-import { LanguageProvider } from '@/context/LanguageContext';
-import { NotificationsProvider } from '@/context/NotificationsContext';
-import { CustomerDataProvider } from '@/contexts/CustomerDataProvider';
-import { ImpersonationProvider } from '@/contexts/ImpersonationContext';
-import { ReactErrorBoundary } from '@/components/error/ReactErrorBoundary';
-
-// Page imports
-import Dashboard from '@/pages/Dashboard';
-import CustomersPage from '@/pages/CustomersPage';
-import CustomerDetailsPage from '@/pages/CustomerDetails';
-import EquipmentPage from '@/pages/Equipment';
-import InventoryPage from '@/pages/Inventory';
-import WorkOrdersPage from '@/pages/WorkOrders';
-import InvoicesPage from '@/pages/Invoices';
-import TeamPage from '@/pages/Team';
-import Settings from '@/pages/Settings';
-import DeveloperPortal from '@/pages/DeveloperPortal';
-
-// Developer Portal Pages
-import ServiceManagement from '@/pages/developer/ServiceManagement';
-import OrganizationManagement from '@/pages/developer/OrganizationManagement';
-import ShoppingControls from '@/pages/developer/ShoppingControls';
-import UserManagement from '@/pages/developer/UserManagement';
-import SystemSettings from '@/pages/developer/SystemSettings';
-import ToolsManagement from '@/pages/developer/ToolsManagement';
-import AnalyticsDashboard from '@/pages/developer/AnalyticsDashboard';
-import SecuritySettings from '@/pages/developer/SecuritySettings';
-
-// Settings Pages
-import IntegrationsSettings from '@/pages/settings/IntegrationsSettings';
+// Pages
+import Dashboard from "@/pages/Dashboard";
+import Customers from "@/pages/Customers";
+import WorkOrders from "@/pages/WorkOrders";
+import Inventory from "@/pages/Inventory";
+import Invoices from "@/pages/Invoices";
+import Reports from "@/pages/Reports";
+import Settings from "@/pages/Settings";
+import Calendar from "@/pages/Calendar";
+import Equipment from "@/pages/Equipment";
+import CustomerDetails from "@/pages/CustomerDetails";
+import WorkOrderDetails from "@/pages/WorkOrderDetails";
+import InvoiceDetails from "@/pages/InvoiceDetails";
+import CreateInvoice from "@/pages/CreateInvoice";
+import CreateWorkOrder from "@/pages/CreateWorkOrder";
+import CreateCustomer from "@/pages/CreateCustomer";
+import Reminders from "@/pages/Reminders";
+import EquipmentDetails from "@/pages/EquipmentDetails";
+import VehicleDetails from "@/pages/VehicleDetails";
+import Maintenance from "@/pages/Maintenance";
+import Analytics from "@/pages/Analytics";
+import TeamManagement from "@/pages/TeamManagement";
+import Feedback from "@/pages/Feedback";
+import FeedbackForm from "@/pages/FeedbackForm";
+import FeedbackAnalytics from "@/pages/FeedbackAnalytics";
+import Forms from "@/pages/Forms";
+import Notifications from "@/pages/Notifications";
+import CustomerPortal from "@/pages/CustomerPortal";
+import CustomerPortalLogin from "@/pages/CustomerPortalLogin";
+import ShoppingPortal from "@/pages/ShoppingPortal";
+import Developer from "@/pages/Developer";
+import Chat from "@/pages/Chat";
+import Authentication from "./pages/Authentication";
+import { useEffect, useState } from "react";
+import { supabase } from "./lib/supabase";
+import { Profile } from "./types";
+import { useLocation } from 'react-router-dom';
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      retry: false,
+      refetchOnWindowFocus: false,
     },
   },
 });
 
 function App() {
   return (
-    <ReactErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <LanguageProvider>
-            <NotificationsProvider>
-              <ImpersonationProvider>
-                <CustomerDataProvider>
-                  <Router>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <ReactErrorBoundary>
+          <Router>
+            <Routes>
+              {/* Customer Portal Routes - No Auth Required */}
+              <Route path="/customer-portal" element={<CustomerPortal />} />
+              <Route path="/customer-portal/login" element={<CustomerPortalLogin />} />
+              
+              {/* Shopping Portal - No Auth Required */}
+              <Route path="/shopping/*" element={<ShoppingPortal />} />
+              
+              {/* Feedback Form - No Auth Required */}
+              <Route path="/feedback/:formId" element={<FeedbackForm />} />
+              
+              {/* Protected Routes */}
+              <Route path="/*" element={
+                <AuthGate>
+                  <OnboardingGate>
                     <Layout>
                       <Routes>
-                        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                        <Route path="/" element={<Dashboard />} />
                         <Route path="/dashboard" element={<Dashboard />} />
-                        <Route path="/customers" element={<CustomersPage />} />
-                        <Route path="/customers/:id" element={<CustomerDetailsPage />} />
-                        <Route path="/equipment" element={<EquipmentPage />} />
-                        <Route path="/inventory" element={<InventoryPage />} />
-                        <Route path="/work-orders" element={<WorkOrdersPage />} />
-                        <Route path="/invoices" element={<InvoicesPage />} />
-                        <Route path="/team" element={<TeamPage />} />
+                        <Route path="/customers" element={<Customers />} />
+                        <Route path="/customers/new" element={<CreateCustomer />} />
+                        <Route path="/customers/:id" element={<CustomerDetails />} />
+                        <Route path="/customers/:customerId/vehicles/:vehicleId" element={<VehicleDetails />} />
+                        <Route path="/work-orders" element={<WorkOrders />} />
+                        <Route path="/work-orders/new" element={<CreateWorkOrder />} />
+                        <Route path="/work-orders/:id" element={<WorkOrderDetails />} />
+                        <Route path="/inventory" element={<Inventory />} />
+                        <Route path="/invoices" element={<Invoices />} />
+                        <Route path="/invoices/new" element={<CreateInvoice />} />
+                        <Route path="/invoices/:id" element={<InvoiceDetails />} />
+                        <Route path="/reports" element={<Reports />} />
+                        <Route path="/analytics" element={<Analytics />} />
                         <Route path="/settings" element={<Settings />} />
+                        <Route path="/calendar" element={<Calendar />} />
+                        <Route path="/equipment" element={<Equipment />} />
+                        <Route path="/equipment/:id" element={<EquipmentDetails />} />
+                        <Route path="/reminders" element={<Reminders />} />
+                        <Route path="/maintenance" element={<Maintenance />} />
+                        <Route path="/team" element={<TeamManagement />} />
+                        <Route path="/feedback" element={<Feedback />} />
+                        <Route path="/feedback/analytics/:formId" element={<FeedbackAnalytics />} />
+                        <Route path="/forms" element={<Forms />} />
+                        <Route path="/notifications" element={<Notifications />} />
+                        <Route path="/developer" element={<Developer />} />
+                        <Route path="/chat" element={<Chat />} />
                         
-                        {/* Settings Routes */}
-                        <Route path="/settings/integrations" element={<IntegrationsSettings />} />
-                        
-                        {/* Developer Portal Routes */}
-                        <Route path="/developer" element={<DeveloperPortal />} />
-                        <Route path="/developer/service-management" element={<ServiceManagement />} />
-                        <Route path="/developer/organization-management" element={<OrganizationManagement />} />
-                        <Route path="/developer/shopping-controls" element={<ShoppingControls />} />
-                        <Route path="/developer/user-management" element={<UserManagement />} />
-                        <Route path="/developer/system-settings" element={<SystemSettings />} />
-                        <Route path="/developer/tools-management" element={<ToolsManagement />} />
-                        <Route path="/developer/analytics-dashboard" element={<AnalyticsDashboard />} />
-                        <Route path="/developer/security-settings" element={<SecuritySettings />} />
+                        {/* Redirect any old inventory routes to the main inventory page */}
+                        <Route path="/inventory/stock" element={<Navigate to="/inventory" replace />} />
+                        <Route path="/inventory/*" element={<Navigate to="/inventory" replace />} />
                       </Routes>
                     </Layout>
-                    <Toaster />
-                  </Router>
-                </CustomerDataProvider>
-              </ImpersonationProvider>
-            </NotificationsProvider>
-          </LanguageProvider>
-        </ThemeProvider>
-        <ReactQueryDevtools initialIsOpen={false} />
-      </QueryClientProvider>
-    </ReactErrorBoundary>
+                  </OnboardingGate>
+                </AuthGate>
+              } />
+            </Routes>
+          </Router>
+        </ReactErrorBoundary>
+      </TooltipProvider>
+    </QueryClientProvider>
   );
 }
 

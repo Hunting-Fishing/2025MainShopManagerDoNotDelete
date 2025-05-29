@@ -85,8 +85,10 @@ export function DashboardAlerts() {
       </CardHeader>
       <CardContent>
         {alerts.length === 0 ? (
-          <div className="text-center py-4 text-muted-foreground">
-            No active alerts
+          <div className="text-center py-8 text-muted-foreground">
+            <AlertTriangle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p className="text-lg font-medium mb-2">No active alerts</p>
+            <p className="text-sm">Your inventory levels and systems are all good!</p>
           </div>
         ) : (
           <div className="space-y-3">

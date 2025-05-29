@@ -1,178 +1,54 @@
 
-import React from "react";
+import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
-  ClipboardList,
   Users,
-  FileText,
   Wrench,
   Package,
-  BarChart2,
-  CalendarDays,
+  FileText,
+  BarChart3,
   Settings,
-  MessageCircle,
-  Megaphone,
-  MailOpen,
-  BellRing,
-  HardDrive,
-  UserCog,
-  FilePen,
-  Hammer,
-  Save,
-  Link,
-  Store,
+  Calendar,
   Cog,
-  ShoppingCart
+  Bell,
+  Clock,
+  UserCheck,
+  MessageSquare,
+  ShoppingCart,
+  Code,
+  FileCheck,
+  TrendingUp
 } from "lucide-react";
-import { SidebarNavItem, NavItem } from "./SidebarNavItem";
-import { useAuthUser } from "@/hooks/useAuthUser";
+import { SidebarNavItem } from "./SidebarNavItem";
 
-// Define all navigation items here
-const navigationItems: NavItem[] = [
-  {
-    title: "Dashboard",
-    href: "/dashboard",
-    icon: <LayoutDashboard className="h-5 w-5" />
-  },
-  {
-    title: "Work Orders",
-    href: "/work-orders",
-    icon: <ClipboardList className="h-5 w-5" />
-  },
-  {
-    title: "Invoices",
-    href: "/invoices",
-    icon: <FileText className="h-5 w-5" />
-  },
-  {
-    title: "Customers",
-    href: "/customers",
-    icon: <Users className="h-5 w-5" />
-  },
-  {
-    title: "Equipment",
-    href: "/equipment",
-    icon: <HardDrive className="h-5 w-5" />
-  },
-  {
-    title: "Inventory",
-    href: "/inventory",
-    icon: <Package className="h-5 w-5" />
-  },
-  {
-    title: "Tools Shop",
-    href: "/tools",
-    icon: <Hammer className="h-5 w-5" />
-  },
-  {
-    title: "Forms",
-    href: "/forms",
-    icon: <FilePen className="h-5 w-5" />
-  },
-  {
-    title: "Shopping",
-    href: "/shopping",
-    icon: <ShoppingCart className="h-5 w-5" />
-  },
-  {
-    title: "Maintenance",
-    href: "/maintenance",
-    icon: <Wrench className="h-5 w-5" />
-  },
-  {
-    title: "Calendar",
-    href: "/calendar",
-    icon: <CalendarDays className="h-5 w-5" />
-  },
-  {
-    title: "Reminders",
-    href: "/reminders",
-    icon: <BellRing className="h-5 w-5" />
-  },
-  {
-    title: "Chat",
-    href: "/chat",
-    icon: <MessageCircle className="h-5 w-5" />
-  },
-  {
-    title: "Reports",
-    href: "/reports",
-    icon: <BarChart2 className="h-5 w-5" />
-  },
-  {
-    title: "Team",
-    href: "/team",
-    icon: <UserCog className="h-5 w-5" />
-  },
-  {
-    title: "Marketing",
-    href: "/marketing",
-    icon: <Megaphone className="h-5 w-5" />,
-    submenu: [
-      {
-        title: "Email Templates",
-        href: "/email-templates",
-        icon: <MailOpen className="h-4 w-4" />
-      },
-      {
-        title: "Email Campaigns",
-        href: "/email-campaigns",
-        icon: <Megaphone className="h-4 w-4" />
-      },
-      {
-        title: "Email Sequences",
-        href: "/email-sequences",
-        icon: <MailOpen className="h-4 w-4" />
-      },
-      {
-        title: "SMS Templates",
-        href: "/sms-templates",
-        icon: <MessageCircle className="h-4 w-4" />
-      }
-    ]
-  },
-  {
-    title: "Developer Portal",
-    href: "/developer",
-    icon: <Cog className="h-5 w-5" />,
-    submenu: [
-      {
-        title: "Shopping Controls",
-        href: "/developer/shopping-controls",
-        icon: <Store className="h-4 w-4" />
-      },
-      {
-        title: "Service Management",
-        href: "/developer/service-management",
-        icon: <Wrench className="h-4 w-4" />
-      },
-      {
-        title: "Integrations",
-        href: "/settings/integrations",
-        icon: <Link className="h-4 w-4" />
-      }
-    ]
-  },
-  {
-    title: "Settings",
-    href: "/settings",
-    icon: <Settings className="h-5 w-5" />
-  }
+const navigation = [
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Customers", href: "/customers", icon: Users },
+  { name: "Work Orders", href: "/work-orders", icon: Wrench },
+  { name: "Inventory", href: "/inventory", icon: Package },
+  { name: "Invoices", href: "/invoices", icon: FileText },
+  { name: "Calendar", href: "/calendar", icon: Calendar },
+  { name: "Equipment", href: "/equipment", icon: Cog },
+  { name: "Reminders", href: "/reminders", icon: Clock },
+  { name: "Maintenance", href: "/maintenance", icon: UserCheck },
+  { name: "Reports", href: "/reports", icon: BarChart3 },
+  { name: "Analytics", href: "/analytics", icon: TrendingUp },
+  { name: "Team", href: "/team", icon: UserCheck },
+  { name: "Feedback", href: "/feedback", icon: MessageSquare },
+  { name: "Forms", href: "/forms", icon: FileCheck },
+  { name: "Chat", href: "/chat", icon: MessageSquare },
+  { name: "Shopping", href: "/shopping", icon: ShoppingCart },
+  { name: "Notifications", href: "/notifications", icon: Bell },
+  { name: "Developer", href: "/developer", icon: Code },
+  { name: "Settings", href: "/settings", icon: Settings },
 ];
 
 export function SidebarNavList() {
-  const { isAdmin, isOwner } = useAuthUser();
-  
-  console.log("User roles in SidebarNavList - isAdmin:", isAdmin, "isOwner:", isOwner);
-  
-  // For staff portal, we're showing all navigation items
-  // No filtering is applied as per the requirement
-
   return (
-    <div className="grid grid-flow-row auto-rows-max text-sm gap-0.5 group-[[data-collapsed=true]]:justify-center overflow-auto max-h-[calc(100vh-var(--header-height)-theme(spacing.6))]">
-      {navigationItems.map((item) => (
-        <SidebarNavItem key={item.title} item={item} />
+    <nav className="flex-1 space-y-1 px-2 py-4">
+      {navigation.map((item) => (
+        <SidebarNavItem key={item.name} item={item} />
       ))}
-    </div>
+    </nav>
   );
 }
