@@ -29,6 +29,25 @@ export async function updateProfileMetadata(profileId: string, metadata: Profile
   }
 }
 
+export async function saveProfileMetadata(profileId: string, notes: string) {
+  try {
+    const { data, error } = await supabase
+      .from('profile_metadata')
+      .upsert({
+        profile_id: profileId,
+        metadata: { notes } as any
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return true;
+  } catch (error: any) {
+    console.error('Error saving profile metadata:', error);
+    return false;
+  }
+}
+
 export async function getProfileMetadata(profileId: string): Promise<ProfileMetadata | null> {
   try {
     const { data, error } = await supabase

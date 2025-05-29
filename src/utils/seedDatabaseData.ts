@@ -54,51 +54,54 @@ export async function seedManufacturers() {
 export async function seedSampleProducts(categoryIds: Record<string, string>) {
   const products = [
     {
-      name: 'Premium Socket Set',
+      title: 'Premium Socket Set', // Use title instead of name
       description: 'Complete socket set with ratchet and extensions',
       slug: 'premium-socket-set',
       price: 129.99,
       sale_price: 99.99,
       image_url: 'https://example.com/images/socket-set.jpg',
-      category: 'Engine',
       category_id: categoryIds['Engine'],
       manufacturer: 'Craftsman',
-      rating: 4.8,
+      average_rating: 4.8,
       review_count: 152,
-      featured: true,
-      best_seller: true,
-      affiliate_link: 'https://example.com/affiliate/socket-set'
+      is_featured: true,
+      is_bestseller: true,
+      affiliate_link: 'https://example.com/affiliate/socket-set',
+      is_approved: true,
+      is_available: true
     },
     {
-      name: 'Torque Wrench',
+      title: 'Torque Wrench', // Use title instead of name
       description: 'Precision torque wrench with digital display',
       slug: 'torque-wrench',
       price: 89.99,
       image_url: 'https://example.com/images/torque-wrench.jpg',
-      category: 'Engine',
       category_id: categoryIds['Engine'],
       manufacturer: 'Snap-on',
-      rating: 4.6,
+      average_rating: 4.6,
       review_count: 98,
-      featured: false,
-      best_seller: false,
-      affiliate_link: 'https://example.com/affiliate/torque-wrench'
+      is_featured: false,
+      is_bestseller: false,
+      affiliate_link: 'https://example.com/affiliate/torque-wrench',
+      is_approved: true,
+      is_available: true
     },
     {
-      name: 'OBD-II Scanner',
+      title: 'OBD-II Scanner', // Use title instead of name
       description: 'Advanced diagnostic scanner for all vehicles',
       slug: 'obd-ii-scanner',
       price: 149.99,
       sale_price: 129.99,
       image_url: 'https://example.com/images/scanner.jpg',
-      category: 'Diagnostics',
       category_id: categoryIds['Diagnostics'],
       manufacturer: 'Autel',
-      rating: 4.9,
+      average_rating: 4.9,
       review_count: 215,
-      featured: true,
-      best_seller: true,
-      affiliate_link: 'https://example.com/affiliate/scanner'
+      is_featured: true,
+      is_bestseller: true,
+      affiliate_link: 'https://example.com/affiliate/scanner',
+      is_approved: true,
+      is_available: true
     }
   ];
 
