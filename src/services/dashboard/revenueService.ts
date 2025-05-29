@@ -35,7 +35,7 @@ export const getRevenueData = async (): Promise<MonthlyRevenueData[]> => {
     // Group by date and sum revenues
     const revenueByDate = workOrders.reduce((acc: Record<string, number>, order) => {
       const date = new Date(order.created_at).toISOString().split('T')[0];
-      const revenue = parseFloat(order.total_cost) || 0;
+      const revenue = order.total_cost ? parseFloat(order.total_cost.toString()) : 0;
       
       if (!acc[date]) {
         acc[date] = 0;
@@ -79,7 +79,7 @@ export const getMonthlyRevenue = async (): Promise<{ month: string; revenue: num
     const revenueByMonth = workOrders.reduce((acc: Record<string, number>, order) => {
       const date = new Date(order.created_at);
       const month = date.toLocaleString('default', { month: 'short' });
-      const revenue = parseFloat(order.total_cost) || 0;
+      const revenue = order.total_cost ? parseFloat(order.total_cost.toString()) : 0;
       
       if (!acc[month]) {
         acc[month] = 0;

@@ -2,6 +2,9 @@
 import { supabase } from '@/lib/supabase';
 import { InventoryOrder, CreateInventoryOrderDto, UpdateInventoryOrderDto, ReceiveInventoryOrderDto } from '@/types/inventory/orders';
 
+// Define the valid status type
+type InventoryOrderStatus = 'ordered' | 'partially received' | 'received' | 'cancelled';
+
 // Fetch all inventory orders
 export async function getAllInventoryOrders(): Promise<InventoryOrder[]> {
   try {
@@ -15,11 +18,12 @@ export async function getAllInventoryOrders(): Promise<InventoryOrder[]> {
 
     if (error) throw error;
 
-    // Transform data to include item_name from the join
+    // Transform data to include item_name from the join and ensure proper typing
     return data.map(order => ({
       ...order,
-      item_name: order.inventory_items?.name,
-    }));
+      item_name: order.inventory_items?.name || 'Unknown Item',
+      status: order.status as InventoryOrderStatus,
+    })) as InventoryOrder[];
   } catch (error) {
     console.error('Error fetching inventory orders:', error);
     throw error;
@@ -36,7 +40,11 @@ export async function createInventoryOrder(orderData: CreateInventoryOrderDto): 
       .single();
 
     if (error) throw error;
-    return data;
+    
+    return {
+      ...data,
+      status: data.status as InventoryOrderStatus
+    } as InventoryOrder;
   } catch (error) {
     console.error('Error creating inventory order:', error);
     throw error;
@@ -70,7 +78,11 @@ export async function cancelInventoryOrder(orderId: string): Promise<InventoryOr
       .single();
 
     if (error) throw error;
-    return data;
+    
+    return {
+      ...data,
+      status: data.status as InventoryOrderStatus
+    } as InventoryOrder;
   } catch (error) {
     console.error('Error cancelling inventory order:', error);
     throw error;
@@ -91,7 +103,11 @@ export async function updateInventoryOrder(
       .single();
 
     if (error) throw error;
-    return data;
+    
+    return {
+      ...data,
+      status: data.status as InventoryOrderStatus
+    } as InventoryOrder;
   } catch (error) {
     console.error('Error updating inventory order:', error);
     throw error;

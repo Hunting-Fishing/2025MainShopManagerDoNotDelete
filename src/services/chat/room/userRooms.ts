@@ -1,85 +1,82 @@
 
-import { supabase, DatabaseChatRoom } from "../supabaseClient";
-import { ChatRoom } from "@/types/chat";
-import { transformDatabaseRoom } from "./types";
+import { supabase } from "../supabaseClient";
+import { ChatRoom, ChatMessage } from "@/types/chat";
+import { DatabaseChatRoom } from "./types";
 
-// Get all chat rooms for a user
+// Get all chat rooms for a specific user
 export const getUserChatRooms = async (userId: string): Promise<ChatRoom[]> => {
   try {
-    // Get rooms where the user is a participant
-    const { data: participantRooms, error: participantError } = await supabase
-      .from('chat_participants')
-      .select('room_id')
-      .eq('user_id', userId);
-    
-    if (participantError) throw participantError;
-    
-    if (!participantRooms || participantRooms.length === 0) {
-      return [];
-    }
-    
-    const roomIds = participantRooms.map(p => p.room_id);
-    
-    // Get the room details
-    const { data: rooms, error: roomsError } = await supabase
+    const { data: roomsData, error } = await supabase
       .from('chat_rooms')
-      .select('*')
-      .in('id', roomIds);
+      .select(`
+        *,
+        chat_participants!inner(user_id)
+      `)
+      .eq('chat_participants.user_id', userId)
+      .order('updated_at', { ascending: false });
     
-    if (roomsError) throw roomsError;
+    if (error) throw error;
     
-    // Enhance rooms with last message and unread count
-    const enhancedRooms: ChatRoom[] = await Promise.all(
-      (rooms || []).map(async (room: DatabaseChatRoom) => {
+    // Get last message and unread count for each room
+    const roomsWithDetails = await Promise.all(
+      (roomsData || []).map(async (room: any) => {
         // Get last message
-        const { data: lastMessages, error: lastMessageError } = await supabase
+        const { data: lastMessage } = await supabase
           .from('chat_messages')
           .select('*')
           .eq('room_id', room.id)
           .order('created_at', { ascending: false })
-          .limit(1);
-        
-        if (lastMessageError) console.error("Error fetching last message:", lastMessageError);
-        
-        const lastMessage = lastMessages && lastMessages.length > 0 ? lastMessages[0] : null;
+          .limit(1)
+          .single();
         
         // Get unread count
-        const { data: unreadCountData, error: unreadCountError } = await supabase
+        const { count: unreadCount } = await supabase
           .from('chat_messages')
-          .select('id', { count: 'exact' })
+          .select('*', { count: 'exact', head: true })
           .eq('room_id', room.id)
           .eq('is_read', false)
           .neq('sender_id', userId);
         
-        if (unreadCountError) console.error("Error fetching unread count:", unreadCountError);
-        
-        const unreadCount = unreadCountData ? (unreadCountData as any).count || 0 : 0;
-        
-        // Generate a proper name for shift chats if none is provided
-        let roomName = room.name;
-        if (room.type === 'group' && room.metadata?.is_shift_chat && (!roomName || roomName.trim() === '')) {
-          const shiftDate = room.metadata.shift_date 
-            ? new Date(room.metadata.shift_date).toLocaleDateString() 
-            : 'Unknown Date';
-          const shiftName = room.metadata.shift_name || 'Shift';
-          roomName = `${shiftName} - ${shiftDate}`;
-        }
-        
         return {
-          ...transformDatabaseRoom(room),
-          name: roomName,
-          last_message: lastMessage,
-          unread_count: unreadCount
-        };
+          ...room,
+          last_message: lastMessage ? {
+            ...lastMessage,
+            message_type: lastMessage.message_type as ChatMessage['message_type'] || 'text'
+          } : undefined,
+          unread_count: unreadCount || 0,
+          type: room.type as 'direct' | 'group' | 'work_order'
+        } as ChatRoom;
       })
     );
     
-    return enhancedRooms;
+    return roomsWithDetails;
   } catch (error) {
-    console.error("Error fetching chat rooms:", error);
+    console.error("Error fetching user chat rooms:", error);
     throw error;
   }
 };
 
-// Re-export the room queries
-export { getShiftChatRoom } from './queries';
+// Get archived chat rooms for a user
+export const getArchivedChatRooms = async (userId: string): Promise<ChatRoom[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('chat_rooms')
+      .select(`
+        *,
+        chat_participants!inner(user_id)
+      `)
+      .eq('chat_participants.user_id', userId)
+      .eq('is_archived', true)
+      .order('updated_at', { ascending: false });
+    
+    if (error) throw error;
+    
+    return (data || []).map(room => ({
+      ...room,
+      type: room.type as 'direct' | 'group' | 'work_order'
+    })) as ChatRoom[];
+  } catch (error) {
+    console.error("Error fetching archived chat rooms:", error);
+    throw error;
+  }
+};

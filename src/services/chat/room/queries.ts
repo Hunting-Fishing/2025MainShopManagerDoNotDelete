@@ -1,10 +1,10 @@
 
-import { supabase, DatabaseChatRoom } from "../supabaseClient";
-import { ChatRoom, ChatMessage } from "@/types/chat";
-import { GetRoomOptions, transformDatabaseRoom } from "./types";
+import { supabase } from "../supabaseClient";
+import { ChatRoom } from "@/types/chat";
+import { DatabaseChatRoom, transformDatabaseRoom } from "./types";
 
-// Get a chat room by ID with options for additional data
-export const getChatRoomDetails = async (roomId: string, options?: GetRoomOptions): Promise<ChatRoom> => {
+// Get a specific chat room by ID
+export const getChatRoom = async (roomId: string): Promise<ChatRoom | null> => {
   try {
     const { data, error } = await supabase
       .from('chat_rooms')
@@ -12,32 +12,21 @@ export const getChatRoomDetails = async (roomId: string, options?: GetRoomOption
       .eq('id', roomId)
       .single();
     
-    if (error) throw error;
-    
-    const room = transformDatabaseRoom(data as DatabaseChatRoom);
-    
-    // Enhance with additional data if requested
-    if (options?.includeLastMessage) {
-      const { data: lastMessages } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .eq('room_id', roomId)
-        .order('created_at', { ascending: false })
-        .limit(1);
-        
-      if (lastMessages && lastMessages.length > 0) {
-        room.last_message = lastMessages[0] as ChatMessage;
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null; // Room not found
       }
+      throw error;
     }
     
-    return room;
+    return transformDatabaseRoom(data);
   } catch (error) {
-    console.error("Error fetching chat room details:", error);
+    console.error("Error fetching chat room:", error);
     throw error;
   }
 };
 
-// Get chat room by work order ID
+// Get chat room for a specific work order
 export const getWorkOrderChatRoom = async (workOrderId: string): Promise<ChatRoom | null> => {
   try {
     const { data, error } = await supabase
@@ -45,130 +34,102 @@ export const getWorkOrderChatRoom = async (workOrderId: string): Promise<ChatRoo
       .select('*')
       .eq('type', 'work_order')
       .eq('work_order_id', workOrderId)
-      .maybeSingle();
+      .single();
     
-    if (error) throw error;
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null; // Room not found
+      }
+      throw error;
+    }
     
-    if (!data) return null;
-    
-    return transformDatabaseRoom(data as DatabaseChatRoom);
+    return transformDatabaseRoom(data);
   } catch (error) {
     console.error("Error fetching work order chat room:", error);
     throw error;
   }
 };
 
-// Get direct chat with a specific user
-export const getDirectChatWithUser = async (currentUserId: string, otherUserId: string): Promise<ChatRoom | null> => {
+// Get shift chat room by date or room ID
+export const getShiftChatRoom = async (dateOrId: Date | string): Promise<ChatRoom | null> => {
   try {
-    // Get all direct chat rooms where the current user is a participant
-    const { data: currentUserRooms, error: currentUserError } = await supabase
-      .from('chat_participants')
-      .select('room_id')
-      .eq('user_id', currentUserId);
+    let roomId: string;
     
-    if (currentUserError) throw currentUserError;
-    
-    if (!currentUserRooms || currentUserRooms.length === 0) {
-      return null;
+    if (typeof dateOrId === 'string' && dateOrId.startsWith('shift-chat-')) {
+      roomId = dateOrId;
+    } else if (dateOrId instanceof Date) {
+      const dateStr = dateOrId.toISOString().split('T')[0];
+      roomId = `shift-chat-${dateStr}`;
+    } else {
+      roomId = dateOrId as string;
     }
     
-    const roomIds = currentUserRooms.map(p => p.room_id);
-    
-    // Check if the other user is in any of those rooms
-    const { data: sharedRooms, error: sharedRoomsError } = await supabase
-      .from('chat_participants')
-      .select('room_id')
-      .eq('user_id', otherUserId)
-      .in('room_id', roomIds);
-    
-    if (sharedRoomsError) throw sharedRoomsError;
-    
-    if (!sharedRooms || sharedRooms.length === 0) {
-      return null;
-    }
-    
-    const sharedRoomIds = sharedRooms.map(p => p.room_id);
-    
-    // Get the direct chat rooms among the shared rooms
-    const { data: directRooms, error: directRoomsError } = await supabase
+    const { data, error } = await supabase
       .from('chat_rooms')
       .select('*')
-      .eq('type', 'direct')
-      .in('id', sharedRoomIds)
-      .maybeSingle();
+      .eq('id', roomId)
+      .single();
     
-    if (directRoomsError) throw directRoomsError;
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null; // Room not found
+      }
+      throw error;
+    }
     
-    if (!directRooms) return null;
-    
-    return transformDatabaseRoom(directRooms as DatabaseChatRoom);
+    return transformDatabaseRoom(data);
   } catch (error) {
-    console.error("Error fetching direct chat:", error);
+    console.error("Error fetching shift chat room:", error);
     throw error;
   }
 };
 
-// Get a chat room for a specific shift date
-export const getShiftChatRoom = async (date: Date | string): Promise<ChatRoom | null> => {
+// Get direct message room between two users
+export const getDirectMessageRoom = async (userId1: string, userId2: string): Promise<ChatRoom | null> => {
   try {
-    // First check if the input is a shift-chat ID
-    if (typeof date === 'string' && date.startsWith('shift-chat-')) {
-      // Try to fetch directly by ID
-      const { data, error } = await supabase
-        .from('chat_rooms')
-        .select('*')
-        .eq('id', date)
-        .maybeSingle();
-      
-      if (!error && data) {
-        return transformDatabaseRoom(data);
-      }
-
-      // If not found by direct ID, try to search by shift-date pattern in metadata
-      // Extract the date part if format is shift-chat-YYYY-MM-DD
-      const dateMatch = date.match(/shift-chat-(\d{4}-\d{2}-\d{2})/);
-      if (dateMatch && dateMatch[1]) {
-        const extractedDate = dateMatch[1];
-        const { data: metadataData, error: metadataError } = await supabase
-          .from('chat_rooms')
-          .select('*')
-          .eq('type', 'group')
-          .filter('metadata->is_shift_chat', 'eq', true)
-          .filter('metadata->shift_date', 'ilike', `%${extractedDate}%`)
-          .maybeSingle();
-
-        if (!metadataError && metadataData) {
-          return transformDatabaseRoom(metadataData);
-        }
-      }
-    }
+    // Query for direct rooms where both users are participants
+    const { data: rooms, error } = await supabase
+      .from('chat_rooms')
+      .select(`
+        *,
+        chat_participants!inner(user_id)
+      `)
+      .eq('type', 'direct');
     
-    // Handle both Date objects and string dates for regular date search
-    const dateStr = typeof date === 'string' 
-      ? date 
-      : date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+    if (error) throw error;
     
-    // Search by metadata with the date string
+    // Find room where both users are participants
+    const room = rooms?.find(room => {
+      const participants = room.chat_participants as any[];
+      const userIds = participants.map(p => p.user_id);
+      return userIds.includes(userId1) && userIds.includes(userId2) && userIds.length === 2;
+    });
+    
+    return room ? transformDatabaseRoom(room) : null;
+  } catch (error) {
+    console.error("Error fetching direct message room:", error);
+    throw error;
+  }
+};
+
+// Search chat rooms
+export const searchChatRooms = async (query: string, userId: string): Promise<ChatRoom[]> => {
+  try {
     const { data, error } = await supabase
       .from('chat_rooms')
-      .select('*')
-      .eq('type', 'group')
-      .filter('metadata->is_shift_chat', 'eq', true)
-      .filter('metadata->shift_date', 'ilike', `%${dateStr}%`)
-      .maybeSingle();
+      .select(`
+        *,
+        chat_participants!inner(user_id)
+      `)
+      .eq('chat_participants.user_id', userId)
+      .ilike('name', `%${query}%`)
+      .order('updated_at', { ascending: false });
     
-    if (error) {
-      console.error("Error in getShiftChatRoom:", error);
-      return null;
-    }
+    if (error) throw error;
     
-    if (!data) return null;
-    
-    // Transform the database object to a ChatRoom
-    return transformDatabaseRoom(data);
+    return (data || []).map(transformDatabaseRoom);
   } catch (error) {
-    console.error("Error fetching shift chat room:", error);
-    return null;
+    console.error("Error searching chat rooms:", error);
+    throw error;
   }
 };

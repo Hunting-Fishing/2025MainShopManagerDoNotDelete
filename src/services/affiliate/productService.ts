@@ -19,6 +19,7 @@ interface DatabaseProduct {
   weight?: number;
   tags?: string[];
   product_type?: string;
+  title?: string; // Add optional title field
 }
 
 export interface ProductData {
@@ -44,7 +45,7 @@ export interface ProductData {
 // Transform database product to our ProductData interface
 const transformDatabaseProduct = (dbProduct: DatabaseProduct): ProductData => ({
   id: dbProduct.id,
-  name: dbProduct.description || 'Product', // Use description as name since name column doesn't exist
+  name: dbProduct.title || dbProduct.description || 'Product', // Use title if available, fallback to description
   slug: dbProduct.id, // Use ID as slug since slug column doesn't exist
   description: dbProduct.description || '',
   price: dbProduct.price || 0,
@@ -110,6 +111,7 @@ export async function createProduct(productData: Partial<ProductData>): Promise<
   const { data, error } = await supabase
     .from('products')
     .insert({
+      title: productData.name || productData.description || 'Untitled Product',
       description: productData.description || '',
       price: productData.price || 0,
       image_url: productData.image_url || '',
@@ -130,6 +132,7 @@ export async function updateProduct(id: string, productData: Partial<ProductData
   const { data, error } = await supabase
     .from('products')
     .update({
+      title: productData.name,
       description: productData.description,
       price: productData.price,
       image_url: productData.image_url,
