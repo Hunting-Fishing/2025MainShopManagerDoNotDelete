@@ -57,14 +57,35 @@ export default function Equipment() {
         </Button>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <MaintenanceDueCard equipment={maintenanceDueEquipment} />
-        <WarrantyExpiringCard equipment={warrantyExpiringEquipment} />
-      </div>
+      {equipment.length === 0 && !loading && (
+        <div className="text-center py-12">
+          <div className="mx-auto max-w-md">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Equipment Found</h3>
+            <p className="text-gray-500 mb-4">
+              Get started by adding your first piece of equipment to track maintenance and warranties.
+            </p>
+            <Button asChild>
+              <Link to="/equipment/add">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Add Your First Equipment
+              </Link>
+            </Button>
+          </div>
+        </div>
+      )}
 
-      {/* Equipment Table */}
-      <EquipmentTable equipment={equipment} loading={loading} />
+      {equipment.length > 0 && (
+        <>
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <MaintenanceDueCard equipment={maintenanceDueEquipment} />
+            <WarrantyExpiringCard equipment={warrantyExpiringEquipment} />
+          </div>
+
+          {/* Equipment Table */}
+          <EquipmentTable equipment={equipment} loading={loading} />
+        </>
+      )}
     </div>
   );
 }

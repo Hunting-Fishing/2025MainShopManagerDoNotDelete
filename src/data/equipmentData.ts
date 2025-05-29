@@ -30,34 +30,6 @@ export const maintenanceFrequencyMap: Record<string, string> = {
   "as-needed": "As Needed"
 };
 
-// Mock equipment data for testing and development
-export const mockEquipmentData: Equipment[] = [
-  {
-    id: "1",
-    name: "Hydraulic Lift #1",
-    model: "HydroMax 3000",
-    serial_number: "HM3000-001",
-    manufacturer: "LiftTech",
-    category: "Lifting Equipment",
-    purchase_date: "2022-01-15",
-    install_date: "2022-02-01",
-    customer: "AutoShop Pro",
-    location: "Bay 1",
-    status: "operational",
-    next_maintenance_date: "2024-06-15",
-    maintenance_frequency: "quarterly",
-    last_maintenance_date: "2024-03-15",
-    warranty_expiry_date: "2025-01-15",
-    warranty_status: "active",
-    notes: "Regular maintenance schedule",
-    created_at: "2022-01-15T00:00:00Z",
-    updated_at: "2024-03-15T00:00:00Z",
-    work_order_history: [],
-    maintenance_history: [],
-    maintenance_schedules: []
-  }
-];
-
 // Get equipment with maintenance due within specified days
 export const getMaintenanceDueEquipment = (equipment: Equipment[], daysThreshold: number = 30): Equipment[] => {
   const today = new Date();

@@ -38,7 +38,6 @@ export const useCustomerCreate = () => {
     new_household_name: "",
     household_id: "", 
     household_relationship: "primary",
-    // Remove role from default values since it's not part of the customers table
   });
 
   // Update defaultValues when currentUserShopId changes
@@ -50,9 +49,7 @@ export const useCustomerCreate = () => {
   }
 
   const onSubmit = async (data: CustomerFormValues) => {
-    // No need to destructure role since it doesn't exist in CustomerFormValues anymore
     console.log("Submitting customer with vehicles:", data.vehicles);
-    
     await handleSubmit(data, currentUserShopId);
   };
 
