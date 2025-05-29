@@ -4,35 +4,25 @@ import { ChecklistStat } from "@/types/dashboard";
 
 export const getChecklistStats = async (): Promise<ChecklistStat[]> => {
   try {
-    // In a real application, you'd have a checklist_items table
-    // Here we'll create placeholder data based on existing work orders
-    const { data, error } = await supabase
+    // For now, return mock data since we don't have checklist functionality implemented
+    // In a real implementation, this would query work order checklists
+    const { data: workOrders } = await supabase
       .from('work_orders')
-      .select('id, status')
-      .in('status', ['pending', 'in-progress'])
-      .limit(5);
-      
-    if (error) throw error;
-    
-    if (!data || data.length === 0) return [];
-    
-    // Create checklist stats based on work orders
-    // In real implementation, you would query real checklist data
-    return data.map((workOrder, index) => {
-      // Generate random but consistent required and completed items
-      const requiredItems = 10 + (index % 5); // 10-14 items
-      const completedRequiredItems = Math.floor(requiredItems * (0.4 + (index * 0.1))); // 40-80% complete
-      
-      return {
-        work_order_id: workOrder.id,
-        checklist_id: `checklist-${index+1}`,
-        requiredItems,
-        completedRequiredItems,
-        completionRate: parseFloat((completedRequiredItems / requiredItems).toFixed(2))
-      };
-    });
+      .select('id')
+      .limit(10);
+
+    if (!workOrders) return [];
+
+    // Generate mock checklist data
+    return workOrders.map(order => ({
+      work_order_id: order.id,
+      checklist_id: `checklist-${order.id}`,
+      requiredItems: Math.floor(Math.random() * 10) + 5,
+      completedRequiredItems: Math.floor(Math.random() * 8) + 2,
+      completionRate: Math.floor(Math.random() * 40) + 60 // 60-100%
+    }));
   } catch (error) {
-    console.error("Error generating checklist stats:", error);
+    console.error("Error fetching checklist stats:", error);
     return [];
   }
 };

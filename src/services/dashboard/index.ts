@@ -9,5 +9,8 @@ export * from './revenueService';
 export * from './calendarService';
 export * from './alertsService';
 
-// Fix function name for getPhaseProgress
-export { getPhaseProgress as getPhaseProgressData } from './workOrderService';
+// Export specific functions with their correct names
+export { getPhaseProgress } from './workOrderService';
+export { getRecentWorkOrders } from './workOrderService';
+export { getTechnicianEfficiency } from './technicianService';
+export { getChecklistStats } from './checklistService';
