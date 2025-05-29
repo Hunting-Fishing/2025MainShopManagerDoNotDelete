@@ -10,10 +10,11 @@ interface StepProps {
   onPrevious: () => void;
   data: any;
   updateData: (data: any) => void;
-  onComplete?: () => void; // Add optional completion handler
+  onComplete?: () => void;
+  loading?: boolean; // Add loading property
 }
 
-export function BusinessDetailsStep({ onNext, onPrevious, data, updateData }: StepProps) {
+export function BusinessDetailsStep({ onNext, onPrevious, data, updateData, loading = false }: StepProps) {
   const { companyInfo, updateCompanyInfo } = useShopData();
   const { businessTypes, businessIndustries, isLoading: isLoadingConstants } = useBusinessConstants();
   
@@ -67,11 +68,11 @@ export function BusinessDetailsStep({ onNext, onPrevious, data, updateData }: St
       />
 
       <div className="flex justify-between">
-        <Button variant="outline" onClick={onPrevious}>
+        <Button variant="outline" onClick={onPrevious} disabled={loading}>
           Back
         </Button>
-        <Button onClick={handleNext}>
-          Next
+        <Button onClick={handleNext} disabled={loading}>
+          {loading ? 'Saving...' : 'Next'}
         </Button>
       </div>
     </div>

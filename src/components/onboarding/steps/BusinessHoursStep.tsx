@@ -10,13 +10,14 @@ interface StepProps {
   onPrevious: () => void;
   data: any;
   updateData: (data: any) => void;
-  onComplete?: () => void; // Add optional completion handler
+  onComplete?: () => void;
+  loading?: boolean; // Add loading property
 }
 
-export function BusinessHoursStep({ onNext, onPrevious, data, updateData }: StepProps) {
+export function BusinessHoursStep({ onNext, onPrevious, data, updateData, loading = false }: StepProps) {
   const { shopData } = useShopData();
   const [businessHours, setBusinessHours] = useState<BusinessHours[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Load existing business hours or create defaults
   useEffect(() => {
@@ -50,7 +51,7 @@ export function BusinessHoursStep({ onNext, onPrevious, data, updateData }: Step
         }));
         setBusinessHours(defaultHours);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
@@ -74,7 +75,7 @@ export function BusinessHoursStep({ onNext, onPrevious, data, updateData }: Step
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return <div className="p-8 text-center">Loading business hours...</div>;
   }
 
@@ -93,11 +94,11 @@ export function BusinessHoursStep({ onNext, onPrevious, data, updateData }: Step
       />
 
       <div className="flex justify-between">
-        <Button variant="outline" onClick={onPrevious}>
+        <Button variant="outline" onClick={onPrevious} disabled={loading}>
           Back
         </Button>
-        <Button onClick={handleNext}>
-          Next
+        <Button onClick={handleNext} disabled={loading}>
+          {loading ? 'Saving...' : 'Next'}
         </Button>
       </div>
     </div>

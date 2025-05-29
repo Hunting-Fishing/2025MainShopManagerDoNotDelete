@@ -9,10 +9,11 @@ interface StepProps {
   onPrevious: () => void;
   data: any;
   updateData: (data: any) => void;
-  onComplete?: () => void; // Add optional completion handler
+  onComplete?: () => void;
+  loading?: boolean; // Add loading property
 }
 
-export function BasicInfoStep({ onNext, onPrevious, data, updateData }: StepProps) {
+export function BasicInfoStep({ onNext, onPrevious, data, updateData, loading = false }: StepProps) {
   const { companyInfo, updateCompanyInfo } = useShopData();
   const [formData, setFormData] = useState({
     name: data.name || companyInfo?.name || '',
@@ -104,8 +105,8 @@ export function BasicInfoStep({ onNext, onPrevious, data, updateData }: StepProp
       </div>
 
       <div className="flex justify-end">
-        <Button onClick={handleNext}>
-          Next
+        <Button onClick={handleNext} disabled={loading}>
+          {loading ? 'Saving...' : 'Next'}
         </Button>
       </div>
     </div>
