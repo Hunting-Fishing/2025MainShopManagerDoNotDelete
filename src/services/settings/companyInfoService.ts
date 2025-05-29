@@ -97,7 +97,7 @@ async function getShopInfo() {
     
     console.log("Shop data from DB:", shop);
     
-    // Format shop data to match CompanyInfo structure
+    // Format shop data to match CompanyInfo structure with proper property names
     const companyInfo: CompanyInfo = {
       name: shop?.name || "",
       address: shop?.address || "",
@@ -106,11 +106,11 @@ async function getShopInfo() {
       zip: shop?.postal_code || "",
       phone: shop?.phone ? formatPhoneNumber(shop.phone) : "",
       email: shop?.email || "",
-      taxId: shop?.tax_id || "",
-      businessType: shop?.business_type || "",
+      tax_id: shop?.tax_id || "",
+      business_type: shop?.business_type || "",
       industry: shop?.industry || "",
-      otherIndustry: shop?.other_industry || "",
-      logoUrl: shop?.logo_url || ""
+      other_industry: shop?.other_industry || "",
+      logo_url: shop?.logo_url || ""
     };
     
     console.log("Loaded company info:", companyInfo);
@@ -136,10 +136,10 @@ async function updateCompanyInfo(shopId: string, companyInfo: CompanyInfo) {
       postal_code: companyInfo.zip,
       phone: cleanedPhone,
       email: companyInfo.email,
-      tax_id: companyInfo.taxId,
-      business_type: companyInfo.businessType,
+      tax_id: companyInfo.tax_id,
+      business_type: companyInfo.business_type,
       industry: companyInfo.industry,
-      other_industry: companyInfo.otherIndustry,
+      other_industry: companyInfo.other_industry,
       updated_at: new Date().toISOString()
     };
     
@@ -158,7 +158,7 @@ async function updateCompanyInfo(shopId: string, companyInfo: CompanyInfo) {
     
     console.log("Company info updated successfully:", data);
     
-    // Return formatted data
+    // Return formatted data with proper property mapping
     const updatedCompanyInfo: CompanyInfo = {
       name: data[0]?.name || companyInfo.name,
       address: data[0]?.address || companyInfo.address,
@@ -167,11 +167,11 @@ async function updateCompanyInfo(shopId: string, companyInfo: CompanyInfo) {
       zip: data[0]?.postal_code || companyInfo.zip,
       phone: formatPhoneNumber(data[0]?.phone || companyInfo.phone),
       email: data[0]?.email || companyInfo.email,
-      taxId: data[0]?.tax_id || companyInfo.taxId,
-      businessType: data[0]?.business_type || companyInfo.businessType,
+      tax_id: data[0]?.tax_id || companyInfo.tax_id,
+      business_type: data[0]?.business_type || companyInfo.business_type,
       industry: data[0]?.industry || companyInfo.industry,
-      otherIndustry: data[0]?.other_industry || companyInfo.otherIndustry,
-      logoUrl: data[0]?.logo_url || companyInfo.logoUrl
+      other_industry: data[0]?.other_industry || companyInfo.other_industry,
+      logo_url: data[0]?.logo_url || companyInfo.logo_url
     };
     
     return { success: true, data: updatedCompanyInfo };

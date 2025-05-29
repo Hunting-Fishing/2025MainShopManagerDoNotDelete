@@ -1,9 +1,8 @@
 
 import { supabase } from '@/lib/supabase';
-import { toast } from '@/hooks/use-toast';
 
-export interface CompanyInfo {
-  id?: string;
+export interface ShopData {
+  id: string;
   name: string;
   address?: string;
   city?: string;
@@ -11,305 +10,181 @@ export interface CompanyInfo {
   postal_code?: string;
   phone?: string;
   email?: string;
-  logo_url?: string;
   tax_id?: string;
   business_type?: string;
   industry?: string;
   other_industry?: string;
-}
-
-export interface ShopData extends CompanyInfo {
-  shop_id?: string;
-  organization_id?: string;
-  is_active?: boolean;
+  logo_url?: string;
   onboarding_completed?: boolean;
-  onboarding_data?: any;
-  latitude?: number;
-  longitude?: number;
-  shop_description?: string;
-  shop_image_url?: string;
+  setup_step?: number;
 }
 
-export interface ShopValidation {
+export interface CompanyInfo {
+  name: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  phone: string;
+  email: string;
+  tax_id: string;
+  business_type: string;
+  industry: string;
+  other_industry?: string;
+  logo_url: string;
+}
+
+export interface ShopDataValidation {
   isValid: boolean;
   missingFields: string[];
-  warnings: string[];
-}
-
-// Define the exact structure that matches the shops table
-interface ShopUpdateData {
-  name?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  postal_code?: string;
-  phone?: string;
-  email?: string;
-  logo_url?: string;
-  tax_id?: string;
-  business_type?: string;
-  industry?: string;
-  other_industry?: string;
-  shop_description?: string;
-  shop_image_url?: string;
-  latitude?: number;
-  longitude?: number;
-  is_active?: boolean;
-  onboarding_completed?: boolean;
-  onboarding_data?: any;
 }
 
 class ShopDataService {
-  private readonly REQUIRED_FIELDS = ['name', 'email'];
-  private readonly BUSINESS_FIELDS = ['phone', 'address', 'city', 'state'];
-
   /**
-   * Get current shop data with validation
+   * Get shop data from database
    */
-  async getValidatedShopData(): Promise<{ data: ShopData | null; validation: ShopValidation }> {
+  async getShopData(): Promise<ShopData | null> {
     try {
-      const { data, error } = await supabase
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('No authenticated user');
+      }
+
+      // Get user's profile to find shop_id
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('shop_id')
+        .eq('id', user.id)
+        .single();
+
+      if (!profile?.shop_id) {
+        throw new Error('No shop associated with user');
+      }
+
+      // Get shop data
+      const { data: shop, error } = await supabase
         .from('shops')
         .select('*')
+        .eq('id', profile.shop_id)
         .single();
 
       if (error) {
-        console.error('Error fetching shop data:', error);
-        return {
-          data: null,
-          validation: {
-            isValid: false,
-            missingFields: this.REQUIRED_FIELDS,
-            warnings: ['Failed to fetch shop data']
-          }
-        };
+        throw error;
       }
 
-      const validation = this.validateShopData(data);
-      
-      return {
-        data: data as ShopData,
-        validation
-      };
+      return shop as ShopData;
     } catch (error) {
-      console.error('Unexpected error in getValidatedShopData:', error);
-      return {
-        data: null,
-        validation: {
-          isValid: false,
-          missingFields: this.REQUIRED_FIELDS,
-          warnings: ['Unexpected error occurred']
-        }
-      };
-    }
-  }
-
-  /**
-   * Get company information in CompanyInfo format
-   */
-  async getCompanyInfo(): Promise<CompanyInfo | null> {
-    try {
-      const { data, error } = await supabase
-        .from('shops')
-        .select(`
-          id,
-          name,
-          address,
-          city,
-          state,
-          postal_code,
-          phone,
-          email,
-          logo_url,
-          tax_id,
-          business_type,
-          industry,
-          other_industry
-        `)
-        .single();
-
-      if (error) {
-        console.error('Error fetching company info:', error);
-        return null;
-      }
-
-      return data as CompanyInfo;
-    } catch (error) {
-      console.error('Unexpected error in getCompanyInfo:', error);
+      console.error('Error fetching shop data:', error);
       return null;
     }
   }
 
   /**
-   * Update company information
+   * Get validated shop data
    */
-  async updateCompanyInfo(updates: Partial<CompanyInfo>): Promise<boolean> {
-    try {
-      // Remove id from updates as it's not updatable
-      const { id, ...updateData } = updates;
-      
-      // Map CompanyInfo to ShopUpdateData structure
-      const shopUpdateData: ShopUpdateData = {
-        name: updateData.name,
-        address: updateData.address,
-        city: updateData.city,
-        state: updateData.state,
-        postal_code: updateData.postal_code,
-        phone: updateData.phone,
-        email: updateData.email,
-        logo_url: updateData.logo_url,
-        tax_id: updateData.tax_id,
-        business_type: updateData.business_type,
-        industry: updateData.industry,
-        other_industry: updateData.other_industry
-      };
-
-      // Remove undefined values
-      const cleanUpdateData = Object.fromEntries(
-        Object.entries(shopUpdateData).filter(([_, value]) => value !== undefined)
-      );
-
-      const { error } = await supabase
-        .from('shops')
-        .update(cleanUpdateData)
-        .single();
-
-      if (error) {
-        console.error('Error updating company info:', error);
-        return false;
-      }
-
-      // Log the update for audit trail
-      await this.logShopDataChange('company_info_update', cleanUpdateData);
-      
-      return true;
-    } catch (error) {
-      console.error('Unexpected error in updateCompanyInfo:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Update shop data with proper validation
-   */
-  async updateShopData(updates: Partial<ShopData>): Promise<boolean> {
-    try {
-      // Remove fields that shouldn't be updated directly
-      const { id, shop_id, organization_id, ...updateData } = updates;
-      
-      const { error } = await supabase
-        .from('shops')
-        .update(updateData)
-        .single();
-
-      if (error) {
-        console.error('Error updating shop data:', error);
-        return false;
-      }
-
-      // Log the update for audit trail
-      await this.logShopDataChange('shop_data_update', updateData);
-      
-      return true;
-    } catch (error) {
-      console.error('Unexpected error in updateShopData:', error);
-      return false;
-    }
+  async getValidatedShopData(): Promise<{ data: ShopData | null; validation: ShopDataValidation }> {
+    const data = await this.getShopData();
+    const validation = data ? this.validateShopData(data) : { isValid: false, missingFields: ['all'] };
+    
+    return { data, validation };
   }
 
   /**
    * Validate shop data completeness
    */
-  validateShopData(data: any): ShopValidation {
-    if (!data) {
-      return {
-        isValid: false,
-        missingFields: this.REQUIRED_FIELDS,
-        warnings: ['No shop data available']
-      };
-    }
-
-    const missingFields: string[] = [];
-    const warnings: string[] = [];
-
-    // Check required fields
-    this.REQUIRED_FIELDS.forEach(field => {
-      if (!data[field] || data[field].trim() === '') {
-        missingFields.push(field);
-      }
-    });
-
-    // Check business fields for warnings
-    this.BUSINESS_FIELDS.forEach(field => {
-      if (!data[field] || data[field].trim() === '') {
-        warnings.push(`${field} is recommended for complete business profile`);
-      }
+  validateShopData(shopData: ShopData): ShopDataValidation {
+    const requiredFields = ['name', 'email', 'phone', 'address', 'city', 'state'];
+    const missingFields = requiredFields.filter(field => {
+      const value = shopData[field as keyof ShopData];
+      return !value || value.toString().trim() === '';
     });
 
     return {
       isValid: missingFields.length === 0,
-      missingFields,
-      warnings
+      missingFields
     };
   }
 
   /**
-   * Log shop data changes for audit trail
+   * Get company info in standardized format
    */
-  private async logShopDataChange(action: string, data: any): Promise<void> {
+  async getCompanyInfo(): Promise<CompanyInfo | null> {
     try {
-      console.log(`Shop data change logged: ${action}`, data);
-      // Here you could implement actual audit logging to a separate table
-      // For now, we'll just log to console
+      const shopData = await this.getShopData();
+      if (!shopData) return null;
+
+      return {
+        name: shopData.name || '',
+        address: shopData.address || '',
+        city: shopData.city || '',
+        state: shopData.state || '',
+        zip: shopData.postal_code || '',
+        phone: shopData.phone || '',
+        email: shopData.email || '',
+        tax_id: shopData.tax_id || '',
+        business_type: shopData.business_type || '',
+        industry: shopData.industry || '',
+        other_industry: shopData.other_industry || '',
+        logo_url: shopData.logo_url || ''
+      };
     } catch (error) {
-      console.error('Error logging shop data change:', error);
-      // Don't throw error as this is just for logging
+      console.error('Error getting company info:', error);
+      return null;
     }
   }
 
   /**
-   * Get shop data health status
+   * Update company info
    */
-  async getShopDataHealth(): Promise<{
-    status: 'healthy' | 'warning' | 'critical';
-    issues: string[];
-    score: number;
-  }> {
-    const { data, validation } = await this.getValidatedShopData();
-    
-    if (!data) {
-      return {
-        status: 'critical',
-        issues: ['Shop data not found'],
-        score: 0
-      };
+  async updateCompanyInfo(updates: Partial<CompanyInfo>): Promise<boolean> {
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+
+      // Get user's profile to find shop_id
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('shop_id')
+        .eq('id', user.id)
+        .single();
+
+      if (!profile?.shop_id) return false;
+
+      // Map CompanyInfo properties to database columns
+      const updateData: any = {};
+      if (updates.name !== undefined) updateData.name = updates.name;
+      if (updates.address !== undefined) updateData.address = updates.address;
+      if (updates.city !== undefined) updateData.city = updates.city;
+      if (updates.state !== undefined) updateData.state = updates.state;
+      if (updates.zip !== undefined) updateData.postal_code = updates.zip;
+      if (updates.phone !== undefined) updateData.phone = updates.phone;
+      if (updates.email !== undefined) updateData.email = updates.email;
+      if (updates.tax_id !== undefined) updateData.tax_id = updates.tax_id;
+      if (updates.business_type !== undefined) updateData.business_type = updates.business_type;
+      if (updates.industry !== undefined) updateData.industry = updates.industry;
+      if (updates.other_industry !== undefined) updateData.other_industry = updates.other_industry;
+      if (updates.logo_url !== undefined) updateData.logo_url = updates.logo_url;
+
+      updateData.updated_at = new Date().toISOString();
+
+      const { error } = await supabase
+        .from('shops')
+        .update(updateData)
+        .eq('id', profile.shop_id);
+
+      if (error) {
+        console.error('Error updating shop:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error updating company info:', error);
+      return false;
     }
-
-    const totalFields = this.REQUIRED_FIELDS.length + this.BUSINESS_FIELDS.length;
-    const filledFields = totalFields - validation.missingFields.length;
-    const score = Math.round((filledFields / totalFields) * 100);
-
-    let status: 'healthy' | 'warning' | 'critical';
-    if (score >= 80) {
-      status = 'healthy';
-    } else if (score >= 60) {
-      status = 'warning';
-    } else {
-      status = 'critical';
-    }
-
-    const issues = [
-      ...validation.missingFields.map(field => `Missing required field: ${field}`),
-      ...validation.warnings
-    ];
-
-    return {
-      status,
-      issues,
-      score
-    };
   }
 }
 
-// Export singleton instance
 export const shopDataService = new ShopDataService();

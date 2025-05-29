@@ -11,11 +11,11 @@ export interface CompanyInfo {
   zip: string;
   phone: string;
   email: string;
-  taxId: string;
-  businessType: string;
+  tax_id: string;
+  business_type: string;
   industry: string;
-  otherIndustry?: string;  
-  logoUrl: string;
+  other_industry?: string;  
+  logo_url: string;
 }
 
 export interface BusinessHours {
