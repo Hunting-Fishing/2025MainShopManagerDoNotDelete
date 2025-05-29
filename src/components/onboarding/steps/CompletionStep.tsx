@@ -4,24 +4,25 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Building2, MapPin, Phone, Mail, FileText, Briefcase, Globe } from 'lucide-react';
 import { useShopData } from '@/hooks/useShopData';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface StepProps {
   onNext: () => void;
   onPrevious: () => void;
   data: any;
   updateData: (data: any) => void;
-  onComplete?: () => void; // Add completion handler
+  onComplete?: () => void;
+  loading?: boolean;
 }
 
-export function CompletionStep({ onNext, onPrevious, data, updateData, onComplete }: StepProps) {
-  const { shopData, companyInfo, loading } = useShopData();
+export function CompletionStep({ onNext, onPrevious, data, updateData, onComplete, loading = false }: StepProps) {
+  const { shopData, companyInfo, loading: dataLoading } = useShopData();
   
-  if (loading) {
+  if (dataLoading) {
     return (
       <div className="space-y-6">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading...</h2>
-          <p className="text-gray-600">Fetching your shop information...</p>
+          <LoadingSpinner text="Loading your shop information..." />
         </div>
       </div>
     );
@@ -136,14 +137,23 @@ export function CompletionStep({ onNext, onPrevious, data, updateData, onComplet
         <Button 
           variant="outline" 
           onClick={onPrevious}
+          disabled={loading}
         >
           Back
         </Button>
         <Button 
           onClick={handleComplete}
           className="bg-green-600 hover:bg-green-700"
+          disabled={loading}
         >
-          Complete Setup
+          {loading ? (
+            <>
+              <LoadingSpinner size="sm" className="mr-2" />
+              Completing Setup...
+            </>
+          ) : (
+            'Complete Setup'
+          )}
         </Button>
       </div>
     </div>
