@@ -63,25 +63,28 @@ export const invoiceService = {
   },
 
   async createInvoice(invoice: Omit<Invoice, 'id' | 'created_at' | 'updated_at' | 'number' | 'issue_date' | 'tax_rate' | 'items' | 'assignedStaff' | 'last_updated_by' | 'last_updated_at'>): Promise<Invoice> {
+    // Only include fields that exist in the database schema
+    const dbInvoice = {
+      customer: invoice.customer,
+      date: invoice.date,
+      due_date: invoice.due_date,
+      status: invoice.status,
+      subtotal: invoice.subtotal,
+      tax: invoice.tax,
+      total: invoice.total,
+      customer_id: invoice.customer_id,
+      customer_email: invoice.customer_email,
+      customer_address: invoice.customer_address,
+      notes: invoice.notes,
+      payment_method: invoice.payment_method,
+      work_order_id: invoice.work_order_id,
+      description: invoice.description,
+      created_by: invoice.created_by
+    };
+
     const { data, error } = await supabase
       .from('invoices')
-      .insert({
-        customer: invoice.customer,
-        date: invoice.date,
-        due_date: invoice.due_date,
-        status: invoice.status,
-        subtotal: invoice.subtotal,
-        tax: invoice.tax,
-        total: invoice.total,
-        customer_id: invoice.customer_id,
-        customer_email: invoice.customer_email,
-        customer_address: invoice.customer_address,
-        notes: invoice.notes,
-        payment_method: invoice.payment_method,
-        work_order_id: invoice.work_order_id,
-        description: invoice.description,
-        created_by: invoice.created_by
-      })
+      .insert(dbInvoice)
       .select()
       .single();
 
