@@ -2,109 +2,81 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
-export interface OnboardingStatus {
+interface OnboardingStatus {
   isComplete: boolean;
-  hasShopInfo: boolean;
-  hasBusinessSettings: boolean;
-  lastStep: number;
+  currentStep: number;
+  completedSteps: number[];
 }
 
 export function useOnboardingStatus() {
   const [status, setStatus] = useState<OnboardingStatus>({
     isComplete: false,
-    hasShopInfo: false,
-    hasBusinessSettings: false,
-    lastStep: 0,
+    currentStep: 0,
+    completedSteps: []
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      try {
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setLoading(false);
+          return;
+        }
+
+        // Get user's profile to find shop_id
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('shop_id')
+          .eq('id', user.id)
+          .single();
+
+        if (!profile?.shop_id) {
+          setLoading(false);
+          return;
+        }
+
+        // Check shop onboarding status
+        const { data: shop } = await supabase
+          .from('shops')
+          .select('onboarding_completed, setup_step')
+          .eq('id', profile.shop_id)
+          .single();
+
+        // Check onboarding progress
+        const { data: progress } = await supabase
+          .from('onboarding_progress')
+          .select('*')
+          .eq('shop_id', profile.shop_id)
+          .single();
+
+        const isComplete = shop?.onboarding_completed || progress?.is_completed || false;
+        const currentStep = progress?.current_step || shop?.setup_step || 0;
+        const completedSteps = progress?.completed_steps || [];
+
+        setStatus({
+          isComplete,
+          currentStep,
+          completedSteps
+        });
+
+      } catch (error) {
+        console.error('Error checking onboarding status:', error);
+        // Default to not completed on error
+        setStatus({
+          isComplete: false,
+          currentStep: 0,
+          completedSteps: []
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
     checkOnboardingStatus();
   }, []);
 
-  const checkOnboardingStatus = async () => {
-    try {
-      setLoading(true);
-      
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Check if user has shop info
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('shop_id')
-        .eq('id', user.id)
-        .single();
-
-      if (!profile?.shop_id) {
-        setStatus({
-          isComplete: false,
-          hasShopInfo: false,
-          hasBusinessSettings: false,
-          lastStep: 0,
-        });
-        return;
-      }
-
-      // Check shop details and onboarding completion
-      const { data: shop } = await supabase
-        .from('shops')
-        .select('*, onboarding_completed, setup_step')
-        .eq('id', profile.shop_id)
-        .single();
-
-      // Check if onboarding is marked as complete
-      if (shop?.onboarding_completed) {
-        setStatus({
-          isComplete: true,
-          hasShopInfo: true,
-          hasBusinessSettings: true,
-          lastStep: 4,
-        });
-        return;
-      }
-
-      // Check onboarding progress
-      const { data: progress } = await supabase
-        .from('onboarding_progress')
-        .select('*')
-        .eq('shop_id', profile.shop_id)
-        .single();
-
-      // Check business hours
-      const { data: hours } = await supabase
-        .from('shop_hours')
-        .select('*')
-        .eq('shop_id', profile.shop_id);
-
-      const hasShopInfo = !!(shop?.name && shop?.email && shop?.phone);
-      const hasBusinessSettings = hours && hours.length > 0;
-      const currentStep = progress?.current_step || (hasBusinessSettings ? 2 : hasShopInfo ? 1 : 0);
-      const isComplete = hasShopInfo && hasBusinessSettings && (progress?.is_completed || shop?.onboarding_completed);
-
-      setStatus({
-        isComplete,
-        hasShopInfo,
-        hasBusinessSettings,
-        lastStep: currentStep,
-      });
-
-    } catch (error) {
-      console.error('Error checking onboarding status:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const markOnboardingComplete = async () => {
-    setStatus(prev => ({ ...prev, isComplete: true, lastStep: 4 }));
-  };
-
-  return {
-    status,
-    loading,
-    checkOnboardingStatus,
-    markOnboardingComplete,
-  };
+  return { status, loading };
 }
