@@ -6340,6 +6340,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           name: string
+          position: number | null
           updated_at: string | null
         }
         Insert: {
@@ -6348,6 +6349,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name: string
+          position?: number | null
           updated_at?: string | null
         }
         Update: {
@@ -6356,6 +6358,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name?: string
+          position?: number | null
           updated_at?: string | null
         }
         Relationships: []
@@ -6389,6 +6392,47 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      service_jobs: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          estimated_time: number | null
+          id: string
+          name: string
+          price: number | null
+          subcategory_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          estimated_time?: number | null
+          id?: string
+          name: string
+          price?: number | null
+          subcategory_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          estimated_time?: number | null
+          id?: string
+          name?: string
+          price?: number | null
+          subcategory_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_jobs_subcategory_id_fkey"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "service_subcategories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       service_reminder_tags: {
         Row: {
@@ -6539,6 +6583,41 @@ export type Database = {
             columns: ["vehicle_id"]
             isOneToOne: false
             referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_subcategories: {
+        Row: {
+          category_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_subcategories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "service_categories"
             referencedColumns: ["id"]
           },
         ]

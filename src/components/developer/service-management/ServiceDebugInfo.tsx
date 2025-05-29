@@ -1,201 +1,172 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Database, RefreshCw, Eye, EyeOff } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { Bug, Eye, EyeOff, Database, AlertTriangle } from 'lucide-react';
+import { fetchRawServiceData } from '@/lib/services/serviceApi';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
-export const ServiceDebugInfo: React.FC = () => {
-  const [isVisible, setIsVisible] = useState(false);
+const ServiceDebugInfo: React.FC = () => {
+  const [isOpen, setIsOpen] = useState(false);
   const [debugData, setDebugData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const fetchDebugData = async () => {
-    setIsLoading(true);
+  const loadDebugData = async () => {
     try {
-      // Get raw table data
-      const [categoriesResult, subcategoriesResult, jobsResult] = await Promise.all([
-        supabase.from('service_categories').select('*').order('created_at', { ascending: false }),
-        supabase.from('service_subcategories').select('*').order('created_at', { ascending: false }),
-        supabase.from('service_jobs').select('*').order('created_at', { ascending: false })
-      ]);
-
-      setDebugData({
-        categories: categoriesResult.data || [],
-        subcategories: subcategoriesResult.data || [],
-        jobs: jobsResult.data || [],
-        errors: {
-          categories: categoriesResult.error,
-          subcategories: subcategoriesResult.error,
-          jobs: jobsResult.error
-        }
-      });
+      setIsLoading(true);
+      const data = await fetchRawServiceData();
+      setDebugData(data);
+      console.log('Debug data loaded:', data);
     } catch (error) {
-      console.error('Error fetching debug data:', error);
+      console.error('Failed to load debug data:', error);
+      setDebugData({ error: error.message });
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (!isVisible) {
-    return (
-      <Card className="border-orange-200 bg-orange-50">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Database className="h-5 w-5 text-orange-600" />
-              <span className="font-medium text-orange-800">Debug Database Contents</span>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setIsVisible(true);
-                fetchDebugData();
-              }}
-              className="border-orange-300 text-orange-700 hover:bg-orange-100"
-            >
-              <Eye className="h-4 w-4 mr-2" />
-              Show Debug Info
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <Card className="border-orange-200 bg-orange-50">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-orange-800">
-            <Database className="h-5 w-5" />
-            Database Debug Information
-          </CardTitle>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fetchDebugData}
-              disabled={isLoading}
-              className="border-orange-300 text-orange-700 hover:bg-orange-100"
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsVisible(false)}
-              className="border-orange-300 text-orange-700 hover:bg-orange-100"
-            >
-              <EyeOff className="h-4 w-4 mr-2" />
-              Hide
-            </Button>
-          </div>
-        </div>
+    <Card className="bg-yellow-50 border-yellow-200">
+      <CardHeader className="bg-yellow-100 border-b border-yellow-200">
+        <CardTitle className="flex items-center gap-2 text-yellow-800">
+          <Bug className="h-5 w-5" />
+          Debug Database Contents
+          <Badge variant="outline" className="bg-yellow-200 text-yellow-800 border-yellow-300">
+            Troubleshooting
+          </Badge>
+        </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {isLoading ? (
-          <div className="text-center py-4 text-orange-600">Loading debug data...</div>
-        ) : debugData ? (
-          <div className="space-y-4">
-            {/* Categories */}
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <h4 className="font-semibold text-orange-800">Service Categories</h4>
-                <Badge variant="outline" className="bg-white border-orange-300 text-orange-700">
-                  {debugData.categories.length} found
-                </Badge>
-              </div>
-              {debugData.errors.categories ? (
-                <div className="text-red-600 text-sm bg-red-50 p-2 rounded">
-                  Error: {debugData.errors.categories.message}
-                </div>
-              ) : debugData.categories.length > 0 ? (
-                <div className="bg-white p-3 rounded border border-orange-200 max-h-32 overflow-y-auto">
-                  {debugData.categories.slice(0, 5).map((cat: any) => (
-                    <div key={cat.id} className="text-sm py-1">
-                      <strong>{cat.name}</strong> (ID: {cat.id})
-                      {cat.description && <span className="text-gray-600"> - {cat.description}</span>}
+      <CardContent className="p-4">
+        <div className="flex items-center gap-2 mb-4">
+          <Button 
+            onClick={loadDebugData} 
+            disabled={isLoading}
+            variant="outline"
+            size="sm"
+            className="border-yellow-300 text-yellow-700 hover:bg-yellow-100"
+          >
+            <Database className="h-4 w-4 mr-2" />
+            {isLoading ? 'Loading...' : 'Load Raw Database Data'}
+          </Button>
+          
+          <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+            <CollapsibleTrigger asChild>
+              <Button variant="outline" size="sm" className="border-yellow-300 text-yellow-700 hover:bg-yellow-100">
+                {isOpen ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
+                {isOpen ? 'Hide' : 'Show'} Debug Info
+              </Button>
+            </CollapsibleTrigger>
+            
+            <CollapsibleContent className="mt-4">
+              {debugData && (
+                <div className="space-y-4">
+                  {debugData.error ? (
+                    <div className="bg-red-50 border border-red-200 rounded p-3">
+                      <div className="flex items-center gap-2 text-red-700 font-medium mb-2">
+                        <AlertTriangle className="h-4 w-4" />
+                        Error Loading Data
+                      </div>
+                      <p className="text-red-600 text-sm">{debugData.error}</p>
                     </div>
-                  ))}
-                  {debugData.categories.length > 5 && (
-                    <div className="text-sm text-gray-500 italic">
-                      ... and {debugData.categories.length - 5} more
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-orange-600 text-sm">No categories found in database</div>
-              )}
-            </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div className="bg-white border border-yellow-200 rounded p-3">
+                          <h4 className="font-medium text-gray-800 mb-2">Categories</h4>
+                          <p className="text-gray-600">Count: {debugData.categories?.length || 0}</p>
+                          {debugData.errors?.categories && (
+                            <p className="text-red-500 text-xs mt-1">Error: {debugData.errors.categories.message}</p>
+                          )}
+                        </div>
+                        
+                        <div className="bg-white border border-yellow-200 rounded p-3">
+                          <h4 className="font-medium text-gray-800 mb-2">Subcategories</h4>
+                          <p className="text-gray-600">Count: {debugData.subcategories?.length || 0}</p>
+                          {debugData.errors?.subcategories && (
+                            <p className="text-red-500 text-xs mt-1">Error: {debugData.errors.subcategories.message}</p>
+                          )}
+                        </div>
+                        
+                        <div className="bg-white border border-yellow-200 rounded p-3">
+                          <h4 className="font-medium text-gray-800 mb-2">Jobs</h4>
+                          <p className="text-gray-600">Count: {debugData.jobs?.length || 0}</p>
+                          {debugData.errors?.jobs && (
+                            <p className="text-red-500 text-xs mt-1">Error: {debugData.errors.jobs.message}</p>
+                          )}
+                        </div>
+                      </div>
 
-            {/* Subcategories */}
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <h4 className="font-semibold text-orange-800">Service Subcategories</h4>
-                <Badge variant="outline" className="bg-white border-orange-300 text-orange-700">
-                  {debugData.subcategories.length} found
-                </Badge>
-              </div>
-              {debugData.errors.subcategories ? (
-                <div className="text-red-600 text-sm bg-red-50 p-2 rounded">
-                  Error: {debugData.errors.subcategories.message}
-                </div>
-              ) : debugData.subcategories.length > 0 ? (
-                <div className="bg-white p-3 rounded border border-orange-200 max-h-32 overflow-y-auto">
-                  {debugData.subcategories.slice(0, 5).map((sub: any) => (
-                    <div key={sub.id} className="text-sm py-1">
-                      <strong>{sub.name}</strong> (Category: {sub.category_id})
-                    </div>
-                  ))}
-                  {debugData.subcategories.length > 5 && (
-                    <div className="text-sm text-gray-500 italic">
-                      ... and {debugData.subcategories.length - 5} more
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-orange-600 text-sm">No subcategories found in database</div>
-              )}
-            </div>
+                      {debugData.categories?.length > 0 && (
+                        <div className="bg-white border border-yellow-200 rounded p-3">
+                          <h4 className="font-medium text-gray-800 mb-2">Sample Categories</h4>
+                          <div className="space-y-1 text-xs">
+                            {debugData.categories.slice(0, 5).map((cat: any) => (
+                              <div key={cat.id} className="flex justify-between">
+                                <span className="text-gray-700">{cat.name}</span>
+                                <span className="text-gray-500">ID: {cat.id.slice(0, 8)}...</span>
+                              </div>
+                            ))}
+                            {debugData.categories.length > 5 && (
+                              <p className="text-gray-500">...and {debugData.categories.length - 5} more</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
 
-            {/* Jobs */}
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <h4 className="font-semibold text-orange-800">Service Jobs</h4>
-                <Badge variant="outline" className="bg-white border-orange-300 text-orange-700">
-                  {debugData.jobs.length} found
-                </Badge>
-              </div>
-              {debugData.errors.jobs ? (
-                <div className="text-red-600 text-sm bg-red-50 p-2 rounded">
-                  Error: {debugData.errors.jobs.message}
-                </div>
-              ) : debugData.jobs.length > 0 ? (
-                <div className="bg-white p-3 rounded border border-orange-200 max-h-32 overflow-y-auto">
-                  {debugData.jobs.slice(0, 5).map((job: any) => (
-                    <div key={job.id} className="text-sm py-1">
-                      <strong>{job.name}</strong> (Subcategory: {job.subcategory_id})
-                      {job.price && <span className="text-green-600"> - ${job.price}</span>}
-                    </div>
-                  ))}
-                  {debugData.jobs.length > 5 && (
-                    <div className="text-sm text-gray-500 italic">
-                      ... and {debugData.jobs.length - 5} more
-                    </div>
+                      {debugData.subcategories?.length > 0 && (
+                        <div className="bg-white border border-yellow-200 rounded p-3">
+                          <h4 className="font-medium text-gray-800 mb-2">Sample Subcategories</h4>
+                          <div className="space-y-1 text-xs">
+                            {debugData.subcategories.slice(0, 5).map((sub: any) => (
+                              <div key={sub.id} className="flex justify-between">
+                                <span className="text-gray-700">{sub.name}</span>
+                                <span className="text-gray-500">Category: {sub.category_id?.slice(0, 8)}...</span>
+                              </div>
+                            ))}
+                            {debugData.subcategories.length > 5 && (
+                              <p className="text-gray-500">...and {debugData.subcategories.length - 5} more</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {debugData.jobs?.length > 0 && (
+                        <div className="bg-white border border-yellow-200 rounded p-3">
+                          <h4 className="font-medium text-gray-800 mb-2">Sample Jobs</h4>
+                          <div className="space-y-1 text-xs">
+                            {debugData.jobs.slice(0, 5).map((job: any) => (
+                              <div key={job.id} className="flex justify-between">
+                                <span className="text-gray-700">{job.name}</span>
+                                <div className="text-gray-500">
+                                  {job.price && <span>${job.price}</span>}
+                                  {job.estimated_time && <span className="ml-2">{job.estimated_time}min</span>}
+                                </div>
+                              </div>
+                            ))}
+                            {debugData.jobs.length > 5 && (
+                              <p className="text-gray-500">...and {debugData.jobs.length - 5} more</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
-              ) : (
-                <div className="text-orange-600 text-sm">No jobs found in database</div>
               )}
-            </div>
-          </div>
-        ) : (
-          <div className="text-orange-600">Click Refresh to load debug data</div>
-        )}
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
+
+        <div className="text-sm text-yellow-700 bg-yellow-100 border border-yellow-200 rounded p-3">
+          <p className="font-medium mb-1">Troubleshooting Tips:</p>
+          <ul className="list-disc list-inside space-y-1 text-xs">
+            <li>If you see categories but they're not showing above, there might be a data structure issue</li>
+            <li>Check if your Excel import created the proper relationships between categories, subcategories, and jobs</li>
+            <li>Verify that category_id and subcategory_id foreign keys are properly set</li>
+            <li>Look for any console errors in your browser's developer tools</li>
+          </ul>
+        </div>
       </CardContent>
     </Card>
   );
