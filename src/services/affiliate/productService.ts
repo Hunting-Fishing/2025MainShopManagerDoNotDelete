@@ -44,7 +44,7 @@ export interface ProductData {
 // Transform database product to our ProductData interface
 const transformDatabaseProduct = (dbProduct: DatabaseProduct): ProductData => ({
   id: dbProduct.id,
-  name: 'Product', // Default since name column doesn't exist
+  name: dbProduct.description || 'Product', // Use description as name since name column doesn't exist
   slug: dbProduct.id, // Use ID as slug since slug column doesn't exist
   description: dbProduct.description || '',
   price: dbProduct.price || 0,
@@ -114,6 +114,7 @@ export async function createProduct(productData: Partial<ProductData>): Promise<
       price: productData.price || 0,
       image_url: productData.image_url || '',
       affiliate_link: productData.affiliate_link || '',
+      category_id: 'default', // Provide default category_id
       is_approved: true,
       is_available: true
     })

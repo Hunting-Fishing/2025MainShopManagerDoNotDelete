@@ -11,7 +11,7 @@ export const createChatRoom = async (params: CreateRoomParams): Promise<ChatRoom
       name: params.name,
       type: params.type,
       work_order_id: params.workOrderId,
-      metadata: params.metadata,
+      metadata: params.metadata as any,
       id: params.id // Use custom ID if provided
     };
 

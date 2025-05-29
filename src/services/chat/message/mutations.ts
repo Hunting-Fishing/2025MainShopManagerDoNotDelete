@@ -15,17 +15,19 @@ export const sendMessage = async (message: MessageSendParams): Promise<ChatMessa
       taggedItems: taggedItems
     };
     
+    const messageData = {
+      room_id: message.room_id,
+      sender_id: message.sender_id,
+      sender_name: message.sender_name,
+      content: message.content,
+      is_read: false,
+      message_type: getMessageType(message.content),
+      metadata: metadata as any
+    };
+    
     const { data, error } = await supabase
       .from('chat_messages')
-      .insert([{
-        room_id: message.room_id,
-        sender_id: message.sender_id,
-        sender_name: message.sender_name,
-        content: message.content,
-        is_read: false,
-        message_type: getMessageType(message.content),
-        metadata: metadata
-      } as Partial<DatabaseChatMessage>])
+      .insert([messageData])
       .select()
       .single();
     
@@ -49,7 +51,7 @@ export const markMessagesAsRead = async (roomId: string, userId: string): Promis
   try {
     const { error } = await supabase
       .from('chat_messages')
-      .update({ is_read: true } as Partial<DatabaseChatMessage>)
+      .update({ is_read: true })
       .eq('room_id', roomId)
       .neq('sender_id', userId)
       .eq('is_read', false);
@@ -73,8 +75,8 @@ export const flagChatMessage = async ({ messageId, reason, userId }: MessageFlag
         metadata: {
           flagged_by: userId,
           flagged_at: new Date().toISOString()
-        }
-      } as Partial<DatabaseChatMessage>)
+        } as any
+      })
       .eq('id', messageId);
     
     if (error) throw error;
@@ -119,6 +121,11 @@ export const editMessage = async ({ messageId, content, userId }: MessageEditPar
     // Parse tagged items from the new content
     const taggedItems = parseTaggedItems(content);
     
+    // Handle metadata safely
+    const originalMetadata = originalMessage.metadata || {};
+    const metadataObj = typeof originalMetadata === 'string' ? 
+      JSON.parse(originalMetadata) : originalMetadata;
+    
     // Update the message
     const { data, error } = await supabase
       .from('chat_messages')
@@ -128,17 +135,17 @@ export const editMessage = async ({ messageId, content, userId }: MessageEditPar
         edited_at: new Date().toISOString(),
         original_content: originalMessage.original_content || originalMessage.content,
         metadata: {
-          ...originalMessage.metadata,
+          ...metadataObj,
           taggedItems: taggedItems,
           edit_history: [
-            ...(originalMessage.metadata?.edit_history || []),
+            ...(metadataObj.edit_history || []),
             {
               previous_content: originalMessage.content,
               edited_at: new Date().toISOString()
             }
           ]
-        }
-      } as Partial<DatabaseChatMessage>)
+        } as any
+      })
       .eq('id', messageId)
       .select()
       .single();
@@ -168,11 +175,16 @@ export const saveMessageToRecord = async (
       
     if (messageError) throw messageError;
     
+    // Handle metadata safely
+    const currentMetadata = message.metadata || {};
+    const metadataObj = typeof currentMetadata === 'string' ? 
+      JSON.parse(currentMetadata) : currentMetadata;
+    
     // Update the message metadata to indicate it's been saved
     const updatedMetadata = {
-      ...(message.metadata || {}),
+      ...metadataObj,
       saved_to: {
-        ...(message.metadata?.saved_to || {}),
+        ...(metadataObj.saved_to || {}),
         [recordType]: recordId,
         saved_at: new Date().toISOString()
       }
@@ -182,7 +194,7 @@ export const saveMessageToRecord = async (
     const { error: updateError } = await supabase
       .from('chat_messages')
       .update({
-        metadata: updatedMetadata
+        metadata: updatedMetadata as any
       })
       .eq('id', messageId);
       

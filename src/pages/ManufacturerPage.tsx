@@ -90,7 +90,7 @@ export default function ManufacturerPage() {
             // Transform to AffiliateProduct for ProductCard
             const affiliateProduct = {
               id: product.id,
-              name: 'Product', // Default since name column doesn't exist
+              name: product.description || 'Product',
               description: product.description || '',
               imageUrl: product.image_url || '',
               retailPrice: product.price || 0,
