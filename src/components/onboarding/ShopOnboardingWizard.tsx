@@ -1,16 +1,16 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, Building2, Clock, FileText } from 'lucide-react';
 import { BasicInfoStep } from './steps/BasicInfoStep';
 import { BusinessDetailsStep } from './steps/BusinessDetailsStep';
 import { BusinessHoursStep } from './steps/BusinessHoursStep';
 import { CompletionStep } from './steps/CompletionStep';
-import { useShopData } from '@/hooks/useShopData';
 import { supabase } from '@/lib/supabase';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface OnboardingData {
   // Basic Info
@@ -30,237 +30,218 @@ interface OnboardingData {
   
   // Business Hours
   businessHours?: any[];
+  
+  // Logo
+  logoUrl?: string;
 }
 
 const steps = [
-  { id: 1, title: 'Basic Information', component: BasicInfoStep },
-  { id: 2, title: 'Business Details', component: BusinessDetailsStep },
-  { id: 3, title: 'Business Hours', component: BusinessHoursStep },
-  { id: 4, title: 'Complete Setup', component: CompletionStep },
+  {
+    id: 0,
+    title: 'Basic Information',
+    description: 'Shop name, contact info, and address',
+    icon: Building2,
+  },
+  {
+    id: 1,
+    title: 'Business Details',
+    description: 'Tax ID, business type, and industry',
+    icon: FileText,
+  },
+  {
+    id: 2,
+    title: 'Business Hours',
+    description: 'Set your operating hours',
+    icon: Clock,
+  },
+  {
+    id: 3,
+    title: 'Complete Setup',
+    description: 'Review and finish setup',
+    icon: CheckCircle,
+  },
 ];
 
 export function ShopOnboardingWizard() {
   const navigate = useNavigate();
-  const { shopData, updateCompanyInfo, loading } = useShopData();
-  const [currentStep, setCurrentStep] = useState(1);
-  const [onboardingData, setOnboardingData] = useState<OnboardingData>({});
-  const [completingSetup, setCompletingSetup] = useState(false);
-
-  // Load existing data into form if available
-  useEffect(() => {
-    if (shopData && !loading) {
-      setOnboardingData({
-        name: shopData.name || '',
-        email: shopData.email || '',
-        phone: shopData.phone || '',
-        address: shopData.address || '',
-        city: shopData.city || '',
-        state: shopData.state || '',
-        zip: shopData.postal_code || '',
-        taxId: shopData.tax_id || '',
-        businessType: shopData.business_type || '',
-        industry: shopData.industry || '',
-        otherIndustry: shopData.other_industry || '',
-      });
-    }
-  }, [shopData, loading]);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [formData, setFormData] = useState<OnboardingData>({});
+  const [isCompleting, setIsCompleting] = useState(false);
 
   const updateData = (data: Partial<OnboardingData>) => {
-    setOnboardingData(prev => ({ ...prev, ...data }));
+    setFormData(prev => ({ ...prev, ...data }));
   };
 
   const handleNext = () => {
-    if (currentStep < steps.length) {
+    if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     }
   };
 
   const handlePrevious = () => {
-    if (currentStep > 1) {
+    if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }
   };
 
   const handleComplete = async () => {
-    if (!shopData?.id) {
-      toast({
-        title: "Error",
-        description: "Shop information not found",
-        variant: "destructive",
-      });
-      return;
-    }
-
+    if (isCompleting) return;
+    
+    setIsCompleting(true);
+    
     try {
-      setCompletingSetup(true);
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('No authenticated user');
+      }
 
-      // Update the shop record with onboarding completion
+      // Get user's profile to find shop_id
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('shop_id')
+        .eq('id', user.id)
+        .single();
+
+      if (!profile?.shop_id) {
+        throw new Error('No shop associated with user');
+      }
+
+      const shopId = profile.shop_id;
+
+      // Mark onboarding as complete in shops table
       const { error: shopError } = await supabase
         .from('shops')
         .update({
           onboarding_completed: true,
-          setup_step: 4,
           updated_at: new Date().toISOString()
         })
-        .eq('id', shopData.id);
+        .eq('id', shopId);
 
       if (shopError) {
+        console.error('Error updating shop:', shopError);
         throw shopError;
       }
 
-      // Update or create onboarding progress record
+      // Convert formData to JSON-compatible format
+      const stepDataJson = JSON.parse(JSON.stringify(formData));
+
+      // Update or insert onboarding progress
       const { error: progressError } = await supabase
         .from('onboarding_progress')
         .upsert({
-          shop_id: shopData.id,
-          current_step: 4,
-          completed_steps: [1, 2, 3, 4],
+          shop_id: shopId,
+          current_step: 3,
+          completed_steps: [0, 1, 2, 3],
           is_completed: true,
-          step_data: onboardingData,
+          step_data: stepDataJson,
           updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'shop_id'
         });
 
       if (progressError) {
+        console.error('Error updating progress:', progressError);
         throw progressError;
       }
 
-      toast({
-        title: "Success!",
-        description: "Shop setup completed successfully",
-      });
-
+      toast.success('Onboarding completed successfully!');
+      
       // Navigate to dashboard
       navigate('/', { replace: true });
       
     } catch (error) {
       console.error('Error completing onboarding:', error);
-      toast({
-        title: "Error",
-        description: "Failed to complete setup. Please try again.",
-        variant: "destructive",
-      });
+      toast.error('Failed to complete onboarding. Please try again.');
     } finally {
-      setCompletingSetup(false);
+      setIsCompleting(false);
     }
   };
 
-  const getCurrentStepComponent = () => {
-    const StepComponent = steps[currentStep - 1].component;
-    
-    const commonProps = {
+  const renderStep = () => {
+    const stepProps = {
       onNext: handleNext,
       onPrevious: handlePrevious,
-      data: onboardingData,
+      data: formData,
       updateData,
     };
 
-    // Only pass onComplete to the final step
-    if (currentStep === steps.length) {
-      return (
-        <StepComponent 
-          {...commonProps} 
-          onComplete={handleComplete}
-        />
-      );
+    switch (currentStep) {
+      case 0:
+        return <BasicInfoStep {...stepProps} />;
+      case 1:
+        return <BusinessDetailsStep {...stepProps} />;
+      case 2:
+        return <BusinessHoursStep {...stepProps} />;
+      case 3:
+        return <CompletionStep {...stepProps} onComplete={handleComplete} />;
+      default:
+        return <BasicInfoStep {...stepProps} />;
     }
-
-    return <StepComponent {...commonProps} />;
   };
 
-  const progressPercentage = (currentStep / steps.length) * 100;
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading shop information...</p>
-        </div>
-      </div>
-    );
-  }
+  const progress = ((currentStep + 1) / steps.length) * 100;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-4xl">
+        {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Shop Setup</h1>
-          <p className="text-gray-600">Let's get your shop configured and ready to go</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Welcome to Your Shop Management System
+          </h1>
+          <p className="text-gray-600">
+            Let's get your shop set up in just a few steps
+          </p>
         </div>
 
-        {/* Progress indicator */}
+        {/* Progress Bar */}
         <div className="mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <span className="text-sm font-medium text-gray-700">
-              Step {currentStep} of {steps.length}
-            </span>
-            <span className="text-sm font-medium text-gray-700">
-              {Math.round(progressPercentage)}% Complete
-            </span>
-          </div>
-          
-          <Progress value={progressPercentage} className="mb-6" />
-          
-          <div className="flex justify-between">
-            {steps.map((step, index) => (
-              <div
-                key={step.id}
-                className={`flex items-center ${
-                  index < steps.length - 1 ? 'flex-1' : ''
-                }`}
-              >
-                <div className="flex items-center">
+          <div className="flex justify-between mb-4">
+            {steps.map((step, index) => {
+              const Icon = step.icon;
+              const isActive = index === currentStep;
+              const isCompleted = index < currentStep;
+              
+              return (
+                <div
+                  key={step.id}
+                  className={`flex flex-col items-center ${
+                    isActive ? 'text-blue-600' : isCompleted ? 'text-green-600' : 'text-gray-400'
+                  }`}
+                >
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                      currentStep > step.id
-                        ? 'bg-green-500 text-white'
-                        : currentStep === step.id
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-300 text-gray-600'
+                    className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${
+                      isActive
+                        ? 'bg-blue-100 border-2 border-blue-600'
+                        : isCompleted
+                        ? 'bg-green-100 border-2 border-green-600'
+                        : 'bg-gray-100 border-2 border-gray-300'
                     }`}
                   >
-                    {currentStep > step.id ? (
-                      <CheckCircle className="w-5 h-5" />
-                    ) : (
-                      step.id
-                    )}
+                    <Icon className="w-5 h-5" />
                   </div>
-                  <span
-                    className={`ml-2 text-sm font-medium ${
-                      currentStep >= step.id ? 'text-gray-900' : 'text-gray-500'
-                    }`}
-                  >
-                    {step.title}
-                  </span>
+                  <div className="text-center">
+                    <div className="text-sm font-medium">{step.title}</div>
+                    <div className="text-xs text-gray-500 max-w-24">
+                      {step.description}
+                    </div>
+                  </div>
                 </div>
-                {index < steps.length - 1 && (
-                  <div
-                    className={`flex-1 h-0.5 mx-4 ${
-                      currentStep > step.id ? 'bg-green-500' : 'bg-gray-300'
-                    }`}
-                  />
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
+          <Progress value={progress} className="h-2" />
         </div>
 
-        {/* Step content */}
+        {/* Step Content */}
         <Card>
           <CardHeader>
-            <CardTitle>{steps[currentStep - 1].title}</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              {React.createElement(steps[currentStep].icon, { className: "w-5 h-5" })}
+              {steps[currentStep].title}
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            {completingSetup ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p className="text-gray-600">Completing setup...</p>
-              </div>
-            ) : (
-              getCurrentStepComponent()
-            )}
+            {renderStep()}
           </CardContent>
         </Card>
       </div>
