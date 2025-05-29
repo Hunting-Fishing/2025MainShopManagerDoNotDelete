@@ -12,6 +12,7 @@ import { ShopOnboardingWizard } from "@/components/onboarding/ShopOnboardingWiza
 import Dashboard from "@/pages/Dashboard";
 import CustomersPage from "@/pages/CustomersPage";
 import WorkOrders from "@/pages/WorkOrders";
+import WorkOrderCreate from "@/pages/WorkOrderCreate";
 import Inventory from "@/pages/Inventory";
 import Invoices from "@/pages/Invoices";
 import Reports from "@/pages/Reports";
@@ -71,6 +72,7 @@ function App() {
                       <Route path="/customers/:id" element={<CustomerDetails />} />
                       <Route path="/customers/:customerId/vehicles/:vehicleId" element={<VehicleDetails />} />
                       <Route path="/work-orders" element={<WorkOrders />} />
+                      <Route path="/work-orders/create" element={<WorkOrderCreate />} />
                       <Route path="/work-orders/:id" element={<WorkOrderDetails />} />
                       <Route path="/inventory" element={<Inventory />} />
                       <Route path="/invoices" element={<Invoices />} />
