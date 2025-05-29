@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
 
@@ -104,6 +103,57 @@ export async function fetchServiceCategories(): Promise<ServiceMainCategory[]> {
 
   } catch (error) {
     console.error('Failed to fetch service categories:', error);
+    throw error;
+  }
+}
+
+export async function updateServiceCategory(category: ServiceMainCategory): Promise<void> {
+  try {
+    console.log('Updating service category:', category);
+    
+    const { error } = await supabase
+      .from('service_categories')
+      .update({
+        name: category.name,
+        description: category.description,
+        position: category.position || 1
+      })
+      .eq('id', category.id);
+
+    if (error) {
+      console.error('Error updating category:', error);
+      throw error;
+    }
+
+    console.log('Category updated successfully');
+  } catch (error) {
+    console.error('Failed to update service category:', error);
+    throw error;
+  }
+}
+
+export async function fetchRawServiceData() {
+  try {
+    console.log('Fetching raw service data for debugging...');
+    
+    const [categoriesResult, subcategoriesResult, jobsResult] = await Promise.all([
+      supabase.from('service_categories').select('*').order('position', { ascending: true }),
+      supabase.from('service_subcategories').select('*').order('category_id', { ascending: true }),
+      supabase.from('service_jobs').select('*').order('subcategory_id', { ascending: true })
+    ]);
+
+    return {
+      categories: categoriesResult.data || [],
+      subcategories: subcategoriesResult.data || [],
+      jobs: jobsResult.data || [],
+      errors: {
+        categories: categoriesResult.error,
+        subcategories: subcategoriesResult.error,
+        jobs: jobsResult.error
+      }
+    };
+  } catch (error) {
+    console.error('Failed to fetch raw service data:', error);
     throw error;
   }
 }
