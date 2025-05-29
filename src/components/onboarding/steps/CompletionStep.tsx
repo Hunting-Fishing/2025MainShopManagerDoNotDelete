@@ -10,9 +10,10 @@ interface StepProps {
   onPrevious: () => void;
   data: any;
   updateData: (data: any) => void;
+  onComplete?: () => void; // Add completion handler
 }
 
-export function CompletionStep({ onNext, onPrevious, data, updateData }: StepProps) {
+export function CompletionStep({ onNext, onPrevious, data, updateData, onComplete }: StepProps) {
   const { shopData, companyInfo, loading } = useShopData();
   
   if (loading) {
@@ -45,6 +46,14 @@ export function CompletionStep({ onNext, onPrevious, data, updateData }: StepPro
   console.log('CompletionStep - Company info:', companyInfo);
   console.log('CompletionStep - Shop data:', shopData);
   console.log('CompletionStep - Display data:', displayData);
+
+  const handleComplete = () => {
+    if (onComplete) {
+      onComplete();
+    } else {
+      onNext();
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -131,7 +140,7 @@ export function CompletionStep({ onNext, onPrevious, data, updateData }: StepPro
           Back
         </Button>
         <Button 
-          onClick={onNext}
+          onClick={handleComplete}
           className="bg-green-600 hover:bg-green-700"
         >
           Complete Setup

@@ -178,10 +178,11 @@ export function ShopOnboardingWizard() {
           </CardHeader>
           <CardContent>
             <CurrentStepComponent
-              onNext={currentStep === steps.length - 1 ? handleComplete : handleNext}
+              onNext={handleNext}
               onPrevious={handlePrevious}
               data={formData}
               updateData={updateFormData}
+              onComplete={currentStep === steps.length - 1 ? handleComplete : undefined}
             />
           </CardContent>
         </Card>
