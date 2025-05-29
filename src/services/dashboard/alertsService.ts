@@ -1,119 +1,176 @@
 
 import { supabase } from "@/lib/supabase";
-import { getOverdueReminders, getTodaysReminders } from "@/services/reminders/reminderQueries";
+import { getAllReminders } from "@/services/reminderService";
 
-export interface DashboardAlert {
+export interface Alert {
   id: string;
-  type: 'inventory' | 'follow_up' | 'maintenance' | 'reminder';
+  type: 'reminder' | 'inventory' | 'equipment' | 'payment';
+  severity: 'low' | 'medium' | 'high' | 'critical';
   title: string;
   message: string;
-  priority: 'low' | 'medium' | 'high';
-  created_at: string;
+  timestamp: string;
+  resolved: boolean;
+  link?: string;
+  metadata?: Record<string, any>;
 }
 
-export const getDashboardAlerts = async (): Promise<DashboardAlert[]> => {
+export interface AlertSummary {
+  total: number;
+  byType: Record<string, number>;
+  bySeverity: Record<string, number>;
+  unresolved: number;
+}
+
+// Get all active alerts
+export const getActiveAlerts = async (): Promise<Alert[]> => {
   try {
-    const alerts: DashboardAlert[] = [];
-
-    // Get low stock inventory alerts
-    const { data: inventorySettings } = await supabase
-      .from('inventory_settings')
-      .select('low_stock_threshold')
-      .limit(1);
-
-    const threshold = inventorySettings?.[0]?.low_stock_threshold || 10;
-
-    const { data: lowStockItems } = await supabase
-      .from('inventory_items')
-      .select('id, name, quantity, reorder_point')
-      .lt('quantity', threshold)
-      .eq('status', 'active');
-
-    if (lowStockItems && lowStockItems.length > 0) {
-      lowStockItems.forEach(item => {
-        alerts.push({
-          id: `inventory-${item.id}`,
-          type: 'inventory',
-          title: 'Low Stock Alert',
-          message: `${item.name} is low on stock (${item.quantity} remaining)`,
-          priority: item.quantity === 0 ? 'high' : 'medium',
-          created_at: new Date().toISOString()
-        });
-      });
-    }
-
-    // Get pending follow-ups
-    const { data: followUps } = await supabase
-      .from('follow_ups')
-      .select(`
-        id,
-        type,
-        due_date,
-        notes,
-        customers (
-          first_name,
-          last_name
-        )
-      `)
-      .eq('status', 'pending')
-      .lte('due_date', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString())
-      .limit(5);
-
-    if (followUps && followUps.length > 0) {
-      followUps.forEach(followUp => {
-        const customer = followUp.customers as any;
-        const customerName = customer ? `${customer.first_name} ${customer.last_name}` : 'Unknown Customer';
-        
-        alerts.push({
-          id: `followup-${followUp.id}`,
-          type: 'follow_up',
-          title: 'Follow-up Due',
-          message: `Follow-up with ${customerName} is due today`,
-          priority: 'medium',
-          created_at: followUp.due_date
-        });
-      });
-    }
-
-    // Get overdue service reminders using live data
-    const overdueReminders = await getOverdueReminders();
-    overdueReminders.forEach(reminder => {
-      const customer = (reminder as any).customers;
-      const customerName = customer ? `${customer.first_name} ${customer.last_name}` : 'Unknown Customer';
-      
-      alerts.push({
-        id: `reminder-${reminder.id}`,
-        type: 'reminder',
-        title: 'Overdue Service Reminder',
-        message: `${reminder.title} for ${customerName} is overdue`,
-        priority: reminder.priority as 'low' | 'medium' | 'high',
-        created_at: reminder.due_date
-      });
-    });
-
-    // Get today's service reminders using live data
-    const todaysReminders = await getTodaysReminders();
-    todaysReminders.forEach(reminder => {
-      const customer = (reminder as any).customers;
-      const customerName = customer ? `${customer.first_name} ${customer.last_name}` : 'Unknown Customer';
-      
-      alerts.push({
-        id: `reminder-today-${reminder.id}`,
-        type: 'reminder',
-        title: 'Service Reminder Due Today',
-        message: `${reminder.title} for ${customerName} is due today`,
-        priority: reminder.priority as 'low' | 'medium' | 'high',
-        created_at: reminder.due_date
-      });
-    });
-
+    const alerts: Alert[] = [];
+    
+    // Get reminder-based alerts
+    const reminderAlerts = await getReminderAlerts();
+    alerts.push(...reminderAlerts);
+    
+    // Get inventory alerts (placeholder - would need inventory service)
+    // const inventoryAlerts = await getInventoryAlerts();
+    // alerts.push(...inventoryAlerts);
+    
+    // Get equipment alerts (placeholder - would need equipment service)
+    // const equipmentAlerts = await getEquipmentAlerts();
+    // alerts.push(...equipmentAlerts);
+    
+    // Sort by severity and timestamp
     return alerts.sort((a, b) => {
-      const priorityOrder = { high: 3, medium: 2, low: 1 };
-      return priorityOrder[b.priority] - priorityOrder[a.priority];
+      const severityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
+      const severityDiff = severityOrder[b.severity] - severityOrder[a.severity];
+      if (severityDiff !== 0) return severityDiff;
+      
+      return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
     });
-
   } catch (error) {
-    console.error("Error fetching dashboard alerts:", error);
+    console.error("Error fetching active alerts:", error);
     return [];
+  }
+};
+
+// Get summary of alerts
+export const getAlertSummary = async (): Promise<AlertSummary> => {
+  try {
+    const alerts = await getActiveAlerts();
+    
+    const summary: AlertSummary = {
+      total: alerts.length,
+      byType: {},
+      bySeverity: {},
+      unresolved: 0
+    };
+    
+    alerts.forEach(alert => {
+      // Count by type
+      summary.byType[alert.type] = (summary.byType[alert.type] || 0) + 1;
+      
+      // Count by severity
+      summary.bySeverity[alert.severity] = (summary.bySeverity[alert.severity] || 0) + 1;
+      
+      // Count unresolved
+      if (!alert.resolved) {
+        summary.unresolved++;
+      }
+    });
+    
+    return summary;
+  } catch (error) {
+    console.error("Error getting alert summary:", error);
+    return {
+      total: 0,
+      byType: {},
+      bySeverity: {},
+      unresolved: 0
+    };
+  }
+};
+
+// Get reminder-based alerts
+const getReminderAlerts = async (): Promise<Alert[]> => {
+  try {
+    const alerts: Alert[] = [];
+    
+    // Get overdue reminders
+    const overdueReminders = await getAllReminders({
+      status: 'pending',
+      dateRange: {
+        to: new Date() // Past due date
+      }
+    });
+    
+    overdueReminders.forEach(reminder => {
+      alerts.push({
+        id: `reminder-overdue-${reminder.id}`,
+        type: 'reminder',
+        severity: 'high',
+        title: 'Overdue Reminder',
+        message: `Reminder "${reminder.title}" is overdue (due ${reminder.dueDate})`,
+        timestamp: reminder.dueDate,
+        resolved: false,
+        link: `/reminders/${reminder.id}`,
+        metadata: { reminderId: reminder.id, customerId: reminder.customerId }
+      });
+    });
+    
+    // Get reminders due soon (next 3 days)
+    const upcomingSoon = new Date();
+    upcomingSoon.setDate(upcomingSoon.getDate() + 3);
+    
+    const upcomingReminders = await getAllReminders({
+      status: 'pending',
+      dateRange: {
+        from: new Date(),
+        to: upcomingSoon
+      }
+    });
+    
+    upcomingReminders.forEach(reminder => {
+      alerts.push({
+        id: `reminder-upcoming-${reminder.id}`,
+        type: 'reminder',
+        severity: 'medium',
+        title: 'Upcoming Reminder',
+        message: `Reminder "${reminder.title}" is due ${reminder.dueDate}`,
+        timestamp: reminder.dueDate,
+        resolved: false,
+        link: `/reminders/${reminder.id}`,
+        metadata: { reminderId: reminder.id, customerId: reminder.customerId }
+      });
+    });
+    
+    return alerts;
+  } catch (error) {
+    console.error("Error getting reminder alerts:", error);
+    return [];
+  }
+};
+
+// Mark alert as resolved
+export const resolveAlert = async (alertId: string): Promise<void> => {
+  try {
+    // For now, we'll handle this in memory/localStorage
+    // In a real app, you'd save alert states to the database
+    const resolvedAlerts = JSON.parse(localStorage.getItem('resolvedAlerts') || '[]');
+    if (!resolvedAlerts.includes(alertId)) {
+      resolvedAlerts.push(alertId);
+      localStorage.setItem('resolvedAlerts', JSON.stringify(resolvedAlerts));
+    }
+  } catch (error) {
+    console.error("Error resolving alert:", error);
+  }
+};
+
+// Check if alert is resolved
+export const isAlertResolved = (alertId: string): boolean => {
+  try {
+    const resolvedAlerts = JSON.parse(localStorage.getItem('resolvedAlerts') || '[]');
+    return resolvedAlerts.includes(alertId);
+  } catch (error) {
+    console.error("Error checking alert resolution:", error);
+    return false;
   }
 };

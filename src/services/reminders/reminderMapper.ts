@@ -1,5 +1,5 @@
 
-import { ServiceReminder, ReminderTemplate, ReminderCategory, ReminderTag } from "@/types/reminder";
+import type { ServiceReminder, ReminderTemplate, ReminderCategory, ReminderTag } from "@/types/reminder";
 
 // Database types that match the actual database schema
 export interface DbServiceReminder {
@@ -64,6 +64,7 @@ export interface DbReminderCategory {
   name: string;
   color: string;
   description?: string;
+  is_active: boolean;
 }
 
 // Mapper functions
@@ -94,7 +95,6 @@ export function mapDbServiceReminderToType(dbReminder: DbServiceReminder): Servi
     parentReminderId: dbReminder.parent_reminder_id,
     lastOccurredAt: dbReminder.last_occurred_at,
     nextOccurrenceDate: dbReminder.next_occurrence_date,
-    updatedAt: dbReminder.updated_at || dbReminder.created_at,
     customer: dbReminder.customers ? {
       id: dbReminder.customer_id,
       first_name: dbReminder.customers.first_name,
@@ -128,7 +128,7 @@ export function mapDbReminderCategoryToType(dbCategory: DbReminderCategory): Rem
     name: dbCategory.name,
     color: dbCategory.color,
     description: dbCategory.description,
-    is_active: true // Default to true since it's required in the type
+    is_active: dbCategory.is_active
   };
 }
 
