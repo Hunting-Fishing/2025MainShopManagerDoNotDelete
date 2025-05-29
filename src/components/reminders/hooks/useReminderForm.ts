@@ -4,9 +4,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
-import { createReminder } from "@/services/reminderService";
-import { ReminderType, ReminderPriority, RecurrenceUnit, ReminderCategory, CreateReminderParams } from "@/types/reminder";
-import { reminderFormSchema, reminderFormSchemaWithValidation, ReminderFormValues } from "../schemas/reminderFormSchema";
+import { createReminder, CreateReminderData } from "@/services/reminders/reminderMutations";
+import { ReminderType, ReminderPriority, RecurrenceUnit, ReminderCategory } from "@/types/reminder";
+import { reminderFormSchema, ReminderFormValues } from "../schemas/reminderFormSchema";
 
 interface UseReminderFormProps {
   customerId?: string;
@@ -20,7 +20,7 @@ export function useReminderForm({ customerId, vehicleId, onSuccess, categories =
 
   // Initialize the form with default values
   const form = useForm<ReminderFormValues>({
-    resolver: zodResolver(reminderFormSchema), // Using the basic schema for form validation
+    resolver: zodResolver(reminderFormSchema),
     defaultValues: {
       customerId: customerId || "",
       vehicleId: vehicleId || "",
@@ -50,27 +50,20 @@ export function useReminderForm({ customerId, vehicleId, onSuccess, categories =
     try {
       const formattedDate = format(values.dueDate, "yyyy-MM-dd");
       
-      const reminderParams: CreateReminderParams = {
-        customerId: values.customerId,
-        vehicleId: values.vehicleId,
-        type: values.type as ReminderType,
+      const reminderData: CreateReminderData = {
+        customer_id: values.customerId,
+        vehicle_id: values.vehicleId,
+        type: values.type,
         title: values.title,
         description: values.description || "",
-        dueDate: formattedDate,
+        due_date: formattedDate,
         notes: values.notes,
-        
-        // New advanced properties
-        priority: values.priority as ReminderPriority,
-        categoryId: values.categoryId,
-        assignedTo: values.assignedTo,
-        templateId: values.templateId,
-        isRecurring: values.isRecurring,
-        recurrenceInterval: values.recurrenceInterval,
-        recurrenceUnit: values.recurrenceUnit as RecurrenceUnit | undefined,
-        tagIds: values.tagIds,
+        priority: values.priority as 'low' | 'medium' | 'high',
+        category_id: values.categoryId,
+        assigned_to: values.assignedTo,
       };
       
-      await createReminder(reminderParams);
+      await createReminder(reminderData);
       
       toast({
         title: "Reminder Created",

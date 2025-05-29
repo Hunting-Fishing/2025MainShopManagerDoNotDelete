@@ -1,6 +1,11 @@
 
 import { supabase } from "@/lib/supabase";
-import { ServiceReminder } from "./reminderQueries";
+import { 
+  mapDbServiceReminderToType, 
+  mapCreateReminderParamsToDb,
+  DbServiceReminder 
+} from "./reminderMapper";
+import { ServiceReminder } from "@/types/reminder";
 
 export interface CreateReminderData {
   customer_id: string;
@@ -51,7 +56,7 @@ export const createReminder = async (reminderData: CreateReminderData): Promise<
       .single();
 
     if (error) throw error;
-    return { ...data, updated_at: data.updated_at || new Date().toISOString() };
+    return mapDbServiceReminderToType({...data, updated_at: data.updated_at || new Date().toISOString()} as DbServiceReminder);
   } catch (error) {
     console.error("Error creating reminder:", error);
     throw error;
@@ -83,7 +88,7 @@ export const updateReminder = async (updateData: UpdateReminderData): Promise<Se
       .single();
 
     if (error) throw error;
-    return { ...data, updated_at: data.updated_at || new Date().toISOString() };
+    return mapDbServiceReminderToType({...data, updated_at: data.updated_at || new Date().toISOString()} as DbServiceReminder);
   } catch (error) {
     console.error("Error updating reminder:", error);
     throw error;
@@ -116,12 +121,14 @@ export const completeReminder = async (id: string): Promise<ServiceReminder> => 
 
     if (error) throw error;
 
+    const reminder = mapDbServiceReminderToType({...data, updated_at: data.updated_at || new Date().toISOString()} as DbServiceReminder);
+
     // If this is a recurring reminder, generate the next occurrence
-    if (data.is_recurring && data.recurrence_pattern) {
-      await generateNextRecurringReminder(data);
+    if (reminder.isRecurring && data.recurrence_pattern) {
+      await generateNextRecurringReminder(reminder);
     }
 
-    return { ...data, updated_at: data.updated_at || new Date().toISOString() };
+    return reminder;
   } catch (error) {
     console.error("Error completing reminder:", error);
     throw error;
@@ -166,7 +173,9 @@ export const bulkUpdateReminders = async (ids: string[], updates: Partial<Create
       `);
 
     if (error) throw error;
-    return (data || []).map(item => ({ ...item, updated_at: item.updated_at || new Date().toISOString() }));
+    return (data || []).map(item => 
+      mapDbServiceReminderToType({...item, updated_at: item.updated_at || new Date().toISOString()} as DbServiceReminder)
+    );
   } catch (error) {
     console.error("Error bulk updating reminders:", error);
     throw error;
@@ -175,7 +184,7 @@ export const bulkUpdateReminders = async (ids: string[], updates: Partial<Create
 
 const generateNextRecurringReminder = async (completedReminder: ServiceReminder): Promise<void> => {
   try {
-    if (!completedReminder.recurrence_pattern) return;
+    if (!completedReminder.isRecurring) return;
 
     // Call the database function to generate the next recurring reminder
     const { error } = await supabase.rpc('generate_recurring_reminder', {
@@ -214,7 +223,7 @@ export const snoozeReminder = async (id: string, snoozeUntil: string): Promise<S
       .single();
 
     if (error) throw error;
-    return { ...data, updated_at: data.updated_at || new Date().toISOString() };
+    return mapDbServiceReminderToType({...data, updated_at: data.updated_at || new Date().toISOString()} as DbServiceReminder);
   } catch (error) {
     console.error("Error snoozing reminder:", error);
     throw error;

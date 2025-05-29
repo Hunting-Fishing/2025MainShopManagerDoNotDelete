@@ -1,71 +1,34 @@
 
 import { supabase } from "@/lib/supabase";
+import { 
+  mapDbServiceReminderToType, 
+  mapDbReminderTemplateToType,
+  mapDbReminderCategoryToType,
+  DbServiceReminder,
+  DbReminderTemplate,
+  DbReminderCategory
+} from "./reminderMapper";
+import { ServiceReminder, ReminderTemplate, ReminderCategory, ReminderTag } from "@/types/reminder";
+import { DateRange } from "react-day-picker";
 
-export interface ServiceReminder {
-  id: string;
-  customer_id: string;
-  vehicle_id?: string;
-  type: string;
-  title: string;
-  description: string;
-  due_date: string;
-  status: 'pending' | 'completed' | 'overdue' | 'cancelled';
-  priority: 'low' | 'medium' | 'high';
-  assigned_to?: string;
-  category_id?: string;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-  notification_sent: boolean;
-  notification_date?: string;
-  notes?: string;
-  is_recurring?: boolean;
-  recurrence_interval?: number;
-  recurrence_unit?: string;
-  recurrence_pattern?: string;
-  last_completed_date?: string;
-  work_order_id?: string;
-  customers?: {
-    first_name: string;
-    last_name: string;
-  };
-  vehicles?: {
-    year?: number;
-    make?: string;
-    model?: string;
-  };
+// Re-export types for backwards compatibility
+export { ServiceReminder, ReminderTemplate, ReminderCategory, ReminderTag };
+
+export interface RemindersFilters {
+  status?: string;
+  priority?: string;
+  categoryId?: string;
+  assignedTo?: string;
+  isRecurring?: boolean;
+  dateRange?: DateRange;
+  tagIds?: string[];
+  search?: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  limit?: number;
 }
 
-export interface ReminderCategory {
-  id: string;
-  name: string;
-  color: string;
-  description?: string;
-  is_active: boolean;
-}
-
-export interface ReminderTag {
-  id: string;
-  name: string;
-  color?: string;
-}
-
-export interface ReminderTemplate {
-  id: string;
-  title: string;
-  description?: string;
-  category_id?: string;
-  priority: 'low' | 'medium' | 'high';
-  default_days_until_due: number;
-  is_recurring?: boolean;
-  recurrence_interval?: number;
-  recurrence_unit?: string;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export const getAllReminders = async (filters?: any): Promise<ServiceReminder[]> => {
+export const getAllReminders = async (filters?: RemindersFilters): Promise<ServiceReminder[]> => {
   try {
     let query = supabase
       .from('service_reminders')
@@ -76,31 +39,62 @@ export const getAllReminders = async (filters?: any): Promise<ServiceReminder[]>
           last_name
         ),
         vehicles (
-          year,
+          id,
           make,
-          model
+          model,
+          year,
+          vin,
+          license_plate
         )
       `);
 
+    // Apply filters
+    if (filters?.status) {
+      query = query.eq('status', filters.status);
+    }
+    if (filters?.priority) {
+      query = query.eq('priority', filters.priority);
+    }
+    if (filters?.categoryId) {
+      query = query.eq('category_id', filters.categoryId);
+    }
+    if (filters?.assignedTo) {
+      query = query.eq('assigned_to', filters.assignedTo);
+    }
+    if (filters?.isRecurring !== undefined) {
+      query = query.eq('is_recurring', filters.isRecurring);
+    }
+    if (filters?.dateRange?.from) {
+      query = query.gte('due_date', filters.dateRange.from.toISOString());
+    }
+    if (filters?.dateRange?.to) {
+      query = query.lte('due_date', filters.dateRange.to.toISOString());
+    }
+    if (filters?.search) {
+      query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
+    }
+
+    // Apply sorting
+    const sortBy = filters?.sortBy || 'due_date';
+    const sortOrder = filters?.sortOrder || 'asc';
+    query = query.order(sortBy, { ascending: sortOrder === 'asc' });
+
+    // Apply limit
     if (filters?.limit) {
       query = query.limit(filters.limit);
     }
 
-    if (filters?.status) {
-      query = query.eq('status', filters.status);
-    }
-
-    const { data, error } = await query.order('due_date', { ascending: true });
+    const { data, error } = await query;
 
     if (error) throw error;
-    return data || [];
+    return (data as DbServiceReminder[]).map(mapDbServiceReminderToType);
   } catch (error) {
-    console.error("Error fetching all reminders:", error);
-    return [];
+    console.error("Error fetching reminders:", error);
+    throw error;
   }
 };
 
-export const getCustomerReminders = async (customerId: string, filters?: any): Promise<ServiceReminder[]> => {
+export const getCustomerReminders = async (customerId: string, filters?: RemindersFilters): Promise<ServiceReminder[]> => {
   try {
     let query = supabase
       .from('service_reminders')
@@ -111,28 +105,36 @@ export const getCustomerReminders = async (customerId: string, filters?: any): P
           last_name
         ),
         vehicles (
-          year,
+          id,
           make,
-          model
+          model,
+          year,
+          vin,
+          license_plate
         )
       `)
       .eq('customer_id', customerId);
 
+    // Apply additional filters
+    if (filters?.status) {
+      query = query.eq('status', filters.status);
+    }
     if (filters?.limit) {
       query = query.limit(filters.limit);
     }
 
-    const { data, error } = await query.order('due_date', { ascending: true });
+    query = query.order('due_date', { ascending: true });
 
+    const { data, error } = await query;
     if (error) throw error;
-    return data || [];
+    return (data as DbServiceReminder[]).map(mapDbServiceReminderToType);
   } catch (error) {
     console.error("Error fetching customer reminders:", error);
-    return [];
+    throw error;
   }
 };
 
-export const getVehicleReminders = async (vehicleId: string, filters?: any): Promise<ServiceReminder[]> => {
+export const getVehicleReminders = async (vehicleId: string, filters?: RemindersFilters): Promise<ServiceReminder[]> => {
   try {
     let query = supabase
       .from('service_reminders')
@@ -143,9 +145,12 @@ export const getVehicleReminders = async (vehicleId: string, filters?: any): Pro
           last_name
         ),
         vehicles (
-          year,
+          id,
           make,
-          model
+          model,
+          year,
+          vin,
+          license_plate
         )
       `)
       .eq('vehicle_id', vehicleId);
@@ -154,21 +159,19 @@ export const getVehicleReminders = async (vehicleId: string, filters?: any): Pro
       query = query.limit(filters.limit);
     }
 
-    const { data, error } = await query.order('due_date', { ascending: true });
+    query = query.order('due_date', { ascending: true });
 
+    const { data, error } = await query;
     if (error) throw error;
-    return data || [];
+    return (data as DbServiceReminder[]).map(mapDbServiceReminderToType);
   } catch (error) {
     console.error("Error fetching vehicle reminders:", error);
-    return [];
+    throw error;
   }
 };
 
-export const getUpcomingReminders = async (limit = 10, filters?: any): Promise<ServiceReminder[]> => {
+export const getUpcomingReminders = async (limit?: number, filters?: RemindersFilters): Promise<ServiceReminder[]> => {
   try {
-    const today = new Date().toISOString().split('T')[0];
-    const oneWeekFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
     let query = supabase
       .from('service_reminders')
       .select(`
@@ -178,30 +181,33 @@ export const getUpcomingReminders = async (limit = 10, filters?: any): Promise<S
           last_name
         ),
         vehicles (
-          year,
+          id,
           make,
-          model
+          model,
+          year,
+          vin,
+          license_plate
         )
       `)
       .eq('status', 'pending')
-      .gte('due_date', today)
-      .lte('due_date', oneWeekFromNow)
-      .limit(limit);
+      .gte('due_date', new Date().toISOString())
+      .order('due_date', { ascending: true });
 
-    const { data, error } = await query.order('due_date', { ascending: true });
+    if (limit) {
+      query = query.limit(limit);
+    }
 
+    const { data, error } = await query;
     if (error) throw error;
-    return data || [];
+    return (data as DbServiceReminder[]).map(mapDbServiceReminderToType);
   } catch (error) {
     console.error("Error fetching upcoming reminders:", error);
-    return [];
+    throw error;
   }
 };
 
 export const getOverdueReminders = async (): Promise<ServiceReminder[]> => {
   try {
-    const today = new Date().toISOString().split('T')[0];
-
     const { data, error } = await supabase
       .from('service_reminders')
       .select(`
@@ -211,26 +217,31 @@ export const getOverdueReminders = async (): Promise<ServiceReminder[]> => {
           last_name
         ),
         vehicles (
-          year,
+          id,
           make,
-          model
+          model,
+          year,
+          vin,
+          license_plate
         )
       `)
       .eq('status', 'pending')
-      .lt('due_date', today)
+      .lt('due_date', new Date().toISOString())
       .order('due_date', { ascending: true });
 
     if (error) throw error;
-    return data || [];
+    return (data as DbServiceReminder[]).map(mapDbServiceReminderToType);
   } catch (error) {
     console.error("Error fetching overdue reminders:", error);
-    return [];
+    throw error;
   }
 };
 
 export const getTodaysReminders = async (): Promise<ServiceReminder[]> => {
   try {
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date();
+    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
+    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59).toISOString();
 
     const { data, error } = await supabase
       .from('service_reminders')
@@ -241,51 +252,24 @@ export const getTodaysReminders = async (): Promise<ServiceReminder[]> => {
           last_name
         ),
         vehicles (
-          year,
+          id,
           make,
-          model
+          model,
+          year,
+          vin,
+          license_plate
         )
       `)
       .eq('status', 'pending')
-      .eq('due_date', today)
-      .order('created_at', { ascending: true });
+      .gte('due_date', startOfDay)
+      .lte('due_date', endOfDay)
+      .order('due_date', { ascending: true });
 
     if (error) throw error;
-    return data || [];
+    return (data as DbServiceReminder[]).map(mapDbServiceReminderToType);
   } catch (error) {
     console.error("Error fetching today's reminders:", error);
-    return [];
-  }
-};
-
-export const getReminderCategories = async (): Promise<ReminderCategory[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('reminder_categories')
-      .select('*')
-      .eq('is_active', true)
-      .order('name');
-
-    if (error) throw error;
-    return data || [];
-  } catch (error) {
-    console.error("Error fetching reminder categories:", error);
-    return [];
-  }
-};
-
-export const getReminderTags = async (): Promise<ReminderTag[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('reminder_tags')
-      .select('*')
-      .order('name');
-
-    if (error) throw error;
-    return data || [];
-  } catch (error) {
-    console.error("Error fetching reminder tags:", error);
-    return [];
+    throw error;
   }
 };
 
@@ -294,12 +278,42 @@ export const getReminderTemplates = async (): Promise<ReminderTemplate[]> => {
     const { data, error } = await supabase
       .from('reminder_templates')
       .select('*')
-      .order('title');
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return (data as DbReminderTemplate[]).map(mapDbReminderTemplateToType);
+  } catch (error) {
+    console.error("Error fetching reminder templates:", error);
+    return []; // Return empty array instead of throwing
+  }
+};
+
+export const getReminderCategories = async (): Promise<ReminderCategory[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('reminder_categories')
+      .select('*')
+      .order('name', { ascending: true });
+
+    if (error) throw error;
+    return (data as DbReminderCategory[]).map(mapDbReminderCategoryToType);
+  } catch (error) {
+    console.error("Error fetching reminder categories:", error);
+    return []; // Return empty array instead of throwing
+  }
+};
+
+export const getReminderTags = async (): Promise<ReminderTag[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('reminder_tags')
+      .select('*')
+      .order('name', { ascending: true });
 
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error("Error fetching reminder templates:", error);
-    return [];
+    console.error("Error fetching reminder tags:", error);
+    return []; // Return empty array instead of throwing
   }
 };

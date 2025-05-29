@@ -1,35 +1,82 @@
 
-import { ServiceReminder, ReminderCategory, CreateReminderParams, ReminderTemplate } from "@/types/reminder";
+import { ServiceReminder, ReminderTemplate, ReminderCategory, ReminderTag } from "@/types/reminder";
 
-/**
- * Maps a reminder from database format to frontend format
- */
-export const mapReminderFromDb = (dbReminder: any): ServiceReminder => {
-  // Extract tags from the nested structure
-  const tags = dbReminder.tags?.map((tagRelation: any) => ({
-    id: tagRelation.tag_id.id,
-    name: tagRelation.tag_id.name,
-    color: tagRelation.tag_id.color
-  })) || [];
-  
-  // Map the category data if available
-  const category = dbReminder.categories ? {
-    id: dbReminder.categories.id,
-    name: dbReminder.categories.name,
-    color: dbReminder.categories.color || '#808080',
-    description: dbReminder.categories.description,
-    is_active: dbReminder.categories.is_active
-  } : undefined;
-  
+// Database types that match the actual database schema
+export interface DbServiceReminder {
+  id: string;
+  customer_id: string;
+  vehicle_id?: string;
+  type: string;
+  title: string;
+  description: string;
+  due_date: string;
+  status: string;
+  notification_sent: boolean;
+  notification_date?: string;
+  created_at: string;
+  created_by: string;
+  completed_at?: string;
+  completed_by?: string;
+  notes?: string;
+  priority: string;
+  category_id?: string;
+  assigned_to?: string;
+  template_id?: string;
+  is_recurring: boolean;
+  recurrence_interval?: number;
+  recurrence_unit?: string;
+  parent_reminder_id?: string;
+  last_occurred_at?: string;
+  next_occurrence_date?: string;
+  updated_at?: string;
+  customers?: {
+    first_name: string;
+    last_name: string;
+  };
+  vehicles?: {
+    id: string;
+    make?: string;
+    model?: string;
+    year?: number;
+    vin?: string;
+    license_plate?: string;
+  };
+}
+
+export interface DbReminderTemplate {
+  id: string;
+  title: string;
+  description?: string;
+  category_id?: string;
+  priority: string;
+  default_days_until_due: number;
+  notification_days_before: number;
+  is_recurring: boolean;
+  recurrence_interval?: number;
+  recurrence_unit?: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbReminderCategory {
+  id: string;
+  name: string;
+  color: string;
+  description?: string;
+}
+
+// Mapper functions
+export function mapDbServiceReminderToType(dbReminder: DbServiceReminder): ServiceReminder {
   return {
     id: dbReminder.id,
     customerId: dbReminder.customer_id,
     vehicleId: dbReminder.vehicle_id,
-    type: dbReminder.type,
+    type: dbReminder.type as any,
     title: dbReminder.title,
     description: dbReminder.description,
     dueDate: dbReminder.due_date,
-    status: dbReminder.status,
+    status: dbReminder.status === 'sent' ? 'pending' : dbReminder.status as any,
     notificationSent: dbReminder.notification_sent,
     notificationDate: dbReminder.notification_date,
     createdAt: dbReminder.created_at,
@@ -37,88 +84,69 @@ export const mapReminderFromDb = (dbReminder: any): ServiceReminder => {
     completedAt: dbReminder.completed_at,
     completedBy: dbReminder.completed_by,
     notes: dbReminder.notes,
-    
-    // Advanced properties
-    priority: dbReminder.priority,
+    priority: dbReminder.priority as any,
     categoryId: dbReminder.category_id,
-    category: category,
     assignedTo: dbReminder.assigned_to,
     templateId: dbReminder.template_id,
     isRecurring: dbReminder.is_recurring,
     recurrenceInterval: dbReminder.recurrence_interval,
-    recurrenceUnit: dbReminder.recurrence_unit,
+    recurrenceUnit: dbReminder.recurrence_unit as any,
     parentReminderId: dbReminder.parent_reminder_id,
     lastOccurredAt: dbReminder.last_occurred_at,
     nextOccurrenceDate: dbReminder.next_occurrence_date,
-    tags: tags
+    updatedAt: dbReminder.updated_at || dbReminder.created_at,
+    customer: dbReminder.customers ? {
+      id: dbReminder.customer_id,
+      first_name: dbReminder.customers.first_name,
+      last_name: dbReminder.customers.last_name,
+    } : undefined,
+    vehicle: dbReminder.vehicles
   };
-};
+}
 
-/**
- * Maps a reminder from frontend format to database format for creation/update
- */
-export const mapReminderToDb = (reminder: CreateReminderParams): Record<string, any> => {
-  return {
-    customer_id: reminder.customerId,
-    vehicle_id: reminder.vehicleId,
-    type: reminder.type,
-    title: reminder.title,
-    description: reminder.description,
-    due_date: reminder.dueDate,
-    notes: reminder.notes,
-    
-    // Advanced properties
-    priority: reminder.priority || 'medium',
-    category_id: reminder.categoryId,
-    assigned_to: reminder.assignedTo === 'unassigned' ? null : reminder.assignedTo,
-    template_id: reminder.templateId,
-    is_recurring: reminder.isRecurring || false,
-    recurrence_interval: reminder.recurrenceInterval,
-    recurrence_unit: reminder.recurrenceUnit,
-    status: 'pending' // Default status for new reminders
-  };
-};
-
-/**
- * Maps a category from database format to frontend format
- */
-export const mapCategoryFromDb = (dbCategory: any): ReminderCategory => {
-  return {
-    id: dbCategory.id,
-    name: dbCategory.name,
-    color: dbCategory.color || '#808080',
-    description: dbCategory.description,
-    is_active: dbCategory.is_active
-  };
-};
-
-/**
- * Maps a template from database format to frontend format
- */
-export const mapTemplateFromDb = (dbTemplate: any): ReminderTemplate => {
-  // Map the category data if available
-  const category = dbTemplate.categories ? {
-    id: dbTemplate.categories.id,
-    name: dbTemplate.categories.name,
-    color: dbTemplate.categories.color || '#808080',
-    description: dbTemplate.categories.description,
-    is_active: dbTemplate.categories.is_active
-  } : undefined;
-  
+export function mapDbReminderTemplateToType(dbTemplate: DbReminderTemplate): ReminderTemplate {
   return {
     id: dbTemplate.id,
     title: dbTemplate.title,
     description: dbTemplate.description,
     categoryId: dbTemplate.category_id,
-    category: category,
-    priority: dbTemplate.priority || 'medium',
-    defaultDaysUntilDue: dbTemplate.default_days_until_due || 30,
-    notificationDaysBefore: dbTemplate.notification_days_before || 3,
-    isRecurring: dbTemplate.is_recurring || false,
+    priority: dbTemplate.priority as any,
+    defaultDaysUntilDue: dbTemplate.default_days_until_due,
+    notificationDaysBefore: dbTemplate.notification_days_before,
+    isRecurring: dbTemplate.is_recurring,
     recurrenceInterval: dbTemplate.recurrence_interval,
-    recurrenceUnit: dbTemplate.recurrence_unit,
+    recurrenceUnit: dbTemplate.recurrence_unit as any,
     createdBy: dbTemplate.created_by,
     createdAt: dbTemplate.created_at,
     updatedAt: dbTemplate.updated_at
   };
-};
+}
+
+export function mapDbReminderCategoryToType(dbCategory: DbReminderCategory): ReminderCategory {
+  return {
+    id: dbCategory.id,
+    name: dbCategory.name,
+    color: dbCategory.color,
+    description: dbCategory.description,
+    is_active: true // Default to true since it's required in the type
+  };
+}
+
+export function mapCreateReminderParamsToDb(params: any): any {
+  return {
+    customer_id: params.customerId,
+    vehicle_id: params.vehicleId,
+    type: params.type,
+    title: params.title,
+    description: params.description,
+    due_date: params.dueDate,
+    notes: params.notes,
+    priority: params.priority,
+    category_id: params.categoryId,
+    assigned_to: params.assignedTo,
+    template_id: params.templateId,
+    is_recurring: params.isRecurring,
+    recurrence_interval: params.recurrenceInterval,
+    recurrence_unit: params.recurrenceUnit
+  };
+}

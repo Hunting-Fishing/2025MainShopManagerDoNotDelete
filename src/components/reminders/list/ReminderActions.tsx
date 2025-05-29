@@ -1,8 +1,9 @@
 
 import { Button } from "@/components/ui/button";
 import { Bell, CheckCircle2, ChevronRight } from "lucide-react";
-import { ServiceReminder, ReminderStatus } from "@/types/reminder";
-import { updateReminderStatus, sendReminderNotifications } from "@/services/reminderService";
+import { ServiceReminder } from "@/types/reminder";
+import { updateReminder } from "@/services/reminders/reminderMutations";
+import { sendReminderNotifications } from "@/services/reminders/reminderNotifications";
 import { toast } from "@/hooks/use-toast";
 
 interface ReminderActionsProps {
@@ -11,9 +12,12 @@ interface ReminderActionsProps {
 }
 
 export function ReminderActions({ reminder, onStatusUpdate }: ReminderActionsProps) {
-  const handleStatusUpdate = async (reminderId: string, newStatus: ReminderStatus) => {
+  const handleStatusUpdate = async (reminderId: string, newStatus: 'pending' | 'completed' | 'overdue' | 'cancelled') => {
     try {
-      const updatedReminder = await updateReminderStatus(reminderId, newStatus);
+      const updatedReminder = await updateReminder({ 
+        id: reminderId, 
+        status: newStatus 
+      });
       
       onStatusUpdate(reminderId, updatedReminder);
       
@@ -33,16 +37,13 @@ export function ReminderActions({ reminder, onStatusUpdate }: ReminderActionsPro
 
   const handleSendNotification = async (reminderId: string) => {
     try {
-      // Since we're using the sendReminderNotifications function which handles multiple reminders,
-      // we'll need to adapt our approach here
       await sendReminderNotifications();
       
       // After sending the notification, fetch the updated reminder
-      const updatedReminder = await updateReminderStatus(
-        reminderId, 
-        reminder.status, // Keep the same status, just to get updated reminder data
-        reminder.notes
-      );
+      const updatedReminder = await updateReminder({
+        id: reminderId,
+        status: reminder.status
+      });
       
       onStatusUpdate(reminderId, updatedReminder);
       

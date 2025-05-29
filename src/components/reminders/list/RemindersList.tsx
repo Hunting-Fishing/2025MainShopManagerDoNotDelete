@@ -7,7 +7,7 @@ import { RemindersLoading } from "./RemindersLoading";
 import { useReminders } from "./useReminders";
 import { ServiceReminder } from "@/types/reminder";
 import { DateRange } from "react-day-picker";
-import { updateReminderStatus } from "@/services/reminderService";
+import { updateReminder } from "@/services/reminders/reminderMutations";
 
 interface RemindersListProps {
   customerId?: string;
@@ -54,7 +54,11 @@ export const RemindersList = memo(function RemindersList({
   // Memoize the callback to prevent recreation on every render
   const handleReminderUpdate = useCallback(async (reminderId: string, updatedReminder: ServiceReminder) => {
     try {
-      await updateReminderStatus(reminderId, updatedReminder.status, updatedReminder.notes);
+      await updateReminder({ 
+        id: reminderId, 
+        status: updatedReminder.status as 'pending' | 'completed' | 'overdue' | 'cancelled', 
+        notes: updatedReminder.notes 
+      });
       refetch(); // Refresh the list after an update
     } catch (error) {
       console.error("Error updating reminder:", error);
