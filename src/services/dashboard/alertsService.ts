@@ -78,7 +78,7 @@ export const getDashboardAlerts = async (): Promise<DashboardAlert[]> => {
     // Get overdue service reminders using live data
     const overdueReminders = await getOverdueReminders();
     overdueReminders.forEach(reminder => {
-      const customer = reminder.customers as any;
+      const customer = (reminder as any).customers;
       const customerName = customer ? `${customer.first_name} ${customer.last_name}` : 'Unknown Customer';
       
       alerts.push({
@@ -94,7 +94,7 @@ export const getDashboardAlerts = async (): Promise<DashboardAlert[]> => {
     // Get today's service reminders using live data
     const todaysReminders = await getTodaysReminders();
     todaysReminders.forEach(reminder => {
-      const customer = reminder.customers as any;
+      const customer = (reminder as any).customers;
       const customerName = customer ? `${customer.first_name} ${customer.last_name}` : 'Unknown Customer';
       
       alerts.push({

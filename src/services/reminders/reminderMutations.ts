@@ -28,6 +28,7 @@ export const createReminder = async (reminderData: CreateReminderData): Promise<
       .from('service_reminders')
       .insert([{
         ...reminderData,
+        description: reminderData.description || reminderData.title,
         created_by: (await supabase.auth.getUser()).data.user?.id || '',
         status: reminderData.status || 'pending',
         priority: reminderData.priority || 'medium'
@@ -79,7 +80,7 @@ export const updateReminder = async (updateData: UpdateReminderData): Promise<Se
       .single();
 
     if (error) throw error;
-    return data;
+    return { ...data, updated_at: data.updated_at || new Date().toISOString() };
   } catch (error) {
     console.error("Error updating reminder:", error);
     throw error;
