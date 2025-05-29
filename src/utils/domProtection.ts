@@ -22,10 +22,13 @@ export const initializeDOMProtection = (): void => {
           mutation.addedNodes.forEach((node) => {
             if (node.nodeType === Node.ELEMENT_NODE) {
               const element = node as Element;
-              // Check for extension-injected elements
-              if (element.id?.includes('extension') || 
-                  element.className?.includes('extension') ||
-                  element.tagName?.toLowerCase().includes('chrome')) {
+              // Check for extension-injected elements with proper DOM API usage
+              const hasExtensionId = element.id?.includes('extension');
+              const hasExtensionClass = element.classList?.contains('extension') || 
+                                      Array.from(element.classList || []).some(cls => cls.includes('extension'));
+              const hasExtensionTag = element.tagName?.toLowerCase().includes('chrome');
+              
+              if (hasExtensionId || hasExtensionClass || hasExtensionTag) {
                 console.warn('🔌 Extension-injected element detected:', element);
               }
             }
