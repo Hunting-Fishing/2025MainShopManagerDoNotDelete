@@ -32,8 +32,7 @@ const ServiceCategoryEditor: React.FC<ServiceCategoryEditorProps> = ({
 
     setIsLoading(true);
     try {
-      await updateServiceCategory({
-        ...category,
+      await updateServiceCategory(category.id, {
         name: name.trim(),
         description: description.trim() || undefined
       });
