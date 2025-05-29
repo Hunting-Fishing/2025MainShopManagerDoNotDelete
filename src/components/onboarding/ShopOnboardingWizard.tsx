@@ -1,204 +1,190 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle, Building2, Settings, Database, Rocket } from 'lucide-react';
+import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
+import { useShopData } from '@/hooks/useShopData';
+import { supabase } from '@/lib/supabase';
+import { toast } from '@/hooks/use-toast';
+
+// Import step components
 import { BasicInfoStep } from './steps/BasicInfoStep';
-import { BusinessSettingsStep } from './steps/BusinessSettingsStep';
-import { SampleDataStep } from './steps/SampleDataStep';
+import { BusinessDetailsStep } from './steps/BusinessDetailsStep';
+import { BusinessHoursStep } from './steps/BusinessHoursStep';
 import { CompletionStep } from './steps/CompletionStep';
 
-interface OnboardingStep {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  component: React.ComponentType<{ onNext: () => void; onPrevious: () => void; data: any; updateData: (data: any) => void; }>;
-}
-
-const steps: OnboardingStep[] = [
-  {
-    id: 'basic-info',
-    title: 'Basic Information',
-    description: 'Tell us about your automotive shop',
-    icon: <Building2 className="h-6 w-6" />,
-    component: BasicInfoStep,
-  },
-  {
-    id: 'business-settings',
-    title: 'Business Settings',
-    description: 'Configure your operating hours and preferences',
-    icon: <Settings className="h-6 w-6" />,
-    component: BusinessSettingsStep,
-  },
-  {
-    id: 'sample-data',
-    title: 'Sample Data',
-    description: 'Import sample customers and inventory to get started',
-    icon: <Database className="h-6 w-6" />,
-    component: SampleDataStep,
-  },
-  {
-    id: 'completion',
-    title: 'Ready to Go!',
-    description: 'Your shop is set up and ready for business',
-    icon: <Rocket className="h-6 w-6" />,
-    component: CompletionStep,
-  },
-];
-
 export function ShopOnboardingWizard() {
+  const navigate = useNavigate();
+  const { status, loading, markOnboardingComplete } = useOnboardingStatus();
+  const { shopData } = useShopData();
   const [currentStep, setCurrentStep] = useState(0);
-  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
-  const [onboardingData, setOnboardingData] = useState({
-    basicInfo: {},
-    businessSettings: {},
-    sampleData: { importCustomers: false, importInventory: false, importServices: false },
-  });
+  const [formData, setFormData] = useState({});
 
-  const progress = ((currentStep + 1) / steps.length) * 100;
-  const CurrentStepComponent = steps[currentStep].component;
+  // Redirect if onboarding is already complete
+  useEffect(() => {
+    if (!loading && status.isComplete) {
+      navigate('/', { replace: true });
+    }
+  }, [status.isComplete, loading, navigate]);
+
+  // Set initial step based on onboarding progress
+  useEffect(() => {
+    if (!loading && status) {
+      if (!status.hasShopInfo) {
+        setCurrentStep(0);
+      } else if (!status.hasBusinessSettings) {
+        setCurrentStep(2);
+      } else {
+        setCurrentStep(3);
+      }
+    }
+  }, [status, loading]);
+
+  const steps = [
+    { title: 'Basic Information', component: BasicInfoStep },
+    { title: 'Business Details', component: BusinessDetailsStep },
+    { title: 'Business Hours', component: BusinessHoursStep },
+    { title: 'Complete Setup', component: CompletionStep }
+  ];
 
   const handleNext = () => {
-    console.log('ShopOnboardingWizard handleNext called');
-    console.log('Current step:', currentStep);
-    console.log('Total steps:', steps.length);
-    
-    // Mark current step as completed
-    const newCompletedSteps = new Set([...completedSteps, currentStep]);
-    setCompletedSteps(newCompletedSteps);
-    console.log('Completed steps updated:', Array.from(newCompletedSteps));
-    
-    // Navigate to next step if not at the end
     if (currentStep < steps.length - 1) {
-      const nextStep = currentStep + 1;
-      console.log('Navigating to step:', nextStep);
-      setCurrentStep(nextStep);
-    } else {
-      console.log('Already at last step, not navigating further');
+      setCurrentStep(currentStep + 1);
     }
   };
 
   const handlePrevious = () => {
-    console.log('ShopOnboardingWizard handlePrevious called');
-    console.log('Current step:', currentStep);
-    
     if (currentStep > 0) {
-      const prevStep = currentStep - 1;
-      console.log('Navigating to previous step:', prevStep);
-      setCurrentStep(prevStep);
-    } else {
-      console.log('Already at first step, cannot go back');
+      setCurrentStep(currentStep - 1);
     }
   };
 
-  const updateData = (stepData: any) => {
-    const stepKey = steps[currentStep].id === 'basic-info' ? 'basicInfo' 
-                  : steps[currentStep].id === 'business-settings' ? 'businessSettings'
-                  : steps[currentStep].id === 'sample-data' ? 'sampleData'
-                  : steps[currentStep].id;
-    
-    console.log('Updating onboarding data for step:', stepKey);
-    console.log('New step data:', stepData);
-    
-    setOnboardingData(prev => {
-      const updated = {
-        ...prev,
-        [stepKey]: { ...prev[stepKey as keyof typeof prev], ...stepData }
-      };
-      console.log('Updated onboarding data:', updated);
-      return updated;
-    });
+  const handleComplete = async () => {
+    try {
+      // Mark onboarding as complete in database
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('shop_id')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.shop_id) {
+        // Update shop to mark onboarding complete
+        await supabase
+          .from('shops')
+          .update({ 
+            onboarding_completed: true,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', profile.shop_id);
+
+        // Update onboarding progress
+        await supabase
+          .from('onboarding_progress')
+          .upsert({
+            shop_id: profile.shop_id,
+            current_step: 4,
+            is_completed: true,
+            completed_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+
+        markOnboardingComplete();
+        
+        toast({
+          title: "Setup Complete!",
+          description: "Welcome to your shop management system",
+        });
+
+        navigate('/', { replace: true });
+      }
+    } catch (error) {
+      console.error('Error completing onboarding:', error);
+      toast({
+        title: "Error",
+        description: "Failed to complete setup. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  // Debug logging for step changes
-  React.useEffect(() => {
-    console.log('Current step changed to:', currentStep);
-    console.log('Current step info:', steps[currentStep]);
-  }, [currentStep]);
+  const updateFormData = (data: any) => {
+    setFormData(prev => ({ ...prev, ...data }));
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  const CurrentStepComponent = steps[currentStep].component;
+  const progress = ((currentStep + 1) / steps.length) * 100;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="max-w-4xl mx-auto py-8">
+    <div className="min-h-screen bg-gray-50 py-8 px-4">
+      <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome to Easy Shop Manager
-          </h1>
-          <p className="text-lg text-gray-600">
-            Let's get your automotive shop set up in just a few minutes
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Shop Setup</h1>
+          <p className="text-gray-600">Let's get your shop configured and ready to go</p>
         </div>
 
-        {/* Progress Bar */}
+        {/* Progress */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
             <span className="text-sm font-medium text-gray-700">
               Step {currentStep + 1} of {steps.length}
             </span>
-            <span className="text-sm font-medium text-gray-700">
-              {Math.round(progress)}% Complete
-            </span>
+            <span className="text-sm text-gray-500">{Math.round(progress)}% Complete</span>
           </div>
           <Progress value={progress} className="h-2" />
         </div>
 
-        {/* Step Indicators */}
-        <div className="flex justify-between mb-8">
-          {steps.map((step, index) => (
-            <div
-              key={step.id}
-              className={`flex flex-col items-center ${
-                index <= currentStep ? 'text-blue-600' : 'text-gray-400'
-              }`}
-            >
-              <div
-                className={`w-12 h-12 rounded-full flex items-center justify-center border-2 mb-2 ${
-                  completedSteps.has(index)
-                    ? 'bg-green-500 border-green-500 text-white'
-                    : index === currentStep
-                    ? 'bg-blue-500 border-blue-500 text-white'
-                    : 'border-gray-300 text-gray-400'
-                }`}
-              >
-                {completedSteps.has(index) ? (
-                  <CheckCircle className="h-6 w-6" />
-                ) : (
-                  step.icon
-                )}
+        {/* Step Navigation */}
+        <div className="flex justify-center mb-8">
+          <div className="flex space-x-8">
+            {steps.map((step, index) => (
+              <div key={index} className="flex items-center">
+                <div className={`
+                  w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
+                  ${index <= currentStep 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-gray-200 text-gray-600'
+                  }
+                `}>
+                  {index + 1}
+                </div>
+                <span className={`ml-2 text-sm ${
+                  index <= currentStep ? 'text-gray-900 font-medium' : 'text-gray-500'
+                }`}>
+                  {step.title}
+                </span>
               </div>
-              <span className="text-sm font-medium text-center max-w-20">
-                {step.title}
-              </span>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
-        {/* Current Step Content */}
-        <Card className="shadow-xl">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl text-gray-900">
-              {steps[currentStep].title}
-            </CardTitle>
-            <CardDescription className="text-lg">
-              {steps[currentStep].description}
-            </CardDescription>
+        {/* Step Content */}
+        <Card>
+          <CardHeader>
+            <h2 className="text-xl font-semibold">{steps[currentStep].title}</h2>
           </CardHeader>
           <CardContent>
             <CurrentStepComponent
-              onNext={handleNext}
+              onNext={currentStep === steps.length - 1 ? handleComplete : handleNext}
               onPrevious={handlePrevious}
-              data={onboardingData}
-              updateData={updateData}
+              data={formData}
+              updateData={updateFormData}
             />
           </CardContent>
         </Card>
-
-        {/* Footer */}
-        <div className="text-center mt-8 text-sm text-gray-500">
-          Need help? Contact our support team at support@easyshopmanager.com
-        </div>
       </div>
     </div>
   );

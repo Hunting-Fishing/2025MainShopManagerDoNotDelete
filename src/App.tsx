@@ -5,8 +5,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ReactErrorBoundary } from "@/components/error/ReactErrorBoundary";
 import AuthGate from "@/components/AuthGate";
-import { OnboardingGate } from "@/components/onboarding/OnboardingGate";
 import Layout from "@/components/layout/Layout";
+import { ShopOnboardingWizard } from "@/components/onboarding/ShopOnboardingWizard";
 
 // Pages
 import Dashboard from "@/pages/Dashboard";
@@ -52,38 +52,43 @@ function App() {
               {/* Customer Portal Routes - No Auth Required */}
               <Route path="/customer-portal" element={<CustomerPortal />} />
               
-              {/* Protected Routes */}
+              {/* Onboarding Routes - Auth Required */}
+              <Route path="/onboarding" element={
+                <AuthGate>
+                  <ShopOnboardingWizard />
+                </AuthGate>
+              } />
+              
+              {/* Protected Main App Routes with OnboardingGate */}
               <Route path="/*" element={
                 <AuthGate>
-                  <OnboardingGate>
-                    <Layout>
-                      <Routes>
-                        <Route path="/" element={<Dashboard />} />
-                        <Route path="/dashboard" element={<Dashboard />} />
-                        <Route path="/customers" element={<CustomersPage />} />
-                        <Route path="/customers/new" element={<CreateCustomer />} />
-                        <Route path="/customers/:id" element={<CustomerDetails />} />
-                        <Route path="/customers/:customerId/vehicles/:vehicleId" element={<VehicleDetails />} />
-                        <Route path="/work-orders" element={<WorkOrders />} />
-                        <Route path="/work-orders/:id" element={<WorkOrderDetails />} />
-                        <Route path="/inventory" element={<Inventory />} />
-                        <Route path="/invoices" element={<Invoices />} />
-                        <Route path="/invoices/new" element={<CreateInvoice />} />
-                        <Route path="/invoices/:id" element={<InvoiceDetails />} />
-                        <Route path="/reports" element={<Reports />} />
-                        <Route path="/analytics" element={<Analytics />} />
-                        <Route path="/settings" element={<Settings />} />
-                        <Route path="/calendar" element={<Calendar />} />
-                        <Route path="/equipment" element={<Equipment />} />
-                        <Route path="/equipment/:id" element={<EquipmentDetails />} />
-                        <Route path="/maintenance" element={<Maintenance />} />
-                        <Route path="/feedback" element={<Feedback />} />
-                        <Route path="/forms" element={<Forms />} />
-                        <Route path="/notifications" element={<Notifications />} />
-                        <Route path="/chat" element={<Chat />} />
-                      </Routes>
-                    </Layout>
-                  </OnboardingGate>
+                  <Layout>
+                    <Routes>
+                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/customers" element={<CustomersPage />} />
+                      <Route path="/customers/new" element={<CreateCustomer />} />
+                      <Route path="/customers/:id" element={<CustomerDetails />} />
+                      <Route path="/customers/:customerId/vehicles/:vehicleId" element={<VehicleDetails />} />
+                      <Route path="/work-orders" element={<WorkOrders />} />
+                      <Route path="/work-orders/:id" element={<WorkOrderDetails />} />
+                      <Route path="/inventory" element={<Inventory />} />
+                      <Route path="/invoices" element={<Invoices />} />
+                      <Route path="/invoices/new" element={<CreateInvoice />} />
+                      <Route path="/invoices/:id" element={<InvoiceDetails />} />
+                      <Route path="/reports" element={<Reports />} />
+                      <Route path="/analytics" element={<Analytics />} />
+                      <Route path="/settings" element={<Settings />} />
+                      <Route path="/calendar" element={<Calendar />} />
+                      <Route path="/equipment" element={<Equipment />} />
+                      <Route path="/equipment/:id" element={<EquipmentDetails />} />
+                      <Route path="/maintenance" element={<Maintenance />} />
+                      <Route path="/feedback" element={<Feedback />} />
+                      <Route path="/forms" element={<Forms />} />
+                      <Route path="/notifications" element={<Notifications />} />
+                      <Route path="/chat" element={<Chat />} />
+                    </Routes>
+                  </Layout>
                 </AuthGate>
               } />
             </Routes>

@@ -6,6 +6,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { useTheme } from '@/context/ThemeContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { SidebarProvider } from '@/hooks/use-sidebar';
+import { OnboardingRedirectGate } from '@/components/onboarding/OnboardingRedirectGate';
 
 interface LayoutProps {
   children?: ReactNode;
@@ -19,19 +20,21 @@ export function Layout({ children }: LayoutProps) {
   const isDark = resolvedTheme === 'dark';
 
   return (
-    <SidebarProvider>
-      <div className={`min-h-screen flex w-full flex-col ${isDark ? 'dark' : ''}`}>
-        <div className="flex flex-1 flex-col md:flex-row">
-          <AppSidebar />
-          <div className={`flex flex-col flex-1 ${!isMobile ? "md:ml-[280px]" : ""}`}>
-            <Header />
-            <main className="flex-1 p-4 md:p-6 bg-slate-50 dark:bg-slate-900 overflow-auto">
-              {children || <Outlet />}
-            </main>
+    <OnboardingRedirectGate>
+      <SidebarProvider>
+        <div className={`min-h-screen flex w-full flex-col ${isDark ? 'dark' : ''}`}>
+          <div className="flex flex-1 flex-col md:flex-row">
+            <AppSidebar />
+            <div className={`flex flex-col flex-1 ${!isMobile ? "md:ml-[280px]" : ""}`}>
+              <Header />
+              <main className="flex-1 p-4 md:p-6 bg-slate-50 dark:bg-slate-900 overflow-auto">
+                {children || <Outlet />}
+              </main>
+            </div>
           </div>
         </div>
-      </div>
-    </SidebarProvider>
+      </SidebarProvider>
+    </OnboardingRedirectGate>
   );
 }
 
