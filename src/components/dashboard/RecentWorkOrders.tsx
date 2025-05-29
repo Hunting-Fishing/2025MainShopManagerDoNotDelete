@@ -3,13 +3,15 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getRecentWorkOrders } from "@/services/dashboard"; // Updated import
 import { Badge } from "@/components/ui/badge";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye } from "lucide-react";
 import { RecentWorkOrder } from "@/types/dashboard";
+import { useNavigate } from "react-router-dom";
 
 export function RecentWorkOrders() {
   const [workOrders, setWorkOrders] = useState<RecentWorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchWorkOrders = async () => {
@@ -28,6 +30,10 @@ export function RecentWorkOrders() {
 
     fetchWorkOrders();
   }, []);
+
+  const handleWorkOrderClick = (workOrderId: string) => {
+    navigate(`/work-orders/${workOrderId}`);
+  };
 
   const getStatusColor = (status: string): string => {
     switch (status.toLowerCase()) {
@@ -91,10 +97,18 @@ export function RecentWorkOrders() {
             </div>
           ) : (
             workOrders.map((order) => (
-              <div key={order.id} className="flex items-center justify-between border-b py-3 last:border-0">
+              <div 
+                key={order.id} 
+                className="flex items-center justify-between border-b py-3 last:border-0 cursor-pointer hover:bg-slate-50 rounded-lg px-3 transition-colors group"
+                onClick={() => handleWorkOrderClick(order.id)}
+              >
                 <div className="flex flex-col">
-                  <span className="font-medium">{order.customer}</span>
-                  <span className="text-sm text-muted-foreground">{order.service}</span>
+                  <span className="font-medium group-hover:text-blue-600 transition-colors">
+                    {order.customer}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {order.service}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className={getStatusColor(order.status)}>
@@ -104,6 +118,7 @@ export function RecentWorkOrders() {
                     {order.priority}
                   </Badge>
                   <span className="text-sm">{order.date}</span>
+                  <Eye className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
               </div>
             ))
