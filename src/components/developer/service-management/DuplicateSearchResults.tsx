@@ -1,30 +1,19 @@
 
-import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   X, 
-  Search, 
-  Filter, 
-  TrendingUp, 
-  TrendingDown, 
-  Minus,
-  Eye,
-  EyeOff,
-  ChevronDown,
-  ChevronUp,
-  AlertTriangle,
-  CheckCircle,
-  Info
+  Trash2, 
+  AlertTriangle, 
+  CheckCircle2,
+  Search,
+  FileText
 } from 'lucide-react';
-import { DuplicateItem, DuplicateSearchOptions } from '@/utils/search/duplicateSearch';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { DuplicateItem, DuplicateOccurrence, DuplicateSearchOptions } from '@/utils/search/duplicateSearch';
 import { toast } from 'sonner';
 
 interface DuplicateSearchResultsProps {
@@ -35,16 +24,6 @@ interface DuplicateSearchResultsProps {
   onRemoveDuplicate: (itemId: string, type: 'category' | 'subcategory' | 'job') => Promise<void>;
 }
 
-interface ResultFilters {
-  searchTerm: string;
-  matchType: string;
-  minSimilarity: number;
-  category: string;
-  showResolved: boolean;
-  sortBy: 'similarity' | 'occurrences' | 'category';
-  sortOrder: 'asc' | 'desc';
-}
-
 export const DuplicateSearchResults: React.FC<DuplicateSearchResultsProps> = ({
   duplicates,
   recommendations,
@@ -52,390 +31,167 @@ export const DuplicateSearchResults: React.FC<DuplicateSearchResultsProps> = ({
   onClose,
   onRemoveDuplicate
 }) => {
-  const [filters, setFilters] = useState<ResultFilters>({
-    searchTerm: '',
-    matchType: 'all',
-    minSimilarity: 50,
-    category: 'all',
-    showResolved: true,
-    sortBy: 'similarity',
-    sortOrder: 'desc'
-  });
-
-  const [resolvedItems, setResolvedItems] = useState<Set<string>>(new Set());
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-  const [showFilters, setShowFilters] = useState(false);
-
-  // Filter and sort duplicates
-  const filteredDuplicates = useMemo(() => {
-    let filtered = duplicates.filter(duplicate => {
-      // Search term filter
-      if (filters.searchTerm) {
-        const searchLower = filters.searchTerm.toLowerCase();
-        const matchesSearch = duplicate.text.toLowerCase().includes(searchLower) ||
-          duplicate.occurrences.some(occ => 
-            occ.categoryName?.toLowerCase().includes(searchLower) ||
-            occ.subcategoryName?.toLowerCase().includes(searchLower)
-          );
-        if (!matchesSearch) return false;
-      }
-
-      // Match type filter
-      if (filters.matchType !== 'all' && duplicate.matchType !== filters.matchType) {
-        return false;
-      }
-
-      // Similarity filter
-      if (duplicate.similarity < filters.minSimilarity) {
-        return false;
-      }
-
-      // Category filter
-      if (filters.category !== 'all') {
-        const hasCategory = duplicate.occurrences.some(occ => 
-          occ.categoryName === filters.category
-        );
-        if (!hasCategory) return false;
-      }
-
-      // Resolved filter
-      if (!filters.showResolved && resolvedItems.has(duplicate.id)) {
-        return false;
-      }
-
-      return true;
-    });
-
-    // Sort results
-    filtered.sort((a, b) => {
-      let comparison = 0;
-      
-      switch (filters.sortBy) {
-        case 'similarity':
-          comparison = a.similarity - b.similarity;
-          break;
-        case 'occurrences':
-          comparison = a.occurrences.length - b.occurrences.length;
-          break;
-        case 'category':
-          const aCat = a.occurrences[0]?.categoryName || '';
-          const bCat = b.occurrences[0]?.categoryName || '';
-          comparison = aCat.localeCompare(bCat);
-          break;
-      }
-
-      return filters.sortOrder === 'desc' ? -comparison : comparison;
-    });
-
-    return filtered;
-  }, [duplicates, filters, resolvedItems]);
-
-  // Get unique categories for filter
-  const uniqueCategories = useMemo(() => {
-    const categories = new Set<string>();
-    duplicates.forEach(duplicate => {
-      duplicate.occurrences.forEach(occ => {
-        if (occ.categoryName) categories.add(occ.categoryName);
-      });
-    });
-    return Array.from(categories).sort();
-  }, [duplicates]);
-
-  const handleResolveGroup = (groupId: string) => {
-    setResolvedItems(prev => new Set([...prev, groupId]));
-    toast.success("Duplicate group marked as resolved");
-  };
-
-  const handleToggleGroup = (groupId: string) => {
-    setExpandedGroups(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(groupId)) {
-        newSet.delete(groupId);
-      } else {
-        newSet.add(groupId);
-      }
-      return newSet;
-    });
-  };
+  const [removingItems, setRemovingItems] = useState<Set<string>>(new Set());
 
   const getMatchTypeColor = (matchType: string) => {
     switch (matchType) {
-      case 'exact': return 'bg-red-100 text-red-800 border-red-300';
-      case 'exact_words': return 'bg-orange-100 text-orange-800 border-orange-300';
-      case 'similar': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-      case 'partial': return 'bg-blue-100 text-blue-800 border-blue-300';
-      default: return 'bg-gray-100 text-gray-800 border-gray-300';
+      case 'exact': return 'bg-red-100 text-red-800';
+      case 'exact_words': return 'bg-orange-100 text-orange-800';
+      case 'similar': return 'bg-yellow-100 text-yellow-800';
+      case 'partial': return 'bg-blue-100 text-blue-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const getSimilarityColor = (similarity: number) => {
-    if (similarity >= 90) return 'text-red-600';
-    if (similarity >= 80) return 'text-orange-600';
-    if (similarity >= 70) return 'text-yellow-600';
-    return 'text-blue-600';
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'category': return '📁';
+      case 'subcategory': return '📂';
+      case 'job': return '🔧';
+      default: return '📄';
+    }
   };
 
+  const handleRemoveItem = async (occurrence: DuplicateOccurrence) => {
+    if (removingItems.has(occurrence.itemId)) return;
+
+    setRemovingItems(prev => new Set(prev).add(occurrence.itemId));
+    
+    try {
+      await onRemoveDuplicate(occurrence.itemId, occurrence.itemType);
+      toast.success(`${occurrence.itemType} removed successfully`);
+    } catch (error) {
+      console.error('Error removing item:', error);
+      toast.error(`Failed to remove ${occurrence.itemType}`);
+    } finally {
+      setRemovingItems(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(occurrence.itemId);
+        return newSet;
+      });
+    }
+  };
+
+  const totalDuplicates = duplicates.reduce((acc, dup) => acc + dup.occurrences.length, 0);
+
   return (
-    <Card className="w-full h-full flex flex-col">
+    <Card className="w-full bg-white shadow-xl">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-xl">Duplicate Search Results</CardTitle>
+            <CardTitle className="text-xl font-semibold flex items-center gap-2">
+              <Search className="h-5 w-5" />
+              Duplicate Search Results
+            </CardTitle>
             <p className="text-sm text-gray-600 mt-1">
-              Found {filteredDuplicates.length} duplicate groups from {duplicates.length} total
+              Found {duplicates.length} duplicate groups affecting {totalDuplicates} items
             </p>
           </div>
-          <Button variant="ghost" size="sm" onClick={onClose}>
+          <Button variant="outline" size="sm" onClick={onClose}>
             <X className="h-4 w-4" />
           </Button>
         </div>
+      </CardHeader>
 
+      <CardContent className="space-y-6">
         {/* Search Configuration Summary */}
-        <div className="bg-gray-50 p-3 rounded-lg mt-4">
+        <div className="bg-gray-50 p-3 rounded-lg">
           <h4 className="font-medium text-sm mb-2">Search Configuration</h4>
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="outline">
-              Scope: {searchOptions.searchScope}
-            </Badge>
-            <Badge variant="outline">
-              Threshold: {searchOptions.similarityThreshold}%
-            </Badge>
-            <Badge variant="outline">
-              Min Group: {searchOptions.minGroupSize}
-            </Badge>
-            {Object.entries(searchOptions.matchTypes)
-              .filter(([_, enabled]) => enabled)
-              .map(([type]) => (
-                <Badge key={type} className={getMatchTypeColor(type)}>
-                  {type.replace('_', ' ')}
-                </Badge>
-              ))}
+          <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+            <div>Scope: {searchOptions.searchScope}</div>
+            <div>Similarity: {searchOptions.similarityThreshold}%</div>
+            <div>Match Types: {searchOptions.matchTypes.join(', ')}</div>
+            <div>Min Word Length: {searchOptions.minWordLength}</div>
           </div>
         </div>
 
-        {/* Filters */}
-        <Collapsible open={showFilters} onOpenChange={setShowFilters}>
-          <CollapsibleTrigger asChild>
-            <Button variant="outline" size="sm" className="w-full mt-3">
-              <Filter className="h-4 w-4 mr-2" />
-              {showFilters ? 'Hide' : 'Show'} Filters
-              {showFilters ? <ChevronUp className="h-4 w-4 ml-2" /> : <ChevronDown className="h-4 w-4 ml-2" />}
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="mt-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
-              <div>
-                <Label className="text-sm font-medium">Search</Label>
-                <Input
-                  placeholder="Search duplicates..."
-                  value={filters.searchTerm}
-                  onChange={(e) => setFilters(prev => ({ ...prev, searchTerm: e.target.value }))}
-                  className="mt-1"
-                />
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium">Match Type</Label>
-                <Select 
-                  value={filters.matchType} 
-                  onValueChange={(value) => setFilters(prev => ({ ...prev, matchType: value }))}
-                >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="exact">Exact Match</SelectItem>
-                    <SelectItem value="exact_words">Exact Words</SelectItem>
-                    <SelectItem value="similar">Similar</SelectItem>
-                    <SelectItem value="partial">Partial</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium">Category</Label>
-                <Select 
-                  value={filters.category} 
-                  onValueChange={(value) => setFilters(prev => ({ ...prev, category: value }))}
-                >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    {uniqueCategories.map(category => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium">Sort By</Label>
-                <Select 
-                  value={filters.sortBy} 
-                  onValueChange={(value: 'similarity' | 'occurrences' | 'category') => 
-                    setFilters(prev => ({ ...prev, sortBy: value }))}
-                >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="similarity">Similarity</SelectItem>
-                    <SelectItem value="occurrences">Occurrences</SelectItem>
-                    <SelectItem value="category">Category</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium">Sort Order</Label>
-                <Select 
-                  value={filters.sortOrder} 
-                  onValueChange={(value: 'asc' | 'desc') => 
-                    setFilters(prev => ({ ...prev, sortOrder: value }))}
-                >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="desc">Descending</SelectItem>
-                    <SelectItem value="asc">Ascending</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="show-resolved"
-                  checked={filters.showResolved}
-                  onCheckedChange={(checked) => setFilters(prev => ({ ...prev, showResolved: checked }))}
-                />
-                <Label htmlFor="show-resolved" className="text-sm">Show Resolved</Label>
-              </div>
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
-      </CardHeader>
-
-      <CardContent className="flex-1 overflow-y-auto">
-        {filteredDuplicates.length === 0 ? (
-          <div className="text-center py-8">
-            <Info className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No duplicates found</h3>
-            <p className="text-gray-600">
-              {duplicates.length === 0 
-                ? "No duplicates detected with current search criteria."
-                : "All duplicates are filtered out. Try adjusting your filters."}
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {filteredDuplicates.map((duplicate) => {
-              const isResolved = resolvedItems.has(duplicate.id);
-              const isExpanded = expandedGroups.has(duplicate.id);
-
-              return (
-                <Card key={duplicate.id} className={`${isResolved ? 'opacity-60' : ''}`}>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleToggleGroup(duplicate.id)}
-                        >
-                          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                        </Button>
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <Badge className={getMatchTypeColor(duplicate.matchType)}>
-                              {duplicate.matchType.replace('_', ' ')}
-                            </Badge>
-                            <Badge variant="outline" className={getSimilarityColor(duplicate.similarity)}>
-                              {duplicate.similarity}% similar
-                            </Badge>
-                            <Badge variant="secondary">
-                              {duplicate.occurrences.length} occurrences
-                            </Badge>
-                            {isResolved && (
-                              <Badge className="bg-green-100 text-green-800 border-green-300">
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Resolved
-                              </Badge>
-                            )}
-                          </div>
-                          <h4 className="font-medium text-gray-900">"{duplicate.text}"</h4>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        {!isResolved && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleResolveGroup(duplicate.id)}
-                          >
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            Mark Resolved
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </CardHeader>
-
-                  {isExpanded && (
-                    <CardContent className="pt-0">
-                      <div className="space-y-3">
-                        {duplicate.occurrences.map((occurrence, index) => (
-                          <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                            <div className="flex-1">
-                              <div className="font-medium text-sm">
-                                {occurrence.categoryName} → {occurrence.subcategoryName}
-                              </div>
-                              <div className="text-sm text-gray-600 mt-1">
-                                Type: {occurrence.type} | ID: {occurrence.itemId}
-                              </div>
-                            </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => onRemoveDuplicate(occurrence.itemId, occurrence.type)}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              Remove
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  )}
-                </Card>
-              );
-            })}
-          </div>
-        )}
-
         {/* Recommendations */}
         {recommendations.length > 0 && (
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle className="text-lg">Recommendations</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2">
-                {recommendations.map((recommendation, index) => (
-                  <li key={index} className="flex items-start gap-2">
-                    <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5" />
-                    <span className="text-sm">{recommendation}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
+          <div className="space-y-2">
+            <h4 className="font-medium text-sm flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Recommendations
+            </h4>
+            <div className="space-y-1">
+              {recommendations.map((rec, index) => (
+                <div key={index} className="text-sm text-gray-700 flex items-start gap-2">
+                  <CheckCircle2 className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
+                  {rec}
+                </div>
+              ))}
+            </div>
+          </div>
         )}
+
+        <Separator />
+
+        {/* Duplicate Groups */}
+        <ScrollArea className="max-h-96">
+          <div className="space-y-4">
+            {duplicates.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <CheckCircle2 className="h-12 w-12 mx-auto mb-3 text-green-500" />
+                <h3 className="font-medium">No Duplicates Found</h3>
+                <p className="text-sm">Your service hierarchy looks clean!</p>
+              </div>
+            ) : (
+              duplicates.map((duplicate, index) => (
+                <Card key={duplicate.groupId} className="border border-gray-200">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Badge className={getMatchTypeColor(duplicate.matchType)}>
+                          {duplicate.matchType.replace('_', ' ')}
+                        </Badge>
+                        {duplicate.matchType === 'similar' && (
+                          <span className="text-xs text-gray-500">
+                            {duplicate.similarity.toFixed(1)}% similar
+                          </span>
+                        )}
+                      </div>
+                      <AlertTriangle className="h-4 w-4 text-amber-500" />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {duplicate.occurrences.map((occurrence, occIndex) => (
+                      <div key={occurrence.itemId} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-lg">{getTypeIcon(occurrence.itemType)}</span>
+                            <span className="font-medium">{occurrence.itemName}</span>
+                            <Badge variant="outline" className="text-xs">
+                              {occurrence.itemType}
+                            </Badge>
+                          </div>
+                          {(occurrence.parentCategory || occurrence.parentSubcategory) && (
+                            <div className="text-xs text-gray-500">
+                              {occurrence.parentCategory && `${occurrence.parentCategory}`}
+                              {occurrence.parentSubcategory && ` > ${occurrence.parentSubcategory}`}
+                            </div>
+                          )}
+                          {occurrence.description && (
+                            <div className="text-xs text-gray-600 mt-1">
+                              {occurrence.description}
+                            </div>
+                          )}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleRemoveItem(occurrence)}
+                          disabled={removingItems.has(occurrence.itemId)}
+                          className="ml-3 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </ScrollArea>
       </CardContent>
     </Card>
   );
