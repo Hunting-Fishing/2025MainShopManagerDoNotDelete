@@ -6,7 +6,7 @@ import { workOrderFormSchema, WorkOrderFormSchemaValues } from "@/schemas/workOr
 import { WorkOrderCreateForm } from "./WorkOrderCreateForm";
 
 interface WorkOrderFormProps {
-  onSubmit?: (values: WorkOrderFormSchemaValues) => void;
+  onSubmit?: (values: WorkOrderFormSchemaValues) => Promise<void>;
   initialValues?: Partial<WorkOrderFormSchemaValues>;
 }
 
@@ -36,9 +36,9 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
     }
   });
 
-  const handleSubmit = (values: WorkOrderFormSchemaValues) => {
+  const handleSubmit = async (values: WorkOrderFormSchemaValues) => {
     if (onSubmit) {
-      onSubmit(values);
+      await onSubmit(values);
     }
   };
 
