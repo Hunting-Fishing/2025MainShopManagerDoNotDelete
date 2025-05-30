@@ -9,6 +9,7 @@ import { ServiceBulkImport } from './ServiceBulkImport';
 import { ServiceDebugInfo } from './ServiceDebugInfo';
 import ServicesPriceReport from './ServicesPriceReport';
 import ServiceAnalytics from './ServiceAnalytics';
+import { ServiceDuplicatesManager } from './ServiceDuplicatesManager';
 import { 
   Database, 
   Search, 
@@ -16,7 +17,8 @@ import {
   Upload,
   Bug,
   DollarSign,
-  BarChart3
+  BarChart3,
+  Copy
 } from 'lucide-react';
 
 interface ServiceHierarchyBrowserProps {
@@ -68,6 +70,13 @@ const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = ({
             Overview
           </TabsTrigger>
           <TabsTrigger 
+            value="duplicates" 
+            className="rounded-full text-sm px-4 py-2 data-[state=active]:bg-red-600 data-[state=active]:text-white gap-2"
+          >
+            <Copy className="h-4 w-4" />
+            Duplicates
+          </TabsTrigger>
+          <TabsTrigger 
             value="quality" 
             className="rounded-full text-sm px-4 py-2 data-[state=active]:bg-green-600 data-[state=active]:text-white gap-2"
           >
@@ -109,6 +118,13 @@ const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = ({
             <ServiceCategoriesManager 
               categories={categories}
               isLoading={isLoading}
+              onRefresh={onRefresh}
+            />
+          </TabsContent>
+
+          <TabsContent value="duplicates" className="space-y-4">
+            <ServiceDuplicatesManager 
+              categories={categories}
               onRefresh={onRefresh}
             />
           </TabsContent>
