@@ -5,11 +5,18 @@ import { ServiceMainCategory } from '@/types/serviceHierarchy';
 import ServiceCategoriesManager from './ServiceCategoriesManager';
 import { DuplicateSearchButton } from './DuplicateSearchButton';
 import ServiceQualityAnalysis from './ServiceQualityAnalysis';
+import { ServiceBulkImport } from './ServiceBulkImport';
+import { ServiceDebugInfo } from './ServiceDebugInfo';
+import ServicesPriceReport from './ServicesPriceReport';
+import ServiceAnalytics from './ServiceAnalytics';
 import { 
   Database, 
   Search, 
   TrendingUp,
-  AlertTriangle
+  Upload,
+  Bug,
+  DollarSign,
+  BarChart3
 } from 'lucide-react';
 
 interface ServiceHierarchyBrowserProps {
@@ -24,6 +31,16 @@ const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = ({
   onRefresh
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
+
+  const handleImport = async (data: any) => {
+    // This would typically call an API to import the data
+    console.log('Importing data:', data);
+    onRefresh();
+  };
+
+  const handleExport = () => {
+    console.log('Export triggered');
+  };
 
   return (
     <div className="space-y-6">
@@ -57,6 +74,34 @@ const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = ({
             <TrendingUp className="h-4 w-4" />
             Quality Analysis
           </TabsTrigger>
+          <TabsTrigger 
+            value="analytics" 
+            className="rounded-full text-sm px-4 py-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white gap-2"
+          >
+            <BarChart3 className="h-4 w-4" />
+            Analytics
+          </TabsTrigger>
+          <TabsTrigger 
+            value="pricing" 
+            className="rounded-full text-sm px-4 py-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white gap-2"
+          >
+            <DollarSign className="h-4 w-4" />
+            Pricing
+          </TabsTrigger>
+          <TabsTrigger 
+            value="import" 
+            className="rounded-full text-sm px-4 py-2 data-[state=active]:bg-orange-600 data-[state=active]:text-white gap-2"
+          >
+            <Upload className="h-4 w-4" />
+            Import/Export
+          </TabsTrigger>
+          <TabsTrigger 
+            value="debug" 
+            className="rounded-full text-sm px-4 py-2 data-[state=active]:bg-red-600 data-[state=active]:text-white gap-2"
+          >
+            <Bug className="h-4 w-4" />
+            Debug
+          </TabsTrigger>
         </TabsList>
 
         <div className="mt-6">
@@ -72,6 +117,30 @@ const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = ({
             <ServiceQualityAnalysis 
               categories={categories}
               onRefresh={onRefresh}
+            />
+          </TabsContent>
+
+          <TabsContent value="analytics" className="space-y-4">
+            <ServiceAnalytics categories={categories} />
+          </TabsContent>
+
+          <TabsContent value="pricing" className="space-y-4">
+            <ServicesPriceReport categories={categories} />
+          </TabsContent>
+
+          <TabsContent value="import" className="space-y-4">
+            <ServiceBulkImport 
+              categories={categories}
+              onImport={handleImport}
+              onExport={handleExport}
+            />
+          </TabsContent>
+
+          <TabsContent value="debug" className="space-y-4">
+            <ServiceDebugInfo 
+              categories={categories}
+              isLoading={isLoading}
+              error={null}
             />
           </TabsContent>
         </div>

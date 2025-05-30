@@ -1,175 +1,161 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Bug, Eye, EyeOff, Database, AlertTriangle } from 'lucide-react';
-import { fetchRawServiceData } from '@/lib/services/serviceApi';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Copy, Bug, AlertTriangle, Info } from 'lucide-react';
+import { ServiceMainCategory } from '@/types/serviceHierarchy';
+import { toast } from 'sonner';
 
-const ServiceDebugInfo: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [debugData, setDebugData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(false);
+interface ServiceDebugInfoProps {
+  categories: ServiceMainCategory[];
+  isLoading: boolean;
+  error?: string | null;
+}
 
-  const loadDebugData = async () => {
-    try {
-      setIsLoading(true);
-      const data = await fetchRawServiceData();
-      setDebugData(data);
-      console.log('Debug data loaded:', data);
-    } catch (error) {
-      console.error('Failed to load debug data:', error);
-      setDebugData({ error: error.message });
-    } finally {
-      setIsLoading(false);
-    }
+export const ServiceDebugInfo: React.FC<ServiceDebugInfoProps> = ({
+  categories,
+  isLoading,
+  error
+}) => {
+  const debugInfo = React.useMemo(() => {
+    const totalJobs = categories.reduce((total, cat) => 
+      total + cat.subcategories.reduce((subTotal, sub) => subTotal + sub.jobs.length, 0), 0
+    );
+    
+    const totalSubcategories = categories.reduce((total, cat) => total + cat.subcategories.length, 0);
+    
+    const jobsWithPrices = categories.reduce((total, cat) => 
+      total + cat.subcategories.reduce((subTotal, sub) => 
+        subTotal + sub.jobs.filter(job => job.price !== null && job.price !== undefined).length, 0
+      ), 0
+    );
+    
+    const jobsWithTime = categories.reduce((total, cat) => 
+      total + cat.subcategories.reduce((subTotal, sub) => 
+        subTotal + sub.jobs.filter(job => job.estimatedTime !== null && job.estimatedTime !== undefined).length, 0
+      ), 0
+    );
+
+    const categoriesWithoutSubcategories = categories.filter(cat => cat.subcategories.length === 0);
+    const subcategoriesWithoutJobs = categories.flatMap(cat => 
+      cat.subcategories.filter(sub => sub.jobs.length === 0)
+    );
+
+    return {
+      totalCategories: categories.length,
+      totalSubcategories,
+      totalJobs,
+      jobsWithPrices,
+      jobsWithTime,
+      categoriesWithoutSubcategories,
+      subcategoriesWithoutJobs,
+      dataStructureValid: categories.every(cat => cat.id && cat.name && Array.isArray(cat.subcategories))
+    };
+  }, [categories]);
+
+  const copyDebugInfo = () => {
+    const debugData = {
+      timestamp: new Date().toISOString(),
+      debugInfo,
+      isLoading,
+      error,
+      categories: categories.map(cat => ({
+        id: cat.id,
+        name: cat.name,
+        subcategoriesCount: cat.subcategories.length,
+        jobsCount: cat.subcategories.reduce((total, sub) => total + sub.jobs.length, 0)
+      }))
+    };
+
+    navigator.clipboard.writeText(JSON.stringify(debugData, null, 2))
+      .then(() => toast.success('Debug info copied to clipboard'))
+      .catch(() => toast.error('Failed to copy debug info'));
   };
 
   return (
-    <Card className="bg-yellow-50 border-yellow-200">
-      <CardHeader className="bg-yellow-100 border-b border-yellow-200">
-        <CardTitle className="flex items-center gap-2 text-yellow-800">
-          <Bug className="h-5 w-5" />
-          Debug Database Contents
-          <Badge variant="outline" className="bg-yellow-200 text-yellow-800 border-yellow-300">
-            Troubleshooting
-          </Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-4">
-        <div className="flex items-center gap-2 mb-4">
-          <Button 
-            onClick={loadDebugData} 
-            disabled={isLoading}
-            variant="outline"
-            size="sm"
-            className="border-yellow-300 text-yellow-700 hover:bg-yellow-100"
-          >
-            <Database className="h-4 w-4 mr-2" />
-            {isLoading ? 'Loading...' : 'Load Raw Database Data'}
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bug className="h-5 w-5" />
+            Debug Information
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Status Indicators */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold">{debugInfo.totalCategories}</div>
+              <div className="text-sm text-gray-600">Categories</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{debugInfo.totalSubcategories}</div>
+              <div className="text-sm text-gray-600">Subcategories</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{debugInfo.totalJobs}</div>
+              <div className="text-sm text-gray-600">Total Jobs</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">
+                {debugInfo.totalJobs > 0 ? Math.round((debugInfo.jobsWithPrices / debugInfo.totalJobs) * 100) : 0}%
+              </div>
+              <div className="text-sm text-gray-600">Jobs with Prices</div>
+            </div>
+          </div>
+
+          {/* Status Badges */}
+          <div className="flex flex-wrap gap-2">
+            <Badge variant={isLoading ? "secondary" : "outline"}>
+              {isLoading ? "Loading..." : "Loaded"}
+            </Badge>
+            <Badge variant={debugInfo.dataStructureValid ? "success" : "destructive"}>
+              {debugInfo.dataStructureValid ? "Valid Structure" : "Invalid Structure"}
+            </Badge>
+            <Badge variant={error ? "destructive" : "success"}>
+              {error ? "Has Errors" : "No Errors"}
+            </Badge>
+          </div>
+
+          {/* Warnings */}
+          {debugInfo.categoriesWithoutSubcategories.length > 0 && (
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                {debugInfo.categoriesWithoutSubcategories.length} categories have no subcategories: {
+                  debugInfo.categoriesWithoutSubcategories.map(cat => cat.name).join(', ')
+                }
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {debugInfo.subcategoriesWithoutJobs.length > 0 && (
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                {debugInfo.subcategoriesWithoutJobs.length} subcategories have no jobs
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {error && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                Error: {error}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Copy Debug Info */}
+          <Button onClick={copyDebugInfo} variant="outline" className="gap-2">
+            <Copy className="h-4 w-4" />
+            Copy Debug Info
           </Button>
-          
-          <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-            <CollapsibleTrigger asChild>
-              <Button variant="outline" size="sm" className="border-yellow-300 text-yellow-700 hover:bg-yellow-100">
-                {isOpen ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
-                {isOpen ? 'Hide' : 'Show'} Debug Info
-              </Button>
-            </CollapsibleTrigger>
-            
-            <CollapsibleContent className="mt-4">
-              {debugData && (
-                <div className="space-y-4">
-                  {debugData.error ? (
-                    <div className="bg-red-50 border border-red-200 rounded p-3">
-                      <div className="flex items-center gap-2 text-red-700 font-medium mb-2">
-                        <AlertTriangle className="h-4 w-4" />
-                        Error Loading Data
-                      </div>
-                      <p className="text-red-600 text-sm">{debugData.error}</p>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div className="bg-white border border-yellow-200 rounded p-3">
-                          <h4 className="font-medium text-gray-800 mb-2">Categories</h4>
-                          <p className="text-gray-600">Count: {debugData.categories?.length || 0}</p>
-                          {debugData.errors?.categories && (
-                            <p className="text-red-500 text-xs mt-1">Error: {debugData.errors.categories.message}</p>
-                          )}
-                        </div>
-                        
-                        <div className="bg-white border border-yellow-200 rounded p-3">
-                          <h4 className="font-medium text-gray-800 mb-2">Subcategories</h4>
-                          <p className="text-gray-600">Count: {debugData.subcategories?.length || 0}</p>
-                          {debugData.errors?.subcategories && (
-                            <p className="text-red-500 text-xs mt-1">Error: {debugData.errors.subcategories.message}</p>
-                          )}
-                        </div>
-                        
-                        <div className="bg-white border border-yellow-200 rounded p-3">
-                          <h4 className="font-medium text-gray-800 mb-2">Jobs</h4>
-                          <p className="text-gray-600">Count: {debugData.jobs?.length || 0}</p>
-                          {debugData.errors?.jobs && (
-                            <p className="text-red-500 text-xs mt-1">Error: {debugData.errors.jobs.message}</p>
-                          )}
-                        </div>
-                      </div>
-
-                      {debugData.categories?.length > 0 && (
-                        <div className="bg-white border border-yellow-200 rounded p-3">
-                          <h4 className="font-medium text-gray-800 mb-2">Sample Categories</h4>
-                          <div className="space-y-1 text-xs">
-                            {debugData.categories.slice(0, 5).map((cat: any) => (
-                              <div key={cat.id} className="flex justify-between">
-                                <span className="text-gray-700">{cat.name}</span>
-                                <span className="text-gray-500">ID: {cat.id.slice(0, 8)}...</span>
-                              </div>
-                            ))}
-                            {debugData.categories.length > 5 && (
-                              <p className="text-gray-500">...and {debugData.categories.length - 5} more</p>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {debugData.subcategories?.length > 0 && (
-                        <div className="bg-white border border-yellow-200 rounded p-3">
-                          <h4 className="font-medium text-gray-800 mb-2">Sample Subcategories</h4>
-                          <div className="space-y-1 text-xs">
-                            {debugData.subcategories.slice(0, 5).map((sub: any) => (
-                              <div key={sub.id} className="flex justify-between">
-                                <span className="text-gray-700">{sub.name}</span>
-                                <span className="text-gray-500">Category: {sub.category_id?.slice(0, 8)}...</span>
-                              </div>
-                            ))}
-                            {debugData.subcategories.length > 5 && (
-                              <p className="text-gray-500">...and {debugData.subcategories.length - 5} more</p>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {debugData.jobs?.length > 0 && (
-                        <div className="bg-white border border-yellow-200 rounded p-3">
-                          <h4 className="font-medium text-gray-800 mb-2">Sample Jobs</h4>
-                          <div className="space-y-1 text-xs">
-                            {debugData.jobs.slice(0, 5).map((job: any) => (
-                              <div key={job.id} className="flex justify-between">
-                                <span className="text-gray-700">{job.name}</span>
-                                <div className="text-gray-500">
-                                  {job.price && <span>${job.price}</span>}
-                                  {job.estimated_time && <span className="ml-2">{job.estimated_time}min</span>}
-                                </div>
-                              </div>
-                            ))}
-                            {debugData.jobs.length > 5 && (
-                              <p className="text-gray-500">...and {debugData.jobs.length - 5} more</p>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              )}
-            </CollapsibleContent>
-          </Collapsible>
-        </div>
-
-        <div className="text-sm text-yellow-700 bg-yellow-100 border border-yellow-200 rounded p-3">
-          <p className="font-medium mb-1">Troubleshooting Tips:</p>
-          <ul className="list-disc list-inside space-y-1 text-xs">
-            <li>If you see categories but they're not showing above, there might be a data structure issue</li>
-            <li>Check if your Excel import created the proper relationships between categories, subcategories, and jobs</li>
-            <li>Verify that category_id and subcategory_id foreign keys are properly set</li>
-            <li>Look for any console errors in your browser's developer tools</li>
-          </ul>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
-
-export default ServiceDebugInfo;
