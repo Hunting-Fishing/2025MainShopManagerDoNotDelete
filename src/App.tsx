@@ -34,6 +34,12 @@ import Notifications from "@/pages/Notifications";
 import CustomerPortal from "@/pages/CustomerPortal";
 import Chat from "@/pages/Chat";
 
+// Developer Pages
+import DeveloperPortal from "@/pages/DeveloperPortal";
+import OrganizationManagement from "@/pages/developer/OrganizationManagement";
+import ShoppingControls from "@/pages/developer/ShoppingControls";
+import ServiceManagement from "@/pages/developer/ServiceManagement";
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -89,6 +95,12 @@ function App() {
                       <Route path="/forms" element={<Forms />} />
                       <Route path="/notifications" element={<Notifications />} />
                       <Route path="/chat" element={<Chat />} />
+                      
+                      {/* Developer Portal Routes */}
+                      <Route path="/developer" element={<DeveloperPortal />} />
+                      <Route path="/developer/organization-management" element={<OrganizationManagement />} />
+                      <Route path="/developer/shopping-controls" element={<ShoppingControls />} />
+                      <Route path="/developer/service-management" element={<ServiceManagement />} />
                     </Routes>
                   </Layout>
                 </AuthGate>
