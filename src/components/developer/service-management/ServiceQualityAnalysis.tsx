@@ -3,337 +3,205 @@ import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  AlertTriangle, 
-  CheckCircle2,
-  Target,
-  BarChart3,
-  FileText,
-  Layers
-} from 'lucide-react';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
+import { AlertTriangle, CheckCircle, TrendingUp, Target } from 'lucide-react';
 
 interface ServiceQualityAnalysisProps {
   categories: ServiceMainCategory[];
   onRefresh: () => void;
 }
 
-interface QualityMetrics {
-  totalCategories: number;
-  totalSubcategories: number;
-  totalJobs: number;
-  categoriesWithDescription: number;
-  subcategoriesWithDescription: number;
-  jobsWithDescription: number;
-  jobsWithPrice: number;
-  jobsWithEstimatedTime: number;
-  averageJobsPerSubcategory: number;
-  averageSubcategoriesPerCategory: number;
-  completenessScore: number;
-  qualityIssues: string[];
-  recommendations: string[];
-}
-
 const ServiceQualityAnalysis: React.FC<ServiceQualityAnalysisProps> = ({
   categories,
   onRefresh
 }) => {
-  const metrics = useMemo((): QualityMetrics => {
+  const qualityMetrics = useMemo(() => {
     const totalCategories = categories.length;
     const totalSubcategories = categories.reduce((sum, cat) => sum + cat.subcategories.length, 0);
     const totalJobs = categories.reduce((sum, cat) => 
       sum + cat.subcategories.reduce((subSum, sub) => subSum + sub.jobs.length, 0), 0
     );
 
-    const categoriesWithDescription = categories.filter(cat => cat.description?.trim()).length;
-    const subcategoriesWithDescription = categories.reduce((sum, cat) =>
-      sum + cat.subcategories.filter(sub => sub.description?.trim()).length, 0
+    // Categories with missing descriptions
+    const categoriesWithoutDesc = categories.filter(cat => !cat.description?.trim()).length;
+    
+    // Subcategories with missing descriptions
+    const subcategoriesWithoutDesc = categories.reduce((sum, cat) => 
+      sum + cat.subcategories.filter(sub => !sub.description?.trim()).length, 0
     );
 
-    let jobsWithDescription = 0;
-    let jobsWithPrice = 0;
-    let jobsWithEstimatedTime = 0;
+    // Jobs with missing data
+    const jobsWithoutDesc = categories.reduce((sum, cat) => 
+      sum + cat.subcategories.reduce((subSum, sub) => 
+        subSum + sub.jobs.filter(job => !job.description?.trim()).length, 0
+      ), 0
+    );
 
-    categories.forEach(cat => {
-      cat.subcategories.forEach(sub => {
-        sub.jobs.forEach(job => {
-          if (job.description?.trim()) jobsWithDescription++;
-          if (job.price !== undefined && job.price > 0) jobsWithPrice++;
-          if (job.estimatedTime?.trim()) jobsWithEstimatedTime++;
-        });
-      });
-    });
+    const jobsWithoutPrice = categories.reduce((sum, cat) => 
+      sum + cat.subcategories.reduce((subSum, sub) => 
+        subSum + sub.jobs.filter(job => !job.price || job.price <= 0).length, 0
+      ), 0
+    );
 
-    const averageJobsPerSubcategory = totalSubcategories > 0 ? totalJobs / totalSubcategories : 0;
-    const averageSubcategoriesPerCategory = totalCategories > 0 ? totalSubcategories / totalCategories : 0;
+    const jobsWithoutTime = categories.reduce((sum, cat) => 
+      sum + cat.subcategories.reduce((subSum, sub) => 
+        subSum + sub.jobs.filter(job => !job.estimatedTime || job.estimatedTime <= 0).length, 0
+      ), 0
+    );
 
-    // Calculate completeness score (0-100)
-    const categoryDescriptionScore = totalCategories > 0 ? (categoriesWithDescription / totalCategories) * 20 : 0;
-    const subcategoryDescriptionScore = totalSubcategories > 0 ? (subcategoriesWithDescription / totalSubcategories) * 20 : 0;
-    const jobDescriptionScore = totalJobs > 0 ? (jobsWithDescription / totalJobs) * 20 : 0;
-    const jobPriceScore = totalJobs > 0 ? (jobsWithPrice / totalJobs) * 20 : 0;
-    const jobTimeScore = totalJobs > 0 ? (jobsWithEstimatedTime / totalJobs) * 20 : 0;
+    // Calculate completion percentages
+    const categoryCompleteness = totalCategories > 0 ? 
+      ((totalCategories - categoriesWithoutDesc) / totalCategories) * 100 : 100;
+    
+    const subcategoryCompleteness = totalSubcategories > 0 ? 
+      ((totalSubcategories - subcategoriesWithoutDesc) / totalSubcategories) * 100 : 100;
+    
+    const jobCompleteness = totalJobs > 0 ? 
+      ((totalJobs - jobsWithoutDesc - jobsWithoutPrice - jobsWithoutTime) / totalJobs) * 100 : 100;
 
-    const completenessScore = categoryDescriptionScore + subcategoryDescriptionScore + 
-                             jobDescriptionScore + jobPriceScore + jobTimeScore;
-
-    // Identify quality issues
-    const qualityIssues: string[] = [];
-    const recommendations: string[] = [];
-
-    if (categoriesWithDescription / totalCategories < 0.8) {
-      qualityIssues.push(`${totalCategories - categoriesWithDescription} categories missing descriptions`);
-      recommendations.push('Add descriptions to all categories for better organization');
-    }
-
-    if (totalSubcategories > 0 && subcategoriesWithDescription / totalSubcategories < 0.7) {
-      qualityIssues.push(`${totalSubcategories - subcategoriesWithDescription} subcategories missing descriptions`);
-      recommendations.push('Complete subcategory descriptions to improve clarity');
-    }
-
-    if (totalJobs > 0 && jobsWithPrice / totalJobs < 0.9) {
-      qualityIssues.push(`${totalJobs - jobsWithPrice} jobs missing pricing information`);
-      recommendations.push('Set prices for all jobs to enable accurate quoting');
-    }
-
-    if (totalJobs > 0 && jobsWithEstimatedTime / totalJobs < 0.8) {
-      qualityIssues.push(`${totalJobs - jobsWithEstimatedTime} jobs missing time estimates`);
-      recommendations.push('Add time estimates to improve scheduling accuracy');
-    }
-
-    if (averageJobsPerSubcategory < 2) {
-      qualityIssues.push('Some subcategories have very few jobs');
-      recommendations.push('Consider consolidating subcategories with few jobs');
-    }
-
-    if (averageJobsPerSubcategory > 10) {
-      qualityIssues.push('Some subcategories are overcrowded with jobs');
-      recommendations.push('Consider splitting large subcategories for better organization');
-    }
+    // Overall quality score
+    const overallQuality = (categoryCompleteness + subcategoryCompleteness + jobCompleteness) / 3;
 
     return {
       totalCategories,
       totalSubcategories,
       totalJobs,
-      categoriesWithDescription,
-      subcategoriesWithDescription,
-      jobsWithDescription,
-      jobsWithPrice,
-      jobsWithEstimatedTime,
-      averageJobsPerSubcategory,
-      averageSubcategoriesPerCategory,
-      completenessScore,
-      qualityIssues,
-      recommendations
+      categoriesWithoutDesc,
+      subcategoriesWithoutDesc,
+      jobsWithoutDesc,
+      jobsWithoutPrice,
+      jobsWithoutTime,
+      categoryCompleteness,
+      subcategoryCompleteness,
+      jobCompleteness,
+      overallQuality
     };
   }, [categories]);
 
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600';
-    if (score >= 60) return 'text-yellow-600';
-    return 'text-red-600';
-  };
-
-  const getScoreIcon = (score: number) => {
-    if (score >= 80) return <TrendingUp className="h-4 w-4 text-green-600" />;
-    if (score >= 60) return <Target className="h-4 w-4 text-yellow-600" />;
-    return <TrendingDown className="h-4 w-4 text-red-600" />;
+  const getQualityBadge = (score: number) => {
+    if (score >= 90) return <Badge className="bg-green-100 text-green-800">Excellent</Badge>;
+    if (score >= 70) return <Badge className="bg-yellow-100 text-yellow-800">Good</Badge>;
+    if (score >= 50) return <Badge className="bg-orange-100 text-orange-800">Fair</Badge>;
+    return <Badge className="bg-red-100 text-red-800">Needs Improvement</Badge>;
   };
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Overview Stats */}
+        {/* Overall Quality Score */}
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Layers className="h-4 w-4" />
-              Structure
-            </CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Overall Quality</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Categories</span>
-                <span className="font-medium">{metrics.totalCategories}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Subcategories</span>
-                <span className="font-medium">{metrics.totalSubcategories}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Jobs</span>
-                <span className="font-medium">{metrics.totalJobs}</span>
-              </div>
-            </div>
+            <div className="text-2xl font-bold">{Math.round(qualityMetrics.overallQuality)}%</div>
+            <div className="mt-2">{getQualityBadge(qualityMetrics.overallQuality)}</div>
+            <Progress value={qualityMetrics.overallQuality} className="mt-3" />
           </CardContent>
         </Card>
 
-        {/* Completeness Score */}
+        {/* Category Completeness */}
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Quality Score
-            </CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Categories</CardTitle>
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className={`text-2xl font-bold ${getScoreColor(metrics.completenessScore)}`}>
-                  {Math.round(metrics.completenessScore)}%
-                </span>
-                {getScoreIcon(metrics.completenessScore)}
-              </div>
-              <Progress value={metrics.completenessScore} className="h-2" />
-              <p className="text-xs text-gray-600">
-                Overall data completeness
-              </p>
-            </div>
+            <div className="text-2xl font-bold">{Math.round(qualityMetrics.categoryCompleteness)}%</div>
+            <p className="text-xs text-muted-foreground">
+              {qualityMetrics.categoriesWithoutDesc} missing descriptions
+            </p>
+            <Progress value={qualityMetrics.categoryCompleteness} className="mt-3" />
           </CardContent>
         </Card>
 
-        {/* Organization Metrics */}
+        {/* Subcategory Completeness */}
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Target className="h-4 w-4" />
-              Organization
-            </CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Subcategories</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Avg Jobs/Sub</span>
-                <span className="font-medium">{metrics.averageJobsPerSubcategory.toFixed(1)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Avg Subs/Cat</span>
-                <span className="font-medium">{metrics.averageSubcategoriesPerCategory.toFixed(1)}</span>
-              </div>
-            </div>
+            <div className="text-2xl font-bold">{Math.round(qualityMetrics.subcategoryCompleteness)}%</div>
+            <p className="text-xs text-muted-foreground">
+              {qualityMetrics.subcategoriesWithoutDesc} missing descriptions
+            </p>
+            <Progress value={qualityMetrics.subcategoryCompleteness} className="mt-3" />
           </CardContent>
         </Card>
 
-        {/* Issues Count */}
+        {/* Job Completeness */}
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4" />
-              Issues
-            </CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Jobs</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold text-amber-600">
-                  {metrics.qualityIssues.length}
-                </span>
-                <AlertTriangle className="h-4 w-4 text-amber-600" />
-              </div>
-              <p className="text-xs text-gray-600">
-                Quality issues found
-              </p>
-            </div>
+            <div className="text-2xl font-bold">{Math.round(qualityMetrics.jobCompleteness)}%</div>
+            <p className="text-xs text-muted-foreground">
+              {qualityMetrics.jobsWithoutDesc + qualityMetrics.jobsWithoutPrice + qualityMetrics.jobsWithoutTime} incomplete
+            </p>
+            <Progress value={qualityMetrics.jobCompleteness} className="mt-3" />
           </CardContent>
         </Card>
       </div>
 
-      {/* Detailed Analysis */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Data Completeness */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Data Completeness
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span>Category Descriptions</span>
-                  <span>{metrics.categoriesWithDescription}/{metrics.totalCategories}</span>
-                </div>
-                <Progress value={(metrics.categoriesWithDescription / Math.max(metrics.totalCategories, 1)) * 100} className="h-2" />
-              </div>
-              
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span>Subcategory Descriptions</span>
-                  <span>{metrics.subcategoriesWithDescription}/{metrics.totalSubcategories}</span>
-                </div>
-                <Progress value={(metrics.subcategoriesWithDescription / Math.max(metrics.totalSubcategories, 1)) * 100} className="h-2" />
-              </div>
-              
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span>Job Pricing</span>
-                  <span>{metrics.jobsWithPrice}/{metrics.totalJobs}</span>
-                </div>
-                <Progress value={(metrics.jobsWithPrice / Math.max(metrics.totalJobs, 1)) * 100} className="h-2" />
-              </div>
-              
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span>Time Estimates</span>
-                  <span>{metrics.jobsWithEstimatedTime}/{metrics.totalJobs}</span>
-                </div>
-                <Progress value={(metrics.jobsWithEstimatedTime / Math.max(metrics.totalJobs, 1)) * 100} className="h-2" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Issues & Recommendations */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5" />
-              Issues & Recommendations
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {metrics.qualityIssues.length > 0 ? (
+      {/* Detailed Issues */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Data Quality Issues</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {qualityMetrics.jobsWithoutDesc > 0 && (
+              <div className="flex items-center justify-between p-3 border rounded-lg">
                 <div>
-                  <h4 className="font-medium text-sm mb-2 text-amber-700">Issues Found:</h4>
-                  <ul className="space-y-1">
-                    {metrics.qualityIssues.map((issue, index) => (
-                      <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
-                        <AlertTriangle className="h-3 w-3 text-amber-500 mt-0.5 flex-shrink-0" />
-                        {issue}
-                      </li>
-                    ))}
-                  </ul>
+                  <h4 className="font-medium">Jobs Missing Descriptions</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {qualityMetrics.jobsWithoutDesc} jobs need descriptions for better clarity
+                  </p>
                 </div>
-              ) : (
-                <div className="flex items-center gap-2 text-green-700">
-                  <CheckCircle2 className="h-4 w-4" />
-                  <span className="text-sm">No major issues found</span>
-                </div>
-              )}
+                <Badge variant="outline">{qualityMetrics.jobsWithoutDesc}</Badge>
+              </div>
+            )}
 
-              {metrics.recommendations.length > 0 && (
+            {qualityMetrics.jobsWithoutPrice > 0 && (
+              <div className="flex items-center justify-between p-3 border rounded-lg">
                 <div>
-                  <h4 className="font-medium text-sm mb-2 text-blue-700">Recommendations:</h4>
-                  <ul className="space-y-1">
-                    {metrics.recommendations.map((rec, index) => (
-                      <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
-                        <CheckCircle2 className="h-3 w-3 text-blue-500 mt-0.5 flex-shrink-0" />
-                        {rec}
-                      </li>
-                    ))}
-                  </ul>
+                  <h4 className="font-medium">Jobs Missing Pricing</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {qualityMetrics.jobsWithoutPrice} jobs need price information
+                  </p>
                 </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                <Badge variant="outline">{qualityMetrics.jobsWithoutPrice}</Badge>
+              </div>
+            )}
+
+            {qualityMetrics.jobsWithoutTime > 0 && (
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <div>
+                  <h4 className="font-medium">Jobs Missing Time Estimates</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {qualityMetrics.jobsWithoutTime} jobs need estimated time information
+                  </p>
+                </div>
+                <Badge variant="outline">{qualityMetrics.jobsWithoutTime}</Badge>
+              </div>
+            )}
+
+            {qualityMetrics.overallQuality >= 90 && (
+              <div className="flex items-center justify-center p-6 border rounded-lg bg-green-50">
+                <div className="text-center">
+                  <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                  <h4 className="font-medium text-green-800">Excellent Data Quality!</h4>
+                  <p className="text-sm text-green-600">Your service hierarchy is well-organized and complete.</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
