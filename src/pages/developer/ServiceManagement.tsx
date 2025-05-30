@@ -82,7 +82,7 @@ export default function ServiceManagement() {
           <h1 className="text-3xl font-bold">Service Management</h1>
         </div>
         <p className="text-slate-600 dark:text-slate-300">
-          Manage service categories, subcategories, and jobs with real-time database integration
+          Manage service categories, subcategories, and jobs with real-time database integration and advanced duplicate detection
         </p>
       </div>
 
@@ -121,8 +121,14 @@ export default function ServiceManagement() {
             Analytics
           </TabsTrigger>
           <TabsTrigger 
-            value="import" 
+            value="quality" 
             className="rounded-full text-sm px-4 py-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white"
+          >
+            Quality Analysis
+          </TabsTrigger>
+          <TabsTrigger 
+            value="import" 
+            className="rounded-full text-sm px-4 py-2 data-[state=active]:bg-amber-600 data-[state=active]:text-white"
           >
             Import/Export
           </TabsTrigger>
@@ -143,6 +149,13 @@ export default function ServiceManagement() {
 
           <TabsContent value="analytics" className="space-y-6">
             <ServiceAnalytics categories={categories} />
+          </TabsContent>
+
+          <TabsContent value="quality" className="space-y-6">
+            <ServiceQualityAnalysis 
+              categories={categories}
+              onRefresh={handleRefresh}
+            />
           </TabsContent>
 
           <TabsContent value="import" className="space-y-6">

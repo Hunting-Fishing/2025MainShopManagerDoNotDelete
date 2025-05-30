@@ -2,11 +2,47 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { DuplicateSearchOptions } from '@/utils/search/duplicateSearch';
-import { Settings, Target, Percent, Type } from 'lucide-react';
+import { Info } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
+export interface DuplicateSearchOptions {
+  matchTypes: {
+    exact: boolean;
+    exactWords: boolean;
+    similar: boolean;
+    partial: boolean;
+  };
+  similarityThreshold: number;
+  minWordLength: number;
+  ignoreCase: boolean;
+  ignoreSpecialChars: boolean;
+  ignorePunctuation: boolean;
+  searchScope: 'all' | 'names' | 'descriptions';
+  groupBy: 'category' | 'matchType' | 'similarity';
+  minGroupSize: number;
+}
+
+export const defaultSearchOptions: DuplicateSearchOptions = {
+  matchTypes: {
+    exact: true,
+    exactWords: true,
+    similar: false,
+    partial: false
+  },
+  similarityThreshold: 80,
+  minWordLength: 3,
+  ignoreCase: true,
+  ignoreSpecialChars: true,
+  ignorePunctuation: true,
+  searchScope: 'all',
+  groupBy: 'matchType',
+  minGroupSize: 2
+};
 
 interface DuplicateSearchConfigProps {
   options: DuplicateSearchOptions;
@@ -17,184 +53,227 @@ export const DuplicateSearchConfig: React.FC<DuplicateSearchConfigProps> = ({
   options,
   onOptionsChange
 }) => {
-  const updateOption = (key: keyof DuplicateSearchOptions, value: any) => {
-    onOptionsChange({
-      ...options,
-      [key]: value
+  const updateOptions = (updates: Partial<DuplicateSearchOptions>) => {
+    onOptionsChange({ ...options, ...updates });
+  };
+
+  const updateMatchType = (type: keyof DuplicateSearchOptions['matchTypes'], enabled: boolean) => {
+    updateOptions({
+      matchTypes: {
+        ...options.matchTypes,
+        [type]: enabled
+      }
     });
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader className="pb-4">
-        <div className="flex items-center gap-2">
-          <Settings className="h-5 w-5 text-blue-600" />
-          <CardTitle className="text-lg">Duplicate Search Configuration</CardTitle>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Matching Types */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Target className="h-4 w-4 text-green-600" />
-            <Label className="text-sm font-semibold">Matching Types</Label>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center justify-between p-3 border rounded-lg">
-              <div className="space-y-1">
-                <Label htmlFor="exact-match" className="text-sm font-medium">
-                  Exact Match
-                </Label>
-                <p className="text-xs text-gray-600">
-                  Find items with identical names
-                </p>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            Match Types
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className="h-4 w-4 text-gray-400" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Select which types of matches to detect</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="font-medium">Exact Match</Label>
+                <p className="text-sm text-gray-500">Identical text</p>
               </div>
               <Switch
-                id="exact-match"
-                checked={options.exactMatch}
-                onCheckedChange={(checked) => updateOption('exactMatch', checked)}
+                checked={options.matchTypes.exact}
+                onCheckedChange={(checked) => updateMatchType('exact', checked)}
               />
             </div>
-            
-            <div className="flex items-center justify-between p-3 border rounded-lg">
-              <div className="space-y-1">
-                <Label htmlFor="exact-words" className="text-sm font-medium">
-                  Exact Words
-                </Label>
-                <p className="text-xs text-gray-600">
-                  Match items with same words in any order
-                </p>
-              </div>
-              <Switch
-                id="exact-words"
-                checked={options.exactWords}
-                onCheckedChange={(checked) => updateOption('exactWords', checked)}
-              />
-            </div>
-            
-            <div className="flex items-center justify-between p-3 border rounded-lg">
-              <div className="space-y-1">
-                <Label htmlFor="partial-match" className="text-sm font-medium">
-                  Partial Match
-                </Label>
-                <p className="text-xs text-gray-600">
-                  Find items with partial similarities
-                </p>
-              </div>
-              <Switch
-                id="partial-match"
-                checked={options.partialMatch}
-                onCheckedChange={(checked) => updateOption('partialMatch', checked)}
-              />
-            </div>
-          </div>
-        </div>
 
-        {/* Similarity Threshold */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Percent className="h-4 w-4 text-orange-600" />
-            <Label className="text-sm font-semibold">Similarity Threshold</Label>
-            <Badge variant="outline">{options.similarityThreshold}%</Badge>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="font-medium">Exact Words</Label>
+                <p className="text-sm text-gray-500">Same words, different order</p>
+              </div>
+              <Switch
+                checked={options.matchTypes.exactWords}
+                onCheckedChange={(checked) => updateMatchType('exactWords', checked)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="font-medium">Similar Text</Label>
+                <p className="text-sm text-gray-500">Text similarity algorithm</p>
+              </div>
+              <Switch
+                checked={options.matchTypes.similar}
+                onCheckedChange={(checked) => updateMatchType('similar', checked)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="font-medium">Partial Match</Label>
+                <p className="text-sm text-gray-500">Contains similar words</p>
+              </div>
+              <Switch
+                checked={options.matchTypes.partial}
+                onCheckedChange={(checked) => updateMatchType('partial', checked)}
+              />
+            </div>
           </div>
-          
-          <div className="px-2">
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Similarity Settings</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div>
+            <div className="flex justify-between mb-2">
+              <Label>Similarity Threshold</Label>
+              <Badge variant="secondary">{options.similarityThreshold}%</Badge>
+            </div>
             <Slider
               value={[options.similarityThreshold]}
-              onValueChange={([value]) => updateOption('similarityThreshold', value)}
-              max={100}
+              onValueChange={(value) => updateOptions({ similarityThreshold: value[0] })}
               min={50}
+              max={100}
               step={5}
               className="w-full"
             />
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
-              <span>50% (Loose)</span>
-              <span>75% (Medium)</span>
-              <span>100% (Strict)</span>
-            </div>
+            <p className="text-sm text-gray-500 mt-1">
+              Higher values = more strict matching
+            </p>
           </div>
-        </div>
 
-        {/* Text Processing Options */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Type className="h-4 w-4 text-purple-600" />
-            <Label className="text-sm font-semibold">Text Processing</Label>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center justify-between p-3 border rounded-lg">
-              <div className="space-y-1">
-                <Label htmlFor="ignore-case" className="text-sm font-medium">
-                  Ignore Case
-                </Label>
-                <p className="text-xs text-gray-600">
-                  Case-insensitive matching
-                </p>
-              </div>
-              <Switch
-                id="ignore-case"
-                checked={options.ignoreCase}
-                onCheckedChange={(checked) => updateOption('ignoreCase', checked)}
-              />
+          <div>
+            <div className="flex justify-between mb-2">
+              <Label>Minimum Word Length</Label>
+              <Badge variant="secondary">{options.minWordLength}</Badge>
             </div>
-            
-            <div className="flex items-center justify-between p-3 border rounded-lg">
-              <div className="space-y-1">
-                <Label htmlFor="ignore-punctuation" className="text-sm font-medium">
-                  Ignore Punctuation
-                </Label>
-                <p className="text-xs text-gray-600">
-                  Remove punctuation before matching
-                </p>
-              </div>
-              <Switch
-                id="ignore-punctuation"
-                checked={options.ignorePunctuation}
-                onCheckedChange={(checked) => updateOption('ignorePunctuation', checked)}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Minimum Word Length */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Label className="text-sm font-semibold">Minimum Word Length</Label>
-            <Badge variant="outline">{options.minWordLength} characters</Badge>
-          </div>
-          
-          <div className="px-2">
             <Slider
               value={[options.minWordLength]}
-              onValueChange={([value]) => updateOption('minWordLength', value)}
-              max={6}
+              onValueChange={(value) => updateOptions({ minWordLength: value[0] })}
               min={2}
+              max={6}
               step={1}
               className="w-full"
             />
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
-              <span>2 chars</span>
-              <span>4 chars</span>
-              <span>6 chars</span>
-            </div>
+            <p className="text-sm text-gray-500 mt-1">
+              Ignore words shorter than this length
+            </p>
           </div>
-        </div>
 
-        {/* Current Settings Summary */}
-        <div className="pt-4 border-t">
-          <Label className="text-sm font-semibold mb-2 block">Active Filters</Label>
-          <div className="flex flex-wrap gap-2">
-            {options.exactMatch && <Badge variant="secondary">Exact Match</Badge>}
-            {options.exactWords && <Badge variant="secondary">Exact Words</Badge>}
-            {options.partialMatch && <Badge variant="secondary">Partial Match</Badge>}
-            <Badge variant="outline">≥{options.similarityThreshold}% similar</Badge>
-            {options.ignoreCase && <Badge variant="outline">Case insensitive</Badge>}
-            {options.ignorePunctuation && <Badge variant="outline">No punctuation</Badge>}
+          <div>
+            <div className="flex justify-between mb-2">
+              <Label>Minimum Group Size</Label>
+              <Badge variant="secondary">{options.minGroupSize}</Badge>
+            </div>
+            <Slider
+              value={[options.minGroupSize]}
+              onValueChange={(value) => updateOptions({ minGroupSize: value[0] })}
+              min={2}
+              max={10}
+              step={1}
+              className="w-full"
+            />
+            <p className="text-sm text-gray-500 mt-1">
+              Minimum duplicates required to form a group
+            </p>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Text Processing</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="font-medium">Ignore Case</Label>
+              <p className="text-sm text-gray-500">Case-insensitive matching</p>
+            </div>
+            <Switch
+              checked={options.ignoreCase}
+              onCheckedChange={(checked) => updateOptions({ ignoreCase: checked })}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="font-medium">Ignore Special Characters</Label>
+              <p className="text-sm text-gray-500">Remove special chars (., -, _, etc.)</p>
+            </div>
+            <Switch
+              checked={options.ignoreSpecialChars}
+              onCheckedChange={(checked) => updateOptions({ ignoreSpecialChars: checked })}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="font-medium">Ignore Punctuation</Label>
+              <p className="text-sm text-gray-500">Remove punctuation marks</p>
+            </div>
+            <Switch
+              checked={options.ignorePunctuation}
+              onCheckedChange={(checked) => updateOptions({ ignorePunctuation: checked })}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Search & Display Options</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label className="font-medium mb-2 block">Search Scope</Label>
+            <Select 
+              value={options.searchScope} 
+              onValueChange={(value: 'all' | 'names' | 'descriptions') => updateOptions({ searchScope: value })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Names & Descriptions</SelectItem>
+                <SelectItem value="names">Names Only</SelectItem>
+                <SelectItem value="descriptions">Descriptions Only</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label className="font-medium mb-2 block">Group Results By</Label>
+            <Select 
+              value={options.groupBy} 
+              onValueChange={(value: 'category' | 'matchType' | 'similarity') => updateOptions({ groupBy: value })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="matchType">Match Type</SelectItem>
+                <SelectItem value="category">Category</SelectItem>
+                <SelectItem value="similarity">Similarity Score</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
