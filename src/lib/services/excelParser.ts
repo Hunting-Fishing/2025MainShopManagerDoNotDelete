@@ -1,250 +1,275 @@
 
-import * as XLSX from 'xlsx';
+import { read, utils } from 'xlsx';
 import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
 
 export interface ParsedExcelData {
   categories: ServiceMainCategory[];
-  errors: string[];
+  stats: {
+    totalCategories: number;
+    totalSubcategories: number;
+    totalJobs: number;
+  };
 }
 
-export const parseExcelFile = async (file: File): Promise<ParsedExcelData> => {
+export async function parseExcelFile(file: File): Promise<ParsedExcelData> {
+  console.log('Starting Excel file parsing...');
+  
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
-        
-        const result = parseWorkbook(workbook);
-        resolve(result);
-      } catch (error) {
-        reject(new Error(`Failed to parse Excel file: ${error instanceof Error ? error.message : 'Unknown error'}`));
-      }
-    };
-    
-    reader.onerror = () => {
-      reject(new Error('Failed to read file'));
-    };
-    
-    reader.readAsArrayBuffer(file);
-  });
-};
-
-const parseWorkbook = (workbook: XLSX.WorkBook): ParsedExcelData => {
-  const categories: ServiceMainCategory[] = [];
-  const errors: string[] = [];
-  
-  if (workbook.SheetNames.length === 0) {
-    return { categories: [], errors: ['No sheets found in Excel file'] };
-  }
-  
-  // Process each sheet as a category
-  workbook.SheetNames.forEach((sheetName, sheetIndex) => {
-    try {
-      const worksheet = workbook.Sheets[sheetName];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' }) as string[][];
-      
-      if (jsonData.length < 2) {
-        errors.push(`Sheet "${sheetName}": Must contain at least 2 rows (headers and data)`);
-        return;
-      }
-      
-      // First row contains subcategory headers starting from column B (index 1)
-      const headerRow = jsonData[0];
-      const subcategoryHeaders = headerRow.slice(1).filter(header => header && header.trim() !== '');
-      
-      if (subcategoryHeaders.length === 0) {
-        errors.push(`Sheet "${sheetName}": No subcategory headers found in row 1 starting from column B`);
-        return;
-      }
-      
-      // Create category
-      const category: ServiceMainCategory = {
-        id: `cat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        name: sheetName.trim(),
-        description: `Services for ${sheetName}`,
-        subcategories: [],
-        position: sheetIndex + 1
-      };
-      
-      // Create subcategories
-      const subcategoriesMap = new Map<number, ServiceSubcategory>();
-      subcategoryHeaders.forEach((header, index) => {
-        const subcategory: ServiceSubcategory = {
-          id: `sub-${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${index}`,
-          name: header.trim(),
-          description: `${header} services`,
-          jobs: []
-        };
-        subcategoriesMap.set(index + 1, subcategory); // +1 because we skip column A
-        category.subcategories.push(subcategory);
-      });
-      
-      // Process data rows (starting from row 2)
-      for (let rowIndex = 1; rowIndex < jsonData.length; rowIndex++) {
-        const row = jsonData[rowIndex];
-        
-        // Skip empty rows
-        if (!row || row.every(cell => !cell || cell.toString().trim() === '')) {
-          continue;
+        const data = e.target?.result;
+        if (!data) {
+          throw new Error('Failed to read file data');
         }
+
+        console.log('File loaded, parsing workbook...');
+        const workbook = read(data, { type: 'array' });
         
-        // Process each column starting from column B
-        for (let colIndex = 1; colIndex < row.length && colIndex <= subcategoryHeaders.length; colIndex++) {
-          const cellValue = row[colIndex];
+        if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+          throw new Error('No sheets found in the Excel file');
+        }
+
+        console.log(`Found ${workbook.SheetNames.length} sheets in workbook`);
+        
+        const categories: ServiceMainCategory[] = [];
+        let totalSubcategories = 0;
+        let totalJobs = 0;
+
+        // Process each sheet (category)
+        for (let i = 0; i < workbook.SheetNames.length; i++) {
+          const sheetName = workbook.SheetNames[i];
+          console.log(`Processing sheet ${i + 1}/${workbook.SheetNames.length}: ${sheetName}`);
           
-          if (cellValue && cellValue.toString().trim() !== '') {
-            const subcategory = subcategoriesMap.get(colIndex);
-            if (subcategory) {
-              // Parse the cell value - it might contain service name, price, and time
-              const serviceData = parseServiceCell(cellValue.toString());
-              
-              const job: ServiceJob = {
-                id: `job-${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${rowIndex}-${colIndex}`,
-                name: serviceData.name,
-                description: serviceData.description,
-                price: serviceData.price,
-                estimatedTime: serviceData.estimatedTime
-              };
-              
-              subcategory.jobs.push(job);
+          try {
+            const category = await parseSheetAsCategory(workbook, sheetName, i);
+            if (category) {
+              categories.push(category);
+              totalSubcategories += category.subcategories.length;
+              totalJobs += category.subcategories.reduce((sum, sub) => sum + sub.jobs.length, 0);
             }
+          } catch (sheetError) {
+            console.warn(`Error processing sheet "${sheetName}":`, sheetError);
+            // Continue with other sheets instead of failing completely
+          }
+
+          // Add a small delay to prevent blocking
+          if (i % 5 === 0) {
+            await new Promise(resolve => setTimeout(resolve, 10));
           }
         }
+
+        if (categories.length === 0) {
+          throw new Error('No valid categories could be parsed from the Excel file');
+        }
+
+        console.log(`Parsing completed: ${categories.length} categories, ${totalSubcategories} subcategories, ${totalJobs} jobs`);
+
+        resolve({
+          categories,
+          stats: {
+            totalCategories: categories.length,
+            totalSubcategories,
+            totalJobs
+          }
+        });
+      } catch (error) {
+        console.error('Error parsing Excel file:', error);
+        reject(error);
       }
-      
-      // Only add category if it has subcategories with jobs
-      const hasJobs = category.subcategories.some(sub => sub.jobs.length > 0);
-      if (hasJobs) {
-        categories.push(category);
-      } else {
-        errors.push(`Sheet "${sheetName}": No services found in any subcategory`);
-      }
-      
-    } catch (error) {
-      errors.push(`Sheet "${sheetName}": ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
+    };
+
+    reader.onerror = () => {
+      reject(new Error('Failed to read the file'));
+    };
+
+    reader.readAsArrayBuffer(file);
   });
-  
-  return { categories, errors };
-};
+}
 
-const parseServiceCell = (cellValue: string): {
-  name: string;
-  description?: string;
-  price?: number;
-  estimatedTime?: number;
-} => {
-  const trimmed = cellValue.trim();
-  
-  // Try to parse format like "Service Name | $50 | 60min"
-  const parts = trimmed.split('|').map(part => part.trim());
-  
-  if (parts.length === 1) {
-    // Just service name
-    return { name: parts[0] };
+async function parseSheetAsCategory(workbook: any, sheetName: string, position: number): Promise<ServiceMainCategory | null> {
+  const sheet = workbook.Sheets[sheetName];
+  if (!sheet) {
+    console.warn(`Sheet "${sheetName}" not found`);
+    return null;
   }
-  
-  const result: any = { name: parts[0] };
-  
-  // Look for price and time in remaining parts
-  for (let i = 1; i < parts.length; i++) {
-    const part = parts[i];
-    
-    // Check for price (starts with $ or contains price keywords)
-    const priceMatch = part.match(/\$?(\d+(?:\.\d{2})?)/);
-    if (priceMatch && (part.includes('$') || part.toLowerCase().includes('price'))) {
-      result.price = parseFloat(priceMatch[1]);
-      continue;
-    }
-    
-    // Check for time (contains min, hour, etc.)
-    const timeMatch = part.match(/(\d+)(?:\s*(?:min|minutes?|hr|hours?|h))?/i);
-    if (timeMatch && (part.toLowerCase().includes('min') || part.toLowerCase().includes('hour') || part.toLowerCase().includes('time'))) {
-      let minutes = parseInt(timeMatch[1]);
-      if (part.toLowerCase().includes('hour') || part.toLowerCase().includes('hr')) {
-        minutes *= 60;
+
+  // Convert sheet to JSON with header row
+  const jsonData = utils.sheet_to_json(sheet, { 
+    header: 1, 
+    defval: '',
+    raw: false 
+  }) as string[][];
+
+  if (jsonData.length < 2) {
+    console.warn(`Sheet "${sheetName}" has insufficient data (needs at least 2 rows)`);
+    return null;
+  }
+
+  // First row contains subcategory headers starting from column B (index 1)
+  const headerRow = jsonData[0];
+  const subcategoryNames = headerRow.slice(1).filter(name => name && name.trim() !== '');
+
+  if (subcategoryNames.length === 0) {
+    console.warn(`Sheet "${sheetName}" has no valid subcategory headers`);
+    return null;
+  }
+
+  console.log(`Found ${subcategoryNames.length} subcategories in "${sheetName}"`);
+
+  // Create subcategories with their jobs
+  const subcategories: ServiceSubcategory[] = [];
+
+  for (let colIndex = 0; colIndex < subcategoryNames.length; colIndex++) {
+    const subcategoryName = subcategoryNames[colIndex].trim();
+    const jobs: ServiceJob[] = [];
+
+    // Collect jobs from this column (starting from row 2)
+    for (let rowIndex = 1; rowIndex < jsonData.length; rowIndex++) {
+      const row = jsonData[rowIndex];
+      const jobName = row[colIndex + 1]; // +1 because subcategories start from column B
+
+      if (jobName && jobName.trim() !== '') {
+        jobs.push({
+          id: `${sheetName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${subcategoryName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${jobs.length + 1}`,
+          name: jobName.trim(),
+          description: `${jobName.trim()} service`
+        });
       }
-      result.estimatedTime = minutes;
-      continue;
     }
-    
-    // If not price or time, treat as description
-    if (!result.description) {
-      result.description = part;
+
+    if (jobs.length > 0) {
+      subcategories.push({
+        id: `${sheetName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${subcategoryName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+        name: subcategoryName,
+        description: `${subcategoryName} services`,
+        jobs
+      });
     }
   }
-  
-  return result;
-};
 
-export const generateExcelTemplate = (): Blob => {
-  const workbook = XLSX.utils.book_new();
+  if (subcategories.length === 0) {
+    console.warn(`Sheet "${sheetName}" produced no valid subcategories`);
+    return null;
+  }
+
+  return {
+    id: sheetName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+    name: sheetName,
+    description: `${sheetName} services`,
+    position: position + 1,
+    subcategories
+  };
+}
+
+export function generateExcelTemplate(): void {
+  console.log('Generating Excel template...');
   
-  // Create sample categories as separate sheets
-  const sampleCategories = [
+  const workbook = utils.book_new();
+
+  // Sample categories with their subcategories and jobs
+  const sampleData = [
     {
-      name: 'Oil Change & Maintenance',
-      subcategories: ['Oil Changes', 'Filter Services', 'Fluid Checks'],
-      services: [
-        ['Standard Oil Change | $35 | 30min', 'Air Filter Replacement | $25 | 15min', 'Brake Fluid Check | $15 | 10min'],
-        ['Synthetic Oil Change | $65 | 30min', 'Cabin Filter Replacement | $30 | 20min', 'Coolant Level Check | $10 | 5min'],
-        ['High Mileage Oil Change | $45 | 30min', 'Fuel Filter Replacement | $65 | 45min', 'Power Steering Fluid | $20 | 10min']
-      ]
+      category: 'Oil Change & Maintenance',
+      subcategories: {
+        'Oil Changes': [
+          'Standard Oil Change',
+          'Synthetic Oil Change', 
+          'High Mileage Oil Change',
+          'Diesel Oil Change'
+        ],
+        'Filter Services': [
+          'Air Filter Replacement',
+          'Cabin Filter Replacement',
+          'Fuel Filter Replacement',
+          'Oil Filter Replacement'
+        ],
+        'Fluid Services': [
+          'Transmission Fluid Change',
+          'Coolant Flush',
+          'Brake Fluid Change',
+          'Power Steering Fluid'
+        ]
+      }
     },
     {
-      name: 'Brakes',
-      subcategories: ['Brake Pads', 'Brake Rotors', 'Brake Fluid'],
-      services: [
-        ['Front Brake Pad Replacement | $150 | 90min', 'Front Rotor Resurfacing | $80 | 60min', 'Brake Fluid Flush | $90 | 45min'],
-        ['Rear Brake Pad Replacement | $140 | 90min', 'Rear Rotor Replacement | $200 | 120min', 'Brake Fluid Top-off | $15 | 10min'],
-        ['Performance Brake Pads | $250 | 120min', 'Performance Rotors | $400 | 150min', 'DOT 4 Brake Fluid | $120 | 60min']
-      ]
+      category: 'Brakes',
+      subcategories: {
+        'Brake Pads': [
+          'Front Brake Pad Replacement',
+          'Rear Brake Pad Replacement',
+          'Brake Pad Inspection'
+        ],
+        'Brake Rotors': [
+          'Front Rotor Replacement',
+          'Rear Rotor Replacement',
+          'Rotor Resurfacing'
+        ],
+        'Brake System': [
+          'Brake Fluid Flush',
+          'Brake Line Repair',
+          'Brake Caliper Service'
+        ]
+      }
     },
     {
-      name: 'Tires',
-      subcategories: ['Tire Installation', 'Tire Repair', 'Wheel Services'],
-      services: [
-        ['Tire Mount & Balance | $80 | 60min', 'Tire Patch | $25 | 20min', 'Wheel Alignment | $100 | 90min'],
-        ['Tire Rotation | $25 | 30min', 'Tire Plug | $20 | 15min', 'Wheel Balancing | $50 | 45min'],
-        ['Tire Replacement | $150 | 45min', 'Sidewall Repair | $35 | 30min', 'Rim Repair | $75 | 60min']
-      ]
+      category: 'Tires',
+      subcategories: {
+        'Tire Installation': [
+          'Tire Mount & Balance',
+          'Tire Rotation',
+          'Tire Repair'
+        ],
+        'Wheel Services': [
+          'Wheel Alignment',
+          'Wheel Balancing',
+          'Wheel Repair'
+        ]
+      }
     }
   ];
-  
-  sampleCategories.forEach(category => {
-    // Create sheet data
-    const sheetData: any[][] = [];
+
+  sampleData.forEach(categoryData => {
+    const subcategoryNames = Object.keys(categoryData.subcategories);
+    const maxJobs = Math.max(...Object.values(categoryData.subcategories).map(jobs => jobs.length));
     
-    // Header row with subcategories (starting from column B)
-    const headerRow = ['Service Name', ...category.subcategories];
+    // Create sheet data
+    const sheetData: string[][] = [];
+    
+    // Header row with subcategory names starting from column B
+    const headerRow = ['', ...subcategoryNames];
     sheetData.push(headerRow);
     
-    // Data rows
-    const maxRows = Math.max(...category.services.map(serviceCol => serviceCol.length));
-    for (let rowIndex = 0; rowIndex < maxRows; rowIndex++) {
-      const dataRow = [''];
-      category.services.forEach(serviceCol => {
-        dataRow.push(serviceCol[rowIndex] || '');
+    // Job rows
+    for (let i = 0; i < maxJobs; i++) {
+      const row = [''];
+      subcategoryNames.forEach(subcatName => {
+        const jobs = categoryData.subcategories[subcatName as keyof typeof categoryData.subcategories];
+        row.push(jobs[i] || '');
       });
-      sheetData.push(dataRow);
+      sheetData.push(row);
     }
     
-    // Create worksheet and add to workbook
-    const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
-    
-    // Set column widths
-    worksheet['!cols'] = [
-      { width: 20 }, // Column A
-      { width: 30 }, // Column B
-      { width: 30 }, // Column C
-      { width: 30 }  // Column D
-    ];
-    
-    XLSX.utils.book_append_sheet(workbook, worksheet, category.name);
+    // Create worksheet
+    const worksheet = utils.aoa_to_sheet(sheetData);
+    utils.book_append_sheet(workbook, worksheet, categoryData.category);
+  });
+
+  // Generate and download the file
+  const excelBuffer = utils.write(workbook, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([excelBuffer], { 
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
   });
   
-  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-  return new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-};
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'service_categories_template.xlsx';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  
+  console.log('Template download initiated');
+}
