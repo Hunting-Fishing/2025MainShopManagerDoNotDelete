@@ -1,10 +1,12 @@
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Package, Layers, Wrench } from 'lucide-react';
+import { RefreshCw, Package, Layers, Wrench, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { SearchAndFilterBar, FilterOptions } from './SearchAndFilterBar';
+import { Input } from '@/components/ui/input';
 
 interface ServiceCategoriesManagerProps {
   categories: ServiceMainCategory[];
@@ -17,6 +19,117 @@ const ServiceCategoriesManager: React.FC<ServiceCategoriesManagerProps> = ({
   isLoading,
   onRefresh
 }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState<FilterOptions>({
+    categories: [],
+    priceRange: { min: null, max: null },
+    timeRange: { min: null, max: null },
+    searchIn: 'all',
+    sortBy: 'name',
+    sortOrder: 'asc'
+  });
+
+  // Extract all unique category names for filter options
+  const categoryNames = useMemo(() => {
+    return [...new Set(categories.map(cat => cat.name))];
+  }, [categories]);
+
+  // Filter and sort services based on current filters
+  const filteredAndSortedCategories = useMemo(() => {
+    let filtered = categories.filter(category => {
+      // Category filter
+      if (filters.categories.length > 0 && !filters.categories.includes(category.name)) {
+        return false;
+      }
+
+      // Search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const searchTargets = [];
+        
+        if (filters.searchIn === 'all' || filters.searchIn === 'name') {
+          searchTargets.push(category.name.toLowerCase());
+        }
+        if (filters.searchIn === 'all' || filters.searchIn === 'description') {
+          searchTargets.push((category.description || '').toLowerCase());
+        }
+        if (filters.searchIn === 'all' || filters.searchIn === 'category') {
+          searchTargets.push(category.name.toLowerCase());
+        }
+        
+        // Also search in subcategories and jobs
+        if (filters.searchIn === 'all' || filters.searchIn === 'name') {
+          category.subcategories.forEach(sub => {
+            searchTargets.push(sub.name.toLowerCase());
+            sub.jobs.forEach(job => {
+              searchTargets.push(job.name.toLowerCase());
+            });
+          });
+        }
+        
+        if (filters.searchIn === 'all' || filters.searchIn === 'description') {
+          category.subcategories.forEach(sub => {
+            if (sub.description) searchTargets.push(sub.description.toLowerCase());
+            sub.jobs.forEach(job => {
+              if (job.description) searchTargets.push(job.description.toLowerCase());
+            });
+          });
+        }
+
+        const matches = searchTargets.some(target => target.includes(query));
+        if (!matches) return false;
+      }
+
+      return true;
+    });
+
+    // Sort categories
+    filtered.sort((a, b) => {
+      let aValue: string | number;
+      let bValue: string | number;
+
+      switch (filters.sortBy) {
+        case 'name':
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+          break;
+        case 'category':
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+          break;
+        case 'price':
+          // Calculate average price for category
+          const aJobs = a.subcategories.flatMap(sub => sub.jobs);
+          const bJobs = b.subcategories.flatMap(sub => sub.jobs);
+          const aAvgPrice = aJobs.length > 0 ? aJobs.reduce((sum, job) => sum + (job.price || 0), 0) / aJobs.length : 0;
+          const bAvgPrice = bJobs.length > 0 ? bJobs.reduce((sum, job) => sum + (job.price || 0), 0) / bJobs.length : 0;
+          aValue = aAvgPrice;
+          bValue = bAvgPrice;
+          break;
+        case 'time':
+          // Calculate average time for category
+          const aJobsTime = a.subcategories.flatMap(sub => sub.jobs);
+          const bJobsTime = b.subcategories.flatMap(sub => sub.jobs);
+          const aAvgTime = aJobsTime.length > 0 ? aJobsTime.reduce((sum, job) => sum + (job.estimatedTime || 0), 0) / aJobsTime.length : 0;
+          const bAvgTime = bJobsTime.length > 0 ? bJobsTime.reduce((sum, job) => sum + (job.estimatedTime || 0), 0) / bJobsTime.length : 0;
+          aValue = aAvgTime;
+          bValue = bAvgTime;
+          break;
+        default:
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+      }
+
+      if (typeof aValue === 'string') {
+        return filters.sortOrder === 'asc' ? aValue.localeCompare(bValue as string) : (bValue as string).localeCompare(aValue);
+      } else {
+        return filters.sortOrder === 'asc' ? aValue - (bValue as number) : (bValue as number) - aValue;
+      }
+    });
+
+    return filtered;
+  }, [categories, searchQuery, filters]);
+
   if (isLoading) {
     return (
       <Card className="bg-white shadow-md rounded-xl border border-gray-100">
@@ -46,7 +159,7 @@ const ServiceCategoriesManager: React.FC<ServiceCategoriesManagerProps> = ({
             <Package className="h-5 w-5 text-indigo-600" />
             Service Categories
             <Badge variant="outline" className="ml-2 bg-indigo-100 text-indigo-700 border-indigo-300">
-              {categories.length} categories
+              {filteredAndSortedCategories.length} of {categories.length} categories
             </Badge>
           </CardTitle>
           <Button onClick={onRefresh} variant="outline" size="sm" className="rounded-full">
@@ -56,6 +169,13 @@ const ServiceCategoriesManager: React.FC<ServiceCategoriesManagerProps> = ({
         </div>
       </CardHeader>
       <CardContent className="p-6">
+        {/* Enhanced Search and Filter Bar */}
+        <SearchAndFilterBar
+          onSearch={setSearchQuery}
+          onFilterChange={setFilters}
+          categories={categoryNames}
+        />
+
         {categories.length === 0 ? (
           <div className="text-center py-12">
             <div className="flex flex-col items-center gap-4">
@@ -70,13 +190,32 @@ const ServiceCategoriesManager: React.FC<ServiceCategoriesManagerProps> = ({
               </div>
             </div>
           </div>
+        ) : filteredAndSortedCategories.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="flex flex-col items-center gap-4">
+              <div className="p-4 bg-gray-100 rounded-full">
+                <Search className="h-8 w-8 text-gray-400" />
+              </div>
+              <div>
+                <p className="text-gray-500 font-medium">No services match your filters</p>
+                <p className="text-sm text-gray-400 mt-1">
+                  Try adjusting your search terms or filters
+                </p>
+              </div>
+            </div>
+          </div>
         ) : (
           <div className="space-y-4">
-            {categories.map((category) => {
+            {filteredAndSortedCategories.map((category) => {
               const totalJobs = category.subcategories.reduce(
                 (sum, sub) => sum + sub.jobs.length, 
                 0
               );
+              
+              // Calculate average price and time for display
+              const allJobs = category.subcategories.flatMap(sub => sub.jobs);
+              const avgPrice = allJobs.length > 0 ? allJobs.reduce((sum, job) => sum + (job.price || 0), 0) / allJobs.length : 0;
+              const avgTime = allJobs.length > 0 ? allJobs.reduce((sum, job) => sum + (job.estimatedTime || 0), 0) / allJobs.length : 0;
               
               return (
                 <div key={category.id} className="border rounded-xl p-4 bg-gradient-to-r from-white to-gray-50 hover:shadow-md transition-shadow">
@@ -88,7 +227,7 @@ const ServiceCategoriesManager: React.FC<ServiceCategoriesManagerProps> = ({
                       {category.description && (
                         <p className="text-gray-600 text-sm mb-3">{category.description}</p>
                       )}
-                      <div className="flex items-center gap-4 text-sm">
+                      <div className="flex items-center gap-4 text-sm flex-wrap">
                         <div className="flex items-center gap-1">
                           <Layers className="h-4 w-4 text-blue-500" />
                           <span className="text-gray-600">
@@ -101,6 +240,16 @@ const ServiceCategoriesManager: React.FC<ServiceCategoriesManagerProps> = ({
                             <span className="font-medium text-green-600">{totalJobs}</span> services
                           </span>
                         </div>
+                        {avgPrice > 0 && (
+                          <div className="text-gray-600">
+                            Avg Price: <span className="font-medium text-green-600">${avgPrice.toFixed(2)}</span>
+                          </div>
+                        )}
+                        {avgTime > 0 && (
+                          <div className="text-gray-600">
+                            Avg Time: <span className="font-medium text-blue-600">{avgTime.toFixed(0)}min</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <Badge 
