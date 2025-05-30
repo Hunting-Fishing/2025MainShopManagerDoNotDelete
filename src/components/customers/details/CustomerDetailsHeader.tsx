@@ -1,11 +1,12 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, Edit, ClipboardList, MessageSquare, AlertTriangle } from "lucide-react";
 import { Customer, getCustomerFullName } from "@/types/customer";
 import { Alert } from "@/components/ui/alert";
+import { CreateWorkOrderFromCustomerDialog } from "@/components/work-orders/CreateWorkOrderFromCustomerDialog";
 
 interface CustomerDetailsHeaderProps {
   customer: Customer & { name?: string, status?: string };
@@ -17,6 +18,7 @@ export const CustomerDetailsHeader: React.FC<CustomerDetailsHeaderProps> = ({
   setAddInteractionOpen 
 }) => {
   const navigate = useNavigate();
+  const [createWorkOrderOpen, setCreateWorkOrderOpen] = useState(false);
   
   // Safety check for missing customer data
   if (!customer || !customer.id) {
@@ -79,13 +81,10 @@ export const CustomerDetailsHeader: React.FC<CustomerDetailsHeaderProps> = ({
             <MessageSquare className="mr-2 h-4 w-4 text-esm-blue-500" /> Record Interaction
           </Button>
           <Button 
-            variant="outline"
-            asChild
-            className="border-esm-blue-200 hover:bg-esm-blue-50"
+            onClick={() => setCreateWorkOrderOpen(true)}
+            className="bg-esm-blue-600 hover:bg-esm-blue-700 text-white"
           >
-            <Link to={`/work-orders/create?customerId=${customer.id}&customerName=${encodeURIComponent(customerName)}`}>
-              <ClipboardList className="mr-2 h-4 w-4 text-esm-blue-500" /> New Work Order
-            </Link>
+            <ClipboardList className="mr-2 h-4 w-4" /> New Work Order
           </Button>
           <Button 
             variant="outline"
@@ -98,6 +97,12 @@ export const CustomerDetailsHeader: React.FC<CustomerDetailsHeaderProps> = ({
           </Button>
         </div>
       </div>
+
+      <CreateWorkOrderFromCustomerDialog
+        customer={customer}
+        open={createWorkOrderOpen}
+        onOpenChange={setCreateWorkOrderOpen}
+      />
     </div>
   );
 }

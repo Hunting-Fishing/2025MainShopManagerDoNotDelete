@@ -1,91 +1,102 @@
 
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { WorkOrderFormHeader } from "@/components/work-orders/WorkOrderFormHeader";
 import { WorkOrderCreateForm } from "@/components/work-orders/WorkOrderCreateForm";
-import { useWorkOrderForm } from "@/hooks/useWorkOrderForm";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { workOrderFormSchema, WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
-
-// Define the WorkOrderTemplate type to match the expected structure
-interface WorkOrderTemplate {
-  id: string;
-  name: string;
-  description: string;
-  status: 'pending' | 'in-progress' | 'on-hold' | 'completed' | 'cancelled';
-  technician: string;
-  notes: string;
-  usage_count: number;
-  last_used: string;
-}
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Info } from "lucide-react";
 
 const WorkOrderCreate = () => {
   const navigate = useNavigate();
-  // Use form from react-hook-form instead of the hook that returns incompatible types
-  const form = useForm<WorkOrderFormSchemaValues>({
-    resolver: zodResolver(workOrderFormSchema),
-    defaultValues: {
-      customer: "",
-      description: "",
-      status: "pending",
-      priority: "medium",
-      technician: "",
-      location: "",
-      dueDate: "",
-      notes: "",
-      vehicleMake: "",
-      vehicleModel: "",
-      vehicleYear: "",
-      odometer: "",
-      licensePlate: "",
-      vin: "",
-      inventoryItems: []
-    }
-  });
-  
+  const [searchParams] = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   
-  // Mock templates for demo purposes
-  const workOrderTemplates: WorkOrderTemplate[] = [
-    {
-      id: "1",
-      name: "Oil Change",
-      description: "Standard oil change service",
+  // Extract customer and equipment information from URL parameters
+  const customerId = searchParams.get('customerId');
+  const customerName = searchParams.get('customerName');
+  const customerEmail = searchParams.get('customerEmail');
+  const customerPhone = searchParams.get('customerPhone');
+  const customerAddress = searchParams.get('customerAddress');
+  const equipmentType = searchParams.get('equipmentType');
+  const equipmentName = searchParams.get('equipmentName');
+  const equipmentId = searchParams.get('equipmentId');
+  
+  // Extract equipment details
+  const vehicleMake = searchParams.get('equipment_make');
+  const vehicleModel = searchParams.get('equipment_model');
+  const vehicleYear = searchParams.get('equipment_year');
+  const vehicleVin = searchParams.get('equipment_vin');
+  const vehicleLicensePlate = searchParams.get('equipment_license_plate');
+
+  const form = useForm<WorkOrderFormSchemaValues>({
+    resolver: zodResolver(workOrderFormSchema),
+    defaultValues: {
+      customer: customerName || "",
+      description: equipmentName ? `Service for ${equipmentName}` : "",
       status: "pending",
-      technician: "John Smith",
-      notes: "Use synthetic oil as default",
-      usage_count: 54,
-      last_used: "2023-05-10",
-    },
-    {
-      id: "2",
-      name: "Brake Inspection",
-      description: "Thorough brake system inspection",
-      status: "pending",
-      technician: "Jane Doe",
-      notes: "Check brake fluid levels",
-      usage_count: 32,
-      last_used: "2023-05-15",
-    },
-    {
-      id: "3",
-      name: "Tire Rotation",
-      description: "Standard tire rotation service",
-      status: "pending",
-      technician: "Mike Johnson",
-      notes: "Check tire pressure",
-      usage_count: 41,
-      last_used: "2023-05-12",
-    },
-  ];
+      priority: "medium",
+      technician: "",
+      location: customerAddress || "",
+      dueDate: "",
+      notes: "",
+      vehicleMake: vehicleMake || "",
+      vehicleModel: vehicleModel || "",
+      vehicleYear: vehicleYear || "",
+      odometer: "",
+      licensePlate: vehicleLicensePlate || "",
+      vin: vehicleVin || "",
+      inventoryItems: []
+    }
+  });
+
+  // Update form when URL params change
+  useEffect(() => {
+    if (customerName) {
+      form.setValue('customer', customerName);
+    }
+    if (equipmentName) {
+      form.setValue('description', `Service for ${equipmentName}`);
+    }
+    if (customerAddress) {
+      form.setValue('location', customerAddress);
+    }
+    if (vehicleMake) {
+      form.setValue('vehicleMake', vehicleMake);
+    }
+    if (vehicleModel) {
+      form.setValue('vehicleModel', vehicleModel);
+    }
+    if (vehicleYear) {
+      form.setValue('vehicleYear', vehicleYear);
+    }
+    if (vehicleLicensePlate) {
+      form.setValue('licensePlate', vehicleLicensePlate);
+    }
+    if (vehicleVin) {
+      form.setValue('vin', vehicleVin);
+    }
+  }, [searchParams, form]);
 
   const onSubmit = async (values: WorkOrderFormSchemaValues) => {
     try {
       setIsSubmitting(true);
-      // Code to save the work order would go here
-      console.log("Submitting work order:", values);
+      
+      // Include customer information in the work order data
+      const workOrderData = {
+        ...values,
+        customer_id: customerId,
+        customer_email: customerEmail,
+        customer_phone: customerPhone,
+        customer_address: customerAddress,
+        equipment_id: equipmentId,
+        equipment_type: equipmentType
+      };
+      
+      console.log("Submitting work order:", workOrderData);
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -108,6 +119,18 @@ const WorkOrderCreate = () => {
         title="Create Work Order" 
         description="Create a new work order for a customer's vehicle service" 
       />
+
+      {/* Show customer info if pre-populated */}
+      {customerName && (
+        <Alert className="mb-6">
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            Creating work order for <strong>{customerName}</strong>
+            {equipmentName && <span> - {equipmentName}</span>}
+            {customerEmail && <span> ({customerEmail})</span>}
+          </AlertDescription>
+        </Alert>
+      )}
 
       {successMessage && (
         <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-4">

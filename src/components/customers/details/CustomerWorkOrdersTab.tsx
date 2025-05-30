@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Customer } from '@/types/customer';
 import { WorkOrder } from '@/types/workOrder';
@@ -22,6 +22,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
+import { CreateWorkOrderFromCustomerDialog } from '@/components/work-orders/CreateWorkOrderFromCustomerDialog';
 
 interface CustomerWorkOrdersTabProps {
   customer: Customer;
@@ -33,9 +34,10 @@ export function CustomerWorkOrdersTab({
   workOrders 
 }: CustomerWorkOrdersTabProps) {
   const navigate = useNavigate();
+  const [createWorkOrderOpen, setCreateWorkOrderOpen] = useState(false);
 
   const handleCreateWorkOrder = () => {
-    navigate(`/work-orders/new?customerId=${customer.id}`);
+    setCreateWorkOrderOpen(true);
   };
 
   const handleViewWorkOrder = (workOrderId: string) => {
@@ -150,6 +152,12 @@ export function CustomerWorkOrdersTab({
           </div>
         )}
       </Card>
+
+      <CreateWorkOrderFromCustomerDialog
+        customer={customer}
+        open={createWorkOrderOpen}
+        onOpenChange={setCreateWorkOrderOpen}
+      />
     </div>
   );
 }
