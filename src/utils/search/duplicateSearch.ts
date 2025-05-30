@@ -1,30 +1,18 @@
-
-import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
+import { ServiceMainCategory } from '@/types/serviceHierarchy';
 
 export interface DuplicateSearchOptions {
-  // Match type controls
   exactMatch: boolean;
   exactWords: boolean;
   similarMatch: boolean;
   partialMatch: boolean;
-  
-  // Similarity threshold (0-1)
   similarityThreshold: number;
-  
-  // Text processing options
-  ignoreCase: boolean;
+  matchTypes: string[];
   ignoreSpecialChars: boolean;
-  ignorePunctuation: boolean;
-  
-  // Word filtering
-  minWordLength: number;
-  
-  // Search scope
-  searchScope: ('categories' | 'subcategories' | 'jobs')[];
-  
-  // Result grouping
-  groupBy: 'similarity' | 'category' | 'type';
+  searchScope: string[];
+  groupBy: string;
   minGroupSize: number;
+  minWordLength: number;
+  ignorePunctuation: boolean;
 }
 
 export const defaultSearchOptions: DuplicateSearchOptions = {
@@ -33,13 +21,13 @@ export const defaultSearchOptions: DuplicateSearchOptions = {
   similarMatch: true,
   partialMatch: false,
   similarityThreshold: 0.8,
-  ignoreCase: true,
+  matchTypes: ['exact', 'exact_words', 'similar'],
   ignoreSpecialChars: true,
-  ignorePunctuation: true,
-  minWordLength: 3,
   searchScope: ['categories', 'subcategories', 'jobs'],
   groupBy: 'similarity',
-  minGroupSize: 2
+  minGroupSize: 2,
+  minWordLength: 3,
+  ignorePunctuation: true
 };
 
 export interface DuplicateOccurrence {
@@ -49,13 +37,13 @@ export interface DuplicateOccurrence {
   normalizedName: string;
   categoryName?: string;
   subcategoryName?: string;
-  type: 'category' | 'subcategory' | 'job';
+  type?: 'category' | 'subcategory' | 'job';
 }
 
 export interface DuplicateItem {
   id: string;
   text: string;
-  matchType: 'exact' | 'exact_words' | 'similar' | 'partial';
+  matchType: 'exact' | 'exact_words' | 'similar';
   similarity: number;
   occurrences: DuplicateOccurrence[];
 }
