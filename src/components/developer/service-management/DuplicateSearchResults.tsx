@@ -1,27 +1,23 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { 
-  X, 
-  Trash2, 
-  AlertTriangle, 
-  CheckCircle2,
-  Search,
-  FileText
-} from 'lucide-react';
-import { DuplicateItem, DuplicateOccurrence, DuplicateSearchOptions } from '@/utils/search/duplicateSearch';
+import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { 
+  DuplicateItem, 
+  DuplicateSearchOptions,
+  DuplicateOccurrence
+} from '@/utils/search/duplicateSearch';
 
 interface DuplicateSearchResultsProps {
   duplicates: DuplicateItem[];
   recommendations: string[];
   searchOptions: DuplicateSearchOptions;
   onClose: () => void;
-  onRemoveDuplicate: (itemId: string, type: 'category' | 'subcategory' | 'job') => Promise<void>;
+  onRemoveDuplicate?: (itemId: string, type: 'category' | 'subcategory' | 'job') => Promise<void>;
 }
 
 export const DuplicateSearchResults: React.FC<DuplicateSearchResultsProps> = ({
@@ -31,7 +27,56 @@ export const DuplicateSearchResults: React.FC<DuplicateSearchResultsProps> = ({
   onClose,
   onRemoveDuplicate
 }) => {
-  const [removingItems, setRemovingItems] = useState<Set<string>>(new Set());
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [isRemoving, setIsRemoving] = useState(false);
+
+  const handleSelectItem = (itemId: string) => {
+    const newSelectedItems = new Set(selectedItems);
+    if (newSelectedItems.has(itemId)) {
+      newSelectedItems.delete(itemId);
+    } else {
+      newSelectedItems.add(itemId);
+    }
+    setSelectedItems(newSelectedItems);
+  };
+
+  const handleSelectAll = () => {
+    const allItemIds = duplicates.flatMap(duplicate => duplicate.occurrences.map(occurrence => occurrence.itemId));
+    const allSelected = allItemIds.every(itemId => selectedItems.has(itemId));
+    
+    if (allSelected) {
+      // If all are selected, deselect all
+      setSelectedItems(new Set());
+    } else {
+      // If not all are selected, select all
+      setSelectedItems(new Set(allItemIds));
+    }
+  };
+
+  const handleRemoveSelected = async () => {
+    setIsRemoving(true);
+    try {
+      const promises = Array.from(selectedItems).map(itemId => {
+        const duplicate = duplicates.find(d => d.occurrences.some(o => o.itemId === itemId));
+        const occurrence = duplicate?.occurrences.find(o => o.itemId === itemId);
+        
+        if (occurrence) {
+          return onRemoveDuplicate?.(itemId, occurrence.type);
+        }
+        
+        return Promise.resolve();
+      });
+      
+      await Promise.all(promises);
+      toast.success("Selected duplicates removed successfully");
+      setSelectedItems(new Set());
+    } catch (error) {
+      console.error("Error removing selected duplicates:", error);
+      toast.error("Failed to remove selected duplicates");
+    } finally {
+      setIsRemoving(false);
+    }
+  };
 
   const getMatchTypeColor = (matchType: string) => {
     switch (matchType) {
@@ -43,156 +88,142 @@ export const DuplicateSearchResults: React.FC<DuplicateSearchResultsProps> = ({
     }
   };
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'category': return '📁';
-      case 'subcategory': return '📂';
-      case 'job': return '🔧';
-      default: return '📄';
-    }
-  };
-
-  const handleRemoveItem = async (occurrence: DuplicateOccurrence) => {
-    if (removingItems.has(occurrence.itemId)) return;
-
-    setRemovingItems(prev => new Set(prev).add(occurrence.itemId));
-    
-    try {
-      await onRemoveDuplicate(occurrence.itemId, occurrence.itemType);
-      toast.success(`${occurrence.itemType} removed successfully`);
-    } catch (error) {
-      console.error('Error removing item:', error);
-      toast.error(`Failed to remove ${occurrence.itemType}`);
-    } finally {
-      setRemovingItems(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(occurrence.itemId);
-        return newSet;
-      });
-    }
-  };
-
-  const totalDuplicates = duplicates.reduce((acc, dup) => acc + dup.occurrences.length, 0);
-
-  return (
-    <Card className="w-full bg-white shadow-xl">
-      <CardHeader className="pb-4">
+  const renderDuplicateGroup = (duplicate: DuplicateItem, index: number) => (
+    <Card key={duplicate.groupId} className="mb-4">
+      <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-xl font-semibold flex items-center gap-2">
-              <Search className="h-5 w-5" />
-              Duplicate Search Results
+          <div className="flex items-center gap-3">
+            <Badge className={getMatchTypeColor(duplicate.matchType)}>
+              {duplicate.matchType.replace('_', ' ').toUpperCase()}
+            </Badge>
+            <CardTitle className="text-lg">
+              Duplicate Group {index + 1}: "{duplicate.name}"
             </CardTitle>
-            <p className="text-sm text-gray-600 mt-1">
-              Found {duplicates.length} duplicate groups affecting {totalDuplicates} items
-            </p>
-          </div>
-          <Button variant="outline" size="sm" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardHeader>
-
-      <CardContent className="space-y-6">
-        {/* Search Configuration Summary */}
-        <div className="bg-gray-50 p-3 rounded-lg">
-          <h4 className="font-medium text-sm mb-2">Search Configuration</h4>
-          <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
-            <div>Scope: {searchOptions.searchScope}</div>
-            <div>Similarity: {searchOptions.similarityThreshold}%</div>
-            <div>Match Types: {searchOptions.matchTypes.join(', ')}</div>
-            <div>Min Word Length: {searchOptions.minWordLength}</div>
-          </div>
-        </div>
-
-        {/* Recommendations */}
-        {recommendations.length > 0 && (
-          <div className="space-y-2">
-            <h4 className="font-medium text-sm flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Recommendations
-            </h4>
-            <div className="space-y-1">
-              {recommendations.map((rec, index) => (
-                <div key={index} className="text-sm text-gray-700 flex items-start gap-2">
-                  <CheckCircle2 className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
-                  {rec}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <Separator />
-
-        {/* Duplicate Groups */}
-        <ScrollArea className="max-h-96">
-          <div className="space-y-4">
-            {duplicates.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <CheckCircle2 className="h-12 w-12 mx-auto mb-3 text-green-500" />
-                <h3 className="font-medium">No Duplicates Found</h3>
-                <p className="text-sm">Your service hierarchy looks clean!</p>
-              </div>
-            ) : (
-              duplicates.map((duplicate, index) => (
-                <Card key={duplicate.groupId} className="border border-gray-200">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Badge className={getMatchTypeColor(duplicate.matchType)}>
-                          {duplicate.matchType.replace('_', ' ')}
-                        </Badge>
-                        {duplicate.matchType === 'similar' && (
-                          <span className="text-xs text-gray-500">
-                            {duplicate.similarity.toFixed(1)}% similar
-                          </span>
-                        )}
-                      </div>
-                      <AlertTriangle className="h-4 w-4 text-amber-500" />
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {duplicate.occurrences.map((occurrence, occIndex) => (
-                      <div key={occurrence.itemId} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-lg">{getTypeIcon(occurrence.itemType)}</span>
-                            <span className="font-medium">{occurrence.itemName}</span>
-                            <Badge variant="outline" className="text-xs">
-                              {occurrence.itemType}
-                            </Badge>
-                          </div>
-                          {(occurrence.parentCategory || occurrence.parentSubcategory) && (
-                            <div className="text-xs text-gray-500">
-                              {occurrence.parentCategory && `${occurrence.parentCategory}`}
-                              {occurrence.parentSubcategory && ` > ${occurrence.parentSubcategory}`}
-                            </div>
-                          )}
-                          {occurrence.description && (
-                            <div className="text-xs text-gray-600 mt-1">
-                              {occurrence.description}
-                            </div>
-                          )}
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleRemoveItem(occurrence)}
-                          disabled={removingItems.has(occurrence.itemId)}
-                          className="ml-3 text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              ))
+            {duplicate.similarityScore && duplicate.similarityScore < 100 && (
+              <Badge variant="outline">
+                {duplicate.similarityScore}% similarity
+              </Badge>
             )}
           </div>
-        </ScrollArea>
+          <div className="text-sm text-muted-foreground">
+            {duplicate.occurrences.length} items
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {duplicate.occurrences.map((occurrence, occIndex) => (
+            <div key={`${occurrence.itemId}-${occIndex}`} className="flex items-center justify-between p-3 border rounded-lg">
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  checked={selectedItems.has(occurrence.itemId)}
+                  onCheckedChange={() => handleSelectItem(occurrence.itemId)}
+                />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-xs">
+                      {occurrence.type}
+                    </Badge>
+                    <span className="font-medium">{occurrence.name}</span>
+                  </div>
+                  <div className="text-sm text-muted-foreground mt-1">
+                    {occurrence.type === 'job' && occurrence.parentCategory && occurrence.parentSubcategory && (
+                      <>Category: {occurrence.parentCategory} → {occurrence.parentSubcategory}</>
+                    )}
+                    {occurrence.type === 'subcategory' && occurrence.parentCategory && (
+                      <>Category: {occurrence.parentCategory}</>
+                    )}
+                    {occurrence.type === 'category' && (
+                      <>Top-level category</>
+                    )}
+                  </div>
+                  {occurrence.description && (
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {occurrence.description}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleRemoveItem(occurrence.itemId, occurrence.type)}
+                disabled={isRemoving}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
       </CardContent>
     </Card>
+  );
+
+  const handleRemoveItem = async (itemId: string, type: 'category' | 'subcategory' | 'job') => {
+    setIsRemoving(true);
+    try {
+      await onRemoveDuplicate?.(itemId, type);
+      toast.success("Duplicate removed successfully");
+    } catch (error) {
+      console.error("Error removing duplicate:", error);
+      toast.error("Failed to remove duplicate");
+    } finally {
+      setIsRemoving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="w-full max-w-6xl max-h-[80vh] bg-white rounded-lg shadow-xl overflow-hidden">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-2xl">Duplicate Search Results</CardTitle>
+              <Button variant="ghost" size="sm" onClick={onClose}>
+                Close
+              </Button>
+            </div>
+            <CardDescription>
+              Found {duplicates.length} duplicate groups based on current configuration.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="overflow-y-auto max-h-[60vh]">
+            {duplicates.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-lg text-muted-foreground">No duplicates found with current search criteria.</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {duplicates.map((duplicate, index) => renderDuplicateGroup(duplicate, index))}
+              </div>
+            )}
+          </CardContent>
+          <CardFooter className="flex justify-between items-center">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="select-all"
+                checked={duplicates.length > 0 && duplicates.flatMap(duplicate => duplicate.occurrences.map(occurrence => occurrence.itemId)).every(itemId => selectedItems.has(itemId))}
+                onCheckedChange={handleSelectAll}
+              />
+              <Label htmlFor="select-all" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed">
+                Select All
+              </Label>
+            </div>
+            <div className="flex space-x-2">
+              <Button 
+                variant="destructive" 
+                onClick={handleRemoveSelected} 
+                disabled={selectedItems.size === 0 || isRemoving}
+              >
+                {isRemoving ? "Removing..." : `Remove Selected (${selectedItems.size})`}
+              </Button>
+              <Button variant="outline" onClick={onClose}>
+                Close
+              </Button>
+            </div>
+          </CardFooter>
+        </Card>
+      </div>
+    </div>
   );
 };
