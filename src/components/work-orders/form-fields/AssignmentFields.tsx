@@ -17,21 +17,33 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
+interface Technician {
+  id: string;
+  name: string;
+  jobTitle?: string;
+}
 
 interface AssignmentFieldsProps {
   form: UseFormReturn<WorkOrderFormSchemaValues>;
-  technicians?: string[];
+  technicians: Technician[];
+  technicianLoading: boolean;
+  technicianError: string | null;
 }
 
 export const AssignmentFields: React.FC<AssignmentFieldsProps> = ({
   form,
-  technicians = []
+  technicians,
+  technicianLoading,
+  technicianError
 }) => {
   return (
     <div className="bg-white p-4 rounded-lg border border-gray-200 space-y-4">
@@ -44,21 +56,47 @@ export const AssignmentFields: React.FC<AssignmentFieldsProps> = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Technician</FormLabel>
+              {technicianError && (
+                <Alert variant="destructive" className="mb-2">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Failed to load technicians: {technicianError}
+                  </AlertDescription>
+                </Alert>
+              )}
               <Select
                 onValueChange={field.onChange}
                 defaultValue={field.value}
+                disabled={technicianLoading}
               >
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a technician" />
+                    <SelectValue 
+                      placeholder={
+                        technicianLoading 
+                          ? "Loading technicians..." 
+                          : "Select a technician"
+                      } 
+                    />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {technicians.map((tech) => (
-                    <SelectItem key={tech} value={tech}>
-                      {tech}
-                    </SelectItem>
-                  ))}
+                  {technicianLoading ? (
+                    <div className="flex items-center justify-center p-4">
+                      <LoadingSpinner size="sm" text="Loading..." />
+                    </div>
+                  ) : (
+                    technicians.map((tech) => (
+                      <SelectItem key={tech.id} value={tech.name}>
+                        <div className="flex flex-col">
+                          <span>{tech.name}</span>
+                          {tech.jobTitle && (
+                            <span className="text-sm text-gray-500">{tech.jobTitle}</span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
               <FormMessage />

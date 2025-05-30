@@ -31,14 +31,7 @@ export function useStaff() {
     } catch (err) {
       console.error('Error fetching staff:', err);
       setError(err instanceof Error ? err : new Error('Unknown error occurred'));
-      
-      // Fallback data if database access fails
-      setStaff([
-        { id: '1', name: 'John Smith', role: 'Technician' },
-        { id: '2', name: 'Sarah Johnson', role: 'Service Advisor' },
-        { id: '3', name: 'Mike Wilson', role: 'Technician' },
-        { id: '4', name: 'Emma Davis', role: 'Manager' }
-      ]);
+      setStaff([]);
     } finally {
       setIsLoading(false);
     }

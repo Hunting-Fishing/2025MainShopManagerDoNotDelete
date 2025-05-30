@@ -6,6 +6,7 @@ import { Loader2 } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
 import { WorkOrderFormFields } from "./WorkOrderFormFields";
 import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
+import { useTechnicians } from "@/hooks/useTechnicians";
 
 interface WorkOrderCreateFormProps {
   form: UseFormReturn<WorkOrderFormSchemaValues>;
@@ -31,14 +32,7 @@ export const WorkOrderCreateForm: React.FC<WorkOrderCreateFormProps> = ({
   prePopulatedCustomer
 }) => {
   const isSubmitting = form.formState.isSubmitting;
-  
-  // Mock technicians data - in a real app this would come from an API
-  const technicians = [
-    "John Smith",
-    "Sarah Johnson", 
-    "Mike Wilson",
-    "Lisa Davis"
-  ];
+  const { technicians, isLoading: technicianLoading, error: technicianError } = useTechnicians();
 
   return (
     <Form {...form}>
@@ -46,6 +40,8 @@ export const WorkOrderCreateForm: React.FC<WorkOrderCreateFormProps> = ({
         <WorkOrderFormFields 
           form={form} 
           technicians={technicians}
+          technicianLoading={technicianLoading}
+          technicianError={technicianError}
           prePopulatedCustomer={prePopulatedCustomer}
         />
         
