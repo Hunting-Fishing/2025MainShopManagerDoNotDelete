@@ -1,12 +1,13 @@
 
-import React, { useState, useMemo } from 'react';
-import { ServiceMainCategory } from '@/types/serviceHierarchy';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { RefreshCw, Package, Layers, Wrench, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { SearchAndFilterBar, FilterOptions } from './SearchAndFilterBar';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ChevronDown, ChevronRight, Edit, Plus, Trash2, Database, Filter } from 'lucide-react';
+import { ServiceMainCategory } from '@/types/serviceHierarchy';
+import { useServiceFiltering } from './useServiceFiltering';
+import ServiceAdvancedFilters from './ServiceAdvancedFilters';
 
 interface ServiceCategoriesManagerProps {
   categories: ServiceMainCategory[];
@@ -14,279 +15,259 @@ interface ServiceCategoriesManagerProps {
   onRefresh: () => void;
 }
 
-const ServiceCategoriesManager: React.FC<ServiceCategoriesManagerProps> = ({
-  categories,
+const ServiceCategoriesManager: React.FC<ServiceCategoriesManagerProps> = ({ 
+  categories, 
   isLoading,
-  onRefresh
+  onRefresh 
 }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filters, setFilters] = useState<FilterOptions>({
-    categories: [],
-    priceRange: { min: null, max: null },
-    timeRange: { min: null, max: null },
-    searchIn: 'all',
-    sortBy: 'name',
-    sortOrder: 'asc'
-  });
+  const {
+    filters,
+    setFilters,
+    resetFilters,
+    isFiltersExpanded,
+    toggleFiltersExpanded,
+    filteredCategories,
+    filteredServicesCount,
+    totalServicesCount
+  } = useServiceFiltering(categories);
 
-  // Extract all unique category names for filter options
-  const categoryNames = useMemo(() => {
-    return [...new Set(categories.map(cat => cat.name))];
-  }, [categories]);
+  const [expandedCategories, setExpandedCategories] = React.useState<Set<string>>(new Set());
+  const [expandedSubcategories, setExpandedSubcategories] = React.useState<Set<string>>(new Set());
 
-  // Filter and sort services based on current filters
-  const filteredAndSortedCategories = useMemo(() => {
-    let filtered = categories.filter(category => {
-      // Category filter
-      if (filters.categories.length > 0 && !filters.categories.includes(category.name)) {
-        return false;
-      }
-
-      // Search filter
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        const searchTargets = [];
-        
-        if (filters.searchIn === 'all' || filters.searchIn === 'name') {
-          searchTargets.push(category.name.toLowerCase());
-        }
-        if (filters.searchIn === 'all' || filters.searchIn === 'description') {
-          searchTargets.push((category.description || '').toLowerCase());
-        }
-        if (filters.searchIn === 'all' || filters.searchIn === 'category') {
-          searchTargets.push(category.name.toLowerCase());
-        }
-        
-        // Also search in subcategories and jobs
-        if (filters.searchIn === 'all' || filters.searchIn === 'name') {
-          category.subcategories.forEach(sub => {
-            searchTargets.push(sub.name.toLowerCase());
-            sub.jobs.forEach(job => {
-              searchTargets.push(job.name.toLowerCase());
-            });
-          });
-        }
-        
-        if (filters.searchIn === 'all' || filters.searchIn === 'description') {
-          category.subcategories.forEach(sub => {
-            if (sub.description) searchTargets.push(sub.description.toLowerCase());
-            sub.jobs.forEach(job => {
-              if (job.description) searchTargets.push(job.description.toLowerCase());
-            });
-          });
-        }
-
-        const matches = searchTargets.some(target => target.includes(query));
-        if (!matches) return false;
-      }
-
-      return true;
-    });
-
-    // Sort categories
-    filtered.sort((a, b) => {
-      let aValue: string | number;
-      let bValue: string | number;
-
-      switch (filters.sortBy) {
-        case 'name':
-          aValue = a.name.toLowerCase();
-          bValue = b.name.toLowerCase();
-          break;
-        case 'category':
-          aValue = a.name.toLowerCase();
-          bValue = b.name.toLowerCase();
-          break;
-        case 'price':
-          // Calculate average price for category
-          const aJobs = a.subcategories.flatMap(sub => sub.jobs);
-          const bJobs = b.subcategories.flatMap(sub => sub.jobs);
-          const aAvgPrice = aJobs.length > 0 ? aJobs.reduce((sum, job) => sum + (job.price || 0), 0) / aJobs.length : 0;
-          const bAvgPrice = bJobs.length > 0 ? bJobs.reduce((sum, job) => sum + (job.price || 0), 0) / bJobs.length : 0;
-          aValue = aAvgPrice;
-          bValue = bAvgPrice;
-          break;
-        case 'time':
-          // Calculate average time for category
-          const aJobsTime = a.subcategories.flatMap(sub => sub.jobs);
-          const bJobsTime = b.subcategories.flatMap(sub => sub.jobs);
-          const aAvgTime = aJobsTime.length > 0 ? aJobsTime.reduce((sum, job) => sum + (job.estimatedTime || 0), 0) / aJobsTime.length : 0;
-          const bAvgTime = bJobsTime.length > 0 ? bJobsTime.reduce((sum, job) => sum + (job.estimatedTime || 0), 0) / bJobsTime.length : 0;
-          aValue = aAvgTime;
-          bValue = bAvgTime;
-          break;
-        default:
-          aValue = a.name.toLowerCase();
-          bValue = b.name.toLowerCase();
-      }
-
-      if (typeof aValue === 'string') {
-        return filters.sortOrder === 'asc' ? aValue.localeCompare(bValue as string) : (bValue as string).localeCompare(aValue);
+  const toggleCategory = (categoryId: string) => {
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(categoryId)) {
+        newSet.delete(categoryId);
       } else {
-        return filters.sortOrder === 'asc' ? aValue - (bValue as number) : (bValue as number) - aValue;
+        newSet.add(categoryId);
       }
+      return newSet;
     });
+  };
 
-    return filtered;
-  }, [categories, searchQuery, filters]);
+  const toggleSubcategory = (subcategoryId: string) => {
+    setExpandedSubcategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(subcategoryId)) {
+        newSet.delete(subcategoryId);
+      } else {
+        newSet.add(subcategoryId);
+      }
+      return newSet;
+    });
+  };
 
   if (isLoading) {
     return (
-      <Card className="bg-white shadow-md rounded-xl border border-gray-100">
-        <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b">
-          <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5 text-indigo-600" />
-            Service Categories
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center py-8">
-            <div className="flex items-center gap-3">
-              <RefreshCw className="h-5 w-5 animate-spin text-indigo-600" />
-              <p className="text-gray-600">Loading service categories from database...</p>
+      <div className="space-y-4">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <span className="ml-2">Loading service categories...</span>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <Card className="bg-white shadow-md rounded-xl border border-gray-100">
-      <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5 text-indigo-600" />
-            Service Categories
-            <Badge variant="outline" className="ml-2 bg-indigo-100 text-indigo-700 border-indigo-300">
-              {filteredAndSortedCategories.length} of {categories.length} categories
-            </Badge>
-          </CardTitle>
-          <Button onClick={onRefresh} variant="outline" size="sm" className="rounded-full">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent className="p-6">
-        {/* Enhanced Search and Filter Bar */}
-        <SearchAndFilterBar
-          onSearch={setSearchQuery}
-          onFilterChange={setFilters}
-          categories={categoryNames}
-        />
+    <div className="space-y-4">
+      {/* Advanced Filters */}
+      <ServiceAdvancedFilters
+        categories={categories}
+        filters={filters}
+        onFiltersChange={setFilters}
+        onReset={resetFilters}
+        isExpanded={isFiltersExpanded}
+        onToggleExpanded={toggleFiltersExpanded}
+      />
 
-        {categories.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="flex flex-col items-center gap-4">
-              <div className="p-4 bg-gray-100 rounded-full">
-                <Package className="h-8 w-8 text-gray-400" />
-              </div>
-              <div>
-                <p className="text-gray-500 font-medium">No service categories found</p>
-                <p className="text-sm text-gray-400 mt-1">
-                  Check your database connection or import service data
-                </p>
-              </div>
+      {/* Results Summary */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Database className="h-5 w-5" />
+              <CardTitle className="text-lg">Service Categories</CardTitle>
+              <Badge variant="outline">
+                {filteredServicesCount} of {totalServicesCount} services
+              </Badge>
             </div>
+            <Button variant="outline" size="sm" onClick={onRefresh}>
+              Refresh
+            </Button>
           </div>
-        ) : filteredAndSortedCategories.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="flex flex-col items-center gap-4">
-              <div className="p-4 bg-gray-100 rounded-full">
-                <Search className="h-8 w-8 text-gray-400" />
-              </div>
-              <div>
-                <p className="text-gray-500 font-medium">No services match your filters</p>
-                <p className="text-sm text-gray-400 mt-1">
-                  Try adjusting your search terms or filters
-                </p>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {filteredAndSortedCategories.map((category) => {
-              const totalJobs = category.subcategories.reduce(
-                (sum, sub) => sum + sub.jobs.length, 
-                0
-              );
-              
-              // Calculate average price and time for display
-              const allJobs = category.subcategories.flatMap(sub => sub.jobs);
-              const avgPrice = allJobs.length > 0 ? allJobs.reduce((sum, job) => sum + (job.price || 0), 0) / allJobs.length : 0;
-              const avgTime = allJobs.length > 0 ? allJobs.reduce((sum, job) => sum + (job.estimatedTime || 0), 0) / allJobs.length : 0;
-              
-              return (
-                <div key={category.id} className="border rounded-xl p-4 bg-gradient-to-r from-white to-gray-50 hover:shadow-md transition-shadow">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg text-gray-900 mb-1">
-                        {category.name}
-                      </h3>
-                      {category.description && (
-                        <p className="text-gray-600 text-sm mb-3">{category.description}</p>
-                      )}
-                      <div className="flex items-center gap-4 text-sm flex-wrap">
-                        <div className="flex items-center gap-1">
-                          <Layers className="h-4 w-4 text-blue-500" />
-                          <span className="text-gray-600">
-                            <span className="font-medium text-blue-600">{category.subcategories.length}</span> subcategories
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Wrench className="h-4 w-4 text-green-500" />
-                          <span className="text-gray-600">
-                            <span className="font-medium text-green-600">{totalJobs}</span> services
-                          </span>
-                        </div>
-                        {avgPrice > 0 && (
-                          <div className="text-gray-600">
-                            Avg Price: <span className="font-medium text-green-600">${avgPrice.toFixed(2)}</span>
-                          </div>
-                        )}
-                        {avgTime > 0 && (
-                          <div className="text-gray-600">
-                            Avg Time: <span className="font-medium text-blue-600">{avgTime.toFixed(0)}min</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <Badge 
-                      variant="secondary" 
-                      className="bg-indigo-100 text-indigo-800 border border-indigo-200"
+        </CardHeader>
+      </Card>
+
+      {/* Categories List */}
+      <div className="space-y-4">
+        {filteredCategories.length === 0 ? (
+          <Card>
+            <CardContent className="p-6 text-center">
+              <div className="text-gray-500">
+                {totalServicesCount === 0 ? (
+                  <>
+                    <Database className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <p className="text-lg font-medium mb-2">No service categories found</p>
+                    <p>Start by importing service data or creating categories manually.</p>
+                  </>
+                ) : (
+                  <>
+                    <Filter className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <p className="text-lg font-medium mb-2">No services match your filters</p>
+                    <p>Try adjusting your search criteria or clearing some filters.</p>
+                    <Button 
+                      variant="outline" 
+                      className="mt-4" 
+                      onClick={resetFilters}
                     >
-                      Active
-                    </Badge>
-                  </div>
-                  
-                  {category.subcategories.length > 0 && (
-                    <div className="mt-4 pt-4 border-t border-gray-200">
-                      <div className="flex flex-wrap gap-2">
-                        {category.subcategories.slice(0, 3).map((sub) => (
-                          <Badge 
-                            key={sub.id} 
-                            variant="outline" 
-                            className="text-xs bg-white border-gray-300 text-gray-700"
-                          >
-                            {sub.name} ({sub.jobs.length})
-                          </Badge>
-                        ))}
-                        {category.subcategories.length > 3 && (
-                          <Badge variant="outline" className="text-xs bg-gray-50 border-gray-300 text-gray-500">
-                            +{category.subcategories.length - 3} more
-                          </Badge>
+                      Clear All Filters
+                    </Button>
+                  </>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          filteredCategories.map((category) => (
+            <Card key={category.id}>
+              <Collapsible 
+                open={expandedCategories.has(category.id)}
+                onOpenChange={() => toggleCategory(category.id)}
+              >
+                <CollapsibleTrigger asChild>
+                  <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        {expandedCategories.has(category.id) ? (
+                          <ChevronDown className="h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4" />
                         )}
+                        <div>
+                          <CardTitle className="text-lg">{category.name}</CardTitle>
+                          {category.description && (
+                            <p className="text-sm text-gray-600 mt-1">{category.description}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary">
+                          {category.subcategories.length} subcategories
+                        </Badge>
+                        <Badge variant="outline">
+                          {category.subcategories.reduce((total, sub) => total + sub.jobs.length, 0)} services
+                        </Badge>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="sm" onClick={(e) => e.stopPropagation()}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={(e) => e.stopPropagation()}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                  </CardHeader>
+                </CollapsibleTrigger>
+
+                <CollapsibleContent>
+                  <CardContent className="pt-0">
+                    <div className="space-y-3 ml-7">
+                      {category.subcategories.map((subcategory) => (
+                        <Card key={subcategory.id} className="bg-gray-50">
+                          <Collapsible 
+                            open={expandedSubcategories.has(subcategory.id)}
+                            onOpenChange={() => toggleSubcategory(subcategory.id)}
+                          >
+                            <CollapsibleTrigger asChild>
+                              <CardHeader className="cursor-pointer hover:bg-gray-100 transition-colors py-3">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3">
+                                    {expandedSubcategories.has(subcategory.id) ? (
+                                      <ChevronDown className="h-3 w-3" />
+                                    ) : (
+                                      <ChevronRight className="h-3 w-3" />
+                                    )}
+                                    <div>
+                                      <h4 className="font-medium">{subcategory.name}</h4>
+                                      {subcategory.description && (
+                                        <p className="text-sm text-gray-600">{subcategory.description}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant="outline" className="text-xs">
+                                      {subcategory.jobs.length} services
+                                    </Badge>
+                                    <div className="flex gap-1">
+                                      <Button variant="ghost" size="sm" onClick={(e) => e.stopPropagation()}>
+                                        <Plus className="h-3 w-3" />
+                                      </Button>
+                                      <Button variant="ghost" size="sm" onClick={(e) => e.stopPropagation()}>
+                                        <Edit className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            </CollapsibleTrigger>
+
+                            <CollapsibleContent>
+                              <CardContent className="pt-0">
+                                <div className="space-y-2 ml-6">
+                                  {subcategory.jobs.map((job) => (
+                                    <div 
+                                      key={job.id} 
+                                      className="flex items-center justify-between p-3 bg-white rounded border"
+                                    >
+                                      <div className="flex-1">
+                                        <h5 className="font-medium">{job.name}</h5>
+                                        {job.description && (
+                                          <p className="text-sm text-gray-600">{job.description}</p>
+                                        )}
+                                      </div>
+                                      <div className="flex items-center gap-3">
+                                        {job.price && (
+                                          <Badge variant="secondary" className="text-xs">
+                                            ${job.price}
+                                          </Badge>
+                                        )}
+                                        {job.estimatedTime && (
+                                          <Badge variant="outline" className="text-xs">
+                                            {job.estimatedTime}min
+                                          </Badge>
+                                        )}
+                                        <div className="flex gap-1">
+                                          <Button variant="ghost" size="sm">
+                                            <Edit className="h-3 w-3" />
+                                          </Button>
+                                          <Button variant="ghost" size="sm">
+                                            <Trash2 className="h-3 w-3" />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </CardContent>
+                            </CollapsibleContent>
+                          </Collapsible>
+                        </Card>
+                      ))}
+                    </div>
+                  </CardContent>
+                </CollapsibleContent>
+              </Collapsible>
+            </Card>
+          ))
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 
