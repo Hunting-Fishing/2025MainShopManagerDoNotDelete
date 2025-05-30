@@ -1,11 +1,92 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
 import ServiceQualityAnalysis from '@/components/developer/service-management/ServiceQualityAnalysis';
 import ServiceHierarchyBrowser from '@/components/developer/service-management/ServiceHierarchyBrowser';
-import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ArrowLeft, Database, AlertCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
+
+// Placeholder components for missing ones
+const ServiceDebugInfo = () => (
+  <div className="p-4 bg-gray-50 rounded-lg">
+    <h3 className="font-medium mb-2">Debug Information</h3>
+    <p className="text-sm text-gray-600">Service management debug info will be displayed here.</p>
+  </div>
+);
+
+const ServicesPriceReport = ({ categories }: { categories: ServiceMainCategory[] }) => (
+  <div className="p-4 bg-white rounded-lg border">
+    <h3 className="font-medium mb-2">Price Report</h3>
+    <p className="text-sm text-gray-600">Loaded {categories.length} categories for price analysis.</p>
+  </div>
+);
+
+const ServiceAnalytics = ({ categories }: { categories: ServiceMainCategory[] }) => (
+  <div className="p-4 bg-white rounded-lg border">
+    <h3 className="font-medium mb-2">Service Analytics</h3>
+    <p className="text-sm text-gray-600">Analytics for {categories.length} service categories.</p>
+  </div>
+);
+
+const ServiceBulkImport = ({ 
+  onCancel, 
+  onComplete 
+}: { 
+  onCancel: () => void; 
+  onComplete: (categories: ServiceMainCategory[]) => void; 
+}) => (
+  <div className="p-4 bg-white rounded-lg border">
+    <h3 className="font-medium mb-2">Bulk Import/Export</h3>
+    <p className="text-sm text-gray-600 mb-4">Import or export service categories in bulk.</p>
+    <div className="flex gap-2">
+      <Button onClick={onCancel} variant="outline">Cancel</Button>
+      <Button onClick={() => onComplete([])}>Complete Import</Button>
+    </div>
+  </div>
+);
+
+// Fetch service categories function
+const fetchServiceCategories = async (): Promise<ServiceMainCategory[]> => {
+  const { data, error } = await supabase
+    .from('service_categories')
+    .select(`
+      *,
+      service_subcategories (
+        *,
+        service_jobs (*)
+      )
+    `)
+    .order('position', { ascending: true });
+
+  if (error) throw error;
+
+  return (data || []).map(category => ({
+    id: category.id,
+    name: category.name,
+    description: category.description,
+    position: category.position,
+    subcategories: (category.service_subcategories || []).map((sub: any) => ({
+      id: sub.id,
+      name: sub.name,
+      description: sub.description,
+      category_id: sub.category_id,
+      jobs: (sub.service_jobs || []).map((job: any) => ({
+        id: job.id,
+        name: job.name,
+        description: job.description,
+        estimatedTime: job.estimated_time,
+        price: job.price,
+        subcategory_id: job.subcategory_id
+      }))
+    }))
+  }));
+};
 
 export default function ServiceManagement() {
   const [activeTab, setActiveTab] = useState("services");

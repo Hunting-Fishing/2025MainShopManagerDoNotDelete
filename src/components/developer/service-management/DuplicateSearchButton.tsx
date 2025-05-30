@@ -119,6 +119,10 @@ export const DuplicateSearchButton: React.FC<DuplicateSearchButtonProps> = ({
       return Promise.reject(error);
     }
   };
+
+  const handleOptionsChange = (newOptions: DuplicateSearchOptions) => {
+    setSearchOptions(newOptions);
+  };
   
   return (
     <>
@@ -136,7 +140,7 @@ export const DuplicateSearchButton: React.FC<DuplicateSearchButtonProps> = ({
             </DialogHeader>
             <DuplicateSearchConfig
               options={searchOptions}
-              onOptionsChange={setSearchOptions}
+              onOptionsChange={handleOptionsChange}
             />
           </DialogContent>
         </Dialog>

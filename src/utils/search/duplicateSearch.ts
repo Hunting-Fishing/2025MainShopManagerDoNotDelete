@@ -1,29 +1,30 @@
 
-import { ServiceMainCategory } from '@/types/serviceHierarchy';
-
-export type MatchType = 'exact' | 'exact_words' | 'similar' | 'partial';
-export type SearchScope = 'all' | 'categories' | 'subcategories' | 'jobs';
-export type GroupBy = 'similarity' | 'category' | 'type';
+import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
 
 export interface DuplicateSearchOptions {
-  // Match type options
+  // Match type controls
   exactMatch: boolean;
   exactWords: boolean;
   similarMatch: boolean;
   partialMatch: boolean;
   
-  // Additional options for enhanced search
-  matchTypes: MatchType[];
-  ignoreSpecialChars: boolean;
-  searchScope: SearchScope;
-  groupBy: GroupBy;
-  minGroupSize: number;
-  
-  // Similarity threshold
+  // Similarity threshold (0-1)
   similarityThreshold: number;
+  
+  // Text processing options
   ignoreCase: boolean;
-  ignoreWhitespace: boolean;
-  ignoreNumbers: boolean;
+  ignoreSpecialChars: boolean;
+  ignorePunctuation: boolean;
+  
+  // Word filtering
+  minWordLength: number;
+  
+  // Search scope
+  searchScope: ('categories' | 'subcategories' | 'jobs')[];
+  
+  // Result grouping
+  groupBy: 'similarity' | 'category' | 'type';
+  minGroupSize: number;
 }
 
 export const defaultSearchOptions: DuplicateSearchOptions = {
@@ -31,15 +32,14 @@ export const defaultSearchOptions: DuplicateSearchOptions = {
   exactWords: true,
   similarMatch: true,
   partialMatch: false,
-  matchTypes: ['exact', 'exact_words', 'similar'],
-  ignoreSpecialChars: true,
-  searchScope: 'all',
-  groupBy: 'similarity',
-  minGroupSize: 2,
-  similarityThreshold: 80,
+  similarityThreshold: 0.8,
   ignoreCase: true,
-  ignoreWhitespace: true,
-  ignoreNumbers: false,
+  ignoreSpecialChars: true,
+  ignorePunctuation: true,
+  minWordLength: 3,
+  searchScope: ['categories', 'subcategories', 'jobs'],
+  groupBy: 'similarity',
+  minGroupSize: 2
 };
 
 export interface DuplicateOccurrence {
@@ -47,20 +47,20 @@ export interface DuplicateOccurrence {
   path: string;
   itemId: string;
   normalizedName: string;
-  categoryName: string;
-  subcategoryName: string;
+  categoryName?: string;
+  subcategoryName?: string;
   type: 'category' | 'subcategory' | 'job';
 }
 
 export interface DuplicateItem {
   id: string;
   text: string;
-  occurrences: DuplicateOccurrence[];
-  matchType: MatchType;
+  matchType: 'exact' | 'exact_words' | 'similar' | 'partial';
   similarity: number;
+  occurrences: DuplicateOccurrence[];
 }
 
-// Helper function to normalize text based on options
+// Text processing utilities
 const normalizeText = (text: string, options: DuplicateSearchOptions): string => {
   let normalized = text;
   
@@ -68,35 +68,37 @@ const normalizeText = (text: string, options: DuplicateSearchOptions): string =>
     normalized = normalized.toLowerCase();
   }
   
-  if (options.ignoreWhitespace) {
-    normalized = normalized.replace(/\s+/g, ' ').trim();
-  }
-  
   if (options.ignoreSpecialChars) {
-    normalized = normalized.replace(/[^\w\s]/g, '');
+    normalized = normalized.replace(/[^\w\s]/g, ' ');
   }
   
-  if (options.ignoreNumbers) {
-    normalized = normalized.replace(/\d+/g, '');
+  if (options.ignorePunctuation) {
+    normalized = normalized.replace(/[.,;:!?'"()[\]{}]/g, ' ');
   }
+  
+  // Remove extra whitespace
+  normalized = normalized.replace(/\s+/g, ' ').trim();
   
   return normalized;
 };
 
-// Calculate similarity between two strings
-const calculateSimilarity = (str1: string, str2: string): number => {
-  if (str1 === str2) return 100;
-  
-  const longer = str1.length > str2.length ? str1 : str2;
-  const shorter = str1.length > str2.length ? str2 : str1;
-  
-  if (longer.length === 0) return 100;
-  
-  const distance = levenshteinDistance(longer, shorter);
-  return Math.round((1 - distance / longer.length) * 100);
+const getWords = (text: string, minLength: number): string[] => {
+  return text.split(/\s+/).filter(word => word.length >= minLength);
 };
 
-// Levenshtein distance algorithm
+// Similarity calculation
+const calculateSimilarity = (text1: string, text2: string): number => {
+  if (text1 === text2) return 1.0;
+  
+  const longer = text1.length > text2.length ? text1 : text2;
+  const shorter = text1.length > text2.length ? text2 : text1;
+  
+  if (longer.length === 0) return 1.0;
+  
+  const editDistance = levenshteinDistance(longer, shorter);
+  return (longer.length - editDistance) / longer.length;
+};
+
 const levenshteinDistance = (str1: string, str2: string): number => {
   const matrix = Array(str2.length + 1).fill(null).map(() => Array(str1.length + 1).fill(null));
   
@@ -107,9 +109,9 @@ const levenshteinDistance = (str1: string, str2: string): number => {
     for (let i = 1; i <= str1.length; i++) {
       const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
       matrix[j][i] = Math.min(
-        matrix[j][i - 1] + 1,
-        matrix[j - 1][i] + 1,
-        matrix[j - 1][i - 1] + indicator
+        matrix[j][i - 1] + 1,     // deletion
+        matrix[j - 1][i] + 1,     // insertion
+        matrix[j - 1][i - 1] + indicator // substitution
       );
     }
   }
@@ -117,88 +119,51 @@ const levenshteinDistance = (str1: string, str2: string): number => {
   return matrix[str2.length][str1.length];
 };
 
-// Check if strings are exact word matches
-const isExactWordMatch = (str1: string, str2: string): boolean => {
-  const words1 = str1.toLowerCase().split(/\s+/).sort();
-  const words2 = str2.toLowerCase().split(/\s+/).sort();
-  
-  if (words1.length !== words2.length) return false;
-  
-  return words1.every((word, index) => word === words2[index]);
-};
-
-// Determine match type between two strings
-const getMatchType = (text1: string, text2: string, options: DuplicateSearchOptions): MatchType | null => {
-  const norm1 = normalizeText(text1, options);
-  const norm2 = normalizeText(text2, options);
-  
-  // Exact match
-  if (options.exactMatch && norm1 === norm2) {
-    return 'exact';
-  }
-  
-  // Exact words match
-  if (options.exactWords && isExactWordMatch(norm1, norm2)) {
-    return 'exact_words';
-  }
-  
-  // Similar match
-  if (options.similarMatch) {
-    const similarity = calculateSimilarity(norm1, norm2);
-    if (similarity >= options.similarityThreshold) {
-      return 'similar';
-    }
-  }
-  
-  // Partial match
-  if (options.partialMatch) {
-    if (norm1.includes(norm2) || norm2.includes(norm1)) {
-      return 'partial';
-    }
-  }
-  
-  return null;
-};
-
-// Extract all searchable items from categories
-const extractAllItems = (categories: ServiceMainCategory[]): DuplicateOccurrence[] => {
-  const items: DuplicateOccurrence[] = [];
+// Extract all items from categories
+const extractItems = (categories: ServiceMainCategory[], options: DuplicateSearchOptions) => {
+  const items: Array<{
+    id: string;
+    name: string;
+    type: 'category' | 'subcategory' | 'job';
+    categoryName?: string;
+    subcategoryName?: string;
+    path: string;
+  }> = [];
   
   categories.forEach(category => {
-    // Add category
-    items.push({
-      id: `category-${category.id}`,
-      path: category.name,
-      itemId: category.id,
-      normalizedName: category.name,
-      categoryName: category.name,
-      subcategoryName: '',
-      type: 'category'
-    });
-    
-    // Add subcategories
-    category.subcategories?.forEach(subcategory => {
+    if (options.searchScope.includes('categories')) {
       items.push({
-        id: `subcategory-${subcategory.id}`,
-        path: `${category.name} > ${subcategory.name}`,
-        itemId: subcategory.id,
-        normalizedName: subcategory.name,
+        id: category.id,
+        name: category.name,
+        type: 'category',
         categoryName: category.name,
-        subcategoryName: subcategory.name,
-        type: 'subcategory'
+        path: category.name
       });
-      
-      // Add jobs
-      subcategory.jobs?.forEach(job => {
+    }
+    
+    category.subcategories?.forEach(subcategory => {
+      if (options.searchScope.includes('subcategories')) {
         items.push({
-          id: `job-${job.id}`,
-          path: `${category.name} > ${subcategory.name} > ${job.name}`,
-          itemId: job.id,
-          normalizedName: job.name,
+          id: subcategory.id,
+          name: subcategory.name,
+          type: 'subcategory',
           categoryName: category.name,
           subcategoryName: subcategory.name,
-          type: 'job'
+          path: `${category.name} > ${subcategory.name}`
         });
+      }
+      
+      subcategory.jobs?.forEach(job => {
+        if (options.searchScope.includes('jobs')) {
+          items.push({
+            id: job.id,
+            name: job.name,
+            type: 'job',
+            categoryName: category.name,
+            subcategoryName: subcategory.name,
+            path: `${category.name} > ${subcategory.name} > ${job.name}`
+          });
+        }
       });
     });
   });
@@ -206,84 +171,132 @@ const extractAllItems = (categories: ServiceMainCategory[]): DuplicateOccurrence
   return items;
 };
 
-// Filter items based on search scope
-const filterItemsByScope = (items: DuplicateOccurrence[], scope: SearchScope): DuplicateOccurrence[] => {
-  if (scope === 'all') return items;
-  
-  return items.filter(item => {
-    switch (scope) {
-      case 'categories': return item.type === 'category';
-      case 'subcategories': return item.type === 'subcategory';
-      case 'jobs': return item.type === 'job';
-      default: return true;
-    }
-  });
-};
-
 // Main duplicate search function
 export const findServiceDuplicates = (
-  categories: ServiceMainCategory[],
-  options: DuplicateSearchOptions = defaultSearchOptions
+  categories: ServiceMainCategory[], 
+  options: DuplicateSearchOptions
 ): DuplicateItem[] => {
-  console.log('Starting duplicate search with options:', options);
+  const items = extractItems(categories, options);
+  const duplicateGroups = new Map<string, DuplicateOccurrence[]>();
   
-  const allItems = extractAllItems(categories);
-  const filteredItems = filterItemsByScope(allItems, options.searchScope);
-  
-  console.log(`Found ${filteredItems.length} items to analyze`);
-  
-  const duplicateGroups: Map<string, DuplicateOccurrence[]> = new Map();
-  const processed = new Set<string>();
-  
-  // Group items by similarity
-  filteredItems.forEach((item1, index) => {
-    if (processed.has(item1.id)) return;
+  // Process each item
+  for (let i = 0; i < items.length; i++) {
+    const item1 = items[i];
+    const normalized1 = normalizeText(item1.name, options);
     
-    const similarItems: DuplicateOccurrence[] = [item1];
-    
-    filteredItems.slice(index + 1).forEach(item2 => {
-      if (processed.has(item2.id)) return;
+    for (let j = i + 1; j < items.length; j++) {
+      const item2 = items[j];
+      const normalized2 = normalizeText(item2.name, options);
       
-      const matchType = getMatchType(item1.normalizedName, item2.normalizedName, options);
-      if (matchType && options.matchTypes.includes(matchType)) {
-        similarItems.push(item2);
-        processed.add(item2.id);
+      let matchType: DuplicateItem['matchType'] | null = null;
+      let similarity = 0;
+      
+      // Check for exact match
+      if (options.exactMatch && normalized1 === normalized2) {
+        matchType = 'exact';
+        similarity = 1.0;
       }
-    });
-    
-    if (similarItems.length >= options.minGroupSize) {
-      duplicateGroups.set(item1.normalizedName, similarItems);
-      processed.add(item1.id);
-    }
-  });
-  
-  // Convert groups to DuplicateItem format
-  const duplicateItems: DuplicateItem[] = [];
-  let groupIndex = 0;
-  
-  duplicateGroups.forEach((occurrences, text) => {
-    if (occurrences.length >= options.minGroupSize) {
-      // Calculate match type and similarity for the group
-      const firstItem = occurrences[0];
-      const secondItem = occurrences[1];
-      const matchType = getMatchType(firstItem.normalizedName, secondItem.normalizedName, options) || 'similar';
-      const similarity = calculateSimilarity(firstItem.normalizedName, secondItem.normalizedName);
+      // Check for exact words match
+      else if (options.exactWords) {
+        const words1 = getWords(normalized1, options.minWordLength);
+        const words2 = getWords(normalized2, options.minWordLength);
+        
+        if (words1.length > 0 && words2.length > 0) {
+          const commonWords = words1.filter(word => words2.includes(word));
+          const wordSimilarity = (commonWords.length * 2) / (words1.length + words2.length);
+          
+          if (wordSimilarity >= 0.8) {
+            matchType = 'exact_words';
+            similarity = wordSimilarity;
+          }
+        }
+      }
+      // Check for similar match
+      else if (options.similarMatch) {
+        similarity = calculateSimilarity(normalized1, normalized2);
+        if (similarity >= options.similarityThreshold) {
+          matchType = 'similar';
+        }
+      }
+      // Check for partial match
+      else if (options.partialMatch) {
+        if (normalized1.includes(normalized2) || normalized2.includes(normalized1)) {
+          matchType = 'partial';
+          similarity = Math.max(normalized2.length / normalized1.length, normalized1.length / normalized2.length);
+        }
+      }
       
-      duplicateItems.push({
-        id: `duplicate-group-${groupIndex++}`,
-        text: text,
-        occurrences: occurrences,
-        matchType: matchType,
-        similarity: similarity
+      if (matchType) {
+        const groupKey = `${Math.min(i, j)}-${Math.max(i, j)}`;
+        
+        if (!duplicateGroups.has(groupKey)) {
+          duplicateGroups.set(groupKey, []);
+        }
+        
+        const group = duplicateGroups.get(groupKey)!;
+        
+        // Add first item if not already added
+        if (!group.some(g => g.itemId === item1.id)) {
+          group.push({
+            id: item1.id,
+            path: item1.path,
+            itemId: item1.id,
+            normalizedName: normalized1,
+            categoryName: item1.categoryName,
+            subcategoryName: item1.subcategoryName,
+            type: item1.type
+          });
+        }
+        
+        // Add second item if not already added
+        if (!group.some(g => g.itemId === item2.id)) {
+          group.push({
+            id: item2.id,
+            path: item2.path,
+            itemId: item2.id,
+            normalizedName: normalized2,
+            categoryName: item2.categoryName,
+            subcategoryName: item2.subcategoryName,
+            type: item2.type
+          });
+        }
+      }
+    }
+  }
+  
+  // Convert to DuplicateItem format
+  const duplicates: DuplicateItem[] = [];
+  let duplicateId = 1;
+  
+  duplicateGroups.forEach((occurrences, key) => {
+    if (occurrences.length >= options.minGroupSize) {
+      const firstOccurrence = occurrences[0];
+      const secondOccurrence = occurrences[1];
+      
+      const similarity = calculateSimilarity(
+        firstOccurrence.normalizedName,
+        secondOccurrence.normalizedName
+      );
+      
+      let matchType: DuplicateItem['matchType'] = 'similar';
+      if (similarity === 1.0) matchType = 'exact';
+      else if (similarity >= 0.9) matchType = 'exact_words';
+      else if (similarity >= 0.7) matchType = 'similar';
+      else matchType = 'partial';
+      
+      duplicates.push({
+        id: `duplicate-${duplicateId++}`,
+        text: firstOccurrence.normalizedName,
+        matchType,
+        similarity,
+        occurrences
       });
     }
   });
   
-  console.log(`Found ${duplicateItems.length} duplicate groups`);
-  return duplicateItems;
+  return duplicates;
 };
 
-// Generate recommendations based on duplicates found
 export const generateDuplicateRecommendations = (duplicates: DuplicateItem[]): string[] => {
   const recommendations: string[] = [];
   
@@ -292,34 +305,24 @@ export const generateDuplicateRecommendations = (duplicates: DuplicateItem[]): s
     return recommendations;
   }
   
-  const exactCount = duplicates.filter(d => d.matchType === 'exact').length;
-  const exactWordsCount = duplicates.filter(d => d.matchType === 'exact_words').length;
-  const similarCount = duplicates.filter(d => d.matchType === 'similar').length;
-  const partialCount = duplicates.filter(d => d.matchType === 'partial').length;
+  const exactDuplicates = duplicates.filter(d => d.matchType === 'exact');
+  const wordDuplicates = duplicates.filter(d => d.matchType === 'exact_words');
+  const similarDuplicates = duplicates.filter(d => d.matchType === 'similar');
   
-  if (exactCount > 0) {
-    recommendations.push(`${exactCount} exact duplicates found - these should be merged immediately`);
+  if (exactDuplicates.length > 0) {
+    recommendations.push(`Found ${exactDuplicates.length} exact duplicate(s). Consider removing or merging these immediately.`);
   }
   
-  if (exactWordsCount > 0) {
-    recommendations.push(`${exactWordsCount} items with identical words found - consider standardizing naming`);
+  if (wordDuplicates.length > 0) {
+    recommendations.push(`Found ${wordDuplicates.length} items with identical words. Review for potential consolidation.`);
   }
   
-  if (similarCount > 0) {
-    recommendations.push(`${similarCount} similar items found - review for potential consolidation`);
+  if (similarDuplicates.length > 0) {
+    recommendations.push(`Found ${similarDuplicates.length} similar items. Consider standardizing naming conventions.`);
   }
   
-  if (partialCount > 0) {
-    recommendations.push(`${partialCount} items with partial matches - may indicate inconsistent naming patterns`);
-  }
-  
-  // Category-specific recommendations
-  const categoryDuplicates = duplicates.filter(d => 
-    d.occurrences.some(o => o.type === 'category')
-  );
-  
-  if (categoryDuplicates.length > 0) {
-    recommendations.push("Category duplicates detected - consider reorganizing your main service categories");
+  if (duplicates.length > 10) {
+    recommendations.push("High number of duplicates detected. Consider implementing naming standards and regular audits.");
   }
   
   return recommendations;
