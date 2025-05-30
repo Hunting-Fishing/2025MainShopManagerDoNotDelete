@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { WorkOrderFormHeader } from "@/components/work-orders/WorkOrderFormHeader";
@@ -31,6 +30,21 @@ const WorkOrderCreate = () => {
   const vehicleYear = searchParams.get('equipment_year');
   const vehicleVin = searchParams.get('equipment_vin');
   const vehicleLicensePlate = searchParams.get('equipment_license_plate');
+
+  // Prepare pre-populated customer data
+  const prePopulatedCustomer = customerName ? {
+    customerName,
+    customerEmail: customerEmail || undefined,
+    customerPhone: customerPhone || undefined,
+    customerAddress: customerAddress || undefined,
+    equipmentName: equipmentName || undefined,
+    equipmentType: equipmentType || undefined,
+    vehicleMake: vehicleMake || undefined,
+    vehicleModel: vehicleModel || undefined,
+    vehicleYear: vehicleYear || undefined,
+    vehicleLicensePlate: vehicleLicensePlate || undefined,
+    vehicleVin: vehicleVin || undefined,
+  } : undefined;
 
   const form = useForm<WorkOrderFormSchemaValues>({
     resolver: zodResolver(workOrderFormSchema),
@@ -141,6 +155,7 @@ const WorkOrderCreate = () => {
       <WorkOrderCreateForm
         form={form}
         onSubmit={onSubmit}
+        prePopulatedCustomer={prePopulatedCustomer}
       />
     </div>
   );
