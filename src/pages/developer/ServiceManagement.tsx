@@ -1,17 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
-import { Link } from "react-router-dom";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, Database, AlertCircle } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import ServiceAnalytics from '@/components/developer/service-management/ServiceAnalytics';
-import ServiceBulkImport from '@/components/developer/service-management/ServiceBulkImport';
-import ServicesPriceReport from '@/components/developer/service-management/ServicesPriceReport';
-import ServiceHierarchyBrowser from '@/components/developer/service-management/ServiceHierarchyBrowser';
-import ServiceDebugInfo from '@/components/developer/service-management/ServiceDebugInfo';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
-import { fetchServiceCategories } from '@/lib/services/serviceApi';
+import ServiceQualityAnalysis from '@/components/developer/service-management/ServiceQualityAnalysis';
+import ServiceHierarchyBrowser from '@/components/developer/service-management/ServiceHierarchyBrowser';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ServiceManagement() {
