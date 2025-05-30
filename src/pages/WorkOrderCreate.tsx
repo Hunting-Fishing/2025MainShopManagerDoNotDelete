@@ -1,164 +1,104 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { WorkOrderFormHeader } from "@/components/work-orders/WorkOrderFormHeader";
-import { WorkOrderCreateForm } from "@/components/work-orders/WorkOrderCreateForm";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { workOrderFormSchema, WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Info } from "lucide-react";
 
-const WorkOrderCreate = () => {
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { WorkOrderCreateForm } from '@/components/work-orders/WorkOrderCreateForm';
+import { createWorkOrder } from '@/services/workOrder';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { workOrderFormSchema, WorkOrderFormSchemaValues } from '@/schemas/workOrderSchema';
+import { useToast } from '@/hooks/use-toast';
+import { formatWorkOrderForDb } from '@/utils/workOrders/formatters';
+
+export default function WorkOrderCreate() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  
-  // Extract customer and equipment information from URL parameters
-  const customerId = searchParams.get('customerId');
-  const customerName = searchParams.get('customerName');
-  const customerEmail = searchParams.get('customerEmail');
-  const customerPhone = searchParams.get('customerPhone');
-  const customerAddress = searchParams.get('customerAddress');
-  const equipmentType = searchParams.get('equipmentType');
-  const equipmentName = searchParams.get('equipmentName');
-  const equipmentId = searchParams.get('equipmentId');
-  
-  // Extract equipment details
-  const vehicleMake = searchParams.get('equipment_make');
-  const vehicleModel = searchParams.get('equipment_model');
-  const vehicleYear = searchParams.get('equipment_year');
-  const vehicleVin = searchParams.get('equipment_vin');
-  const vehicleLicensePlate = searchParams.get('equipment_license_plate');
+  const { toast } = useToast();
 
-  // Prepare pre-populated customer data
-  const prePopulatedCustomer = customerName ? {
-    customerName,
-    customerEmail: customerEmail || undefined,
-    customerPhone: customerPhone || undefined,
-    customerAddress: customerAddress || undefined,
-    equipmentName: equipmentName || undefined,
-    equipmentType: equipmentType || undefined,
-    vehicleMake: vehicleMake || undefined,
-    vehicleModel: vehicleModel || undefined,
-    vehicleYear: vehicleYear || undefined,
-    vehicleLicensePlate: vehicleLicensePlate || undefined,
-    vehicleVin: vehicleVin || undefined,
-  } : undefined;
+  // Get pre-populated data from URL params
+  const prePopulatedCustomer = {
+    customerName: searchParams.get('customerName') || undefined,
+    customerEmail: searchParams.get('customerEmail') || undefined,
+    customerPhone: searchParams.get('customerPhone') || undefined,
+    customerAddress: searchParams.get('customerAddress') || undefined,
+    equipmentName: searchParams.get('equipmentName') || undefined,
+    equipmentType: searchParams.get('equipmentType') || undefined,
+    vehicleMake: searchParams.get('vehicleMake') || undefined,
+    vehicleModel: searchParams.get('vehicleModel') || undefined,
+    vehicleYear: searchParams.get('vehicleYear') || undefined,
+    vehicleLicensePlate: searchParams.get('vehicleLicensePlate') || undefined,
+    vehicleVin: searchParams.get('vehicleVin') || undefined
+  };
 
   const form = useForm<WorkOrderFormSchemaValues>({
     resolver: zodResolver(workOrderFormSchema),
     defaultValues: {
-      customer: customerName || "",
-      description: equipmentName ? `Service for ${equipmentName}` : "",
+      customer: prePopulatedCustomer.customerName || "",
+      description: "",
       status: "pending",
       priority: "medium",
       technician: "",
-      location: customerAddress || "",
+      location: "",
       dueDate: "",
       notes: "",
-      vehicleMake: vehicleMake || "",
-      vehicleModel: vehicleModel || "",
-      vehicleYear: vehicleYear || "",
+      vehicleMake: prePopulatedCustomer.vehicleMake || "",
+      vehicleModel: prePopulatedCustomer.vehicleModel || "",
+      vehicleYear: prePopulatedCustomer.vehicleYear || "",
       odometer: "",
-      licensePlate: vehicleLicensePlate || "",
-      vin: vehicleVin || "",
+      licensePlate: prePopulatedCustomer.vehicleLicensePlate || "",
+      vin: prePopulatedCustomer.vehicleVin || "",
       inventoryItems: []
     }
   });
 
-  // Update form when URL params change
-  useEffect(() => {
-    if (customerName) {
-      form.setValue('customer', customerName);
-    }
-    if (equipmentName) {
-      form.setValue('description', `Service for ${equipmentName}`);
-    }
-    if (customerAddress) {
-      form.setValue('location', customerAddress);
-    }
-    if (vehicleMake) {
-      form.setValue('vehicleMake', vehicleMake);
-    }
-    if (vehicleModel) {
-      form.setValue('vehicleModel', vehicleModel);
-    }
-    if (vehicleYear) {
-      form.setValue('vehicleYear', vehicleYear);
-    }
-    if (vehicleLicensePlate) {
-      form.setValue('licensePlate', vehicleLicensePlate);
-    }
-    if (vehicleVin) {
-      form.setValue('vin', vehicleVin);
-    }
-  }, [searchParams, form]);
-
-  const onSubmit = async (values: WorkOrderFormSchemaValues) => {
+  const handleSubmit = async (values: WorkOrderFormSchemaValues) => {
     try {
-      setIsSubmitting(true);
+      console.log('Submitting work order:', values);
       
-      // Include customer information in the work order data
-      const workOrderData = {
-        ...values,
-        customer_id: customerId,
-        customer_email: customerEmail,
-        customer_phone: customerPhone,
-        customer_address: customerAddress,
-        equipment_id: equipmentId,
-        equipment_type: equipmentType
-      };
+      // Format the data for database insertion
+      const workOrderData = formatWorkOrderForDb({
+        customer_id: searchParams.get('customerId') || undefined,
+        description: values.description,
+        status: values.status,
+        service_type: 'General Service',
+        // Add other fields as needed
+      });
+
+      const result = await createWorkOrder(workOrderData);
       
-      console.log("Submitting work order:", workOrderData);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setSuccessMessage("Work order created successfully!");
-      // Navigate after a short delay to show the success message
-      setTimeout(() => {
-        navigate("/work-orders");
-      }, 2000);
+      if (result) {
+        console.log('Work order created successfully:', result);
+        toast({
+          title: "Success",
+          description: "Work order created successfully",
+        });
+        navigate('/work-orders');
+      } else {
+        throw new Error('Failed to create work order');
+      }
     } catch (error) {
-      console.error("Error creating work order:", error);
-    } finally {
-      setIsSubmitting(false);
+      console.error('Error creating work order:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create work order. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <WorkOrderFormHeader 
-        title="Create Work Order" 
-        description="Create a new work order for a customer's vehicle service" 
-      />
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Create Work Order</h1>
+        <p className="text-muted-foreground">
+          Create a new work order for tracking service tasks.
+        </p>
+      </div>
 
-      {/* Show customer info if pre-populated */}
-      {customerName && (
-        <Alert className="mb-6">
-          <Info className="h-4 w-4" />
-          <AlertDescription>
-            Creating work order for <strong>{customerName}</strong>
-            {equipmentName && <span> - {equipmentName}</span>}
-            {customerEmail && <span> ({customerEmail})</span>}
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {successMessage && (
-        <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-4">
-          <p className="text-green-700">{successMessage}</p>
-        </div>
-      )}
-
-      <WorkOrderCreateForm
-        form={form}
-        onSubmit={onSubmit}
+      <WorkOrderCreateForm 
+        form={form} 
+        onSubmit={handleSubmit}
         prePopulatedCustomer={prePopulatedCustomer}
       />
     </div>
   );
-};
-
-export default WorkOrderCreate;
+}

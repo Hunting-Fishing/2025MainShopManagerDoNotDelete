@@ -2,83 +2,68 @@
 import { WorkOrder } from "@/types/workOrder";
 
 /**
- * Format date to a readable string
+ * Normalize work order data from database format to application format
  */
-export const formatDate = (date: string | Date): string => {
-  if (!date) return '';
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
-  return dateObj.toLocaleDateString();
-};
+export const normalizeWorkOrder = (dbWorkOrder: any): WorkOrder => {
+  if (!dbWorkOrder) {
+    throw new Error('Work order data is required');
+  }
 
-/**
- * Format time to a readable string
- */
-export const formatTime = (time: string): string => {
-  if (!time) return '';
-  const date = new Date(time);
-  return date.toLocaleTimeString();
-};
-
-/**
- * Format time duration in hours and minutes
- */
-export const formatTimeInHoursAndMinutes = (minutes: number): string => {
-  if (!minutes) return '0 minutes';
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  
-  if (hours === 0) return `${mins} minutes`;
-  if (mins === 0) return `${hours} hours`;
-  return `${hours}h ${mins}m`;
-};
-
-/**
- * Normalize work order data from database
- */
-export const normalizeWorkOrder = (data: any): WorkOrder => {
   return {
-    id: data.id,
-    customer_id: data.customer_id,
-    vehicle_id: data.vehicle_id,
-    technician_id: data.technician_id,
-    status: data.status,
-    description: data.description,
-    service_type: data.service_type,
-    estimated_hours: data.estimated_hours,
-    total_cost: data.total_cost,
-    created_at: data.created_at,
-    updated_at: data.updated_at,
-    start_time: data.start_time,
-    end_time: data.end_time,
-    service_category_id: data.service_category_id,
-    invoice_id: data.invoice_id,
-    invoiced_at: data.invoiced_at,
+    id: dbWorkOrder.id,
+    customer_id: dbWorkOrder.customer_id,
+    vehicle_id: dbWorkOrder.vehicle_id,
+    advisor_id: dbWorkOrder.advisor_id,
+    technician_id: dbWorkOrder.technician_id,
+    estimated_hours: dbWorkOrder.estimated_hours,
+    total_cost: dbWorkOrder.total_cost,
+    created_by: dbWorkOrder.created_by,
+    created_at: dbWorkOrder.created_at,
+    updated_at: dbWorkOrder.updated_at,
+    start_time: dbWorkOrder.start_time,
+    end_time: dbWorkOrder.end_time,
+    service_category_id: dbWorkOrder.service_category_id,
+    invoiced_at: dbWorkOrder.invoiced_at,
+    status: dbWorkOrder.status || 'pending',
+    description: dbWorkOrder.description || '',
+    service_type: dbWorkOrder.service_type,
+    invoice_id: dbWorkOrder.invoice_id,
     
-    // Legacy fields for backward compatibility
-    customer: data.customer || '',
-    technician: data.technician || '',
-    priority: data.priority || 'medium',
-    date: data.created_at,
-    dueDate: data.end_time || data.created_at,
-    location: data.location || '',
-    notes: data.description || '',
+    // Backward compatibility fields
+    customer: dbWorkOrder.customer || '',
+    technician: dbWorkOrder.technician || '',
+    date: dbWorkOrder.created_at,
+    dueDate: dbWorkOrder.end_time,
+    due_date: dbWorkOrder.end_time,
+    priority: dbWorkOrder.priority || 'medium',
+    location: dbWorkOrder.location || '',
+    notes: dbWorkOrder.notes || dbWorkOrder.description || '',
+    
+    // Additional fields
     timeEntries: [],
-    inventoryItems: []
+    inventoryItems: [],
+    inventory_items: []
   };
 };
 
 /**
- * Calculate total time from time entries
+ * Format work order for database insertion/update
  */
-export const calculateTotalTime = (timeEntries: any[]): number => {
-  return timeEntries.reduce((total, entry) => total + (entry.duration || 0), 0);
-};
-
-/**
- * Calculate billable time from time entries
- */
-export const calculateBillableTime = (timeEntries: any[]): number => {
-  return timeEntries
-    .filter(entry => entry.billable)
-    .reduce((total, entry) => total + (entry.duration || 0), 0);
+export const formatWorkOrderForDb = (workOrder: Partial<WorkOrder>) => {
+  return {
+    customer_id: workOrder.customer_id,
+    vehicle_id: workOrder.vehicle_id,
+    advisor_id: workOrder.advisor_id,
+    technician_id: workOrder.technician_id,
+    estimated_hours: workOrder.estimated_hours,
+    total_cost: workOrder.total_cost,
+    created_by: workOrder.created_by,
+    start_time: workOrder.start_time,
+    end_time: workOrder.end_time || workOrder.dueDate,
+    service_category_id: workOrder.service_category_id,
+    status: workOrder.status || 'pending',
+    description: workOrder.description,
+    service_type: workOrder.service_type,
+    invoice_id: workOrder.invoice_id
+  };
 };
