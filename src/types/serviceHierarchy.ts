@@ -5,6 +5,7 @@ export interface ServiceJob {
   description?: string;
   estimatedTime?: number; // in minutes
   price?: number;
+  subcategory_id?: string; // Added to link jobs to subcategories
 }
 
 export interface ServiceSubcategory {

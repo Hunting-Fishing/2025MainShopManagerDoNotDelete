@@ -1,275 +1,140 @@
-
-import { read, utils } from 'xlsx';
+import * as XLSX from 'xlsx';
 import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
 
-export interface ParsedExcelData {
-  categories: ServiceMainCategory[];
-  stats: {
-    totalCategories: number;
-    totalSubcategories: number;
-    totalJobs: number;
-  };
-}
-
-export async function parseExcelFile(file: File): Promise<ParsedExcelData> {
-  console.log('Starting Excel file parsing...');
-  
+export function parseExcelToServiceCategories(file: File): Promise<ServiceMainCategory[]> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    
-    reader.onload = async (e) => {
+
+    reader.onload = (e: any) => {
       try {
-        const data = e.target?.result;
-        if (!data) {
-          throw new Error('Failed to read file data');
-        }
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
 
-        console.log('File loaded, parsing workbook...');
-        const workbook = read(data, { type: 'array' });
-        
-        if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
-          throw new Error('No sheets found in the Excel file');
-        }
-
-        console.log(`Found ${workbook.SheetNames.length} sheets in workbook`);
-        
         const categories: ServiceMainCategory[] = [];
-        let totalSubcategories = 0;
-        let totalJobs = 0;
 
-        // Process each sheet (category)
-        for (let i = 0; i < workbook.SheetNames.length; i++) {
-          const sheetName = workbook.SheetNames[i];
-          console.log(`Processing sheet ${i + 1}/${workbook.SheetNames.length}: ${sheetName}`);
-          
-          try {
-            const category = await parseSheetAsCategory(workbook, sheetName, i);
-            if (category) {
-              categories.push(category);
-              totalSubcategories += category.subcategories.length;
-              totalJobs += category.subcategories.reduce((sum, sub) => sum + sub.jobs.length, 0);
+        workbook.SheetNames.forEach(sheetName => {
+          const worksheet = workbook.Sheets[sheetName];
+          const aoa = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' }) as any[][];
+
+          if (!aoa || aoa.length < 2) {
+            console.warn(`Sheet "${sheetName}" is empty or has an invalid format.`);
+            return;
+          }
+
+          const subcategoryNames: string[] = aoa[0].slice(1);
+          const jobsData: string[][] = aoa.slice(1);
+
+          const subcategories: ServiceSubcategory[] = subcategoryNames.map(name => ({
+            id: crypto.randomUUID(),
+            name: name.trim(),
+            description: '',
+            jobs: []
+          }));
+
+          jobsData.forEach(rowData => {
+            const jobName = rowData[0].trim();
+            if (!jobName) return;
+
+            for (let i = 1; i < rowData.length; i++) {
+              const jobDescription = rowData[i].trim();
+              if (!jobDescription) continue;
+
+              subcategories[i - 1].jobs.push({
+                id: crypto.randomUUID(),
+                name: jobDescription,
+                description: jobName,
+                estimatedTime: 60,
+                price: 50
+              });
             }
-          } catch (sheetError) {
-            console.warn(`Error processing sheet "${sheetName}":`, sheetError);
-            // Continue with other sheets instead of failing completely
-          }
+          });
 
-          // Add a small delay to prevent blocking
-          if (i % 5 === 0) {
-            await new Promise(resolve => setTimeout(resolve, 10));
-          }
-        }
-
-        if (categories.length === 0) {
-          throw new Error('No valid categories could be parsed from the Excel file');
-        }
-
-        console.log(`Parsing completed: ${categories.length} categories, ${totalSubcategories} subcategories, ${totalJobs} jobs`);
-
-        resolve({
-          categories,
-          stats: {
-            totalCategories: categories.length,
-            totalSubcategories,
-            totalJobs
-          }
+          categories.push({
+            id: crypto.randomUUID(),
+            name: sheetName,
+            description: '',
+            subcategories: subcategories,
+            position: 0
+          });
         });
+
+        resolve(categories);
+
       } catch (error) {
         console.error('Error parsing Excel file:', error);
         reject(error);
       }
     };
 
-    reader.onerror = () => {
-      reject(new Error('Failed to read the file'));
+    reader.onerror = (error) => {
+      console.error('Error reading file:', error);
+      reject(error);
     };
 
     reader.readAsArrayBuffer(file);
   });
 }
 
-async function parseSheetAsCategory(workbook: any, sheetName: string, position: number): Promise<ServiceMainCategory | null> {
-  const sheet = workbook.Sheets[sheetName];
-  if (!sheet) {
-    console.warn(`Sheet "${sheetName}" not found`);
-    return null;
-  }
-
-  // Convert sheet to JSON with header row
-  const jsonData = utils.sheet_to_json(sheet, { 
-    header: 1, 
-    defval: '',
-    raw: false 
-  }) as string[][];
-
-  if (jsonData.length < 2) {
-    console.warn(`Sheet "${sheetName}" has insufficient data (needs at least 2 rows)`);
-    return null;
-  }
-
-  // First row contains subcategory headers starting from column B (index 1)
-  const headerRow = jsonData[0];
-  const subcategoryNames = headerRow.slice(1).filter(name => name && name.trim() !== '');
-
-  if (subcategoryNames.length === 0) {
-    console.warn(`Sheet "${sheetName}" has no valid subcategory headers`);
-    return null;
-  }
-
-  console.log(`Found ${subcategoryNames.length} subcategories in "${sheetName}"`);
-
-  // Create subcategories with their jobs
-  const subcategories: ServiceSubcategory[] = [];
-
-  for (let colIndex = 0; colIndex < subcategoryNames.length; colIndex++) {
-    const subcategoryName = subcategoryNames[colIndex].trim();
-    const jobs: ServiceJob[] = [];
-
-    // Collect jobs from this column (starting from row 2)
-    for (let rowIndex = 1; rowIndex < jsonData.length; rowIndex++) {
-      const row = jsonData[rowIndex];
-      const jobName = row[colIndex + 1]; // +1 because subcategories start from column B
-
-      if (jobName && jobName.trim() !== '') {
-        jobs.push({
-          id: `${sheetName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${subcategoryName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${jobs.length + 1}`,
-          name: jobName.trim(),
-          description: `${jobName.trim()} service`
-        });
-      }
-    }
-
-    if (jobs.length > 0) {
-      subcategories.push({
-        id: `${sheetName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${subcategoryName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
-        name: subcategoryName,
-        description: `${subcategoryName} services`,
-        jobs
-      });
-    }
-  }
-
-  if (subcategories.length === 0) {
-    console.warn(`Sheet "${sheetName}" produced no valid subcategories`);
-    return null;
-  }
-
-  return {
-    id: sheetName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-    name: sheetName,
-    description: `${sheetName} services`,
-    position: position + 1,
-    subcategories
-  };
-}
-
-export function generateExcelTemplate(): void {
-  console.log('Generating Excel template...');
+export function generateServiceTemplate(): ArrayBuffer {
+  console.log('Generating service template...');
   
-  const workbook = utils.book_new();
-
-  // Sample categories with their subcategories and jobs
-  const sampleData = [
+  const workbook = XLSX.utils.book_new();
+  
+  // Sample data for demonstration
+  const sampleCategories = [
     {
-      category: 'Oil Change & Maintenance',
-      subcategories: {
-        'Oil Changes': [
-          'Standard Oil Change',
-          'Synthetic Oil Change', 
-          'High Mileage Oil Change',
-          'Diesel Oil Change'
-        ],
-        'Filter Services': [
-          'Air Filter Replacement',
-          'Cabin Filter Replacement',
-          'Fuel Filter Replacement',
-          'Oil Filter Replacement'
-        ],
-        'Fluid Services': [
-          'Transmission Fluid Change',
-          'Coolant Flush',
-          'Brake Fluid Change',
-          'Power Steering Fluid'
-        ]
-      }
+      name: 'Automotive Services',
+      subcategories: ['Oil Change', 'Brake Service', 'Engine Repair'],
+      jobs: [
+        ['Basic Oil Change', 'Synthetic Oil Change', 'Oil Filter Replacement'],
+        ['Brake Pad Replacement', 'Brake Rotor Service', 'Brake Fluid Flush'],
+        ['Engine Diagnostics', 'Engine Tune-up', 'Engine Overhaul']
+      ]
     },
     {
-      category: 'Brakes',
-      subcategories: {
-        'Brake Pads': [
-          'Front Brake Pad Replacement',
-          'Rear Brake Pad Replacement',
-          'Brake Pad Inspection'
-        ],
-        'Brake Rotors': [
-          'Front Rotor Replacement',
-          'Rear Rotor Replacement',
-          'Rotor Resurfacing'
-        ],
-        'Brake System': [
-          'Brake Fluid Flush',
-          'Brake Line Repair',
-          'Brake Caliper Service'
-        ]
-      }
-    },
-    {
-      category: 'Tires',
-      subcategories: {
-        'Tire Installation': [
-          'Tire Mount & Balance',
-          'Tire Rotation',
-          'Tire Repair'
-        ],
-        'Wheel Services': [
-          'Wheel Alignment',
-          'Wheel Balancing',
-          'Wheel Repair'
-        ]
-      }
+      name: 'Electrical Services', 
+      subcategories: ['Battery Service', 'Alternator Service', 'Wiring'],
+      jobs: [
+        ['Battery Test', 'Battery Replacement', 'Battery Cleaning'],
+        ['Alternator Test', 'Alternator Replacement', 'Alternator Repair'],
+        ['Wire Repair', 'Harness Replacement', 'Electrical Diagnostics']
+      ]
     }
   ];
-
-  sampleData.forEach(categoryData => {
-    const subcategoryNames = Object.keys(categoryData.subcategories);
-    const maxJobs = Math.max(...Object.values(categoryData.subcategories).map(jobs => jobs.length));
+  
+  sampleCategories.forEach(category => {
+    console.log(`Creating sheet for category: ${category.name}`);
     
-    // Create sheet data
-    const sheetData: string[][] = [];
+    // Create worksheet data
+    const wsData: any[][] = [];
     
-    // Header row with subcategory names starting from column B
-    const headerRow = ['', ...subcategoryNames];
-    sheetData.push(headerRow);
+    // Header row (row 1): empty cell in A1, then subcategory names
+    const headerRow = ['', ...category.subcategories];
+    wsData.push(headerRow);
     
-    // Job rows
+    // Find the maximum number of jobs in any subcategory
+    const maxJobs = Math.max(...category.jobs.map(jobList => jobList.length));
+    
+    // Data rows: jobs for each subcategory
     for (let i = 0; i < maxJobs; i++) {
-      const row = [''];
-      subcategoryNames.forEach(subcatName => {
-        const jobs = categoryData.subcategories[subcatName as keyof typeof categoryData.subcategories];
-        row.push(jobs[i] || '');
+      const dataRow = [''];
+      category.jobs.forEach(jobList => {
+        dataRow.push(jobList[i] || '');
       });
-      sheetData.push(row);
+      wsData.push(dataRow);
     }
     
     // Create worksheet
-    const worksheet = utils.aoa_to_sheet(sheetData);
-    utils.book_append_sheet(workbook, worksheet, categoryData.category);
-  });
-
-  // Generate and download the file
-  const excelBuffer = utils.write(workbook, { bookType: 'xlsx', type: 'array' });
-  const blob = new Blob([excelBuffer], { 
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+    const worksheet = XLSX.utils.aoa_to_sheet(wsData);
+    
+    // Add the worksheet to workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, category.name);
   });
   
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = 'service_categories_template.xlsx';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  // Write workbook to ArrayBuffer
+  console.log('Writing workbook to buffer...');
+  const buffer = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
   
-  console.log('Template download initiated');
+  console.log('Template generated successfully');
+  return buffer;
 }
