@@ -3,8 +3,8 @@ import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import { Upload } from 'lucide-react';
-import { parseExcelFile } from '@/lib/services/excelParser';
+import { Upload, Download } from 'lucide-react';
+import { parseExcelFile, generateExcelTemplate } from '@/lib/services/excelParser';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
 import { toast } from 'sonner';
 import { bulkImportServiceCategories } from '@/lib/services/serviceApi';
@@ -30,6 +30,22 @@ const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onCancel, onCompl
     fileInputRef.current?.click();
   };
 
+  const handleDownloadTemplate = () => {
+    try {
+      const templateBlob = generateExcelTemplate();
+      const url = URL.createObjectURL(templateBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'service-categories-template.xlsx';
+      link.click();
+      URL.revokeObjectURL(url);
+      toast.success('Template downloaded successfully');
+    } catch (error) {
+      console.error('Failed to generate template:', error);
+      toast.error('Failed to generate template');
+    }
+  };
+
   const handleImport = async () => {
     if (!file) {
       toast.error('Please select a file to import');
@@ -40,14 +56,23 @@ const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onCancel, onCompl
       setIsProcessing(true);
       setProgress(10);
       
-      // Parse the Excel file
+      console.log('Parsing Excel file...');
       const result = await parseExcelFile(file);
+      
       if (result.errors.length > 0) {
         toast.error(`Import errors: ${result.errors.join(', ')}`);
+        setIsProcessing(false);
+        return;
+      }
+      
+      if (result.categories.length === 0) {
+        toast.error('No valid service categories found in the file');
+        setIsProcessing(false);
         return;
       }
       
       setProgress(50);
+      console.log('Importing categories to database...', result.categories);
       
       // Perform the bulk import
       await bulkImportServiceCategories(result.categories, (importProgress) => {
@@ -58,6 +83,7 @@ const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onCancel, onCompl
       
       // Notify completion
       onComplete(result.categories);
+      toast.success(`Successfully imported ${result.categories.length} service categories`);
     } catch (error) {
       console.error('Import error:', error);
       toast.error('Failed to import services: ' + (error instanceof Error ? error.message : 'Unknown error'));
@@ -70,7 +96,7 @@ const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onCancel, onCompl
       <div className="space-y-6">
         <div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Import Service Categories</h3>
-          <p className="text-gray-600 text-sm">Upload an Excel file to bulk import service categories, subcategories, and jobs.</p>
+          <p className="text-gray-600 text-sm">Upload an Excel file with multiple sheets to bulk import service categories, subcategories, and jobs.</p>
         </div>
 
         <div className="space-y-4">
@@ -95,6 +121,10 @@ const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onCancel, onCompl
               <Upload className="h-4 w-4 mr-2" />
               Browse
             </Button>
+            <Button type="button" onClick={handleDownloadTemplate} variant="outline" disabled={isProcessing}>
+              <Download className="h-4 w-4 mr-2" />
+              Template
+            </Button>
           </div>
 
           {isProcessing && (
@@ -106,13 +136,24 @@ const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onCancel, onCompl
             </div>
           )}
 
-          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-800">
-            <p className="font-medium mb-2">File Format Requirements:</p>
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
+            <p className="font-medium mb-2">Multi-Sheet Excel Format:</p>
             <ul className="list-disc list-inside space-y-1">
-              <li>File should be in Excel format (.xlsx or .xls)</li>
-              <li>Required columns: category, subcategory, service</li>
-              <li>Optional columns: price, time, description</li>
-              <li>Existing services with the same names may be updated</li>
+              <li><strong>Each sheet</strong> represents a service category (sheet name = category name)</li>
+              <li><strong>Row 1</strong> contains subcategory headers starting from column B</li>
+              <li><strong>Rows 2+</strong> contain services under each subcategory column</li>
+              <li><strong>Service format:</strong> "Service Name | $Price | Time" (price and time optional)</li>
+              <li><strong>Example:</strong> "Oil Change | $35 | 30min"</li>
+            </ul>
+          </div>
+
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-800">
+            <p className="font-medium mb-2">Tips:</p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>Download the template to see the exact format</li>
+              <li>Sheet names become category names</li>
+              <li>Empty cells are ignored</li>
+              <li>Services with the same names will be treated as duplicates</li>
             </ul>
           </div>
         </div>
