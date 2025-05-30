@@ -1,243 +1,196 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
-import { Upload, Download, FileSpreadsheet, AlertCircle, CheckCircle } from 'lucide-react';
-import { toast } from 'sonner';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Upload, FileText, AlertCircle, CheckCircle } from 'lucide-react';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
 import { bulkImportServices } from '@/lib/services/serviceApi';
-import { parseExcelFile, generateExcelTemplate } from '@/lib/services/excelParser';
+import { toast } from 'sonner';
 
 interface ServiceBulkImportProps {
-  onCancel: () => void;
-  onComplete: (categories: ServiceMainCategory[]) => void;
+  onImportComplete: (categories: ServiceMainCategory[]) => void;
 }
 
-const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onCancel, onComplete }) => {
-  const [file, setFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [previewData, setPreviewData] = useState<ServiceMainCategory[]>([]);
-  const [error, setError] = useState<string>('');
+interface ImportResult {
+  success: boolean;
+  message: string;
+  importedCount?: number;
+  errors?: string[];
+}
+
+export const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({
+  onImportComplete
+}) => {
+  const [isImporting, setIsImporting] = useState(false);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = event.target.files?.[0];
-    if (!selectedFile) return;
-
-    if (!selectedFile.name.match(/\.(xlsx|xls)$/)) {
-      setError('Please select a valid Excel file (.xlsx or .xls)');
-      return;
-    }
-
-    setFile(selectedFile);
-    setError('');
-    handleFilePreview(selectedFile);
-  };
-
-  const handleFilePreview = async (file: File) => {
-    try {
-      setIsUploading(true);
-      setUploadProgress(25);
-      
-      console.log('Starting file preview...');
-      const categories = await parseExcelFile(file);
-      
-      setUploadProgress(50);
-      console.log('Preview data parsed:', categories);
-      
-      setPreviewData(categories);
-      setUploadProgress(100);
-      
-      toast.success(`Preview ready: ${categories.length} categories found`);
-    } catch (error) {
-      console.error('Error previewing file:', error);
-      setError(error instanceof Error ? error.message : 'Failed to preview file');
-      toast.error('Failed to preview file');
-    } finally {
-      setIsUploading(false);
-      setUploadProgress(0);
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setImportResult(null);
     }
   };
 
   const handleImport = async () => {
-    if (!previewData.length) {
-      toast.error('No data to import');
+    if (!selectedFile) {
+      toast.error('Please select a file to import');
       return;
     }
 
-    try {
-      setIsUploading(true);
-      setUploadProgress(0);
-      
-      console.log('Starting import process...');
-      
-      // Calculate stats for display
-      const totalCategories = previewData.length;
-      const totalSubcategories = previewData.reduce((sum, cat) => sum + cat.subcategories.length, 0);
-      const totalJobs = previewData.reduce((sum, cat) => 
-        sum + cat.subcategories.reduce((subSum, sub) => subSum + sub.jobs.length, 0), 0
-      );
+    setIsImporting(true);
+    setImportResult(null);
 
-      toast.info(`Importing ${totalCategories} categories, ${totalSubcategories} subcategories, ${totalJobs} jobs...`);
-      
-      setUploadProgress(25);
-      
-      const importedCategories = await bulkImportServices(previewData);
-      
-      setUploadProgress(100);
-      
-      toast.success('Import completed successfully!');
-      onComplete(importedCategories);
-      
+    try {
+      // Read file content
+      const fileContent = await selectedFile.text();
+      let importData;
+
+      try {
+        importData = JSON.parse(fileContent);
+      } catch (parseError) {
+        throw new Error('Invalid JSON format');
+      }
+
+      // Validate data structure
+      if (!Array.isArray(importData)) {
+        throw new Error('Import data must be an array of service categories');
+      }
+
+      // Call the bulk import function
+      await bulkImportServices(importData);
+
+      const result: ImportResult = {
+        success: true,
+        message: `Successfully imported ${importData.length} service categories`,
+        importedCount: importData.length
+      };
+
+      setImportResult(result);
+      toast.success(result.message);
+
+      // Notify parent component with the imported data
+      onImportComplete(importData as ServiceMainCategory[]);
+
     } catch (error) {
-      console.error('Error importing data:', error);
-      setError(error instanceof Error ? error.message : 'Failed to import data');
-      toast.error('Import failed');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      const result: ImportResult = {
+        success: false,
+        message: `Import failed: ${errorMessage}`,
+        errors: [errorMessage]
+      };
+
+      setImportResult(result);
+      toast.error(result.message);
     } finally {
-      setIsUploading(false);
-      setUploadProgress(0);
+      setIsImporting(false);
     }
   };
 
-  const handleDownloadTemplate = async () => {
-    try {
-      console.log('Generating template...');
-      const buffer = generateExcelTemplate();
-      const blob = new Blob([buffer], { 
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-      });
-      
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'service-template.xlsx';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      
-      toast.success('Template downloaded successfully');
-    } catch (error) {
-      console.error('Error downloading template:', error);
-      toast.error('Failed to download template');
-    }
+  const resetImport = () => {
+    setSelectedFile(null);
+    setImportResult(null);
   };
-
-  const getPreviewStats = () => {
-    if (!previewData.length) return { categories: 0, subcategories: 0, jobs: 0 };
-    
-    const categories = previewData.length;
-    const subcategories = previewData.reduce((sum, cat) => sum + cat.subcategories.length, 0);
-    const jobs = previewData.reduce((sum, cat) => 
-      sum + cat.subcategories.reduce((subSum, sub) => subSum + sub.jobs.length, 0), 0
-    );
-    
-    return { categories, subcategories, jobs };
-  };
-
-  const stats = getPreviewStats();
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileSpreadsheet className="h-5 w-5" />
-            Service Bulk Import
-          </CardTitle>
-          <CardDescription>
-            Import service categories, subcategories, and jobs from an Excel file
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {error && (
-            <Alert className="border-red-200 bg-red-50">
-              <AlertCircle className="h-4 w-4 text-red-600" />
-              <AlertDescription className="text-red-700">{error}</AlertDescription>
-            </Alert>
-          )}
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Upload className="h-5 w-5" />
+          Bulk Import Services
+        </CardTitle>
+        <CardDescription>
+          Import multiple service categories, subcategories, and jobs from a JSON file
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {!importResult && (
+          <>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <div className="space-y-2">
+                <p className="text-sm text-gray-600">
+                  Select a JSON file containing service hierarchy data
+                </p>
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={handleFileSelect}
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                />
+              </div>
+            </div>
 
-          <div className="flex gap-4">
+            {selectedFile && (
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <p className="text-sm font-medium text-blue-900">
+                  Selected file: {selectedFile.name}
+                </p>
+                <p className="text-xs text-blue-700">
+                  Size: {(selectedFile.size / 1024).toFixed(2)} KB
+                </p>
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <Button
+                onClick={handleImport}
+                disabled={!selectedFile || isImporting}
+                className="flex-1"
+              >
+                {isImporting ? 'Importing...' : 'Import Services'}
+              </Button>
+              {selectedFile && (
+                <Button variant="outline" onClick={resetImport}>
+                  Clear
+                </Button>
+              )}
+            </div>
+          </>
+        )}
+
+        {importResult && (
+          <div className={`p-4 rounded-lg ${
+            importResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+          }`}>
+            <div className="flex items-start gap-3">
+              {importResult.success ? (
+                <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+              ) : (
+                <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+              )}
+              <div className="flex-1">
+                <p className={`font-medium ${
+                  importResult.success ? 'text-green-900' : 'text-red-900'
+                }`}>
+                  {importResult.message}
+                </p>
+                {importResult.errors && importResult.errors.length > 0 && (
+                  <ul className="mt-2 text-sm text-red-700 list-disc list-inside">
+                    {importResult.errors.map((error, index) => (
+                      <li key={index}>{error}</li>
+                    ))}
+                  </ul>
+                )}
+                {importResult.success && importResult.importedCount && (
+                  <p className="text-sm text-green-700 mt-1">
+                    {importResult.importedCount} categories processed successfully
+                  </p>
+                )}
+              </div>
+            </div>
             <Button
-              onClick={handleDownloadTemplate}
               variant="outline"
-              className="flex items-center gap-2"
+              size="sm"
+              onClick={resetImport}
+              className="mt-3"
             >
-              <Download className="h-4 w-4" />
-              Download Template
+              Import Another File
             </Button>
           </div>
-
-          <div className="space-y-2">
-            <label htmlFor="file-upload" className="text-sm font-medium">
-              Select Excel File
-            </label>
-            <Input
-              id="file-upload"
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={handleFileSelect}
-              disabled={isUploading}
-            />
-          </div>
-
-          {isUploading && (
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Processing...</span>
-                <span>{uploadProgress}%</span>
-              </div>
-              <Progress value={uploadProgress} className="w-full" />
-            </div>
-          )}
-
-          {previewData.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                  Preview Ready
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-3 gap-4 text-center">
-                  <div>
-                    <div className="text-2xl font-bold text-blue-600">{stats.categories}</div>
-                    <div className="text-sm text-gray-600">Categories</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-green-600">{stats.subcategories}</div>
-                    <div className="text-sm text-gray-600">Subcategories</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-purple-600">{stats.jobs}</div>
-                    <div className="text-sm text-gray-600">Jobs</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </CardContent>
-      </Card>
-
-      <div className="flex justify-end gap-3">
-        <Button variant="outline" onClick={onCancel} disabled={isUploading}>
-          Cancel
-        </Button>
-        <Button
-          onClick={handleImport}
-          disabled={!previewData.length || isUploading}
-          className="flex items-center gap-2"
-        >
-          <Upload className="h-4 w-4" />
-          {isUploading ? 'Importing...' : 'Import Services'}
-        </Button>
-      </div>
-    </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
-
-export default ServiceBulkImport;
