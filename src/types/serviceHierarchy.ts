@@ -13,6 +13,7 @@ export interface ServiceSubcategory {
   name: string;
   description?: string;
   jobs: ServiceJob[];
+  category_id?: string; // Added to link subcategories to categories
 }
 
 export interface ServiceMainCategory {
