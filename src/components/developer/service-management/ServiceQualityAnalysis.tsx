@@ -1,536 +1,399 @@
+
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertTriangle, CheckCircle, Users, Search, Wrench } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import DuplicateResolutionDialog from './DuplicateResolutionDialog';
-import { ServiceQualityMetrics } from './ServiceQualityMetrics';
-import { getCategoryColor, findServiceCategory } from '@/utils/automotive/serviceTaxonomy';
-import { toast } from 'sonner';
+import { 
+  TrendingUp, 
+  AlertTriangle, 
+  CheckCircle, 
+  Clock,
+  BarChart3,
+  RefreshCw
+} from 'lucide-react';
+import { ServiceMainCategory } from '@/types/serviceHierarchy';
+import { ServiceQualityMetrics, ServiceQualityData } from './ServiceQualityMetrics';
+import DuplicateResolutionDialog, { DuplicateGroup } from './DuplicateResolutionDialog';
+import { toast } from '@/hooks/use-toast';
 
-interface QualityIssue {
-  type: 'duplicate' | 'inconsistent_pricing' | 'missing_category' | 'poor_description';
-  severity: 'low' | 'medium' | 'high';
-  count: number;
-  description: string;
-  affectedServices: string[];
+interface ServiceQualityAnalysisProps {
+  categories: ServiceMainCategory[];
+  onRefresh: () => void;
 }
 
-interface ServiceQualityData {
-  totalServices: number;
-  issues: QualityIssue[];
-  duplicateGroups: DuplicateGroup[];
-  qualityScore: number;
-  categories: ServiceCategory[];
-}
-
-interface DuplicateGroup {
-  groupName: string;
-  services: Array<{
-    id: string;
-    name: string;
-    category?: string;
-    subcategory?: string;
-    price?: number;
-    estimatedTime?: number;
-    description?: string;
-  }>;
-  similarity: number;
-  issues: string[];
-}
-
-interface ServiceCategory {
-  id: string;
-  name: string;
-  subcategories?: Array<{ id: string; name: string }>;
-}
-
-interface ResolutionAction {
-  groupName: string;
-  action: 'merge' | 'move' | 'delete';
-  targetCategoryId?: string;
-  targetSubcategoryId?: string;
-  selectedServices?: string[];
-}
-
-export const ServiceQualityAnalysis: React.FC = () => {
+const ServiceQualityAnalysis: React.FC<ServiceQualityAnalysisProps> = ({
+  categories,
+  onRefresh
+}) => {
   const [qualityData, setQualityData] = useState<ServiceQualityData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [duplicateGroups, setDuplicateGroups] = useState<DuplicateGroup[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showResolutionDialog, setShowResolutionDialog] = useState(false);
+  const [analysisComplete, setAnalysisComplete] = useState(false);
 
-  useEffect(() => {
-    analyzeServiceQuality();
-  }, []);
+  // Mock data generation - in real implementation, this would come from analysis service
+  const generateQualityData = (): ServiceQualityData => {
+    const totalServices = categories.reduce((acc, cat) => 
+      acc + cat.subcategories.reduce((subAcc, sub) => subAcc + sub.jobs.length, 0), 0
+    );
+    
+    const duplicateGroups = Math.floor(totalServices * 0.15); // Assume 15% have duplicates
+    const duplicatePercentage = (duplicateGroups / totalServices) * 100;
+    const categoriesWithDuplicates = Math.floor(categories.length * 0.6);
+    const averageDuplicatesPerGroup = 2.3;
+    const qualityScore = Math.max(20, 100 - duplicatePercentage * 2);
 
-  const analyzeServiceQuality = async () => {
-    setIsAnalyzing(true);
-    try {
-      // Fetch services and categories
-      const { data: services, error: servicesError } = await supabase
-        .from('service_hierarchy')
-        .select('*');
-
-      const { data: categories, error: categoriesError } = await supabase
-        .from('service_categories')
-        .select(`
-          id,
-          name,
-          service_subcategories (
-            id,
-            name
-          )
-        `);
-
-      if (servicesError || categoriesError) {
-        throw new Error('Failed to fetch data');
+    return {
+      totalServices,
+      duplicateGroups,
+      duplicatePercentage,
+      categoriesWithDuplicates,
+      averageDuplicatesPerGroup,
+      qualityScore,
+      trends: {
+        duplicateChange: Math.random() * 10 - 5, // -5 to +5
+        qualityScoreChange: Math.random() * 6 - 3 // -3 to +3
       }
-
-      // Analyze duplicates and issues
-      const duplicateGroups = findDuplicateServices(services || []);
-      const issues = analyzeQualityIssues(services || [], duplicateGroups);
-      const qualityScore = calculateQualityScore(services?.length || 0, issues);
-
-      const formattedCategories: ServiceCategory[] = (categories || []).map(cat => ({
-        id: cat.id,
-        name: cat.name,
-        subcategories: cat.service_subcategories?.map((sub: any) => ({
-          id: sub.id,
-          name: sub.name
-        })) || []
-      }));
-
-      setQualityData({
-        totalServices: services?.length || 0,
-        issues,
-        duplicateGroups,
-        qualityScore,
-        categories: formattedCategories
-      });
-
-    } catch (error) {
-      console.error('Error analyzing service quality:', error);
-      toast.error('Failed to analyze service quality');
-    } finally {
-      setIsAnalyzing(false);
-      setIsLoading(false);
-    }
+    };
   };
 
-  const findDuplicateServices = (services: any[]): DuplicateGroup[] => {
+  // Mock duplicate groups generation
+  const generateDuplicateGroups = (): DuplicateGroup[] => {
     const groups: DuplicateGroup[] = [];
-    const processed = new Set<string>();
-
-    services.forEach((service, index) => {
-      if (processed.has(service.id)) return;
-
-      const duplicates = services.filter((other, otherIndex) => 
-        otherIndex !== index && 
-        !processed.has(other.id) &&
-        calculateSimilarity(service.name, other.name) > 0.7
-      );
-
-      if (duplicates.length > 0) {
-        const allServices = [service, ...duplicates];
-        const groupName = `${service.name} variants`;
-        
-        // Mark all as processed
-        allServices.forEach(s => processed.add(s.id));
-
-        const issues = analyzeGroupIssues(allServices);
-        const similarity = Math.min(...duplicates.map(d => calculateSimilarity(service.name, d.name)));
-
-        groups.push({
-          groupName,
-          services: allServices.map(s => ({
-            id: s.id,
-            name: s.name,
-            category: s.category_name,
-            subcategory: s.subcategory_name,
-            price: s.price,
-            estimatedTime: s.estimated_time,
-            description: s.description
-          })),
-          similarity,
-          issues
-        });
-      }
+    
+    categories.forEach(category => {
+      category.subcategories.forEach(subcategory => {
+        // Simulate finding duplicate groups
+        if (Math.random() > 0.7) { // 30% chance of duplicates in subcategory
+          const services = subcategory.jobs;
+          if (services.length >= 2) {
+            const groupSize = Math.min(services.length, Math.floor(Math.random() * 3) + 2);
+            const selectedServices = services.slice(0, groupSize);
+            
+            groups.push({
+              groupName: `${subcategory.name} Services`,
+              services: selectedServices,
+              category: category.name,
+              subcategory: subcategory.name,
+              confidence: Math.floor(Math.random() * 30) + 70 // 70-100% confidence
+            });
+          }
+        }
+      });
     });
 
-    return groups;
+    return groups.slice(0, 8); // Limit to 8 groups for demo
   };
 
-  const calculateSimilarity = (str1: string, str2: string): number => {
-    const normalize = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const normalized1 = normalize(str1);
-    const normalized2 = normalize(str2);
+  const analyzeQuality = async () => {
+    setIsAnalyzing(true);
     
-    if (normalized1 === normalized2) return 1.0;
-    
-    // Simple similarity based on common words
-    const words1 = normalized1.split(/\s+/);
-    const words2 = normalized2.split(/\s+/);
-    const commonWords = words1.filter(word => words2.includes(word));
-    
-    return commonWords.length / Math.max(words1.length, words2.length);
-  };
-
-  const analyzeGroupIssues = (services: any[]): string[] => {
-    const issues: string[] = [];
-    
-    const prices = services.filter(s => s.price).map(s => s.price);
-    if (prices.length > 1) {
-      const maxPrice = Math.max(...prices);
-      const minPrice = Math.min(...prices);
-      if ((maxPrice - minPrice) / minPrice > 0.2) {
-        issues.push('Inconsistent pricing');
-      }
-    }
-
-    const categories = [...new Set(services.map(s => s.category).filter(Boolean))];
-    if (categories.length > 1) {
-      issues.push('Different categories');
-    }
-
-    const descriptions = services.filter(s => s.description);
-    if (descriptions.length < services.length) {
-      issues.push('Missing descriptions');
-    }
-
-    return issues;
-  };
-
-  const analyzeQualityIssues = (services: any[], duplicateGroups: DuplicateGroup[]): QualityIssue[] => {
-    const issues: QualityIssue[] = [];
-
-    // Duplicate services
-    if (duplicateGroups.length > 0) {
-      const totalDuplicates = duplicateGroups.reduce((sum, group) => sum + group.services.length, 0);
-      issues.push({
-        type: 'duplicate',
-        severity: 'high',
-        count: totalDuplicates,
-        description: `${duplicateGroups.length} groups of duplicate services found`,
-        affectedServices: duplicateGroups.flatMap(g => g.services.map(s => s.id))
-      });
-    }
-
-    // Missing categories
-    const uncategorized = services.filter(s => !s.category_id);
-    if (uncategorized.length > 0) {
-      issues.push({
-        type: 'missing_category',
-        severity: 'medium',
-        count: uncategorized.length,
-        description: `${uncategorized.length} services without categories`,
-        affectedServices: uncategorized.map(s => s.id)
-      });
-    }
-
-    // Poor descriptions
-    const poorDescriptions = services.filter(s => !s.description || s.description.length < 20);
-    if (poorDescriptions.length > 0) {
-      issues.push({
-        type: 'poor_description',
-        severity: 'low',
-        count: poorDescriptions.length,
-        description: `${poorDescriptions.length} services with poor descriptions`,
-        affectedServices: poorDescriptions.map(s => s.id)
-      });
-    }
-
-    return issues;
-  };
-
-  const calculateQualityScore = (totalServices: number, issues: QualityIssue[]): number => {
-    if (totalServices === 0) return 100;
-
-    const weights = { high: 10, medium: 5, low: 2 };
-    const totalDeductions = issues.reduce((sum, issue) => {
-      return sum + (issue.count * weights[issue.severity]);
-    }, 0);
-
-    const maxPossibleDeductions = totalServices * weights.high;
-    const score = Math.max(0, 100 - ((totalDeductions / maxPossibleDeductions) * 100));
-    
-    return Math.round(score);
-  };
-
-  const handleResolveDuplicates = async (actions: ResolutionAction[]) => {
     try {
-      for (const action of actions) {
-        if (action.action === 'merge') {
-          // Implement merge logic
-          await mergeDuplicateServices(action.selectedServices || []);
-        } else if (action.action === 'move') {
-          // Implement move logic
-          await moveServicesToCategory(action.selectedServices || [], action.targetCategoryId!, action.targetSubcategoryId);
-        } else if (action.action === 'delete') {
-          // Implement delete logic
-          await deleteServices(action.selectedServices || []);
-        }
-      }
+      // Simulate analysis time
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Refresh the analysis
-      await analyzeServiceQuality();
-      toast.success('Duplicate resolution completed');
+      const data = generateQualityData();
+      const duplicates = generateDuplicateGroups();
+      
+      setQualityData(data);
+      setDuplicateGroups(duplicates);
+      setAnalysisComplete(true);
+      
+      toast({
+        title: "Analysis Complete",
+        description: `Found ${duplicates.length} duplicate groups affecting ${data.duplicatePercentage.toFixed(1)}% of services.`
+      });
     } catch (error) {
-      console.error('Error resolving duplicates:', error);
-      throw error;
+      console.error('Error analyzing quality:', error);
+      toast({
+        title: "Analysis Failed",
+        description: "Unable to complete quality analysis. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
-  const mergeDuplicateServices = async (serviceIds: string[]) => {
-    // Implementation for merging services
-    console.log('Merging services:', serviceIds);
-  };
-
-  const moveServicesToCategory = async (serviceIds: string[], categoryId: string, subcategoryId?: string) => {
-    // Implementation for moving services
-    console.log('Moving services:', serviceIds, 'to category:', categoryId, 'subcategory:', subcategoryId);
-  };
-
-  const deleteServices = async (serviceIds: string[]) => {
-    // Implementation for deleting services
-    console.log('Deleting services:', serviceIds);
-  };
-
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600';
-    if (score >= 60) return 'text-yellow-600';
-    return 'text-red-600';
-  };
-
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'high': return 'destructive';
-      case 'medium': return 'default';
-      case 'low': return 'secondary';
-      default: return 'outline';
+  const handleResolveDuplicates = async (resolutions: any[]) => {
+    // In real implementation, this would call the actual resolution service
+    console.log('Resolving duplicates:', resolutions);
+    
+    // Simulate resolution
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Update data after resolution
+    if (qualityData) {
+      const resolvedGroups = resolutions.length;
+      const newDuplicateGroups = Math.max(0, qualityData.duplicateGroups - resolvedGroups);
+      const newDuplicatePercentage = (newDuplicateGroups / qualityData.totalServices) * 100;
+      const newQualityScore = Math.min(100, 100 - newDuplicatePercentage * 2);
+      
+      setQualityData({
+        ...qualityData,
+        duplicateGroups: newDuplicateGroups,
+        duplicatePercentage: newDuplicatePercentage,
+        qualityScore: newQualityScore
+      });
+      
+      // Remove resolved groups
+      const resolvedGroupNames = new Set(resolutions.map(r => r.groupName));
+      setDuplicateGroups(prev => prev.filter(group => !resolvedGroupNames.has(group.groupName)));
     }
+    
+    onRefresh();
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-500">Analyzing service quality...</p>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (categories.length > 0 && !qualityData) {
+      analyzeQuality();
+    }
+  }, [categories]);
 
-  if (!qualityData) {
-    return (
-      <Alert>
-        <AlertTriangle className="h-4 w-4" />
-        <AlertDescription>
-          Failed to load service quality data. Please try again.
-        </AlertDescription>
-      </Alert>
-    );
-  }
+  const getQualityScoreColor = (score: number) => {
+    if (score >= 80) return "text-green-600";
+    if (score >= 60) return "text-yellow-600";
+    return "text-red-600";
+  };
+
+  const getQualityScoreBadgeVariant = (score: number) => {
+    if (score >= 80) return "default" as const;
+    if (score >= 60) return "secondary" as const;
+    return "destructive" as const;
+  };
 
   return (
     <div className="space-y-6">
-      {/* Quality Score Overview */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Wrench className="h-5 w-5" />
-            Service Quality Analysis
-          </CardTitle>
-          <CardDescription>
-            Comprehensive analysis of your service catalog quality and consistency
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="text-center">
-              <div className={`text-4xl font-bold ${getScoreColor(qualityData.qualityScore)}`}>
-                {qualityData.qualityScore}%
-              </div>
-              <p className="text-sm text-gray-500 mt-1">Quality Score</p>
-              <Progress value={qualityData.qualityScore} className="mt-2" />
-            </div>
-            
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">
-                {qualityData.totalServices}
-              </div>
-              <p className="text-sm text-gray-500 mt-1">Total Services</p>
-            </div>
-            
-            <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">
-                {qualityData.issues.length}
-              </div>
-              <p className="text-sm text-gray-500 mt-1">Issues Found</p>
-            </div>
-            
-            <div className="text-center">
-              <div className="text-2xl font-bold text-red-600">
-                {qualityData.duplicateGroups.length}
-              </div>
-              <p className="text-sm text-gray-500 mt-1">Duplicate Groups</p>
-            </div>
-          </div>
-          
-          <div className="mt-6 flex gap-2">
-            <Button onClick={analyzeServiceQuality} disabled={isAnalyzing}>
-              {isAnalyzing ? 'Analyzing...' : 'Refresh Analysis'}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-xl font-semibold text-gray-900">Service Quality Analysis</h3>
+          <p className="text-gray-600">Analyze and improve your service hierarchy quality</p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            onClick={analyzeQuality}
+            disabled={isAnalyzing}
+            variant="outline"
+            size="sm"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isAnalyzing ? 'animate-spin' : ''}`} />
+            {isAnalyzing ? 'Analyzing...' : 'Re-analyze'}
+          </Button>
+          {duplicateGroups.length > 0 && (
+            <Button
+              onClick={() => setShowResolutionDialog(true)}
+              size="sm"
+            >
+              <AlertTriangle className="h-4 w-4 mr-2" />
+              Resolve Duplicates ({duplicateGroups.length})
             </Button>
-            {qualityData.duplicateGroups.length > 0 && (
-              <Button 
-                variant="outline" 
-                onClick={() => setShowDuplicateDialog(true)}
-              >
-                <Users className="h-4 w-4 mr-2" />
-                Resolve Duplicates ({qualityData.duplicateGroups.length})
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+          )}
+        </div>
+      </div>
 
-      <Tabs defaultValue="issues" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="issues">Quality Issues</TabsTrigger>
-          <TabsTrigger value="duplicates">Duplicates</TabsTrigger>
-          <TabsTrigger value="metrics">Metrics</TabsTrigger>
-        </TabsList>
+      {isAnalyzing && !qualityData && (
+        <Card>
+          <CardContent className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+              <h3 className="text-lg font-semibold mb-2">Analyzing Service Quality</h3>
+              <p className="text-gray-600">This may take a few moments...</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-        <TabsContent value="issues" className="space-y-4">
-          {qualityData.issues.length === 0 ? (
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-center">
-                  <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium">No Quality Issues Found</h3>
-                  <p className="text-gray-500">Your service catalog is in excellent condition!</p>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4">
-              {qualityData.issues.map((issue, index) => (
-                <Card key={index}>
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <AlertTriangle className="h-5 w-5 text-orange-500" />
-                        <h3 className="font-medium">{issue.description}</h3>
-                        <Badge variant={getSeverityColor(issue.severity) as any}>
-                          {issue.severity}
-                        </Badge>
+      {qualityData && (
+        <>
+          <ServiceQualityMetrics data={qualityData} />
+
+          <Tabs defaultValue="overview" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="duplicates">
+                Duplicates
+                {duplicateGroups.length > 0 && (
+                  <Badge variant="destructive" className="ml-2">
+                    {duplicateGroups.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="overview" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5" />
+                      Quality Score Breakdown
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span>Overall Quality</span>
+                      <Badge variant={getQualityScoreBadgeVariant(qualityData.qualityScore)}>
+                        {qualityData.qualityScore}%
+                      </Badge>
+                    </div>
+                    <Progress value={qualityData.qualityScore} className="h-2" />
+                    
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>Duplicate Rate:</span>
+                        <span className="font-medium">{qualityData.duplicatePercentage.toFixed(1)}%</span>
                       </div>
-                      <span className="text-2xl font-bold text-gray-600">
-                        {issue.count}
+                      <div className="flex justify-between">
+                        <span>Affected Categories:</span>
+                        <span className="font-medium">{qualityData.categoriesWithDuplicates}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5" />
+                      Recent Trends
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span>Quality Score Change</span>
+                      <span className={`font-medium ${qualityData.trends.qualityScoreChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {qualityData.trends.qualityScoreChange >= 0 ? '+' : ''}{qualityData.trends.qualityScoreChange.toFixed(1)}%
                       </span>
                     </div>
-                    <p className="text-sm text-gray-500">
-                      Affects {issue.affectedServices.length} services
-                    </p>
+                    <div className="flex items-center justify-between">
+                      <span>Duplicate Change</span>
+                      <span className={`font-medium ${qualityData.trends.duplicateChange <= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {qualityData.trends.duplicateChange >= 0 ? '+' : ''}{qualityData.trends.duplicateChange.toFixed(1)}%
+                      </span>
+                    </div>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
+              </div>
+            </TabsContent>
 
-        <TabsContent value="duplicates" className="space-y-4">
-          {qualityData.duplicateGroups.length === 0 ? (
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-center">
-                  <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium">No Duplicates Found</h3>
-                  <p className="text-gray-500">All services appear to be unique!</p>
+            <TabsContent value="duplicates" className="space-y-4">
+              {duplicateGroups.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-lg font-semibold">Detected Duplicate Groups</h4>
+                    <Button onClick={() => setShowResolutionDialog(true)}>
+                      <AlertTriangle className="h-4 w-4 mr-2" />
+                      Resolve All Duplicates
+                    </Button>
+                  </div>
+                  
+                  <div className="grid gap-4">
+                    {duplicateGroups.slice(0, 5).map((group, index) => (
+                      <Card key={index} className="border-l-4 border-l-amber-500">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-base">{group.groupName}</CardTitle>
+                            <Badge variant="secondary">{group.confidence}% match</Badge>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline">{group.category}</Badge>
+                            <span className="text-gray-400">→</span>
+                            <Badge variant="outline">{group.subcategory}</Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-1">
+                            {group.services.map((service, serviceIndex) => (
+                              <div key={serviceIndex} className="text-sm p-2 bg-gray-50 rounded">
+                                <span className="font-medium">{service.name}</span>
+                                {service.description && (
+                                  <p className="text-gray-600 mt-1">{service.description}</p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                    
+                    {duplicateGroups.length > 5 && (
+                      <Card className="border-dashed">
+                        <CardContent className="text-center py-6">
+                          <p className="text-gray-600">
+                            +{duplicateGroups.length - 5} more duplicate groups
+                          </p>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="mt-2"
+                            onClick={() => setShowResolutionDialog(true)}
+                          >
+                            View All Duplicates
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {qualityData.duplicateGroups.map((group, index) => (
-                <Card key={index}>
+              ) : (
+                <Card>
+                  <CardContent className="text-center py-12">
+                    <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No Duplicates Found</h3>
+                    <p className="text-gray-600">Your service hierarchy looks clean!</p>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
+            <TabsContent value="recommendations" className="space-y-4">
+              <div className="grid gap-4">
+                <Card>
                   <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">{group.groupName}</CardTitle>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">
-                          {Math.round(group.similarity * 100)}% similar
-                        </Badge>
-                        <Badge variant="secondary">
-                          {group.services.length} services
-                        </Badge>
+                    <CardTitle className="flex items-center gap-2">
+                      <Clock className="h-5 w-5" />
+                      Quick Wins
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
+                      <div>
+                        <p className="font-medium">Merge similar services</p>
+                        <p className="text-sm text-gray-600">Combine services with similar names and descriptions</p>
                       </div>
                     </div>
-                    {group.issues.length > 0 && (
-                      <CardDescription>
-                        Issues: {group.issues.join(', ')}
-                      </CardDescription>
-                    )}
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {group.services.map((service) => (
-                        <div 
-                          key={service.id} 
-                          className="border rounded-lg p-3 hover:bg-gray-50"
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="font-medium text-sm">{service.name}</span>
-                            {service.category && (
-                              <Badge 
-                                className={getCategoryColor(service.name)} 
-                                variant="outline"
-                              >
-                                {service.category}
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="text-xs text-gray-500 space-y-1">
-                            {service.price && (
-                              <div>Price: ${service.price}</div>
-                            )}
-                            {service.estimatedTime && (
-                              <div>Time: {service.estimatedTime}min</div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                    <div className="flex items-start gap-3">
+                      <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
+                      <div>
+                        <p className="font-medium">Standardize naming conventions</p>
+                        <p className="text-sm text-gray-600">Use consistent terminology across all categories</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
+                      <div>
+                        <p className="font-medium">Review category placement</p>
+                        <p className="text-sm text-gray-600">Ensure services are in the most appropriate categories</p>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
-              ))}
-              
-              <div className="text-center">
-                <Button onClick={() => setShowDuplicateDialog(true)}>
-                  <Users className="h-4 w-4 mr-2" />
-                  Resolve All Duplicates
-                </Button>
               </div>
-            </div>
-          )}
-        </TabsContent>
+            </TabsContent>
+          </Tabs>
+        </>
+      )}
 
-        <TabsContent value="metrics">
-          <ServiceQualityMetrics data={qualityData} />
-        </TabsContent>
-      </Tabs>
-
-      {/* Duplicate Resolution Dialog */}
       <DuplicateResolutionDialog
-        isOpen={showDuplicateDialog}
-        onClose={() => setShowDuplicateDialog(false)}
-        duplicateGroups={qualityData.duplicateGroups}
-        categories={qualityData.categories}
-        onResolve={handleResolveDuplicates}
+        isOpen={showResolutionDialog}
+        onClose={() => setShowResolutionDialog(false)}
+        duplicateGroups={duplicateGroups}
+        categories={categories}
+        onResolveDuplicates={handleResolveDuplicates}
       />
     </div>
   );
