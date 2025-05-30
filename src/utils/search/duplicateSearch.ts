@@ -1,268 +1,313 @@
-import { ServiceMainCategory } from "@/types/serviceHierarchy";
 
-export interface DuplicateOccurrence {
-  itemId: string;
-  name: string;
-  type: 'category' | 'subcategory' | 'job';
-  parentCategory?: string;
-  parentSubcategory?: string;
-  description?: string;
-}
+import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
 
-export interface DuplicateItem {
-  groupId: string;
-  name: string;
-  matchType: 'exact' | 'exact_words' | 'similar';
-  occurrences: DuplicateOccurrence[];
-  score: number;
-}
+export type DuplicateMatchType = 'exact' | 'exact_words' | 'similar' | 'partial';
+export type DuplicateSearchScope = 'all' | 'categories' | 'subcategories' | 'jobs';
 
 export interface DuplicateSearchOptions {
-  exactMatch: boolean;
-  exactWordsMatch: boolean;
-  similarityMatch: boolean;
   similarityThreshold: number;
-  checkCategories: boolean;
-  checkSubcategories: boolean;
-  checkJobs: boolean;
+  matchTypes?: DuplicateMatchType[];
+  searchScope: DuplicateSearchScope;
+  ignoreCase: boolean;
+  ignorePunctuation: boolean;
+  minWordLength: number;
 }
 
 export const defaultSearchOptions: DuplicateSearchOptions = {
-  exactMatch: true,
-  exactWordsMatch: true,
-  similarityMatch: true,
-  similarityThreshold: 0.8,
-  checkCategories: true,
-  checkSubcategories: true,
-  checkJobs: true
+  similarityThreshold: 80,
+  matchTypes: ['exact', 'exact_words', 'similar'],
+  searchScope: 'all',
+  ignoreCase: true,
+  ignorePunctuation: true,
+  minWordLength: 3
 };
 
-export const findServiceDuplicates = (
+export interface DuplicateOccurrence {
+  itemId: string;
+  itemName: string;
+  itemType: 'category' | 'subcategory' | 'job';
+  parentCategory?: string;
+  parentSubcategory?: string;
+  description?: string;
+  estimatedTime?: number;
+  price?: number;
+}
+
+export interface DuplicateItem {
+  id: string;
+  matchType: DuplicateMatchType;
+  similarityScore: number;
+  occurrences: DuplicateOccurrence[];
+  category: string;
+  categoryColor: string;
+}
+
+// Service category color mapping for automotive services
+const categoryColors: Record<string, string> = {
+  engine: '#ff6b35',
+  cooling: '#4dabf7',
+  electrical: '#ffd43b',
+  brakes: '#ff8cc8',
+  suspension: '#74c0fc',
+  transmission: '#69db7c',
+  exhaust: '#9775fa',
+  fuel: '#ffa8a8',
+  maintenance: '#ced4da',
+  diagnostics: '#868e96',
+  body: '#495057',
+  interior: '#6c757d',
+  default: '#adb5bd'
+};
+
+function getCategoryFromName(name: string): string {
+  const normalizedName = name.toLowerCase();
+  
+  if (normalizedName.includes('engine') || normalizedName.includes('motor')) return 'engine';
+  if (normalizedName.includes('cool') || normalizedName.includes('radiator')) return 'cooling';
+  if (normalizedName.includes('electric') || normalizedName.includes('battery')) return 'electrical';
+  if (normalizedName.includes('brake') || normalizedName.includes('pad')) return 'brakes';
+  if (normalizedName.includes('suspension') || normalizedName.includes('shock')) return 'suspension';
+  if (normalizedName.includes('transmission') || normalizedName.includes('gear')) return 'transmission';
+  if (normalizedName.includes('exhaust') || normalizedName.includes('muffler')) return 'exhaust';
+  if (normalizedName.includes('fuel') || normalizedName.includes('gas')) return 'fuel';
+  if (normalizedName.includes('oil') || normalizedName.includes('filter')) return 'maintenance';
+  if (normalizedName.includes('diagnostic') || normalizedName.includes('scan')) return 'diagnostics';
+  if (normalizedName.includes('body') || normalizedName.includes('panel')) return 'body';
+  if (normalizedName.includes('interior') || normalizedName.includes('seat')) return 'interior';
+  
+  return 'default';
+}
+
+function normalizeText(text: string, options: DuplicateSearchOptions): string {
+  let normalized = text;
+  
+  if (options.ignoreCase) {
+    normalized = normalized.toLowerCase();
+  }
+  
+  if (options.ignorePunctuation) {
+    normalized = normalized.replace(/[^\w\s]/g, ' ');
+  }
+  
+  // Filter out words shorter than minimum length
+  if (options.minWordLength > 1) {
+    normalized = normalized
+      .split(/\s+/)
+      .filter(word => word.length >= options.minWordLength)
+      .join(' ');
+  }
+  
+  return normalized.trim();
+}
+
+function calculateSimilarity(text1: string, text2: string, options: DuplicateSearchOptions): number {
+  const norm1 = normalizeText(text1, options);
+  const norm2 = normalizeText(text2, options);
+  
+  // Exact match
+  if (norm1 === norm2) return 100;
+  
+  // Exact words match
+  const words1 = norm1.split(/\s+/);
+  const words2 = norm2.split(/\s+/);
+  
+  if (words1.length === words2.length && 
+      words1.every(word => words2.includes(word))) {
+    return 90;
+  }
+  
+  // Partial match based on common words
+  const commonWords = words1.filter(word => words2.includes(word));
+  const totalWords = Math.max(words1.length, words2.length);
+  
+  if (totalWords === 0) return 0;
+  
+  const similarity = (commonWords.length / totalWords) * 100;
+  return Math.round(similarity);
+}
+
+function isMatchTypeEnabled(matchType: DuplicateMatchType, options: DuplicateSearchOptions): boolean {
+  return options.matchTypes?.includes(matchType) ?? true;
+}
+
+export function findServiceDuplicates(
   categories: ServiceMainCategory[],
   options: DuplicateSearchOptions = defaultSearchOptions
-): DuplicateItem[] => {
-  const duplicateGroups = new Map<string, DuplicateOccurrence[]>();
-  
-  // Collect all items with their parent information
-  const allItems: DuplicateOccurrence[] = [];
-  
+): DuplicateItem[] {
+  const duplicates: DuplicateItem[] = [];
+  const processed = new Set<string>();
+
+  // Collect all items based on search scope
+  const allItems: Array<{
+    id: string;
+    name: string;
+    type: 'category' | 'subcategory' | 'job';
+    parentCategory?: string;
+    parentSubcategory?: string;
+    description?: string;
+    estimatedTime?: number;
+    price?: number;
+  }> = [];
+
   categories.forEach(category => {
-    // Add category itself
-    if (options.checkCategories) {
+    if (options.searchScope === 'all' || options.searchScope === 'categories') {
       allItems.push({
-        itemId: category.id,
+        id: category.id,
         name: category.name,
         type: 'category',
-        parentCategory: category.name,
         description: category.description
       });
     }
-    
+
     category.subcategories.forEach(subcategory => {
-      // Add subcategory
-      if (options.checkSubcategories) {
+      if (options.searchScope === 'all' || options.searchScope === 'subcategories') {
         allItems.push({
-          itemId: subcategory.id,
+          id: subcategory.id,
           name: subcategory.name,
           type: 'subcategory',
           parentCategory: category.name,
-          parentSubcategory: subcategory.name,
           description: subcategory.description
         });
       }
-      
-      // Add jobs
-      if (options.checkJobs) {
-        subcategory.jobs.forEach(job => {
+
+      subcategory.jobs.forEach(job => {
+        if (options.searchScope === 'all' || options.searchScope === 'jobs') {
           allItems.push({
-            itemId: job.id,
+            id: job.id,
             name: job.name,
             type: 'job',
             parentCategory: category.name,
             parentSubcategory: subcategory.name,
-            description: job.description
+            description: job.description,
+            estimatedTime: job.estimatedTime,
+            price: job.price
           });
-        });
-      }
+        }
+      });
     });
   });
-  
-  // Find duplicates using various matching strategies
-  const processedItems = new Set<string>();
-  
-  allItems.forEach((item, index) => {
-    if (processedItems.has(item.itemId)) return;
+
+  // Find duplicates
+  for (let i = 0; i < allItems.length; i++) {
+    const item1 = allItems[i];
     
-    const matches: DuplicateOccurrence[] = [item];
-    processedItems.add(item.itemId);
+    if (processed.has(item1.id)) continue;
     
-    // Check against remaining items
-    for (let i = index + 1; i < allItems.length; i++) {
-      const otherItem = allItems[i];
-      if (processedItems.has(otherItem.itemId)) continue;
+    const matches: DuplicateOccurrence[] = [];
+    let maxSimilarity = 0;
+    let matchType: DuplicateMatchType = 'partial';
+
+    for (let j = i + 1; j < allItems.length; j++) {
+      const item2 = allItems[j];
       
-      const matchType = getMatchType(item.name, otherItem.name, options);
-      if (matchType) {
-        matches.push(otherItem);
-        processedItems.add(otherItem.itemId);
+      if (processed.has(item2.id)) continue;
+      
+      const similarity = calculateSimilarity(item1.name, item2.name, options);
+      
+      if (similarity >= options.similarityThreshold) {
+        let currentMatchType: DuplicateMatchType = 'partial';
+        
+        if (similarity === 100 && isMatchTypeEnabled('exact', options)) {
+          currentMatchType = 'exact';
+        } else if (similarity >= 90 && isMatchTypeEnabled('exact_words', options)) {
+          currentMatchType = 'exact_words';
+        } else if (similarity >= 80 && isMatchTypeEnabled('similar', options)) {
+          currentMatchType = 'similar';
+        } else if (isMatchTypeEnabled('partial', options)) {
+          currentMatchType = 'partial';
+        } else {
+          continue; // Skip if this match type is not enabled
+        }
+
+        if (matches.length === 0) {
+          // Add the first item as well
+          matches.push({
+            itemId: item1.id,
+            itemName: item1.name,
+            itemType: item1.type,
+            parentCategory: item1.parentCategory,
+            parentSubcategory: item1.parentSubcategory,
+            description: item1.description,
+            estimatedTime: item1.estimatedTime,
+            price: item1.price
+          });
+        }
+
+        matches.push({
+          itemId: item2.id,
+          itemName: item2.name,
+          itemType: item2.type,
+          parentCategory: item2.parentCategory,
+          parentSubcategory: item2.parentSubcategory,
+          description: item2.description,
+          estimatedTime: item2.estimatedTime,
+          price: item2.price
+        });
+
+        if (similarity > maxSimilarity) {
+          maxSimilarity = similarity;
+          matchType = currentMatchType;
+        }
+
+        processed.add(item2.id);
       }
     }
-    
-    // If we found matches, create a duplicate group
+
     if (matches.length > 1) {
-      const groupKey = matches.map(m => m.name).sort().join('|');
-      duplicateGroups.set(groupKey, matches);
-    }
-  });
-  
-  // Convert to DuplicateItem format
-  const duplicateItems: DuplicateItem[] = [];
-  let groupIndex = 1;
-  
-  duplicateGroups.forEach((occurrences, groupKey) => {
-    const firstItem = occurrences[0];
-    const matchType = getMatchType(occurrences[0].name, occurrences[1].name, options) || 'similar';
-    
-    duplicateItems.push({
-      groupId: `group-${groupIndex++}`,
-      name: firstItem.name,
-      matchType,
-      occurrences,
-      score: calculateDuplicateScore(occurrences, matchType)
-    });
-  });
-  
-  // Sort by score (highest first) and then by number of occurrences
-  return duplicateItems.sort((a, b) => {
-    if (a.score !== b.score) return b.score - a.score;
-    return b.occurrences.length - a.occurrences.length;
-  });
-};
-
-function getMatchType(
-  name1: string,
-  name2: string,
-  options: DuplicateSearchOptions
-): 'exact' | 'exact_words' | 'similar' | null {
-  const normalized1 = normalizeString(name1);
-  const normalized2 = normalizeString(name2);
-  
-  // Exact match
-  if (options.exactMatch && normalized1 === normalized2) {
-    return 'exact';
-  }
-  
-  // Exact words match (all words present in both)
-  if (options.exactWordsMatch) {
-    const words1 = new Set(normalized1.split(' ').filter(w => w.length > 2));
-    const words2 = new Set(normalized2.split(' ').filter(w => w.length > 2));
-    const intersection = new Set([...words1].filter(x => words2.has(x)));
-    
-    if (intersection.size > 0 && intersection.size === Math.min(words1.size, words2.size)) {
-      return 'exact_words';
+      processed.add(item1.id);
+      
+      const category = getCategoryFromName(item1.name);
+      
+      duplicates.push({
+        id: `duplicate_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        matchType,
+        similarityScore: maxSimilarity,
+        occurrences: matches,
+        category,
+        categoryColor: categoryColors[category]
+      });
     }
   }
-  
-  // Similar match based on threshold
-  if (options.similarityMatch) {
-    const similarity = calculateSimilarity(normalized1, normalized2);
-    if (similarity >= options.similarityThreshold) {
-      return 'similar';
-    }
-  }
-  
-  return null;
+
+  return duplicates;
 }
 
-function normalizeString(str: string): string {
-  return str
-    .toLowerCase()
-    .replace(/[^\w\s]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function calculateSimilarity(str1: string, str2: string): number {
-  // Simple Jaccard similarity for now
-  const words1 = new Set(str1.split(' '));
-  const words2 = new Set(str2.split(' '));
-  const intersection = new Set([...words1].filter(x => words2.has(x)));
-  const union = new Set([...words1, ...words2]);
-  
-  return union.size === 0 ? 0 : intersection.size / union.size;
-}
-
-function calculateDuplicateScore(
-  occurrences: DuplicateOccurrence[],
-  matchType: 'exact' | 'exact_words' | 'similar'
-): number {
-  let baseScore = 0;
-  
-  switch (matchType) {
-    case 'exact': baseScore = 100; break;
-    case 'exact_words': baseScore = 80; break;
-    case 'similar': baseScore = 60; break;
-  }
-  
-  // Boost score based on number of occurrences
-  const occurrenceBonus = Math.min(occurrences.length * 10, 50);
-  
-  // Boost score if items are in different categories (more problematic)
-  const categories = new Set(occurrences.map(o => o.parentCategory));
-  const categoryBonus = categories.size > 1 ? 20 : 0;
-  
-  return baseScore + occurrenceBonus + categoryBonus;
-}
-
-export const generateDuplicateRecommendations = (duplicates: DuplicateItem[]): string[] => {
+export function generateDuplicateRecommendations(duplicates: DuplicateItem[]): string[] {
   const recommendations: string[] = [];
   
   if (duplicates.length === 0) {
-    recommendations.push("✅ No duplicates found - your service hierarchy is well organized!");
+    recommendations.push("No duplicates found. Your service hierarchy appears to be well-organized.");
     return recommendations;
   }
-  
-  const exactDuplicates = duplicates.filter(d => d.matchType === 'exact');
-  const wordDuplicates = duplicates.filter(d => d.matchType === 'exact_words');
-  const similarDuplicates = duplicates.filter(d => d.matchType === 'similar');
-  
-  if (exactDuplicates.length > 0) {
-    recommendations.push(
-      `🚨 Found ${exactDuplicates.length} exact duplicates that should be merged immediately`
-    );
+
+  const exactMatches = duplicates.filter(d => d.matchType === 'exact').length;
+  const exactWordMatches = duplicates.filter(d => d.matchType === 'exact_words').length;
+  const similarMatches = duplicates.filter(d => d.matchType === 'similar').length;
+
+  if (exactMatches > 0) {
+    recommendations.push(`Found ${exactMatches} exact duplicate(s). These should be merged immediately.`);
   }
-  
-  if (wordDuplicates.length > 0) {
-    recommendations.push(
-      `⚠️ Found ${wordDuplicates.length} services with identical key words - consider consolidating`
-    );
+
+  if (exactWordMatches > 0) {
+    recommendations.push(`Found ${exactWordMatches} exact word match(es). Review for potential consolidation.`);
   }
-  
-  if (similarDuplicates.length > 0) {
-    recommendations.push(
-      `💡 Found ${similarDuplicates.length} similar services - review for potential standardization`
-    );
+
+  if (similarMatches > 0) {
+    recommendations.push(`Found ${similarMatches} similar item(s). Consider standardizing naming conventions.`);
   }
-  
-  // Category-specific recommendations
-  const categoryGroups = new Map<string, DuplicateItem[]>();
-  duplicates.forEach(duplicate => {
-    duplicate.occurrences.forEach(occurrence => {
-      const category = occurrence.parentCategory || 'Unknown';
-      if (!categoryGroups.has(category)) {
-        categoryGroups.set(category, []);
-      }
-      categoryGroups.get(category)!.push(duplicate);
-    });
-  });
-  
-  categoryGroups.forEach((items, category) => {
-    if (items.length > 2) {
-      recommendations.push(
-        `📂 "${category}" category has ${items.length} duplicate groups - focus cleanup here`
-      );
-    }
-  });
-  
+
+  const categoryStats = duplicates.reduce((acc, dup) => {
+    acc[dup.category] = (acc[dup.category] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const topCategories = Object.entries(categoryStats)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 3);
+
+  if (topCategories.length > 0) {
+    recommendations.push(`Most duplicates found in: ${topCategories.map(([cat, count]) => `${cat} (${count})`).join(', ')}`);
+  }
+
   return recommendations;
-};
+}
