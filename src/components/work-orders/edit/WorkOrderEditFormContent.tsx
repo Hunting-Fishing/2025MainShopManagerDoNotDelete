@@ -69,9 +69,6 @@ export const WorkOrderEditFormContent: React.FC<WorkOrderEditFormContentProps> =
     fetchCustomers();
   }, []);
 
-  // Convert technicians to the format expected by AssignmentFields
-  const technicianNames = technicians.map(tech => tech.name);
-
   return (
     <Card className="p-6">
       {error && (
@@ -92,7 +89,12 @@ export const WorkOrderEditFormContent: React.FC<WorkOrderEditFormContentProps> =
             <StatusFields form={form as any} />
             
             {/* Assignment */}
-            <AssignmentFields form={form as any} technicians={technicianNames} />
+            <AssignmentFields 
+              form={form as any} 
+              technicians={technicians}
+              technicianLoading={false}
+              technicianError={null}
+            />
             
             {/* Notes */}
             <NotesField form={form as any} />
