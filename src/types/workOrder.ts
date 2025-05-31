@@ -1,4 +1,3 @@
-
 // Work Order Types - Standardized to match database schema (snake_case)
 export interface WorkOrder {
   id: string;
@@ -31,6 +30,7 @@ export interface WorkOrder {
   total_billable_time?: number;
   vehicle_make?: string;
   vehicle_model?: string;
+  vehicle_year?: string;
   // Additional fields for UI
   timeEntries?: TimeEntry[];
   inventoryItems?: WorkOrderInventoryItem[];
