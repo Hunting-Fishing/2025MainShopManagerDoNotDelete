@@ -7,6 +7,8 @@ import { WorkOrderPageLayout } from "./WorkOrderPageLayout";
 import { WorkOrderDetailsHeader } from "./details/WorkOrderDetailsHeader";
 import { WorkOrderDetailsTabs } from "./details/WorkOrderDetailsTabs";
 import { WorkOrderInvoiceView } from "./WorkOrderInvoiceView";
+import { JobLinesGrid } from "./job-lines/JobLinesGrid";
+import { JobLinesDebugInfo } from "./job-lines/JobLinesDebugInfo";
 import { Button } from "@/components/ui/button";
 import { FileText, Layout } from "lucide-react";
 
@@ -81,21 +83,23 @@ export function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsViewProps) {
           </div>
         </div>
 
-        {/* Debug Info - Remove in production */}
-        {jobLines.length > 0 && (
-          <div className="bg-blue-50 p-4 rounded border border-blue-200">
-            <h3 className="font-semibold text-blue-800 mb-2">Parsed Job Lines ({jobLines.length}):</h3>
-            <ul className="text-sm text-blue-700">
-              {jobLines.map((line, index) => (
-                <li key={index}>• {line.name} - {line.category} - {line.estimatedHours}h - ${line.totalAmount}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-
         {viewMode === 'details' ? (
           <>
             <WorkOrderDetailsHeader workOrder={enhancedWorkOrder} />
+            
+            {/* Job Lines Section */}
+            {jobLines.length > 0 && (
+              <div className="space-y-4">
+                <JobLinesGrid jobLines={jobLines} showSummary={true} />
+              </div>
+            )}
+
+            {/* Debug Info - Only shown in development or when there are issues */}
+            <JobLinesDebugInfo 
+              jobLines={jobLines} 
+              description={workOrder.description} 
+            />
+            
             <WorkOrderDetailsTabs 
               workOrder={enhancedWorkOrder}
               timeEntries={timeEntries}

@@ -1,319 +1,229 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { WorkOrder } from "@/types/workOrder";
+import { JobLinesGrid } from "./job-lines/JobLinesGrid";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, Printer } from "lucide-react";
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
-import { parseJobLinesFromDescription, formatJobLineName } from '@/services/jobLineParser';
+import { Badge } from "@/components/ui/badge";
+import { Building, User, Car, Calendar, Grid3X3, Table } from "lucide-react";
 
-export interface WorkOrderInvoiceViewProps {
+interface WorkOrderInvoiceViewProps {
   workOrder: WorkOrder;
 }
 
 export function WorkOrderInvoiceView({ workOrder }: WorkOrderInvoiceViewProps) {
-  const handlePrint = () => {
-    window.print();
+  const [layoutMode, setLayoutMode] = useState<'cards' | 'table'>('cards');
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString();
   };
 
-  const handleDownload = async () => {
-    const element = document.getElementById('work-order-invoice');
-    if (element) {
-      const canvas = await html2canvas(element);
-      const imgData = canvas.toDataURL('image/png');
-      
-      const pdf = new jsPDF();
-      const imgWidth = 210;
-      const pageHeight = 295;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      
-      let position = 0;
-      
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-      
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-      
-      pdf.save(`work-order-${workOrder.id}.pdf`);
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return 'success';
+      case 'in-progress':
+        return 'info';
+      case 'pending':
+        return 'warning';
+      case 'cancelled':
+        return 'destructive';
+      default:
+        return 'secondary';
     }
   };
 
-  // Parse job lines from description if not already present
-  const jobLines = workOrder.jobLines || parseJobLinesFromDescription(workOrder.description || '', workOrder.id);
-
-  // Calculate totals including job lines
-  const jobLinesTotal = jobLines.reduce((sum, job) => sum + (job.totalAmount || 0), 0);
-  const inventoryTotal = workOrder.inventoryItems?.reduce((sum, item) => sum + item.total, 0) || 0;
-  const subtotal = jobLinesTotal + inventoryTotal;
-  const taxRate = workOrder.tax_rate || 0.08; // Default 8% tax
-  const taxAmount = subtotal * taxRate;
-  const total = subtotal + taxAmount;
-
   return (
-    <div className="bg-white">
-      {/* Print/Download Actions - Hidden when printing */}
-      <div className="flex justify-end gap-2 mb-6 print:hidden">
-        <Button onClick={handlePrint} variant="outline" className="flex items-center gap-2">
-          <Printer className="h-4 w-4" />
-          Print
-        </Button>
-        <Button onClick={handleDownload} className="flex items-center gap-2">
-          <Download className="h-4 w-4" />
-          Download PDF
-        </Button>
-      </div>
-
-      {/* Invoice Content */}
-      <div id="work-order-invoice" className="max-w-4xl mx-auto bg-white p-8">
-        {/* Header */}
-        <div className="flex justify-between items-start mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">WORK ORDER</h1>
-            <div className="text-sm text-gray-600">
-              <p>Work Order #: <span className="font-semibold">{workOrder.id}</span></p>
-              <p>Date: <span className="font-semibold">{new Date(workOrder.created_at).toLocaleDateString()}</span></p>
-              <p>Status: <span className="font-semibold capitalize">{workOrder.status}</span></p>
-              {workOrder.technician && (
-                <p>Technician: <span className="font-semibold">{workOrder.technician}</span></p>
-              )}
+    <div className="max-w-4xl mx-auto space-y-6 print:max-w-none">
+      {/* Invoice Header */}
+      <Card>
+        <CardHeader className="border-b">
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle className="text-2xl font-bold">Service Invoice</CardTitle>
+              <p className="text-muted-foreground">Work Order #{workOrder.id}</p>
             </div>
+            <Badge variant={getStatusColor(workOrder.status)} className="text-sm">
+              {workOrder.status.toUpperCase()}
+            </Badge>
           </div>
-          
-          <div className="text-right">
-            <div className="mb-4">
-              <h2 className="text-xl font-bold text-gray-900">{workOrder.company_name || "Auto Shop"}</h2>
-              <div className="text-sm text-gray-600">
-                <p>{workOrder.company_address || "123 Main St"}</p>
-                <p>{workOrder.company_city || "City"}, {workOrder.company_state || "State"} {workOrder.company_zip || "12345"}</p>
-                <p>{workOrder.company_phone || "(555) 123-4567"}</p>
-                <p>{workOrder.company_email || "info@autoshop.com"}</p>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Company Information */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-lg font-semibold">
+                <Building className="h-5 w-5" />
+                Company Information
+              </div>
+              <div className="space-y-1 text-sm">
+                <div className="font-medium">{workOrder.company_name || "Auto Shop"}</div>
+                <div>{workOrder.company_address || "123 Main Street"}</div>
+                <div>{workOrder.company_city || "City"}, {workOrder.company_state || "State"} {workOrder.company_zip || "12345"}</div>
+                <div>{workOrder.company_phone || "(555) 123-4567"}</div>
+                <div>{workOrder.company_email || "info@autoshop.com"}</div>
+              </div>
+            </div>
+
+            {/* Customer Information */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-lg font-semibold">
+                <User className="h-5 w-5" />
+                Customer Information
+              </div>
+              <div className="space-y-1 text-sm">
+                <div className="font-medium">{workOrder.customer_name || workOrder.customer || "Customer Name"}</div>
+                <div>{workOrder.customer_address || "Customer Address"}</div>
+                <div>{workOrder.customer_city || "City"}, {workOrder.customer_state || "State"} {workOrder.customer_zip || "ZIP"}</div>
+                <div>{workOrder.customer_phone || "Phone"}</div>
+                <div>{workOrder.customer_email || "Email"}</div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Customer Information */}
-        <div className="grid grid-cols-2 gap-8 mb-8">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-3 border-b border-gray-300 pb-1">CUSTOMER INFORMATION</h3>
-            <div className="text-sm text-gray-700">
-              <p className="font-semibold">{workOrder.customer_name || workOrder.customer || "Customer Name"}</p>
-              <p>{workOrder.customer_address || "Customer Address"}</p>
-              <p>{workOrder.customer_city || "City"}, {workOrder.customer_state || "State"} {workOrder.customer_zip || "ZIP"}</p>
-              <p>Phone: {workOrder.customer_phone || "Phone Number"}</p>
-              <p>Email: {workOrder.customer_email || "Email Address"}</p>
+          {/* Vehicle & Service Information */}
+          <div className="grid md:grid-cols-2 gap-6 mt-6 pt-6 border-t">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 font-medium">
+                <Car className="h-4 w-4" />
+                Vehicle Information
+              </div>
+              <div className="text-sm space-y-1">
+                <div>{workOrder.vehicle_year} {workOrder.vehicle_make} {workOrder.vehicle_model}</div>
+                <div>VIN: {workOrder.vehicle_vin || "N/A"}</div>
+                <div>License: {workOrder.vehicle_license_plate || "N/A"}</div>
+                <div>Odometer: {workOrder.vehicle_odometer ? `${workOrder.vehicle_odometer} miles` : "N/A"}</div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 font-medium">
+                <Calendar className="h-4 w-4" />
+                Service Information
+              </div>
+              <div className="text-sm space-y-1">
+                <div>Created: {formatDate(workOrder.created_at)}</div>
+                <div>Start Date: {formatDate(workOrder.start_time)}</div>
+                <div>Due Date: {formatDate(workOrder.due_date)}</div>
+                <div>Technician: {workOrder.technician || "Unassigned"}</div>
+              </div>
             </div>
           </div>
-          
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-3 border-b border-gray-300 pb-1">VEHICLE INFORMATION</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-300">
-                    <th className="text-left py-1 font-semibold">VIN</th>
-                    <th className="text-left py-1 font-semibold">Year</th>
-                    <th className="text-left py-1 font-semibold">Make</th>
-                    <th className="text-left py-1 font-semibold">Model</th>
-                    <th className="text-left py-1 font-semibold">Mileage</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td className="py-1 text-gray-700">{workOrder.vehicle_vin || "N/A"}</td>
-                    <td className="py-1 text-gray-700">{workOrder.vehicle_year || "N/A"}</td>
-                    <td className="py-1 text-gray-700">{workOrder.vehicle_make || "N/A"}</td>
-                    <td className="py-1 text-gray-700">{workOrder.vehicle_model || "N/A"}</td>
-                    <td className="py-1 text-gray-700">{workOrder.vehicle_odometer || "N/A"}</td>
-                  </tr>
-                </tbody>
-              </table>
+        </CardContent>
+      </Card>
+
+      {/* Service Description */}
+      {workOrder.description && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Service Description</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm leading-relaxed whitespace-pre-wrap">
+              {workOrder.description}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Job Lines Section */}
+      {workOrder.jobLines && workOrder.jobLines.length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle className="text-lg">Service Details</CardTitle>
+              <div className="flex gap-2">
+                <Button
+                  variant={layoutMode === 'cards' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setLayoutMode('cards')}
+                >
+                  <Grid3X3 className="h-4 w-4 mr-1" />
+                  Cards
+                </Button>
+                <Button
+                  variant={layoutMode === 'table' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setLayoutMode('table')}
+                >
+                  <Table className="h-4 w-4 mr-1" />
+                  Table
+                </Button>
+              </div>
             </div>
-          </div>
-        </div>
-
-        {/* Service Description - Only show if no job lines parsed */}
-        {jobLines.length === 0 && workOrder.description && (
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3 border-b border-gray-300 pb-1">SERVICE DESCRIPTION</h3>
-            <div className="bg-gray-50 p-4 rounded">
-              <p className="text-sm text-gray-700">{workOrder.description}</p>
-              {workOrder.notes && (
-                <div className="mt-2">
-                  <p className="text-sm font-semibold text-gray-900">Notes:</p>
-                  <p className="text-sm text-gray-700">{workOrder.notes}</p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Line Items */}
-        <div className="mb-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-3 border-b border-gray-300 pb-1">SERVICES & PARTS</h3>
-          <table className="w-full border border-gray-300">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Description</th>
-                <th className="border border-gray-300 px-3 py-2 text-center text-sm font-semibold w-20">Hours</th>
-                <th className="border border-gray-300 px-3 py-2 text-right text-sm font-semibold w-24">Rate</th>
-                <th className="border border-gray-300 px-3 py-2 text-right text-sm font-semibold w-24">Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {/* Job Lines - Individual Service Items */}
-              {jobLines.map((jobLine, index) => (
-                <tr key={jobLine.id || index}>
-                  <td className="border border-gray-300 px-3 py-2 text-sm">
-                    <div className="font-medium">{formatJobLineName(jobLine.name)}</div>
-                    {jobLine.category && (
-                      <div className="text-xs text-gray-600 mt-1">Category: {jobLine.category}</div>
-                    )}
-                    {jobLine.description && jobLine.description !== jobLine.name && (
-                      <div className="text-xs text-gray-600 mt-1">{jobLine.description}</div>
-                    )}
-                  </td>
-                  <td className="border border-gray-300 px-3 py-2 text-center text-sm">
-                    {jobLine.estimatedHours?.toFixed(1) || '0.0'}
-                  </td>
-                  <td className="border border-gray-300 px-3 py-2 text-right text-sm">
-                    ${(jobLine.laborRate || 0).toFixed(2)}
-                  </td>
-                  <td className="border border-gray-300 px-3 py-2 text-right text-sm font-semibold">
-                    ${(jobLine.totalAmount || 0).toFixed(2)}
-                  </td>
-                </tr>
-              ))}
-
-              {/* Inventory Items - Parts */}
-              {workOrder.inventoryItems?.map((item, index) => (
-                <tr key={`inventory-${index}`}>
-                  <td className="border border-gray-300 px-3 py-2 text-sm">
-                    <div className="font-medium">{item.name}</div>
-                    {item.sku && (
-                      <div className="text-xs text-gray-600 mt-1">SKU: {item.sku}</div>
-                    )}
-                    {item.category && (
-                      <div className="text-xs text-gray-600">Category: {item.category}</div>
-                    )}
-                  </td>
-                  <td className="border border-gray-300 px-3 py-2 text-center text-sm">
-                    Qty: {item.quantity}
-                  </td>
-                  <td className="border border-gray-300 px-3 py-2 text-right text-sm">
-                    ${item.unit_price.toFixed(2)}
-                  </td>
-                  <td className="border border-gray-300 px-3 py-2 text-right text-sm font-semibold">
-                    ${item.total.toFixed(2)}
-                  </td>
-                </tr>
-              ))}
-
-              {/* Empty state */}
-              {jobLines.length === 0 && (!workOrder.inventoryItems || workOrder.inventoryItems.length === 0) && (
-                <tr>
-                  <td className="border border-gray-300 px-3 py-2 text-sm text-gray-500" colSpan={4}>
-                    No services or parts listed
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Additional Notes */}
-        {workOrder.notes && jobLines.length > 0 && (
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3 border-b border-gray-300 pb-1">ADDITIONAL NOTES</h3>
-            <div className="bg-gray-50 p-4 rounded">
-              <p className="text-sm text-gray-700">{workOrder.notes}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Totals */}
-        <div className="flex justify-end mb-8">
-          <div className="w-64">
-            <div className="flex justify-between py-1 text-sm">
-              <span>Labor Subtotal:</span>
-              <span>${jobLinesTotal.toFixed(2)}</span>
-            </div>
-            {inventoryTotal > 0 && (
-              <div className="flex justify-between py-1 text-sm">
-                <span>Parts Subtotal:</span>
-                <span>${inventoryTotal.toFixed(2)}</span>
+          </CardHeader>
+          <CardContent>
+            {layoutMode === 'cards' ? (
+              <JobLinesGrid jobLines={workOrder.jobLines} showSummary={true} />
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-2 font-medium">Service/Part</th>
+                      <th className="text-left py-2 font-medium">Category</th>
+                      <th className="text-center py-2 font-medium">Labor Time</th>
+                      <th className="text-right py-2 font-medium">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {workOrder.jobLines.map((jobLine) => (
+                      <tr key={jobLine.id} className="border-b">
+                        <td className="py-3">
+                          <div className="font-medium">{jobLine.name}</div>
+                          {jobLine.description && jobLine.description !== jobLine.name && (
+                            <div className="text-sm text-muted-foreground mt-1">
+                              {jobLine.description}
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-3">
+                          {jobLine.category && (
+                            <Badge variant="outline" className="text-xs">
+                              {jobLine.category}
+                            </Badge>
+                          )}
+                        </td>
+                        <td className="py-3 text-center">
+                          {jobLine.estimatedHours ? `${jobLine.estimatedHours}h` : "—"}
+                        </td>
+                        <td className="py-3 text-right font-medium">
+                          ${(jobLine.totalAmount || 0).toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 font-semibold">
+                      <td colSpan={2} className="py-3">Total</td>
+                      <td className="py-3 text-center">
+                        {workOrder.jobLines.reduce((sum, line) => sum + (line.estimatedHours || 0), 0).toFixed(1)}h
+                      </td>
+                      <td className="py-3 text-right">
+                        ${workOrder.jobLines.reduce((sum, line) => sum + (line.totalAmount || 0), 0).toFixed(2)}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
               </div>
             )}
-            <div className="flex justify-between py-1 text-sm border-t border-gray-300 pt-1">
-              <span>Subtotal:</span>
-              <span>${subtotal.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between py-1 text-sm">
-              <span>Tax ({(taxRate * 100).toFixed(1)}%):</span>
-              <span>${taxAmount.toFixed(2)}</span>
-            </div>
-            <div className="border-t border-gray-300 mt-2 pt-2">
-              <div className="flex justify-between py-1 text-lg font-bold">
-                <span>Total:</span>
-                <span>${total.toFixed(2)}</span>
-              </div>
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
+      )}
 
-        {/* Terms and Authorization */}
-        <div className="border-t border-gray-300 pt-6">
-          <div className="grid grid-cols-2 gap-8">
-            <div>
-              <h4 className="font-semibold text-sm mb-2">TERMS & CONDITIONS</h4>
-              <div className="text-xs text-gray-600 space-y-1">
-                <p>• Payment is due upon completion of work unless other arrangements have been made.</p>
-                <p>• We are not responsible for loss or damage to vehicles or contents left in vehicles.</p>
-                <p>• All work is guaranteed for 30 days or 1,000 miles, whichever comes first.</p>
-              </div>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold text-sm mb-2">CUSTOMER AUTHORIZATION</h4>
-              <div className="text-xs text-gray-600 mb-4">
-                <p>I authorize the above repair work to be done and the necessary material to be furnished. I understand that a finance charge of 1.5% per month will be added to all accounts not paid within 30 days.</p>
-              </div>
-              
-              <div className="border-t border-gray-400 pt-2">
-                <div className="flex justify-between">
-                  <span className="text-xs">Customer Signature</span>
-                  <span className="text-xs">Date</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Print Styles */}
-      <style>
-        {`
-          @media print {
-            body { margin: 0; }
-            .print\\:hidden { display: none !important; }
-            #work-order-invoice { 
-              max-width: none; 
-              margin: 0; 
-              padding: 20px; 
-              box-shadow: none;
-            }
-            table { page-break-inside: avoid; }
-            tr { page-break-inside: avoid; }
-            .page-break { page-break-before: always; }
-          }
-        `}
-      </style>
+      {/* Notes Section */}
+      {workOrder.notes && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Additional Notes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm leading-relaxed whitespace-pre-wrap">
+              {workOrder.notes}
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
