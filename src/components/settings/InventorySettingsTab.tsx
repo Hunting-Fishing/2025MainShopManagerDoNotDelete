@@ -3,6 +3,8 @@ import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { InventoryTableColumnsManager } from "./inventory/InventoryTableColumnsManager";
+import { CategoriesManager } from "./inventory/CategoriesManager";
+import { SuppliersManager } from "./inventory/SuppliersManager";
 import { ClearInventoryButton } from "@/components/inventory/ClearInventoryButton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
@@ -44,31 +46,11 @@ export const InventorySettingsTab = () => {
       </TabsContent>
       
       <TabsContent value="categories" className="space-y-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Categories Management</CardTitle>
-            <CardDescription>
-              Manage your inventory categories
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {/* Categories Manager will go here */}
-          </CardContent>
-        </Card>
+        <CategoriesManager />
       </TabsContent>
       
       <TabsContent value="suppliers" className="space-y-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Suppliers Management</CardTitle>
-            <CardDescription>
-              Manage your inventory suppliers
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {/* Suppliers Manager will go here */}
-          </CardContent>
-        </Card>
+        <SuppliersManager />
       </TabsContent>
 
       <TabsContent value="data" className="space-y-4">

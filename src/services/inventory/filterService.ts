@@ -1,156 +1,139 @@
-import { InventoryItemExtended, InventoryFilter } from "@/types/inventory";
-import { getInventoryItems } from "./crudService";
+
+import { supabase } from "@/integrations/supabase/client";
+import { InventoryItemExtended } from "@/types/inventory";
+import { getInventorySuppliers } from "./supplierService";
+import { getInventoryCategories } from "./categoryService";
 
 /**
- * Filter inventory items based on provided criteria
+ * Filter inventory items based on search criteria
  */
-export const filterInventoryItems = async (filter: InventoryFilter): Promise<InventoryItemExtended[]> => {
-  try {
-    const allItems = await getInventoryItems();
-    
-    return allItems.filter(item => {
-      // Search filter
-      if (filter.search) {
-        const searchLower = filter.search.toLowerCase();
-        const matchesSearch = 
-          item.name.toLowerCase().includes(searchLower) ||
-          item.sku.toLowerCase().includes(searchLower) ||
-          (item.description && item.description.toLowerCase().includes(searchLower));
-        
-        if (!matchesSearch) return false;
-      }
-      
-      // Category filter
-      if (filter.category && filter.category.length > 0) {
-        if (!filter.category.includes(item.category || '')) return false;
-      }
-      
-      // Status filter
-      if (filter.status && filter.status.length > 0) {
-        if (!filter.status.includes(item.status)) return false;
-      }
-      
-      // Supplier filter
-      if (filter.supplier) {
-        if (item.supplier !== filter.supplier) return false;
-      }
-      
-      // Location filter
-      if (filter.location) {
-        if (item.location !== filter.location) return false;
-      }
-      
-      // Stock level filter
-      if (filter.stockLevel) {
-        const quantity = Number(item.quantity) || 0;
-        const reorderPoint = Number(item.reorder_point) || 0;
-        
-        switch (filter.stockLevel) {
-          case 'out':
-            if (quantity > 0) return false;
-            break;
-          case 'low':
-            if (quantity <= 0 || quantity > reorderPoint) return false;
-            break;
-          case 'in':
-            if (quantity <= reorderPoint) return false;
-            break;
-        }
-      }
-      
-      // Price range filter
-      if (filter.priceRange) {
-        const price = Number(item.unit_price) || 0;
-        
-        if (filter.priceRange.min !== undefined && price < filter.priceRange.min) return false;
-        if (filter.priceRange.max !== undefined && price > filter.priceRange.max) return false;
-      }
-      
-      return true;
-    });
-  } catch (error) {
-    console.error('Error filtering inventory items:', error);
-    return [];
+export const filterInventoryItems = (
+  items: InventoryItemExtended[],
+  filters: {
+    search?: string;
+    category?: string;
+    status?: string;
+    supplier?: string;
+    location?: string;
   }
+): InventoryItemExtended[] => {
+  return items.filter((item) => {
+    // Search filter
+    if (filters.search) {
+      const searchTerm = filters.search.toLowerCase();
+      const matchesSearch = 
+        item.name.toLowerCase().includes(searchTerm) ||
+        item.sku.toLowerCase().includes(searchTerm) ||
+        (item.description && item.description.toLowerCase().includes(searchTerm));
+      
+      if (!matchesSearch) return false;
+    }
+    
+    // Category filter
+    if (filters.category && item.category !== filters.category) {
+      return false;
+    }
+    
+    // Status filter
+    if (filters.status && item.status !== filters.status) {
+      return false;
+    }
+    
+    // Supplier filter
+    if (filters.supplier && item.supplier !== filters.supplier) {
+      return false;
+    }
+    
+    // Location filter
+    if (filters.location && item.location !== filters.location) {
+      return false;
+    }
+    
+    return true;
+  });
 };
 
 /**
- * Get available filter options from inventory data
+ * Get unique categories from database
  */
-export const getFilterOptions = async () => {
+export const getInventoryFilters = async () => {
   try {
-    const allItems = await getInventoryItems();
-    
-    const categories = [...new Set(allItems.map(item => item.category).filter(Boolean))];
-    const suppliers = [...new Set(allItems.map(item => item.supplier).filter(Boolean))];
-    const locations = [...new Set(allItems.map(item => item.location).filter(Boolean))];
-    const statuses = [...new Set(allItems.map(item => item.status).filter(Boolean))];
+    const [categories, suppliers] = await Promise.all([
+      getInventoryCategories(),
+      getInventorySuppliers()
+    ]);
     
     return {
       categories,
       suppliers,
-      locations,
-      statuses
+      statuses: ['active', 'inactive', 'in stock', 'low stock', 'out of stock', 'discontinued'],
+      locations: [] // Will be populated from actual data
     };
   } catch (error) {
-    console.error('Error getting filter options:', error);
+    console.error('Error fetching inventory filters:', error);
     return {
       categories: [],
       suppliers: [],
-      locations: [],
-      statuses: []
+      statuses: [],
+      locations: []
     };
   }
 };
 
 /**
- * Get inventory categories
+ * Get inventory categories (alias for compatibility)
  */
-export const getInventoryCategories = async (): Promise<string[]> => {
-  try {
-    const allItems = await getInventoryItems();
-    return [...new Set(allItems.map(item => item.category).filter(Boolean))];
-  } catch (error) {
-    console.error('Error getting inventory categories:', error);
-    return [];
-  }
-};
+export { getInventoryCategories };
 
 /**
- * Get inventory suppliers
+ * Get inventory suppliers (alias for compatibility)
  */
-export const getInventorySuppliers = async (): Promise<string[]> => {
-  try {
-    const allItems = await getInventoryItems();
-    return [...new Set(allItems.map(item => item.supplier).filter(Boolean))];
-  } catch (error) {
-    console.error('Error getting inventory suppliers:', error);
-    return [];
-  }
-};
+export { getInventorySuppliers };
 
 /**
- * Get inventory locations
+ * Get unique locations from inventory items
  */
 export const getInventoryLocations = async (): Promise<string[]> => {
   try {
-    const allItems = await getInventoryItems();
-    return [...new Set(allItems.map(item => item.location).filter(Boolean))];
+    const { data, error } = await supabase
+      .from('inventory_items')
+      .select('location')
+      .not('location', 'is', null)
+      .not('location', 'eq', '');
+      
+    if (error) throw error;
+    
+    const uniqueLocations = [...new Set(
+      data?.map(item => item.location).filter(Boolean) || []
+    )].sort();
+    
+    return uniqueLocations;
   } catch (error) {
-    console.error('Error getting inventory locations:', error);
+    console.error('Error fetching inventory locations:', error);
     return [];
   }
 };
 
 /**
- * Get inventory statuses
+ * Get unique statuses from inventory items
  */
 export const getInventoryStatuses = async (): Promise<string[]> => {
   try {
-    const allItems = await getInventoryItems();
-    return [...new Set(allItems.map(item => item.status).filter(Boolean))];
+    const { data, error } = await supabase
+      .from('inventory_items')
+      .select('status')
+      .not('status', 'is', null)
+      .not('status', 'eq', '');
+      
+    if (error) throw error;
+    
+    const uniqueStatuses = [...new Set(
+      data?.map(item => item.status).filter(Boolean) || []
+    )].sort();
+    
+    return uniqueStatuses;
   } catch (error) {
-    console.error('Error getting inventory statuses:', error);
-    return [];
+    console.error('Error fetching inventory statuses:', error);
+    return ['active', 'inactive', 'in stock', 'low stock', 'out of stock', 'discontinued'];
   }
 };
