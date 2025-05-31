@@ -14,6 +14,7 @@ import CustomersPage from "@/pages/CustomersPage";
 import WorkOrders from "@/pages/WorkOrders";
 import WorkOrderCreate from "@/pages/WorkOrderCreate";
 import Inventory from "@/pages/Inventory";
+import InventoryAdd from "@/pages/InventoryAdd";
 import Invoices from "@/pages/Invoices";
 import Reports from "@/pages/Reports";
 import Settings from "@/pages/Settings";
@@ -81,6 +82,7 @@ function App() {
                       <Route path="/work-orders/create" element={<WorkOrderCreate />} />
                       <Route path="/work-orders/:id" element={<WorkOrderDetails />} />
                       <Route path="/inventory" element={<Inventory />} />
+                      <Route path="/inventory/add" element={<InventoryAdd />} />
                       <Route path="/invoices" element={<Invoices />} />
                       <Route path="/invoices/new" element={<CreateInvoice />} />
                       <Route path="/invoices/:id" element={<InvoiceDetails />} />
