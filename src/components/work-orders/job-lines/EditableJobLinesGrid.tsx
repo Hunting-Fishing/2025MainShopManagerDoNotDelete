@@ -5,7 +5,7 @@ import { EditableJobLineCard } from './EditableJobLineCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ResponsiveGrid } from '@/components/ui/responsive-grid';
-import { Clock, DollarSign, Plus, Wrench } from 'lucide-react';
+import { Clock, DollarSign, Plus, Wrench, Package } from 'lucide-react';
 import { AddJobLineDialog } from './AddJobLineDialog';
 
 interface EditableJobLinesGridProps {
@@ -32,6 +32,11 @@ export function EditableJobLinesGrid({
   const totalHours = jobLines.reduce((sum, line) => sum + (line.estimatedHours || 0), 0);
   const totalAmount = jobLines.reduce((sum, line) => sum + (line.totalAmount || 0), 0);
 
+  const handleAddPartsLine = () => {
+    // TODO: Implement parts line dialog or functionality
+    console.log('Add Parts Line clicked');
+  };
+
   if (jobLines.length === 0) {
     return (
       <Card className="border-dashed border-2">
@@ -41,10 +46,16 @@ export function EditableJobLinesGrid({
           <p className="text-sm text-muted-foreground text-center mb-4">
             Job lines will be automatically parsed from the work order description, or you can add them manually.
           </p>
-          <Button onClick={() => setShowAddDialog(true)} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Add Job Line
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => setShowAddDialog(true)} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Add Job Line
+            </Button>
+            <Button onClick={handleAddPartsLine} variant="outline" className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Add Parts Line
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );
@@ -58,14 +69,25 @@ export function EditableJobLinesGrid({
           <div className="text-sm text-muted-foreground">
             {jobLines.length} service{jobLines.length !== 1 ? 's' : ''}
           </div>
-          <Button 
-            onClick={() => setShowAddDialog(true)} 
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Add Job Line
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              onClick={() => setShowAddDialog(true)} 
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Add Job Line
+            </Button>
+            <Button 
+              onClick={handleAddPartsLine}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <Package className="h-4 w-4" />
+              Add Parts Line
+            </Button>
+          </div>
         </div>
       </div>
 
