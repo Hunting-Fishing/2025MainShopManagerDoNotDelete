@@ -2,6 +2,10 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+interface CategoryRecord {
+  name: string;
+}
+
 /**
  * Get all inventory categories from the database
  * @returns Array of category names
@@ -10,19 +14,20 @@ export async function getInventoryCategories(): Promise<string[]> {
   try {
     console.log('Fetching inventory categories from database...');
     
-    const { data: categories, error } = await supabase
+    const { data, error } = await supabase
       .from('inventory_categories')
       .select('name')
       .eq('is_active', true)
       .order('display_order', { ascending: true })
-      .order('name', { ascending: true });
+      .order('name', { ascending: true })
+      .returns<CategoryRecord[]>();
     
     if (error) {
       console.error('Error fetching categories from database:', error);
       throw error;
     }
     
-    const categoryNames = categories?.map((cat: { name: string }) => cat.name) || [];
+    const categoryNames = data?.map(cat => cat.name) || [];
     console.log(`Retrieved ${categoryNames.length} categories from database`);
     
     // If no categories exist in database, return empty array (no fallbacks)
