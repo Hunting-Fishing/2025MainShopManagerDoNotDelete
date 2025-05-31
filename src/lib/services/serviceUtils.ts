@@ -1,82 +1,78 @@
 
 import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
 
-export const findServiceById = (categories: ServiceMainCategory[], serviceId: string): ServiceJob | null => {
+/**
+ * Utility functions for working with service data
+ */
+
+export function findServiceById(categories: ServiceMainCategory[], serviceId: string): ServiceJob | null {
   for (const category of categories) {
     for (const subcategory of category.subcategories) {
-      const job = subcategory.jobs.find(job => job.id === serviceId);
+      const job = subcategory.jobs.find(j => j.id === serviceId);
       if (job) return job;
     }
   }
   return null;
-};
+}
 
-export const findServicePath = (
-  categories: ServiceMainCategory[], 
-  serviceId: string
-): { category: ServiceMainCategory; subcategory: ServiceSubcategory; job: ServiceJob } | null => {
+export function findCategoryById(categories: ServiceMainCategory[], categoryId: string): ServiceMainCategory | null {
+  return categories.find(c => c.id === categoryId) || null;
+}
+
+export function findSubcategoryById(categories: ServiceMainCategory[], subcategoryId: string): ServiceSubcategory | null {
+  for (const category of categories) {
+    const subcategory = category.subcategories.find(s => s.id === subcategoryId);
+    if (subcategory) return subcategory;
+  }
+  return null;
+}
+
+export function getServicePath(categories: ServiceMainCategory[], serviceId: string): {
+  category: ServiceMainCategory;
+  subcategory: ServiceSubcategory;
+  job: ServiceJob;
+} | null {
   for (const category of categories) {
     for (const subcategory of category.subcategories) {
-      const job = subcategory.jobs.find(job => job.id === serviceId);
+      const job = subcategory.jobs.find(j => j.id === serviceId);
       if (job) {
         return { category, subcategory, job };
       }
     }
   }
   return null;
-};
+}
 
-export const searchServices = (
-  categories: ServiceMainCategory[], 
-  searchTerm: string
-): ServiceJob[] => {
+export function searchServices(categories: ServiceMainCategory[], query: string): ServiceJob[] {
   const results: ServiceJob[] = [];
-  const lowerSearchTerm = searchTerm.toLowerCase();
-  
+  const searchTerm = query.toLowerCase();
+
   for (const category of categories) {
     for (const subcategory of category.subcategories) {
       for (const job of subcategory.jobs) {
         if (
-          job.name.toLowerCase().includes(lowerSearchTerm) ||
-          (job.description && job.description.toLowerCase().includes(lowerSearchTerm))
+          job.name.toLowerCase().includes(searchTerm) ||
+          (job.description && job.description.toLowerCase().includes(searchTerm))
         ) {
           results.push(job);
         }
       }
     }
   }
-  
+
   return results;
-};
+}
 
-export const getServicesByCategory = (
-  categories: ServiceMainCategory[], 
-  categoryId: string
-): ServiceJob[] => {
-  const category = categories.find(cat => cat.id === categoryId);
-  if (!category) return [];
-  
-  return category.subcategories.flatMap(sub => sub.jobs);
-};
+export function formatPrice(price?: number): string {
+  if (!price) return 'Price not set';
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD'
+  }).format(price);
+}
 
-export const getServicesBySubcategory = (
-  categories: ServiceMainCategory[], 
-  subcategoryId: string
-): ServiceJob[] => {
-  for (const category of categories) {
-    const subcategory = category.subcategories.find(sub => sub.id === subcategoryId);
-    if (subcategory) return subcategory.jobs;
-  }
-  return [];
-};
-
-export const formatServicePrice = (price?: number): string => {
-  if (!price) return 'Contact for pricing';
-  return `$${price.toFixed(2)}`;
-};
-
-export const formatEstimatedTime = (minutes?: number): string => {
-  if (!minutes) return 'Contact for time estimate';
+export function formatEstimatedTime(minutes?: number): string {
+  if (!minutes) return 'Time not set';
   
   if (minutes < 60) {
     return `${minutes} min`;
@@ -86,8 +82,8 @@ export const formatEstimatedTime = (minutes?: number): string => {
   const remainingMinutes = minutes % 60;
   
   if (remainingMinutes === 0) {
-    return `${hours}h`;
+    return `${hours} hr`;
   }
   
-  return `${hours}h ${remainingMinutes}m`;
-};
+  return `${hours} hr ${remainingMinutes} min`;
+}
