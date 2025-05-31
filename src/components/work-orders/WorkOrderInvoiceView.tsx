@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Download, Printer } from "lucide-react";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { parseJobLinesFromDescription, formatJobLineName } from '@/services/jobLineParser';
 
 export interface WorkOrderInvoiceViewProps {
   workOrder: WorkOrder;
@@ -43,8 +44,13 @@ export function WorkOrderInvoiceView({ workOrder }: WorkOrderInvoiceViewProps) {
     }
   };
 
-  // Calculate totals
-  const subtotal = workOrder.total_cost || 0;
+  // Parse job lines from description if not already present
+  const jobLines = workOrder.jobLines || parseJobLinesFromDescription(workOrder.description || '', workOrder.id);
+
+  // Calculate totals including job lines
+  const jobLinesTotal = jobLines.reduce((sum, job) => sum + (job.totalAmount || 0), 0);
+  const inventoryTotal = workOrder.inventoryItems?.reduce((sum, item) => sum + item.total, 0) || 0;
+  const subtotal = jobLinesTotal + inventoryTotal;
   const taxRate = workOrder.tax_rate || 0.08; // Default 8% tax
   const taxAmount = subtotal * taxRate;
   const total = subtotal + taxAmount;
@@ -132,19 +138,21 @@ export function WorkOrderInvoiceView({ workOrder }: WorkOrderInvoiceViewProps) {
           </div>
         </div>
 
-        {/* Service Description */}
-        <div className="mb-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-3 border-b border-gray-300 pb-1">SERVICE DESCRIPTION</h3>
-          <div className="bg-gray-50 p-4 rounded">
-            <p className="text-sm text-gray-700">{workOrder.description || "No service description provided"}</p>
-            {workOrder.notes && (
-              <div className="mt-2">
-                <p className="text-sm font-semibold text-gray-900">Notes:</p>
-                <p className="text-sm text-gray-700">{workOrder.notes}</p>
-              </div>
-            )}
+        {/* Service Description - Only show if no job lines parsed */}
+        {jobLines.length === 0 && workOrder.description && (
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3 border-b border-gray-300 pb-1">SERVICE DESCRIPTION</h3>
+            <div className="bg-gray-50 p-4 rounded">
+              <p className="text-sm text-gray-700">{workOrder.description}</p>
+              {workOrder.notes && (
+                <div className="mt-2">
+                  <p className="text-sm font-semibold text-gray-900">Notes:</p>
+                  <p className="text-sm text-gray-700">{workOrder.notes}</p>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Line Items */}
         <div className="mb-8">
@@ -153,39 +161,51 @@ export function WorkOrderInvoiceView({ workOrder }: WorkOrderInvoiceViewProps) {
             <thead className="bg-gray-50">
               <tr>
                 <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Description</th>
-                <th className="border border-gray-300 px-3 py-2 text-center text-sm font-semibold w-20">Qty</th>
+                <th className="border border-gray-300 px-3 py-2 text-center text-sm font-semibold w-20">Hours</th>
                 <th className="border border-gray-300 px-3 py-2 text-right text-sm font-semibold w-24">Rate</th>
                 <th className="border border-gray-300 px-3 py-2 text-right text-sm font-semibold w-24">Amount</th>
               </tr>
             </thead>
             <tbody>
-              {/* Labor/Service Entry */}
-              <tr>
-                <td className="border border-gray-300 px-3 py-2 text-sm">
-                  {workOrder.service_type || "Service"}
-                  {workOrder.description && (
-                    <div className="text-xs text-gray-600 mt-1">{workOrder.description}</div>
-                  )}
-                </td>
-                <td className="border border-gray-300 px-3 py-2 text-center text-sm">1</td>
-                <td className="border border-gray-300 px-3 py-2 text-right text-sm">
-                  ${(workOrder.total_cost || 0).toFixed(2)}
-                </td>
-                <td className="border border-gray-300 px-3 py-2 text-right text-sm font-semibold">
-                  ${(workOrder.total_cost || 0).toFixed(2)}
-                </td>
-              </tr>
-
-              {/* Inventory Items */}
-              {workOrder.inventoryItems?.map((item, index) => (
-                <tr key={index}>
+              {/* Job Lines - Individual Service Items */}
+              {jobLines.map((jobLine, index) => (
+                <tr key={jobLine.id || index}>
                   <td className="border border-gray-300 px-3 py-2 text-sm">
-                    {item.name}
-                    {item.sku && (
-                      <div className="text-xs text-gray-600">SKU: {item.sku}</div>
+                    <div className="font-medium">{formatJobLineName(jobLine.name)}</div>
+                    {jobLine.category && (
+                      <div className="text-xs text-gray-600 mt-1">Category: {jobLine.category}</div>
+                    )}
+                    {jobLine.description && jobLine.description !== jobLine.name && (
+                      <div className="text-xs text-gray-600 mt-1">{jobLine.description}</div>
                     )}
                   </td>
-                  <td className="border border-gray-300 px-3 py-2 text-center text-sm">{item.quantity}</td>
+                  <td className="border border-gray-300 px-3 py-2 text-center text-sm">
+                    {jobLine.estimatedHours?.toFixed(1) || '0.0'}
+                  </td>
+                  <td className="border border-gray-300 px-3 py-2 text-right text-sm">
+                    ${(jobLine.laborRate || 0).toFixed(2)}
+                  </td>
+                  <td className="border border-gray-300 px-3 py-2 text-right text-sm font-semibold">
+                    ${(jobLine.totalAmount || 0).toFixed(2)}
+                  </td>
+                </tr>
+              ))}
+
+              {/* Inventory Items - Parts */}
+              {workOrder.inventoryItems?.map((item, index) => (
+                <tr key={`inventory-${index}`}>
+                  <td className="border border-gray-300 px-3 py-2 text-sm">
+                    <div className="font-medium">{item.name}</div>
+                    {item.sku && (
+                      <div className="text-xs text-gray-600 mt-1">SKU: {item.sku}</div>
+                    )}
+                    {item.category && (
+                      <div className="text-xs text-gray-600">Category: {item.category}</div>
+                    )}
+                  </td>
+                  <td className="border border-gray-300 px-3 py-2 text-center text-sm">
+                    Qty: {item.quantity}
+                  </td>
                   <td className="border border-gray-300 px-3 py-2 text-right text-sm">
                     ${item.unit_price.toFixed(2)}
                   </td>
@@ -195,11 +215,11 @@ export function WorkOrderInvoiceView({ workOrder }: WorkOrderInvoiceViewProps) {
                 </tr>
               ))}
 
-              {/* Empty rows to maintain structure */}
-              {(!workOrder.inventoryItems || workOrder.inventoryItems.length === 0) && (
+              {/* Empty state */}
+              {jobLines.length === 0 && (!workOrder.inventoryItems || workOrder.inventoryItems.length === 0) && (
                 <tr>
                   <td className="border border-gray-300 px-3 py-2 text-sm text-gray-500" colSpan={4}>
-                    No additional parts or services
+                    No services or parts listed
                   </td>
                 </tr>
               )}
@@ -207,10 +227,30 @@ export function WorkOrderInvoiceView({ workOrder }: WorkOrderInvoiceViewProps) {
           </table>
         </div>
 
+        {/* Additional Notes */}
+        {workOrder.notes && jobLines.length > 0 && (
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3 border-b border-gray-300 pb-1">ADDITIONAL NOTES</h3>
+            <div className="bg-gray-50 p-4 rounded">
+              <p className="text-sm text-gray-700">{workOrder.notes}</p>
+            </div>
+          </div>
+        )}
+
         {/* Totals */}
         <div className="flex justify-end mb-8">
           <div className="w-64">
             <div className="flex justify-between py-1 text-sm">
+              <span>Labor Subtotal:</span>
+              <span>${jobLinesTotal.toFixed(2)}</span>
+            </div>
+            {inventoryTotal > 0 && (
+              <div className="flex justify-between py-1 text-sm">
+                <span>Parts Subtotal:</span>
+                <span>${inventoryTotal.toFixed(2)}</span>
+              </div>
+            )}
+            <div className="flex justify-between py-1 text-sm border-t border-gray-300 pt-1">
               <span>Subtotal:</span>
               <span>${subtotal.toFixed(2)}</span>
             </div>

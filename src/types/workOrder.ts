@@ -1,4 +1,8 @@
+
 // Work Order Types - Standardized to match database schema (snake_case)
+
+import { WorkOrderJobLine } from './jobLine';
+
 export interface WorkOrder {
   id: string;
   customer_id?: string;
@@ -55,6 +59,8 @@ export interface WorkOrder {
   timeEntries?: TimeEntry[];
   inventoryItems?: WorkOrderInventoryItem[];
   inventory_items?: WorkOrderInventoryItem[];
+  // Job Lines - NEW
+  jobLines?: WorkOrderJobLine[];
   // Invoice calculations
   subtotal?: number;
   tax_rate?: number;
