@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -13,10 +14,12 @@ export async function getInventoryCategories(): Promise<string[]> {
   try {
     console.log('Fetching inventory categories from database...');
     
-    const { data, error } = await supabase
+    const query = supabase
       .from('inventory_categories')
       .select('name')
-      .eq('is_active', true)
+      .eq('is_active', true);
+    
+    const { data, error } = await query
       .order('display_order', { ascending: true })
       .order('name', { ascending: true });
     
@@ -25,7 +28,7 @@ export async function getInventoryCategories(): Promise<string[]> {
       throw error;
     }
     
-    const categoryNames = (data as CategoryRecord[])?.map(cat => cat.name) || [];
+    const categoryNames = (data || []).map((cat: CategoryRecord) => cat.name);
     console.log(`Retrieved ${categoryNames.length} categories from database`);
     
     // If no categories exist in database, return empty array (no fallbacks)
