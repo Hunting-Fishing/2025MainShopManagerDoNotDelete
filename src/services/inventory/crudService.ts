@@ -1,28 +1,42 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { InventoryItemExtended } from "@/types/inventory";
 import { formatInventoryItem } from "@/utils/inventory/inventoryUtils";
 
 /**
- * Get all inventory items from the database
+ * Get all inventory items from the database - NO SAMPLE DATA
  */
 export const getInventoryItems = async (): Promise<InventoryItemExtended[]> => {
   try {
+    console.log('Fetching real inventory items from Supabase...');
+    
     const { data, error } = await supabase
       .from('inventory_items')
       .select('*')
       .order('name');
       
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error:', error);
+      throw error;
+    }
     
-    return data?.map(item => formatInventoryItem(item)) || [];
+    console.log(`Retrieved ${data?.length || 0} real items from database`);
+    
+    // Only return real data from database, no fallback to sample data
+    if (!data || data.length === 0) {
+      console.log('No real inventory items found in database');
+      return [];
+    }
+    
+    return data.map(item => formatInventoryItem(item));
   } catch (error) {
-    console.error('Error fetching inventory items:', error);
-    return [];
+    console.error('Error fetching real inventory items:', error);
+    return []; // Return empty array instead of sample data
   }
 };
 
 /**
- * Get inventory item by ID
+ * Get inventory item by ID - NO SAMPLE DATA
  */
 export const getInventoryItemById = async (id: string): Promise<InventoryItemExtended | null> => {
   try {

@@ -25,18 +25,26 @@ export const useInventory = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   
-  // Fetch real inventory data from database
+  // Fetch only real inventory data from database
   const fetchItems = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      console.log('Loading real inventory data from database...');
+      console.log('Fetching real inventory data from database...');
       const data = await getInventoryItems();
-      console.log(`Loaded ${data.length} real inventory items from database`);
-      setItems(data);
+      console.log(`Fetched ${data.length} real inventory items from database`);
+      
+      // Ensure we only show items that exist in the database
+      if (data.length === 0) {
+        console.log('No real inventory items found in database');
+        setItems([]);
+      } else {
+        setItems(data);
+      }
     } catch (err) {
       console.error("Error fetching real inventory data:", err);
       setError("Failed to load inventory items from database");
+      setItems([]); // Clear any existing data on error
       toast.error("Failed to load inventory items from database");
     } finally {
       setLoading(false);
@@ -48,11 +56,11 @@ export const useInventory = ({
     fetchItems();
   }, [fetchItems]);
   
-  // Get unique values from real data only
-  const categories = [...new Set(items.map(item => item.category))].filter(Boolean).sort();
-  const statuses = [...new Set(items.map(item => item.status))].filter(Boolean).sort();
-  const suppliers = [...new Set(items.map(item => item.supplier))].filter(Boolean).sort();
-  const locations = [...new Set(items.map(item => item.location))].filter(Boolean).sort();
+  // Get unique values from real data only - return empty arrays if no data
+  const categories = items.length > 0 ? [...new Set(items.map(item => item.category))].filter(Boolean).sort() : [];
+  const statuses = items.length > 0 ? [...new Set(items.map(item => item.status))].filter(Boolean).sort() : [];
+  const suppliers = items.length > 0 ? [...new Set(items.map(item => item.supplier))].filter(Boolean).sort() : [];
+  const locations = items.length > 0 ? [...new Set(items.map(item => item.location))].filter(Boolean).sort() : [];
   
   // Filter real data based on search and filter criteria
   const filteredItems = items.filter((item) => {
@@ -86,15 +94,19 @@ export const useInventory = ({
     return matchesSearch && matchesCategory && matchesStatus && matchesSupplier && matchesLocation;
   });
   
-  // Calculate statistics from real data
-  const lowStockCount = countLowStockItems(items);
-  const outOfStockCount = countOutOfStockItems(items);
-  const totalValue = calculateTotalValue(items);
+  // Calculate statistics from real data only
+  const lowStockCount = items.length > 0 ? countLowStockItems(items) : 0;
+  const outOfStockCount = items.length > 0 ? countOutOfStockItems(items) : 0;
+  const totalValue = items.length > 0 ? calculateTotalValue(items) : 0;
   
   // Export real data only
   const handleExport = useCallback(() => {
     try {
-      // Only export real filtered items
+      if (filteredItems.length === 0) {
+        toast.info("No inventory items to export");
+        return;
+      }
+      
       const exportData = filteredItems.map((item) => ({
         Name: item.name,
         SKU: item.sku,
@@ -108,11 +120,11 @@ export const useInventory = ({
         'Last Updated': new Date(item.updated_at).toLocaleDateString()
       }));
       
-      exportToCSV(exportData, `real-inventory-export-${new Date().toISOString().split('T')[0]}`);
-      toast.success(`Exported ${exportData.length} real inventory items successfully`);
+      exportToCSV(exportData, `inventory-export-${new Date().toISOString().split('T')[0]}`);
+      toast.success(`Exported ${exportData.length} inventory items successfully`);
     } catch (error) {
       console.error("Export failed:", error);
-      toast.error("Failed to export real inventory data");
+      toast.error("Failed to export inventory data");
     }
   }, [filteredItems]);
   
