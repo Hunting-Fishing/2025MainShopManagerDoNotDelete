@@ -1,135 +1,126 @@
 
 import React from 'react';
 import { WorkOrder } from '@/types/workOrder';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { 
-  ArrowLeft, 
-  Printer, 
-  Edit, 
-  MoreHorizontal, 
-  FileText,
-  Trash2,
-  Phone
-} from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
-import { formatDate } from '@/utils/workOrders';
-import { WorkOrderChatButton } from '../WorkOrderChatButton';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { SendSmsButton } from '@/components/calls/SendSmsButton';
-import { VoiceCallButton } from '@/components/calls/VoiceCallButton';
+import { Calendar, User, MapPin, Edit, MoreHorizontal } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface WorkOrderDetailsHeaderProps {
   workOrder: WorkOrder;
-  onDelete?: () => void;
 }
 
-export const WorkOrderDetailsHeader: React.FC<WorkOrderDetailsHeaderProps> = ({ 
-  workOrder, 
-  onDelete = () => {} 
-}) => {
-  const navigate = useNavigate();
-  const isMobile = useIsMobile();
-  
-  const handleEdit = () => {
-    navigate(`/work-orders/${workOrder.id}/edit`);
-  };
-  
-  const handleCreateInvoice = () => {
-    navigate(`/invoices/new?workOrder=${workOrder.id}`);
+export function WorkOrderDetailsHeader({ workOrder }: WorkOrderDetailsHeaderProps) {
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'completed': return 'default';
+      case 'in-progress': return 'secondary';
+      case 'on-hold': return 'outline';
+      case 'cancelled': return 'destructive';
+      default: return 'outline';
+    }
   };
 
-  // This would come from customer data in a real app
-  const phoneNumber = "";
-  const customerId = "";
+  const getPriorityColor = (priority?: string) => {
+    if (!priority) return 'outline';
+    switch (priority.toLowerCase()) {
+      case 'urgent': return 'destructive';
+      case 'high': return 'destructive';
+      case 'medium': return 'secondary';
+      case 'low': return 'outline';
+      default: return 'outline';
+    }
+  };
 
   return (
-    <div className="flex flex-col space-y-4 pb-4 md:pb-6">
-      <div className="flex items-center">
-        <Button variant="ghost" size="sm" asChild className="gap-1">
-          <Link to="/work-orders">
-            <ArrowLeft className="h-4 w-4" />
-            <span>Back to Work Orders</span>
-          </Link>
-        </Button>
-      </div>
-      
-      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold mb-1">{workOrder.id}</h1>
-          <div className="text-slate-500 mb-2">Created on {formatDate(workOrder.date)}</div>
-          <div className="text-lg font-medium">{workOrder.customer}</div>
-          <div className="text-slate-700">{workOrder.description}</div>
-        </div>
-        
-        <div className={`flex ${isMobile ? 'flex-wrap' : ''} items-center gap-2`}>
-          <WorkOrderChatButton 
-            workOrderId={workOrder.id} 
-            workOrderName={`${workOrder.id}: ${workOrder.description}`}
-          />
-          
-          {/* SMS and Call buttons */}
-          <SendSmsButton 
-            phoneNumber={phoneNumber} 
-            message={`Hello, regarding your work order ${workOrder.id}`}
-            customerId={customerId}
-            variant="outline"
-            size="sm"
-          />
-          
-          <VoiceCallButton
-            phoneNumber={phoneNumber}
-            callType="appointment_reminder"
-            customerId={customerId}
-            variant="outline"
-            size="sm"
-          />
-          
-          {!isMobile && (
-            <Button variant="outline" size="sm">
-              <Printer className="h-4 w-4 mr-2" />
-              Print
-            </Button>
-          )}
-          <Button variant="outline" size="sm" onClick={handleEdit}>
-            <Edit className="h-4 w-4 mr-2" />
-            {isMobile ? '' : 'Edit'}
-          </Button>
-          <Button onClick={handleCreateInvoice}>
-            <FileText className="h-4 w-4 mr-2" />
-            {isMobile ? '' : 'Create Invoice'}
-          </Button>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <MoreHorizontal className="h-5 w-5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {isMobile && (
-                <DropdownMenuItem>
-                  <Printer className="h-4 w-4 mr-2" />
-                  Print Work Order
-                </DropdownMenuItem>
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex justify-between items-start">
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-4">
+              <Badge variant={getStatusColor(workOrder.status)} className="text-sm">
+                {workOrder.status?.replace('-', ' ')}
+              </Badge>
+              {workOrder.priority && (
+                <Badge variant={getPriorityColor(workOrder.priority)} className="text-sm">
+                  {workOrder.priority} Priority
+                </Badge>
               )}
-              <DropdownMenuItem>Duplicate Work Order</DropdownMenuItem>
-              <DropdownMenuItem>Email Work Order</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-red-600" onClick={onDelete}>
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete Work Order
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {workOrder.customer && (
+                <div className="flex items-center gap-2 text-sm">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">Customer:</span>
+                  <span>{workOrder.customer}</span>
+                </div>
+              )}
+
+              {workOrder.technician && (
+                <div className="flex items-center gap-2 text-sm">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">Technician:</span>
+                  <span>{workOrder.technician}</span>
+                </div>
+              )}
+
+              {workOrder.location && (
+                <div className="flex items-center gap-2 text-sm">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">Location:</span>
+                  <span>{workOrder.location}</span>
+                </div>
+              )}
+
+              {workOrder.date && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">Created:</span>
+                  <span>{new Date(workOrder.date).toLocaleDateString()}</span>
+                </div>
+              )}
+
+              {workOrder.dueDate && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">Due Date:</span>
+                  <span>{new Date(workOrder.dueDate).toLocaleDateString()}</span>
+                </div>
+              )}
+            </div>
+
+            {workOrder.description && (
+              <div className="mt-4">
+                <h4 className="font-medium text-sm mb-2">Description</h4>
+                <p className="text-sm text-muted-foreground">{workOrder.description}</p>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 ml-4">
+            <Button variant="outline" size="sm">
+              <Edit className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem>Print Work Order</DropdownMenuItem>
+                <DropdownMenuItem>Export as PDF</DropdownMenuItem>
+                <DropdownMenuItem>Send to Customer</DropdownMenuItem>
+                <DropdownMenuItem className="text-red-600">Delete Work Order</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
-};
+}

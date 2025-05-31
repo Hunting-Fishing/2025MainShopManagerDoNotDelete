@@ -4,9 +4,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { useLabourRates } from '@/hooks/useLabourRates';
+import { toast } from 'sonner';
 
 interface AddJobLineDialogProps {
   open: boolean;
@@ -15,6 +16,16 @@ interface AddJobLineDialogProps {
   workOrderId: string;
   shopId?: string;
 }
+
+const JOB_LINE_CATEGORIES = [
+  'Maintenance',
+  'Brake Service',
+  'Tire Service',
+  'Engine/Transmission',
+  'Diagnostic',
+  'Repair',
+  'General Service'
+];
 
 export function AddJobLineDialog({
   open,
@@ -27,65 +38,51 @@ export function AddJobLineDialog({
     name: '',
     category: '',
     description: '',
-    estimatedHours: 0,
-    laborRate: 0
+    estimatedHours: 1.0,
+    laborRate: 100.0,
+    status: 'pending' as WorkOrderJobLine['status']
   });
-  
-  const { rates } = useLabourRates();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const jobLine = {
+    if (!formData.name.trim()) {
+      toast.error('Job line name is required');
+      return;
+    }
+
+    const totalAmount = formData.estimatedHours * formData.laborRate;
+
+    onAddJobLine({
       workOrderId,
       name: formData.name,
       category: formData.category || undefined,
       description: formData.description || undefined,
       estimatedHours: formData.estimatedHours,
       laborRate: formData.laborRate,
-      totalAmount: formData.estimatedHours * formData.laborRate,
-      status: 'pending' as const,
-      notes: undefined
-    };
+      totalAmount,
+      status: formData.status
+    });
 
-    onAddJobLine(jobLine);
-    
     // Reset form
     setFormData({
       name: '',
       category: '',
       description: '',
-      estimatedHours: 0,
-      laborRate: 0
+      estimatedHours: 1.0,
+      laborRate: 100.0,
+      status: 'pending'
     });
-    
+
     onOpenChange(false);
+    toast.success('Job line added successfully');
   };
 
-  const handleLaborRateTypeChange = (rateType: string) => {
-    let laborRate = typeof rates.standard_rate === 'number' ? rates.standard_rate : parseFloat(rates.standard_rate.toString()) || 100;
-    
-    switch (rateType) {
-      case 'diagnostic':
-        laborRate = typeof rates.diagnostic_rate === 'number' ? rates.diagnostic_rate : parseFloat(rates.diagnostic_rate.toString()) || 120;
-        break;
-      case 'emergency':
-        laborRate = typeof rates.emergency_rate === 'number' ? rates.emergency_rate : parseFloat(rates.emergency_rate.toString()) || 150;
-        break;
-      case 'warranty':
-        laborRate = typeof rates.warranty_rate === 'number' ? rates.warranty_rate : parseFloat(rates.warranty_rate.toString()) || 80;
-        break;
-      case 'internal':
-        laborRate = typeof rates.internal_rate === 'number' ? rates.internal_rate : parseFloat(rates.internal_rate.toString()) || 75;
-        break;
-    }
-
-    setFormData(prev => ({ ...prev, laborRate }));
-  };
+  const totalAmount = formData.estimatedHours * formData.laborRate;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add New Job Line</DialogTitle>
         </DialogHeader>
@@ -97,80 +94,74 @@ export function AddJobLineDialog({
               id="name"
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="e.g., Oil Change, Brake Pad Replacement"
+              placeholder="Enter service name"
               required
             />
           </div>
 
           <div>
             <Label htmlFor="category">Category</Label>
-            <Input
-              id="category"
-              value={formData.category}
-              onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-              placeholder="e.g., Maintenance, Repair"
-            />
+            <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                {JOB_LINE_CATEGORIES.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
             <Label htmlFor="description">Description</Label>
-            <Input
+            <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="Additional details about the service"
+              placeholder="Enter detailed description"
+              rows={3}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="hours">Estimated Hours *</Label>
+              <Label htmlFor="hours">Estimated Hours</Label>
               <Input
                 id="hours"
                 type="number"
-                step="0.1"
                 min="0"
-                value={formData.estimatedHours || ''}
-                onChange={(e) => setFormData(prev => ({ 
-                  ...prev, 
-                  estimatedHours: parseFloat(e.target.value) || 0 
-                }))}
-                placeholder="0.0"
-                required
+                step="0.25"
+                value={formData.estimatedHours}
+                onChange={(e) => setFormData(prev => ({ ...prev, estimatedHours: parseFloat(e.target.value) || 0 }))}
               />
             </div>
 
             <div>
-              <Label>Labor Rate Type *</Label>
-              <Select onValueChange={handleLaborRateTypeChange} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select rate type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="standard">Standard (${typeof rates.standard_rate === 'number' ? rates.standard_rate : parseFloat(rates.standard_rate.toString()) || 100}/hr)</SelectItem>
-                  <SelectItem value="diagnostic">Diagnostic (${typeof rates.diagnostic_rate === 'number' ? rates.diagnostic_rate : parseFloat(rates.diagnostic_rate.toString()) || 120}/hr)</SelectItem>
-                  <SelectItem value="emergency">Emergency (${typeof rates.emergency_rate === 'number' ? rates.emergency_rate : parseFloat(rates.emergency_rate.toString()) || 150}/hr)</SelectItem>
-                  <SelectItem value="warranty">Warranty (${typeof rates.warranty_rate === 'number' ? rates.warranty_rate : parseFloat(rates.warranty_rate.toString()) || 80}/hr)</SelectItem>
-                  <SelectItem value="internal">Internal (${typeof rates.internal_rate === 'number' ? rates.internal_rate : parseFloat(rates.internal_rate.toString()) || 75}/hr)</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="rate">Labor Rate ($)</Label>
+              <Input
+                id="rate"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.laborRate}
+                onChange={(e) => setFormData(prev => ({ ...prev, laborRate: parseFloat(e.target.value) || 0 }))}
+              />
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t">
-            <div className="text-sm text-muted-foreground">
-              Labor Rate: ${formData.laborRate}/hr
-            </div>
-            <div className="font-semibold">
-              Total: ${(formData.estimatedHours * formData.laborRate).toFixed(2)}
-            </div>
+          <div className="bg-gray-50 p-3 rounded-md">
+            <div className="text-sm text-gray-600">Total Amount</div>
+            <div className="text-lg font-semibold">${totalAmount.toFixed(2)}</div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-4">
+          <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={!formData.name || formData.estimatedHours <= 0 || formData.laborRate <= 0}>
+            <Button type="submit">
               Add Job Line
             </Button>
           </div>

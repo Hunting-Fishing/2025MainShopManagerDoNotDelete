@@ -1,4 +1,3 @@
-
 import { WorkOrderJobLine } from '@/types/jobLine';
 
 interface LaborRateData {
@@ -152,3 +151,10 @@ function determineLaborRateType(category: string): keyof LaborRateData {
 function getLaborRate(rates: LaborRateData, rateType: keyof LaborRateData): number {
   return rates[rateType] || rates.standard_rate;
 }
+
+// Re-export database functions
+export { 
+  loadJobLinesFromDatabase, 
+  saveJobLinesToDatabase, 
+  deleteJobLineFromDatabase 
+} from './jobLineDatabase';

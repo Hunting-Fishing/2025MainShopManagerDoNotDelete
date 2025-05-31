@@ -8615,6 +8615,14 @@ export type Database = {
         Args: { work_order_id: string }
         Returns: undefined
       }
+      delete_work_order_job_line: {
+        Args: { job_line_id_param: string }
+        Returns: undefined
+      }
+      delete_work_order_job_lines: {
+        Args: { work_order_id_param: string }
+        Returns: undefined
+      }
       delete_work_order_time_entries: {
         Args: { work_order_id: string }
         Returns: undefined
@@ -8651,6 +8659,26 @@ export type Database = {
           quantity: number
           sku: string
           unit_price: number
+          work_order_id: string
+        }[]
+      }
+      get_work_order_job_lines: {
+        Args: { work_order_id_param: string }
+        Returns: {
+          category: string | null
+          created_at: string
+          description: string | null
+          display_order: number | null
+          estimated_hours: number | null
+          id: string
+          labor_rate: number | null
+          labor_rate_type: string | null
+          name: string
+          notes: string | null
+          status: string | null
+          subcategory: string | null
+          total_amount: number | null
+          updated_at: string
           work_order_id: string
         }[]
       }
@@ -8786,6 +8814,23 @@ export type Database = {
       update_email_processing_schedule: {
         Args: { new_settings: Json }
         Returns: Json
+      }
+      upsert_work_order_job_line: {
+        Args: {
+          p_id: string
+          p_work_order_id: string
+          p_name: string
+          p_category: string
+          p_subcategory: string
+          p_description: string
+          p_estimated_hours: number
+          p_labor_rate: number
+          p_total_amount: number
+          p_status: string
+          p_notes: string
+          p_display_order: number
+        }
+        Returns: string
       }
     }
     Enums: {
