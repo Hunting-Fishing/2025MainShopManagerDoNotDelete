@@ -1,54 +1,54 @@
 
-import React from "react";
-import { Link } from "react-router-dom";
-import { ChevronLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface WorkOrderPageLayoutProps {
   title: string;
-  description: string;
-  children: React.ReactNode;
+  description?: string;
   backLink?: string;
   backLinkText?: string;
   actions?: React.ReactNode;
+  children: React.ReactNode;
 }
 
-export const WorkOrderPageLayout: React.FC<WorkOrderPageLayoutProps> = ({
+export function WorkOrderPageLayout({
   title,
   description,
-  children,
-  backLink = "/work-orders",
-  backLinkText = "Back to Work Orders",
-  actions
-}) => {
+  backLink,
+  backLinkText = 'Back',
+  actions,
+  children
+}: WorkOrderPageLayoutProps) {
   return (
-    <div className="space-y-6">
-      {/* Header with gradient background */}
-      <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-6 rounded-xl border border-blue-200 dark:border-blue-800">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-              <Link to={backLink} className="hover:text-primary flex items-center gap-1 font-medium text-sm text-blue-600">
-                <ChevronLeft className="h-4 w-4" />
+    <div className="container mx-auto py-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          {backLink && (
+            <Button variant="ghost" asChild className="p-2">
+              <Link to={backLink}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
                 {backLinkText}
               </Link>
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-            <p className="text-muted-foreground">{description}</p>
-          </div>
-          {actions && (
-            <div className="flex items-center gap-2">
-              {actions}
-            </div>
+            </Button>
           )}
+          <div>
+            <h1 className="text-2xl font-semibold">{title}</h1>
+            {description && (
+              <p className="text-muted-foreground">{description}</p>
+            )}
+          </div>
         </div>
+        
+        {actions && (
+          <div className="flex items-center gap-2">
+            {actions}
+          </div>
+        )}
       </div>
-
-      {/* Content */}
-      <div>
-        {children}
-      </div>
+      
+      {children}
     </div>
   );
-};
+}

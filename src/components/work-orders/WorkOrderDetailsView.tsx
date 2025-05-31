@@ -5,6 +5,8 @@ import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPageLayout } from './WorkOrderPageLayout';
 import { WorkOrderDetailsTabs } from './details/WorkOrderDetailsTabs';
 import { WorkOrderDetailsHeader } from './details/WorkOrderDetailsHeader';
+import { WorkOrderInvoiceView } from './details/WorkOrderInvoiceView';
+import { WorkOrderViewToggle } from './details/WorkOrderViewToggle';
 import { loadJobLinesFromDatabase, saveJobLinesToDatabase } from '@/services/jobLineParserEnhanced';
 import { toast } from 'sonner';
 
@@ -15,6 +17,7 @@ interface WorkOrderDetailsViewProps {
 export function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsViewProps) {
   const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
   const [jobLinesLoading, setJobLinesLoading] = useState(true);
+  const [view, setView] = useState<'detailed' | 'invoice'>('detailed');
 
   // Load job lines from database
   useEffect(() => {
@@ -53,22 +56,35 @@ export function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsViewProps) {
       description={workOrder.description || 'No description available'}
       backLink="/work-orders"
       backLinkText="Back to Work Orders"
-    >
-      <div className="space-y-6">
-        <WorkOrderDetailsHeader workOrder={workOrder} />
-        
-        <WorkOrderDetailsTabs 
-          workOrder={workOrder}
-          timeEntries={workOrder.timeEntries || []}
-          onUpdateTimeEntries={() => {}}
-          inventoryItems={workOrder.inventoryItems || []}
-          notes={workOrder.notes || ''}
-          onUpdateNotes={() => {}}
-          jobLines={jobLines}
-          onJobLinesChange={handleJobLinesChange}
-          jobLinesLoading={jobLinesLoading}
+      actions={
+        <WorkOrderViewToggle 
+          view={view} 
+          onViewChange={setView}
         />
-      </div>
+      }
+    >
+      {view === 'invoice' ? (
+        <WorkOrderInvoiceView 
+          workOrder={workOrder} 
+          jobLines={jobLines}
+        />
+      ) : (
+        <div className="space-y-6">
+          <WorkOrderDetailsHeader workOrder={workOrder} />
+          
+          <WorkOrderDetailsTabs 
+            workOrder={workOrder}
+            timeEntries={workOrder.timeEntries || []}
+            onUpdateTimeEntries={() => {}}
+            inventoryItems={workOrder.inventoryItems || []}
+            notes={workOrder.notes || ''}
+            onUpdateNotes={() => {}}
+            jobLines={jobLines}
+            onJobLinesChange={handleJobLinesChange}
+            jobLinesLoading={jobLinesLoading}
+          />
+        </div>
+      )}
     </WorkOrderPageLayout>
   );
 }
