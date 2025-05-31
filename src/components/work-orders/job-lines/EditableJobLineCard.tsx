@@ -1,15 +1,13 @@
 
 import React, { useState } from 'react';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Clock, DollarSign, Edit2, Save, X, Trash2 } from 'lucide-react';
-import { useLaborRates } from '@/hooks/useLaborRates';
+import { Trash2, Save, X, Edit } from 'lucide-react';
+import { useLabourRates } from '@/hooks/useLabourRates';
 
 interface EditableJobLineCardProps {
   jobLine: WorkOrderJobLine;
@@ -26,10 +24,10 @@ export function EditableJobLineCard({
 }: EditableJobLineCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedJobLine, setEditedJobLine] = useState(jobLine);
-  const { laborRates, getDefaultRate } = useLaborRates(shopId);
+  const { rates } = useLabourRates();
 
   const handleSave = () => {
-    // Recalculate total amount
+    // Recalculate total amount based on current values
     const totalAmount = (editedJobLine.estimatedHours || 0) * (editedJobLine.laborRate || 0);
     const updatedJobLine = {
       ...editedJobLine,
@@ -46,168 +44,127 @@ export function EditableJobLineCard({
     setIsEditing(false);
   };
 
-  const handleLaborRateChange = (rateType: string) => {
-    const selectedRate = laborRates.find(rate => rate.rate_type === rateType);
-    if (selectedRate) {
-      setEditedJobLine(prev => ({
-        ...prev,
-        laborRate: selectedRate.hourly_rate
-      }));
+  const handleLaborRateTypeChange = (rateType: string) => {
+    let laborRate = rates.standard_rate;
+    
+    switch (rateType) {
+      case 'diagnostic':
+        laborRate = rates.diagnostic_rate;
+        break;
+      case 'emergency':
+        laborRate = rates.emergency_rate;
+        break;
+      case 'warranty':
+        laborRate = rates.warranty_rate;
+        break;
+      case 'internal':
+        laborRate = rates.internal_rate;
+        break;
+      default:
+        laborRate = rates.standard_rate;
     }
+
+    const updatedJobLine = {
+      ...editedJobLine,
+      laborRate: typeof laborRate === 'number' ? laborRate : parseFloat(laborRate.toString()) || 0,
+      totalAmount: (editedJobLine.estimatedHours || 0) * (typeof laborRate === 'number' ? laborRate : parseFloat(laborRate.toString()) || 0)
+    };
+    
+    setEditedJobLine(updatedJobLine);
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed':
-        return 'success';
-      case 'in-progress':
-        return 'info';
-      case 'on-hold':
-        return 'warning';
-      default:
-        return 'secondary';
-    }
-  };
-
-  const getCategoryColor = (category?: string) => {
-    if (!category) return 'outline';
-    
-    switch (category.toLowerCase()) {
-      case 'remove & replace':
-      case 'replacement':
-        return 'destructive';
-      case 'repair':
-      case 'service':
-        return 'info';
-      case 'maintenance':
-        return 'warning';
-      case 'inspection':
-      case 'testing':
-        return 'secondary';
-      default:
-        return 'outline';
+      case 'completed': return 'bg-green-100 text-green-800';
+      case 'in-progress': return 'bg-blue-100 text-blue-800';
+      case 'on-hold': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   if (isEditing) {
     return (
-      <Card className="border-blue-200 bg-blue-50">
-        <CardContent className="p-4 space-y-4">
-          <div className="flex justify-between items-start">
-            <h3 className="font-semibold text-base">Edit Job Line</h3>
-            <div className="flex gap-2">
-              <Button size="sm" onClick={handleSave} className="h-8">
-                <Save className="h-3 w-3 mr-1" />
-                Save
+      <Card className="border-blue-200">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <Input
+              value={editedJobLine.name}
+              onChange={(e) => setEditedJobLine({ ...editedJobLine, name: e.target.value })}
+              className="font-semibold text-base"
+              placeholder="Job line name"
+            />
+            <div className="flex gap-2 ml-2">
+              <Button onClick={handleSave} size="sm" variant="default">
+                <Save className="h-4 w-4" />
               </Button>
-              <Button size="sm" variant="outline" onClick={handleCancel} className="h-8">
-                <X className="h-3 w-3 mr-1" />
-                Cancel
+              <Button onClick={handleCancel} size="sm" variant="outline">
+                <X className="h-4 w-4" />
               </Button>
             </div>
           </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <label className="text-sm font-medium">Category</label>
+            <Input
+              value={editedJobLine.category || ''}
+              onChange={(e) => setEditedJobLine({ ...editedJobLine, category: e.target.value })}
+              placeholder="Service category"
+            />
+          </div>
 
-          <div className="space-y-3">
+          <div>
+            <label className="text-sm font-medium">Description</label>
+            <Input
+              value={editedJobLine.description || ''}
+              onChange={(e) => setEditedJobLine({ ...editedJobLine, description: e.target.value })}
+              placeholder="Job description"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="name" className="text-sm font-medium">Service Name</Label>
+              <label className="text-sm font-medium">Estimated Hours</label>
               <Input
-                id="name"
-                value={editedJobLine.name}
-                onChange={(e) => setEditedJobLine(prev => ({ ...prev, name: e.target.value }))}
-                className="mt-1"
+                type="number"
+                step="0.1"
+                min="0"
+                value={editedJobLine.estimatedHours || ''}
+                onChange={(e) => {
+                  const hours = parseFloat(e.target.value) || 0;
+                  setEditedJobLine({ 
+                    ...editedJobLine, 
+                    estimatedHours: hours,
+                    totalAmount: hours * (editedJobLine.laborRate || 0)
+                  });
+                }}
+                placeholder="0.0"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="category" className="text-sm font-medium">Category</Label>
-                <Input
-                  id="category"
-                  value={editedJobLine.category || ''}
-                  onChange={(e) => setEditedJobLine(prev => ({ ...prev, category: e.target.value }))}
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label htmlFor="subcategory" className="text-sm font-medium">Subcategory</Label>
-                <Input
-                  id="subcategory"
-                  value={editedJobLine.subcategory || ''}
-                  onChange={(e) => setEditedJobLine(prev => ({ ...prev, subcategory: e.target.value }))}
-                  className="mt-1"
-                />
-              </div>
-            </div>
-
             <div>
-              <Label htmlFor="description" className="text-sm font-medium">Description</Label>
-              <Textarea
-                id="description"
-                value={editedJobLine.description || ''}
-                onChange={(e) => setEditedJobLine(prev => ({ ...prev, description: e.target.value }))}
-                className="mt-1"
-                rows={2}
-              />
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <Label htmlFor="hours" className="text-sm font-medium">Hours</Label>
-                <Input
-                  id="hours"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={editedJobLine.estimatedHours || 0}
-                  onChange={(e) => setEditedJobLine(prev => ({ 
-                    ...prev, 
-                    estimatedHours: parseFloat(e.target.value) || 0 
-                  }))}
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label htmlFor="laborRate" className="text-sm font-medium">Labor Rate</Label>
-                <Select
-                  value={laborRates.find(rate => rate.hourly_rate === editedJobLine.laborRate)?.rate_type || 'standard'}
-                  onValueChange={handleLaborRateChange}
-                >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Select rate type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {laborRates.map((rate) => (
-                      <SelectItem key={rate.id} value={rate.rate_type}>
-                        {rate.rate_type} - ${rate.hourly_rate}/hr
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-sm font-medium">Total</Label>
-                <div className="mt-1 p-2 bg-gray-50 rounded border text-lg font-semibold">
-                  ${((editedJobLine.estimatedHours || 0) * (editedJobLine.laborRate || 0)).toFixed(2)}
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="status" className="text-sm font-medium">Status</Label>
-              <Select
-                value={editedJobLine.status}
-                onValueChange={(value: any) => setEditedJobLine(prev => ({ ...prev, status: value }))}
-              >
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
+              <label className="text-sm font-medium">Labor Rate Type</label>
+              <Select onValueChange={handleLaborRateTypeChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select rate type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="in-progress">In Progress</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="on-hold">On Hold</SelectItem>
+                  <SelectItem value="standard">Standard (${typeof rates.standard_rate === 'number' ? rates.standard_rate : parseFloat(rates.standard_rate.toString()) || 0}/hr)</SelectItem>
+                  <SelectItem value="diagnostic">Diagnostic (${typeof rates.diagnostic_rate === 'number' ? rates.diagnostic_rate : parseFloat(rates.diagnostic_rate.toString()) || 0}/hr)</SelectItem>
+                  <SelectItem value="emergency">Emergency (${typeof rates.emergency_rate === 'number' ? rates.emergency_rate : parseFloat(rates.emergency_rate.toString()) || 0}/hr)</SelectItem>
+                  <SelectItem value="warranty">Warranty (${typeof rates.warranty_rate === 'number' ? rates.warranty_rate : parseFloat(rates.warranty_rate.toString()) || 0}/hr)</SelectItem>
+                  <SelectItem value="internal">Internal (${typeof rates.internal_rate === 'number' ? rates.internal_rate : parseFloat(rates.internal_rate.toString()) || 0}/hr)</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-2 border-t">
+            <div className="text-sm text-muted-foreground">
+              Labor Rate: ${editedJobLine.laborRate || 0}/hr
+            </div>
+            <div className="font-semibold text-lg">
+              Total: ${(editedJobLine.totalAmount || 0).toFixed(2)}
             </div>
           </div>
         </CardContent>
@@ -217,70 +174,51 @@ export function EditableJobLineCard({
 
   return (
     <Card className="hover:shadow-md transition-shadow duration-200">
-      <CardContent className="p-4">
-        <div className="flex justify-between items-start mb-3">
-          <div className="flex-1">
-            <h3 className="font-semibold text-base leading-tight mb-1">
-              {jobLine.name}
-            </h3>
-            {jobLine.category && (
-              <Badge variant={getCategoryColor(jobLine.category)} className="text-xs mb-2">
-                {jobLine.category}
-              </Badge>
-            )}
-          </div>
-          <div className="flex items-center gap-2 ml-2">
-            <Badge variant={getStatusColor(jobLine.status)} className="text-xs">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base">{jobLine.name}</CardTitle>
+          <div className="flex items-center gap-2">
+            <Badge className={getStatusColor(jobLine.status)}>
               {jobLine.status.replace('-', ' ')}
             </Badge>
-            <div className="flex gap-1">
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setIsEditing(true)}
-                className="h-7 w-7 p-0"
-              >
-                <Edit2 className="h-3 w-3" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => onDelete(jobLine.id)}
-                className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-              >
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            </div>
+            <Button
+              onClick={() => setIsEditing(true)}
+              size="sm"
+              variant="ghost"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              onClick={() => onDelete(jobLine.id)}
+              size="sm"
+              variant="ghost"
+              className="text-red-600 hover:text-red-700"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
           </div>
         </div>
-
+      </CardHeader>
+      <CardContent>
+        {jobLine.category && (
+          <Badge variant="outline" className="mb-2">
+            {jobLine.category}
+          </Badge>
+        )}
+        
         {jobLine.description && jobLine.description !== jobLine.name && (
-          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+          <p className="text-sm text-muted-foreground mb-3">
             {jobLine.description}
           </p>
         )}
 
         <div className="flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            {jobLine.estimatedHours && (
-              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                <Clock className="h-4 w-4" />
-                <span>{jobLine.estimatedHours}h</span>
-              </div>
-            )}
-            {jobLine.laborRate && (
-              <div className="text-xs text-muted-foreground">
-                Rate: ${jobLine.laborRate}/hr
-              </div>
-            )}
+          <div className="text-sm text-muted-foreground">
+            {jobLine.estimatedHours}h @ ${jobLine.laborRate}/hr
           </div>
-          
-          {jobLine.totalAmount && (
-            <div className="flex items-center gap-1 font-semibold text-lg">
-              <DollarSign className="h-4 w-4" />
-              <span>${jobLine.totalAmount.toFixed(2)}</span>
-            </div>
-          )}
+          <div className="font-semibold text-lg">
+            ${(jobLine.totalAmount || 0).toFixed(2)}
+          </div>
         </div>
       </CardContent>
     </Card>
