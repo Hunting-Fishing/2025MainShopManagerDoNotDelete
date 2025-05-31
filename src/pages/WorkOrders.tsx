@@ -11,10 +11,11 @@ export default function WorkOrders() {
 
   // Refresh data when component mounts
   useEffect(() => {
+    console.log('WorkOrders component mounted, refetching data...');
     refetch();
   }, [refetch]);
 
-  console.log('Work orders data:', { workOrders, loading, error });
+  console.log('WorkOrders render - loading:', loading, 'workOrders:', workOrders, 'error:', error);
 
   if (loading) {
     return (

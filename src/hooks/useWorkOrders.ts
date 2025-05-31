@@ -9,31 +9,33 @@ export function useWorkOrders() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchWorkOrders();
-  }, []);
-
   const fetchWorkOrders = async () => {
     try {
+      console.log('Fetching work orders...');
       setLoading(true);
       setError(null);
       
-      // Only fetch from database - no mock data
       const data = await getAllWorkOrders();
+      console.log('Work orders fetched:', data);
       setWorkOrders(data || []);
     } catch (err: any) {
+      console.error('Error fetching work orders:', err);
       setError(err.message);
       toast({
         title: "Error",
         description: "Failed to load work orders",
         variant: "destructive"
       });
-      // Set empty array on error, no fallback to mock data
       setWorkOrders([]);
     } finally {
+      console.log('Setting loading to false');
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchWorkOrders();
+  }, []);
 
   const updateStatus = async (id: string, status: WorkOrder['status']) => {
     try {

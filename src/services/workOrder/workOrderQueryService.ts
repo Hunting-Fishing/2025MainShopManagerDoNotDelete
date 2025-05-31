@@ -8,16 +8,21 @@ import { normalizeWorkOrder } from "@/utils/workOrders/formatters";
  */
 export const getAllWorkOrders = async (): Promise<WorkOrder[]> => {
   try {
+    console.log('Querying work_orders table...');
     const { data, error } = await supabase
       .from('work_orders')
       .select('*')
       .order('created_at', { ascending: false });
       
     if (error) {
+      console.error('Supabase error:', error);
       throw error;
     }
     
-    return data?.map(normalizeWorkOrder) || [];
+    console.log('Raw data from database:', data);
+    const normalizedData = data?.map(normalizeWorkOrder) || [];
+    console.log('Normalized work orders:', normalizedData);
+    return normalizedData;
   } catch (error) {
     console.error('Error fetching work orders:', error);
     return [];
