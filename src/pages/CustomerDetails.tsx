@@ -6,7 +6,7 @@ import { AddInteractionDialog } from "@/components/interactions/AddInteractionDi
 import { CustomerDetailsHeader } from "@/components/customers/details/CustomerDetailsHeader";
 import { CustomerDetailsTabs } from "@/components/customers/details/CustomerDetailsTabs";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle, ArrowLeft } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CustomerCommunication, CustomerNote } from "@/types/customer";
 
@@ -62,6 +62,7 @@ export default function CustomerDetails() {
       // If we need to pass a parameter later, we can adjust this function
       handleCommunicationAdded({} as CustomerCommunication);
     }
+    refreshCustomerData(); // Refresh to get latest data
   };
 
   const onNoteAddedWrapper = () => {
@@ -69,6 +70,7 @@ export default function CustomerDetails() {
       // If we need to pass a parameter later, we can adjust this function
       handleNoteAdded({} as CustomerNote);
     }
+    refreshCustomerData(); // Refresh to get latest data
   };
 
   if (!id || id === "undefined") {
@@ -94,8 +96,12 @@ export default function CustomerDetails() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-40">
+      <div className="flex flex-col items-center justify-center h-64 space-y-4">
+        <Loader2 className="h-8 w-8 animate-spin" />
         <div className="text-lg text-slate-500">Loading customer details...</div>
+        <div className="text-sm text-slate-400">
+          Fetching customer data, vehicles, work orders, and communications...
+        </div>
       </div>
     );
   }

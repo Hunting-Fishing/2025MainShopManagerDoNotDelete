@@ -4,7 +4,7 @@ import { Customer } from '@/types/customer';
 import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Plus, Car, Pencil } from 'lucide-react';
+import { Plus, Car, Pencil, Eye } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 
@@ -16,6 +16,9 @@ export function CustomerVehiclesTab({ customer }: CustomerVehiclesTabProps) {
   const navigate = useNavigate();
   const vehicles = customer?.vehicles || [];
 
+  console.log('CustomerVehiclesTab - customer:', customer);
+  console.log('CustomerVehiclesTab - vehicles:', vehicles);
+
   const handleAddVehicle = () => {
     navigate(`/customers/${customer.id}/edit?tab=vehicles`);
   };
@@ -26,6 +29,15 @@ export function CustomerVehiclesTab({ customer }: CustomerVehiclesTabProps) {
 
   const handleVehicleClick = (vehicleId: string) => {
     navigate(`/customers/${customer.id}/vehicles/${vehicleId}`);
+  };
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'N/A';
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch {
+      return 'Invalid date';
+    }
   };
 
   if (!vehicles || vehicles.length === 0) {
@@ -45,7 +57,12 @@ export function CustomerVehiclesTab({ customer }: CustomerVehiclesTabProps) {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium">Customer Vehicles</h3>
+        <div>
+          <h3 className="text-lg font-medium">Customer Vehicles</h3>
+          <p className="text-sm text-muted-foreground">
+            {vehicles.length} vehicle{vehicles.length !== 1 ? 's' : ''} registered
+          </p>
+        </div>
         <div className="flex gap-2">
           <Button onClick={handleAddVehicle}>
             <Plus className="h-4 w-4 mr-2" />
@@ -62,26 +79,36 @@ export function CustomerVehiclesTab({ customer }: CustomerVehiclesTabProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Year</TableHead>
-              <TableHead>Make</TableHead>
-              <TableHead>Model</TableHead>
+              <TableHead>Vehicle</TableHead>
               <TableHead>VIN</TableHead>
               <TableHead>License Plate</TableHead>
+              <TableHead>Color</TableHead>
               <TableHead>Last Service</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {vehicles.map((vehicle, index) => (
               <TableRow 
                 key={vehicle.id || `vehicle-${index}`} 
-                className="hover:bg-muted/50 cursor-pointer" 
-                onClick={() => vehicle.id ? handleVehicleClick(vehicle.id) : null}
+                className="hover:bg-muted/50"
               >
-                <TableCell>{vehicle.year || 'N/A'}</TableCell>
-                <TableCell>{vehicle.make || 'N/A'}</TableCell>
-                <TableCell>{vehicle.model || 'N/A'}</TableCell>
+                <TableCell>
+                  <div className="flex flex-col">
+                    <span className="font-medium">
+                      {vehicle.year || 'N/A'} {vehicle.make || 'Unknown'} {vehicle.model || 'Unknown'}
+                    </span>
+                    {vehicle.trim && (
+                      <span className="text-sm text-muted-foreground">{vehicle.trim}</span>
+                    )}
+                  </div>
+                </TableCell>
                 <TableCell className="font-mono text-xs">
-                  {vehicle.vin || <span className="text-muted-foreground">No VIN</span>}
+                  {vehicle.vin ? (
+                    <span className="bg-muted px-2 py-1 rounded">{vehicle.vin}</span>
+                  ) : (
+                    <span className="text-muted-foreground">No VIN</span>
+                  )}
                 </TableCell>
                 <TableCell>
                   {vehicle.license_plate ? (
@@ -93,17 +120,45 @@ export function CustomerVehiclesTab({ customer }: CustomerVehiclesTabProps) {
                   )}
                 </TableCell>
                 <TableCell>
+                  {vehicle.color ? (
+                    <Badge variant="secondary">{vehicle.color}</Badge>
+                  ) : (
+                    <span className="text-muted-foreground">N/A</span>
+                  )}
+                </TableCell>
+                <TableCell>
                   {vehicle.last_service_date ? (
-                    new Date(vehicle.last_service_date).toLocaleDateString()
+                    formatDate(vehicle.last_service_date)
                   ) : (
                     <span className="text-muted-foreground">No service history</span>
                   )}
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => vehicle.id ? handleVehicleClick(vehicle.id) : null}
+                      disabled={!vehicle.id}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={handleEditCustomer}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </Card>
+
+      {vehicles.length > 0 && (
+        <div className="text-sm text-muted-foreground">
+          <p>💡 Click the eye icon to view detailed vehicle information and service history.</p>
+        </div>
+      )}
     </div>
   );
 }

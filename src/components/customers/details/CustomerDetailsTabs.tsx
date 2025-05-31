@@ -5,6 +5,11 @@ import { Customer, CustomerNote } from "@/types/customer";
 import { WorkOrder } from "@/types/workOrder";
 import { CustomerInteraction } from "@/types/interaction";
 import { CustomerCommunication } from "@/types/customer";
+import { CustomerVehiclesTab } from "./CustomerVehiclesTab";
+import { CustomerWorkOrdersTab } from "./CustomerWorkOrdersTab";
+import { CustomerInteractionsTab } from "./CustomerInteractionsTab";
+import { CustomerCommunicationsTab } from "./CustomerCommunicationsTab";
+import { CustomerNotesTab } from "./CustomerNotesTab";
 import { CustomerFormsTab } from "@/components/customers/forms/CustomerFormsTab";
 
 interface CustomerDetailsTabsProps {
@@ -44,33 +49,38 @@ export function CustomerDetailsTabs({
       </TabsList>
 
       <TabsContent value="vehicles">
-        <div className="text-center py-8 text-muted-foreground">
-          Vehicle list component will be displayed here
-        </div>
+        <CustomerVehiclesTab customer={customer} />
       </TabsContent>
 
       <TabsContent value="work-orders">
-        <div className="text-center py-8 text-muted-foreground">
-          Work orders list component will be displayed here
-        </div>
+        <CustomerWorkOrdersTab 
+          customer={customer} 
+          workOrders={customerWorkOrders} 
+        />
       </TabsContent>
 
       <TabsContent value="interactions">
-        <div className="text-center py-8 text-muted-foreground">
-          Interactions component will be displayed here
-        </div>
+        <CustomerInteractionsTab 
+          customer={customer}
+          interactions={customerInteractions}
+          setAddInteractionOpen={setAddInteractionOpen}
+        />
       </TabsContent>
 
       <TabsContent value="communications">
-        <div className="text-center py-8 text-muted-foreground">
-          Communications component will be displayed here
-        </div>
+        <CustomerCommunicationsTab 
+          customer={customer}
+          communications={customerCommunications}
+          onCommunicationAdded={onCommunicationAdded}
+        />
       </TabsContent>
 
       <TabsContent value="notes">
-        <div className="text-center py-8 text-muted-foreground">
-          Notes component will be displayed here
-        </div>
+        <CustomerNotesTab 
+          customer={customer}
+          notes={customerNotes}
+          onNoteAdded={onNoteAdded}
+        />
       </TabsContent>
 
       <TabsContent value="forms">
