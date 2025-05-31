@@ -22,7 +22,7 @@ export async function getInventoryCategories(): Promise<string[]> {
       throw error;
     }
     
-    const categoryNames = categories?.map(cat => cat.name) || [];
+    const categoryNames = categories?.map((cat: { name: string }) => cat.name) || [];
     console.log(`Retrieved ${categoryNames.length} categories from database`);
     
     // If no categories exist in database, return empty array (no fallbacks)
