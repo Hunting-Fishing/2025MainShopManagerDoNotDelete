@@ -28,14 +28,16 @@ export function CustomerNotesTab({
     }
   };
 
-  const getPriorityColor = (priority?: string) => {
-    switch (priority?.toLowerCase()) {
-      case 'high':
-        return 'bg-red-100 text-red-800';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'low':
+  const getCategoryColor = (category?: string) => {
+    switch (category?.toLowerCase()) {
+      case 'service':
+        return 'bg-blue-100 text-blue-800';
+      case 'sales':
         return 'bg-green-100 text-green-800';
+      case 'follow-up':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'general':
+        return 'bg-gray-100 text-gray-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -59,12 +61,12 @@ export function CustomerNotesTab({
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base flex items-center">
                     <StickyNote className="h-4 w-4 mr-2" />
-                    {note.title || 'Customer Note'}
+                    Customer Note
                   </CardTitle>
                   <div className="flex items-center space-x-2">
-                    {note.priority && (
-                      <Badge className={getPriorityColor(note.priority)}>
-                        {note.priority}
+                    {note.category && (
+                      <Badge className={getCategoryColor(note.category)}>
+                        {note.category}
                       </Badge>
                     )}
                     <Badge variant="outline">
@@ -76,25 +78,11 @@ export function CustomerNotesTab({
               </CardHeader>
               <CardContent>
                 <p className="text-gray-700 whitespace-pre-line">
-                  {note.content || note.note}
+                  {note.content}
                 </p>
-                {note.category && (
-                  <div className="mt-3">
-                    <Badge variant="secondary">{note.category}</Badge>
-                  </div>
-                )}
-                {note.created_by_name && (
+                {note.created_by && (
                   <div className="mt-3 text-sm text-gray-600">
-                    Created by: {note.created_by_name}
-                  </div>
-                )}
-                {note.tags && note.tags.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-1">
-                    {note.tags.map((tag, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
+                    Created by: {note.created_by}
                   </div>
                 )}
               </CardContent>

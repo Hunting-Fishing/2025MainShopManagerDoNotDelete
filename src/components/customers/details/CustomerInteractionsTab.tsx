@@ -50,11 +50,11 @@ export function CustomerInteractionsTab({
                   <div className="flex items-center space-x-2">
                     <Badge variant="outline">
                       <Calendar className="h-3 w-3 mr-1" />
-                      {formatDate(interaction.created_at)}
+                      {formatDate(interaction.created_at || interaction.date)}
                     </Badge>
-                    {interaction.priority && (
-                      <Badge variant={interaction.priority === 'high' ? 'destructive' : 'secondary'}>
-                        {interaction.priority}
+                    {interaction.status && (
+                      <Badge variant={interaction.status === 'completed' ? 'success' : 'secondary'}>
+                        {interaction.status}
                       </Badge>
                     )}
                   </div>
@@ -67,6 +67,11 @@ export function CustomerInteractionsTab({
                 {interaction.follow_up_date && (
                   <div className="mt-3 text-sm text-gray-600">
                     Follow-up scheduled for: {formatDate(interaction.follow_up_date)}
+                  </div>
+                )}
+                {interaction.staff_member_name && (
+                  <div className="mt-2 text-sm text-gray-600">
+                    Staff: {interaction.staff_member_name}
                   </div>
                 )}
               </CardContent>

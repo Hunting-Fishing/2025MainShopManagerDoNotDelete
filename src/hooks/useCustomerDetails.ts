@@ -56,7 +56,14 @@ export function useCustomerDetails(customerId?: string) {
         if (commError) {
           console.error('Error fetching communications:', commError);
         } else {
-          setCustomerCommunications(communications || []);
+          // Type cast to match our interface expectations
+          const typedCommunications = (communications || []).map(comm => ({
+            ...comm,
+            type: comm.type as 'email' | 'phone' | 'text' | 'in-person',
+            direction: comm.direction as 'incoming' | 'outgoing',
+            status: comm.status as 'completed' | 'pending' | 'failed'
+          }));
+          setCustomerCommunications(typedCommunications);
         }
       } catch (err) {
         console.error('Communications fetch error:', err);
@@ -74,7 +81,13 @@ export function useCustomerDetails(customerId?: string) {
         if (intError) {
           console.error('Error fetching interactions:', intError);
         } else {
-          setCustomerInteractions(interactions || []);
+          // Type cast to match our interface expectations
+          const typedInteractions = (interactions || []).map(interaction => ({
+            ...interaction,
+            type: interaction.type as 'work_order' | 'communication' | 'parts' | 'service' | 'follow_up',
+            status: interaction.status as 'pending' | 'in_progress' | 'completed' | 'cancelled'
+          }));
+          setCustomerInteractions(typedInteractions);
         }
       } catch (err) {
         console.error('Interactions fetch error:', err);
@@ -92,7 +105,12 @@ export function useCustomerDetails(customerId?: string) {
         if (notesError) {
           console.error('Error fetching notes:', notesError);
         } else {
-          setCustomerNotes(notes || []);
+          // Type cast to match our interface expectations
+          const typedNotes = (notes || []).map(note => ({
+            ...note,
+            category: note.category as 'service' | 'sales' | 'follow-up' | 'general'
+          }));
+          setCustomerNotes(typedNotes);
         }
       } catch (err) {
         console.error('Notes fetch error:', err);
