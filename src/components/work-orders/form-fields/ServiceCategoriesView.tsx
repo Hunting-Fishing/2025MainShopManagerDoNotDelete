@@ -1,34 +1,34 @@
 
-import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronRight, Clock, DollarSign, Plus } from "lucide-react";
-import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from "@/types/serviceHierarchy";
-import { fetchServiceCategories } from "@/lib/services/serviceApi";
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Clock, DollarSign, Plus } from 'lucide-react';
+import { 
+  ServiceMainCategory, 
+  ServiceSubcategory, 
+  ServiceJob
+} from '@/types/serviceHierarchy';
+import { fetchServiceCategories } from '@/lib/services/serviceApi';
+import { generateServiceCode } from '@/utils/serviceCodeGenerator';
 
 interface ServiceCategoriesViewProps {
-  onServiceSelect?: (service: ServiceJob, categoryName: string, subcategoryName: string) => void;
-  selectedServices?: string[];
   showSelectionMode?: boolean;
+  onServiceSelect?: (service: ServiceJob, categoryName: string, subcategoryName: string, jobIndex: number) => void;
 }
 
 export const ServiceCategoriesView: React.FC<ServiceCategoriesViewProps> = ({
-  onServiceSelect,
-  selectedServices = [],
-  showSelectionMode = false
+  showSelectionMode = false,
+  onServiceSelect
 }) => {
   const [categories, setCategories] = useState<ServiceMainCategory[]>([]);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
-  const [expandedSubcategories, setExpandedSubcategories] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadCategories = async () => {
       try {
         setIsLoading(true);
-        setError(null);
         const serviceCategories = await fetchServiceCategories();
         setCategories(serviceCategories);
         
@@ -36,9 +36,8 @@ export const ServiceCategoriesView: React.FC<ServiceCategoriesViewProps> = ({
         if (serviceCategories.length > 0) {
           setExpandedCategories(new Set([serviceCategories[0].id]));
         }
-      } catch (err) {
-        console.error("Failed to load service categories:", err);
-        setError("Failed to load service categories. Please try again.");
+      } catch (error) {
+        console.error('Failed to load service categories:', error);
       } finally {
         setIsLoading(false);
       }
@@ -57,93 +56,79 @@ export const ServiceCategoriesView: React.FC<ServiceCategoriesViewProps> = ({
     setExpandedCategories(newExpanded);
   };
 
-  const toggleSubcategory = (subcategoryId: string) => {
-    const newExpanded = new Set(expandedSubcategories);
-    if (newExpanded.has(subcategoryId)) {
-      newExpanded.delete(subcategoryId);
-    } else {
-      newExpanded.add(subcategoryId);
-    }
-    setExpandedSubcategories(newExpanded);
-  };
-
-  const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
+  const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string, jobIndex: number) => {
     if (onServiceSelect) {
-      onServiceSelect(service, categoryName, subcategoryName);
+      onServiceSelect(service, categoryName, subcategoryName, jobIndex);
     }
   };
 
-  const renderServiceJob = (job: ServiceJob, categoryName: string, subcategoryName: string) => {
-    const isSelected = selectedServices.includes(job.id);
+  const renderServiceJob = (job: ServiceJob, categoryName: string, subcategoryName: string, jobIndex: number) => {
+    const serviceCode = generateServiceCode(categoryName, subcategoryName, jobIndex);
     
     return (
-      <div key={job.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
-        <div className="flex-1">
-          <div className="flex items-center space-x-2">
-            <h5 className="font-medium">{job.name}</h5>
-            {isSelected && <Badge variant="default" className="text-xs">Selected</Badge>}
+      <div key={job.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+        <div className="flex items-start justify-between">
+          <div className="flex-1 space-y-2">
+            {/* Service Code and Name */}
+            <div className="flex items-center space-x-2">
+              <Badge variant="outline" className="font-mono text-xs">
+                {serviceCode}
+              </Badge>
+              <h5 className="font-medium text-gray-900">{job.name}</h5>
+            </div>
+            
+            {/* Description */}
+            {job.description && (
+              <p className="text-sm text-gray-600">{job.description}</p>
+            )}
+            
+            {/* Service Details */}
+            <div className="flex items-center space-x-4">
+              {job.estimatedTime && (
+                <Badge variant="outline" className="flex items-center space-x-1">
+                  <Clock className="h-3 w-3" />
+                  <span>{job.estimatedTime} min</span>
+                </Badge>
+              )}
+              {job.price && (
+                <Badge variant="outline" className="flex items-center space-x-1">
+                  <DollarSign className="h-3 w-3" />
+                  <span>${job.price.toFixed(2)}</span>
+                </Badge>
+              )}
+            </div>
           </div>
-          {job.description && (
-            <p className="text-sm text-gray-600 mt-1">{job.description}</p>
+          
+          {/* Add Button */}
+          {showSelectionMode && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="ml-4"
+              onClick={() => handleServiceSelect(job, categoryName, subcategoryName, jobIndex)}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Add
+            </Button>
           )}
-          <div className="flex items-center space-x-4 mt-2">
-            {job.estimatedTime && (
-              <Badge variant="outline" className="flex items-center space-x-1">
-                <Clock className="h-3 w-3" />
-                <span>{job.estimatedTime} min</span>
-              </Badge>
-            )}
-            {job.price && (
-              <Badge variant="outline" className="flex items-center space-x-1">
-                <DollarSign className="h-3 w-3" />
-                <span>${job.price}</span>
-              </Badge>
-            )}
-          </div>
         </div>
-        {showSelectionMode && (
-          <Button
-            type="button"
-            size="sm"
-            variant={isSelected ? "secondary" : "outline"}
-            onClick={() => handleServiceSelect(job, categoryName, subcategoryName)}
-            className="ml-3"
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-        )}
       </div>
     );
   };
 
-  const renderSubcategory = (subcategory: ServiceSubcategory, categoryName: string) => {
-    const isExpanded = expandedSubcategories.has(subcategory.id);
-    
-    return (
-      <div key={subcategory.id} className="ml-4 border-l border-gray-200 pl-4">
-        <div
-          className="flex items-center space-x-2 py-2 cursor-pointer hover:bg-gray-50 rounded px-2"
-          onClick={() => toggleSubcategory(subcategory.id)}
-        >
-          {isExpanded ? (
-            <ChevronDown className="h-4 w-4 text-gray-500" />
-          ) : (
-            <ChevronRight className="h-4 w-4 text-gray-500" />
-          )}
-          <h4 className="font-medium text-gray-700">{subcategory.name}</h4>
-          <Badge variant="secondary" className="text-xs">
-            {subcategory.jobs.length} services
-          </Badge>
-        </div>
-        
-        {isExpanded && (
-          <div className="mt-2 space-y-2">
-            {subcategory.jobs.map(job => renderServiceJob(job, categoryName, subcategory.name))}
-          </div>
+  const renderSubcategory = (subcategory: ServiceSubcategory, categoryName: string) => (
+    <div key={subcategory.id} className="ml-4 space-y-3">
+      <h4 className="font-medium text-gray-700 border-b pb-1">
+        {subcategory.name}
+      </h4>
+      <div className="space-y-3">
+        {subcategory.jobs.map((job, jobIndex) => 
+          renderServiceJob(job, categoryName, subcategory.name, jobIndex)
         )}
       </div>
-    );
-  };
+    </div>
+  );
 
   if (isLoading) {
     return (
@@ -166,60 +151,39 @@ export const ServiceCategoriesView: React.FC<ServiceCategoriesViewProps> = ({
     );
   }
 
-  if (error) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-red-500">{error}</p>
-        <Button 
-          onClick={() => window.location.reload()} 
-          variant="outline" 
-          className="mt-2"
-        >
-          Retry
-        </Button>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
-      {categories.map(category => {
-        const isExpanded = expandedCategories.has(category.id);
-        
-        return (
-          <Card key={category.id}>
-            <CardHeader 
-              className="cursor-pointer"
-              onClick={() => toggleCategory(category.id)}
-            >
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  {isExpanded ? (
-                    <ChevronDown className="h-5 w-5 text-gray-500" />
-                  ) : (
-                    <ChevronRight className="h-5 w-5 text-gray-500" />
-                  )}
-                  <span>{category.name}</span>
-                  <Badge variant="secondary">
-                    {category.subcategories.length} subcategories
-                  </Badge>
-                </div>
-              </CardTitle>
-              {category.description && (
-                <p className="text-sm text-gray-600">{category.description}</p>
-              )}
-            </CardHeader>
-            
-            {isExpanded && (
-              <CardContent className="space-y-4">
-                {category.subcategories.map(subcategory => 
-                  renderSubcategory(subcategory, category.name)
-                )}
-              </CardContent>
+      {categories.map(category => (
+        <Card key={category.id}>
+          <CardHeader 
+            className="cursor-pointer hover:bg-gray-50"
+            onClick={() => toggleCategory(category.id)}
+          >
+            <CardTitle className="flex items-center justify-between">
+              <span>{category.name}</span>
+              <div className="flex items-center space-x-2">
+                <Badge variant="secondary">
+                  {category.subcategories.reduce((total, sub) => total + sub.jobs.length, 0)} Services
+                </Badge>
+                <span className="text-sm font-normal text-gray-500">
+                  {expandedCategories.has(category.id) ? '−' : '+'}
+                </span>
+              </div>
+            </CardTitle>
+            {category.description && (
+              <p className="text-sm text-gray-600">{category.description}</p>
             )}
-          </Card>
-        );
-      })}
+          </CardHeader>
+          
+          {expandedCategories.has(category.id) && (
+            <CardContent className="space-y-6">
+              {category.subcategories.map(subcategory => 
+                renderSubcategory(subcategory, category.name)
+              )}
+            </CardContent>
+          )}
+        </Card>
+      ))}
     </div>
   );
 };
