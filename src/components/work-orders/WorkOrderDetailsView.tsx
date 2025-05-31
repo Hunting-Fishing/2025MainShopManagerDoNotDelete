@@ -6,7 +6,7 @@ import { WorkOrderDetailsHeader } from "./details/WorkOrderDetailsHeader";
 import { WorkOrderDetailsTabs } from "./details/WorkOrderDetailsTabs";
 import { WorkOrderInvoiceView } from "./WorkOrderInvoiceView";
 import { Button } from "@/components/ui/button";
-import { FileText, Tabs as TabsIcon } from "lucide-react";
+import { FileText, Layout } from "lucide-react";
 
 export interface WorkOrderDetailsViewProps {
   workOrder: WorkOrder;
@@ -49,7 +49,7 @@ export function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsViewProps) {
               onClick={() => setViewMode('details')}
               className="flex items-center gap-2"
             >
-              <TabsIcon className="h-4 w-4" />
+              <Layout className="h-4 w-4" />
               Details View
             </Button>
             <Button
