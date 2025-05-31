@@ -25,7 +25,14 @@ export const parseJobLinesFromDescription = (description: string, workOrderId?: 
     // Skip empty lines or lines that are just separators
     if (!trimmedLine || trimmedLine.match(/^[-=_\s]+$/)) return;
     
-    // Enhanced patterns for job categories
+    // For lines with multiple dashes, take only the last segment as the actual job
+    const segments = trimmedLine.split('-').map(seg => seg.trim());
+    const actualJob = segments[segments.length - 1]; // Take the last segment
+    
+    // Skip if the last segment is too short or doesn't contain actionable work
+    if (actualJob.length < 8) return;
+    
+    // Enhanced patterns for job categories - focus on action verbs and specific tasks
     const jobPatterns = [
       /^(R\s*&\s*R\s+.+)/i,           // R & R patterns
       /^(Replace\s+.+)/i,             // Replace patterns
@@ -39,18 +46,20 @@ export const parseJobLinesFromDescription = (description: string, workOrderId?: 
       /^(Change\s+.+)/i,              // Change patterns
       /^(Adjust\s+.+)/i,              // Adjust patterns
       /^(Clean\s+.+)/i,               // Clean patterns
-      /^([A-Z].{10,})/,               // General patterns (at least 10 chars starting with capital)
-      /^(.+(?:RADIATOR|BRAKE|ENGINE|TRANSMISSION|TIRE|BATTERY|ALTERNATOR|STARTER|PUMP|BELT|CLUTCH|SUSPENSION|EXHAUST|FILTER).+)/i, // Specific part patterns
+      /^([A-Z].{8,})/,                // General patterns (at least 8 chars starting with capital)
+      /^(.+(?:RADIATOR|BRAKE|ENGINE|TRANSMISSION|TIRE|BATTERY|ALTERNATOR|STARTER|PUMP|BELT|CLUTCH|SUSPENSION|EXHAUST|FILTER|CYLINDER|WHEEL).+)/i, // Specific part patterns
     ];
 
-    let jobName = trimmedLine;
+    let jobName = actualJob;
     let category = 'General Service';
+    let isValidJob = false;
 
-    // Try to match against known patterns
+    // Try to match against known patterns to verify this is an actual job
     for (const pattern of jobPatterns) {
-      const match = trimmedLine.match(pattern);
+      const match = actualJob.match(pattern);
       if (match) {
         jobName = match[1].trim();
+        isValidJob = true;
         
         // Determine category based on the pattern
         if (pattern.source.includes('R\\s*&\\s*R')) {
@@ -76,6 +85,12 @@ export const parseJobLinesFromDescription = (description: string, workOrderId?: 
       }
     }
 
+    // Only create job line if it matches a valid job pattern
+    if (!isValidJob) {
+      console.log('Skipping non-job line:', actualJob); // Debug log
+      return;
+    }
+
     // Create job line
     const estimatedHours = estimateHoursForJob(jobName);
     const laborRate = 125; // Default labor rate
@@ -85,7 +100,7 @@ export const parseJobLinesFromDescription = (description: string, workOrderId?: 
       workOrderId,
       name: formatJobLineName(jobName),
       category,
-      description: trimmedLine,
+      description: jobName, // Use the clean job name as description
       status: 'pending',
       estimatedHours,
       laborRate,
