@@ -8043,6 +8043,68 @@ export type Database = {
           },
         ]
       }
+      work_order_job_lines: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          display_order: number | null
+          estimated_hours: number | null
+          id: string
+          labor_rate: number | null
+          labor_rate_type: string | null
+          name: string
+          notes: string | null
+          status: string | null
+          subcategory: string | null
+          total_amount: number | null
+          updated_at: string
+          work_order_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          estimated_hours?: number | null
+          id?: string
+          labor_rate?: number | null
+          labor_rate_type?: string | null
+          name: string
+          notes?: string | null
+          status?: string | null
+          subcategory?: string | null
+          total_amount?: number | null
+          updated_at?: string
+          work_order_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          estimated_hours?: number | null
+          id?: string
+          labor_rate?: number | null
+          labor_rate_type?: string | null
+          name?: string
+          notes?: string | null
+          status?: string | null
+          subcategory?: string | null
+          total_amount?: number | null
+          updated_at?: string
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_job_lines_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_order_notifications: {
         Row: {
           created_at: string | null
