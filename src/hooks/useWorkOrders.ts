@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { getAllWorkOrders, updateWorkOrderStatus } from '@/services/workOrder';
 import { WorkOrder } from '@/types/workOrder';
@@ -9,10 +9,9 @@ export function useWorkOrders() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchWorkOrders = async () => {
+  const fetchWorkOrders = useCallback(async () => {
     try {
       console.log('Fetching work orders...');
-      setLoading(true);
       setError(null);
       
       const data = await getAllWorkOrders();
@@ -31,11 +30,11 @@ export function useWorkOrders() {
       console.log('Setting loading to false');
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchWorkOrders();
-  }, []);
+  }, [fetchWorkOrders]);
 
   const updateStatus = async (id: string, status: WorkOrder['status']) => {
     try {

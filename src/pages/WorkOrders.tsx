@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React from "react";
 import { useWorkOrders } from "@/hooks/useWorkOrders";
 import WorkOrdersHeader from "@/components/work-orders/WorkOrdersHeader";
 import WorkOrdersTable from "@/components/work-orders/WorkOrdersTable";
@@ -7,13 +7,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
 
 export default function WorkOrders() {
-  const { workOrders, loading, error, refetch } = useWorkOrders();
-
-  // Refresh data when component mounts
-  useEffect(() => {
-    console.log('WorkOrders component mounted, refetching data...');
-    refetch();
-  }, [refetch]);
+  const { workOrders, loading, error } = useWorkOrders();
 
   console.log('WorkOrders render - loading:', loading, 'workOrders:', workOrders, 'error:', error);
 
