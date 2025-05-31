@@ -33,13 +33,15 @@ export default function WorkOrderCreate() {
     resolver: zodResolver(workOrderFormSchema),
     defaultValues: {
       customer: prePopulatedCustomer.customerName || "",
-      description: "",
+      description: prePopulatedCustomer.equipmentName ? 
+        `Service request for ${prePopulatedCustomer.equipmentName}` : "",
       status: "pending",
       priority: "medium",
       technician: "",
       location: "",
       dueDate: "",
-      notes: "",
+      notes: prePopulatedCustomer.equipmentType ? 
+        `Equipment Type: ${prePopulatedCustomer.equipmentType}` : "",
       vehicleMake: prePopulatedCustomer.vehicleMake || "",
       vehicleModel: prePopulatedCustomer.vehicleModel || "",
       vehicleYear: prePopulatedCustomer.vehicleYear || "",
@@ -54,12 +56,21 @@ export default function WorkOrderCreate() {
     try {
       console.log('Submitting work order:', values);
       
+      // Create a comprehensive description including equipment information
+      let fullDescription = values.description;
+      if (prePopulatedCustomer.equipmentName && !fullDescription.includes(prePopulatedCustomer.equipmentName)) {
+        fullDescription += `\nEquipment: ${prePopulatedCustomer.equipmentName}`;
+      }
+      if (prePopulatedCustomer.equipmentType) {
+        fullDescription += `\nEquipment Type: ${prePopulatedCustomer.equipmentType}`;
+      }
+
       // Format the data for database insertion
       const workOrderData = formatWorkOrderForDb({
         customer_id: searchParams.get('customerId') || undefined,
-        description: values.description,
+        description: fullDescription,
         status: values.status,
-        service_type: 'General Service',
+        service_type: prePopulatedCustomer.equipmentType || 'General Service',
         // Add other fields as needed
       });
 

@@ -1,14 +1,15 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Customer, CustomerVehicle } from '@/types/customer';
-import { Car, Plus, Pencil, AlertTriangle } from 'lucide-react';
+import { Car, Plus, Pencil, AlertTriangle, Wrench } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { toast } from "@/hooks/use-toast";
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { CreateWorkOrderFromCustomerDialog } from '@/components/work-orders/CreateWorkOrderFromCustomerDialog';
 
 interface CustomerVehiclesTabProps {
   customer: Customer;
@@ -17,6 +18,8 @@ interface CustomerVehiclesTabProps {
 export const CustomerVehiclesTab: React.FC<CustomerVehiclesTabProps> = ({ customer }) => {
   const navigate = useNavigate();
   const vehicles = customer?.vehicles || [];
+  const [createWorkOrderOpen, setCreateWorkOrderOpen] = useState(false);
+  const [selectedVehicle, setSelectedVehicle] = useState<CustomerVehicle | null>(null);
   
   console.log('Rendering CustomerVehiclesTab with vehicles:', vehicles);
 
@@ -54,6 +57,16 @@ export const CustomerVehiclesTab: React.FC<CustomerVehiclesTabProps> = ({ custom
     }
     
     navigate(`/customers/${customer.id}/vehicles/${vehicleId}`);
+  };
+
+  const handleCreateWorkOrderForVehicle = (vehicle: CustomerVehicle) => {
+    // Create a modified customer object with only the selected vehicle
+    const customerWithSelectedVehicle = {
+      ...customer,
+      vehicles: [vehicle]
+    };
+    setSelectedVehicle(vehicle);
+    setCreateWorkOrderOpen(true);
   };
 
   if (!vehicles || vehicles.length === 0) {
@@ -96,6 +109,7 @@ export const CustomerVehiclesTab: React.FC<CustomerVehiclesTabProps> = ({ custom
               <TableHead>VIN</TableHead>
               <TableHead>License Plate</TableHead>
               <TableHead>Last Service</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -127,11 +141,27 @@ export const CustomerVehiclesTab: React.FC<CustomerVehiclesTabProps> = ({ custom
                     <span className="text-muted-foreground">No service history</span>
                   )}
                 </TableCell>
+                <TableCell onClick={(e) => e.stopPropagation()}>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => handleCreateWorkOrderForVehicle(vehicle)}
+                  >
+                    <Wrench className="h-4 w-4 mr-1" />
+                    Service
+                  </Button>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </Card>
+
+      <CreateWorkOrderFromCustomerDialog
+        customer={customer}
+        open={createWorkOrderOpen}
+        onOpenChange={setCreateWorkOrderOpen}
+      />
     </div>
   );
 };
