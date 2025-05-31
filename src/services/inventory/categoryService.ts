@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -14,26 +13,21 @@ export async function getInventoryCategories(): Promise<string[]> {
   try {
     console.log('Fetching inventory categories from database...');
     
-    // Use a simple approach to avoid TypeScript type inference issues
-    const { data, error } = await supabase.rpc('get_inventory_categories');
+    // Use direct query with explicit typing to avoid TypeScript issues
+    const { data, error } = await supabase
+      .from('inventory_categories')
+      .select('name')
+      .order('name', { ascending: true });
     
     if (error) {
       console.error('Error fetching categories from database:', error);
-      // Fallback to direct query if RPC fails
-      const fallbackResult = await supabase
-        .from('inventory_categories')
-        .select('name');
-      
-      if (fallbackResult.error) {
-        throw fallbackResult.error;
-      }
-      
-      const categories = (fallbackResult.data as any[])?.map((item: any) => item.name) || [];
-      console.log(`Retrieved ${categories.length} categories from database (fallback)`);
-      return categories;
+      throw error;
     }
     
-    const categoryNames = (data as string[]) || [];
+    // Explicitly type the data and extract category names
+    const records = (data as CategoryRecord[]) || [];
+    const categoryNames = records.map(record => record.name);
+    
     console.log(`Retrieved ${categoryNames.length} categories from database`);
     return categoryNames;
   } catch (error) {

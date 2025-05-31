@@ -8565,6 +8565,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      get_inventory_categories: {
+        Args: Record<PropertyKey, never>
+        Returns: string[]
+      }
       get_product_interactions_by_category: {
         Args: Record<PropertyKey, never>
         Returns: {
