@@ -7,7 +7,16 @@ import { WorkOrderJobLine } from '@/types/jobLine';
 export const parseJobLinesFromDescription = (description: string, workOrderId?: string): WorkOrderJobLine[] => {
   if (!description) return [];
 
-  const lines = description.split('\n').filter(line => line.trim());
+  console.log('Parsing description:', description); // Debug log
+
+  // Split by common delimiters and clean up
+  const lines = description
+    .split(/[-•·\n]/) // Split by dash, bullet, or newline
+    .map(line => line.trim())
+    .filter(line => line.length > 3); // Filter out very short lines
+
+  console.log('Split lines:', lines); // Debug log
+
   const jobLines: WorkOrderJobLine[] = [];
 
   lines.forEach((line, index) => {
@@ -16,7 +25,7 @@ export const parseJobLinesFromDescription = (description: string, workOrderId?: 
     // Skip empty lines or lines that are just separators
     if (!trimmedLine || trimmedLine.match(/^[-=_\s]+$/)) return;
     
-    // Common patterns for job categories
+    // Enhanced patterns for job categories
     const jobPatterns = [
       /^(R\s*&\s*R\s+.+)/i,           // R & R patterns
       /^(Replace\s+.+)/i,             // Replace patterns
@@ -30,7 +39,8 @@ export const parseJobLinesFromDescription = (description: string, workOrderId?: 
       /^(Change\s+.+)/i,              // Change patterns
       /^(Adjust\s+.+)/i,              // Adjust patterns
       /^(Clean\s+.+)/i,               // Clean patterns
-      /^([A-Z][^.]*[A-Z][^.]*)/,      // General uppercase patterns
+      /^([A-Z].{10,})/,               // General patterns (at least 10 chars starting with capital)
+      /^(.+(?:RADIATOR|BRAKE|ENGINE|TRANSMISSION|TIRE|BATTERY|ALTERNATOR|STARTER|PUMP|BELT|CLUTCH|SUSPENSION|EXHAUST|FILTER).+)/i, // Specific part patterns
     ];
 
     let jobName = trimmedLine;
@@ -59,33 +69,36 @@ export const parseJobLinesFromDescription = (description: string, workOrderId?: 
           category = 'Testing';
         } else if (pattern.source.includes('Flush|Change')) {
           category = 'Maintenance';
+        } else if (pattern.source.includes('RADIATOR|BRAKE|ENGINE')) {
+          category = 'Component Service';
         }
         break;
       }
     }
 
     // Create job line
+    const estimatedHours = estimateHoursForJob(jobName);
+    const laborRate = 125; // Default labor rate
+    
     const jobLine: WorkOrderJobLine = {
-      id: `${workOrderId}-job-${index + 1}`,
+      id: `${workOrderId || 'job'}-line-${index + 1}`,
       workOrderId,
-      name: jobName,
+      name: formatJobLineName(jobName),
       category,
       description: trimmedLine,
       status: 'pending',
-      estimatedHours: estimateHoursForJob(jobName),
-      laborRate: 125, // Default labor rate
+      estimatedHours,
+      laborRate,
+      totalAmount: estimatedHours * laborRate,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
-    // Calculate total amount if we have hours and rate
-    if (jobLine.estimatedHours && jobLine.laborRate) {
-      jobLine.totalAmount = jobLine.estimatedHours * jobLine.laborRate;
-    }
-
+    console.log('Created job line:', jobLine); // Debug log
     jobLines.push(jobLine);
   });
 
+  console.log('Final job lines:', jobLines); // Debug log
   return jobLines;
 };
 
@@ -98,6 +111,7 @@ const estimateHoursForJob = (jobName: string): number => {
   // Basic estimation based on job type
   if (lowerJobName.includes('radiator')) return 4.0;
   if (lowerJobName.includes('brake line')) return 2.5;
+  if (lowerJobName.includes('brake')) return 2.0;
   if (lowerJobName.includes('engine')) return 8.0;
   if (lowerJobName.includes('transmission')) return 6.0;
   if (lowerJobName.includes('oil change')) return 0.5;
@@ -115,6 +129,9 @@ const estimateHoursForJob = (jobName: string): number => {
   if (lowerJobName.includes('flush')) return 1.0;
   if (lowerJobName.includes('inspect')) return 0.5;
   if (lowerJobName.includes('diagnostic')) return 1.0;
+  if (lowerJobName.includes('cooling system')) return 3.0;
+  if (lowerJobName.includes('cylinder')) return 5.0;
+  if (lowerJobName.includes('wheel')) return 1.5;
   
   // Default estimate
   return 2.0;

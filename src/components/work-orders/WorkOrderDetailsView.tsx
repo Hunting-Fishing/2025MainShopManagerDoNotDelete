@@ -1,6 +1,8 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { WorkOrder, TimeEntry, WorkOrderInventoryItem } from "@/types/workOrder";
+import { WorkOrderJobLine } from "@/types/jobLine";
+import { parseJobLinesFromDescription } from "@/services/jobLineParser";
 import { WorkOrderPageLayout } from "./WorkOrderPageLayout";
 import { WorkOrderDetailsHeader } from "./details/WorkOrderDetailsHeader";
 import { WorkOrderDetailsTabs } from "./details/WorkOrderDetailsTabs";
@@ -17,6 +19,22 @@ export function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsViewProps) {
   const [inventoryItems, setInventoryItems] = useState<WorkOrderInventoryItem[]>([]);
   const [notes, setNotes] = useState<string>(workOrder?.notes || '');
   const [viewMode, setViewMode] = useState<'details' | 'invoice'>('details');
+  const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
+
+  // Parse job lines from work order description when component mounts
+  useEffect(() => {
+    if (workOrder?.description) {
+      const parsedJobLines = parseJobLinesFromDescription(workOrder.description, workOrder.id);
+      setJobLines(parsedJobLines);
+      console.log('Parsed job lines:', parsedJobLines); // Debug log
+    }
+  }, [workOrder?.description, workOrder?.id]);
+
+  // Create enhanced work order with job lines
+  const enhancedWorkOrder = {
+    ...workOrder,
+    jobLines: jobLines
+  };
 
   if (!workOrder) {
     return null;
@@ -63,11 +81,23 @@ export function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsViewProps) {
           </div>
         </div>
 
+        {/* Debug Info - Remove in production */}
+        {jobLines.length > 0 && (
+          <div className="bg-blue-50 p-4 rounded border border-blue-200">
+            <h3 className="font-semibold text-blue-800 mb-2">Parsed Job Lines ({jobLines.length}):</h3>
+            <ul className="text-sm text-blue-700">
+              {jobLines.map((line, index) => (
+                <li key={index}>• {line.name} - {line.category} - {line.estimatedHours}h - ${line.totalAmount}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {viewMode === 'details' ? (
           <>
-            <WorkOrderDetailsHeader workOrder={workOrder} />
+            <WorkOrderDetailsHeader workOrder={enhancedWorkOrder} />
             <WorkOrderDetailsTabs 
-              workOrder={workOrder}
+              workOrder={enhancedWorkOrder}
               timeEntries={timeEntries}
               inventoryItems={inventoryItems}
               notes={notes}
@@ -76,7 +106,7 @@ export function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsViewProps) {
             />
           </>
         ) : (
-          <WorkOrderInvoiceView workOrder={workOrder} />
+          <WorkOrderInvoiceView workOrder={enhancedWorkOrder} />
         )}
       </div>
     </WorkOrderPageLayout>

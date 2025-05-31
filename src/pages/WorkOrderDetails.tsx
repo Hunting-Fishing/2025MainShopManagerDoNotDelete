@@ -20,7 +20,9 @@ export default function WorkOrderDetails() {
       if (!id) return;
       
       try {
+        console.log('Loading work order with ID:', id); // Debug log
         const order = await getWorkOrderById(id);
+        console.log('Loaded work order:', order); // Debug log
         setWorkOrder(order);
       } catch (error) {
         console.error("Error loading work order:", error);
@@ -64,5 +66,6 @@ export default function WorkOrderDetails() {
     );
   }
 
+  console.log('Rendering WorkOrderDetailsView with:', workOrder); // Debug log
   return <WorkOrderDetailsView workOrder={workOrder} />;
 }
