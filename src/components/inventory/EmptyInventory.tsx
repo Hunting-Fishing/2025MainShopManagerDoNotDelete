@@ -22,7 +22,7 @@ export const EmptyInventory: React.FC<EmptyInventoryProps> = ({
         {searchQuery || filtersActive ? (
           `No items match your current ${searchQuery ? 'search' : ''} ${searchQuery && filtersActive ? 'or' : ''} ${filtersActive ? 'filter' : ''} criteria.`
         ) : (
-          'Your inventory is empty. Add some items to get started.'
+          'Your inventory is empty. Add real inventory items to get started with your business operations.'
         )}
       </p>
       <div className="flex gap-4">
@@ -37,7 +37,7 @@ export const EmptyInventory: React.FC<EmptyInventoryProps> = ({
         <Button 
           onClick={() => window.location.href = "/inventory/add"}
         >
-          Add Item
+          Add Real Inventory Item
         </Button>
       </div>
     </div>

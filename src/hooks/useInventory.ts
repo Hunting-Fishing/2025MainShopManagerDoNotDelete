@@ -25,34 +25,36 @@ export const useInventory = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   
-  // Get all unique categories, statuses, suppliers, and locations from items
-  const categories = [...new Set(items.map(item => item.category))].filter(Boolean).sort();
-  const statuses = [...new Set(items.map(item => item.status))].filter(Boolean).sort();
-  const suppliers = [...new Set(items.map(item => item.supplier))].filter(Boolean).sort();
-  const locations = [...new Set(items.map(item => item.location))].filter(Boolean).sort();
-  
-  // Fetch inventory data
+  // Fetch real inventory data from database
   const fetchItems = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
+      console.log('Loading real inventory data from database...');
       const data = await getInventoryItems();
+      console.log(`Loaded ${data.length} real inventory items from database`);
       setItems(data);
     } catch (err) {
-      console.error("Error fetching inventory:", err);
-      setError("Failed to load inventory items");
-      toast.error("Failed to load inventory items");
+      console.error("Error fetching real inventory data:", err);
+      setError("Failed to load inventory items from database");
+      toast.error("Failed to load inventory items from database");
     } finally {
       setLoading(false);
     }
   }, []);
   
-  // Load inventory on component mount
+  // Load real inventory data on component mount
   useEffect(() => {
     fetchItems();
   }, [fetchItems]);
   
-  // Filter items based on search query and filter criteria
+  // Get unique values from real data only
+  const categories = [...new Set(items.map(item => item.category))].filter(Boolean).sort();
+  const statuses = [...new Set(items.map(item => item.status))].filter(Boolean).sort();
+  const suppliers = [...new Set(items.map(item => item.supplier))].filter(Boolean).sort();
+  const locations = [...new Set(items.map(item => item.location))].filter(Boolean).sort();
+  
+  // Filter real data based on search and filter criteria
   const filteredItems = items.filter((item) => {
     // Search filter
     const matchesSearch = !searchQuery || 
@@ -84,15 +86,15 @@ export const useInventory = ({
     return matchesSearch && matchesCategory && matchesStatus && matchesSupplier && matchesLocation;
   });
   
-  // Calculate statistics
+  // Calculate statistics from real data
   const lowStockCount = countLowStockItems(items);
   const outOfStockCount = countOutOfStockItems(items);
   const totalValue = calculateTotalValue(items);
   
-  // Export handler
+  // Export real data only
   const handleExport = useCallback(() => {
     try {
-      // Only export filtered items
+      // Only export real filtered items
       const exportData = filteredItems.map((item) => ({
         Name: item.name,
         SKU: item.sku,
@@ -106,11 +108,11 @@ export const useInventory = ({
         'Last Updated': new Date(item.updated_at).toLocaleDateString()
       }));
       
-      exportToCSV(exportData, `inventory-export-${new Date().toISOString().split('T')[0]}`);
-      toast.success("Inventory exported successfully");
+      exportToCSV(exportData, `real-inventory-export-${new Date().toISOString().split('T')[0]}`);
+      toast.success(`Exported ${exportData.length} real inventory items successfully`);
     } catch (error) {
       console.error("Export failed:", error);
-      toast.error("Failed to export inventory");
+      toast.error("Failed to export real inventory data");
     }
   }, [filteredItems]);
   

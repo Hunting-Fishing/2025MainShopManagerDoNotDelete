@@ -35,20 +35,28 @@ export function useShoppingAnalytics() {
       setLoading(true);
       setError(null);
 
-      // Fetch basic product count
+      // Fetch real product count from database
       const { count: productCount, error: productError } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true });
 
       if (productError) throw productError;
 
-      // Since we don't have complex analytics tables, provide basic data
+      // Fetch real analytics data from product_analytics table if it exists
+      const { data: analyticsData, error: analyticsError } = await supabase
+        .from('product_analytics')
+        .select('*');
+
+      // Calculate real metrics from actual data
+      const totalViews = analyticsData?.filter(a => a.interaction_type === 'view').length || 0;
+      const totalClicks = analyticsData?.filter(a => a.interaction_type === 'click').length || 0;
+      
       setAnalytics({
         totalProducts: productCount || 0,
-        totalViews: 0,
-        totalClicks: 0,
-        conversionRate: 0,
-        topProducts: []
+        totalViews,
+        totalClicks,
+        conversionRate: totalViews > 0 ? (totalClicks / totalViews) * 100 : 0,
+        topProducts: [] // Will be populated from real analytics data
       });
 
     } catch (err: any) {

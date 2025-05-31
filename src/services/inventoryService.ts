@@ -80,7 +80,6 @@ export const bulkUpdateInventory = async (items: InventoryItemExtended[]) => {
   return data;
 };
 
-// Add the missing clearAllInventoryItems function
 export const clearAllInventoryItems = async () => {
   try {
     // First get all inventory items to check if there are any

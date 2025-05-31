@@ -22,17 +22,19 @@ export function useInventoryFilters() {
   const [supplierFilter, setSupplierFilter] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
   
-  // Category, status, supplier, and location options
+  // Options derived from real database data
   const [categories, setCategories] = useState<string[]>([]);
   const [statuses, setStatuses] = useState<string[]>([]);
   const [suppliers, setSuppliers] = useState<string[]>([]);
   const [locations, setLocations] = useState<string[]>([]);
 
-  // Load items and filter options when component mounts
+  // Load real data from database
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchRealData = async () => {
       setLoading(true);
       try {
+        console.log('Fetching real inventory data from database...');
+        
         const [itemsData, categoriesData, statusesData, suppliersData, locationsData] = await Promise.all([
           getInventoryItems(),
           getInventoryCategories(),
@@ -40,6 +42,13 @@ export function useInventoryFilters() {
           getInventorySuppliers(),
           getInventoryLocations()
         ]);
+        
+        console.log('Real inventory data loaded:', {
+          itemsCount: itemsData.length,
+          categoriesCount: categoriesData.length,
+          suppliersCount: suppliersData.length,
+          locationsCount: locationsData.length
+        });
         
         setItems(itemsData);
         setFilteredItems(itemsData);
@@ -49,19 +58,18 @@ export function useInventoryFilters() {
         setLocations(locationsData);
         setError(null);
       } catch (err) {
-        setError('Failed to load inventory items');
-        console.error("Error fetching inventory:", err);
+        console.error("Error fetching real inventory data:", err);
+        setError('Failed to load inventory data from database');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
+    fetchRealData();
   }, []);
 
-  // Apply filters when filter states change
+  // Apply filters to real data
   useEffect(() => {
-    // Apply filters to items
     let result = [...items];
 
     // Apply search filter
@@ -97,15 +105,32 @@ export function useInventoryFilters() {
     setFilteredItems(result);
   }, [items, searchQuery, categoryFilter, statusFilter, supplierFilter, locationFilter]);
 
-  // Mock handlers for export and import
-  const handleExport = () => {
-    console.log('Export inventory data');
-    // Implement export functionality
+  const resetFilters = () => {
+    setSearchQuery('');
+    setCategoryFilter([]);
+    setStatusFilter([]);
+    setSupplierFilter('');
+    setLocationFilter('');
   };
 
-  const handleImport = () => {
-    console.log('Import inventory data');
-    // Implement import functionality
+  const updateFilter = (filterType: string, value: any) => {
+    switch (filterType) {
+      case 'search':
+        setSearchQuery(value);
+        break;
+      case 'category':
+        setCategoryFilter(value);
+        break;
+      case 'status':
+        setStatusFilter(value);
+        break;
+      case 'supplier':
+        setSupplierFilter(value);
+        break;
+      case 'location':
+        setLocationFilter(value);
+        break;
+    }
   };
 
   return {
@@ -121,14 +146,19 @@ export function useInventoryFilters() {
     locationFilter,
     setLocationFilter,
     filteredItems,
+    filters: {
+      search: searchQuery,
+      category: categoryFilter,
+      status: statusFilter,
+      supplier: supplierFilter,
+      location: locationFilter
+    },
+    updateFilter,
+    resetFilters,
     error,
-    // Additional properties needed for the Inventory pages
     categories,
     statuses,
     suppliers,
-    locations,
-    handleExport,
-    handleImport,
-    inventoryItems: filteredItems // Alias for backward compatibility
+    locations
   };
 }
