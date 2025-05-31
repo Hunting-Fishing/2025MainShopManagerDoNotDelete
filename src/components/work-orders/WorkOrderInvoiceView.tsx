@@ -71,7 +71,7 @@ export function WorkOrderInvoiceView({ workOrder }: WorkOrderInvoiceViewProps) {
             <h1 className="text-3xl font-bold text-gray-900 mb-2">WORK ORDER</h1>
             <div className="text-sm text-gray-600">
               <p>Work Order #: <span className="font-semibold">{workOrder.id}</span></p>
-              <p>Date: <span className="font-semibold">{new Date(workOrder.created_at).toLocaleDateString()}</p>
+              <p>Date: <span className="font-semibold">{new Date(workOrder.created_at).toLocaleDateString()}</span></p>
               <p>Status: <span className="font-semibold capitalize">{workOrder.status}</span></p>
               {workOrder.technician && (
                 <p>Technician: <span className="font-semibold">{workOrder.technician}</span></p>
@@ -197,13 +197,11 @@ export function WorkOrderInvoiceView({ workOrder }: WorkOrderInvoiceViewProps) {
 
               {/* Empty rows to maintain structure */}
               {(!workOrder.inventoryItems || workOrder.inventoryItems.length === 0) && (
-                <>
-                  <tr>
-                    <td className="border border-gray-300 px-3 py-2 text-sm text-gray-500" colSpan={4}>
-                      No additional parts or services
-                    </td>
-                  </tr>
-                </>
+                <tr>
+                  <td className="border border-gray-300 px-3 py-2 text-sm text-gray-500" colSpan={4}>
+                    No additional parts or services
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
