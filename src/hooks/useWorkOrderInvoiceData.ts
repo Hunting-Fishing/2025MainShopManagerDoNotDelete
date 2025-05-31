@@ -117,8 +117,11 @@ export const useWorkOrderInvoiceData = (workOrder: WorkOrder): InvoiceData => {
             .eq('settings_key', 'tax_rate')
             .maybeSingle();
 
-          if (taxSettings?.settings_value?.rate) {
-            setTaxRate(Number(taxSettings.settings_value.rate));
+          if (taxSettings?.settings_value && typeof taxSettings.settings_value === 'object') {
+            const settingsValue = taxSettings.settings_value as { rate?: number };
+            if (settingsValue.rate) {
+              setTaxRate(Number(settingsValue.rate));
+            }
           }
         }
 
