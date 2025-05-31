@@ -31,10 +31,35 @@ export interface WorkOrder {
   vehicle_make?: string;
   vehicle_model?: string;
   vehicle_year?: string;
+  vehicle_vin?: string;
+  vehicle_license_plate?: string;
+  vehicle_odometer?: string;
+  // Customer information
+  customer_name?: string;
+  customer_email?: string;
+  customer_phone?: string;
+  customer_address?: string;
+  customer_city?: string;
+  customer_state?: string;
+  customer_zip?: string;
+  // Company information
+  company_name?: string;
+  company_address?: string;
+  company_city?: string;
+  company_state?: string;
+  company_zip?: string;
+  company_phone?: string;
+  company_email?: string;
+  company_logo?: string;
   // Additional fields for UI
   timeEntries?: TimeEntry[];
   inventoryItems?: WorkOrderInventoryItem[];
   inventory_items?: WorkOrderInventoryItem[];
+  // Invoice calculations
+  subtotal?: number;
+  tax_rate?: number;
+  tax_amount?: number;
+  total_amount?: number;
 }
 
 // Work Order Form Values - Used by form components
