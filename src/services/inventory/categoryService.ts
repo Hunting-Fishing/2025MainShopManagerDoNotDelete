@@ -14,21 +14,22 @@ export async function getInventoryCategories(): Promise<string[]> {
   try {
     console.log('Fetching inventory categories from database...');
     
-    const query = supabase
+    // Simplify the query to avoid complex type inference
+    const result = await supabase
       .from('inventory_categories')
       .select('name')
-      .eq('is_active', true);
-    
-    const { data, error } = await query
+      .eq('is_active', true)
       .order('display_order', { ascending: true })
       .order('name', { ascending: true });
     
-    if (error) {
-      console.error('Error fetching categories from database:', error);
-      throw error;
+    if (result.error) {
+      console.error('Error fetching categories from database:', result.error);
+      throw result.error;
     }
     
-    const categoryNames = (data || []).map((cat: CategoryRecord) => cat.name);
+    // Use explicit typing to avoid inference issues
+    const records: CategoryRecord[] = result.data || [];
+    const categoryNames = records.map(cat => cat.name);
     console.log(`Retrieved ${categoryNames.length} categories from database`);
     
     // If no categories exist in database, return empty array (no fallbacks)
