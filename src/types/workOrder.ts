@@ -1,4 +1,3 @@
-
 // Work Order Types - Standardized to match database schema (snake_case)
 
 import { WorkOrderJobLine } from './jobLine';
@@ -61,6 +60,16 @@ export interface WorkOrder {
   inventory_items?: WorkOrderInventoryItem[];
   // Job Lines - NEW
   jobLines?: WorkOrderJobLine[];
+  // NEW: Vehicle object from vehicle table join
+  vehicle?: {
+    id: string;
+    year?: number | string;
+    make?: string;
+    model?: string;
+    vin?: string;
+    license_plate?: string;
+    trim?: string;
+  };
   // Invoice calculations
   subtotal?: number;
   tax_rate?: number;

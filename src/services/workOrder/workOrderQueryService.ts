@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { WorkOrder } from "@/types/workOrder";
 import { normalizeWorkOrder } from "@/utils/workOrders/formatters";
@@ -19,6 +18,15 @@ export const getAllWorkOrders = async (): Promise<WorkOrder[]> => {
           last_name,
           email,
           phone
+        ),
+        vehicles!vehicle_id (
+          id,
+          year,
+          make,
+          model,
+          vin,
+          license_plate,
+          trim
         )
       `)
       .order('created_at', { ascending: false });
@@ -39,6 +47,18 @@ export const getAllWorkOrders = async (): Promise<WorkOrder[]> => {
         normalized.customer_email = customer.email;
         normalized.customer_phone = customer.phone;
         normalized.customer = normalized.customer_name; // For backward compatibility
+      }
+      
+      // NEW: Add vehicle information if available
+      if (workOrder.vehicles) {
+        const vehicle = workOrder.vehicles;
+        normalized.vehicle_make = vehicle.make;
+        normalized.vehicle_model = vehicle.model;
+        normalized.vehicle_year = vehicle.year?.toString();
+        normalized.vehicle_vin = vehicle.vin;
+        normalized.vehicle_license_plate = vehicle.license_plate;
+        // Store the vehicle object for easier access
+        normalized.vehicle = vehicle;
       }
       
       return normalized;
@@ -67,6 +87,15 @@ export const getWorkOrderById = async (id: string): Promise<WorkOrder | null> =>
           last_name,
           email,
           phone
+        ),
+        vehicles!vehicle_id (
+          id,
+          year,
+          make,
+          model,
+          vin,
+          license_plate,
+          trim
         )
       `)
       .eq('id', id)
@@ -85,6 +114,17 @@ export const getWorkOrderById = async (id: string): Promise<WorkOrder | null> =>
       normalized.customer_email = customer.email;
       normalized.customer_phone = customer.phone;
       normalized.customer = normalized.customer_name; // For backward compatibility
+    }
+    
+    // NEW: Add vehicle information if available
+    if (data.vehicles) {
+      const vehicle = data.vehicles;
+      normalized.vehicle_make = vehicle.make;
+      normalized.vehicle_model = vehicle.model;
+      normalized.vehicle_year = vehicle.year?.toString();
+      normalized.vehicle_vin = vehicle.vin;
+      normalized.vehicle_license_plate = vehicle.license_plate;
+      normalized.vehicle = vehicle;
     }
     
     return normalized;
@@ -109,6 +149,15 @@ export const getWorkOrdersByCustomerId = async (customerId: string): Promise<Wor
           last_name,
           email,
           phone
+        ),
+        vehicles!vehicle_id (
+          id,
+          year,
+          make,
+          model,
+          vin,
+          license_plate,
+          trim
         )
       `)
       .eq('customer_id', customerId)
@@ -128,6 +177,17 @@ export const getWorkOrdersByCustomerId = async (customerId: string): Promise<Wor
         normalized.customer_email = customer.email;
         normalized.customer_phone = customer.phone;
         normalized.customer = normalized.customer_name;
+      }
+      
+      // NEW: Add vehicle information if available
+      if (workOrder.vehicles) {
+        const vehicle = workOrder.vehicles;
+        normalized.vehicle_make = vehicle.make;
+        normalized.vehicle_model = vehicle.model;
+        normalized.vehicle_year = vehicle.year?.toString();
+        normalized.vehicle_vin = vehicle.vin;
+        normalized.vehicle_license_plate = vehicle.license_plate;
+        normalized.vehicle = vehicle;
       }
       
       return normalized;

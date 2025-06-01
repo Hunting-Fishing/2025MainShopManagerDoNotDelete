@@ -1,178 +1,200 @@
 
-import React, { useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { WorkOrderCreateForm } from '@/components/work-orders/WorkOrderCreateForm';
-import { createWorkOrder } from '@/services/workOrder';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { workOrderFormSchema, WorkOrderFormSchemaValues } from '@/schemas/workOrderSchema';
-import { useToast } from '@/hooks/use-toast';
-import { formatWorkOrderForDb } from '@/utils/workOrders/formatters';
-import { Button } from '@/components/ui/button';
-import { ChevronLeft } from 'lucide-react';
+import React, { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
+import { WorkOrderCreateForm } from "@/components/work-orders/WorkOrderCreateForm";
+import { WorkOrderFormSchemaValues, workOrderFormSchema } from "@/schemas/workOrderSchema";
+import { createWorkOrder } from "@/services/workOrder";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 
 export default function WorkOrderCreate() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { toast } = useToast();
-
-  console.log('WorkOrderCreate page loaded with params:', Object.fromEntries(searchParams));
-
-  // Get pre-populated data from URL params
-  const prePopulatedData = {
-    customerId: searchParams.get('customerId') || '',
-    customerName: searchParams.get('customer') || searchParams.get('customerName') || '',
-    customerEmail: searchParams.get('customerEmail') || '',
-    customerPhone: searchParams.get('customerPhone') || '',
-    customerAddress: searchParams.get('customerAddress') || '',
-    title: searchParams.get('title') || '',
-    description: searchParams.get('description') || '',
-    priority: searchParams.get('priority') || 'medium',
-    vehicleMake: searchParams.get('vehicleMake') || '',
-    vehicleModel: searchParams.get('vehicleModel') || '',
-    vehicleYear: searchParams.get('vehicleYear') || '',
-    vehicleLicensePlate: searchParams.get('vehicleLicensePlate') || '',
-    vehicleVin: searchParams.get('vehicleVin') || '',
-    equipmentName: searchParams.get('equipmentName') || '',
-    equipmentType: searchParams.get('equipmentType') || ''
-  };
 
   const form = useForm<WorkOrderFormSchemaValues>({
     resolver: zodResolver(workOrderFormSchema),
     defaultValues: {
-      customer: prePopulatedData.customerName,
-      description: prePopulatedData.description || (prePopulatedData.equipmentName ? 
-        `Service request for ${prePopulatedData.equipmentName}` : ""),
+      customerId: "",
+      customerName: "",
+      customerEmail: "",
+      customerPhone: "",
+      customerAddress: "",
+      title: "",
+      description: "",
+      priority: "medium",
+      vehicleMake: "",
+      vehicleModel: "",
+      vehicleYear: "",
+      vehicleLicensePlate: "",
+      vehicleVin: "",
+      equipmentName: "",
+      equipmentType: "",
+      technicianId: "",
       status: "pending",
-      priority: prePopulatedData.priority as any,
-      technician: "",
-      location: "",
+      startDate: "",
       dueDate: "",
-      notes: prePopulatedData.equipmentType ? 
-        `Equipment Type: ${prePopulatedData.equipmentType}` : "",
-      vehicleMake: prePopulatedData.vehicleMake,
-      vehicleModel: prePopulatedData.vehicleModel,
-      vehicleYear: prePopulatedData.vehicleYear,
-      odometer: "",
-      licensePlate: prePopulatedData.vehicleLicensePlate,
-      vin: prePopulatedData.vehicleVin,
-      inventoryItems: []
+      estimatedHours: 0,
+      notes: ""
     }
   });
 
-  // Update form values when URL params change
+  // Pre-populate form with URL parameters
   useEffect(() => {
-    if (prePopulatedData.customerName) {
-      form.setValue('customer', prePopulatedData.customerName);
+    const prePopulatedData: any = {};
+    
+    // Extract all URL parameters
+    const customerId = searchParams.get("customerId");
+    const vehicleId = searchParams.get("vehicleId"); // NEW: Capture vehicle ID
+    const customer = searchParams.get("customer");
+    const customerEmail = searchParams.get("customerEmail");
+    const customerPhone = searchParams.get("customerPhone");
+    const customerAddress = searchParams.get("customerAddress");
+    const title = searchParams.get("title");
+    const description = searchParams.get("description");
+    const priority = searchParams.get("priority");
+    const vehicleMake = searchParams.get("vehicleMake");
+    const vehicleModel = searchParams.get("vehicleModel");
+    const vehicleYear = searchParams.get("vehicleYear");
+    const vehicleLicensePlate = searchParams.get("vehicleLicensePlate");
+    const vehicleVin = searchParams.get("vehicleVin");
+
+    // Set form values from URL parameters
+    if (customerId) {
+      prePopulatedData.customerId = customerId;
+      form.setValue("customerId", customerId);
     }
-    if (prePopulatedData.description) {
-      form.setValue('description', prePopulatedData.description);
+    
+    // NEW: Store vehicle ID for later use
+    if (vehicleId) {
+      prePopulatedData.vehicleId = vehicleId;
     }
-    if (prePopulatedData.title && !prePopulatedData.description) {
-      form.setValue('description', prePopulatedData.title);
+    
+    if (customer) {
+      prePopulatedData.customerName = customer;
+      form.setValue("customerName", customer);
     }
-    if (prePopulatedData.vehicleMake) {
-      form.setValue('vehicleMake', prePopulatedData.vehicleMake);
+    if (customerEmail) {
+      prePopulatedData.customerEmail = customerEmail;
+      form.setValue("customerEmail", customerEmail);
     }
-    if (prePopulatedData.vehicleModel) {
-      form.setValue('vehicleModel', prePopulatedData.vehicleModel);
+    if (customerPhone) {
+      prePopulatedData.customerPhone = customerPhone;
+      form.setValue("customerPhone", customerPhone);
     }
-    if (prePopulatedData.vehicleYear) {
-      form.setValue('vehicleYear', prePopulatedData.vehicleYear);
+    if (customerAddress) {
+      prePopulatedData.customerAddress = customerAddress;
+      form.setValue("customerAddress", customerAddress);
     }
-    if (prePopulatedData.vehicleLicensePlate) {
-      form.setValue('licensePlate', prePopulatedData.vehicleLicensePlate);
+    if (title) {
+      prePopulatedData.title = title;
+      form.setValue("title", title);
     }
-    if (prePopulatedData.vehicleVin) {
-      form.setValue('vin', prePopulatedData.vehicleVin);
+    if (description) {
+      prePopulatedData.description = description;
+      form.setValue("description", description);
     }
-  }, [searchParams, form, prePopulatedData]);
+    if (priority) {
+      prePopulatedData.priority = priority;
+      form.setValue("priority", priority as any);
+    }
+    if (vehicleMake) {
+      prePopulatedData.vehicleMake = vehicleMake;
+      form.setValue("vehicleMake", vehicleMake);
+    }
+    if (vehicleModel) {
+      prePopulatedData.vehicleModel = vehicleModel;
+      form.setValue("vehicleModel", vehicleModel);
+    }
+    if (vehicleYear) {
+      prePopulatedData.vehicleYear = vehicleYear;
+      form.setValue("vehicleYear", vehicleYear);
+    }
+    if (vehicleLicensePlate) {
+      prePopulatedData.vehicleLicensePlate = vehicleLicensePlate;
+      form.setValue("vehicleLicensePlate", vehicleLicensePlate);
+    }
+    if (vehicleVin) {
+      prePopulatedData.vehicleVin = vehicleVin;
+      form.setValue("vehicleVin", vehicleVin);
+    }
+
+    // Store the vehicle ID in a way that can be accessed during form submission
+    if (vehicleId) {
+      form.setValue("vehicleId" as any, vehicleId);
+    }
+
+    console.log("Pre-populated work order data:", prePopulatedData);
+  }, [searchParams, form]);
 
   const handleSubmit = async (values: WorkOrderFormSchemaValues) => {
     try {
-      console.log('Submitting work order:', values);
+      console.log("Submitting work order with values:", values);
       
-      // Create a comprehensive description including equipment information
-      let fullDescription = values.description;
-      if (prePopulatedData.equipmentName && !fullDescription.includes(prePopulatedData.equipmentName)) {
-        fullDescription += `\nEquipment: ${prePopulatedData.equipmentName}`;
-      }
-      if (prePopulatedData.equipmentType) {
-        fullDescription += `\nEquipment Type: ${prePopulatedData.equipmentType}`;
-      }
-
-      // Format the data for database insertion
-      const workOrderData = formatWorkOrderForDb({
-        customer_id: prePopulatedData.customerId || undefined,
-        description: fullDescription,
+      // Extract vehicle ID from form or URL params
+      const vehicleId = (values as any).vehicleId || searchParams.get("vehicleId");
+      
+      // Prepare the work order data
+      const workOrderData = {
+        customer_id: values.customerId || undefined,
+        vehicle_id: vehicleId || undefined, // NEW: Include vehicle_id
+        description: values.description,
         status: values.status,
         priority: values.priority,
-        technician_id: values.technician || undefined,
-        service_type: prePopulatedData.equipmentType || 'General Service',
-        location: values.location || undefined,
-        due_date: values.dueDate || undefined,
+        technician_id: values.technicianId || undefined,
+        estimated_hours: values.estimatedHours || undefined,
+        start_time: values.startDate ? new Date(values.startDate).toISOString() : undefined,
+        end_time: values.dueDate ? new Date(values.dueDate).toISOString() : undefined,
+        service_type: values.title || undefined,
         notes: values.notes || undefined,
+        // Individual vehicle fields as fallback
         vehicle_make: values.vehicleMake || undefined,
         vehicle_model: values.vehicleModel || undefined,
         vehicle_year: values.vehicleYear || undefined,
-        vehicle_vin: values.vin || undefined,
-        vehicle_license_plate: values.licensePlate || undefined,
-        vehicle_odometer: values.odometer || undefined
-      });
+        vehicle_license_plate: values.vehicleLicensePlate || undefined,
+        vehicle_vin: values.vehicleVin || undefined,
+        // Customer information
+        customer_name: values.customerName || undefined,
+        customer_email: values.customerEmail || undefined,
+        customer_phone: values.customerPhone || undefined,
+        customer_address: values.customerAddress || undefined,
+      };
 
-      console.log('Formatted work order data:', workOrderData);
+      console.log("Final work order data being sent:", workOrderData);
 
       const result = await createWorkOrder(workOrderData);
       
       if (result) {
-        console.log('Work order created successfully:', result);
-        toast({
-          title: "Success",
-          description: "Work order created successfully",
-        });
-        navigate('/work-orders');
+        toast.success("Work order created successfully!");
+        navigate("/work-orders");
       } else {
-        throw new Error('Failed to create work order');
+        toast.error("Failed to create work order");
       }
     } catch (error) {
-      console.error('Error creating work order:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create work order. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleBack = () => {
-    if (prePopulatedData.customerId) {
-      navigate(`/customers/${prePopulatedData.customerId}`);
-    } else {
-      navigate('/work-orders');
+      console.error("Error creating work order:", error);
+      toast.error("Failed to create work order");
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" onClick={handleBack}>
-          <ChevronLeft className="mr-2 h-4 w-4" />
-          {prePopulatedData.customerId ? 'Back to Customer' : 'Back to Work Orders'}
+    <div className="container mx-auto p-6 max-w-4xl">
+      <div className="flex items-center gap-4 mb-6">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigate("/work-orders")}
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Work Orders
         </Button>
-      </div>
-
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Create Work Order</h1>
-        <p className="text-muted-foreground">
-          Create a new work order for tracking service tasks.
-          {prePopulatedData.customerName && ` Customer: ${prePopulatedData.customerName}`}
-        </p>
+        <h1 className="text-2xl font-bold">Create Work Order</h1>
       </div>
 
       <WorkOrderCreateForm 
         form={form} 
         onSubmit={handleSubmit}
-        prePopulatedCustomer={prePopulatedData}
       />
     </div>
   );

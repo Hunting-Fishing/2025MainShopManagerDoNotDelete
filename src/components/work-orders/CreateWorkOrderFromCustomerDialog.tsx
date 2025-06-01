@@ -52,6 +52,8 @@ export function CreateWorkOrderFromCustomerDialog({
       if (formData.vehicleId && customer.vehicles) {
         const selectedVehicle = customer.vehicles.find(v => v.id === formData.vehicleId);
         if (selectedVehicle) {
+          // NEW: Add vehicleId to params
+          params.append('vehicleId', selectedVehicle.id!);
           params.append('vehicleMake', selectedVehicle.make || '');
           params.append('vehicleModel', selectedVehicle.model || '');
           params.append('vehicleYear', selectedVehicle.year?.toString() || '');
@@ -132,9 +134,9 @@ export function CreateWorkOrderFromCustomerDialog({
                   <SelectValue placeholder="Select a vehicle" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No vehicle selected</SelectItem>
+                  <SelectItem value="">No vehicle selected</SelectItem>
                   {customer.vehicles.map((vehicle) => (
-                    <SelectItem key={vehicle.id} value={vehicle.id}>
+                    <SelectItem key={vehicle.id} value={vehicle.id!}>
                       {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.license_plate && `(${vehicle.license_plate})`}
                     </SelectItem>
                   ))}
