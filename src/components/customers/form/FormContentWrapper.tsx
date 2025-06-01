@@ -33,6 +33,7 @@ interface FormContentWrapperProps {
   currentStep: number;
   totalSteps: number;
   progressPercentage: number;
+  formId?: string;
 }
 
 export const FormContentWrapper: React.FC<FormContentWrapperProps> = ({
@@ -50,7 +51,8 @@ export const FormContentWrapper: React.FC<FormContentWrapperProps> = ({
   // Add new props for progress tracking
   currentStep,
   totalSteps,
-  progressPercentage
+  progressPercentage,
+  formId = "customer-create-form"
 }) => {
   const isMobile = useIsMobile();
   const { 
@@ -78,7 +80,7 @@ export const FormContentWrapper: React.FC<FormContentWrapperProps> = ({
 
   return (
     <Form {...form}>
-      <form id="customer-create-form" onSubmit={handleFormSubmit} className="space-y-6">
+      <form id={formId} onSubmit={handleFormSubmit} className="space-y-6">
         {/* Only show duplicate alert for new customers, not when editing */}
         {!isEditMode && <DuplicateCustomerAlert form={form} />}
         

@@ -19,6 +19,7 @@ interface CustomerFormProps {
   isEditMode?: boolean;
   customerId?: string;
   initialTab?: string;
+  formId?: string;
 }
 
 export const CustomerForm: React.FC<CustomerFormProps> = ({
@@ -29,7 +30,8 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
   singleShopMode = false,
   isEditMode = false,
   customerId,
-  initialTab
+  initialTab,
+  formId = "customer-create-form"
 }) => {
   const {
     currentTab,
@@ -98,6 +100,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
         currentStep={currentStep}
         totalSteps={totalSteps}
         progressPercentage={progressPercentage}
+        formId={formId}
       />
     </div>
   );
