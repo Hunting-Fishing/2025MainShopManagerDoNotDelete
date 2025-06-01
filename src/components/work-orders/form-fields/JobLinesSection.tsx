@@ -1,12 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { WorkOrderJobLine } from '@/types/jobLine';
-import { parseJobLinesFromDescriptionEnhanced } from '@/services/jobLineParserEnhanced';
-import { EditableJobLinesGrid } from '../job-lines/EditableJobLinesGrid';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { RefreshCw, Wand2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+import { WorkOrderJobLine } from '@/types/jobLine';
+import { AddJobLineDialog } from '../job-lines/AddJobLineDialog';
+import { JobLineCard } from '../job-lines/JobLineCard';
+import { Wrench } from 'lucide-react';
 
 interface JobLinesSectionProps {
   workOrderId: string;
@@ -16,105 +15,99 @@ interface JobLinesSectionProps {
   shopId?: string;
 }
 
-export function JobLinesSection({ 
-  workOrderId, 
-  description, 
-  jobLines, 
+export function JobLinesSection({
+  workOrderId,
+  description,
+  jobLines,
   onJobLinesChange,
-  shopId 
+  shopId
 }: JobLinesSectionProps) {
-  const [isParsingJobLines, setIsParsingJobLines] = useState(false);
+  const [localJobLines, setLocalJobLines] = useState<WorkOrderJobLine[]>(jobLines);
 
-  // Auto-parse job lines when description changes
+  // Sync with parent state
   useEffect(() => {
-    if (description && jobLines.length === 0) {
-      handleParseJobLines();
-    }
-  }, [description]);
-
-  const handleParseJobLines = async () => {
-    if (!description.trim()) {
-      toast.error('Please enter a work order description first');
-      return;
-    }
-
-    setIsParsingJobLines(true);
-    try {
-      const parsedJobLines = await parseJobLinesFromDescriptionEnhanced(
-        description,
-        workOrderId,
-        shopId
-      );
-      
-      if (parsedJobLines.length > 0) {
-        onJobLinesChange(parsedJobLines);
-        toast.success(`Parsed ${parsedJobLines.length} job line(s) from description`);
-      } else {
-        toast.info('No specific services detected in description');
-      }
-    } catch (error) {
-      console.error('Error parsing job lines:', error);
-      toast.error('Failed to parse job lines from description');
-    } finally {
-      setIsParsingJobLines(false);
-    }
-  };
-
-  const handleUpdateJobLine = (updatedJobLine: WorkOrderJobLine) => {
-    const updatedJobLines = jobLines.map(line => 
-      line.id === updatedJobLine.id ? updatedJobLine : line
-    );
-    onJobLinesChange(updatedJobLines);
-  };
-
-  const handleDeleteJobLine = (jobLineId: string) => {
-    const updatedJobLines = jobLines.filter(line => line.id !== jobLineId);
-    onJobLinesChange(updatedJobLines);
-  };
+    setLocalJobLines(jobLines);
+  }, [jobLines]);
 
   const handleAddJobLine = (newJobLineData: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>) => {
     const newJobLine: WorkOrderJobLine = {
       ...newJobLineData,
-      id: `${workOrderId}-job-${Date.now()}`,
+      id: `temp-${Date.now()}`,
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
-    
-    onJobLinesChange([...jobLines, newJobLine]);
+
+    const updatedJobLines = [...localJobLines, newJobLine];
+    setLocalJobLines(updatedJobLines);
+    onJobLinesChange(updatedJobLines);
   };
 
+  const handleUpdateJobLine = (updatedJobLine: WorkOrderJobLine) => {
+    const updatedJobLines = localJobLines.map(jobLine =>
+      jobLine.id === updatedJobLine.id ? updatedJobLine : jobLine
+    );
+    setLocalJobLines(updatedJobLines);
+    onJobLinesChange(updatedJobLines);
+  };
+
+  const handleDeleteJobLine = (jobLineId: string) => {
+    const updatedJobLines = localJobLines.filter(jobLine => jobLine.id !== jobLineId);
+    setLocalJobLines(updatedJobLines);
+    onJobLinesChange(updatedJobLines);
+  };
+
+  const totalEstimatedHours = localJobLines.reduce((total, jobLine) => 
+    total + (jobLine.estimatedHours || 0), 0
+  );
+
+  const totalAmount = localJobLines.reduce((total, jobLine) => 
+    total + (jobLine.totalAmount || 0), 0
+  );
+
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-lg">Labor & Services</CardTitle>
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleParseJobLines}
-            disabled={isParsingJobLines || !description.trim()}
-            className="flex items-center gap-2"
-          >
-            {isParsingJobLines ? (
-              <RefreshCw className="h-4 w-4 animate-spin" />
-            ) : (
-              <Wand2 className="h-4 w-4" />
-            )}
-            {isParsingJobLines ? 'Parsing...' : 'Parse from Description'}
-          </Button>
+    <Card className="border-slate-200 dark:border-slate-700">
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Wrench className="h-5 w-5 text-blue-600" />
+            <CardTitle className="text-lg">Job Lines</CardTitle>
+            <Badge variant="secondary">{localJobLines.length}</Badge>
+          </div>
+          <AddJobLineDialog 
+            workOrderId={workOrderId}
+            onJobLineAdd={handleAddJobLine}
+          />
         </div>
+        
+        {localJobLines.length > 0 && (
+          <div className="flex gap-4 text-sm text-slate-600">
+            <span>Total Hours: {totalEstimatedHours.toFixed(1)}</span>
+            <span>Total Amount: ${totalAmount.toFixed(2)}</span>
+          </div>
+        )}
       </CardHeader>
-      <CardContent>
-        <EditableJobLinesGrid
-          jobLines={jobLines}
-          onUpdateJobLine={handleUpdateJobLine}
-          onDeleteJobLine={handleDeleteJobLine}
-          onAddJobLine={handleAddJobLine}
-          workOrderId={workOrderId}
-          shopId={shopId}
-          showSummary={true}
-        />
+
+      <CardContent className="pt-0">
+        {localJobLines.length === 0 ? (
+          <div className="text-center py-8 border-2 border-dashed border-slate-200 rounded-lg">
+            <Wrench className="h-8 w-8 mx-auto text-slate-400 mb-2" />
+            <p className="text-slate-500 mb-4">No job lines added yet</p>
+            <p className="text-sm text-slate-400">
+              Add job lines to break down the work into specific tasks
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {localJobLines.map((jobLine) => (
+              <JobLineCard
+                key={jobLine.id}
+                jobLine={jobLine}
+                onUpdate={handleUpdateJobLine}
+                onDelete={handleDeleteJobLine}
+              />
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
