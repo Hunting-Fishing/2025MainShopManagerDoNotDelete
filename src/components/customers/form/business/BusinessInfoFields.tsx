@@ -7,7 +7,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CustomerFormValues } from "../schemas/customerSchema";
 import { shops as defaultShops } from "../schemas/relationshipData";
-import { requiredFields } from "../schemas/customerSchema";
 import { EssentialBusinessDetails } from "./EssentialBusinessDetails";
 import { FleetManagementSection } from "./FleetManagementSection";
 
@@ -22,9 +21,28 @@ export const BusinessInfoFields: React.FC<BusinessInfoFieldsProps> = ({
   availableShops = defaultShops,
   singleShopMode = false
 }) => {
-  const [isEssentialInfoOpen, setIsEssentialInfoOpen] = React.useState(true);
-  const [isFleetOpen, setIsFleetOpen] = React.useState(true);
+  // Watch form values to determine initial state
+  const company = form.watch("company");
+  const businessType = form.watch("business_type");
+  const businessIndustry = form.watch("business_industry");
+  const taxId = form.watch("tax_id");
+  const businessEmail = form.watch("business_email");
+  const businessPhone = form.watch("business_phone");
   const isFleet = form.watch("is_fleet");
+
+  // Determine if business info is present
+  const hasBusinessInfo = !!(
+    company || 
+    businessType || 
+    businessIndustry || 
+    taxId || 
+    businessEmail || 
+    businessPhone
+  );
+
+  // State for collapsible sections - smart defaults
+  const [isEssentialInfoOpen, setIsEssentialInfoOpen] = React.useState(hasBusinessInfo);
+  const [isFleetOpen, setIsFleetOpen] = React.useState(isFleet);
 
   return (
     <Card>

@@ -1,322 +1,306 @@
 
-import React, { useEffect } from "react";
+import React from "react";
 import { UseFormReturn } from "react-hook-form";
+import { ChevronDown, Building2, Truck, CheckCircle } from "lucide-react";
 import { 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormControl, 
-  FormMessage,
-  FormDescription
-} from "@/components/ui/form";
+  Collapsible, 
+  CollapsibleContent, 
+  CollapsibleTrigger 
+} from "@/components/ui/collapsible";
+import { Badge } from "@/components/ui/badge";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { 
-  HelpCircle, 
-  ChevronDown, 
-  ChevronUp, 
-  Building2,
-  Mail,
-  Phone
-} from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { CustomerFormValues, shops as defaultShops, requiredFields } from "../CustomerFormSchema";
-import { RequiredIndicator } from "@/components/ui/required-indicator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { businessTypes, businessIndustries } from "./businessConstants";
+import { CustomerFormValues } from "../schemas/customerSchema";
+import { cn } from "@/lib/utils";
 
 interface EssentialBusinessDetailsProps {
   form: UseFormReturn<CustomerFormValues>;
   isOpen: boolean;
-  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsOpen: (open: boolean) => void;
   availableShops?: Array<{id: string, name: string}>;
   singleShopMode?: boolean;
 }
 
-export const EssentialBusinessDetails: React.FC<EssentialBusinessDetailsProps> = ({
-  form,
-  isOpen,
+export const EssentialBusinessDetails: React.FC<EssentialBusinessDetailsProps> = ({ 
+  form, 
+  isOpen, 
   setIsOpen,
-  availableShops = defaultShops,
+  availableShops = [],
   singleShopMode = false
 }) => {
-  const businessIndustryValue = form.watch("business_industry");
-  const showOtherIndustryField = businessIndustryValue === "other";
-  
-  // Set validation errors when switching to "other" but not providing a value
-  useEffect(() => {
-    if (businessIndustryValue === "other") {
-      const otherIndustry = form.getValues("other_business_industry");
-      if (!otherIndustry || otherIndustry.trim() === "") {
-        form.trigger("other_business_industry");
-      }
+  // Watch form values to determine business status
+  const company = form.watch("company");
+  const businessType = form.watch("business_type");
+  const businessIndustry = form.watch("business_industry");
+  const taxId = form.watch("tax_id");
+  const businessEmail = form.watch("business_email");
+  const businessPhone = form.watch("business_phone");
+  const isFleet = form.watch("is_fleet");
+
+  // Check if any business information is present
+  const hasBusinessInfo = !!(
+    company || 
+    businessType || 
+    businessIndustry || 
+    taxId || 
+    businessEmail || 
+    businessPhone
+  );
+
+  // Auto-expand if business info is present and section is closed
+  React.useEffect(() => {
+    if (hasBusinessInfo && !isOpen) {
+      setIsOpen(true);
     }
-  }, [businessIndustryValue, form]);
+  }, [hasBusinessInfo, isOpen, setIsOpen]);
+
+  // Count filled business fields
+  const filledFields = [company, businessType, businessIndustry, taxId, businessEmail, businessPhone].filter(Boolean).length;
+  const totalFields = 6;
+
+  // Determine section styling based on content
+  const getSectionStyle = () => {
+    if (isFleet) {
+      return "border-blue-200 bg-blue-50";
+    }
+    if (hasBusinessInfo) {
+      return "border-green-200 bg-green-50";
+    }
+    return "border-gray-200 bg-white";
+  };
+
+  const getStatusBadge = () => {
+    if (isFleet) {
+      return (
+        <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-300">
+          <Truck className="w-3 h-3 mr-1" />
+          Fleet Customer
+        </Badge>
+      );
+    }
+    if (hasBusinessInfo) {
+      return (
+        <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-300">
+          <Building2 className="w-3 h-3 mr-1" />
+          Business Customer
+        </Badge>
+      );
+    }
+    return null;
+  };
+
+  const getCompletionBadge = () => {
+    if (hasBusinessInfo && filledFields > 0) {
+      return (
+        <Badge variant="outline" className="text-xs">
+          <CheckCircle className="w-3 h-3 mr-1" />
+          {filledFields}/{totalFields} completed
+        </Badge>
+      );
+    }
+    return null;
+  };
 
   return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full border rounded-md p-4 my-4 bg-white">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <Building2 className="h-5 w-5 text-muted-foreground" />
-          <h3 className="text-lg font-medium">Essential Business Details</h3>
-        </div>
-        <CollapsibleTrigger asChild>
-          <button className="p-2 hover:bg-slate-100 rounded-md" aria-label="Toggle section">
-            {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </button>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <div className={cn(
+        "rounded-lg border transition-all duration-200",
+        getSectionStyle()
+      )}>
+        <CollapsibleTrigger className="w-full p-4 hover:bg-opacity-80 transition-colors">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-muted-foreground" />
+                <h3 className="text-lg font-medium">Essential Business Details</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                {getStatusBadge()}
+                {getCompletionBadge()}
+              </div>
+            </div>
+            <ChevronDown className={cn(
+              "h-5 w-5 text-muted-foreground transition-transform duration-200",
+              isOpen && "rotate-180"
+            )} />
+          </div>
         </CollapsibleTrigger>
+
+        <CollapsibleContent className="px-4 pb-4">
+          <div className="space-y-4 pt-2 border-t border-gray-100">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Company Name */}
+              <FormField
+                control={form.control}
+                name="company"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Company Name</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Enter company name" 
+                        {...field} 
+                        value={field.value || ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Business Type */}
+              <FormField
+                control={form.control}
+                name="business_type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Business Type</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ""}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select business type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="corporation">Corporation</SelectItem>
+                        <SelectItem value="llc">LLC</SelectItem>
+                        <SelectItem value="partnership">Partnership</SelectItem>
+                        <SelectItem value="sole_proprietorship">Sole Proprietorship</SelectItem>
+                        <SelectItem value="non_profit">Non-Profit</SelectItem>
+                        <SelectItem value="government">Government</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Business Industry */}
+              <FormField
+                control={form.control}
+                name="business_industry"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Industry</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ""}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select industry" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="automotive">Automotive</SelectItem>
+                        <SelectItem value="construction">Construction</SelectItem>
+                        <SelectItem value="healthcare">Healthcare</SelectItem>
+                        <SelectItem value="manufacturing">Manufacturing</SelectItem>
+                        <SelectItem value="retail">Retail</SelectItem>
+                        <SelectItem value="technology">Technology</SelectItem>
+                        <SelectItem value="transportation">Transportation</SelectItem>
+                        <SelectItem value="agriculture">Agriculture</SelectItem>
+                        <SelectItem value="education">Education</SelectItem>
+                        <SelectItem value="finance">Finance</SelectItem>
+                        <SelectItem value="real_estate">Real Estate</SelectItem>
+                        <SelectItem value="hospitality">Hospitality</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Tax ID */}
+              <FormField
+                control={form.control}
+                name="tax_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tax ID / EIN</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Enter tax ID or EIN" 
+                        {...field} 
+                        value={field.value || ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Business Email */}
+              <FormField
+                control={form.control}
+                name="business_email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Business Email</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="email"
+                        placeholder="business@company.com" 
+                        {...field} 
+                        value={field.value || ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Business Phone */}
+              <FormField
+                control={form.control}
+                name="business_phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Business Phone</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="tel"
+                        placeholder="(555) 123-4567" 
+                        {...field} 
+                        value={field.value || ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Shop Selection (if not in single shop mode) */}
+            {!singleShopMode && availableShops && availableShops.length > 0 && (
+              <FormField
+                control={form.control}
+                name="shop_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Shop Location</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ""}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select shop location" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {availableShops.map((shop) => (
+                          <SelectItem key={shop.id} value={shop.id}>
+                            {shop.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+          </div>
+        </CollapsibleContent>
       </div>
-      <CollapsibleContent className="mt-4 space-y-4">
-        {/* Company/Business Name Field */}
-        <FormField
-          control={form.control}
-          name="company"
-          render={({ field }) => (
-            <FormItem>
-              <div className="flex items-center gap-2">
-                <FormLabel>Business Name</FormLabel>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent side="right">
-                      <p>The company or business name associated with this customer</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <FormControl>
-                <Input placeholder="Enter business name" {...field} />
-              </FormControl>
-              <FormDescription>
-                This will appear on invoices and work orders
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Business Type */}
-        <FormField
-          control={form.control}
-          name="business_type"
-          render={({ field }) => (
-            <FormItem>
-              <div className="flex items-center gap-2">
-                <FormLabel>Business Type</FormLabel>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent side="right">
-                      <p>The legal structure of the business</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <Select value={field.value || ""} onValueChange={field.onChange}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select business type" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {businessTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Business Industry */}
-        <FormField
-          control={form.control}
-          name="business_industry"
-          render={({ field }) => (
-            <FormItem>
-              <div className="flex items-center gap-2">
-                <FormLabel>Business Industry</FormLabel>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent side="right">
-                      <p>The primary industry this business operates in</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <Select 
-                value={field.value || ""} 
-                onValueChange={(value) => {
-                  field.onChange(value);
-                  // Reset other_business_industry when not selecting "other"
-                  if (value !== "other") {
-                    form.setValue("other_business_industry", "");
-                  }
-                }}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select business industry" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {businessIndustries.map((industry) => (
-                    <SelectItem key={industry.value} value={industry.value}>
-                      {industry.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Other Business Industry Field - Only shown when "other" is selected */}
-        {showOtherIndustryField && (
-          <FormField
-            control={form.control}
-            name="other_business_industry"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Specify Industry <RequiredIndicator /></FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter specific business industry" {...field} />
-                </FormControl>
-                <FormDescription>
-                  Please specify the business industry
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
-
-        {/* Tax ID */}
-        <FormField
-          control={form.control}
-          name="tax_id"
-          render={({ field }) => (
-            <FormItem>
-              <div className="flex items-center gap-2">
-                <FormLabel>Tax ID / GST/HST Number</FormLabel>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent side="right">
-                      <p>Company tax identification number for billing purposes</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <FormControl>
-                <Input placeholder="Enter tax ID or GST/HST number" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Business Email */}
-        <FormField
-          control={form.control}
-          name="business_email"
-          render={({ field }) => (
-            <FormItem>
-              <div className="flex items-center gap-2">
-                <FormLabel>Business Email</FormLabel>
-                <Mail className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <FormControl>
-                <Input type="email" placeholder="Enter business email" {...field} />
-              </FormControl>
-              <FormDescription>
-                For business communications and invoices
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Business Phone */}
-        <FormField
-          control={form.control}
-          name="business_phone"
-          render={({ field }) => (
-            <FormItem>
-              <div className="flex items-center gap-2">
-                <FormLabel>Business Phone</FormLabel>
-                <Phone className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <FormControl>
-                <Input placeholder="Enter business phone number" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Shop Selection - Only show if not in single shop mode */}
-        {!singleShopMode && (
-          <FormField
-            control={form.control}
-            name="shop_id"
-            render={({ field }) => (
-              <FormItem>
-                <div className="flex items-center gap-2">
-                  <FormLabel>
-                    Service Location {requiredFields.shop_id && <RequiredIndicator />}
-                  </FormLabel>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent side="right">
-                        <p>The shop location this customer is associated with</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <Select 
-                  value={field.value} 
-                  onValueChange={field.onChange}
-                  disabled={availableShops.length <= 1}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select shop" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {availableShops.map((shop) => (
-                      <SelectItem key={shop.id} value={shop.id}>
-                        {shop.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  Determines which shop will service this customer
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
-      </CollapsibleContent>
     </Collapsible>
   );
 };
