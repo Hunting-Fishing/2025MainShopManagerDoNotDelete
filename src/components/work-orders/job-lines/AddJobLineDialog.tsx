@@ -6,9 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { WorkOrderJobLine } from '@/types/jobLine';
-import { ServicesSection } from '../fields/ServicesSection';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ServicesSection } from '@/components/work-orders/fields/ServicesSection';
+import { WorkOrderJobLine, JOB_LINE_STATUSES } from '@/types/jobLine';
 import { SelectedService } from '@/types/selectedService';
+import { ServiceJob } from '@/types/serviceHierarchy';
 import { Plus, X } from 'lucide-react';
 
 interface AddJobLineDialogProps {
@@ -22,89 +24,98 @@ interface AddJobLineDialogProps {
 export function AddJobLineDialog({ 
   open, 
   onOpenChange, 
-  onAddJobLine, 
+  onAddJobLine,
   workOrderId,
   shopId 
 }: AddJobLineDialogProps) {
-  const [formData, setFormData] = useState({
-    name: '',
-    category: '',
-    subcategory: '',
-    description: '',
-    estimatedHours: 0,
-    laborRate: 0,
-    status: 'pending' as const
-  });
-
+  const [jobLineName, setJobLineName] = useState('');
+  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState('');
+  const [subcategory, setSubcategory] = useState('');
+  const [estimatedHours, setEstimatedHours] = useState<number>(0);
+  const [laborRate, setLaborRate] = useState<number>(0);
+  const [status, setStatus] = useState<'pending' | 'in-progress' | 'completed' | 'on-hold'>('pending');
+  const [notes, setNotes] = useState('');
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
 
-  const handleServiceSelect = (service: any, categoryName: string, subcategoryName: string) => {
+  const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
     const newService: SelectedService = {
       id: `service-${Date.now()}`,
+      serviceId: service.id,
       name: service.name,
+      description: service.description,
       categoryName,
       subcategoryName,
-      estimatedHours: service.estimatedHours || 1,
-      laborRate: service.laborRate || 0
+      estimatedTime: service.estimatedTime,
+      price: service.price,
+      estimatedHours: service.estimatedTime ? service.estimatedTime / 60 : 0, // Convert minutes to hours
+      laborRate: service.price || 0
     };
     setSelectedServices(prev => [...prev, newService]);
+  };
+
+  const handleRemoveService = (serviceId: string) => {
+    setSelectedServices(prev => prev.filter(s => s.id !== serviceId));
   };
 
   const handleUpdateServices = (services: SelectedService[]) => {
     setSelectedServices(services);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (selectedServices.length > 0) {
-      // Create job lines from selected services
-      selectedServices.forEach(service => {
-        onAddJobLine({
-          workOrderId,
-          name: service.name,
-          category: service.categoryName,
-          subcategory: service.subcategoryName,
-          description: formData.description,
-          estimatedHours: service.estimatedHours,
-          laborRate: service.laborRate,
-          totalAmount: (service.estimatedHours || 0) * (service.laborRate || 0),
-          status: formData.status,
-          notes: ''
-        });
-      });
-    } else if (formData.name) {
-      // Create job line from manual form data
-      onAddJobLine({
+  const calculateTotalAmount = () => {
+    return selectedServices.reduce((total, service) => {
+      const hours = service.estimatedHours || 0;
+      const rate = service.laborRate || 0;
+      return total + (hours * rate);
+    }, estimatedHours * laborRate);
+  };
+
+  const handleSubmit = () => {
+    // Create job lines from selected services
+    selectedServices.forEach(service => {
+      const jobLine: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'> = {
         workOrderId,
-        name: formData.name,
-        category: formData.category,
-        subcategory: formData.subcategory,
-        description: formData.description,
-        estimatedHours: formData.estimatedHours,
-        laborRate: formData.laborRate,
-        totalAmount: formData.estimatedHours * formData.laborRate,
-        status: formData.status,
-        notes: ''
-      });
+        name: service.name,
+        category: service.categoryName,
+        subcategory: service.subcategoryName,
+        description: service.description || '',
+        estimatedHours: service.estimatedHours || 0,
+        laborRate: service.laborRate || 0,
+        totalAmount: (service.estimatedHours || 0) * (service.laborRate || 0),
+        status: 'pending',
+        notes: service.notes || ''
+      };
+      onAddJobLine(jobLine);
+    });
+
+    // Create manual job line if any manual data was entered
+    if (jobLineName.trim()) {
+      const manualJobLine: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'> = {
+        workOrderId,
+        name: jobLineName,
+        category,
+        subcategory,
+        description,
+        estimatedHours,
+        laborRate,
+        totalAmount: calculateTotalAmount(),
+        status,
+        notes
+      };
+      onAddJobLine(manualJobLine);
     }
 
     // Reset form
-    setFormData({
-      name: '',
-      category: '',
-      subcategory: '',
-      description: '',
-      estimatedHours: 0,
-      laborRate: 0,
-      status: 'pending'
-    });
+    setJobLineName('');
+    setDescription('');
+    setCategory('');
+    setSubcategory('');
+    setEstimatedHours(0);
+    setLaborRate(0);
+    setStatus('pending');
+    setNotes('');
     setSelectedServices([]);
     onOpenChange(false);
-  };
-
-  const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   return (
@@ -113,116 +124,142 @@ export function AddJobLineDialog({
         <DialogHeader>
           <DialogTitle>Add Job Line</DialogTitle>
         </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Service Selection Section */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Select Services</h3>
-            <ServicesSection
-              onServiceSelect={handleServiceSelect}
-              selectedServices={selectedServices}
-              onUpdateServices={handleUpdateServices}
-            />
-          </div>
 
-          {/* Manual Entry Section */}
-          <div className="border-t pt-6">
-            <h3 className="text-lg font-semibold mb-4">Or Add Manual Job Line</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="name">Job Name</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder="Enter job name"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="category">Category</Label>
-                <Input
-                  id="category"
-                  value={formData.category}
-                  onChange={(e) => handleInputChange('category', e.target.value)}
-                  placeholder="Enter category"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="subcategory">Subcategory</Label>
-                <Input
-                  id="subcategory"
-                  value={formData.subcategory}
-                  onChange={(e) => handleInputChange('subcategory', e.target.value)}
-                  placeholder="Enter subcategory"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="status">Status</Label>
-                <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="in-progress">In Progress</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="on-hold">On Hold</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="estimatedHours">Estimated Hours</Label>
-                <Input
-                  id="estimatedHours"
-                  type="number"
-                  step="0.5"
-                  value={formData.estimatedHours}
-                  onChange={(e) => handleInputChange('estimatedHours', parseFloat(e.target.value) || 0)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="laborRate">Labor Rate ($/hr)</Label>
-                <Input
-                  id="laborRate"
-                  type="number"
-                  step="0.01"
-                  value={formData.laborRate}
-                  onChange={(e) => handleInputChange('laborRate', parseFloat(e.target.value) || 0)}
-                />
-              </div>
-            </div>
-
-            <div className="mt-4">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                placeholder="Enter job description"
-                rows={3}
+        <div className="space-y-6">
+          {/* Service Selection */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Select Services</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ServicesSection
+                onServiceSelect={handleServiceSelect}
+                selectedServices={selectedServices}
+                onUpdateServices={handleUpdateServices}
               />
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
-          <div className="flex justify-end space-x-2 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          {/* Manual Job Line Entry */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Manual Entry</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="jobLineName">Job Line Name</Label>
+                <Input
+                  id="jobLineName"
+                  value={jobLineName}
+                  onChange={(e) => setJobLineName(e.target.value)}
+                  placeholder="Enter job line name"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="category">Category</Label>
+                  <Input
+                    id="category"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    placeholder="Enter category"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="subcategory">Subcategory</Label>
+                  <Input
+                    id="subcategory"
+                    value={subcategory}
+                    onChange={(e) => setSubcategory(e.target.value)}
+                    placeholder="Enter subcategory"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Enter description"
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="estimatedHours">Estimated Hours</Label>
+                  <Input
+                    id="estimatedHours"
+                    type="number"
+                    value={estimatedHours}
+                    onChange={(e) => setEstimatedHours(Number(e.target.value))}
+                    placeholder="0"
+                    min="0"
+                    step="0.25"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="laborRate">Labor Rate ($)</Label>
+                  <Input
+                    id="laborRate"
+                    type="number"
+                    value={laborRate}
+                    onChange={(e) => setLaborRate(Number(e.target.value))}
+                    placeholder="0"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="status">Status</Label>
+                  <Select value={status} onValueChange={(value: any) => setStatus(value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {JOB_LINE_STATUSES.map(statusOption => (
+                        <SelectItem key={statusOption} value={statusOption}>
+                          {statusOption.charAt(0).toUpperCase() + statusOption.slice(1).replace('-', ' ')}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="notes">Notes</Label>
+                <Textarea
+                  id="notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Additional notes"
+                  rows={2}
+                />
+              </div>
+
+              <div className="text-sm text-gray-600">
+                <strong>Total Amount: ${calculateTotalAmount().toFixed(2)}</strong>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Actions */}
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button 
-              type="submit" 
-              disabled={selectedServices.length === 0 && !formData.name}
-              className="flex items-center gap-2"
+              onClick={handleSubmit}
+              disabled={selectedServices.length === 0 && !jobLineName.trim()}
             >
-              <Plus className="h-4 w-4" />
-              Add Job Line
+              Add Job Line(s)
             </Button>
           </div>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

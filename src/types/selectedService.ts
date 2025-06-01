@@ -9,6 +9,8 @@ export interface SelectedService {
   price?: number;
   notes?: string;
   serviceId: string; // reference to original service
+  estimatedHours?: number; // Added for job line compatibility
+  laborRate?: number; // Added for job line compatibility
 }
 
 export interface ServiceSelectionSummary {
