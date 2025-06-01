@@ -2,15 +2,14 @@
 import { supabase } from '@/lib/supabase';
 import { WorkOrder } from '@/types/workOrder';
 
+// Get all work orders with enhanced data
 export const getAllWorkOrders = async (): Promise<WorkOrder[]> => {
-  console.log('Fetching all work orders with vehicle information...');
-  
   try {
     const { data, error } = await supabase
       .from('work_orders')
       .select(`
         *,
-        vehicles:vehicle_id (
+        vehicles (
           id,
           year,
           make,
@@ -27,93 +26,63 @@ export const getAllWorkOrders = async (): Promise<WorkOrder[]> => {
       throw error;
     }
 
-    console.log('Raw work orders data:', data);
-
     if (!data) {
       return [];
     }
 
     // Transform the data to match our WorkOrder interface
-    const workOrders: WorkOrder[] = data.map((wo: any) => {
-      console.log('Processing work order:', wo.id, 'with vehicle data:', wo.vehicles);
-      
-      const workOrder: WorkOrder = {
-        id: wo.id,
-        customer_id: wo.customer_id,
-        vehicle_id: wo.vehicle_id,
-        advisor_id: wo.advisor_id,
-        technician_id: wo.technician_id,
-        estimated_hours: wo.estimated_hours,
-        total_cost: wo.total_cost,
-        created_by: wo.created_by,
-        created_at: wo.created_at,
-        updated_at: wo.updated_at,
-        start_time: wo.start_time,
-        end_time: wo.end_time,
-        service_category_id: wo.service_category_id,
-        invoiced_at: wo.invoiced_at,
-        status: wo.status || 'pending',
-        description: wo.description,
-        service_type: wo.service_type,
-        invoice_id: wo.invoice_id,
+    return data.map((workOrder: any) => {
+      const transformedWorkOrder: WorkOrder = {
+        id: workOrder.id,
+        customer_id: workOrder.customer_id,
+        vehicle_id: workOrder.vehicle_id,
+        advisor_id: workOrder.advisor_id,
+        technician_id: workOrder.technician_id,
+        estimated_hours: workOrder.estimated_hours,
+        total_cost: workOrder.total_cost,
+        created_by: workOrder.created_by,
+        created_at: workOrder.created_at,
+        updated_at: workOrder.updated_at,
+        start_time: workOrder.start_time,
+        end_time: workOrder.end_time,
+        service_category_id: workOrder.service_category_id,
+        invoiced_at: workOrder.invoiced_at,
+        status: workOrder.status,
+        description: workOrder.description,
+        service_type: workOrder.service_type,
+        invoice_id: workOrder.invoice_id,
         
-        // Legacy fields for backward compatibility
-        customer: wo.customer || wo.customer_name,
-        customer_name: wo.customer_name,
-        customer_email: wo.customer_email,
-        customer_phone: wo.customer_phone,
-        customer_address: wo.customer_address,
-        technician: wo.technician,
-        date: wo.created_at,
-        dueDate: wo.due_date,
-        due_date: wo.due_date,
-        priority: wo.priority,
-        location: wo.location,
-        notes: wo.notes,
-        
-        // Individual vehicle fields for backward compatibility
-        vehicle_make: wo.vehicle_make,
-        vehicle_model: wo.vehicle_model,
-        vehicle_year: wo.vehicle_year,
-        vehicle_vin: wo.vehicle_vin,
-        vehicle_license_plate: wo.vehicle_license_plate,
-        vehicle_odometer: wo.vehicle_odometer
+        // Add vehicle data if available
+        ...(workOrder.vehicles && {
+          vehicle: {
+            id: workOrder.vehicles.id,
+            year: workOrder.vehicles.year,
+            make: workOrder.vehicles.make,
+            model: workOrder.vehicles.model,
+            vin: workOrder.vehicles.vin,
+            license_plate: workOrder.vehicles.license_plate,
+            trim: workOrder.vehicles.trim
+          }
+        })
       };
 
-      // Add vehicle object if we have vehicle data from the join
-      if (wo.vehicles && typeof wo.vehicles === 'object' && !Array.isArray(wo.vehicles)) {
-        workOrder.vehicle = {
-          id: wo.vehicles.id,
-          year: wo.vehicles.year,
-          make: wo.vehicles.make,
-          model: wo.vehicles.model,
-          vin: wo.vehicles.vin,
-          license_plate: wo.vehicles.license_plate,
-          trim: wo.vehicles.trim
-        };
-        console.log('Added vehicle object to work order:', workOrder.vehicle);
-      }
-
-      return workOrder;
+      return transformedWorkOrder;
     });
 
-    console.log('Transformed work orders:', workOrders);
-    return workOrders;
   } catch (error) {
     console.error('Error in getAllWorkOrders:', error);
     throw error;
   }
 };
 
+// Get work order by ID
 export const getWorkOrderById = async (id: string): Promise<WorkOrder | null> => {
-  console.log('Fetching work order by ID:', id);
-  
   try {
     const { data, error } = await supabase
       .from('work_orders')
       .select(`
         *,
-        vehicles:vehicle_id (
+        vehicles (
           id,
           year,
           make,
@@ -132,13 +101,10 @@ export const getWorkOrderById = async (id: string): Promise<WorkOrder | null> =>
     }
 
     if (!data) {
-      console.log('Work order not found:', id);
       return null;
     }
 
-    console.log('Raw work order data:', data);
-
-    const workOrder: WorkOrder = {
+    const transformedWorkOrder: WorkOrder = {
       id: data.id,
       customer_id: data.customer_id,
       vehicle_id: data.vehicle_id,
@@ -153,65 +119,41 @@ export const getWorkOrderById = async (id: string): Promise<WorkOrder | null> =>
       end_time: data.end_time,
       service_category_id: data.service_category_id,
       invoiced_at: data.invoiced_at,
-      status: data.status || 'pending',
+      status: data.status,
       description: data.description,
       service_type: data.service_type,
       invoice_id: data.invoice_id,
       
-      // Legacy fields for backward compatibility
-      customer: data.customer || data.customer_name,
-      customer_name: data.customer_name,
-      customer_email: data.customer_email,
-      customer_phone: data.customer_phone,
-      customer_address: data.customer_address,
-      technician: data.technician,
-      date: data.created_at,
-      dueDate: data.due_date,
-      due_date: data.due_date,
-      priority: data.priority,
-      location: data.location,
-      notes: data.notes,
-      
-      // Individual vehicle fields for backward compatibility
-      vehicle_make: data.vehicle_make,
-      vehicle_model: data.vehicle_model,
-      vehicle_year: data.vehicle_year,
-      vehicle_vin: data.vehicle_vin,
-      vehicle_license_plate: data.vehicle_license_plate,
-      vehicle_odometer: data.vehicle_odometer
+      // Add vehicle data if available
+      ...(data.vehicles && {
+        vehicle: {
+          id: data.vehicles.id,
+          year: data.vehicles.year,
+          make: data.vehicles.make,
+          model: data.vehicles.model,
+          vin: data.vehicles.vin,
+          license_plate: data.vehicles.license_plate,
+          trim: data.vehicles.trim
+        }
+      })
     };
 
-    // Add vehicle object if we have vehicle data from the join
-    if (data.vehicles && typeof data.vehicles === 'object' && !Array.isArray(data.vehicles)) {
-      workOrder.vehicle = {
-        id: data.vehicles.id,
-        year: data.vehicles.year,
-        make: data.vehicles.make,
-        model: data.vehicles.model,
-        vin: data.vehicles.vin,
-        license_plate: data.vehicles.license_plate,
-        trim: data.vehicles.trim
-      };
-      console.log('Added vehicle object to work order:', workOrder.vehicle);
-    }
+    return transformedWorkOrder;
 
-    console.log('Transformed work order:', workOrder);
-    return workOrder;
   } catch (error) {
     console.error('Error in getWorkOrderById:', error);
     throw error;
   }
 };
 
+// Get work orders by customer ID
 export const getWorkOrdersByCustomerId = async (customerId: string): Promise<WorkOrder[]> => {
-  console.log('Fetching work orders for customer:', customerId);
-  
   try {
     const { data, error } = await supabase
       .from('work_orders')
       .select(`
         *,
-        vehicles:vehicle_id (
+        vehicles (
           id,
           year,
           make,
@@ -225,7 +167,7 @@ export const getWorkOrdersByCustomerId = async (customerId: string): Promise<Wor
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching work orders for customer:', error);
+      console.error('Error fetching work orders by customer:', error);
       throw error;
     }
 
@@ -233,86 +175,54 @@ export const getWorkOrdersByCustomerId = async (customerId: string): Promise<Wor
       return [];
     }
 
-    console.log('Raw work orders data for customer:', data);
+    return data.map((workOrder: any) => ({
+      id: workOrder.id,
+      customer_id: workOrder.customer_id,
+      vehicle_id: workOrder.vehicle_id,
+      advisor_id: workOrder.advisor_id,
+      technician_id: workOrder.technician_id,
+      estimated_hours: workOrder.estimated_hours,
+      total_cost: workOrder.total_cost,
+      created_by: workOrder.created_by,
+      created_at: workOrder.created_at,
+      updated_at: workOrder.updated_at,
+      start_time: workOrder.start_time,
+      end_time: workOrder.end_time,
+      service_category_id: workOrder.service_category_id,
+      invoiced_at: workOrder.invoiced_at,
+      status: workOrder.status,
+      description: workOrder.description,
+      service_type: workOrder.service_type,
+      invoice_id: workOrder.invoice_id,
+      
+      // Add vehicle data if available
+      ...(workOrder.vehicles && {
+        vehicle: {
+          id: workOrder.vehicles.id,
+          year: workOrder.vehicles.year,
+          make: workOrder.vehicles.make,
+          model: workOrder.vehicles.model,
+          vin: workOrder.vehicles.vin,
+          license_plate: workOrder.vehicles.license_plate,
+          trim: workOrder.vehicles.trim
+        }
+      })
+    }));
 
-    // Transform the data to match our WorkOrder interface
-    const workOrders: WorkOrder[] = data.map((wo: any) => {
-      const workOrder: WorkOrder = {
-        id: wo.id,
-        customer_id: wo.customer_id,
-        vehicle_id: wo.vehicle_id,
-        advisor_id: wo.advisor_id,
-        technician_id: wo.technician_id,
-        estimated_hours: wo.estimated_hours,
-        total_cost: wo.total_cost,
-        created_by: wo.created_by,
-        created_at: wo.created_at,
-        updated_at: wo.updated_at,
-        start_time: wo.start_time,
-        end_time: wo.end_time,
-        service_category_id: wo.service_category_id,
-        invoiced_at: wo.invoiced_at,
-        status: wo.status || 'pending',
-        description: wo.description,
-        service_type: wo.service_type,
-        invoice_id: wo.invoice_id,
-        
-        // Legacy fields for backward compatibility
-        customer: wo.customer || wo.customer_name,
-        customer_name: wo.customer_name,
-        customer_email: wo.customer_email,
-        customer_phone: wo.customer_phone,
-        customer_address: wo.customer_address,
-        technician: wo.technician,
-        date: wo.created_at,
-        dueDate: wo.due_date,
-        due_date: wo.due_date,
-        priority: wo.priority,
-        location: wo.location,
-        notes: wo.notes,
-        
-        // Individual vehicle fields for backward compatibility
-        vehicle_make: wo.vehicle_make,
-        vehicle_model: wo.vehicle_model,
-        vehicle_year: wo.vehicle_year,
-        vehicle_vin: wo.vehicle_vin,
-        vehicle_license_plate: wo.vehicle_license_plate,
-        vehicle_odometer: wo.vehicle_odometer
-      };
-
-      // Add vehicle object if we have vehicle data from the join
-      if (wo.vehicles && typeof wo.vehicles === 'object' && !Array.isArray(wo.vehicles)) {
-        workOrder.vehicle = {
-          id: wo.vehicles.id,
-          year: wo.vehicles.year,
-          make: wo.vehicles.make,
-          model: wo.vehicles.model,
-          vin: wo.vehicles.vin,
-          license_plate: wo.vehicles.license_plate,
-          trim: wo.vehicles.trim
-        };
-      }
-
-      return workOrder;
-    });
-
-    console.log('Transformed work orders for customer:', workOrders);
-    return workOrders;
   } catch (error) {
     console.error('Error in getWorkOrdersByCustomerId:', error);
     throw error;
   }
 };
 
+// Get work orders by status
 export const getWorkOrdersByStatus = async (status: string): Promise<WorkOrder[]> => {
-  console.log('Fetching work orders by status:', status);
-  
   try {
     const { data, error } = await supabase
       .from('work_orders')
       .select(`
         *,
-        vehicles:vehicle_id (
+        vehicles (
           id,
           year,
           make,
@@ -334,70 +244,74 @@ export const getWorkOrdersByStatus = async (status: string): Promise<WorkOrder[]
       return [];
     }
 
-    // Transform the data to match our WorkOrder interface
-    const workOrders: WorkOrder[] = data.map((wo: any) => {
-      const workOrder: WorkOrder = {
-        id: wo.id,
-        customer_id: wo.customer_id,
-        vehicle_id: wo.vehicle_id,
-        advisor_id: wo.advisor_id,
-        technician_id: wo.technician_id,
-        estimated_hours: wo.estimated_hours,
-        total_cost: wo.total_cost,
-        created_by: wo.created_by,
-        created_at: wo.created_at,
-        updated_at: wo.updated_at,
-        start_time: wo.start_time,
-        end_time: wo.end_time,
-        service_category_id: wo.service_category_id,
-        invoiced_at: wo.invoiced_at,
-        status: wo.status || 'pending',
-        description: wo.description,
-        service_type: wo.service_type,
-        invoice_id: wo.invoice_id,
-        
-        // Legacy fields for backward compatibility
-        customer: wo.customer || wo.customer_name,
-        customer_name: wo.customer_name,
-        customer_email: wo.customer_email,
-        customer_phone: wo.customer_phone,
-        customer_address: wo.customer_address,
-        technician: wo.technician,
-        date: wo.created_at,
-        dueDate: wo.due_date,
-        due_date: wo.due_date,
-        priority: wo.priority,
-        location: wo.location,
-        notes: wo.notes,
-        
-        // Individual vehicle fields for backward compatibility
-        vehicle_make: wo.vehicle_make,
-        vehicle_model: wo.vehicle_model,
-        vehicle_year: wo.vehicle_year,
-        vehicle_vin: wo.vehicle_vin,
-        vehicle_license_plate: wo.vehicle_license_plate,
-        vehicle_odometer: wo.vehicle_odometer
-      };
+    return data.map((workOrder: any) => ({
+      id: workOrder.id,
+      customer_id: workOrder.customer_id,
+      vehicle_id: workOrder.vehicle_id,
+      advisor_id: workOrder.advisor_id,
+      technician_id: workOrder.technician_id,
+      estimated_hours: workOrder.estimated_hours,
+      total_cost: workOrder.total_cost,
+      created_by: workOrder.created_by,
+      created_at: workOrder.created_at,
+      updated_at: workOrder.updated_at,
+      start_time: workOrder.start_time,
+      end_time: workOrder.end_time,
+      service_category_id: workOrder.service_category_id,
+      invoiced_at: workOrder.invoiced_at,
+      status: workOrder.status,
+      description: workOrder.description,
+      service_type: workOrder.service_type,
+      invoice_id: workOrder.invoice_id,
+      
+      // Add vehicle data if available
+      ...(workOrder.vehicles && {
+        vehicle: {
+          id: workOrder.vehicles.id,
+          year: workOrder.vehicles.year,
+          make: workOrder.vehicles.make,
+          model: workOrder.vehicles.model,
+          vin: workOrder.vehicles.vin,
+          license_plate: workOrder.vehicles.license_plate,
+          trim: workOrder.vehicles.trim
+        }
+      })
+    }));
 
-      // Add vehicle object if we have vehicle data from the join
-      if (wo.vehicles && typeof wo.vehicles === 'object' && !Array.isArray(wo.vehicles)) {
-        workOrder.vehicle = {
-          id: wo.vehicles.id,
-          year: wo.vehicles.year,
-          make: wo.vehicles.make,
-          model: wo.vehicles.model,
-          vin: wo.vehicles.vin,
-          license_plate: wo.vehicles.license_plate,
-          trim: wo.vehicles.trim
-        };
-      }
-
-      return workOrder;
-    });
-
-    return workOrders;
   } catch (error) {
     console.error('Error in getWorkOrdersByStatus:', error);
     throw error;
+  }
+};
+
+// Get unique technicians from work orders
+export const getUniqueTechnicians = async (): Promise<string[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('work_orders')
+      .select('technician_id')
+      .not('technician_id', 'is', null);
+
+    if (error) {
+      console.error('Error fetching technicians:', error);
+      throw error;
+    }
+
+    if (!data) {
+      return [];
+    }
+
+    // Extract unique technician IDs and filter out nulls
+    const uniqueTechnicians = [...new Set(
+      data
+        .map(item => item.technician_id)
+        .filter(Boolean)
+    )];
+
+    return uniqueTechnicians;
+
+  } catch (error) {
+    console.error('Error in getUniqueTechnicians:', error);
+    return [];
   }
 };
