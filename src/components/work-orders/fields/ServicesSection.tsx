@@ -4,10 +4,12 @@ import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { EnhancedServiceSelector } from "@/components/work-orders/fields/services/EnhancedServiceSelector";
+import { HierarchicalServiceSelector } from "@/components/work-orders/fields/services/HierarchicalServiceSelector";
 import { ServiceMainCategory, ServiceJob } from "@/types/serviceHierarchy";
 import { SelectedService } from "@/types/selectedService";
 import { fetchServiceCategories } from "@/lib/services/serviceApi";
 import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
+import { ToggleLeft, ToggleRight } from "lucide-react";
 
 interface ServicesSectionProps {
   form: UseFormReturn<WorkOrderFormSchemaValues>;
@@ -18,6 +20,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ form }) => {
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [useEnhancedSelector, setUseEnhancedSelector] = useState(false);
 
   useEffect(() => {
     const loadServiceCategories = async () => {
@@ -66,6 +69,24 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ form }) => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-slate-900">Services</h3>
+        
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-600">
+            {useEnhancedSelector ? "Enhanced" : "Hierarchical"}
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setUseEnhancedSelector(!useEnhancedSelector)}
+            className="p-1"
+          >
+            {useEnhancedSelector ? (
+              <ToggleRight className="h-5 w-5 text-green-600" />
+            ) : (
+              <ToggleLeft className="h-5 w-5 text-gray-400" />
+            )}
+          </Button>
+        </div>
       </div>
 
       <FormField
@@ -88,7 +109,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ form }) => {
         )}
       />
 
-      {/* Enhanced Service Selector */}
+      {/* Service Selector with Toggle */}
       {isLoading ? (
         <div className="text-center py-8">
           <p className="text-gray-500">Loading services...</p>
@@ -105,13 +126,19 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ form }) => {
           </Button>
         </div>
       ) : serviceCategories.length > 0 ? (
-        <EnhancedServiceSelector
-          categories={serviceCategories}
-          onServiceSelect={handleServiceSelect}
-          selectedServices={selectedServices}
-          onRemoveService={handleRemoveService}
-          onUpdateServices={handleUpdateServices}
-        />
+        useEnhancedSelector ? (
+          <EnhancedServiceSelector
+            categories={serviceCategories}
+            onServiceSelect={handleServiceSelect}
+            selectedServices={selectedServices}
+            onRemoveService={handleRemoveService}
+            onUpdateServices={handleUpdateServices}
+          />
+        ) : (
+          <HierarchicalServiceSelector
+            onServiceSelect={handleServiceSelect}
+          />
+        )
       ) : (
         <div className="text-center py-8 border rounded-md bg-gray-50">
           <p className="text-gray-500">No services available</p>
