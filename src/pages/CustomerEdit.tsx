@@ -25,8 +25,30 @@ export default function CustomerEdit() {
   } = useCustomerEdit(id);
 
   const handleBack = () => {
-    navigate(`/customers/${id}`);
+    // Navigate back to customer details page
+    if (id && id !== "undefined") {
+      navigate(`/customers/${id}`);
+    } else {
+      navigate('/customers');
+    }
   };
+
+  // Early validation - redirect if no ID or "undefined" ID
+  React.useEffect(() => {
+    if (!id || id === "undefined") {
+      console.error("Invalid customer ID in URL:", id);
+      navigate("/customers", { replace: true });
+      toast({
+        title: "Invalid Customer ID",
+        description: "No customer ID was provided. Redirecting to customers list.",
+        variant: "destructive"
+      });
+    }
+  }, [id, navigate, toast]);
+
+  if (!id || id === "undefined") {
+    return null; // Will redirect via useEffect
+  }
 
   if (error) {
     return (

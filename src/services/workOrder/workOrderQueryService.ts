@@ -101,7 +101,16 @@ export const getWorkOrdersByCustomerId = async (customerId: string): Promise<Wor
   try {
     const { data, error } = await supabase
       .from('work_orders')
-      .select('*')
+      .select(`
+        *,
+        customers!customer_id (
+          id,
+          first_name,
+          last_name,
+          email,
+          phone
+        )
+      `)
       .eq('customer_id', customerId)
       .order('created_at', { ascending: false });
       
@@ -109,7 +118,20 @@ export const getWorkOrdersByCustomerId = async (customerId: string): Promise<Wor
       throw error;
     }
     
-    return data?.map(normalizeWorkOrder) || [];
+    return data?.map(workOrder => {
+      const normalized = normalizeWorkOrder(workOrder);
+      
+      // Add customer information if available
+      if (workOrder.customers) {
+        const customer = workOrder.customers;
+        normalized.customer_name = `${customer.first_name || ''} ${customer.last_name || ''}`.trim();
+        normalized.customer_email = customer.email;
+        normalized.customer_phone = customer.phone;
+        normalized.customer = normalized.customer_name;
+      }
+      
+      return normalized;
+    }) || [];
   } catch (error) {
     console.error(`Error fetching work orders for customer ${customerId}:`, error);
     return [];

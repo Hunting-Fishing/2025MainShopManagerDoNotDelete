@@ -25,6 +25,7 @@ import WorkOrderDetails from "@/pages/WorkOrderDetails";
 import InvoiceDetails from "@/pages/InvoiceDetails";
 import CreateInvoice from "@/pages/CreateInvoice";
 import CreateCustomer from "@/pages/CreateCustomer";
+import CustomerEdit from "@/pages/CustomerEdit";
 import EquipmentDetails from "@/pages/EquipmentDetails";
 import VehicleDetails from "@/pages/VehicleDetails";
 import Maintenance from "@/pages/Maintenance";
@@ -76,10 +77,13 @@ function App() {
                       <Route path="/dashboard" element={<Dashboard />} />
                       <Route path="/customers" element={<CustomersPage />} />
                       <Route path="/customers/new" element={<CreateCustomer />} />
+                      <Route path="/customers/create" element={<CreateCustomer />} />
                       <Route path="/customers/:id" element={<CustomerDetails />} />
+                      <Route path="/customers/:id/edit" element={<CustomerEdit />} />
                       <Route path="/customers/:customerId/vehicles/:vehicleId" element={<VehicleDetails />} />
                       <Route path="/work-orders" element={<WorkOrders />} />
                       <Route path="/work-orders/create" element={<WorkOrderCreate />} />
+                      <Route path="/work-orders/new" element={<WorkOrderCreate />} />
                       <Route path="/work-orders/:id" element={<WorkOrderDetails />} />
                       <Route path="/inventory" element={<Inventory />} />
                       <Route path="/inventory/add" element={<InventoryAdd />} />
