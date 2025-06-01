@@ -8,7 +8,7 @@ import { StaffMember, Invoice, InvoiceTemplate, InvoiceItem } from "@/types/invo
 import { InventoryItem } from "@/types/inventory";
 import { useState } from "react";
 
-export function useInvoiceForm(initialWorkOrderId?: string) {
+export function useInvoiceForm(initialWorkOrderId?: string, initialInvoiceData?: Partial<Invoice>) {
   // Create local state for items and assignedStaff if not provided by useInvoiceFormState
   const [items, setItems] = useState<InvoiceItem[]>([]);
   const [assignedStaff, setAssignedStaff] = useState<StaffMember[]>([]);
@@ -16,11 +16,12 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
   const [showInventoryDialog, setShowInventoryDialog] = useState(false);
   const [showStaffDialog, setShowStaffDialog] = useState(false);
   
-  // Use form state hook with correct typing
+  // Use form state hook with correct typing and initial data
+  const initialData = initialInvoiceData || (initialWorkOrderId ? { work_order_id: initialWorkOrderId } : {});
   const {
     invoice,
     setInvoice,
-  } = useInvoiceFormState(initialWorkOrderId ? { work_order_id: initialWorkOrderId } : {});
+  } = useInvoiceFormState(initialData);
 
   // Add handlers for item management
   const handleAddInventoryItem = (item: InvoiceItem) => {
@@ -52,11 +53,11 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
   const handleAddLaborItem = () => {
     const newItem: InvoiceItem = {
       id: crypto.randomUUID(),
-      name: "Labor", // Add required name field
+      name: "Labor",
       description: "Labor",
       quantity: 1,
       price: 0,
-      total: 0, // Add required total field
+      total: 0,
       hours: true
     };
     setItems(prev => [...prev, newItem]);
@@ -96,7 +97,6 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
   const { subtotal, tax, total, taxRate } = totalsResult;
   
   const onTaxRateChange = (newRate: number) => {
-    // This would typically update taxRate in state
     console.log("Tax rate changed to:", newRate);
   };
 

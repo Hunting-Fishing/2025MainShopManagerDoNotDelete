@@ -13,7 +13,7 @@ export function useInvoiceFormState(initialInvoice?: Partial<Invoice>) {
     date: initialInvoice?.date || new Date().toISOString().split('T')[0],
     status: initialInvoice?.status || 'draft',
     issue_date: initialInvoice?.issue_date || new Date().toISOString().split('T')[0],
-    due_date: initialInvoice?.due_date || '',
+    due_date: initialInvoice?.due_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days from now
     subtotal: initialInvoice?.subtotal || 0,
     tax_rate: initialInvoice?.tax_rate || 0.08,
     tax: initialInvoice?.tax || 0,

@@ -1,4 +1,5 @@
-import { useParams } from "react-router-dom";
+
+import { useParams, useSearchParams } from "react-router-dom";
 import { useInvoiceForm } from "@/hooks/useInvoiceForm";
 import { InvoiceCreateLayout } from "@/components/invoices/InvoiceCreateLayout";
 import { useWorkOrderSelector } from "@/hooks/invoices/useWorkOrderSelector";
@@ -15,10 +16,18 @@ import { InventoryItem } from "@/types/inventory";
 
 export default function InvoiceCreate() {
   const { workOrderId } = useParams<{ workOrderId?: string }>();
+  const [searchParams] = useSearchParams();
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   
+  // Get customer data from URL parameters
+  const customerId = searchParams.get('customerId');
+  const customerName = searchParams.get('customerName');
+  const customerEmail = searchParams.get('customerEmail');
+  const customerPhone = searchParams.get('customerPhone');
+  const customerAddress = searchParams.get('customerAddress');
+
   const { data: workOrdersData } = useQuery({
     queryKey: ['workOrders'],
     queryFn: async () => {
@@ -98,6 +107,15 @@ export default function InvoiceCreate() {
     }
   }, [workOrdersData, inventoryData, staffData]);
 
+  // Initialize invoice form with customer data if provided
+  const initialInvoiceData = customerId ? {
+    customer_id: customerId,
+    customer: customerName || '',
+    customer_email: customerEmail || '',
+    customer_address: customerAddress || '',
+    work_order_id: workOrderId || ''
+  } : { work_order_id: workOrderId || '' };
+
   const {
     invoice,
     subtotal,
@@ -126,6 +144,19 @@ export default function InvoiceCreate() {
     handleSaveTemplate,
     items
   } = useInvoiceForm(workOrderId);
+
+  // Set initial customer data when component mounts
+  useEffect(() => {
+    if (customerId && customerName) {
+      setInvoice(prev => ({
+        ...prev,
+        customer_id: customerId,
+        customer: customerName,
+        customer_email: customerEmail || '',
+        customer_address: customerAddress || ''
+      }));
+    }
+  }, [customerId, customerName, customerEmail, customerAddress, setInvoice]);
 
   const workOrderSelector = useWorkOrderSelector({
     invoice,
