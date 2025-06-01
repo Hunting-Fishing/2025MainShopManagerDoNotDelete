@@ -3,13 +3,11 @@ import React, { useState, useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { EnhancedServiceSelector } from "@/components/work-orders/fields/services/EnhancedServiceSelector";
-import { HierarchicalServiceSelector } from "@/components/work-orders/fields/services/HierarchicalServiceSelector";
+import { IntegratedServiceSelector } from "@/components/work-orders/fields/services/IntegratedServiceSelector";
 import { ServiceMainCategory, ServiceJob } from "@/types/serviceHierarchy";
 import { SelectedService } from "@/types/selectedService";
 import { fetchServiceCategories } from "@/lib/services/serviceApi";
 import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
-import { ToggleLeft, ToggleRight } from "lucide-react";
 
 interface ServicesSectionProps {
   form: UseFormReturn<WorkOrderFormSchemaValues>;
@@ -20,7 +18,6 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ form }) => {
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [useEnhancedSelector, setUseEnhancedSelector] = useState(false);
 
   useEffect(() => {
     const loadServiceCategories = async () => {
@@ -52,42 +49,67 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ form }) => {
   }, [selectedServices, form]);
 
   const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
-    // This function is called for backward compatibility
-    // The actual logic is handled in EnhancedServiceSelector
-    console.log('Service selected:', service.name);
+    const newSelectedService: SelectedService = {
+      id: `selected-${Date.now()}-${service.id}`,
+      serviceId: service.id,
+      name: service.name,
+      description: service.description,
+      categoryName,
+      subcategoryName,
+      estimatedTime: service.estimatedTime,
+      price: service.price
+    };
+
+    setSelectedServices(prev => [...prev, newSelectedService]);
   };
 
   const handleRemoveService = (serviceId: string) => {
-    console.log('Service removed:', serviceId);
-  };
-
-  const handleUpdateServices = (services: SelectedService[]) => {
-    setSelectedServices(services);
+    setSelectedServices(prev => prev.filter(service => service.id !== serviceId));
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-slate-900">Services</h3>
-        
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600">
-            {useEnhancedSelector ? "Enhanced" : "Hierarchical"}
+        {selectedServices.length > 0 && (
+          <span className="text-sm text-slate-500">
+            {selectedServices.length} service{selectedServices.length !== 1 ? 's' : ''} selected
           </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setUseEnhancedSelector(!useEnhancedSelector)}
-            className="p-1"
-          >
-            {useEnhancedSelector ? (
-              <ToggleRight className="h-5 w-5 text-green-600" />
-            ) : (
-              <ToggleLeft className="h-5 w-5 text-gray-400" />
-            )}
-          </Button>
-        </div>
+        )}
       </div>
+
+      {/* Selected Services Display */}
+      {selectedServices.length > 0 && (
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium text-slate-700">Selected Services:</h4>
+          <div className="space-y-2">
+            {selectedServices.map((service) => (
+              <div key={service.id} className="flex items-center justify-between p-3 bg-blue-50 rounded-md border">
+                <div>
+                  <span className="font-medium text-blue-900">{service.name}</span>
+                  <div className="text-xs text-blue-700">
+                    {service.categoryName} → {service.subcategoryName}
+                  </div>
+                  {(service.estimatedTime || service.price) && (
+                    <div className="flex items-center space-x-3 mt-1 text-xs text-blue-600">
+                      {service.estimatedTime && <span>{service.estimatedTime} min</span>}
+                      {service.price && <span>${service.price}</span>}
+                    </div>
+                  )}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleRemoveService(service.id)}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  Remove
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <FormField
         control={form.control}
@@ -109,7 +131,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ form }) => {
         )}
       />
 
-      {/* Service Selector with Toggle */}
+      {/* Enhanced Service Selector */}
       {isLoading ? (
         <div className="text-center py-8">
           <p className="text-gray-500">Loading services...</p>
@@ -126,19 +148,10 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ form }) => {
           </Button>
         </div>
       ) : serviceCategories.length > 0 ? (
-        useEnhancedSelector ? (
-          <EnhancedServiceSelector
-            categories={serviceCategories}
-            onServiceSelect={handleServiceSelect}
-            selectedServices={selectedServices}
-            onRemoveService={handleRemoveService}
-            onUpdateServices={handleUpdateServices}
-          />
-        ) : (
-          <HierarchicalServiceSelector
-            onServiceSelect={handleServiceSelect}
-          />
-        )
+        <IntegratedServiceSelector
+          categories={serviceCategories}
+          onServiceSelect={handleServiceSelect}
+        />
       ) : (
         <div className="text-center py-8 border rounded-md bg-gray-50">
           <p className="text-gray-500">No services available</p>
