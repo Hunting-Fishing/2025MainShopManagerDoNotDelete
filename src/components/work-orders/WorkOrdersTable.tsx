@@ -1,45 +1,38 @@
-
-import React, { useState, useMemo } from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import React, { useState } from 'react';
+import { WorkOrder } from '@/types/workOrder';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, GripVertical } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { WorkOrder } from '@/types/workOrder';
-import { formatDate } from '@/lib/utils';
-import { useNavigate } from 'react-router-dom';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
+import { Link } from 'react-router-dom';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+import { 
+  DndContext, 
+  closestCenter, 
+  KeyboardSensor, 
+  PointerSensor, 
+  useSensor, 
+  useSensors 
 } from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  horizontalListSortingStrategy,
+import { 
+  arrayMove, 
+  SortableContext, 
+  sortableKeyboardCoordinates, 
+  horizontalListSortingStrategy 
 } from '@dnd-kit/sortable';
-import {
-  useSortable,
-  SortableContext as SortableProvider,
+import { 
+  useSortable 
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { GripVertical, Eye } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { formatDate } from '@/utils/dateUtils';
 
 interface WorkOrdersTableProps {
   workOrders: WorkOrder[];
@@ -48,123 +41,99 @@ interface WorkOrdersTableProps {
 interface Column {
   id: string;
   label: string;
-  accessor: keyof WorkOrder | ((workOrder: WorkOrder) => string);
-  sortable?: boolean;
+  accessor: keyof WorkOrder | 'actions';
 }
 
-const SortableTableHeader: React.FC<{
-  column: Column;
-  children: React.ReactNode;
-}> = ({ column, children }) => {
+const defaultColumns: Column[] = [
+  { id: 'vehicle', label: 'Vehicle', accessor: 'vehicle_id' },
+  { id: 'customer', label: 'Customer', accessor: 'customer_id' },
+  { id: 'status', label: 'Status', accessor: 'status' },
+  { id: 'description', label: 'Description', accessor: 'description' },
+  { id: 'created_at', label: 'Created', accessor: 'created_at' },
+  { id: 'actions', label: 'Actions', accessor: 'actions' },
+];
+
+function SortableTableHeader({ column }: { column: Column }) {
   const {
     attributes,
     listeners,
     setNodeRef,
     transform,
     transition,
-    isDragging,
   } = useSortable({ id: column.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
   };
 
   return (
-    <TableHead
-      ref={setNodeRef}
-      style={style}
-      className="relative group cursor-grab active:cursor-grabbing"
+    <TableHead 
+      ref={setNodeRef} 
+      style={style} 
+      className="cursor-move select-none"
       {...attributes}
       {...listeners}
     >
       <div className="flex items-center gap-2">
-        <GripVertical className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />
-        {children}
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
+        {column.label}
       </div>
     </TableHead>
   );
-};
+}
 
-const getStatusColor = (status: string) => {
-  switch (status?.toLowerCase()) {
+const getStatusVariant = (status: string) => {
+  switch (status.toLowerCase()) {
     case 'completed':
-      return 'bg-green-100 text-green-800 hover:bg-green-200';
+      return 'default';
     case 'in-progress':
-      return 'bg-blue-100 text-blue-800 hover:bg-blue-200';
+      return 'secondary';
     case 'pending':
-      return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200';
-    case 'on-hold':
-      return 'bg-orange-100 text-orange-800 hover:bg-orange-200';
-    case 'cancelled':
-      return 'bg-red-100 text-red-800 hover:bg-red-200';
+      return 'outline';
     default:
-      return 'bg-gray-100 text-gray-800 hover:bg-gray-200';
+      return 'outline';
   }
 };
 
-const formatCurrency = (amount: number | null | undefined): string => {
-  if (!amount) return '$0.00';
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount);
+const renderCellContent = (workOrder: WorkOrder, column: Column) => {
+  switch (column.id) {
+    case 'vehicle':
+      return workOrder.vehicle_info || 'No vehicle assigned';
+    case 'customer':
+      return workOrder.customer_name || workOrder.customer || 'No customer';
+    case 'status':
+      return (
+        <Badge variant={getStatusVariant(workOrder.status)}>
+          {workOrder.status}
+        </Badge>
+      );
+    case 'description':
+      return workOrder.description ? (
+        <span className="truncate max-w-xs block" title={workOrder.description}>
+          {workOrder.description}
+        </span>
+      ) : '—';
+    case 'created_at':
+      return workOrder.created_at ? formatDate(workOrder.created_at) : '—';
+    case 'actions':
+      return (
+        <Button variant="outline" size="sm" asChild>
+          <Link to={`/work-orders/${workOrder.id}`}>
+            <Eye className="h-4 w-4 mr-1" />
+            View
+          </Link>
+        </Button>
+      );
+    default:
+      const value = workOrder[column.accessor as keyof WorkOrder];
+      return value ? String(value) : '—';
+  }
 };
 
 export default function WorkOrdersTable({ workOrders }: WorkOrdersTableProps) {
-  const navigate = useNavigate();
-
-  const [columns, setColumns] = useState<Column[]>([
-    {
-      id: 'customer',
-      label: 'Customer',
-      accessor: (workOrder) => workOrder.customer_name || workOrder.customer || 'No Customer',
-      sortable: true,
-    },
-    {
-      id: 'vehicle',
-      label: 'Vehicle',
-      accessor: (workOrder) => {
-        if (workOrder.vehicle_make && workOrder.vehicle_model) {
-          return `${workOrder.vehicle_year || ''} ${workOrder.vehicle_make} ${workOrder.vehicle_model}`.trim();
-        }
-        return 'No Vehicle';
-      },
-      sortable: true,
-    },
-    {
-      id: 'description',
-      label: 'Description',
-      accessor: (workOrder) => workOrder.description || 'No Description',
-      sortable: true,
-    },
-    {
-      id: 'status',
-      label: 'Status',
-      accessor: 'status',
-      sortable: true,
-    },
-    {
-      id: 'technician',
-      label: 'Technician',
-      accessor: (workOrder) => workOrder.technician || 'Unassigned',
-      sortable: true,
-    },
-    {
-      id: 'date',
-      label: 'Created',
-      accessor: (workOrder) => formatDate(workOrder.created_at),
-      sortable: true,
-    },
-    {
-      id: 'total_cost',
-      label: 'Total',
-      accessor: (workOrder) => formatCurrency(workOrder.total_cost),
-      sortable: true,
-    },
-  ]);
-
+  const [columns, setColumns] = useState<Column[]>(defaultColumns);
+  
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -172,118 +141,69 @@ export default function WorkOrdersTable({ workOrders }: WorkOrdersTableProps) {
     })
   );
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  function handleDragEnd(event: any) {
     const { active, over } = event;
 
     if (active.id !== over?.id) {
       setColumns((items) => {
         const oldIndex = items.findIndex((item) => item.id === active.id);
-        const newIndex = items.findIndex((item) => item.id === over?.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
 
         return arrayMove(items, oldIndex, newIndex);
       });
     }
-  };
-
-  const handleRowClick = (workOrder: WorkOrder) => {
-    navigate(`/work-orders/${workOrder.id}`);
-  };
-
-  const getCellValue = (workOrder: WorkOrder, column: Column): string => {
-    if (typeof column.accessor === 'function') {
-      return column.accessor(workOrder);
-    }
-    const value = workOrder[column.accessor];
-    return value?.toString() || '';
-  };
+  }
 
   if (workOrders.length === 0) {
     return (
-      <div className="text-center py-8">
-        <p className="text-muted-foreground">No work orders found.</p>
-      </div>
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-12">
+          <p className="text-muted-foreground mb-4">No work orders found</p>
+          <Button asChild>
+            <Link to="/work-orders/new">Create Work Order</Link>
+          </Button>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="rounded-md border">
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-      >
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <SortableContext
-                items={columns.map((col) => col.id)}
-                strategy={horizontalListSortingStrategy}
-              >
-                {columns.map((column) => (
-                  <SortableTableHeader key={column.id} column={column}>
-                    {column.label}
-                  </SortableTableHeader>
+    <Card>
+      <CardHeader>
+        <CardTitle>Work Orders</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="rounded-md border overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <SortableContext items={columns.map(col => col.id)} strategy={horizontalListSortingStrategy}>
+                    {columns.map((column) => (
+                      <SortableTableHeader key={column.id} column={column} />
+                    ))}
+                  </SortableContext>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {workOrders.map((workOrder) => (
+                  <TableRow key={workOrder.id}>
+                    {columns.map((column) => (
+                      <TableCell key={`${workOrder.id}-${column.id}`}>
+                        {renderCellContent(workOrder, column)}
+                      </TableCell>
+                    ))}
+                  </TableRow>
                 ))}
-              </SortableContext>
-              <TableHead className="w-12"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {workOrders.map((workOrder) => (
-              <TableRow
-                key={workOrder.id}
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleRowClick(workOrder)}
-              >
-                {columns.map((column) => (
-                  <TableCell key={`${workOrder.id}-${column.id}`}>
-                    {column.id === 'status' ? (
-                      <Badge className={getStatusColor(getCellValue(workOrder, column))}>
-                        {getCellValue(workOrder, column)}
-                      </Badge>
-                    ) : (
-                      <div className="max-w-[200px] truncate" title={getCellValue(workOrder, column)}>
-                        {getCellValue(workOrder, column)}
-                      </div>
-                    )}
-                  </TableCell>
-                ))}
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className="h-8 w-8 p-0"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/work-orders/${workOrder.id}`);
-                        }}
-                      >
-                        View Details
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/work-orders/${workOrder.id}/edit`);
-                        }}
-                      >
-                        Edit
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </DndContext>
-    </div>
+              </TableBody>
+            </Table>
+          </div>
+        </DndContext>
+      </CardContent>
+    </Card>
   );
 }
