@@ -13,33 +13,33 @@ export function JobLineCard({ jobLine }: JobLineCardProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
-        return 'success';
+        return 'success' as const;
       case 'in-progress':
-        return 'info';
+        return 'info' as const;
       case 'on-hold':
-        return 'warning';
+        return 'warning' as const;
       default:
-        return 'secondary';
+        return 'secondary' as const;
     }
   };
 
   const getCategoryColor = (category?: string) => {
-    if (!category) return 'outline';
+    if (!category) return 'outline' as const;
     
     switch (category.toLowerCase()) {
       case 'remove & replace':
       case 'replacement':
-        return 'destructive';
+        return 'destructive' as const;
       case 'repair':
       case 'service':
-        return 'info';
+        return 'info' as const;
       case 'maintenance':
-        return 'warning';
+        return 'warning' as const;
       case 'inspection':
       case 'testing':
-        return 'secondary';
+        return 'secondary' as const;
       default:
-        return 'outline';
+        return 'outline' as const;
     }
   };
 

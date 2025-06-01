@@ -12,15 +12,15 @@ export function ReportStatusBadge({ status, className }: ReportStatusBadgeProps)
   const getVariant = () => {
     switch (status) {
       case "live":
-        return "success";
+        return "success" as const;
       case "refreshing":
-        return "secondary";
+        return "secondary" as const;
       case "error":
-        return "destructive";
+        return "destructive" as const;
       case "scheduled":
-        return "outline";
+        return "outline" as const;
       default:
-        return "default";
+        return "default" as const;
     }
   };
 

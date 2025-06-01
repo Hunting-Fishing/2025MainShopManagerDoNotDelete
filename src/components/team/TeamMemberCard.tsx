@@ -18,15 +18,15 @@ export function TeamMemberCard({ member, getInitials }: TeamMemberCardProps) {
   const getStatusVariant = (status: string) => {
     switch (status.toLowerCase()) {
       case 'active':
-        return 'success';
+        return 'success' as const;
       case 'inactive':
-        return 'secondary';
+        return 'secondary' as const;
       case 'on leave':
-        return 'warning';
+        return 'warning' as const;
       case 'terminated':
-        return 'destructive';
+        return 'destructive' as const;
       default:
-        return 'outline';
+        return 'outline' as const;
     }
   };
   
