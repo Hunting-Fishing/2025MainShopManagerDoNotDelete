@@ -3,8 +3,9 @@ import React, { useState, useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { HierarchicalServiceSelector } from "@/components/work-orders/fields/services/HierarchicalServiceSelector";
+import { EnhancedServiceSelector } from "@/components/work-orders/fields/services/EnhancedServiceSelector";
 import { ServiceMainCategory, ServiceJob } from "@/types/serviceHierarchy";
+import { SelectedService } from "@/types/selectedService";
 import { fetchServiceCategories } from "@/lib/services/serviceApi";
 import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
 
@@ -14,6 +15,7 @@ interface ServicesSectionProps {
 
 export const ServicesSection: React.FC<ServicesSectionProps> = ({ form }) => {
   const [serviceCategories, setServiceCategories] = useState<ServiceMainCategory[]>([]);
+  const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,16 +37,29 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ form }) => {
     loadServiceCategories();
   }, []);
 
+  // Update form description when services change
+  useEffect(() => {
+    if (selectedServices.length > 0) {
+      const serviceDescriptions = selectedServices.map(service => 
+        `${service.categoryName} - ${service.subcategoryName} - ${service.name}`
+      );
+      const newDescription = serviceDescriptions.join('\n');
+      form.setValue("description", newDescription);
+    }
+  }, [selectedServices, form]);
+
   const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
-    const currentDescription = form.getValues("description") || "";
-    const serviceDescription = `${categoryName} - ${subcategoryName} - ${service.name}`;
-    
-    // Update form description with selected service
-    const newDescription = currentDescription 
-      ? `${currentDescription}\n${serviceDescription}`
-      : serviceDescription;
-    
-    form.setValue("description", newDescription);
+    // This function is called for backward compatibility
+    // The actual logic is handled in EnhancedServiceSelector
+    console.log('Service selected:', service.name);
+  };
+
+  const handleRemoveService = (serviceId: string) => {
+    console.log('Service removed:', serviceId);
+  };
+
+  const handleUpdateServices = (services: SelectedService[]) => {
+    setSelectedServices(services);
   };
 
   return (
@@ -62,9 +77,10 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ form }) => {
             <FormControl>
               <textarea
                 {...field}
-                placeholder="Enter service description..."
+                placeholder="Services will be automatically populated as you select them..."
                 className="w-full p-3 border border-gray-300 rounded-md min-h-[100px]"
                 rows={4}
+                readOnly
               />
             </FormControl>
             <FormMessage />
@@ -72,7 +88,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ form }) => {
         )}
       />
 
-      {/* Service Selector */}
+      {/* Enhanced Service Selector */}
       {isLoading ? (
         <div className="text-center py-8">
           <p className="text-gray-500">Loading services...</p>
@@ -89,9 +105,12 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ form }) => {
           </Button>
         </div>
       ) : serviceCategories.length > 0 ? (
-        <HierarchicalServiceSelector
+        <EnhancedServiceSelector
           categories={serviceCategories}
           onServiceSelect={handleServiceSelect}
+          selectedServices={selectedServices}
+          onRemoveService={handleRemoveService}
+          onUpdateServices={handleUpdateServices}
         />
       ) : (
         <div className="text-center py-8 border rounded-md bg-gray-50">
