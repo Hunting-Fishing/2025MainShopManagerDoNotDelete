@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ResponsiveGrid } from '@/components/ui/responsive-grid';
 import { Clock, DollarSign, Plus, Wrench, Package } from 'lucide-react';
 import { AddJobLineDialog } from './AddJobLineDialog';
+import { toast } from 'sonner';
 
 interface EditableJobLinesGridProps {
   jobLines: WorkOrderJobLine[];
@@ -33,8 +34,20 @@ export function EditableJobLinesGrid({
   const totalAmount = jobLines.reduce((sum, line) => sum + (line.totalAmount || 0), 0);
 
   const handleAddPartsLine = () => {
-    // TODO: Implement parts line dialog or functionality
-    console.log('Add Parts Line clicked');
+    // Create a parts-specific job line
+    const partsJobLine: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'> = {
+      workOrderId,
+      name: 'Parts & Materials',
+      category: 'Parts',
+      description: 'Parts and materials for this work order',
+      estimatedHours: 0,
+      laborRate: 0,
+      totalAmount: 0,
+      status: 'pending'
+    };
+    
+    onAddJobLine(partsJobLine);
+    toast.success('Parts line added successfully');
   };
 
   if (jobLines.length === 0) {
