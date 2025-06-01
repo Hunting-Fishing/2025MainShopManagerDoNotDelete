@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { WorkOrder } from '@/types/workOrder';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -96,10 +97,22 @@ const getStatusVariant = (status: string) => {
   }
 };
 
+const getVehicleInfo = (workOrder: WorkOrder): string => {
+  const year = workOrder.vehicle_year || '';
+  const make = workOrder.vehicle_make || '';
+  const model = workOrder.vehicle_model || '';
+  
+  if (year || make || model) {
+    return `${year} ${make} ${model}`.trim();
+  }
+  
+  return 'No vehicle assigned';
+};
+
 const renderCellContent = (workOrder: WorkOrder, column: Column) => {
   switch (column.id) {
     case 'vehicle':
-      return workOrder.vehicle_info || 'No vehicle assigned';
+      return getVehicleInfo(workOrder);
     case 'customer':
       return workOrder.customer_name || workOrder.customer || 'No customer';
     case 'status':
