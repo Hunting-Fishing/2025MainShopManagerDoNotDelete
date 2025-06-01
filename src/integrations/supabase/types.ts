@@ -6400,6 +6400,7 @@ export type Database = {
           estimated_time: number | null
           id: string
           name: string
+          position: number | null
           price: number | null
           subcategory_id: string | null
           updated_at: string | null
@@ -6410,6 +6411,7 @@ export type Database = {
           estimated_time?: number | null
           id?: string
           name: string
+          position?: number | null
           price?: number | null
           subcategory_id?: string | null
           updated_at?: string | null
@@ -6420,6 +6422,7 @@ export type Database = {
           estimated_time?: number | null
           id?: string
           name?: string
+          position?: number | null
           price?: number | null
           subcategory_id?: string | null
           updated_at?: string | null
@@ -6594,6 +6597,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          position: number | null
           updated_at: string | null
         }
         Insert: {
@@ -6602,6 +6606,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          position?: number | null
           updated_at?: string | null
         }
         Update: {
@@ -6610,6 +6615,7 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          position?: number | null
           updated_at?: string | null
         }
         Relationships: [

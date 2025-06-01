@@ -4,30 +4,29 @@ import { supabase } from '@/integrations/supabase/client';
 
 export async function fetchServiceCategories(): Promise<ServiceMainCategory[]> {
   try {
-    // Fetch categories with their subcategories and jobs
+    console.log('Fetching service categories...');
+    
+    // First, try to fetch categories with a simplified query structure
     const { data: categories, error: categoriesError } = await supabase
       .from('service_categories')
       .select(`
         id,
         name,
         description,
-        position,
         service_subcategories (
           id,
           name,
           description,
-          position,
           service_jobs (
             id,
             name,
             description,
             estimated_time,
-            price,
-            position
+            price
           )
         )
       `)
-      .order('position', { ascending: true });
+      .order('name', { ascending: true });
 
     if (categoriesError) {
       console.error('Error fetching service categories:', categoriesError);
@@ -39,33 +38,46 @@ export async function fetchServiceCategories(): Promise<ServiceMainCategory[]> {
       return [];
     }
 
-    // Transform the data to match our ServiceMainCategory type
-    const transformedCategories: ServiceMainCategory[] = categories.map(category => ({
-      id: category.id,
-      name: category.name,
-      description: category.description || undefined,
-      position: category.position || undefined,
-      subcategories: (category.service_subcategories || [])
-        .sort((a, b) => (a.position || 0) - (b.position || 0))
-        .map(subcategory => ({
-          id: subcategory.id,
-          name: subcategory.name,
-          description: subcategory.description || undefined,
-          category_id: category.id,
-          jobs: (subcategory.service_jobs || [])
-            .sort((a, b) => (a.position || 0) - (b.position || 0))
-            .map(job => ({
+    console.log('Raw categories data:', categories);
+
+    // Transform the data to match our ServiceMainCategory type with error handling
+    const transformedCategories: ServiceMainCategory[] = categories.map(category => {
+      // Safely handle subcategories
+      const subcategories = Array.isArray(category.service_subcategories) 
+        ? category.service_subcategories 
+        : [];
+
+      return {
+        id: category.id,
+        name: category.name || 'Unnamed Category',
+        description: category.description || undefined,
+        subcategories: subcategories.map(subcategory => {
+          // Safely handle jobs
+          const jobs = Array.isArray(subcategory.service_jobs) 
+            ? subcategory.service_jobs 
+            : [];
+
+          return {
+            id: subcategory.id,
+            name: subcategory.name || 'Unnamed Subcategory',
+            description: subcategory.description || undefined,
+            category_id: category.id,
+            jobs: jobs.map(job => ({
               id: job.id,
-              name: job.name,
+              name: job.name || 'Unnamed Job',
               description: job.description || undefined,
               estimatedTime: job.estimated_time || undefined,
               price: job.price ? Number(job.price) : undefined,
               subcategory_id: subcategory.id
             }))
-        }))
-    }));
+          };
+        })
+      };
+    });
 
+    console.log('Transformed categories:', transformedCategories);
     return transformedCategories;
+    
   } catch (error) {
     console.error('Error in fetchServiceCategories:', error);
     return [];
