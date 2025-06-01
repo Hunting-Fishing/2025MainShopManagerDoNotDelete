@@ -4,19 +4,39 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, X, ChevronRight, Grid, List } from 'lucide-react';
 import { useServiceCategories } from '@/hooks/useServiceCategories';
-import { searchServiceCategories, getMatchingSubcategories, getMatchingJobs } from '@/utils/search/searchService';
 import { useDebounce } from '@/hooks/useDebounce';
 import { ServiceCategoryList } from './ServiceCategoryList';
 import { ServiceSubcategoryGrid } from './ServiceSubcategoryGrid';
+import { ServiceJob } from '@/types/serviceHierarchy';
 
-interface HierarchicalServiceSelectorProps {
-  onServiceSelect: (service: any, categoryName: string, subcategoryName: string) => void;
+// Simple search function to find services
+function searchServices(categories: any[], searchTerm: string) {
+  const results: Array<{
+    service: ServiceJob;
+    categoryName: string;
+    subcategoryName: string;
+  }> = [];
+
+  categories.forEach(category => {
+    category.subcategories.forEach(subcategory => {
+      subcategory.jobs.forEach(job => {
+        if (job.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            job.description?.toLowerCase().includes(searchTerm.toLowerCase())) {
+          results.push({
+            service: job,
+            categoryName: category.name,
+            subcategoryName: subcategory.name
+          });
+        }
+      });
+    });
+  });
+
+  return results;
 }
 
-interface SearchResult {
-  service: any;
-  categoryName: string;
-  subcategoryName: string;
+interface HierarchicalServiceSelectorProps {
+  onServiceSelect: (service: ServiceJob, categoryName: string, subcategoryName: string) => void;
 }
 
 export function HierarchicalServiceSelector({ onServiceSelect }: HierarchicalServiceSelectorProps) {
@@ -25,29 +45,13 @@ export function HierarchicalServiceSelector({ onServiceSelect }: HierarchicalSer
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'hierarchical' | 'search'>('hierarchical');
-  
+
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  // Search results - flatten all services that match the search term
-  const searchResults = useMemo((): SearchResult[] => {
+  // Search results
+  const searchResults = useMemo(() => {
     if (!debouncedSearchTerm.trim() || viewMode !== 'search') return [];
-    
-    const results: SearchResult[] = [];
-    
-    for (const category of categories) {
-      for (const subcategory of category.subcategories) {
-        const matchingJobs = getMatchingJobs(subcategory, debouncedSearchTerm);
-        for (const job of matchingJobs) {
-          results.push({
-            service: job,
-            categoryName: category.name,
-            subcategoryName: subcategory.name
-          });
-        }
-      }
-    }
-    
-    return results;
+    return searchServices(categories, debouncedSearchTerm);
   }, [categories, debouncedSearchTerm, viewMode]);
 
   // Get category names for hierarchical view
@@ -70,7 +74,7 @@ export function HierarchicalServiceSelector({ onServiceSelect }: HierarchicalSer
     setSelectedSubcategory(subcategory);
   };
 
-  const handleServiceSelect = (service: any) => {
+  const handleServiceSelect = (service: ServiceJob) => {
     if (viewMode === 'search') {
       // Find the category and subcategory for this service
       for (const category of categories) {
@@ -89,7 +93,7 @@ export function HierarchicalServiceSelector({ onServiceSelect }: HierarchicalSer
     }
   };
 
-  const handleSearchResultSelect = (result: SearchResult) => {
+  const handleSearchResultSelect = (result: { service: ServiceJob; categoryName: string; subcategoryName: string }) => {
     onServiceSelect(result.service, result.categoryName, result.subcategoryName);
   };
 
@@ -100,18 +104,6 @@ export function HierarchicalServiceSelector({ onServiceSelect }: HierarchicalSer
 
   const clearSearch = () => {
     setSearchTerm('');
-  };
-
-  const toggleViewMode = () => {
-    const newMode = viewMode === 'hierarchical' ? 'search' : 'hierarchical';
-    setViewMode(newMode);
-    
-    // Clear states when switching modes
-    if (newMode === 'search') {
-      resetHierarchicalSelection();
-    } else {
-      clearSearch();
-    }
   };
 
   if (loading) {
@@ -180,126 +172,103 @@ export function HierarchicalServiceSelector({ onServiceSelect }: HierarchicalSer
           </div>
 
           {/* Search Results */}
-          {debouncedSearchTerm && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-gray-700">
-                Search Results ({searchResults.length})
-              </h4>
-              
-              {searchResults.length > 0 ? (
-                <div className="space-y-2">
-                  {searchResults.map((result, index) => (
-                    <div
-                      key={`${result.service.id}-${index}`}
-                      className="p-3 border rounded-md hover:bg-gray-50 cursor-pointer"
-                      onClick={() => handleSearchResultSelect(result)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h5 className="font-medium text-gray-900">{result.service.name}</h5>
-                          <div className="flex items-center text-sm text-gray-500">
-                            <span>{result.categoryName}</span>
-                            <ChevronRight className="h-3 w-3 mx-1" />
-                            <span>{result.subcategoryName}</span>
-                          </div>
-                          {result.service.description && (
-                            <p className="text-sm text-gray-600 mt-1">{result.service.description}</p>
-                          )}
-                        </div>
-                        <div className="text-right">
-                          {result.service.price && (
-                            <p className="font-medium text-green-600">${result.service.price}</p>
-                          )}
-                          {result.service.estimatedTime && (
-                            <p className="text-sm text-gray-500">{result.service.estimatedTime} min</p>
-                          )}
-                        </div>
-                      </div>
+          {searchResults.length > 0 ? (
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {searchResults.map((result, index) => (
+                <div
+                  key={index}
+                  className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                  onClick={() => handleSearchResultSelect(result)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">{result.service.name}</h4>
+                      <p className="text-sm text-gray-500">
+                        {result.categoryName} <ChevronRight className="inline h-3 w-3 mx-1" /> {result.subcategoryName}
+                      </p>
+                      {result.service.description && (
+                        <p className="text-sm text-gray-600 mt-1">{result.service.description}</p>
+                      )}
                     </div>
-                  ))}
+                    <div className="text-right">
+                      {result.service.price && (
+                        <p className="font-medium">${result.service.price}</p>
+                      )}
+                      {result.service.estimatedTime && (
+                        <p className="text-sm text-gray-500">{result.service.estimatedTime} min</p>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">No services found matching "{debouncedSearchTerm}"</p>
-                </div>
-              )}
+              ))}
             </div>
-          )}
+          ) : debouncedSearchTerm.trim() ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No services found for "{debouncedSearchTerm}"</p>
+            </div>
+          ) : null}
         </div>
       )}
 
       {/* Hierarchical Mode */}
       {viewMode === 'hierarchical' && (
-        <div className="space-y-4">
-          {/* Breadcrumb */}
-          {(selectedCategory || selectedSubcategory) && (
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <button
-                onClick={resetHierarchicalSelection}
-                className="text-blue-600 hover:text-blue-800"
-              >
-                All Categories
-              </button>
-              {selectedCategory && (
-                <>
-                  <ChevronRight className="h-4 w-4" />
-                  <span>{selectedCategory}</span>
-                </>
-              )}
-              {selectedSubcategory && (
-                <>
-                  <ChevronRight className="h-4 w-4" />
-                  <span>{selectedSubcategory}</span>
-                </>
-              )}
-            </div>
-          )}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-64">
+          {/* Categories */}
+          <ServiceCategoryList
+            categories={categoryNames}
+            selectedCategory={selectedCategory}
+            onCategorySelect={handleCategorySelect}
+          />
 
-          {/* Category Selection */}
-          {!selectedCategory && (
-            <ServiceCategoryList
-              categories={categoryNames}
-              onCategorySelect={handleCategorySelect}
-            />
-          )}
-
-          {/* Subcategory Selection */}
-          {selectedCategory && !selectedSubcategory && (
+          {/* Subcategories */}
+          {selectedCategory && (
             <ServiceSubcategoryGrid
+              category={selectedCategory}
               subcategories={subcategoryNames}
-              onSubcategorySelect={handleSubcategorySelect}
+              selectedSubcategory={selectedSubcategory}
+              onSelectSubcategory={handleSubcategorySelect}
             />
           )}
 
-          {/* Service Selection */}
-          {selectedCategory && selectedSubcategory && services.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-gray-700">Available Services</h4>
-              <div className="grid gap-2">
-                {services.map((service) => (
-                  <button
-                    key={service.id}
-                    onClick={() => handleServiceSelect(service)}
-                    className="p-3 text-left border rounded-md hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h5 className="font-medium text-gray-900">{service.name}</h5>
+          {/* Services */}
+          {selectedSubcategory && services.length > 0 && (
+            <div className="h-full">
+              <div className="p-2 border-b">
+                <h3 className="font-medium text-sm">Services</h3>
+              </div>
+              
+              <div className="p-2 overflow-y-auto max-h-56">
+                <ul className="space-y-2">
+                  {services.map((service) => (
+                    <li key={service.id}>
+                      <button
+                        type="button"
+                        className="w-full text-left p-2 rounded-md hover:bg-blue-50 border border-gray-200"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleServiceSelect(service);
+                        }}
+                      >
+                        <div className="font-medium text-sm">{service.name}</div>
                         {service.description && (
-                          <p className="text-sm text-gray-600">{service.description}</p>
+                          <div className="text-xs text-gray-500 mt-1">{service.description}</div>
                         )}
-                      </div>
-                      <div className="text-right">
-                        {service.price && (
-                          <p className="font-medium text-green-600">${service.price}</p>
-                        )}
-                        {service.estimatedTime && (
-                          <p className="text-sm text-gray-500">{service.estimatedTime} min</p>
-                        )}
-                      </div>
-                    </div>
-                  </button>
-                ))}
+                        <div className="flex justify-between items-center mt-1">
+                          {service.price && (
+                            <span className="text-sm font-medium text-green-600">
+                              ${service.price}
+                            </span>
+                          )}
+                          {service.estimatedTime && (
+                            <span className="text-xs text-gray-500">
+                              {service.estimatedTime} min
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           )}
