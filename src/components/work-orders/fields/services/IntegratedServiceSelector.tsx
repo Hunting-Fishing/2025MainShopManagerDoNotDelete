@@ -1,86 +1,56 @@
 
-import React, { useState, useMemo } from 'react';
-import { Search, X, ChevronRight, Clock, DollarSign } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
-import { useDebounce } from '@/hooks/useDebounce';
-import { Card, CardContent } from '@/components/ui/card';
+import React, { useState, useMemo } from "react";
+import { Input } from "@/components/ui/input";
+import { ServiceMainCategory, ServiceJob } from "@/types/serviceHierarchy";
+import { SelectedService } from "@/types/selectedService";
+import { Search, Package, ChevronDown, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
-interface IntegratedServiceSelectorProps {
+export interface IntegratedServiceSelectorProps {
   categories: ServiceMainCategory[];
   onServiceSelect: (service: ServiceJob, categoryName: string, subcategoryName: string) => void;
+  selectedServices?: SelectedService[];
+  onRemoveService?: (serviceId: string) => void;
+  onUpdateServices?: (services: SelectedService[]) => void;
+  maxSelections?: number;
 }
 
-export function IntegratedServiceSelector({
+export const IntegratedServiceSelector: React.FC<IntegratedServiceSelectorProps> = ({
   categories,
-  onServiceSelect
-}: IntegratedServiceSelectorProps) {
-  const [searchQuery, setSearchQuery] = useState('');
+  onServiceSelect,
+  selectedServices = [],
+  onRemoveService,
+  onUpdateServices,
+  maxSelections
+}) => {
+  const [searchTerm, setSearchTerm] = useState("");
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
-  const [expandedSubcategories, setExpandedSubcategories] = useState<Set<string>>(new Set());
-  
-  const debouncedSearch = useDebounce(searchQuery, 300);
 
-  // Search logic that filters and highlights matches
-  const searchResults = useMemo(() => {
-    if (!debouncedSearch.trim()) {
-      return { categories: categories, hasResults: false };
-    }
+  // Search functionality
+  const filteredCategories = useMemo(() => {
+    if (!searchTerm.trim()) return categories;
 
-    const query = debouncedSearch.toLowerCase();
-    const filteredCategories = categories.map(category => {
-      const categoryMatches = category.name.toLowerCase().includes(query) ||
-                             (category.description?.toLowerCase().includes(query) ?? false);
+    return categories.map(category => ({
+      ...category,
+      subcategories: category.subcategories.map(subcategory => ({
+        ...subcategory,
+        jobs: subcategory.jobs.filter(job =>
+          job.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          job.description?.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      })).filter(subcategory => subcategory.jobs.length > 0)
+    })).filter(category => category.subcategories.length > 0);
+  }, [categories, searchTerm]);
 
-      const filteredSubcategories = category.subcategories.map(subcategory => {
-        const subcategoryMatches = subcategory.name.toLowerCase().includes(query) ||
-                                  (subcategory.description?.toLowerCase().includes(query) ?? false);
-
-        const filteredJobs = subcategory.jobs.filter(job =>
-          job.name.toLowerCase().includes(query) ||
-          (job.description?.toLowerCase().includes(query) ?? false)
-        );
-
-        if (subcategoryMatches || filteredJobs.length > 0) {
-          return { ...subcategory, jobs: filteredJobs, isMatch: subcategoryMatches };
-        }
-        return null;
-      }).filter(Boolean) as ServiceSubcategory[];
-
-      if (categoryMatches || filteredSubcategories.length > 0) {
-        return { 
-          ...category, 
-          subcategories: filteredSubcategories,
-          isMatch: categoryMatches 
-        };
-      }
-      return null;
-    }).filter(Boolean) as ServiceMainCategory[];
-
-    return { categories: filteredCategories, hasResults: true };
-  }, [categories, debouncedSearch]);
-
-  // Auto-expand categories with search results
+  // Auto-expand categories when searching
   React.useEffect(() => {
-    if (debouncedSearch && searchResults.hasResults) {
-      const newExpandedCategories = new Set<string>();
-      const newExpandedSubcategories = new Set<string>();
-      
-      searchResults.categories.forEach(category => {
-        newExpandedCategories.add(category.id);
-        category.subcategories.forEach(subcategory => {
-          if (subcategory.jobs.length > 0) {
-            newExpandedSubcategories.add(subcategory.id);
-          }
-        });
-      });
-      
-      setExpandedCategories(newExpandedCategories);
-      setExpandedSubcategories(newExpandedSubcategories);
+    if (searchTerm.trim()) {
+      const categoryIds = filteredCategories.map(cat => cat.id);
+      setExpandedCategories(new Set(categoryIds));
     }
-  }, [debouncedSearch, searchResults]);
+  }, [searchTerm, filteredCategories]);
 
   const toggleCategory = (categoryId: string) => {
     setExpandedCategories(prev => {
@@ -94,202 +64,167 @@ export function IntegratedServiceSelector({
     });
   };
 
-  const toggleSubcategory = (subcategoryId: string) => {
-    setExpandedSubcategories(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(subcategoryId)) {
-        newSet.delete(subcategoryId);
-      } else {
-        newSet.add(subcategoryId);
-      }
-      return newSet;
-    });
-  };
-
-  const highlightText = (text: string, query: string) => {
-    if (!query.trim()) return text;
-    
-    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-    const parts = text.split(regex);
-    
-    return parts.map((part, index) => 
-      regex.test(part) ? (
-        <mark key={index} className="bg-yellow-200 text-yellow-900 rounded px-1">
-          {part}
-        </mark>
-      ) : part
-    );
-  };
-
   const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
+    // Check max selections limit
+    if (maxSelections && selectedServices.length >= maxSelections) {
+      return;
+    }
+
+    // Check if service is already selected
+    const isAlreadySelected = selectedServices.some(s => s.serviceId === service.id);
+    if (isAlreadySelected) {
+      return;
+    }
+
     onServiceSelect(service, categoryName, subcategoryName);
   };
 
-  const clearSearch = () => {
-    setSearchQuery('');
+  const handleRemoveService = (serviceId: string) => {
+    if (onRemoveService) {
+      onRemoveService(serviceId);
+    }
+  };
+
+  const isServiceSelected = (serviceId: string) => {
+    return selectedServices.some(s => s.serviceId === serviceId);
   };
 
   return (
     <div className="space-y-4">
-      {/* Always-visible search bar */}
+      {/* Search Bar */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+        <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Search services, categories, or descriptions..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10 pr-10"
+          placeholder="Search services..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
         />
-        {searchQuery && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={clearSearch}
-            className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        )}
       </div>
 
-      {/* Search status */}
-      {searchQuery && (
-        <div className="flex items-center justify-between text-sm text-gray-600">
-          <span>
-            {searchResults.categories.length > 0 
-              ? `Found results in ${searchResults.categories.length} categor${searchResults.categories.length === 1 ? 'y' : 'ies'}`
-              : 'No services found'
-            }
-          </span>
-          {searchResults.categories.length > 0 && (
-            <Badge variant="secondary" className="text-xs">
-              Search: "{searchQuery}"
-            </Badge>
-          )}
-        </div>
+      {/* Selected Services */}
+      {selectedServices.length > 0 && (
+        <Card>
+          <CardContent className="pt-4">
+            <h4 className="text-sm font-medium mb-2">Selected Services</h4>
+            <div className="flex flex-wrap gap-2">
+              {selectedServices.map((service) => (
+                <Badge key={service.id} variant="secondary" className="flex items-center gap-1">
+                  {service.name}
+                  {onRemoveService && (
+                    <button
+                      onClick={() => handleRemoveService(service.id)}
+                      className="ml-1 hover:text-destructive"
+                    >
+                      ×
+                    </button>
+                  )}
+                </Badge>
+              ))}
+            </div>
+            {maxSelections && (
+              <p className="text-xs text-muted-foreground mt-2">
+                {selectedServices.length} of {maxSelections} services selected
+              </p>
+            )}
+          </CardContent>
+        </Card>
       )}
 
-      {/* Service categories with integrated search results */}
-      <div className="space-y-3 max-h-96 overflow-y-auto">
-        {(searchQuery ? searchResults.categories : categories).map((category) => {
-          const isExpanded = expandedCategories.has(category.id);
-          const hasVisibleServices = category.subcategories.some(sub => sub.jobs.length > 0);
-          
-          return (
-            <Card key={category.id} className={`border transition-all ${searchQuery && (category as any).isMatch ? 'ring-2 ring-blue-200' : ''}`}>
+      {/* Service Categories */}
+      <div className="space-y-2">
+        {filteredCategories.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-8">
+              <Package className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold text-muted-foreground mb-2">
+                {searchTerm ? "No services found" : "No services available"}
+              </h3>
+              <p className="text-sm text-muted-foreground text-center">
+                {searchTerm 
+                  ? `No services match "${searchTerm}". Try a different search term.`
+                  : "Contact your administrator to set up services"
+                }
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          filteredCategories.map((category) => (
+            <Card key={category.id}>
               <CardContent className="p-0">
-                <button
+                <Button
+                  variant="ghost"
                   onClick={() => toggleCategory(category.id)}
-                  className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
-                  disabled={!hasVisibleServices}
+                  className="w-full justify-between p-4 h-auto"
                 >
-                  <div className="flex items-center space-x-3">
-                    <ChevronRight 
-                      className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-90' : ''} ${!hasVisibleServices ? 'opacity-50' : ''}`} 
-                    />
-                    <div className="text-left">
-                      <h3 className="font-medium text-gray-900">
-                        {highlightText(category.name, searchQuery)}
-                      </h3>
-                      {category.description && (
-                        <p className="text-sm text-gray-500">
-                          {highlightText(category.description, searchQuery)}
-                        </p>
-                      )}
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <Package className="h-4 w-4" />
+                    <span className="font-medium">{category.name}</span>
+                    <Badge variant="outline" className="text-xs">
+                      {category.subcategories.reduce((total, sub) => total + sub.jobs.length, 0)} services
+                    </Badge>
                   </div>
-                  <Badge variant="outline" className="text-xs">
-                    {category.subcategories.reduce((total, sub) => total + sub.jobs.length, 0)} services
-                  </Badge>
-                </button>
+                  {expandedCategories.has(category.id) ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
+                </Button>
 
-                {isExpanded && hasVisibleServices && (
-                  <div className="border-t bg-gray-50/50">
-                    {category.subcategories.map((subcategory) => {
-                      const subIsExpanded = expandedSubcategories.has(subcategory.id);
-                      
-                      if (subcategory.jobs.length === 0) return null;
-                      
-                      return (
-                        <div key={subcategory.id} className="border-b last:border-b-0">
-                          <button
-                            onClick={() => toggleSubcategory(subcategory.id)}
-                            className="w-full flex items-center justify-between p-3 pl-12 hover:bg-gray-100 transition-colors"
-                          >
-                            <div className="flex items-center space-x-2">
-                              <ChevronRight 
-                                className={`h-3 w-3 transition-transform ${subIsExpanded ? 'rotate-90' : ''}`} 
-                              />
-                              <span className="text-sm font-medium text-gray-700">
-                                {highlightText(subcategory.name, searchQuery)}
-                              </span>
-                            </div>
-                            <Badge variant="secondary" className="text-xs">
-                              {subcategory.jobs.length}
-                            </Badge>
-                          </button>
-
-                          {subIsExpanded && (
-                            <div className="bg-white">
-                              {subcategory.jobs.map((job) => (
-                                <div
-                                  key={job.id}
-                                  className="flex items-center justify-between p-3 pl-16 hover:bg-blue-50 border-b last:border-b-0"
-                                >
-                                  <div className="flex-1">
-                                    <h4 className="text-sm font-medium text-gray-900">
-                                      {highlightText(job.name, searchQuery)}
-                                    </h4>
-                                    {job.description && (
-                                      <p className="text-xs text-gray-500 mt-1">
-                                        {highlightText(job.description, searchQuery)}
-                                      </p>
+                {expandedCategories.has(category.id) && (
+                  <div className="px-4 pb-4 space-y-3">
+                    {category.subcategories.map((subcategory) => (
+                      <div key={subcategory.id} className="space-y-2">
+                        <h4 className="text-sm font-medium text-muted-foreground px-2">
+                          {subcategory.name}
+                        </h4>
+                        <div className="grid gap-2">
+                          {subcategory.jobs.map((job) => {
+                            const isSelected = isServiceSelected(job.id);
+                            const isDisabled = maxSelections && selectedServices.length >= maxSelections && !isSelected;
+                            
+                            return (
+                              <Button
+                                key={job.id}
+                                variant={isSelected ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => handleServiceSelect(job, category.name, subcategory.name)}
+                                disabled={isDisabled || isSelected}
+                                className="justify-start h-auto p-3"
+                              >
+                                <div className="flex flex-col items-start w-full">
+                                  <div className="flex items-center justify-between w-full">
+                                    <span className="font-medium">{job.name}</span>
+                                    {job.price && (
+                                      <span className="text-sm text-muted-foreground">
+                                        ${job.price}
+                                      </span>
                                     )}
-                                    <div className="flex items-center space-x-3 mt-1">
-                                      {job.estimatedTime && (
-                                        <div className="flex items-center space-x-1 text-xs text-gray-500">
-                                          <Clock className="h-3 w-3" />
-                                          <span>{job.estimatedTime} min</span>
-                                        </div>
-                                      )}
-                                      {job.price && (
-                                        <div className="flex items-center space-x-1 text-xs text-green-600">
-                                          <DollarSign className="h-3 w-3" />
-                                          <span>${job.price}</span>
-                                        </div>
-                                      )}
-                                    </div>
                                   </div>
-                                  <Button
-                                    size="sm"
-                                    onClick={() => handleServiceSelect(job, category.name, subcategory.name)}
-                                    className="ml-3"
-                                  >
-                                    Add
-                                  </Button>
+                                  {job.description && (
+                                    <span className="text-xs text-muted-foreground text-left">
+                                      {job.description}
+                                    </span>
+                                  )}
+                                  {job.estimatedTime && (
+                                    <span className="text-xs text-muted-foreground">
+                                      Est. {job.estimatedTime} min
+                                    </span>
+                                  )}
                                 </div>
-                              ))}
-                            </div>
-                          )}
+                              </Button>
+                            );
+                          })}
                         </div>
-                      );
-                    })}
+                      </div>
+                    ))}
                   </div>
                 )}
               </CardContent>
             </Card>
-          );
-        })}
+          ))
+        )}
       </div>
-
-      {/* No results state */}
-      {searchQuery && searchResults.categories.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
-          <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
-          <p>No services found for "{searchQuery}"</p>
-          <p className="text-sm">Try searching for different keywords or browse categories above</p>
-        </div>
-      )}
     </div>
   );
-}
+};
