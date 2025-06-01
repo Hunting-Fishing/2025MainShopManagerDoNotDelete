@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { EnhancedServiceSelector } from "@/components/work-orders/fields/services/EnhancedServiceSelector";
+import { IntegratedServiceSelector } from "@/components/work-orders/fields/services/IntegratedServiceSelector";
 import { ServiceMainCategory, ServiceJob } from "@/types/serviceHierarchy";
 import { SelectedService } from "@/types/selectedService";
 import { fetchServiceCategories } from "@/lib/services/serviceApi";
@@ -49,8 +49,6 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ form }) => {
   }, [selectedServices, form]);
 
   const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
-    // This function is called for backward compatibility
-    // The actual logic is handled in EnhancedServiceSelector
     console.log('Service selected:', service.name);
   };
 
@@ -88,7 +86,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ form }) => {
         )}
       />
 
-      {/* Enhanced Service Selector */}
+      {/* Integrated Service Selector */}
       {isLoading ? (
         <div className="text-center py-8">
           <p className="text-gray-500">Loading services...</p>
@@ -105,7 +103,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ form }) => {
           </Button>
         </div>
       ) : serviceCategories.length > 0 ? (
-        <EnhancedServiceSelector
+        <IntegratedServiceSelector
           categories={serviceCategories}
           onServiceSelect={handleServiceSelect}
           selectedServices={selectedServices}

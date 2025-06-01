@@ -1,122 +1,119 @@
 
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { WorkOrderJobLine } from '@/types/jobLine';
-import { ServiceJob } from '@/types/serviceHierarchy';
-import { HierarchicalServiceSelector } from '../fields/services/HierarchicalServiceSelector';
-import { toast } from 'sonner';
+import React, { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { IntegratedServiceSelector } from "@/components/work-orders/fields/services/IntegratedServiceSelector";
+import { WorkOrderJobLine } from "@/types/jobLine";
+import { ServiceMainCategory, ServiceJob } from "@/types/serviceHierarchy";
+import { SelectedService } from "@/types/selectedService";
+import { fetchServiceCategories } from "@/lib/services/serviceApi";
+import { toast } from "@/hooks/use-toast";
 
 interface AddJobLineDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAddJobLine: (newJobLine: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  workOrderId: string;
-  shopId?: string;
+  onAddJobLine: (jobLine: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>) => void;
 }
 
-export function AddJobLineDialog({ 
-  open, 
-  onOpenChange, 
-  onAddJobLine, 
-  workOrderId, 
-  shopId 
-}: AddJobLineDialogProps) {
-  const [activeTab, setActiveTab] = useState<'browse' | 'manual'>('browse');
+export const AddJobLineDialog: React.FC<AddJobLineDialogProps> = ({
+  open,
+  onOpenChange,
+  onAddJobLine
+}) => {
+  const [serviceCategories, setServiceCategories] = useState<ServiceMainCategory[]>([]);
+  const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    name: '',
-    category: '',
-    subcategory: '',
-    description: '',
-    estimatedHours: '',
-    laborRate: '',
-    totalAmount: '',
-    status: 'pending' as const,
-    notes: ''
+    name: "",
+    description: "",
+    estimatedHours: 0,
+    laborRate: 0,
+    notes: ""
   });
 
-  const handleServiceSelect = (service: ServiceJob & { categoryName: string; subcategoryName: string }) => {
-    // Convert estimated time from minutes to hours
-    const estimatedHours = service.estimatedTime ? (service.estimatedTime / 60).toString() : '';
-    
-    setFormData({
-      name: service.name,
-      category: service.categoryName,
-      subcategory: service.subcategoryName,
-      description: service.description || '',
-      estimatedHours,
-      laborRate: '75', // Default labor rate - could be made configurable
-      totalAmount: service.price ? service.price.toString() : '',
-      status: 'pending',
-      notes: ''
-    });
-    
-    // Switch to manual tab to show the populated form
-    setActiveTab('manual');
-    
-    toast.success(`Selected: ${service.name}`);
+  useEffect(() => {
+    if (open) {
+      loadServiceCategories();
+    }
+  }, [open]);
+
+  const loadServiceCategories = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const categories = await fetchServiceCategories();
+      setServiceCategories(categories);
+    } catch (err) {
+      console.error("Failed to load service categories:", err);
+      setError("Failed to load service categories. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
+    // Auto-populate form when service is selected
+    setFormData(prev => ({
+      ...prev,
+      name: service.name,
+      description: service.description || "",
+      estimatedHours: service.estimatedTime ? service.estimatedTime / 60 : 0, // Convert minutes to hours
+      laborRate: prev.laborRate || 75 // Default labor rate
+    }));
+  };
+
+  const handleUpdateServices = (services: SelectedService[]) => {
+    setSelectedServices(services);
     
+    // If a service is selected, auto-populate the form
+    if (services.length > 0) {
+      const lastSelected = services[services.length - 1];
+      setFormData(prev => ({
+        ...prev,
+        name: lastSelected.name,
+        description: lastSelected.description || ""
+      }));
+    }
+  };
+
+  const handleSubmit = () => {
     if (!formData.name.trim()) {
-      toast.error('Job name is required');
+      toast({
+        title: "Error",
+        description: "Please enter a job line name or select a service",
+        variant: "destructive"
+      });
       return;
     }
 
-    const newJobLine: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'> = {
-      workOrderId,
-      name: formData.name.trim(),
-      category: formData.category || undefined,
-      subcategory: formData.subcategory || undefined,
-      description: formData.description || undefined,
-      estimatedHours: formData.estimatedHours ? parseFloat(formData.estimatedHours) : undefined,
-      laborRate: formData.laborRate ? parseFloat(formData.laborRate) : undefined,
-      totalAmount: formData.totalAmount ? parseFloat(formData.totalAmount) : undefined,
-      status: formData.status,
-      notes: formData.notes || undefined
+    const selectedService = selectedServices[0];
+    const jobLine: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'> = {
+      name: formData.name,
+      category: selectedService?.categoryName,
+      subcategory: selectedService?.subcategoryName,
+      description: formData.description,
+      estimatedHours: formData.estimatedHours,
+      laborRate: formData.laborRate,
+      totalAmount: formData.estimatedHours * formData.laborRate,
+      status: 'pending',
+      notes: formData.notes
     };
 
-    onAddJobLine(newJobLine);
+    onAddJobLine(jobLine);
     
     // Reset form
     setFormData({
-      name: '',
-      category: '',
-      subcategory: '',
-      description: '',
-      estimatedHours: '',
-      laborRate: '',
-      totalAmount: '',
-      status: 'pending',
-      notes: ''
+      name: "",
+      description: "",
+      estimatedHours: 0,
+      laborRate: 0,
+      notes: ""
     });
-    
-    setActiveTab('browse');
-    onOpenChange(false);
-    
-    toast.success('Job line added successfully');
-  };
-
-  const handleCancel = () => {
-    setFormData({
-      name: '',
-      category: '',
-      subcategory: '',
-      description: '',
-      estimatedHours: '',
-      laborRate: '',
-      totalAmount: '',
-      status: 'pending',
-      notes: ''
-    });
-    setActiveTab('browse');
+    setSelectedServices([]);
     onOpenChange(false);
   };
 
@@ -126,142 +123,125 @@ export function AddJobLineDialog({
         <DialogHeader>
           <DialogTitle>Add Job Line</DialogTitle>
         </DialogHeader>
-
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'browse' | 'manual')}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="browse">Browse Services</TabsTrigger>
-            <TabsTrigger value="manual">Manual Entry</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="browse" className="mt-4">
-            <div className="max-h-[500px] overflow-y-auto">
-              <HierarchicalServiceSelector onServiceSelect={handleServiceSelect} />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="manual" className="mt-4">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Job Name *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="Enter job name"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
-                  <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as any }))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="in-progress">In Progress</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="on-hold">On Hold</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="category">Category</Label>
-                  <Input
-                    id="category"
-                    value={formData.category}
-                    onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                    placeholder="Service category"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="subcategory">Subcategory</Label>
-                  <Input
-                    id="subcategory"
-                    value={formData.subcategory}
-                    onChange={(e) => setFormData(prev => ({ ...prev, subcategory: e.target.value }))}
-                    placeholder="Service subcategory"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="estimatedHours">Estimated Hours</Label>
-                  <Input
-                    id="estimatedHours"
-                    type="number"
-                    step="0.25"
-                    min="0"
-                    value={formData.estimatedHours}
-                    onChange={(e) => setFormData(prev => ({ ...prev, estimatedHours: e.target.value }))}
-                    placeholder="0.0"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="laborRate">Labor Rate ($/hour)</Label>
-                  <Input
-                    id="laborRate"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.laborRate}
-                    onChange={(e) => setFormData(prev => ({ ...prev, laborRate: e.target.value }))}
-                    placeholder="75.00"
-                  />
-                </div>
+        
+        <div className="space-y-6">
+          {/* Service Selection */}
+          <div>
+            <Label className="text-base font-medium">Select Service (Optional)</Label>
+            <p className="text-sm text-gray-500 mb-4">
+              Choose a service to auto-populate the job line details, or create a custom job line below.
+            </p>
+            
+            {isLoading ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">Loading services...</p>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Job description..."
-                  rows={3}
-                />
+            ) : error ? (
+              <div className="text-center py-8">
+                <p className="text-red-500">{error}</p>
+                <Button onClick={loadServiceCategories} variant="outline" className="mt-2">
+                  Retry
+                </Button>
               </div>
+            ) : (
+              <IntegratedServiceSelector
+                categories={serviceCategories}
+                onServiceSelect={handleServiceSelect}
+                selectedServices={selectedServices}
+                onRemoveService={(serviceId) => {
+                  setSelectedServices(prev => prev.filter(s => s.id !== serviceId));
+                }}
+                onUpdateServices={handleUpdateServices}
+                maxSelections={1}
+              />
+            )}
+          </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="totalAmount">Total Amount ($)</Label>
+          {/* Manual Job Line Form */}
+          <div className="border-t pt-6">
+            <Label className="text-base font-medium mb-4 block">Job Line Details</Label>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="name">Job Name *</Label>
                 <Input
-                  id="totalAmount"
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Enter job name"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="estimatedHours">Estimated Hours</Label>
+                <Input
+                  id="estimatedHours"
                   type="number"
-                  step="0.01"
                   min="0"
-                  value={formData.totalAmount}
-                  onChange={(e) => setFormData(prev => ({ ...prev, totalAmount: e.target.value }))}
-                  placeholder="0.00"
+                  step="0.25"
+                  value={formData.estimatedHours}
+                  onChange={(e) => setFormData(prev => ({ ...prev, estimatedHours: parseFloat(e.target.value) || 0 }))}
+                  placeholder="0.0"
                 />
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  value={formData.notes}
-                  onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                  placeholder="Additional notes..."
-                  rows={2}
+              
+              <div>
+                <Label htmlFor="laborRate">Labor Rate ($/hour)</Label>
+                <Input
+                  id="laborRate"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={formData.laborRate}
+                  onChange={(e) => setFormData(prev => ({ ...prev, laborRate: parseFloat(e.target.value) || 0 }))}
+                  placeholder="75"
                 />
               </div>
-
-              <div className="flex justify-end gap-2 pt-4">
-                <Button type="button" variant="outline" onClick={handleCancel}>
-                  Cancel
-                </Button>
-                <Button type="submit">
-                  Add Job Line
-                </Button>
+              
+              <div>
+                <Label>Total Amount</Label>
+                <Input
+                  value={`$${(formData.estimatedHours * formData.laborRate).toFixed(2)}`}
+                  disabled
+                  className="bg-gray-50"
+                />
               </div>
-            </form>
-          </TabsContent>
-        </Tabs>
+            </div>
+            
+            <div className="mt-4">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Enter job description"
+                rows={3}
+              />
+            </div>
+            
+            <div className="mt-4">
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                value={formData.notes}
+                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                placeholder="Additional notes"
+                rows={2}
+              />
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex justify-end space-x-2 pt-4 border-t">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmit}>
+              Add Job Line
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
-}
+};

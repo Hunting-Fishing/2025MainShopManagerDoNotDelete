@@ -1,68 +1,96 @@
-import React from "react";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { HierarchicalServiceSelector } from "@/components/work-orders/fields/services/HierarchicalServiceSelector";
+
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { IntegratedServiceSelector } from "@/components/work-orders/fields/services/IntegratedServiceSelector";
+import { ServiceMainCategory, ServiceJob } from "@/types/serviceHierarchy";
+import { SelectedService } from "@/types/selectedService";
+import { fetchServiceCategories } from "@/lib/services/serviceApi";
+import { Settings } from "lucide-react";
 
 interface WorkOrderInfoSectionProps {
-  form: any;
-  serviceCategories: string[];
+  onServiceSelect?: (service: ServiceJob, categoryName: string, subcategoryName: string) => void;
+  selectedServices?: SelectedService[];
+  onUpdateServices?: (services: SelectedService[]) => void;
 }
 
-export function WorkOrderInfoSection({
-  form,
-  serviceCategories
-}: WorkOrderInfoSectionProps) {
+export const WorkOrderInfoSection: React.FC<WorkOrderInfoSectionProps> = ({
+  onServiceSelect,
+  selectedServices = [],
+  onUpdateServices
+}) => {
+  const [serviceCategories, setServiceCategories] = useState<ServiceMainCategory[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadServiceCategories = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const categories = await fetchServiceCategories();
+        setServiceCategories(categories);
+      } catch (err) {
+        console.error("Failed to load service categories:", err);
+        setError("Failed to load service categories. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadServiceCategories();
+  }, []);
+
+  const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
+    if (onServiceSelect) {
+      onServiceSelect(service, categoryName, subcategoryName);
+    }
+  };
+
+  const handleRemoveService = (serviceId: string) => {
+    if (onUpdateServices) {
+      const updatedServices = selectedServices.filter(s => s.id !== serviceId);
+      onUpdateServices(updatedServices);
+    }
+  };
+
+  const handleUpdateServices = (services: SelectedService[]) => {
+    if (onUpdateServices) {
+      onUpdateServices(services);
+    }
+  };
+
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-slate-900">Work Order Details</h3>
-      
-      <div className="grid grid-cols-1 gap-4">
-        <FormField
-          control={form.control}
-          name="serviceCategory"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Service Category</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger className="bg-white">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {serviceCategories.map((category) => (
-                    <SelectItem key={category} value={category.toLowerCase()}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="estimatedHours"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Estimated Hours</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  placeholder="Enter estimated hours"
-                  className="bg-white"
-                  {...field}
-                  onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </div>
-    </div>
+    <Card className="mb-4 border-blue-100">
+      <CardHeader className="pb-3 bg-gradient-to-r from-blue-50 to-transparent">
+        <CardTitle className="text-lg flex items-center">
+          <Settings className="h-5 w-5 mr-2 text-blue-600" />
+          Service Selection
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-4">
+        {isLoading ? (
+          <div className="text-center py-8">
+            <p className="text-gray-500">Loading services...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-8">
+            <p className="text-red-500">{error}</p>
+          </div>
+        ) : serviceCategories.length > 0 ? (
+          <IntegratedServiceSelector
+            categories={serviceCategories}
+            onServiceSelect={handleServiceSelect}
+            selectedServices={selectedServices}
+            onRemoveService={handleRemoveService}
+            onUpdateServices={handleUpdateServices}
+          />
+        ) : (
+          <div className="text-center py-8 border rounded-md bg-gray-50">
+            <p className="text-gray-500">No services available</p>
+            <p className="text-sm text-gray-400">Contact your administrator to set up services</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
-}
+};
