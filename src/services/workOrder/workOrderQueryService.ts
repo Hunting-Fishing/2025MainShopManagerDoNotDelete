@@ -4,14 +4,23 @@ import { WorkOrder } from "@/types/workOrder";
 import { normalizeWorkOrder } from "@/utils/workOrders/formatters";
 
 /**
- * Get all work orders
+ * Get all work orders with customer and vehicle information
  */
 export const getAllWorkOrders = async (): Promise<WorkOrder[]> => {
   try {
-    console.log('Querying work_orders table...');
+    console.log('Querying work_orders table with customer and vehicle data...');
     const { data, error } = await supabase
       .from('work_orders')
-      .select('*')
+      .select(`
+        *,
+        customers!customer_id (
+          id,
+          first_name,
+          last_name,
+          email,
+          phone
+        )
+      `)
       .order('created_at', { ascending: false });
       
     if (error) {
@@ -20,7 +29,21 @@ export const getAllWorkOrders = async (): Promise<WorkOrder[]> => {
     }
     
     console.log('Raw data from database:', data);
-    const normalizedData = data?.map(normalizeWorkOrder) || [];
+    const normalizedData = data?.map(workOrder => {
+      const normalized = normalizeWorkOrder(workOrder);
+      
+      // Add customer information if available
+      if (workOrder.customers) {
+        const customer = workOrder.customers;
+        normalized.customer_name = `${customer.first_name || ''} ${customer.last_name || ''}`.trim();
+        normalized.customer_email = customer.email;
+        normalized.customer_phone = customer.phone;
+        normalized.customer = normalized.customer_name; // For backward compatibility
+      }
+      
+      return normalized;
+    }) || [];
+    
     console.log('Normalized work orders:', normalizedData);
     return normalizedData;
   } catch (error) {
@@ -30,13 +53,22 @@ export const getAllWorkOrders = async (): Promise<WorkOrder[]> => {
 };
 
 /**
- * Get a work order by ID
+ * Get a work order by ID with customer and vehicle information
  */
 export const getWorkOrderById = async (id: string): Promise<WorkOrder | null> => {
   try {
     const { data, error } = await supabase
       .from('work_orders')
-      .select('*')
+      .select(`
+        *,
+        customers!customer_id (
+          id,
+          first_name,
+          last_name,
+          email,
+          phone
+        )
+      `)
       .eq('id', id)
       .single();
       
@@ -44,7 +76,18 @@ export const getWorkOrderById = async (id: string): Promise<WorkOrder | null> =>
       throw error;
     }
     
-    return normalizeWorkOrder(data);
+    const normalized = normalizeWorkOrder(data);
+    
+    // Add customer information if available
+    if (data.customers) {
+      const customer = data.customers;
+      normalized.customer_name = `${customer.first_name || ''} ${customer.last_name || ''}`.trim();
+      normalized.customer_email = customer.email;
+      normalized.customer_phone = customer.phone;
+      normalized.customer = normalized.customer_name; // For backward compatibility
+    }
+    
+    return normalized;
   } catch (error) {
     console.error(`Error fetching work order ${id}:`, error);
     return null;
@@ -73,9 +116,6 @@ export const getWorkOrdersByCustomerId = async (customerId: string): Promise<Wor
   }
 };
 
-/**
- * Get work orders by status
- */
 export const getWorkOrdersByStatus = async (status: string): Promise<WorkOrder[]> => {
   try {
     const { data, error } = await supabase
@@ -95,9 +135,6 @@ export const getWorkOrdersByStatus = async (status: string): Promise<WorkOrder[]
   }
 };
 
-/**
- * Get unique technicians from work orders - using technician_id instead of technician
- */
 export const getUniqueTechnicians = async (): Promise<string[]> => {
   try {
     const { data, error } = await supabase
