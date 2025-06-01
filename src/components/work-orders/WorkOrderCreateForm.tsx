@@ -12,10 +12,14 @@ interface WorkOrderCreateFormProps {
   form: UseFormReturn<WorkOrderFormSchemaValues>;
   onSubmit: (values: WorkOrderFormSchemaValues) => Promise<void>;
   prePopulatedCustomer?: {
+    customerId?: string;
     customerName?: string;
     customerEmail?: string;
     customerPhone?: string;
     customerAddress?: string;
+    title?: string;
+    description?: string;
+    priority?: string;
     equipmentName?: string;
     equipmentType?: string;
     vehicleMake?: string;
@@ -34,6 +38,11 @@ export const WorkOrderCreateForm: React.FC<WorkOrderCreateFormProps> = ({
   const isSubmitting = form.formState.isSubmitting;
   const { technicians, isLoading: technicianLoading, error: technicianError } = useTechnicians();
 
+  const handleSaveDraft = () => {
+    // TODO: Implement save as draft functionality
+    console.log('Save as draft functionality to be implemented');
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -46,7 +55,7 @@ export const WorkOrderCreateForm: React.FC<WorkOrderCreateFormProps> = ({
         />
         
         <div className="flex justify-end space-x-4 pt-6 border-t">
-          <Button type="button" variant="outline">
+          <Button type="button" variant="outline" onClick={handleSaveDraft}>
             Save as Draft
           </Button>
           <Button type="submit" disabled={isSubmitting}>

@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Customer } from '@/types/customer';
+import { Customer, getCustomerFullName } from '@/types/customer';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -30,6 +30,8 @@ export function CreateWorkOrderFromCustomerDialog({
     vehicleId: ''
   });
 
+  const customerName = getCustomerFullName(customer);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -37,7 +39,8 @@ export function CreateWorkOrderFromCustomerDialog({
     try {
       // Create URL parameters for the work order creation page
       const params = new URLSearchParams({
-        customer: `${customer.first_name} ${customer.last_name}`,
+        customerId: customer.id,
+        customer: customerName,
         customerEmail: customer.email || '',
         customerPhone: customer.phone || '',
         customerAddress: customer.address || '',
@@ -56,6 +59,8 @@ export function CreateWorkOrderFromCustomerDialog({
           params.append('vehicleVin', selectedVehicle.vin || '');
         }
       }
+
+      console.log('Navigating to work order creation with params:', params.toString());
 
       // Navigate to work order creation page with pre-filled data
       navigate(`/work-orders/create?${params.toString()}`);
@@ -78,7 +83,7 @@ export function CreateWorkOrderFromCustomerDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create Work Order for {customer.first_name} {customer.last_name}</DialogTitle>
+          <DialogTitle>Create Work Order for {customerName}</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -127,7 +132,7 @@ export function CreateWorkOrderFromCustomerDialog({
                   <SelectValue placeholder="Select a vehicle" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No vehicle selected</SelectItem>
+                  <SelectItem value="none">No vehicle selected</SelectItem>
                   {customer.vehicles.map((vehicle) => (
                     <SelectItem key={vehicle.id} value={vehicle.id}>
                       {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.license_plate && `(${vehicle.license_plate})`}
