@@ -1,76 +1,79 @@
 
 import React, { useState, useMemo } from 'react';
-import { Search, ChevronRight, ArrowLeft } from 'lucide-react';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { useServiceCategories } from '@/hooks/useServiceCategories';
+import { Input } from '@/components/ui/input';
+import { Search, X, ChevronRight, Grid, List } from 'lucide-react';
 import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
-import { useDebounce } from '@/hooks/use-debounce';
+import { useServiceCategories } from '@/hooks/useServiceCategories';
+import { searchServices } from '@/lib/services/searchService';
+import { useDebounce } from '@/hooks/useDebounce';
+import { ServiceCategoryList } from './ServiceCategoryList';
+import { ServiceSubcategoryGrid } from './ServiceSubcategoryGrid';
 
 interface HierarchicalServiceSelectorProps {
   onServiceSelect: (service: ServiceJob, categoryName: string, subcategoryName: string) => void;
 }
 
-interface SearchResult {
-  service: ServiceJob;
-  categoryName: string;
-  subcategoryName: string;
-  categoryId: string;
-  subcategoryId: string;
-}
-
 export function HierarchicalServiceSelector({ onServiceSelect }: HierarchicalServiceSelectorProps) {
   const { categories, loading, error } = useServiceCategories();
-  const [selectedCategory, setSelectedCategory] = useState<ServiceMainCategory | null>(null);
-  const [selectedSubcategory, setSelectedSubcategory] = useState<ServiceSubcategory | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  
-  // Debounce search term to avoid excessive filtering
+  const [viewMode, setViewMode] = useState<'hierarchical' | 'search'>('hierarchical');
+
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  // Flatten all services for search
-  const allServices = useMemo(() => {
-    const results: SearchResult[] = [];
-    categories.forEach(category => {
-      category.subcategories.forEach(subcategory => {
-        subcategory.jobs.forEach(service => {
-          results.push({
-            service,
-            categoryName: category.name,
-            subcategoryName: subcategory.name,
-            categoryId: category.id,
-            subcategoryId: subcategory.id
-          });
-        });
-      });
-    });
-    return results;
-  }, [categories]);
+  // Search results
+  const searchResults = useMemo(() => {
+    if (!debouncedSearchTerm.trim() || viewMode !== 'search') return [];
+    return searchServices(categories, debouncedSearchTerm);
+  }, [categories, debouncedSearchTerm, viewMode]);
 
-  // Filter services based on search term
-  const filteredServices = useMemo(() => {
-    if (!debouncedSearchTerm.trim()) return [];
-    
-    const searchLower = debouncedSearchTerm.toLowerCase();
-    return allServices.filter(result => 
-      result.service.name.toLowerCase().includes(searchLower) ||
-      result.service.description?.toLowerCase().includes(searchLower) ||
-      result.categoryName.toLowerCase().includes(searchLower) ||
-      result.subcategoryName.toLowerCase().includes(searchLower)
-    );
-  }, [allServices, debouncedSearchTerm]);
+  // Get category names for hierarchical view
+  const categoryNames = categories.map(cat => cat.name);
 
-  const handleServiceSelect = (result: SearchResult) => {
-    onServiceSelect(result.service, result.categoryName, result.subcategoryName);
-  };
+  // Get selected category data
+  const selectedCategoryData = categories.find(cat => cat.name === selectedCategory);
+  const subcategoryNames = selectedCategoryData?.subcategories.map(sub => sub.name) || [];
 
-  const handleBackToCategories = () => {
-    setSelectedCategory(null);
+  // Get selected subcategory data
+  const selectedSubcategoryData = selectedCategoryData?.subcategories.find(sub => sub.name === selectedSubcategory);
+  const services = selectedSubcategoryData?.jobs || [];
+
+  const handleCategorySelect = (category: string) => {
+    setSelectedCategory(category);
     setSelectedSubcategory(null);
   };
 
-  const handleBackToSubcategories = () => {
+  const handleSubcategorySelect = (subcategory: string) => {
+    setSelectedSubcategory(subcategory);
+  };
+
+  const handleServiceSelect = (service: ServiceJob) => {
+    if (viewMode === 'search') {
+      // Find the category and subcategory for this service
+      for (const category of categories) {
+        for (const subcategory of category.subcategories) {
+          if (subcategory.jobs.some(job => job.id === service.id)) {
+            onServiceSelect(service, category.name, subcategory.name);
+            return;
+          }
+        }
+      }
+    } else {
+      // Hierarchical mode
+      if (selectedCategory && selectedSubcategory) {
+        onServiceSelect(service, selectedCategory, selectedSubcategory);
+      }
+    }
+  };
+
+  const handleSearchResultSelect = (result: any) => {
+    onServiceSelect(result.service, result.categoryName, result.subcategoryName);
+  };
+
+  const resetHierarchicalSelection = () => {
+    setSelectedCategory(null);
     setSelectedSubcategory(null);
   };
 
@@ -78,222 +81,216 @@ export function HierarchicalServiceSelector({ onServiceSelect }: HierarchicalSer
     setSearchTerm('');
   };
 
+  const toggleViewMode = () => {
+    const newMode = viewMode === 'hierarchical' ? 'search' : 'hierarchical';
+    setViewMode(newMode);
+    
+    // Clear states when switching modes
+    if (newMode === 'search') {
+      resetHierarchicalSelection();
+    } else {
+      clearSearch();
+    }
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-sm text-slate-500">Loading services...</div>
+      <div className="text-center py-8">
+        <p className="text-gray-500">Loading services...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-sm text-red-500">Error loading services: {error}</div>
+      <div className="text-center py-8">
+        <p className="text-red-500">{error}</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      {/* Search Bar */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-        <Input
-          type="text"
-          placeholder="Search services, categories, or descriptions..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10 pr-4"
-        />
-        {searchTerm && (
+      {/* View Mode Toggle */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
           <Button
-            variant="ghost"
+            variant={viewMode === 'hierarchical' ? 'default' : 'outline'}
             size="sm"
-            onClick={clearSearch}
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+            onClick={() => setViewMode('hierarchical')}
+            className="flex items-center gap-2"
           >
-            ×
+            <Grid className="h-4 w-4" />
+            Categories
           </Button>
-        )}
+          <Button
+            variant={viewMode === 'search' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('search')}
+            className="flex items-center gap-2"
+          >
+            <Search className="h-4 w-4" />
+            Search
+          </Button>
+        </div>
       </div>
 
-      {/* Search Results */}
-      {debouncedSearchTerm.trim() && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <h4 className="text-sm font-medium text-slate-700">
-              Search Results ({filteredServices.length})
-            </h4>
-            {filteredServices.length > 0 && (
-              <Button variant="outline" size="sm" onClick={clearSearch}>
-                Browse Categories
-              </Button>
+      {/* Search Mode */}
+      {viewMode === 'search' && (
+        <div className="space-y-4">
+          {/* Search Input */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Search for services (e.g., 'oil change', 'brake', 'tire')..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-10"
+            />
+            {searchTerm && (
+              <button
+                onClick={clearSearch}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
             )}
           </div>
-          
-          {filteredServices.length === 0 ? (
-            <div className="text-center py-6 text-slate-500">
-              <Search className="h-8 w-8 mx-auto mb-2 text-slate-300" />
-              <p className="text-sm">No services found for "{debouncedSearchTerm}"</p>
+
+          {/* Search Results */}
+          {searchTerm && (
+            <div className="space-y-2">
+              {searchResults.length > 0 ? (
+                <>
+                  <div className="text-sm text-gray-600">
+                    {searchResults.length} result{searchResults.length !== 1 ? 's' : ''} found
+                  </div>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {searchResults.map((result, index) => (
+                      <div
+                        key={index}
+                        className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                        onClick={() => handleSearchResultSelect(result)}
+                      >
+                        <div className="font-medium text-sm">{result.service.name}</div>
+                        <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
+                          <span>{result.categoryName}</span>
+                          <ChevronRight className="h-3 w-3" />
+                          <span>{result.subcategoryName}</span>
+                        </div>
+                        {result.service.description && (
+                          <div className="text-xs text-gray-600 mt-1">{result.service.description}</div>
+                        )}
+                        {(result.service.estimatedTime || result.service.price) && (
+                          <div className="flex items-center gap-3 text-xs text-gray-500 mt-2">
+                            {result.service.estimatedTime && (
+                              <span>⏱️ {result.service.estimatedTime} min</span>
+                            )}
+                            {result.service.price && (
+                              <span>💰 ${result.service.price}</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>No services found for "{searchTerm}"</p>
+                  <p className="text-sm">Try different keywords or browse categories</p>
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-              {filteredServices.map((result, index) => (
-                <Card key={`${result.categoryId}-${result.subcategoryId}-${result.service.id}-${index}`} className="hover:bg-slate-50 cursor-pointer transition-colors">
-                  <CardContent className="p-3" onClick={() => handleServiceSelect(result)}>
-                    <div className="space-y-1">
-                      <div className="flex items-center text-xs text-slate-500">
-                        <span>{result.categoryName}</span>
-                        <ChevronRight className="h-3 w-3 mx-1" />
-                        <span>{result.subcategoryName}</span>
-                      </div>
-                      <h5 className="font-medium text-slate-900">{result.service.name}</h5>
-                      {result.service.description && (
-                        <p className="text-sm text-slate-600">{result.service.description}</p>
-                      )}
-                      <div className="flex items-center justify-between text-xs text-slate-500">
-                        {result.service.estimatedTime && (
-                          <span>{result.service.estimatedTime} min</span>
-                        )}
-                        {result.service.price && (
-                          <span>${result.service.price.toFixed(2)}</span>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+          )}
+
+          {!searchTerm && (
+            <div className="text-center py-8 text-gray-500">
+              <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p>Start typing to search for services</p>
             </div>
           )}
         </div>
       )}
 
-      {/* Hierarchical Navigation (when not searching) */}
-      {!debouncedSearchTerm.trim() && (
-        <div className="space-y-4">
-          {/* Navigation Breadcrumbs */}
-          {(selectedCategory || selectedSubcategory) && (
-            <div className="flex items-center space-x-2 text-sm text-slate-600">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleBackToCategories}
-                className="p-0 h-auto"
-              >
-                Categories
-              </Button>
-              {selectedCategory && (
-                <>
-                  <ChevronRight className="h-3 w-3" />
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={selectedSubcategory ? handleBackToSubcategories : undefined}
-                    className="p-0 h-auto"
-                  >
-                    {selectedCategory.name}
-                  </Button>
-                </>
-              )}
-              {selectedSubcategory && (
-                <>
-                  <ChevronRight className="h-3 w-3" />
-                  <span>{selectedSubcategory.name}</span>
-                </>
-              )}
-            </div>
-          )}
+      {/* Hierarchical Mode */}
+      {viewMode === 'hierarchical' && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-64">
+          {/* Categories Column */}
+          <div className="border rounded-lg">
+            <ServiceCategoryList
+              categories={categoryNames}
+              selectedCategory={selectedCategory}
+              onCategorySelect={handleCategorySelect}
+            />
+          </div>
 
-          {/* Back Button */}
-          {(selectedCategory || selectedSubcategory) && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={selectedSubcategory ? handleBackToSubcategories : handleBackToCategories}
-              className="mb-4"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
-          )}
+          {/* Subcategories Column */}
+          <div className="border rounded-lg">
+            {selectedCategory ? (
+              <ServiceSubcategoryGrid
+                category={selectedCategory}
+                subcategories={subcategoryNames}
+                selectedSubcategory={selectedSubcategory}
+                onSelectSubcategory={handleSubcategorySelect}
+              />
+            ) : (
+              <div className="h-full flex items-center justify-center text-gray-500">
+                <div className="text-center">
+                  <List className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">Select a category</p>
+                </div>
+              </div>
+            )}
+          </div>
 
-          {/* Main Categories */}
-          {!selectedCategory && (
-            <div className="grid grid-cols-1 gap-2">
-              {categories.map((category) => (
-                <Card key={category.id} className="hover:bg-slate-50 cursor-pointer transition-colors">
-                  <CardContent className="p-4" onClick={() => setSelectedCategory(category)}>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium text-slate-900">{category.name}</h4>
-                        {category.description && (
-                          <p className="text-sm text-slate-600 mt-1">{category.description}</p>
-                        )}
-                        <p className="text-xs text-slate-500 mt-2">
-                          {category.subcategories.length} subcategories
-                        </p>
-                      </div>
-                      <ChevronRight className="h-5 w-5 text-slate-400" />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-
-          {/* Subcategories */}
-          {selectedCategory && !selectedSubcategory && (
-            <div className="grid grid-cols-1 gap-2">
-              {selectedCategory.subcategories.map((subcategory) => (
-                <Card key={subcategory.id} className="hover:bg-slate-50 cursor-pointer transition-colors">
-                  <CardContent className="p-4" onClick={() => setSelectedSubcategory(subcategory)}>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h5 className="font-medium text-slate-900">{subcategory.name}</h5>
-                        {subcategory.description && (
-                          <p className="text-sm text-slate-600 mt-1">{subcategory.description}</p>
-                        )}
-                        <p className="text-xs text-slate-500 mt-2">
-                          {subcategory.jobs.length} services
-                        </p>
-                      </div>
-                      <ChevronRight className="h-5 w-5 text-slate-400" />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-
-          {/* Services */}
-          {selectedSubcategory && (
-            <div className="grid grid-cols-1 gap-2">
-              {selectedSubcategory.jobs.map((service) => (
-                <Card key={service.id} className="hover:bg-slate-50 cursor-pointer transition-colors">
-                  <CardContent 
-                    className="p-4" 
-                    onClick={() => onServiceSelect(service, selectedCategory!.name, selectedSubcategory.name)}
-                  >
-                    <div className="space-y-2">
-                      <h6 className="font-medium text-slate-900">{service.name}</h6>
-                      {service.description && (
-                        <p className="text-sm text-slate-600">{service.description}</p>
-                      )}
-                      <div className="flex items-center justify-between text-sm text-slate-500">
-                        {service.estimatedTime && (
-                          <span>Est. {service.estimatedTime} minutes</span>
-                        )}
-                        {service.price && (
-                          <span className="font-medium">${service.price.toFixed(2)}</span>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+          {/* Services Column */}
+          <div className="border rounded-lg">
+            {selectedSubcategory ? (
+              <div className="h-full">
+                <div className="p-2 border-b">
+                  <h3 className="font-medium text-sm">Services</h3>
+                </div>
+                <div className="p-2 overflow-y-auto max-h-56">
+                  <ul className="space-y-1">
+                    {services.map((service) => (
+                      <li key={service.id}>
+                        <button
+                          type="button"
+                          className="w-full text-left px-2 py-2 rounded-md text-sm hover:bg-blue-50 transition border border-transparent hover:border-blue-200"
+                          onClick={() => handleServiceSelect(service)}
+                        >
+                          <div className="font-medium">{service.name}</div>
+                          {service.description && (
+                            <div className="text-xs text-gray-600 mt-1">{service.description}</div>
+                          )}
+                          {(service.estimatedTime || service.price) && (
+                            <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
+                              {service.estimatedTime && (
+                                <span>⏱️ {service.estimatedTime} min</span>
+                              )}
+                              {service.price && (
+                                <span>💰 ${service.price}</span>
+                              )}
+                            </div>
+                          )}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ) : (
+              <div className="h-full flex items-center justify-center text-gray-500">
+                <div className="text-center">
+                  <List className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">Select a subcategory</p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
