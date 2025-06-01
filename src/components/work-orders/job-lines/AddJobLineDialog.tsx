@@ -1,17 +1,16 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { ServiceMainCategory, ServiceJob } from '@/types/serviceHierarchy';
-import { fetchServiceCategories } from '@/lib/services/serviceApi';
-import { HierarchicalServiceSelector } from '@/components/work-orders/fields/services/HierarchicalServiceSelector';
+import { ServiceJob } from '@/types/serviceHierarchy';
+import { HierarchicalServiceSelector } from '../fields/services/HierarchicalServiceSelector';
+import { toast } from 'sonner';
 
 interface AddJobLineDialogProps {
   open: boolean;
@@ -28,98 +27,97 @@ export function AddJobLineDialog({
   workOrderId, 
   shopId 
 }: AddJobLineDialogProps) {
-  const [activeTab, setActiveTab] = useState('browse');
-  const [serviceCategories, setServiceCategories] = useState<ServiceMainCategory[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  
-  // Manual form state
+  const [activeTab, setActiveTab] = useState<'browse' | 'manual'>('browse');
   const [formData, setFormData] = useState({
     name: '',
     category: '',
     subcategory: '',
     description: '',
-    estimatedHours: 0,
-    laborRate: 75,
-    status: 'pending' as const
+    estimatedHours: '',
+    laborRate: '',
+    totalAmount: '',
+    status: 'pending' as const,
+    notes: ''
   });
 
-  useEffect(() => {
-    const loadServiceCategories = async () => {
-      try {
-        setIsLoading(true);
-        const categories = await fetchServiceCategories();
-        setServiceCategories(categories);
-      } catch (error) {
-        console.error('Failed to load service categories:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (open) {
-      loadServiceCategories();
-    }
-  }, [open]);
-
-  const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
-    const jobLine: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'> = {
-      workOrderId,
+  const handleServiceSelect = (service: ServiceJob & { categoryName: string; subcategoryName: string }) => {
+    // Convert estimated time from minutes to hours
+    const estimatedHours = service.estimatedTime ? (service.estimatedTime / 60).toString() : '';
+    
+    setFormData({
       name: service.name,
-      category: categoryName,
-      subcategory: subcategoryName,
-      description: service.description,
-      estimatedHours: service.estimatedTime ? service.estimatedTime / 60 : 1, // Convert minutes to hours
-      laborRate: 75, // Default labor rate
-      totalAmount: service.price || (service.estimatedTime ? (service.estimatedTime / 60) * 75 : 75),
+      category: service.categoryName,
+      subcategory: service.subcategoryName,
+      description: service.description || '',
+      estimatedHours,
+      laborRate: '75', // Default labor rate - could be made configurable
+      totalAmount: service.price ? service.price.toString() : '',
       status: 'pending',
       notes: ''
-    };
-
-    onAddJobLine(jobLine);
-    onOpenChange(false);
-    resetForm();
+    });
+    
+    // Switch to manual tab to show the populated form
+    setActiveTab('manual');
+    
+    toast.success(`Selected: ${service.name}`);
   };
 
-  const handleManualSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name.trim()) return;
+    if (!formData.name.trim()) {
+      toast.error('Job name is required');
+      return;
+    }
 
-    const totalAmount = formData.estimatedHours * formData.laborRate;
-
-    const jobLine: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'> = {
+    const newJobLine: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'> = {
       workOrderId,
-      name: formData.name,
+      name: formData.name.trim(),
       category: formData.category || undefined,
       subcategory: formData.subcategory || undefined,
       description: formData.description || undefined,
-      estimatedHours: formData.estimatedHours,
-      laborRate: formData.laborRate,
-      totalAmount,
+      estimatedHours: formData.estimatedHours ? parseFloat(formData.estimatedHours) : undefined,
+      laborRate: formData.laborRate ? parseFloat(formData.laborRate) : undefined,
+      totalAmount: formData.totalAmount ? parseFloat(formData.totalAmount) : undefined,
       status: formData.status,
-      notes: ''
+      notes: formData.notes || undefined
     };
 
-    onAddJobLine(jobLine);
-    onOpenChange(false);
-    resetForm();
-  };
-
-  const resetForm = () => {
+    onAddJobLine(newJobLine);
+    
+    // Reset form
     setFormData({
       name: '',
       category: '',
       subcategory: '',
       description: '',
-      estimatedHours: 0,
-      laborRate: 75,
-      status: 'pending'
+      estimatedHours: '',
+      laborRate: '',
+      totalAmount: '',
+      status: 'pending',
+      notes: ''
     });
+    
     setActiveTab('browse');
+    onOpenChange(false);
+    
+    toast.success('Job line added successfully');
   };
 
-  const handleInputChange = (field: string, value: string | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleCancel = () => {
+    setFormData({
+      name: '',
+      category: '',
+      subcategory: '',
+      description: '',
+      estimatedHours: '',
+      laborRate: '',
+      totalAmount: '',
+      status: 'pending',
+      notes: ''
+    });
+    setActiveTab('browse');
+    onOpenChange(false);
   };
 
   return (
@@ -129,56 +127,37 @@ export function AddJobLineDialog({
           <DialogTitle>Add Job Line</DialogTitle>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'browse' | 'manual')}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="browse">Browse Services</TabsTrigger>
             <TabsTrigger value="manual">Manual Entry</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="browse" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Select a Service</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500">Loading services...</p>
-                  </div>
-                ) : serviceCategories.length > 0 ? (
-                  <HierarchicalServiceSelector
-                    categories={serviceCategories}
-                    onServiceSelect={handleServiceSelect}
-                  />
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500">No services available</p>
-                    <p className="text-sm text-gray-400">Contact your administrator to set up services</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+          <TabsContent value="browse" className="mt-4">
+            <div className="max-h-[500px] overflow-y-auto">
+              <HierarchicalServiceSelector onServiceSelect={handleServiceSelect} />
+            </div>
           </TabsContent>
 
-          <TabsContent value="manual" className="space-y-4">
-            <form onSubmit={handleManualSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <TabsContent value="manual" className="mt-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="service-name">Service Name *</Label>
+                  <Label htmlFor="name">Job Name *</Label>
                   <Input
-                    id="service-name"
-                    placeholder="Enter service name"
+                    id="name"
                     value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Enter job name"
                     required
                   />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="status">Status</Label>
-                  <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
+                  <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as any }))}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="pending">Pending</SelectItem>
@@ -193,9 +172,9 @@ export function AddJobLineDialog({
                   <Label htmlFor="category">Category</Label>
                   <Input
                     id="category"
-                    placeholder="Service category"
                     value={formData.category}
-                    onChange={(e) => handleInputChange('category', e.target.value)}
+                    onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                    placeholder="Service category"
                   />
                 </div>
 
@@ -203,35 +182,35 @@ export function AddJobLineDialog({
                   <Label htmlFor="subcategory">Subcategory</Label>
                   <Input
                     id="subcategory"
-                    placeholder="Service subcategory"
                     value={formData.subcategory}
-                    onChange={(e) => handleInputChange('subcategory', e.target.value)}
+                    onChange={(e) => setFormData(prev => ({ ...prev, subcategory: e.target.value }))}
+                    placeholder="Service subcategory"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="estimated-hours">Estimated Hours</Label>
+                  <Label htmlFor="estimatedHours">Estimated Hours</Label>
                   <Input
-                    id="estimated-hours"
+                    id="estimatedHours"
                     type="number"
-                    step="0.1"
+                    step="0.25"
                     min="0"
-                    placeholder="0"
                     value={formData.estimatedHours}
-                    onChange={(e) => handleInputChange('estimatedHours', parseFloat(e.target.value) || 0)}
+                    onChange={(e) => setFormData(prev => ({ ...prev, estimatedHours: e.target.value }))}
+                    placeholder="0.0"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="labor-rate">Labor Rate ($/hr)</Label>
+                  <Label htmlFor="laborRate">Labor Rate ($/hour)</Label>
                   <Input
-                    id="labor-rate"
+                    id="laborRate"
                     type="number"
                     step="0.01"
                     min="0"
-                    placeholder="75"
                     value={formData.laborRate}
-                    onChange={(e) => handleInputChange('laborRate', parseFloat(e.target.value) || 0)}
+                    onChange={(e) => setFormData(prev => ({ ...prev, laborRate: e.target.value }))}
+                    placeholder="75.00"
                   />
                 </div>
               </div>
@@ -240,26 +219,42 @@ export function AddJobLineDialog({
                 <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
-                  placeholder="Detailed description of the service"
                   value={formData.description}
-                  onChange={(e) => handleInputChange('description', e.target.value)}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Job description..."
                   rows={3}
                 />
               </div>
 
-              {formData.estimatedHours > 0 && formData.laborRate > 0 && (
-                <div className="p-3 bg-blue-50 rounded-lg">
-                  <div className="text-sm text-blue-700">
-                    <strong>Estimated Total: ${(formData.estimatedHours * formData.laborRate).toFixed(2)}</strong>
-                  </div>
-                </div>
-              )}
+              <div className="space-y-2">
+                <Label htmlFor="totalAmount">Total Amount ($)</Label>
+                <Input
+                  id="totalAmount"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.totalAmount}
+                  onChange={(e) => setFormData(prev => ({ ...prev, totalAmount: e.target.value }))}
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notes">Notes</Label>
+                <Textarea
+                  id="notes"
+                  value={formData.notes}
+                  onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Additional notes..."
+                  rows={2}
+                />
+              </div>
 
               <div className="flex justify-end gap-2 pt-4">
-                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                <Button type="button" variant="outline" onClick={handleCancel}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={!formData.name.trim()}>
+                <Button type="submit">
                   Add Job Line
                 </Button>
               </div>
