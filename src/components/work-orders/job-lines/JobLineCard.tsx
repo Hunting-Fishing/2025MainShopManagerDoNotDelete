@@ -7,9 +7,11 @@ import { Clock, DollarSign } from 'lucide-react';
 
 interface JobLineCardProps {
   jobLine: WorkOrderJobLine;
+  onUpdate?: (updatedJobLine: WorkOrderJobLine) => void;
+  onDelete?: (jobLineId: string) => void;
 }
 
-export function JobLineCard({ jobLine }: JobLineCardProps) {
+export function JobLineCard({ jobLine, onUpdate, onDelete }: JobLineCardProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':

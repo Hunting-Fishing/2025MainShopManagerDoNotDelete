@@ -136,11 +136,10 @@ export function EditableJobLinesGrid({
       )}
 
       <AddJobLineDialog
+        workOrderId={workOrderId}
+        onJobLineAdd={onAddJobLine}
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
-        onAddJobLine={onAddJobLine}
-        workOrderId={workOrderId}
-        shopId={shopId}
       />
     </div>
   );

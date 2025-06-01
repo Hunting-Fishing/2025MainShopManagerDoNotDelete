@@ -22,19 +22,25 @@ import { SelectedService } from '@/types/selectedService';
 interface AddJobLineDialogProps {
   workOrderId: string;
   onJobLineAdd: (jobLine: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function AddJobLineDialog({ workOrderId, onJobLineAdd }: AddJobLineDialogProps) {
-  const [open, setOpen] = useState(false);
+export function AddJobLineDialog({ workOrderId, onJobLineAdd, open, onOpenChange }: AddJobLineDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('services');
   const { categories, loading, error } = useServiceCategories();
 
+  // Use external open state if provided, otherwise use internal state
+  const isOpen = open !== undefined ? open : internalOpen;
+  const setIsOpen = onOpenChange || setInternalOpen;
+
   // Reset tab when dialog opens
   useEffect(() => {
-    if (open) {
+    if (isOpen) {
       setActiveTab('services');
     }
-  }, [open]);
+  }, [isOpen]);
 
   const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
     const newJobLine: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'> = {
@@ -50,7 +56,7 @@ export function AddJobLineDialog({ workOrderId, onJobLineAdd }: AddJobLineDialog
     };
     
     onJobLineAdd(newJobLine);
-    setOpen(false);
+    setIsOpen(false);
   };
 
   const handleManualSubmit = (jobLineData: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -59,7 +65,7 @@ export function AddJobLineDialog({ workOrderId, onJobLineAdd }: AddJobLineDialog
       workOrderId,
       status: 'pending',
     });
-    setOpen(false);
+    setIsOpen(false);
   };
 
   const renderServicesTab = () => {
@@ -121,13 +127,15 @@ export function AddJobLineDialog({ workOrderId, onJobLineAdd }: AddJobLineDialog
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Job Line
-        </Button>
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      {open === undefined && (
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Job Line
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle>Add Job Line</DialogTitle>
