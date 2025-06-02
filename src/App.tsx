@@ -13,6 +13,7 @@ import Dashboard from "@/pages/Dashboard";
 import CustomersPage from "@/pages/CustomersPage";
 import WorkOrders from "@/pages/WorkOrders";
 import WorkOrderCreate from "@/pages/WorkOrderCreate";
+import WorkOrderEdit from "@/pages/WorkOrderEdit";
 import Inventory from "@/pages/Inventory";
 import InventoryAdd from "@/pages/InventoryAdd";
 import Invoices from "@/pages/Invoices";
@@ -85,6 +86,7 @@ function App() {
                       <Route path="/work-orders/create" element={<WorkOrderCreate />} />
                       <Route path="/work-orders/new" element={<WorkOrderCreate />} />
                       <Route path="/work-orders/:id" element={<WorkOrderDetails />} />
+                      <Route path="/work-orders/:id/edit" element={<WorkOrderEdit />} />
                       <Route path="/inventory" element={<Inventory />} />
                       <Route path="/inventory/add" element={<InventoryAdd />} />
                       <Route path="/invoices" element={<Invoices />} />
