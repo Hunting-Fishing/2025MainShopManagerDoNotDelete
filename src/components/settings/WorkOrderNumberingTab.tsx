@@ -1,14 +1,16 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from 'sonner';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { Save, RotateCcw, Hash } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Settings, Hash } from 'lucide-react';
+import { toast } from 'sonner';
+import { useShopId } from '@/hooks/useShopId';
 
 interface WorkOrderNumberingSettings {
   prefix: string;
@@ -21,47 +23,35 @@ interface WorkOrderNumberingSettings {
   custom_format: string;
 }
 
+const defaultSettings: WorkOrderNumberingSettings = {
+  prefix: 'WO',
+  separator: '-',
+  number_format: 'sequential',
+  current_number: 1000,
+  number_length: 4,
+  include_year: false,
+  include_month: false,
+  custom_format: '{prefix}{separator}{number}'
+};
+
 export function WorkOrderNumberingTab() {
-  const [settings, setSettings] = useState<WorkOrderNumberingSettings>({
-    prefix: 'WO',
-    separator: '-',
-    number_format: 'sequential',
-    current_number: 1000,
-    number_length: 4,
-    include_year: false,
-    include_month: false,
-    custom_format: '{prefix}{separator}{number}'
-  });
+  const [settings, setSettings] = useState<WorkOrderNumberingSettings>(defaultSettings);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [shopId, setShopId] = useState<string | null>(null);
+  const shopId = useShopId();
 
   useEffect(() => {
-    loadSettings();
-  }, []);
+    if (shopId) {
+      loadSettings();
+    }
+  }, [shopId]);
 
   const loadSettings = async () => {
     try {
-      setLoading(true);
-      
-      // Get the user's shop_id from their profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('shop_id')
-        .single();
-
-      if (!profile?.shop_id) {
-        toast.error('No shop found for user');
-        return;
-      }
-
-      setShopId(profile.shop_id);
-
-      // Load work order numbering settings
       const { data, error } = await supabase
         .from('company_settings')
         .select('settings_value')
-        .eq('shop_id', profile.shop_id)
+        .eq('shop_id', shopId)
         .eq('settings_key', 'work_order_numbering')
         .single();
 
@@ -70,28 +60,32 @@ export function WorkOrderNumberingTab() {
       }
 
       if (data?.settings_value) {
-        setSettings(data.settings_value as WorkOrderNumberingSettings);
+        // Type assertion since we know the structure from our SQL migration
+        const loadedSettings = data.settings_value as unknown as WorkOrderNumberingSettings;
+        setSettings({ ...defaultSettings, ...loadedSettings });
       }
     } catch (error) {
-      console.error('Error loading settings:', error);
-      toast.error('Failed to load work order numbering settings');
+      console.error('Error loading work order numbering settings:', error);
+      toast.error('Failed to load settings');
     } finally {
       setLoading(false);
     }
   };
 
   const saveSettings = async () => {
-    if (!shopId) return;
+    if (!shopId) {
+      toast.error('Shop ID not found');
+      return;
+    }
 
+    setSaving(true);
     try {
-      setSaving(true);
-
       const { error } = await supabase
         .from('company_settings')
         .upsert({
           shop_id: shopId,
           settings_key: 'work_order_numbering',
-          settings_value: settings
+          settings_value: settings as any // Type assertion for Json compatibility
         });
 
       if (error) throw error;
@@ -99,10 +93,14 @@ export function WorkOrderNumberingTab() {
       toast.success('Work order numbering settings saved successfully');
     } catch (error) {
       console.error('Error saving settings:', error);
-      toast.error('Failed to save work order numbering settings');
+      toast.error('Failed to save settings');
     } finally {
       setSaving(false);
     }
+  };
+
+  const resetToDefaults = () => {
+    setSettings(defaultSettings);
   };
 
   const generatePreview = () => {
@@ -122,127 +120,157 @@ export function WorkOrderNumberingTab() {
       preview = preview.replace('{month}', '');
     }
     
-    const nextNumber = (settings.current_number + 1).toString().padStart(settings.number_length, '0');
-    preview = preview.replace('{number}', nextNumber);
+    const numberPart = (settings.current_number + 1).toString().padStart(settings.number_length, '0');
+    preview = preview.replace('{number}', numberPart);
     
     return preview;
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading settings...</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">Work Order Numbering</h2>
+        <p className="text-muted-foreground">
+          Configure how work order numbers are generated for your shop
+        </p>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Hash className="h-5 w-5" />
-            Work Order Numbering
+            Number Format Settings
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="prefix">Prefix</Label>
-                <Input
-                  id="prefix"
-                  value={settings.prefix}
-                  onChange={(e) => setSettings(prev => ({ ...prev, prefix: e.target.value }))}
-                  placeholder="WO, SERVICE, REPAIR, etc."
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="separator">Separator</Label>
-                <Select
-                  value={settings.separator}
-                  onValueChange={(value) => setSettings(prev => ({ ...prev, separator: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="-">Dash (-)</SelectItem>
-                    <SelectItem value="_">Underscore (_)</SelectItem>
-                    <SelectItem value="">None</SelectItem>
-                    <SelectItem value=".">Period (.)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="number_length">Number Length</Label>
-                <Input
-                  id="number_length"
-                  type="number"
-                  min="1"
-                  max="10"
-                  value={settings.number_length}
-                  onChange={(e) => setSettings(prev => ({ ...prev, number_length: parseInt(e.target.value) || 4 }))}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="current_number">Current Number</Label>
-                <Input
-                  id="current_number"
-                  type="number"
-                  min="1"
-                  value={settings.current_number}
-                  onChange={(e) => setSettings(prev => ({ ...prev, current_number: parseInt(e.target.value) || 1000 }))}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="include_year"
-                  checked={settings.include_year}
-                  onCheckedChange={(checked) => setSettings(prev => ({ ...prev, include_year: checked }))}
-                />
-                <Label htmlFor="include_year">Include Year</Label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="include_month"
-                  checked={settings.include_month}
-                  onCheckedChange={(checked) => setSettings(prev => ({ ...prev, include_month: checked }))}
-                />
-                <Label htmlFor="include_month">Include Month</Label>
-              </div>
-
-              <div>
-                <Label htmlFor="custom_format">Custom Format</Label>
-                <Input
-                  id="custom_format"
-                  value={settings.custom_format}
-                  onChange={(e) => setSettings(prev => ({ ...prev, custom_format: e.target.value }))}
-                  placeholder="{prefix}{separator}{number}"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Available placeholders: {'{prefix}'}, {'{separator}'}, {'{number}'}, {'{year}'}, {'{month}'}
-                </p>
-              </div>
-
-              <div className="p-4 bg-muted rounded-lg">
-                <Label className="text-sm font-medium">Preview</Label>
-                <div className="text-lg font-mono mt-1">{generatePreview()}</div>
-              </div>
+          {/* Current Preview */}
+          <div className="p-4 bg-muted rounded-lg">
+            <Label className="text-sm font-medium">Next Work Order Number Preview</Label>
+            <div className="mt-2">
+              <Badge variant="outline" className="text-lg px-3 py-1">
+                {generatePreview()}
+              </Badge>
             </div>
           </div>
 
-          <div className="flex justify-end">
-            <Button onClick={saveSettings} disabled={saving}>
-              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Settings
+          <Separator />
+
+          {/* Basic Settings */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="prefix">Prefix</Label>
+              <Input
+                id="prefix"
+                value={settings.prefix}
+                onChange={(e) => setSettings(prev => ({ ...prev, prefix: e.target.value }))}
+                placeholder="WO"
+              />
+            </div>
+            <div>
+              <Label htmlFor="separator">Separator</Label>
+              <Input
+                id="separator"
+                value={settings.separator}
+                onChange={(e) => setSettings(prev => ({ ...prev, separator: e.target.value }))}
+                placeholder="-"
+              />
+            </div>
+          </div>
+
+          {/* Number Settings */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="current_number">Current Number</Label>
+              <Input
+                id="current_number"
+                type="number"
+                value={settings.current_number}
+                onChange={(e) => setSettings(prev => ({ ...prev, current_number: parseInt(e.target.value) || 0 }))}
+              />
+              <p className="text-sm text-muted-foreground mt-1">
+                Next work order will use {settings.current_number + 1}
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="number_length">Number Length (with zeros)</Label>
+              <Input
+                id="number_length"
+                type="number"
+                min="1"
+                max="10"
+                value={settings.number_length}
+                onChange={(e) => setSettings(prev => ({ ...prev, number_length: parseInt(e.target.value) || 4 }))}
+              />
+            </div>
+          </div>
+
+          {/* Date Options */}
+          <div className="space-y-4">
+            <Label className="text-base font-medium">Date Components</Label>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Include Year</Label>
+                <p className="text-sm text-muted-foreground">Add current year to work order number</p>
+              </div>
+              <Switch
+                checked={settings.include_year}
+                onCheckedChange={(checked) => setSettings(prev => ({ ...prev, include_year: checked }))}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Include Month</Label>
+                <p className="text-sm text-muted-foreground">Add current month to work order number</p>
+              </div>
+              <Switch
+                checked={settings.include_month}
+                onCheckedChange={(checked) => setSettings(prev => ({ ...prev, include_month: checked }))}
+              />
+            </div>
+          </div>
+
+          {/* Custom Format */}
+          <div>
+            <Label htmlFor="custom_format">Custom Format</Label>
+            <Input
+              id="custom_format"
+              value={settings.custom_format}
+              onChange={(e) => setSettings(prev => ({ ...prev, custom_format: e.target.value }))}
+              placeholder="{prefix}{separator}{number}"
+            />
+            <p className="text-sm text-muted-foreground mt-1">
+              Available variables: {'{prefix}'}, {'{separator}'}, {'{year}'}, {'{month}'}, {'{number}'}
+            </p>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex justify-between pt-4">
+            <Button
+              variant="outline"
+              onClick={resetToDefaults}
+              className="flex items-center gap-2"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Reset to Defaults
+            </Button>
+            <Button
+              onClick={saveSettings}
+              disabled={saving}
+              className="flex items-center gap-2"
+            >
+              <Save className="h-4 w-4" />
+              {saving ? 'Saving...' : 'Save Settings'}
             </Button>
           </div>
         </CardContent>

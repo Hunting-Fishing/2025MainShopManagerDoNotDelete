@@ -33,15 +33,11 @@ export function SettingsLayout() {
   ];
 
   return (
-    <SettingsPageLayout>
+    <SettingsPageLayout
+      title="Settings"
+      description="Manage your shop settings and preferences"
+    >
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-          <p className="text-muted-foreground">
-            Manage your shop settings and preferences
-          </p>
-        </div>
-
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-7">
             {tabs.map((tab) => {

@@ -16,7 +16,25 @@ export async function loadJobLinesFromDatabase(workOrderId: string): Promise<Wor
     }
 
     console.log('Loaded job lines from database:', data);
-    return data || [];
+    
+    // Map database fields to TypeScript interface (snake_case to camelCase)
+    const mappedData: WorkOrderJobLine[] = (data || []).map((item: any) => ({
+      id: item.id,
+      workOrderId: item.work_order_id,
+      name: item.name,
+      category: item.category,
+      subcategory: item.subcategory,
+      description: item.description,
+      estimatedHours: item.estimated_hours,
+      laborRate: item.labor_rate,
+      totalAmount: item.total_amount,
+      status: item.status,
+      notes: item.notes,
+      createdAt: item.created_at,
+      updatedAt: item.updated_at
+    }));
+
+    return mappedData;
   } catch (error) {
     console.error('Error in loadJobLinesFromDatabase:', error);
     throw error;
