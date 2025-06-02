@@ -4,12 +4,11 @@ import { Customer } from '@/types/customer';
 import { WorkOrder } from '@/types/workOrder';
 import { CustomerInteraction } from '@/types/interaction';
 import { CustomerCommunication, CustomerNote } from '@/types/customer';
-import { getCustomerById } from '@/services/customer';
+import { getAllCustomers } from '@/services/customer';
 import { getWorkOrdersByCustomerId } from '@/services/workOrder';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { getCustomerInteractions } from '@/services/customer/interactions/interactionQueryService';
 
-export function useCustomerDetails(customerId?: string) {
+export const useCustomerDetails = (customerId: string | undefined) => {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [customerWorkOrders, setCustomerWorkOrders] = useState<WorkOrder[]>([]);
   const [customerInteractions, setCustomerInteractions] = useState<CustomerInteraction[]>([]);
@@ -19,11 +18,11 @@ export function useCustomerDetails(customerId?: string) {
   const [error, setError] = useState<string | null>(null);
   const [addInteractionOpen, setAddInteractionOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('vehicles');
-  const { toast } = useToast();
 
-  const fetchCustomerData = useCallback(async () => {
+  const refreshCustomerData = useCallback(async () => {
     if (!customerId || customerId === "undefined") {
-      setError("Invalid customer ID");
+      console.error('Invalid customer ID:', customerId);
+      setError('Invalid customer ID provided');
       setLoading(false);
       return;
     }
@@ -31,137 +30,88 @@ export function useCustomerDetails(customerId?: string) {
     try {
       setLoading(true);
       setError(null);
-      console.log('Fetching customer data for ID:', customerId);
+      console.log('Fetching customer details for ID:', customerId);
 
-      // Fetch customer basic info
-      const customerData = await getCustomerById(customerId);
-      if (!customerData) {
-        throw new Error('Customer not found');
+      // Fetch customer data with retry logic
+      let customerData: Customer | null = null;
+      let retryCount = 0;
+      const maxRetries = 3;
+
+      while (!customerData && retryCount < maxRetries) {
+        try {
+          const customers = await getAllCustomers();
+          customerData = customers.find(c => c.id === customerId) || null;
+          
+          if (!customerData) {
+            console.warn(`Customer not found on attempt ${retryCount + 1}`);
+            retryCount++;
+            if (retryCount < maxRetries) {
+              await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+            }
+          }
+        } catch (fetchError) {
+          console.error(`Error fetching customers on attempt ${retryCount + 1}:`, fetchError);
+          retryCount++;
+          if (retryCount < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+          }
+        }
       }
+
+      if (!customerData) {
+        throw new Error('Customer not found after multiple attempts');
+      }
+
       setCustomer(customerData);
 
-      // Fetch work orders
-      const workOrders = await getWorkOrdersByCustomerId(customerId);
-      console.log('Work orders fetched:', workOrders);
-      setCustomerWorkOrders(workOrders || []);
-
-      // Fetch customer communications
+      // Fetch work orders with error handling
       try {
-        const { data: communications, error: commError } = await supabase
-          .from('customer_communications')
-          .select('*')
-          .eq('customer_id', customerId)
-          .order('created_at', { ascending: false });
-        
-        if (commError) {
-          console.error('Error fetching communications:', commError);
-        } else {
-          // Type cast to match our interface expectations
-          const typedCommunications = (communications || []).map(comm => ({
-            ...comm,
-            type: comm.type as 'email' | 'phone' | 'text' | 'in-person',
-            direction: comm.direction as 'incoming' | 'outgoing',
-            status: comm.status as 'completed' | 'pending' | 'failed'
-          }));
-          setCustomerCommunications(typedCommunications);
-        }
-      } catch (err) {
-        console.error('Communications fetch error:', err);
-        setCustomerCommunications([]);
+        console.log('Fetching work orders for customer:', customerId);
+        const workOrders = await getWorkOrdersByCustomerId(customerId);
+        console.log('Work orders fetched:', workOrders);
+        setCustomerWorkOrders(workOrders || []);
+      } catch (workOrderError) {
+        console.error('Error fetching work orders:', workOrderError);
+        setCustomerWorkOrders([]);
       }
 
-      // Fetch customer interactions
+      // Fetch interactions with error handling
       try {
-        const { data: interactions, error: intError } = await supabase
-          .from('customer_interactions')
-          .select('*')
-          .eq('customer_id', customerId)
-          .order('created_at', { ascending: false });
-        
-        if (intError) {
-          console.error('Error fetching interactions:', intError);
-        } else {
-          // Type cast to match our interface expectations
-          const typedInteractions = (interactions || []).map(interaction => ({
-            ...interaction,
-            type: interaction.type as 'work_order' | 'communication' | 'parts' | 'service' | 'follow_up',
-            status: interaction.status as 'pending' | 'in_progress' | 'completed' | 'cancelled'
-          }));
-          setCustomerInteractions(typedInteractions);
-        }
-      } catch (err) {
-        console.error('Interactions fetch error:', err);
+        const interactions = await getCustomerInteractions(customerId);
+        setCustomerInteractions(interactions || []);
+      } catch (interactionError) {
+        console.error('Error fetching interactions:', interactionError);
         setCustomerInteractions([]);
       }
 
-      // Fetch customer notes
-      try {
-        const { data: notes, error: notesError } = await supabase
-          .from('customer_notes')
-          .select('*')
-          .eq('customer_id', customerId)
-          .order('created_at', { ascending: false });
-        
-        if (notesError) {
-          console.error('Error fetching notes:', notesError);
-        } else {
-          // Type cast to match our interface expectations
-          const typedNotes = (notes || []).map(note => ({
-            ...note,
-            category: note.category as 'service' | 'sales' | 'follow-up' | 'general'
-          }));
-          setCustomerNotes(typedNotes);
-        }
-      } catch (err) {
-        console.error('Notes fetch error:', err);
-        setCustomerNotes([]);
-      }
+      // Initialize empty arrays for communications and notes
+      setCustomerCommunications([]);
+      setCustomerNotes([]);
 
     } catch (err: any) {
-      console.error('Error fetching customer data:', err);
-      setError(err.message || 'Failed to load customer data');
-      toast({
-        title: "Error",
-        description: "Failed to load customer data",
-        variant: "destructive"
-      });
+      console.error('Error in refreshCustomerData:', err);
+      setError(err.message || 'Failed to load customer details');
     } finally {
       setLoading(false);
     }
-  }, [customerId, toast]);
-
-  useEffect(() => {
-    fetchCustomerData();
-  }, [fetchCustomerData]);
-
-  const refreshCustomerData = useCallback(() => {
-    fetchCustomerData();
-  }, [fetchCustomerData]);
+  }, [customerId]);
 
   const handleInteractionAdded = useCallback((interaction: CustomerInteraction) => {
     setCustomerInteractions(prev => [interaction, ...prev]);
     setAddInteractionOpen(false);
-    toast({
-      title: "Success",
-      description: "Interaction added successfully"
-    });
-  }, [toast]);
+  }, []);
 
   const handleCommunicationAdded = useCallback((communication: CustomerCommunication) => {
     setCustomerCommunications(prev => [communication, ...prev]);
-    toast({
-      title: "Success", 
-      description: "Communication added successfully"
-    });
-  }, [toast]);
+  }, []);
 
   const handleNoteAdded = useCallback((note: CustomerNote) => {
     setCustomerNotes(prev => [note, ...prev]);
-    toast({
-      title: "Success",
-      description: "Note added successfully"
-    });
-  }, [toast]);
+  }, []);
+
+  useEffect(() => {
+    refreshCustomerData();
+  }, [refreshCustomerData]);
 
   return {
     customer,
@@ -180,4 +130,4 @@ export function useCustomerDetails(customerId?: string) {
     handleCommunicationAdded,
     handleNoteAdded
   };
-}
+};
