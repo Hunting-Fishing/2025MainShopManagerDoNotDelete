@@ -1,14 +1,14 @@
 
-import React from "react";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Calendar, User, Car, AlertTriangle } from "lucide-react";
-import { Customer, getCustomerFullName } from "@/types/customer";
-import { WorkOrder } from "@/types/workOrder";
-import { formatDate } from "@/utils/dateUtils";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Eye, Plus, AlertTriangle, Loader2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Customer } from '@/types/customer';
+import { WorkOrder } from '@/types/workOrder';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface CustomerWorkOrdersTabProps {
   customer: Customer;
@@ -17,170 +17,150 @@ interface CustomerWorkOrdersTabProps {
   error?: string;
 }
 
-export function CustomerWorkOrdersTab({ 
-  customer, 
-  workOrders, 
-  loading = false, 
-  error 
-}: CustomerWorkOrdersTabProps) {
-  const customerName = getCustomerFullName(customer);
-
+export const CustomerWorkOrdersTab: React.FC<CustomerWorkOrdersTabProps> = ({
+  customer,
+  workOrders,
+  loading = false,
+  error
+}) => {
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'completed':
         return 'bg-green-100 text-green-800';
       case 'in-progress':
+      case 'in progress':
         return 'bg-blue-100 text-blue-800';
       case 'pending':
         return 'bg-yellow-100 text-yellow-800';
       case 'cancelled':
         return 'bg-red-100 text-red-800';
-      case 'on-hold':
-        return 'bg-gray-100 text-gray-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
 
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch {
+      return 'Invalid Date';
+    }
+  };
+
   if (loading) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Work Orders</h3>
-          <Button disabled>
-            <Plus className="mr-2 h-4 w-4" />
-            New Work Order
-          </Button>
-        </div>
-        
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center space-y-2">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="text-sm text-muted-foreground">Loading work orders...</p>
+      <Card>
+        <CardHeader>
+          <CardTitle>Work Orders</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <span className="ml-2">Loading work orders...</span>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
   if (error) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Work Orders</h3>
-          <Button asChild>
-            <Link to={`/work-orders/new?customer=${encodeURIComponent(customerName)}&customerId=${customer.id}`}>
-              <Plus className="mr-2 h-4 w-4" />
-              New Work Order
-            </Link>
-          </Button>
-        </div>
-        
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            Error loading work orders: {error}
-          </AlertDescription>
-        </Alert>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Work Orders</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Error Loading Work Orders</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Work Orders</h3>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>Work Orders</CardTitle>
         <Button asChild>
-          <Link to={`/work-orders/new?customer=${encodeURIComponent(customerName)}&customerId=${customer.id}`}>
+          <Link to={`/work-orders/create?customerId=${customer.id}&customerName=${encodeURIComponent(`${customer.first_name} ${customer.last_name}`)}`}>
             <Plus className="mr-2 h-4 w-4" />
-            New Work Order
+            Create Work Order
           </Link>
         </Button>
-      </div>
-
-      {workOrders && workOrders.length > 0 ? (
-        <div className="grid gap-4">
-          {workOrders.map((workOrder) => (
-            <Card key={workOrder.id} className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">
-                    <Link 
-                      to={`/work-orders/${workOrder.id}`}
-                      className="hover:text-blue-600 transition-colors"
-                    >
-                      Work Order #{workOrder.id.slice(0, 8)}
-                    </Link>
-                  </CardTitle>
-                  <Badge className={getStatusColor(workOrder.status)}>
-                    {workOrder.status}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <p className="text-sm text-muted-foreground line-clamp-2">
-                  {workOrder.description || 'No description provided'}
-                </p>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span>{formatDate(workOrder.created_at)}</span>
-                  </div>
-                  
-                  {workOrder.technician_id && (
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      <span>{workOrder.technician_id}</span>
-                    </div>
-                  )}
-                  
-                  {(workOrder.vehicle_make || workOrder.vehicle_model || workOrder.vehicle_year) && (
-                    <div className="flex items-center gap-2">
-                      <Car className="h-4 w-4 text-muted-foreground" />
-                      <span>
-                        {[workOrder.vehicle_year, workOrder.vehicle_make, workOrder.vehicle_model]
-                          .filter(Boolean)
-                          .join(' ')}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {workOrder.total_cost && (
-                  <div className="pt-2 border-t">
-                    <span className="text-sm font-medium">
-                      Total: ${workOrder.total_cost.toFixed(2)}
-                    </span>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <div className="text-center space-y-3">
-              <div className="mx-auto w-12 h-12 bg-muted rounded-full flex items-center justify-center">
-                <Plus className="h-6 w-6 text-muted-foreground" />
-              </div>
-              <div>
-                <h3 className="font-medium">No work orders found</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  This customer doesn't have any work orders yet.
-                </p>
-              </div>
-              <Button asChild>
-                <Link to={`/work-orders/new?customer=${encodeURIComponent(customerName)}&customerId=${customer.id}`}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create First Work Order
-                </Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+      </CardHeader>
+      <CardContent>
+        {!workOrders || workOrders.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground mb-4">No work orders found for this customer.</p>
+            <Button asChild variant="outline">
+              <Link to={`/work-orders/create?customerId=${customer.id}&customerName=${encodeURIComponent(`${customer.first_name} ${customer.last_name}`)}`}>
+                <Plus className="mr-2 h-4 w-4" />
+                Create First Work Order
+              </Link>
+            </Button>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>ID</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Vehicle</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead>Total Cost</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {workOrders.map((workOrder) => (
+                  <TableRow key={workOrder.id}>
+                    <TableCell className="font-mono text-sm">
+                      #{workOrder.id.slice(0, 8)}
+                    </TableCell>
+                    <TableCell>
+                      {workOrder.description || 'No description'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(workOrder.status)}>
+                        {workOrder.status || 'Unknown'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {workOrder.vehicle_year && workOrder.vehicle_make && workOrder.vehicle_model
+                        ? `${workOrder.vehicle_year} ${workOrder.vehicle_make} ${workOrder.vehicle_model}`
+                        : 'No vehicle info'
+                      }
+                    </TableCell>
+                    <TableCell>
+                      {formatDate(workOrder.created_at)}
+                    </TableCell>
+                    <TableCell>
+                      {workOrder.total_cost 
+                        ? `$${workOrder.total_cost.toFixed(2)}` 
+                        : 'N/A'
+                      }
+                    </TableCell>
+                    <TableCell>
+                      <Button variant="outline" size="sm" asChild>
+                        <Link to={`/work-orders/${workOrder.id}`}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          View
+                        </Link>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
-}
+};
