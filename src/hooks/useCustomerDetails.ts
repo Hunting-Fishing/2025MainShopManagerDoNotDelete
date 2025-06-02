@@ -1,10 +1,10 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { getCustomerById } from '@/services/customer/customerQueryService';
 import { getWorkOrdersByCustomerId } from '@/services/workOrder';
 import { useCustomerLoyalty } from '@/hooks/useCustomerLoyalty';
-import { Customer, CustomerInteraction, CustomerCommunication, CustomerNote } from '@/types/customer';
+import { Customer, CustomerCommunication, CustomerNote } from '@/types/customer';
+import { CustomerInteraction } from '@/types/interaction';
 import { WorkOrder } from '@/types/workOrder';
 
 export const useCustomerDetails = (customerId: string | undefined) => {
