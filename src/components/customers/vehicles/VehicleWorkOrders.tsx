@@ -8,7 +8,6 @@ import { Eye, Plus, AlertTriangle, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { WorkOrder } from '@/types/workOrder';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { getWorkOrdersByVehicleId } from '@/services/workOrder';
 import { 
   getCustomerName, 
   getWorkOrderDate, 
@@ -96,8 +95,6 @@ export const VehicleWorkOrders: React.FC<VehicleWorkOrdersProps> = ({
           setInternalError(null);
           console.log('VehicleWorkOrders: Fetching work orders for vehicle:', vehicleId);
           
-          // We'll need to create this function or use an alternative approach
-          // For now, let's use the existing function and filter by vehicle_id
           const { getAllWorkOrders } = await import('@/services/workOrder');
           const allWorkOrders = await getAllWorkOrders();
           const vehicleWorkOrders = allWorkOrders.filter(wo => wo.vehicle_id === vehicleId);
