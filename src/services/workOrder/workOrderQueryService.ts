@@ -1,341 +1,323 @@
 
-import { supabase } from '@/lib/supabase';
-import { WorkOrder } from '@/types/workOrder';
-import { normalizeWorkOrder } from '@/utils/workOrders/formatters';
+import { supabase } from "@/integrations/supabase/client";
+import { WorkOrder } from "@/types/workOrder";
 
-export async function getAllWorkOrders(): Promise<WorkOrder[]> {
-  try {
-    const { data, error } = await supabase
-      .from('work_orders')
-      .select(`
-        *,
-        customers!work_orders_customer_id_fkey(
-          id,
-          first_name,
-          last_name,
-          email,
-          phone,
-          address,
-          city,
-          state,
-          postal_code
-        ),
-        vehicles!work_orders_vehicle_id_fkey(
-          id,
-          year,
-          make,
-          model,
-          vin,
-          license_plate,
-          trim
-        )
-      `)
-      .order('created_at', { ascending: false });
+// Cache for deduplicating requests
+const requestCache = new Map<string, Promise<any>>();
+const CACHE_DURATION = 5000; // 5 seconds
 
-    if (error) {
-      console.error('Error fetching work orders:', error);
-      throw error;
-    }
+/**
+ * Create a cache key for requests
+ */
+const createCacheKey = (operation: string, params: any): string => {
+  return `${operation}_${JSON.stringify(params)}`;
+};
 
-    return (data || []).map((workOrder: any) => {
-      const customer = workOrder.customers?.[0];
-      const vehicle = workOrder.vehicles?.[0];
-      
-      return {
-        ...normalizeWorkOrder(workOrder),
-        // Customer data
-        customer_name: customer ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() : '',
-        customer_email: customer?.email || '',
-        customer_phone: customer?.phone || '',
-        customer_address: customer?.address || '',
-        customer_city: customer?.city || '',
-        customer_state: customer?.state || '',
-        customer_zip: customer?.postal_code || '',
-        
-        // Vehicle data
-        vehicle_year: vehicle?.year?.toString() || '',
-        vehicle_make: vehicle?.make || '',
-        vehicle_model: vehicle?.model || '',
-        vehicle_vin: vehicle?.vin || '',
-        vehicle_license_plate: vehicle?.license_plate || '',
-        
-        // Customer backwards compatibility
-        customer: customer ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() : '',
-        
-        // Vehicle object for new interface
-        vehicle: vehicle ? {
-          id: vehicle.id,
-          year: vehicle.year,
-          make: vehicle.make,
-          model: vehicle.model,
-          vin: vehicle.vin,
-          license_plate: vehicle.license_plate,
-          trim: vehicle.trim
-        } : undefined
-      };
-    });
-  } catch (error) {
-    console.error('Error in getAllWorkOrders:', error);
-    throw error;
+/**
+ * Get cached request or create new one
+ */
+const getCachedRequest = <T>(key: string, requestFn: () => Promise<T>): Promise<T> => {
+  if (requestCache.has(key)) {
+    console.log(`Using cached request for: ${key}`);
+    return requestCache.get(key)!;
   }
-}
 
-export async function getWorkOrderById(id: string): Promise<WorkOrder | null> {
-  try {
-    const { data, error } = await supabase
-      .from('work_orders')
-      .select(`
-        *,
-        customers!work_orders_customer_id_fkey(
-          id,
-          first_name,
-          last_name,
-          email,
-          phone,
-          address,
-          city,
-          state,
-          postal_code
-        ),
-        vehicles!work_orders_vehicle_id_fkey(
-          id,
-          year,
-          make,
-          model,
-          vin,
-          license_plate,
-          trim
-        )
-      `)
-      .eq('id', id)
-      .maybeSingle();
+  const request = requestFn();
+  requestCache.set(key, request);
+  
+  // Clear cache after duration
+  setTimeout(() => {
+    requestCache.delete(key);
+  }, CACHE_DURATION);
 
-    if (error) {
-      console.error('Error fetching work order:', error);
+  return request;
+};
+
+/**
+ * Get all work orders with relationships
+ */
+export const getAllWorkOrders = async (): Promise<WorkOrder[]> => {
+  const cacheKey = createCacheKey('getAllWorkOrders', {});
+  
+  return getCachedRequest(cacheKey, async () => {
+    try {
+      console.log('Fetching all work orders...');
+      
+      const { data, error } = await supabase
+        .from('work_orders')
+        .select(`
+          *,
+          customers (
+            id,
+            first_name,
+            last_name,
+            email,
+            phone,
+            address,
+            city,
+            state,
+            postal_code
+          ),
+          vehicles (
+            id,
+            year,
+            make,
+            model,
+            vin,
+            license_plate,
+            trim
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching all work orders:', error);
+        throw error;
+      }
+
+      console.log('All work orders fetched successfully:', data?.length || 0);
+      return data || [];
+    } catch (error) {
+      console.error('Error in getAllWorkOrders:', error);
       throw error;
     }
+  });
+};
 
-    if (!data) {
+/**
+ * Get work orders by customer ID with optimized relationships
+ */
+export const getWorkOrdersByCustomerId = async (customerId: string): Promise<WorkOrder[]> => {
+  if (!customerId || customerId === "undefined") {
+    console.warn('Invalid customer ID provided to getWorkOrdersByCustomerId');
+    return [];
+  }
+
+  const cacheKey = createCacheKey('getWorkOrdersByCustomerId', { customerId });
+  
+  return getCachedRequest(cacheKey, async () => {
+    try {
+      console.log('Fetching work orders for customer:', customerId);
+      
+      // Try the optimized query first with explicit foreign key names
+      const { data, error } = await supabase
+        .from('work_orders')
+        .select(`
+          *,
+          customers!work_orders_customer_id_fkey (
+            id,
+            first_name,
+            last_name,
+            email,
+            phone,
+            address,
+            city,
+            state,
+            postal_code
+          ),
+          vehicles!work_orders_vehicle_id_fkey (
+            id,
+            year,
+            make,
+            model,
+            vin,
+            license_plate,
+            trim
+          )
+        `)
+        .eq('customer_id', customerId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching work orders by customer:', error);
+        
+        // Fallback: Try without explicit foreign key names
+        console.log('Trying fallback query without explicit foreign key names...');
+        const fallbackResult = await supabase
+          .from('work_orders')
+          .select(`
+            *,
+            customers (
+              id,
+              first_name,
+              last_name,
+              email,
+              phone,
+              address,
+              city,
+              state,
+              postal_code
+            ),
+            vehicles (
+              id,
+              year,
+              make,
+              model,
+              vin,
+              license_plate,
+              trim
+            )
+          `)
+          .eq('customer_id', customerId)
+          .order('created_at', { ascending: false });
+
+        if (fallbackResult.error) {
+          console.error('Fallback query also failed:', fallbackResult.error);
+          throw fallbackResult.error;
+        }
+
+        console.log('Fallback query successful, work orders fetched:', fallbackResult.data?.length || 0);
+        return fallbackResult.data || [];
+      }
+
+      console.log('Work orders fetched successfully:', data?.length || 0);
+      return data || [];
+    } catch (error) {
+      console.error('Error in getWorkOrdersByCustomerId:', error);
+      // Return empty array instead of throwing to prevent UI crashes
+      return [];
+    }
+  });
+};
+
+/**
+ * Get work order by ID with relationships
+ */
+export const getWorkOrderById = async (id: string): Promise<WorkOrder | null> => {
+  if (!id) {
+    console.warn('No work order ID provided');
+    return null;
+  }
+
+  const cacheKey = createCacheKey('getWorkOrderById', { id });
+  
+  return getCachedRequest(cacheKey, async () => {
+    try {
+      console.log('Fetching work order by ID:', id);
+      
+      const { data, error } = await supabase
+        .from('work_orders')
+        .select(`
+          *,
+          customers (
+            id,
+            first_name,
+            last_name,
+            email,
+            phone,
+            address,
+            city,
+            state,
+            postal_code
+          ),
+          vehicles (
+            id,
+            year,
+            make,
+            model,
+            vin,
+            license_plate,
+            trim
+          )
+        `)
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching work order by ID:', error);
+        throw error;
+      }
+
+      console.log('Work order fetched successfully:', data);
+      return data;
+    } catch (error) {
+      console.error('Error in getWorkOrderById:', error);
       return null;
     }
+  });
+};
 
-    const customer = data.customers?.[0];
-    const vehicle = data.vehicles?.[0];
-
-    return {
-      ...normalizeWorkOrder(data),
-      // Customer data
-      customer_name: customer ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() : '',
-      customer_email: customer?.email || '',
-      customer_phone: customer?.phone || '',
-      customer_address: customer?.address || '',
-      customer_city: customer?.city || '',
-      customer_state: customer?.state || '',
-      customer_zip: customer?.postal_code || '',
+/**
+ * Get work orders by status
+ */
+export const getWorkOrdersByStatus = async (status: string): Promise<WorkOrder[]> => {
+  const cacheKey = createCacheKey('getWorkOrdersByStatus', { status });
+  
+  return getCachedRequest(cacheKey, async () => {
+    try {
+      console.log('Fetching work orders by status:', status);
       
-      // Vehicle data
-      vehicle_year: vehicle?.year?.toString() || '',
-      vehicle_make: vehicle?.make || '',
-      vehicle_model: vehicle?.model || '',
-      vehicle_vin: vehicle?.vin || '',
-      vehicle_license_plate: vehicle?.license_plate || '',
-      
-      // Customer backwards compatibility
-      customer: customer ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() : '',
-      
-      // Vehicle object for new interface
-      vehicle: vehicle ? {
-        id: vehicle.id,
-        year: vehicle.year,
-        make: vehicle.make,
-        model: vehicle.model,
-        vin: vehicle.vin,
-        license_plate: vehicle.license_plate,
-        trim: vehicle.trim
-      } : undefined
-    };
-  } catch (error) {
-    console.error('Error in getWorkOrderById:', error);
-    throw error;
-  }
-}
+      const { data, error } = await supabase
+        .from('work_orders')
+        .select(`
+          *,
+          customers (
+            id,
+            first_name,
+            last_name,
+            email,
+            phone
+          ),
+          vehicles (
+            id,
+            year,
+            make,
+            model,
+            vin,
+            license_plate
+          )
+        `)
+        .eq('status', status)
+        .order('created_at', { ascending: false });
 
-export async function getWorkOrdersByCustomerId(customerId: string): Promise<WorkOrder[]> {
-  try {
-    console.log('Fetching work orders for customer:', customerId);
-    
-    const { data, error } = await supabase
-      .from('work_orders')
-      .select(`
-        *,
-        customers!work_orders_customer_id_fkey(
-          id,
-          first_name,
-          last_name,
-          email,
-          phone,
-          address,
-          city,
-          state,
-          postal_code
-        ),
-        vehicles!work_orders_vehicle_id_fkey(
-          id,
-          year,
-          make,
-          model,
-          vin,
-          license_plate,
-          trim
-        )
-      `)
-      .eq('customer_id', customerId)
-      .order('created_at', { ascending: false });
+      if (error) {
+        console.error('Error fetching work orders by status:', error);
+        throw error;
+      }
 
-    if (error) {
-      console.error('Error fetching work orders by customer:', error);
-      throw error;
+      console.log('Work orders by status fetched successfully:', data?.length || 0);
+      return data || [];
+    } catch (error) {
+      console.error('Error in getWorkOrdersByStatus:', error);
+      return [];
     }
+  });
+};
 
-    console.log('Raw work orders data:', data);
-
-    return (data || []).map((workOrder: any) => {
-      const customer = workOrder.customers?.[0];
-      const vehicle = workOrder.vehicles?.[0];
+/**
+ * Get unique technicians from work orders
+ */
+export const getUniqueTechnicians = async (): Promise<string[]> => {
+  const cacheKey = createCacheKey('getUniqueTechnicians', {});
+  
+  return getCachedRequest(cacheKey, async () => {
+    try {
+      console.log('Fetching unique technicians...');
       
-      return {
-        ...normalizeWorkOrder(workOrder),
-        // Customer data
-        customer_name: customer ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() : '',
-        customer_email: customer?.email || '',
-        customer_phone: customer?.phone || '',
-        customer_address: customer?.address || '',
-        customer_city: customer?.city || '',
-        customer_state: customer?.state || '',
-        customer_zip: customer?.postal_code || '',
-        
-        // Vehicle data
-        vehicle_year: vehicle?.year?.toString() || '',
-        vehicle_make: vehicle?.make || '',
-        vehicle_model: vehicle?.model || '',
-        vehicle_vin: vehicle?.vin || '',
-        vehicle_license_plate: vehicle?.license_plate || '',
-        
-        // Customer backwards compatibility - FIXED: changed from 'customers' to 'customer'
-        customer: customer ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() : '',
-        
-        // Vehicle object for new interface
-        vehicle: vehicle ? {
-          id: vehicle.id,
-          year: vehicle.year,
-          make: vehicle.make,
-          model: vehicle.model,
-          vin: vehicle.vin,
-          license_plate: vehicle.license_plate,
-          trim: vehicle.trim
-        } : undefined
-      };
-    });
-  } catch (error) {
-    console.error('Error in getWorkOrdersByCustomerId:', error);
-    throw error;
-  }
-}
+      const { data, error } = await supabase
+        .from('work_orders')
+        .select('technician_id')
+        .not('technician_id', 'is', null);
 
-export async function getWorkOrdersByStatus(status: string): Promise<WorkOrder[]> {
-  try {
-    const { data, error } = await supabase
-      .from('work_orders')
-      .select(`
-        *,
-        customers!work_orders_customer_id_fkey(
-          id,
-          first_name,
-          last_name,
-          email,
-          phone,
-          address,
-          city,
-          state,
-          postal_code
-        ),
-        vehicles!work_orders_vehicle_id_fkey(
-          id,
-          year,
-          make,
-          model,
-          vin,
-          license_plate,
-          trim
-        )
-      `)
-      .eq('status', status)
-      .order('created_at', { ascending: false });
+      if (error) {
+        console.error('Error fetching unique technicians:', error);
+        throw error;
+      }
 
-    if (error) {
-      console.error('Error fetching work orders by status:', error);
-      throw error;
+      const uniqueTechnicians = [...new Set(data?.map(order => order.technician_id).filter(Boolean) || [])];
+      console.log('Unique technicians fetched:', uniqueTechnicians.length);
+      return uniqueTechnicians;
+    } catch (error) {
+      console.error('Error in getUniqueTechnicians:', error);
+      return [];
     }
+  });
+};
 
-    return (data || []).map((workOrder: any) => {
-      const customer = workOrder.customers?.[0];
-      const vehicle = workOrder.vehicles?.[0];
-      
-      return {
-        ...normalizeWorkOrder(workOrder),
-        // Customer data
-        customer_name: customer ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() : '',
-        customer_email: customer?.email || '',
-        customer_phone: customer?.phone || '',
-        customer_address: customer?.address || '',
-        customer_city: customer?.city || '',
-        customer_state: customer?.state || '',
-        customer_zip: customer?.postal_code || '',
-        
-        // Vehicle data
-        vehicle_year: vehicle?.year?.toString() || '',
-        vehicle_make: vehicle?.make || '',
-        vehicle_model: vehicle?.model || '',
-        vehicle_vin: vehicle?.vin || '',
-        vehicle_license_plate: vehicle?.license_plate || '',
-        
-        // Customer backwards compatibility
-        customer: customer ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() : '',
-        
-        // Vehicle object for new interface
-        vehicle: vehicle ? {
-          id: vehicle.id,
-          year: vehicle.year,
-          make: vehicle.make,
-          model: vehicle.model,
-          vin: vehicle.vin,
-          license_plate: vehicle.license_plate,
-          trim: vehicle.trim
-        } : undefined
-      };
-    });
-  } catch (error) {
-    console.error('Error in getWorkOrdersByStatus:', error);
-    throw error;
-  }
-}
-
-export async function getUniqueTechnicians(): Promise<string[]> {
-  try {
-    const { data, error } = await supabase
-      .from('work_orders')
-      .select('technician_id')
-      .not('technician_id', 'is', null);
-
-    if (error) {
-      console.error('Error fetching technicians:', error);
-      throw error;
-    }
-
-    const uniqueTechnicians = [...new Set(data.map(item => item.technician_id))];
-    return uniqueTechnicians.filter(Boolean);
-  } catch (error) {
-    console.error('Error in getUniqueTechnicians:', error);
-    throw error;
-  }
-}
+/**
+ * Clear request cache - useful for forcing fresh data
+ */
+export const clearWorkOrderCache = (): void => {
+  requestCache.clear();
+  console.log('Work order request cache cleared');
+};

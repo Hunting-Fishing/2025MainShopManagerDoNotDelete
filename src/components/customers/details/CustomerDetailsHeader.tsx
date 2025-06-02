@@ -3,17 +3,22 @@ import React from 'react';
 import { CustomerHeader } from '../CustomerHeader';
 import { CustomerInfoCard } from '../CustomerInfoCard';
 import { CustomerLoyaltyCard } from '../loyalty/CustomerLoyaltyCard';
-import { useCustomerLoyalty } from '@/hooks/useCustomerLoyalty';
 import { Customer } from '@/types/customer';
+import { CustomerLoyalty } from '@/types/loyalty';
 
 interface CustomerDetailsHeaderProps {
   customer: Customer;
+  customerLoyalty?: CustomerLoyalty | null;
+  loyaltyLoading?: boolean;
   setAddInteractionOpen: (open: boolean) => void;
 }
 
-export function CustomerDetailsHeader({ customer, setAddInteractionOpen }: CustomerDetailsHeaderProps) {
-  const { customerLoyalty, loading: loyaltyLoading } = useCustomerLoyalty(customer.id);
-
+export function CustomerDetailsHeader({ 
+  customer, 
+  customerLoyalty, 
+  loyaltyLoading = false,
+  setAddInteractionOpen 
+}: CustomerDetailsHeaderProps) {
   return (
     <div className="space-y-6">
       <CustomerHeader 

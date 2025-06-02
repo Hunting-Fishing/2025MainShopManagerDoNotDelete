@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useCustomerDetails } from "@/hooks/useCustomerDetails";
 import { AddInteractionDialog } from "@/components/interactions/AddInteractionDialog";
@@ -29,6 +29,7 @@ export default function CustomerDetails() {
     customerInteractions,
     customerCommunications,
     customerNotes,
+    customerLoyalty,
     loading,
     error,
     addInteractionOpen,
@@ -48,30 +49,21 @@ export default function CustomerDetails() {
       setActiveTab(tabParam);
     }
   }, [searchParams, setActiveTab]);
-  
-  // Refresh customer data when arriving at this page
-  useEffect(() => {
-    if (id && id !== "undefined") {
-      refreshCustomerData();
-    }
-  }, [id, refreshCustomerData]);
 
-  // Create wrapper functions for onCommunicationAdded and onNoteAdded
-  const onCommunicationAddedWrapper = () => {
+  // Create optimized wrapper functions that don't cause re-renders
+  const onCommunicationAddedWrapper = useMemo(() => () => {
     if (handleCommunicationAdded) {
-      // If we need to pass a parameter later, we can adjust this function
       handleCommunicationAdded({} as CustomerCommunication);
     }
-    refreshCustomerData(); // Refresh to get latest data
-  };
+    refreshCustomerData();
+  }, [handleCommunicationAdded, refreshCustomerData]);
 
-  const onNoteAddedWrapper = () => {
+  const onNoteAddedWrapper = useMemo(() => () => {
     if (handleNoteAdded) {
-      // If we need to pass a parameter later, we can adjust this function
       handleNoteAdded({} as CustomerNote);
     }
-    refreshCustomerData(); // Refresh to get latest data
-  };
+    refreshCustomerData();
+  }, [handleNoteAdded, refreshCustomerData]);
 
   if (!id || id === "undefined") {
     return (
@@ -131,6 +123,8 @@ export default function CustomerDetails() {
     <div className="space-y-6">
       <CustomerDetailsHeader 
         customer={customer}
+        customerLoyalty={customerLoyalty}
+        loyaltyLoading={false}
         setAddInteractionOpen={setAddInteractionOpen}
       />
 

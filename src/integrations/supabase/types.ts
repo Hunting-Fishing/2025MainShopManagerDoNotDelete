@@ -8426,6 +8426,13 @@ export type Database = {
             referencedRelation: "service_categories"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "work_orders_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       workflow_rules: {

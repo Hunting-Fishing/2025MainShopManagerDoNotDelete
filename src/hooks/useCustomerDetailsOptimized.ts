@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Customer } from '@/types/customer';
 import { WorkOrder } from '@/types/workOrder';
 import { CustomerInteraction } from '@/types/interaction';
@@ -10,10 +10,22 @@ import { getCustomerInteractions } from '@/services/customer/interactions/intera
 import { ensureCustomerLoyalty } from '@/services/loyalty/customerLoyaltyService';
 import { CustomerLoyalty } from '@/types/loyalty';
 
-// Request deduplication
+// Global state to prevent duplicate requests
 const activeRequests = new Map<string, Promise<any>>();
+const requestResults = new Map<string, { data: any; timestamp: number }>();
+const CACHE_DURATION = 30000; // 30 seconds
 
-export const useCustomerDetails = (customerId: string | undefined) => {
+interface UseCustomerDetailsOptions {
+  enableCaching?: boolean;
+  cacheTimeout?: number;
+}
+
+export const useCustomerDetailsOptimized = (
+  customerId: string | undefined,
+  options: UseCustomerDetailsOptions = {}
+) => {
+  const { enableCaching = true, cacheTimeout = CACHE_DURATION } = options;
+
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [customerWorkOrders, setCustomerWorkOrders] = useState<WorkOrder[]>([]);
   const [customerInteractions, setCustomerInteractions] = useState<CustomerInteraction[]>([]);
@@ -25,26 +37,46 @@ export const useCustomerDetails = (customerId: string | undefined) => {
   const [addInteractionOpen, setAddInteractionOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('vehicles');
 
-  const createRequestKey = (operation: string, id: string) => `${operation}_${id}`;
+  // Memoized fetch functions to prevent unnecessary recreations
+  const fetchWithCache = useCallback(async <T>(
+    key: string,
+    fetchFn: () => Promise<T>
+  ): Promise<T> => {
+    if (enableCaching) {
+      // Check cache first
+      const cached = requestResults.get(key);
+      if (cached && Date.now() - cached.timestamp < cacheTimeout) {
+        console.log(`Using cached data for: ${key}`);
+        return cached.data;
+      }
 
-  const deduplicateRequest = async <T>(key: string, requestFn: () => Promise<T>): Promise<T> => {
-    if (activeRequests.has(key)) {
-      console.log(`Deduplicating request: ${key}`);
-      return activeRequests.get(key);
+      // Check if request is already in progress
+      if (activeRequests.has(key)) {
+        console.log(`Request already in progress for: ${key}`);
+        return activeRequests.get(key)!;
+      }
     }
 
-    const request = requestFn();
-    activeRequests.set(key, request);
-    
+    // Execute the request
+    const request = fetchFn();
+    if (enableCaching) {
+      activeRequests.set(key, request);
+    }
+
     try {
       const result = await request;
-      activeRequests.delete(key);
+      if (enableCaching) {
+        requestResults.set(key, { data: result, timestamp: Date.now() });
+        activeRequests.delete(key);
+      }
       return result;
-    } catch (error) {
-      activeRequests.delete(key);
-      throw error;
+    } catch (err) {
+      if (enableCaching) {
+        activeRequests.delete(key);
+      }
+      throw err;
     }
-  };
+  }, [enableCaching, cacheTimeout]);
 
   const refreshCustomerData = useCallback(async () => {
     if (!customerId || customerId === "undefined") {
@@ -59,44 +91,25 @@ export const useCustomerDetails = (customerId: string | undefined) => {
       setError(null);
       console.log('Fetching customer details for ID:', customerId);
 
-      // Fetch customer data with deduplication
-      const customerData = await deduplicateRequest(
-        createRequestKey('customer', customerId),
+      // Fetch customer data
+      const customerData = await fetchWithCache(
+        `customer_${customerId}`,
         async () => {
-          let retryCount = 0;
-          const maxRetries = 2;
-          
-          while (retryCount < maxRetries) {
-            try {
-              const customers = await getAllCustomers();
-              const found = customers.find(c => c.id === customerId);
-              
-              if (!found) {
-                retryCount++;
-                if (retryCount < maxRetries) {
-                  await new Promise(resolve => setTimeout(resolve, 1000));
-                  continue;
-                }
-                throw new Error('Customer not found after retries');
-              }
-              
-              return found;
-            } catch (fetchError) {
-              retryCount++;
-              if (retryCount >= maxRetries) throw fetchError;
-              await new Promise(resolve => setTimeout(resolve, 1000));
-            }
+          const customers = await getAllCustomers();
+          const found = customers.find(c => c.id === customerId);
+          if (!found) {
+            throw new Error('Customer not found');
           }
-          throw new Error('Failed to fetch customer');
+          return found;
         }
       );
 
       setCustomer(customerData);
 
-      // Fetch work orders with deduplication and error handling
+      // Fetch work orders
       try {
-        const workOrders = await deduplicateRequest(
-          createRequestKey('workorders', customerId),
+        const workOrders = await fetchWithCache(
+          `workorders_${customerId}`,
           () => getWorkOrdersByCustomerId(customerId)
         );
         console.log('Work orders fetched:', workOrders);
@@ -106,10 +119,10 @@ export const useCustomerDetails = (customerId: string | undefined) => {
         setCustomerWorkOrders([]);
       }
 
-      // Fetch interactions with deduplication and error handling
+      // Fetch interactions
       try {
-        const interactions = await deduplicateRequest(
-          createRequestKey('interactions', customerId),
+        const interactions = await fetchWithCache(
+          `interactions_${customerId}`,
           () => getCustomerInteractions(customerId)
         );
         setCustomerInteractions(interactions || []);
@@ -118,11 +131,11 @@ export const useCustomerDetails = (customerId: string | undefined) => {
         setCustomerInteractions([]);
       }
 
-      // Fetch loyalty data with deduplication and auto-creation fallback
+      // Fetch loyalty data
       try {
         console.log('Fetching loyalty data for customer:', customerId);
-        const loyaltyData = await deduplicateRequest(
-          createRequestKey('loyalty', customerId),
+        const loyaltyData = await fetchWithCache(
+          `loyalty_${customerId}`,
           () => ensureCustomerLoyalty(customerId)
         );
         setCustomerLoyalty(loyaltyData);
@@ -142,12 +155,17 @@ export const useCustomerDetails = (customerId: string | undefined) => {
     } finally {
       setLoading(false);
     }
-  }, [customerId]);
+  }, [customerId, fetchWithCache]);
 
+  // Optimized handlers
   const handleInteractionAdded = useCallback((interaction: CustomerInteraction) => {
     setCustomerInteractions(prev => [interaction, ...prev]);
     setAddInteractionOpen(false);
-  }, []);
+    // Clear cache to ensure fresh data on next load
+    if (customerId) {
+      requestResults.delete(`interactions_${customerId}`);
+    }
+  }, [customerId]);
 
   const handleCommunicationAdded = useCallback((communication: CustomerCommunication) => {
     setCustomerCommunications(prev => [communication, ...prev]);
@@ -157,11 +175,24 @@ export const useCustomerDetails = (customerId: string | undefined) => {
     setCustomerNotes(prev => [note, ...prev]);
   }, []);
 
+  // Clear cache when customer changes
+  useEffect(() => {
+    if (customerId && customerId !== "undefined") {
+      // Clear old cache entries for this customer when switching
+      const keysToDelete = Array.from(requestResults.keys()).filter(key => 
+        key.includes(customerId)
+      );
+      keysToDelete.forEach(key => requestResults.delete(key));
+    }
+  }, [customerId]);
+
+  // Single effect to fetch data
   useEffect(() => {
     refreshCustomerData();
   }, [refreshCustomerData]);
 
-  return {
+  // Memoized return value to prevent unnecessary re-renders
+  return useMemo(() => ({
     customer,
     customerWorkOrders,
     customerInteractions,
@@ -178,5 +209,20 @@ export const useCustomerDetails = (customerId: string | undefined) => {
     handleInteractionAdded,
     handleCommunicationAdded,
     handleNoteAdded
-  };
+  }), [
+    customer,
+    customerWorkOrders,
+    customerInteractions,
+    customerCommunications,
+    customerNotes,
+    customerLoyalty,
+    loading,
+    error,
+    addInteractionOpen,
+    activeTab,
+    refreshCustomerData,
+    handleInteractionAdded,
+    handleCommunicationAdded,
+    handleNoteAdded
+  ]);
 };
