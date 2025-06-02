@@ -1,13 +1,14 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { WorkOrder } from "@/types/workOrder";
 import { normalizeWorkOrder } from "@/utils/workOrders/formatters";
 
 /**
- * Get all work orders with enhanced data including customer and vehicle details
+ * Get all work orders with customer and vehicle relationships
  */
 export const getAllWorkOrders = async (): Promise<WorkOrder[]> => {
   try {
-    console.log('Fetching all work orders with enhanced details...');
+    console.log('Fetching all work orders...');
     
     const { data, error } = await supabase
       .from('work_orders')
@@ -18,11 +19,7 @@ export const getAllWorkOrders = async (): Promise<WorkOrder[]> => {
           first_name,
           last_name,
           email,
-          phone,
-          address,
-          city,
-          state,
-          zip
+          phone
         ),
         vehicle:vehicles (
           id,
@@ -42,54 +39,45 @@ export const getAllWorkOrders = async (): Promise<WorkOrder[]> => {
     }
 
     console.log('Raw work orders data:', data);
-    
-    // Transform the data to match our WorkOrder interface
-    const transformedData = data?.map(workOrder => {
-      const transformed = {
-        ...workOrder,
-        // Flatten customer data
-        customer_name: workOrder.customer ? 
-          `${workOrder.customer.first_name || ''} ${workOrder.customer.last_name || ''}`.trim() : 
-          'Unknown Customer',
-        customer_email: workOrder.customer?.email,
-        customer_phone: workOrder.customer?.phone,
-        customer_address: workOrder.customer?.address,
-        customer_city: workOrder.customer?.city,
-        customer_state: workOrder.customer?.state,
-        customer_zip: workOrder.customer?.zip,
+
+    // Transform the data to match WorkOrder interface
+    const workOrders: WorkOrder[] = data?.map((wo: any) => {
+      return {
+        ...wo,
+        // Customer information
+        customer_name: wo.customer ? `${wo.customer.first_name || ''} ${wo.customer.last_name || ''}`.trim() : '',
+        customer_email: wo.customer?.email || '',
+        customer_phone: wo.customer?.phone || '',
+        customer_address: '', // Not available in current schema
+        customer_city: '', // Not available in current schema
+        customer_state: '', // Not available in current schema
+        customer_zip: '', // Not available in current schema
         
-        // Flatten vehicle data
-        vehicle_year: workOrder.vehicle?.year?.toString(),
-        vehicle_make: workOrder.vehicle?.make,
-        vehicle_model: workOrder.vehicle?.model,
-        vehicle_vin: workOrder.vehicle?.vin,
-        vehicle_license_plate: workOrder.vehicle?.license_plate,
+        // Vehicle information (handle single object, not array)
+        vehicle_year: wo.vehicle?.year?.toString() || '',
+        vehicle_make: wo.vehicle?.make || '',
+        vehicle_model: wo.vehicle?.model || '',
+        vehicle_vin: wo.vehicle?.vin || '',
+        vehicle_license_plate: wo.vehicle?.license_plate || '',
         
-        // Keep the nested vehicle object for backward compatibility
-        vehicle: workOrder.vehicle,
+        // Legacy fields for backward compatibility
+        customer: wo.customer ? `${wo.customer.first_name || ''} ${wo.customer.last_name || ''}`.trim() : '',
         
-        // Legacy fields for UI compatibility
-        customer: workOrder.customer ? 
-          `${workOrder.customer.first_name || ''} ${workOrder.customer.last_name || ''}`.trim() : 
-          'Unknown Customer',
-        date: workOrder.created_at,
-        dueDate: workOrder.end_time || workOrder.created_at,
-        technician: 'Unassigned', // TODO: Add technician lookup
-        priority: 'medium', // TODO: Add priority field to database
-        location: 'Shop', // TODO: Add location field to database
-        notes: workOrder.description || '',
-        total_billable_time: 0 // TODO: Calculate from time entries
+        // Vehicle object for new structure
+        vehicle: wo.vehicle ? {
+          id: wo.vehicle.id,
+          year: wo.vehicle.year,
+          make: wo.vehicle.make,
+          model: wo.vehicle.model,
+          vin: wo.vehicle.vin,
+          license_plate: wo.vehicle.license_plate,
+          trim: wo.vehicle.trim
+        } : undefined
       };
-      
-      // Remove the nested objects to avoid confusion
-      delete transformed.customer;
-      delete transformed.vehicle;
-      
-      return transformed;
     }) || [];
 
-    console.log('Transformed work orders:', transformedData);
-    return transformedData;
+    console.log('Transformed work orders:', workOrders);
+    return workOrders;
   } catch (error) {
     console.error('Error in getAllWorkOrders:', error);
     throw error;
@@ -97,79 +85,12 @@ export const getAllWorkOrders = async (): Promise<WorkOrder[]> => {
 };
 
 /**
- * Get a single work order by ID with full details
+ * Get work order by ID with full relationship data
  */
 export const getWorkOrderById = async (id: string): Promise<WorkOrder | null> => {
   try {
     console.log('Fetching work order by ID:', id);
     
-    // First try using the new database function
-    const { data: functionData, error: functionError } = await supabase
-      .rpc('get_work_order_with_details', { work_order_id: id });
-    
-    if (!functionError && functionData && functionData.length > 0) {
-      const workOrderData = functionData[0];
-      console.log('Work order data from function:', workOrderData);
-      
-      // Transform function result to WorkOrder format
-      const transformed: WorkOrder = {
-        id: workOrderData.id,
-        customer_id: workOrderData.customer_id,
-        vehicle_id: workOrderData.vehicle_id,
-        advisor_id: workOrderData.advisor_id,
-        technician_id: workOrderData.technician_id,
-        estimated_hours: workOrderData.estimated_hours,
-        total_cost: workOrderData.total_cost,
-        created_by: workOrderData.created_by,
-        created_at: workOrderData.created_at,
-        updated_at: workOrderData.updated_at,
-        start_time: workOrderData.start_time,
-        end_time: workOrderData.end_time,
-        service_category_id: workOrderData.service_category_id,
-        invoiced_at: workOrderData.invoiced_at,
-        status: workOrderData.status,
-        description: workOrderData.description,
-        service_type: workOrderData.service_type,
-        invoice_id: workOrderData.invoice_id,
-        
-        // Customer information
-        customer_name: `${workOrderData.customer_first_name || ''} ${workOrderData.customer_last_name || ''}`.trim() || 'Unknown Customer',
-        customer_email: workOrderData.customer_email,
-        customer_phone: workOrderData.customer_phone,
-        
-        // Vehicle information
-        vehicle_year: workOrderData.vehicle_year,
-        vehicle_make: workOrderData.vehicle_make,
-        vehicle_model: workOrderData.vehicle_model,
-        vehicle_vin: workOrderData.vehicle_vin,
-        vehicle_license_plate: workOrderData.vehicle_license_plate,
-        
-        // Vehicle object for backward compatibility
-        vehicle: workOrderData.vehicle_make ? {
-          id: workOrderData.vehicle_id,
-          year: workOrderData.vehicle_year,
-          make: workOrderData.vehicle_make,
-          model: workOrderData.vehicle_model,
-          vin: workOrderData.vehicle_vin,
-          license_plate: workOrderData.vehicle_license_plate
-        } : undefined,
-        
-        // Legacy UI fields
-        customer: `${workOrderData.customer_first_name || ''} ${workOrderData.customer_last_name || ''}`.trim() || 'Unknown Customer',
-        date: workOrderData.created_at,
-        dueDate: workOrderData.end_time || workOrderData.created_at,
-        technician: 'Unassigned', // TODO: Add technician lookup
-        priority: 'medium', // TODO: Add priority field
-        location: 'Shop', // TODO: Add location field
-        notes: workOrderData.description || '',
-        total_billable_time: 0 // TODO: Calculate from time entries
-      };
-      
-      return transformed;
-    }
-    
-    // Fallback to regular query if function fails
-    console.log('Function failed, falling back to regular query');
     const { data, error } = await supabase
       .from('work_orders')
       .select(`
@@ -187,7 +108,8 @@ export const getWorkOrderById = async (id: string): Promise<WorkOrder | null> =>
           make,
           model,
           vin,
-          license_plate
+          license_plate,
+          trim
         )
       `)
       .eq('id', id)
@@ -203,40 +125,44 @@ export const getWorkOrderById = async (id: string): Promise<WorkOrder | null> =>
       return null;
     }
 
-    console.log('Work order data from fallback:', data);
-    
-    // Transform the data similar to getAllWorkOrders
-    const transformed: WorkOrder = {
+    console.log('Raw work order data:', data);
+
+    // Transform the data to match WorkOrder interface
+    const workOrder: WorkOrder = {
       ...data,
-      customer_name: data.customer ? 
-        `${data.customer.first_name || ''} ${data.customer.last_name || ''}`.trim() : 
-        'Unknown Customer',
-      customer_email: data.customer?.email,
-      customer_phone: data.customer?.phone,
+      // Customer information
+      customer_name: data.customer ? `${data.customer.first_name || ''} ${data.customer.last_name || ''}`.trim() : '',
+      customer_email: data.customer?.email || '',
+      customer_phone: data.customer?.phone || '',
+      customer_address: '', // Not available in current schema
+      customer_city: '', // Not available in current schema
+      customer_state: '', // Not available in current schema
+      customer_zip: '', // Not available in current schema
       
-      vehicle_year: data.vehicle?.year?.toString(),
-      vehicle_make: data.vehicle?.make,
-      vehicle_model: data.vehicle?.model,
-      vehicle_vin: data.vehicle?.vin,
-      vehicle_license_plate: data.vehicle?.license_plate,
+      // Vehicle information (handle single object, not array)
+      vehicle_year: data.vehicle?.year?.toString() || '',
+      vehicle_make: data.vehicle?.make || '',
+      vehicle_model: data.vehicle?.model || '',
+      vehicle_vin: data.vehicle?.vin || '',
+      vehicle_license_plate: data.vehicle?.license_plate || '',
       
-      // Keep vehicle object
-      vehicle: data.vehicle,
+      // Legacy fields for backward compatibility
+      customer: data.customer ? `${data.customer.first_name || ''} ${data.customer.last_name || ''}`.trim() : '',
       
-      // Legacy fields
-      customer: data.customer ? 
-        `${data.customer.first_name || ''} ${data.customer.last_name || ''}`.trim() : 
-        'Unknown Customer',
-      date: data.created_at,
-      dueDate: data.end_time || data.created_at,
-      technician: 'Unassigned',
-      priority: 'medium',
-      location: 'Shop',
-      notes: data.description || '',
-      total_billable_time: 0
+      // Vehicle object for new structure
+      vehicle: data.vehicle ? {
+        id: data.vehicle.id,
+        year: data.vehicle.year,
+        make: data.vehicle.make,
+        model: data.vehicle.model,
+        vin: data.vehicle.vin,
+        license_plate: data.vehicle.license_plate,
+        trim: data.vehicle.trim
+      } : undefined
     };
 
-    return transformed;
+    console.log('Transformed work order:', workOrder);
+    return workOrder;
   } catch (error) {
     console.error('Error in getWorkOrderById:', error);
     throw error;
@@ -248,6 +174,8 @@ export const getWorkOrderById = async (id: string): Promise<WorkOrder | null> =>
  */
 export const getWorkOrdersByCustomerId = async (customerId: string): Promise<WorkOrder[]> => {
   try {
+    console.log('Fetching work orders for customer:', customerId);
+    
     const { data, error } = await supabase
       .from('work_orders')
       .select(`
@@ -265,20 +193,50 @@ export const getWorkOrdersByCustomerId = async (customerId: string): Promise<Wor
           make,
           model,
           vin,
-          license_plate
+          license_plate,
+          trim
         )
       `)
       .eq('customer_id', customerId)
       .order('created_at', { ascending: false });
 
     if (error) {
+      console.error('Error fetching work orders by customer:', error);
       throw error;
     }
 
-    return data?.map(normalizeWorkOrder) || [];
+    // Transform the data similar to getAllWorkOrders
+    const workOrders: WorkOrder[] = data?.map((wo: any) => ({
+      ...wo,
+      customer_name: wo.customer ? `${wo.customer.first_name || ''} ${wo.customer.last_name || ''}`.trim() : '',
+      customer_email: wo.customer?.email || '',
+      customer_phone: wo.customer?.phone || '',
+      customer_address: '',
+      customer_city: '',
+      customer_state: '',
+      customer_zip: '',
+      vehicle_year: wo.vehicle?.year?.toString() || '',
+      vehicle_make: wo.vehicle?.make || '',
+      vehicle_model: wo.vehicle?.model || '',
+      vehicle_vin: wo.vehicle?.vin || '',
+      vehicle_license_plate: wo.vehicle?.license_plate || '',
+      customer: wo.customer ? `${wo.customer.first_name || ''} ${wo.customer.last_name || ''}`.trim() : '',
+      vehicle: wo.vehicle ? {
+        id: wo.vehicle.id,
+        year: wo.vehicle.year,
+        make: wo.vehicle.make,
+        model: wo.vehicle.model,
+        vin: wo.vehicle.vin,
+        license_plate: wo.vehicle.license_plate,
+        trim: wo.vehicle.trim
+      } : undefined
+    })) || [];
+
+    console.log('Work orders for customer:', workOrders);
+    return workOrders;
   } catch (error) {
-    console.error('Error fetching work orders by customer ID:', error);
-    return [];
+    console.error('Error in getWorkOrdersByCustomerId:', error);
+    throw error;
   }
 };
 
@@ -287,6 +245,8 @@ export const getWorkOrdersByCustomerId = async (customerId: string): Promise<Wor
  */
 export const getWorkOrdersByStatus = async (status: string): Promise<WorkOrder[]> => {
   try {
+    console.log('Fetching work orders by status:', status);
+    
     const { data, error } = await supabase
       .from('work_orders')
       .select(`
@@ -304,20 +264,50 @@ export const getWorkOrdersByStatus = async (status: string): Promise<WorkOrder[]
           make,
           model,
           vin,
-          license_plate
+          license_plate,
+          trim
         )
       `)
       .eq('status', status)
       .order('created_at', { ascending: false });
 
     if (error) {
+      console.error('Error fetching work orders by status:', error);
       throw error;
     }
 
-    return data?.map(normalizeWorkOrder) || [];
+    // Transform the data similar to getAllWorkOrders
+    const workOrders: WorkOrder[] = data?.map((wo: any) => ({
+      ...wo,
+      customer_name: wo.customer ? `${wo.customer.first_name || ''} ${wo.customer.last_name || ''}`.trim() : '',
+      customer_email: wo.customer?.email || '',
+      customer_phone: wo.customer?.phone || '',
+      customer_address: '',
+      customer_city: '',
+      customer_state: '',
+      customer_zip: '',
+      vehicle_year: wo.vehicle?.year?.toString() || '',
+      vehicle_make: wo.vehicle?.make || '',
+      vehicle_model: wo.vehicle?.model || '',
+      vehicle_vin: wo.vehicle?.vin || '',
+      vehicle_license_plate: wo.vehicle?.license_plate || '',
+      customer: wo.customer ? `${wo.customer.first_name || ''} ${wo.customer.last_name || ''}`.trim() : '',
+      vehicle: wo.vehicle ? {
+        id: wo.vehicle.id,
+        year: wo.vehicle.year,
+        make: wo.vehicle.make,
+        model: wo.vehicle.model,
+        vin: wo.vehicle.vin,
+        license_plate: wo.vehicle.license_plate,
+        trim: wo.vehicle.trim
+      } : undefined
+    })) || [];
+
+    console.log('Work orders by status:', workOrders);
+    return workOrders;
   } catch (error) {
-    console.error('Error fetching work orders by status:', error);
-    return [];
+    console.error('Error in getWorkOrdersByStatus:', error);
+    throw error;
   }
 };
 
@@ -326,20 +316,97 @@ export const getWorkOrdersByStatus = async (status: string): Promise<WorkOrder[]
  */
 export const getUniqueTechnicians = async (): Promise<string[]> => {
   try {
+    console.log('Fetching unique technicians...');
+    
     const { data, error } = await supabase
       .from('work_orders')
       .select('technician_id')
       .not('technician_id', 'is', null);
 
     if (error) {
+      console.error('Error fetching technicians:', error);
       throw error;
     }
 
     // Extract unique technician IDs
-    const uniqueTechnicians = [...new Set(data?.map(item => item.technician_id).filter(Boolean))] || [];
+    const uniqueTechnicians = [...new Set(data?.map(wo => wo.technician_id).filter(Boolean))] || [];
+    
+    console.log('Unique technicians:', uniqueTechnicians);
     return uniqueTechnicians;
   } catch (error) {
-    console.error('Error fetching unique technicians:', error);
+    console.error('Error in getUniqueTechnicians:', error);
     return [];
+  }
+};
+
+/**
+ * Get work orders with time entries
+ */
+export const getWorkOrdersWithTimeEntries = async (): Promise<WorkOrder[]> => {
+  try {
+    console.log('Fetching work orders with time entries...');
+    
+    const { data, error } = await supabase
+      .from('work_orders')
+      .select(`
+        *,
+        customer:customers (
+          id,
+          first_name,
+          last_name,
+          email,
+          phone
+        ),
+        vehicle:vehicles (
+          id,
+          year,
+          make,
+          model,
+          vin,
+          license_plate,
+          trim
+        ),
+        timeEntries:work_order_time_entries (*)
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching work orders with time entries:', error);
+      throw error;
+    }
+
+    // Transform the data and include time entries
+    const workOrders: WorkOrder[] = data?.map((wo: any) => ({
+      ...wo,
+      customer_name: wo.customer ? `${wo.customer.first_name || ''} ${wo.customer.last_name || ''}`.trim() : '',
+      customer_email: wo.customer?.email || '',
+      customer_phone: wo.customer?.phone || '',
+      customer_address: '',
+      customer_city: '',
+      customer_state: '',
+      customer_zip: '',
+      vehicle_year: wo.vehicle?.year?.toString() || '',
+      vehicle_make: wo.vehicle?.make || '',
+      vehicle_model: wo.vehicle?.model || '',
+      vehicle_vin: wo.vehicle?.vin || '',
+      vehicle_license_plate: wo.vehicle?.license_plate || '',
+      customer: wo.customer ? `${wo.customer.first_name || ''} ${wo.customer.last_name || ''}`.trim() : '',
+      vehicle: wo.vehicle ? {
+        id: wo.vehicle.id,
+        year: wo.vehicle.year,
+        make: wo.vehicle.make,
+        model: wo.vehicle.model,
+        vin: wo.vehicle.vin,
+        license_plate: wo.vehicle.license_plate,
+        trim: wo.vehicle.trim
+      } : undefined,
+      timeEntries: wo.timeEntries || []
+    })) || [];
+
+    console.log('Work orders with time entries:', workOrders);
+    return workOrders;
+  } catch (error) {
+    console.error('Error in getWorkOrdersWithTimeEntries:', error);
+    throw error;
   }
 };

@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { WorkOrder } from "@/types/workOrder";
-import { normalizeWorkOrder } from "@/utils/workOrders/formatters";
+import { getWorkOrderById } from "./workOrderQueryService";
 
 /**
  * Create a new work order with proper vehicle relationship handling
@@ -36,6 +36,10 @@ export const createWorkOrder = async (workOrder: Partial<WorkOrder>): Promise<Wo
       customer_name,
       customer_email,
       customer_phone,
+      customer_address,
+      customer_city,
+      customer_state,
+      customer_zip,
       vehicle_year,
       vehicle_make,
       vehicle_model,
@@ -63,7 +67,7 @@ export const createWorkOrder = async (workOrder: Partial<WorkOrder>): Promise<Wo
     console.log('Work order created successfully:', data);
     
     // Fetch the complete work order with relationships
-    const fullWorkOrder = await getWorkOrderWithRelationships(data.id);
+    const fullWorkOrder = await getWorkOrderById(data.id);
     return fullWorkOrder;
   } catch (error) {
     console.error('Error creating work order:', error);
@@ -96,6 +100,10 @@ export const updateWorkOrder = async (workOrder: Partial<WorkOrder>): Promise<Wo
       customer_name,
       customer_email,
       customer_phone,
+      customer_address,
+      customer_city,
+      customer_state,
+      customer_zip,
       vehicle_year,
       vehicle_make,
       vehicle_model,
@@ -125,7 +133,7 @@ export const updateWorkOrder = async (workOrder: Partial<WorkOrder>): Promise<Wo
     console.log('Work order updated successfully:', data);
     
     // Fetch the complete work order with relationships
-    const fullWorkOrder = await getWorkOrderWithRelationships(data.id);
+    const fullWorkOrder = await getWorkOrderById(data.id);
     return fullWorkOrder;
   } catch (error) {
     console.error('Error updating work order:', error);
@@ -183,50 +191,10 @@ export const updateWorkOrderStatus = async (id: string, status: string): Promise
     console.log('Work order status updated successfully:', data);
     
     // Fetch the complete work order with relationships
-    const fullWorkOrder = await getWorkOrderWithRelationships(data.id);
+    const fullWorkOrder = await getWorkOrderById(data.id);
     return fullWorkOrder;
   } catch (error) {
     console.error(`Error updating work order status ${id}:`, error);
     throw error;
   }
 };
-
-/**
- * Helper function to get work order with full relationships
- */
-async function getWorkOrderWithRelationships(id: string): Promise<WorkOrder | null> {
-  try {
-    const { data, error } = await supabase
-      .from('work_orders')
-      .select(`
-        *,
-        customer:customers (
-          id,
-          first_name,
-          last_name,
-          email,
-          phone
-        ),
-        vehicle:vehicles (
-          id,
-          year,
-          make,
-          model,
-          vin,
-          license_plate
-        )
-      `)
-      .eq('id', id)
-      .single();
-
-    if (error) {
-      console.error('Error fetching work order with relationships:', error);
-      throw error;
-    }
-
-    return normalizeWorkOrder(data);
-  } catch (error) {
-    console.error('Error in getWorkOrderWithRelationships:', error);
-    return null;
-  }
-}
