@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
@@ -9,18 +9,24 @@ import { AddJobLineForm } from './AddJobLineForm';
 interface AddJobLineDialogProps {
   workOrderId: string;
   onJobLineAdd: (jobLine: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function AddJobLineDialog({ workOrderId, onJobLineAdd }: AddJobLineDialogProps) {
-  const [open, setOpen] = useState(false);
+export function AddJobLineDialog({ workOrderId, onJobLineAdd, open, onOpenChange }: AddJobLineDialogProps) {
+  const [internalOpen, setInternalOpen] = React.useState(false);
+  
+  // Use external state if provided, otherwise use internal state
+  const isOpen = open !== undefined ? open : internalOpen;
+  const setIsOpen = onOpenChange || setInternalOpen;
 
   const handleJobLineAdd = (jobLineData: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>) => {
     onJobLineAdd(jobLineData);
-    setOpen(false);
+    setIsOpen(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button size="sm" className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
@@ -34,7 +40,7 @@ export function AddJobLineDialog({ workOrderId, onJobLineAdd }: AddJobLineDialog
         <AddJobLineForm
           workOrderId={workOrderId}
           onSubmit={handleJobLineAdd}
-          onCancel={() => setOpen(false)}
+          onCancel={() => setIsOpen(false)}
         />
       </DialogContent>
     </Dialog>
