@@ -9,9 +9,18 @@ import { Clock, DollarSign, Wrench } from 'lucide-react';
 interface JobLinesGridProps {
   jobLines: WorkOrderJobLine[];
   showSummary?: boolean;
+  isEditMode?: boolean;
+  onUpdate?: (jobLine: WorkOrderJobLine) => void;
+  onDelete?: (jobLineId: string) => void;
 }
 
-export function JobLinesGrid({ jobLines, showSummary = true }: JobLinesGridProps) {
+export function JobLinesGrid({ 
+  jobLines, 
+  showSummary = true,
+  isEditMode = false,
+  onUpdate = () => {},
+  onDelete = () => {}
+}: JobLinesGridProps) {
   const totalHours = jobLines.reduce((sum, line) => sum + (line.estimatedHours || 0), 0);
   const totalAmount = jobLines.reduce((sum, line) => sum + (line.totalAmount || 0), 0);
 
@@ -43,7 +52,13 @@ export function JobLinesGrid({ jobLines, showSummary = true }: JobLinesGridProps
         gap="md"
       >
         {jobLines.map((jobLine) => (
-          <JobLineCard key={jobLine.id} jobLine={jobLine} />
+          <JobLineCard 
+            key={jobLine.id} 
+            jobLine={jobLine}
+            onUpdate={onUpdate}
+            onDelete={onDelete}
+            isEditMode={isEditMode}
+          />
         ))}
       </ResponsiveGrid>
 
