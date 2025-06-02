@@ -1,162 +1,167 @@
 
-import React, { useState, useEffect } from 'react';
-import { Plus } from 'lucide-react';
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Skeleton } from '@/components/ui/skeleton';
-import { IntegratedServiceSelector } from '../fields/services/IntegratedServiceSelector';
-import { ManualJobLineForm } from './ManualJobLineForm';
-import { useServiceCategories } from '@/hooks/useServiceCategories';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus } from 'lucide-react';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { ServiceJob } from '@/types/serviceHierarchy';
-import { SelectedService } from '@/types/selectedService';
 
 interface AddJobLineDialogProps {
   workOrderId: string;
   onJobLineAdd: (jobLine: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
 }
 
-export function AddJobLineDialog({ workOrderId, onJobLineAdd, open, onOpenChange }: AddJobLineDialogProps) {
-  const [internalOpen, setInternalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('services');
-  const { categories, loading, error } = useServiceCategories();
+export function AddJobLineDialog({ workOrderId, onJobLineAdd }: AddJobLineDialogProps) {
+  const [open, setOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    category: 'General',
+    subcategory: '',
+    estimatedHours: 1,
+    laborRate: 75,
+    status: 'pending' as const,
+    notes: ''
+  });
 
-  // Use external open state if provided, otherwise use internal state
-  const isOpen = open !== undefined ? open : internalOpen;
-  const setIsOpen = onOpenChange || setInternalOpen;
-
-  // Reset tab when dialog opens
-  useEffect(() => {
-    if (isOpen) {
-      setActiveTab('services');
-    }
-  }, [isOpen]);
-
-  const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const totalAmount = formData.estimatedHours * formData.laborRate;
+    
     const newJobLine: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'> = {
       workOrderId,
-      name: service.name,
-      category: categoryName,
-      subcategory: subcategoryName,
-      description: service.description,
-      estimatedHours: service.estimatedTime ? service.estimatedTime / 60 : undefined,
-      laborRate: service.price,
-      totalAmount: service.price,
-      status: 'pending',
+      name: formData.name,
+      description: formData.description || null,
+      category: formData.category || null,
+      subcategory: formData.subcategory || null,
+      estimatedHours: formData.estimatedHours,
+      laborRate: formData.laborRate,
+      totalAmount,
+      status: formData.status,
+      notes: formData.notes || null
     };
-    
+
     onJobLineAdd(newJobLine);
-    setIsOpen(false);
-  };
-
-  const handleManualSubmit = (jobLineData: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>) => {
-    onJobLineAdd({
-      ...jobLineData,
-      workOrderId,
+    
+    // Reset form
+    setFormData({
+      name: '',
+      description: '',
+      category: 'General',
+      subcategory: '',
+      estimatedHours: 1,
+      laborRate: 75,
       status: 'pending',
+      notes: ''
     });
-    setIsOpen(false);
+    
+    setOpen(false);
   };
 
-  const renderServicesTab = () => {
-    if (loading) {
-      return (
-        <div className="space-y-4 p-4">
-          <div className="text-center">
-            <LoadingSpinner size="md" text="Loading services..." />
-          </div>
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-4 w-1/2" />
-            <Skeleton className="h-20 w-full" />
-          </div>
-        </div>
-      );
-    }
-
-    if (error) {
-      return (
-        <div className="text-center py-8">
-          <p className="text-red-500 mb-4">{error}</p>
-          <Button 
-            onClick={() => window.location.reload()} 
-            variant="outline"
-          >
-            Retry Loading Services
-          </Button>
-        </div>
-      );
-    }
-
-    if (categories.length === 0) {
-      return (
-        <div className="text-center py-8 border rounded-md bg-gray-50">
-          <p className="text-gray-500 mb-2">No services available</p>
-          <p className="text-sm text-gray-400 mb-4">Contact your administrator to set up services</p>
-          <Button 
-            variant="outline" 
-            onClick={() => setActiveTab('manual')}
-          >
-            Add Manual Job Line
-          </Button>
-        </div>
-      );
-    }
-
-    return (
-      <div className="max-h-[500px] overflow-y-auto">
-        <IntegratedServiceSelector
-          categories={categories}
-          onServiceSelect={handleServiceSelect}
-          selectedServices={[]}
-          onRemoveService={() => {}}
-          onUpdateServices={() => {}}
-        />
-      </div>
-    );
-  };
+  const totalAmount = formData.estimatedHours * formData.laborRate;
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      {open === undefined && (
-        <DialogTrigger asChild>
-          <Button variant="outline" size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Job Line
-          </Button>
-        </DialogTrigger>
-      )}
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline">
+          <Plus className="h-4 w-4 mr-2" />
+          Add Job Line
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Add Job Line</DialogTitle>
         </DialogHeader>
         
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="services" disabled={loading}>
-              {loading ? 'Loading Services...' : 'Select from Services'}
-            </TabsTrigger>
-            <TabsTrigger value="manual">Manual Entry</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="services" className="mt-4">
-            {renderServicesTab()}
-          </TabsContent>
-          
-          <TabsContent value="manual" className="mt-4">
-            <ManualJobLineForm onSubmit={handleManualSubmit} />
-          </TabsContent>
-        </Tabs>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="name">Service Name *</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="e.g., Oil Change, Brake Inspection"
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              placeholder="Detailed description of the service"
+              rows={2}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="category">Category</Label>
+            <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="General">General</SelectItem>
+                <SelectItem value="Engine">Engine</SelectItem>
+                <SelectItem value="Brakes">Brakes</SelectItem>
+                <SelectItem value="Transmission">Transmission</SelectItem>
+                <SelectItem value="Electrical">Electrical</SelectItem>
+                <SelectItem value="Suspension">Suspension</SelectItem>
+                <SelectItem value="Tires">Tires</SelectItem>
+                <SelectItem value="AC/Heating">AC/Heating</SelectItem>
+                <SelectItem value="Bodywork">Bodywork</SelectItem>
+                <SelectItem value="Diagnostic">Diagnostic</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="estimatedHours">Hours</Label>
+              <Input
+                id="estimatedHours"
+                type="number"
+                step="0.25"
+                min="0"
+                value={formData.estimatedHours}
+                onChange={(e) => setFormData(prev => ({ ...prev, estimatedHours: parseFloat(e.target.value) || 0 }))}
+              />
+            </div>
+            <div>
+              <Label htmlFor="laborRate">Rate ($/hr)</Label>
+              <Input
+                id="laborRate"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.laborRate}
+                onChange={(e) => setFormData(prev => ({ ...prev, laborRate: parseFloat(e.target.value) || 0 }))}
+              />
+            </div>
+          </div>
+
+          <div className="p-3 bg-muted rounded-lg">
+            <div className="text-sm text-muted-foreground">Total Amount</div>
+            <div className="text-lg font-semibold text-green-600">
+              ${totalAmount.toFixed(2)}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={!formData.name.trim()}>
+              Add Job Line
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

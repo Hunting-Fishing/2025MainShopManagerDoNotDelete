@@ -1,9 +1,11 @@
+
 // Work Order Types - Standardized to match database schema (snake_case)
 
 import { WorkOrderJobLine } from './jobLine';
 
 export interface WorkOrder {
   id: string;
+  work_order_number?: string; // NEW: Work order number field
   customer_id?: string;
   vehicle_id?: string;
   advisor_id?: string;

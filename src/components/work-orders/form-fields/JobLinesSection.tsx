@@ -6,6 +6,7 @@ import { WorkOrderJobLine } from '@/types/jobLine';
 import { AddJobLineDialog } from '../job-lines/AddJobLineDialog';
 import { JobLineCard } from '../job-lines/JobLineCard';
 import { Wrench } from 'lucide-react';
+import { generateTempJobLineId } from '@/services/jobLineParserEnhanced';
 
 interface JobLinesSectionProps {
   workOrderId: string;
@@ -34,7 +35,7 @@ export function JobLinesSection({
   const handleAddJobLine = (newJobLineData: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>) => {
     const newJobLine: WorkOrderJobLine = {
       ...newJobLineData,
-      id: `temp-${Date.now()}`,
+      id: generateTempJobLineId(), // Use proper UUID generation
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -46,7 +47,10 @@ export function JobLinesSection({
 
   const handleUpdateJobLine = (updatedJobLine: WorkOrderJobLine) => {
     const updatedJobLines = localJobLines.map(jobLine =>
-      jobLine.id === updatedJobLine.id ? updatedJobLine : jobLine
+      jobLine.id === updatedJobLine.id ? {
+        ...updatedJobLine,
+        updatedAt: new Date().toISOString()
+      } : jobLine
     );
     setLocalJobLines(updatedJobLines);
     onJobLinesChange(updatedJobLines);

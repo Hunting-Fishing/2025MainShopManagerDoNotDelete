@@ -8349,6 +8349,7 @@ export type Database = {
           total_cost: number | null
           updated_at: string
           vehicle_id: string | null
+          work_order_number: string | null
         }
         Insert: {
           advisor_id?: string | null
@@ -8369,6 +8370,7 @@ export type Database = {
           total_cost?: number | null
           updated_at?: string
           vehicle_id?: string | null
+          work_order_number?: string | null
         }
         Update: {
           advisor_id?: string | null
@@ -8389,6 +8391,7 @@ export type Database = {
           total_cost?: number | null
           updated_at?: string
           vehicle_id?: string | null
+          work_order_number?: string | null
         }
         Relationships: [
           {
@@ -8656,6 +8659,10 @@ export type Database = {
       }
       generate_recurring_reminder: {
         Args: { parent_id: string }
+        Returns: string
+      }
+      generate_work_order_number: {
+        Args: { p_shop_id: string }
         Returns: string
       }
       get_email_processing_schedule: {
