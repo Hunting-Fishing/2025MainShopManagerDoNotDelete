@@ -7,6 +7,8 @@ import { CustomerCommunication, CustomerNote } from '@/types/customer';
 import { getAllCustomers } from '@/services/customer';
 import { getWorkOrdersByCustomerId } from '@/services/workOrder';
 import { getCustomerInteractions } from '@/services/customer/interactions/interactionQueryService';
+import { getCustomerLoyalty, ensureCustomerLoyalty } from '@/services/loyalty/customerLoyaltyService';
+import { CustomerLoyalty } from '@/types/loyalty';
 
 export const useCustomerDetails = (customerId: string | undefined) => {
   const [customer, setCustomer] = useState<Customer | null>(null);
@@ -14,6 +16,7 @@ export const useCustomerDetails = (customerId: string | undefined) => {
   const [customerInteractions, setCustomerInteractions] = useState<CustomerInteraction[]>([]);
   const [customerCommunications, setCustomerCommunications] = useState<CustomerCommunication[]>([]);
   const [customerNotes, setCustomerNotes] = useState<CustomerNote[]>([]);
+  const [customerLoyalty, setCustomerLoyalty] = useState<CustomerLoyalty | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [addInteractionOpen, setAddInteractionOpen] = useState(false);
@@ -84,6 +87,17 @@ export const useCustomerDetails = (customerId: string | undefined) => {
         setCustomerInteractions([]);
       }
 
+      // Fetch loyalty data with auto-creation fallback
+      try {
+        console.log('Fetching loyalty data for customer:', customerId);
+        const loyaltyData = await ensureCustomerLoyalty(customerId);
+        setCustomerLoyalty(loyaltyData);
+        console.log('Loyalty data fetched/created:', loyaltyData);
+      } catch (loyaltyError) {
+        console.error('Error fetching/creating loyalty data:', loyaltyError);
+        setCustomerLoyalty(null);
+      }
+
       // Initialize empty arrays for communications and notes
       setCustomerCommunications([]);
       setCustomerNotes([]);
@@ -119,6 +133,7 @@ export const useCustomerDetails = (customerId: string | undefined) => {
     customerInteractions,
     customerCommunications,
     customerNotes,
+    customerLoyalty,
     loading,
     error,
     addInteractionOpen,

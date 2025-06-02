@@ -1,32 +1,44 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { CustomerLoyalty } from "@/types/loyalty";
 
 export const getCustomerLoyalty = async (customerId: string): Promise<CustomerLoyalty | null> => {
-  const { data, error } = await supabase
-    .from("customer_loyalty")
-    .select("*")
-    .eq("customer_id", customerId)
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from("customer_loyalty")
+      .select("*")
+      .eq("customer_id", customerId)
+      .single();
 
-  if (error) {
-    if (error.code === 'PGRST116') {
-      return null; // Customer loyalty record not found
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // No loyalty record found - create default one
+        console.log(`No loyalty record found for customer ${customerId}, creating default record`);
+        return await createCustomerLoyalty(customerId, '');
+      }
+      console.error("Error fetching customer loyalty:", error);
+      throw error;
     }
-    console.error("Error fetching customer loyalty:", error);
-    throw error;
-  }
 
-  return {
-    id: data.id,
-    customer_id: data.customer_id,
-    current_points: data.current_points,
-    lifetime_points: data.lifetime_points,
-    lifetime_value: data.lifetime_value,
-    tier: data.tier,
-    created_at: data.created_at,
-    updated_at: data.updated_at
-  };
+    return {
+      id: data.id,
+      customer_id: data.customer_id,
+      current_points: data.current_points,
+      lifetime_points: data.lifetime_points,
+      lifetime_value: data.lifetime_value,
+      tier: data.tier,
+      created_at: data.created_at,
+      updated_at: data.updated_at
+    };
+  } catch (err) {
+    console.error("Error in getCustomerLoyalty:", err);
+    // Try to create a default record as fallback
+    try {
+      return await createCustomerLoyalty(customerId, '');
+    } catch (createError) {
+      console.error("Failed to create default loyalty record:", createError);
+      return null;
+    }
+  }
 };
 
 export const createCustomerLoyalty = async (customerId: string, shopId: string): Promise<CustomerLoyalty> => {
@@ -57,6 +69,22 @@ export const createCustomerLoyalty = async (customerId: string, shopId: string):
     created_at: data.created_at,
     updated_at: data.updated_at
   };
+};
+
+export const ensureCustomerLoyalty = async (customerId: string): Promise<CustomerLoyalty> => {
+  try {
+    // First, try to get existing loyalty record
+    const existingLoyalty = await getCustomerLoyalty(customerId);
+    if (existingLoyalty) {
+      return existingLoyalty;
+    }
+    
+    // If no record exists, create one
+    return await createCustomerLoyalty(customerId, '');
+  } catch (error) {
+    console.error("Error ensuring customer loyalty:", error);
+    throw error;
+  }
 };
 
 export const updateCustomerLoyalty = async (loyaltyId: string, updates: Partial<CustomerLoyalty>): Promise<CustomerLoyalty> => {
