@@ -37,13 +37,17 @@ export function useReportData() {
       setLoading(true);
       setError(null);
 
-      // Fetch top customers data directly from work_orders and customers
+      // Fetch top customers data using explicit JOIN
       const { data: topCustomersData, error: topCustomersError } = await supabase
         .from('work_orders')
         .select(`
           customer_id,
           total_cost,
-          customers(first_name, last_name)
+          customer:customers!work_orders_customer_id_fkey(
+            id,
+            first_name,
+            last_name
+          )
         `)
         .not('customer_id', 'is', null);
 
@@ -51,10 +55,10 @@ export function useReportData() {
 
       // Process top customers data
       const customerMap = new Map();
-      (topCustomersData || []).forEach(order => {
+      (topCustomersData || []).forEach((order: any) => {
         const customerId = order.customer_id;
-        const customerName = order.customers 
-          ? `${order.customers.first_name || ''} ${order.customers.last_name || ''}`.trim()
+        const customerName = order.customer 
+          ? `${order.customer.first_name || ''} ${order.customer.last_name || ''}`.trim()
           : 'Unknown Customer';
         const revenue = order.total_cost || 0;
 
