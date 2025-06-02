@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { AddJobLineForm } from './AddJobLineForm';
+import { ServiceBasedJobLineForm } from './ServiceBasedJobLineForm';
 
 interface AddJobLineDialogProps {
   workOrderId: string;
@@ -33,11 +33,11 @@ export function AddJobLineDialog({ workOrderId, onJobLineAdd, open, onOpenChange
           Add Job Line
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Job Line</DialogTitle>
+          <DialogTitle>Add Services to Work Order</DialogTitle>
         </DialogHeader>
-        <AddJobLineForm
+        <ServiceBasedJobLineForm
           workOrderId={workOrderId}
           onSubmit={handleJobLineAdd}
           onCancel={() => setIsOpen(false)}
