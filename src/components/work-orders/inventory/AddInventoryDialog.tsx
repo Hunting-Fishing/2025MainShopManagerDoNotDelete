@@ -112,7 +112,7 @@ export function AddInventoryDialog({
                             {item.category && (
                               <span>Category: {item.category}</span>
                             )}
-                            <span>Qty: {item.quantity_in_stock || 0}</span>
+                            <span>Qty: {item.quantity || 0}</span>
                             <span className="font-medium text-green-600">
                               ${item.unit_price?.toFixed(2) || '0.00'}
                             </span>
