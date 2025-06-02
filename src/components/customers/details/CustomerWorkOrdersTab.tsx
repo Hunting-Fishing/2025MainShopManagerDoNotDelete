@@ -9,6 +9,12 @@ import { Link } from 'react-router-dom';
 import { Customer } from '@/types/customer';
 import { WorkOrder } from '@/types/workOrder';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { 
+  getVehicleInfo, 
+  getWorkOrderDate, 
+  getStatusBadgeVariant,
+  validateWorkOrderData
+} from '@/utils/workOrders/dataHelpers';
 
 interface CustomerWorkOrdersTabProps {
   customer: Customer;
@@ -17,37 +23,60 @@ interface CustomerWorkOrdersTabProps {
   error?: string;
 }
 
+const WorkOrderRow: React.FC<{ workOrder: WorkOrder }> = ({ workOrder }) => {
+  const validation = validateWorkOrderData(workOrder);
+  
+  return (
+    <TableRow key={workOrder.id}>
+      <TableCell className="font-mono text-sm">
+        <div className="flex items-center gap-2">
+          #{workOrder.id.slice(0, 8)}
+          {validation.warnings.length > 0 && (
+            <AlertTriangle 
+              className="h-4 w-4 text-yellow-500" 
+              title={`Data warnings: ${validation.warnings.join(', ')}`}
+            />
+          )}
+        </div>
+      </TableCell>
+      <TableCell>
+        {workOrder.description || 'No description'}
+      </TableCell>
+      <TableCell>
+        <Badge variant={getStatusBadgeVariant(workOrder.status)}>
+          {workOrder.status || 'Unknown'}
+        </Badge>
+      </TableCell>
+      <TableCell>
+        {getVehicleInfo(workOrder)}
+      </TableCell>
+      <TableCell>
+        {getWorkOrderDate(workOrder)}
+      </TableCell>
+      <TableCell>
+        {workOrder.total_cost 
+          ? `$${workOrder.total_cost.toFixed(2)}` 
+          : 'N/A'
+        }
+      </TableCell>
+      <TableCell>
+        <Button variant="outline" size="sm" asChild>
+          <Link to={`/work-orders/${workOrder.id}`}>
+            <Eye className="mr-2 h-4 w-4" />
+            View
+          </Link>
+        </Button>
+      </TableCell>
+    </TableRow>
+  );
+};
+
 export const CustomerWorkOrdersTab: React.FC<CustomerWorkOrdersTabProps> = ({
   customer,
   workOrders,
   loading = false,
   error
 }) => {
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'in-progress':
-      case 'in progress':
-        return 'bg-blue-100 text-blue-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    if (!dateString) return 'N/A';
-    try {
-      return new Date(dateString).toLocaleDateString();
-    } catch {
-      return 'Invalid Date';
-    }
-  };
-
   if (loading) {
     return (
       <Card>
@@ -119,42 +148,7 @@ export const CustomerWorkOrdersTab: React.FC<CustomerWorkOrdersTabProps> = ({
               </TableHeader>
               <TableBody>
                 {workOrders.map((workOrder) => (
-                  <TableRow key={workOrder.id}>
-                    <TableCell className="font-mono text-sm">
-                      #{workOrder.id.slice(0, 8)}
-                    </TableCell>
-                    <TableCell>
-                      {workOrder.description || 'No description'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(workOrder.status)}>
-                        {workOrder.status || 'Unknown'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {workOrder.vehicle_year && workOrder.vehicle_make && workOrder.vehicle_model
-                        ? `${workOrder.vehicle_year} ${workOrder.vehicle_make} ${workOrder.vehicle_model}`
-                        : 'No vehicle info'
-                      }
-                    </TableCell>
-                    <TableCell>
-                      {formatDate(workOrder.created_at)}
-                    </TableCell>
-                    <TableCell>
-                      {workOrder.total_cost 
-                        ? `$${workOrder.total_cost.toFixed(2)}` 
-                        : 'N/A'
-                      }
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="outline" size="sm" asChild>
-                        <Link to={`/work-orders/${workOrder.id}`}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          View
-                        </Link>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                  <WorkOrderRow key={workOrder.id} workOrder={workOrder} />
                 ))}
               </TableBody>
             </Table>

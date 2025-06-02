@@ -34,7 +34,7 @@ export const useCustomerDetails = (customerId: string | undefined) => {
     }
 
     try {
-      console.log('Fetching customer data for ID:', customerId);
+      console.log('useCustomerDetails: Fetching customer data for ID:', customerId);
       setLoading(true);
       setError(null);
       
@@ -44,11 +44,11 @@ export const useCustomerDetails = (customerId: string | undefined) => {
         setError("Customer not found");
         setCustomer(null);
       } else {
-        console.log('Customer data loaded:', customerData);
+        console.log('useCustomerDetails: Customer data loaded:', customerData);
         setCustomer(customerData);
       }
     } catch (err) {
-      console.error('Error fetching customer:', err);
+      console.error('useCustomerDetails: Error fetching customer:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to load customer';
       setError(errorMessage);
       setCustomer(null);
@@ -66,19 +66,20 @@ export const useCustomerDetails = (customerId: string | undefined) => {
   const fetchWorkOrders = useCallback(async () => {
     if (!customerId || customerId === "undefined") {
       setWorkOrdersLoading(false);
+      setCustomerWorkOrders([]);
       return;
     }
 
     try {
-      console.log('Fetching work orders for customer:', customerId);
+      console.log('useCustomerDetails: Fetching work orders for customer:', customerId);
       setWorkOrdersLoading(true);
       setWorkOrdersError(null);
       
       const workOrders = await getWorkOrdersByCustomerId(customerId);
-      console.log('Work orders loaded:', workOrders);
+      console.log('useCustomerDetails: Work orders loaded:', workOrders.length);
       setCustomerWorkOrders(workOrders || []);
     } catch (err) {
-      console.error('Error fetching work orders:', err);
+      console.error('useCustomerDetails: Error fetching work orders:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to load work orders';
       setWorkOrdersError(errorMessage);
       setCustomerWorkOrders([]);

@@ -11,45 +11,54 @@ export function useWorkOrders() {
 
   const fetchWorkOrders = useCallback(async () => {
     try {
-      console.log('Fetching work orders...');
+      console.log('useWorkOrders: Fetching work orders...');
+      setLoading(true);
       setError(null);
       
       const data = await getAllWorkOrders();
-      console.log('Work orders fetched:', data);
+      console.log('useWorkOrders: Work orders fetched successfully:', data.length);
       setWorkOrders(data || []);
     } catch (err: any) {
-      console.error('Error fetching work orders:', err);
-      setError(err.message);
+      console.error('useWorkOrders: Error fetching work orders:', err);
+      const errorMessage = err.message || 'Failed to load work orders';
+      setError(errorMessage);
+      
       toast({
         title: "Error",
-        description: "Failed to load work orders",
+        description: errorMessage,
         variant: "destructive"
       });
+      
       setWorkOrders([]);
     } finally {
-      console.log('Setting loading to false');
       setLoading(false);
     }
   }, []);
 
+  // Initial fetch
   useEffect(() => {
     fetchWorkOrders();
   }, [fetchWorkOrders]);
 
   const updateStatus = async (id: string, status: WorkOrder['status']) => {
     try {
+      console.log('useWorkOrders: Updating work order status:', id, status);
       const updatedWorkOrder = await updateWorkOrderStatus(id, status);
+      
       if (updatedWorkOrder) {
-        await fetchWorkOrders(); // Refresh the list
+        // Refresh the list to ensure consistency
+        await fetchWorkOrders();
+        
         toast({
           title: "Success",
-          description: "Work order status updated"
+          description: "Work order status updated successfully"
         });
       }
     } catch (err: any) {
+      console.error('useWorkOrders: Error updating status:', err);
       toast({
         title: "Error",
-        description: "Failed to update work order",
+        description: "Failed to update work order status",
         variant: "destructive"
       });
     }

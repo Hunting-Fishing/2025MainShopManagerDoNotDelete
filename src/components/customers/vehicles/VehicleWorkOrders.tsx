@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
@@ -6,17 +7,48 @@ import { Button } from '@/components/ui/button';
 import { List, AlertTriangle, ClipboardList } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Link, useParams } from 'react-router-dom';
+import { getWorkOrdersByCustomerId } from '@/services/workOrder';
+import { WorkOrder } from '@/types/workOrder';
+import { 
+  getWorkOrderDate, 
+  getStatusBadgeVariant,
+  validateWorkOrderData
+} from '@/utils/workOrders/dataHelpers';
 
-interface WorkOrder {
-  id: string;
-  created_at: string;
-  description: string;
-  status: string;
-  technician_id: string;
-  total_cost: number | null;
+interface VehicleWorkOrdersProps {
+  vehicleId: string;
 }
 
-export const VehicleWorkOrders: React.FC<{ vehicleId: string }> = ({ vehicleId }) => {
+const WorkOrderRow: React.FC<{ workOrder: WorkOrder }> = ({ workOrder }) => {
+  const validation = validateWorkOrderData(workOrder);
+  
+  return (
+    <TableRow key={workOrder.id} className="cursor-pointer hover:bg-slate-50">
+      <TableCell>
+        <div className="flex items-center gap-2">
+          {getWorkOrderDate(workOrder)}
+          {validation.warnings.length > 0 && (
+            <AlertTriangle 
+              className="h-4 w-4 text-yellow-500" 
+              title={`Data warnings: ${validation.warnings.join(', ')}`}
+            />
+          )}
+        </div>
+      </TableCell>
+      <TableCell>{workOrder.description || 'No description'}</TableCell>
+      <TableCell>
+        <Badge variant={getStatusBadgeVariant(workOrder.status)}>
+          {workOrder.status || 'Unknown'}
+        </Badge>
+      </TableCell>
+      <TableCell className="text-right">
+        {workOrder.total_cost ? `$${workOrder.total_cost.toFixed(2)}` : 'N/A'}
+      </TableCell>
+    </TableRow>
+  );
+};
+
+export const VehicleWorkOrders: React.FC<VehicleWorkOrdersProps> = ({ vehicleId }) => {
   const { customerId } = useParams<{ customerId: string }>();
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,16 +58,27 @@ export const VehicleWorkOrders: React.FC<{ vehicleId: string }> = ({ vehicleId }
   useEffect(() => {
     const fetchWorkOrders = async () => {
       try {
-        const { data, error } = await supabase
-          .from('work_orders')
-          .select('*')
-          .eq('vehicle_id', vehicleId)
-          .order('created_at', { ascending: false });
+        setLoading(true);
+        
+        // If we have customerId, use the enriched service
+        if (customerId) {
+          const allCustomerWorkOrders = await getWorkOrdersByCustomerId(customerId);
+          // Filter for this specific vehicle
+          const vehicleWorkOrders = allCustomerWorkOrders.filter(wo => wo.vehicle_id === vehicleId);
+          setWorkOrders(vehicleWorkOrders);
+        } else {
+          // Fallback to direct database query
+          const { data, error } = await supabase
+            .from('work_orders')
+            .select('*')
+            .eq('vehicle_id', vehicleId)
+            .order('created_at', { ascending: false });
 
-        if (error) throw error;
-        setWorkOrders(data || []);
+          if (error) throw error;
+          setWorkOrders(data || []);
+        }
       } catch (error) {
-        console.error("Error fetching work orders:", error);
+        console.error("VehicleWorkOrders: Error fetching work orders:", error);
         setWorkOrders([]);
       } finally {
         setLoading(false);
@@ -51,10 +94,10 @@ export const VehicleWorkOrders: React.FC<{ vehicleId: string }> = ({ vehicleId }
           .from('customers')
           .select('first_name, last_name')
           .eq('id', customerId)
-          .single();
+          .maybeSingle();
 
         if (customerError) {
-          console.error("Error fetching customer:", customerError);
+          console.error("VehicleWorkOrders: Error fetching customer:", customerError);
         } else if (customerData) {
           setCustomerName(`${customerData.first_name} ${customerData.last_name}`);
         }
@@ -64,15 +107,15 @@ export const VehicleWorkOrders: React.FC<{ vehicleId: string }> = ({ vehicleId }
           .from('vehicles')
           .select('year, make, model')
           .eq('id', vehicleId)
-          .single();
+          .maybeSingle();
 
         if (vehicleError) {
-          console.error("Error fetching vehicle:", vehicleError);
+          console.error("VehicleWorkOrders: Error fetching vehicle:", vehicleError);
         } else if (vehicleData) {
           setVehicleInfo(`${vehicleData.year} ${vehicleData.make} ${vehicleData.model}`);
         }
       } catch (error) {
-        console.error("Error fetching info:", error);
+        console.error("VehicleWorkOrders: Error fetching info:", error);
       }
     };
 
@@ -133,18 +176,7 @@ export const VehicleWorkOrders: React.FC<{ vehicleId: string }> = ({ vehicleId }
             </TableHeader>
             <TableBody>
               {workOrders.map((workOrder) => (
-                <TableRow key={workOrder.id} className="cursor-pointer hover:bg-slate-50">
-                  <TableCell>{new Date(workOrder.created_at).toLocaleDateString()}</TableCell>
-                  <TableCell>{workOrder.description || 'No description'}</TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(workOrder.status)}>
-                      {workOrder.status || 'Unknown'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {workOrder.total_cost ? `$${workOrder.total_cost.toFixed(2)}` : 'N/A'}
-                  </TableCell>
-                </TableRow>
+                <WorkOrderRow key={workOrder.id} workOrder={workOrder} />
               ))}
             </TableBody>
           </Table>
@@ -152,20 +184,4 @@ export const VehicleWorkOrders: React.FC<{ vehicleId: string }> = ({ vehicleId }
       )}
     </div>
   );
-};
-
-const getStatusColor = (status: string) => {
-  switch (status?.toLowerCase()) {
-    case 'completed':
-      return 'bg-green-100 text-green-800';
-    case 'in-progress':
-    case 'in progress':
-      return 'bg-blue-100 text-blue-800';
-    case 'pending':
-      return 'bg-yellow-100 text-yellow-800';
-    case 'cancelled':
-      return 'bg-red-100 text-red-800';
-    default:
-      return 'bg-gray-100 text-gray-800';
-  }
 };
