@@ -4,17 +4,25 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Calendar, User, Car } from "lucide-react";
+import { Plus, Calendar, User, Car, AlertTriangle } from "lucide-react";
 import { Customer, getCustomerFullName } from "@/types/customer";
 import { WorkOrder } from "@/types/workOrder";
 import { formatDate } from "@/utils/dateUtils";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface CustomerWorkOrdersTabProps {
   customer: Customer;
   workOrders: WorkOrder[];
+  loading?: boolean;
+  error?: string;
 }
 
-export function CustomerWorkOrdersTab({ customer, workOrders }: CustomerWorkOrdersTabProps) {
+export function CustomerWorkOrdersTab({ 
+  customer, 
+  workOrders, 
+  loading = false, 
+  error 
+}: CustomerWorkOrdersTabProps) {
   const customerName = getCustomerFullName(customer);
 
   const getStatusColor = (status: string) => {
@@ -33,6 +41,50 @@ export function CustomerWorkOrdersTab({ customer, workOrders }: CustomerWorkOrde
         return 'bg-gray-100 text-gray-800';
     }
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Work Orders</h3>
+          <Button disabled>
+            <Plus className="mr-2 h-4 w-4" />
+            New Work Order
+          </Button>
+        </div>
+        
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center space-y-2">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="text-sm text-muted-foreground">Loading work orders...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Work Orders</h3>
+          <Button asChild>
+            <Link to={`/work-orders/new?customer=${encodeURIComponent(customerName)}&customerId=${customer.id}`}>
+              <Plus className="mr-2 h-4 w-4" />
+              New Work Order
+            </Link>
+          </Button>
+        </div>
+        
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Error loading work orders: {error}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

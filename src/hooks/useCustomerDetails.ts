@@ -1,17 +1,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { Customer } from '@/types/customer';
-import { WorkOrder } from '@/types/workOrder';
-import { CustomerInteraction } from '@/types/interaction';
-import { CustomerCommunication, CustomerNote } from '@/types/customer';
-import { getAllCustomers } from '@/services/customer';
+import { useToast } from '@/hooks/use-toast';
+import { getCustomerById } from '@/services/customer/customerQueryService';
 import { getWorkOrdersByCustomerId } from '@/services/workOrder';
-import { getCustomerInteractions } from '@/services/customer/interactions/interactionQueryService';
-import { ensureCustomerLoyalty } from '@/services/loyalty/customerLoyaltyService';
-import { CustomerLoyalty } from '@/types/loyalty';
-
-// Request deduplication
-const activeRequests = new Map<string, Promise<any>>();
+import { useCustomerLoyalty } from '@/hooks/useCustomerLoyalty';
+import { Customer, CustomerInteraction, CustomerCommunication, CustomerNote } from '@/types/customer';
+import { WorkOrder } from '@/types/workOrder';
 
 export const useCustomerDetails = (customerId: string | undefined) => {
   const [customer, setCustomer] = useState<Customer | null>(null);
@@ -19,147 +13,126 @@ export const useCustomerDetails = (customerId: string | undefined) => {
   const [customerInteractions, setCustomerInteractions] = useState<CustomerInteraction[]>([]);
   const [customerCommunications, setCustomerCommunications] = useState<CustomerCommunication[]>([]);
   const [customerNotes, setCustomerNotes] = useState<CustomerNote[]>([]);
-  const [customerLoyalty, setCustomerLoyalty] = useState<CustomerLoyalty | null>(null);
   const [loading, setLoading] = useState(true);
+  const [workOrdersLoading, setWorkOrdersLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [workOrdersError, setWorkOrdersError] = useState<string | null>(null);
   const [addInteractionOpen, setAddInteractionOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('vehicles');
+  const [activeTab, setActiveTab] = useState("service");
 
-  const createRequestKey = (operation: string, id: string) => `${operation}_${id}`;
+  const { toast } = useToast();
+  
+  // Use the loyalty hook
+  const { customerLoyalty, loading: loyaltyLoading, refreshLoyalty } = useCustomerLoyalty(customerId);
 
-  const deduplicateRequest = async <T>(key: string, requestFn: () => Promise<T>): Promise<T> => {
-    if (activeRequests.has(key)) {
-      console.log(`Deduplicating request: ${key}`);
-      return activeRequests.get(key);
-    }
-
-    const request = requestFn();
-    activeRequests.set(key, request);
-    
-    try {
-      const result = await request;
-      activeRequests.delete(key);
-      return result;
-    } catch (error) {
-      activeRequests.delete(key);
-      throw error;
-    }
-  };
-
-  const refreshCustomerData = useCallback(async () => {
+  const fetchCustomerData = useCallback(async () => {
     if (!customerId || customerId === "undefined") {
-      console.error('Invalid customer ID:', customerId);
-      setError('Invalid customer ID provided');
+      setError("Invalid customer ID");
       setLoading(false);
       return;
     }
 
     try {
+      console.log('Fetching customer data for ID:', customerId);
       setLoading(true);
       setError(null);
-      console.log('Fetching customer details for ID:', customerId);
-
-      // Fetch customer data with deduplication
-      const customerData = await deduplicateRequest(
-        createRequestKey('customer', customerId),
-        async () => {
-          let retryCount = 0;
-          const maxRetries = 2;
-          
-          while (retryCount < maxRetries) {
-            try {
-              const customers = await getAllCustomers();
-              const found = customers.find(c => c.id === customerId);
-              
-              if (!found) {
-                retryCount++;
-                if (retryCount < maxRetries) {
-                  await new Promise(resolve => setTimeout(resolve, 1000));
-                  continue;
-                }
-                throw new Error('Customer not found after retries');
-              }
-              
-              return found;
-            } catch (fetchError) {
-              retryCount++;
-              if (retryCount >= maxRetries) throw fetchError;
-              await new Promise(resolve => setTimeout(resolve, 1000));
-            }
-          }
-          throw new Error('Failed to fetch customer');
-        }
-      );
-
-      setCustomer(customerData);
-
-      // Fetch work orders with deduplication and error handling
-      try {
-        const workOrders = await deduplicateRequest(
-          createRequestKey('workorders', customerId),
-          () => getWorkOrdersByCustomerId(customerId)
-        );
-        console.log('Work orders fetched:', workOrders);
-        setCustomerWorkOrders(workOrders || []);
-      } catch (workOrderError) {
-        console.error('Error fetching work orders:', workOrderError);
-        setCustomerWorkOrders([]);
+      
+      const customerData = await getCustomerById(customerId);
+      
+      if (!customerData) {
+        setError("Customer not found");
+        setCustomer(null);
+      } else {
+        console.log('Customer data loaded:', customerData);
+        setCustomer(customerData);
       }
-
-      // Fetch interactions with deduplication and error handling
-      try {
-        const interactions = await deduplicateRequest(
-          createRequestKey('interactions', customerId),
-          () => getCustomerInteractions(customerId)
-        );
-        setCustomerInteractions(interactions || []);
-      } catch (interactionError) {
-        console.error('Error fetching interactions:', interactionError);
-        setCustomerInteractions([]);
-      }
-
-      // Fetch loyalty data with deduplication and auto-creation fallback
-      try {
-        console.log('Fetching loyalty data for customer:', customerId);
-        const loyaltyData = await deduplicateRequest(
-          createRequestKey('loyalty', customerId),
-          () => ensureCustomerLoyalty(customerId)
-        );
-        setCustomerLoyalty(loyaltyData);
-        console.log('Loyalty data fetched/created:', loyaltyData);
-      } catch (loyaltyError) {
-        console.error('Error fetching/creating loyalty data:', loyaltyError);
-        setCustomerLoyalty(null);
-      }
-
-      // Initialize empty arrays for communications and notes
-      setCustomerCommunications([]);
-      setCustomerNotes([]);
-
-    } catch (err: any) {
-      console.error('Error in refreshCustomerData:', err);
-      setError(err.message || 'Failed to load customer details');
+    } catch (err) {
+      console.error('Error fetching customer:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load customer';
+      setError(errorMessage);
+      setCustomer(null);
+      
+      toast({
+        title: "Error",
+        description: "Failed to load customer details. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
-  }, [customerId]);
+  }, [customerId, toast]);
+
+  const fetchWorkOrders = useCallback(async () => {
+    if (!customerId || customerId === "undefined") {
+      setWorkOrdersLoading(false);
+      return;
+    }
+
+    try {
+      console.log('Fetching work orders for customer:', customerId);
+      setWorkOrdersLoading(true);
+      setWorkOrdersError(null);
+      
+      const workOrders = await getWorkOrdersByCustomerId(customerId);
+      console.log('Work orders loaded:', workOrders);
+      setCustomerWorkOrders(workOrders || []);
+    } catch (err) {
+      console.error('Error fetching work orders:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load work orders';
+      setWorkOrdersError(errorMessage);
+      setCustomerWorkOrders([]);
+      
+      toast({
+        title: "Warning",
+        description: "Failed to load work orders for this customer.",
+        variant: "destructive",
+      });
+    } finally {
+      setWorkOrdersLoading(false);
+    }
+  }, [customerId, toast]);
+
+  const refreshCustomerData = useCallback(async () => {
+    await Promise.all([
+      fetchCustomerData(),
+      fetchWorkOrders(),
+      refreshLoyalty()
+    ]);
+  }, [fetchCustomerData, fetchWorkOrders, refreshLoyalty]);
+
+  // Initial data fetch
+  useEffect(() => {
+    fetchCustomerData();
+    fetchWorkOrders();
+  }, [fetchCustomerData, fetchWorkOrders]);
 
   const handleInteractionAdded = useCallback((interaction: CustomerInteraction) => {
     setCustomerInteractions(prev => [interaction, ...prev]);
     setAddInteractionOpen(false);
-  }, []);
+    
+    toast({
+      title: "Success",
+      description: "Interaction added successfully",
+    });
+  }, [toast]);
 
   const handleCommunicationAdded = useCallback((communication: CustomerCommunication) => {
     setCustomerCommunications(prev => [communication, ...prev]);
-  }, []);
+    
+    toast({
+      title: "Success", 
+      description: "Communication added successfully",
+    });
+  }, [toast]);
 
   const handleNoteAdded = useCallback((note: CustomerNote) => {
     setCustomerNotes(prev => [note, ...prev]);
-  }, []);
-
-  useEffect(() => {
-    refreshCustomerData();
-  }, [refreshCustomerData]);
+    
+    toast({
+      title: "Success",
+      description: "Note added successfully", 
+    });
+  }, [toast]);
 
   return {
     customer,
@@ -169,7 +142,10 @@ export const useCustomerDetails = (customerId: string | undefined) => {
     customerNotes,
     customerLoyalty,
     loading,
+    workOrdersLoading,
+    loyaltyLoading,
     error,
+    workOrdersError,
     addInteractionOpen,
     setAddInteractionOpen,
     activeTab,
