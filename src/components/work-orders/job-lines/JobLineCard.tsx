@@ -1,100 +1,95 @@
 
 import React from 'react';
-import { WorkOrderJobLine } from '@/types/jobLine';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Clock, DollarSign } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Trash2, Edit } from 'lucide-react';
+import { WorkOrderJobLine } from '@/types/jobLine';
+import { jobLineStatusMap } from '@/types/jobLine';
 
 interface JobLineCardProps {
   jobLine: WorkOrderJobLine;
-  onUpdate?: (updatedJobLine: WorkOrderJobLine) => void;
-  onDelete?: (jobLineId: string) => void;
+  onUpdate: (jobLine: WorkOrderJobLine) => void;
+  onDelete: (jobLineId: string) => void;
+  isEditMode?: boolean;
 }
 
-export function JobLineCard({ jobLine, onUpdate, onDelete }: JobLineCardProps) {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'success' as const;
-      case 'in-progress':
-        return 'info' as const;
-      case 'on-hold':
-        return 'warning' as const;
-      default:
-        return 'secondary' as const;
-    }
-  };
-
-  const getCategoryColor = (category?: string) => {
-    if (!category) return 'outline' as const;
-    
-    switch (category.toLowerCase()) {
-      case 'remove & replace':
-      case 'replacement':
-        return 'destructive' as const;
-      case 'repair':
-      case 'service':
-        return 'info' as const;
-      case 'maintenance':
-        return 'warning' as const;
-      case 'inspection':
-      case 'testing':
-        return 'secondary' as const;
-      default:
-        return 'outline' as const;
-    }
-  };
+export function JobLineCard({ 
+  jobLine, 
+  onUpdate, 
+  onDelete, 
+  isEditMode = false 
+}: JobLineCardProps) {
+  const statusInfo = jobLineStatusMap[jobLine.status] || jobLineStatusMap.pending;
 
   return (
-    <Card className="hover:shadow-md transition-shadow duration-200">
+    <Card className="border-l-4 border-l-blue-500">
       <CardContent className="p-4">
-        <div className="flex justify-between items-start mb-3">
+        <div className="flex items-start justify-between">
           <div className="flex-1">
-            <h3 className="font-semibold text-base leading-tight mb-1">
-              {jobLine.name}
-            </h3>
-            {jobLine.category && (
-              <Badge variant={getCategoryColor(jobLine.category)} className="text-xs mb-2">
-                {jobLine.category}
+            <div className="flex items-center gap-2 mb-2">
+              <h4 className="font-medium">{jobLine.name}</h4>
+              <Badge className={statusInfo.classes}>
+                {statusInfo.label}
               </Badge>
+              {jobLine.category && (
+                <Badge variant="outline" className="text-xs">
+                  {jobLine.category}
+                </Badge>
+              )}
+            </div>
+            
+            {jobLine.description && (
+              <p className="text-sm text-muted-foreground mb-3">
+                {jobLine.description}
+              </p>
             )}
-          </div>
-          <Badge variant={getStatusColor(jobLine.status)} className="text-xs ml-2">
-            {jobLine.status.replace('-', ' ')}
-          </Badge>
-        </div>
-
-        {jobLine.description && jobLine.description !== jobLine.name && (
-          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-            {jobLine.description}
-          </p>
-        )}
-
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            {jobLine.estimatedHours && (
-              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                <Clock className="h-4 w-4" />
-                <span>{jobLine.estimatedHours}h</span>
+            
+            <div className="grid grid-cols-3 gap-4 text-sm">
+              <div>
+                <span className="text-muted-foreground">Hours:</span>
+                <span className="ml-1 font-medium">
+                  {jobLine.estimatedHours?.toFixed(1) || '0.0'}
+                </span>
               </div>
-            )}
+              <div>
+                <span className="text-muted-foreground">Rate:</span>
+                <span className="ml-1 font-medium">
+                  ${jobLine.laborRate?.toFixed(2) || '0.00'}
+                </span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Total:</span>
+                <span className="ml-1 font-medium text-green-600">
+                  ${jobLine.totalAmount?.toFixed(2) || '0.00'}
+                </span>
+              </div>
+            </div>
           </div>
           
-          {jobLine.totalAmount && (
-            <div className="flex items-center gap-1 font-semibold text-lg">
-              <DollarSign className="h-4 w-4" />
-              <span>${jobLine.totalAmount.toFixed(2)}</span>
+          {isEditMode && (
+            <div className="flex items-center gap-1 ml-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  // Handle edit functionality
+                  console.log('Edit job line:', jobLine.id);
+                }}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onDelete(jobLine.id)}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
             </div>
           )}
         </div>
-
-        {jobLine.laborRate && (
-          <div className="mt-2 pt-2 border-t border-gray-100">
-            <div className="text-xs text-muted-foreground">
-              Labor Rate: ${jobLine.laborRate}/hr
-            </div>
-          </div>
-        )}
       </CardContent>
     </Card>
   );

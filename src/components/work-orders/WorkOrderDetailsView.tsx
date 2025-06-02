@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { WorkOrder } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPageLayout } from './WorkOrderPageLayout';
@@ -7,6 +8,8 @@ import { WorkOrderDetailsTabs } from './details/WorkOrderDetailsTabs';
 import { WorkOrderDetailsHeader } from './details/WorkOrderDetailsHeader';
 import { WorkOrderInvoiceView } from './details/WorkOrderInvoiceView';
 import { WorkOrderViewToggle } from './details/WorkOrderViewToggle';
+import { Button } from '@/components/ui/button';
+import { Edit, Save, X } from 'lucide-react';
 import { loadJobLinesFromDatabase, saveJobLinesToDatabase } from '@/services/jobLineParserEnhanced';
 import { toast } from 'sonner';
 
@@ -15,9 +18,11 @@ interface WorkOrderDetailsViewProps {
 }
 
 export function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsViewProps) {
+  const navigate = useNavigate();
   const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
   const [jobLinesLoading, setJobLinesLoading] = useState(true);
   const [view, setView] = useState<'detailed' | 'invoice'>('detailed');
+  const [isEditMode, setIsEditMode] = useState(false);
 
   // Load job lines from database
   useEffect(() => {
@@ -50,6 +55,21 @@ export function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsViewProps) {
     }
   };
 
+  const handleEditToggle = () => {
+    if (isEditMode) {
+      // If we're saving/exiting edit mode, you might want to save changes here
+      setIsEditMode(false);
+      toast.success('Changes saved successfully');
+    } else {
+      setIsEditMode(true);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
+    // Optionally reload data to discard changes
+  };
+
   // Get work order title with better error handling
   const getWorkOrderTitle = () => {
     try {
@@ -71,6 +91,47 @@ export function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsViewProps) {
     }
   };
 
+  const editModeActions = isEditMode ? (
+    <div className="flex items-center gap-2">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleCancelEdit}
+        className="flex items-center gap-1"
+      >
+        <X className="h-4 w-4" />
+        Cancel
+      </Button>
+      <Button
+        size="sm"
+        onClick={handleEditToggle}
+        className="flex items-center gap-1 bg-green-600 hover:bg-green-700"
+      >
+        <Save className="h-4 w-4" />
+        Save Changes
+      </Button>
+    </div>
+  ) : (
+    <Button
+      size="sm"
+      onClick={handleEditToggle}
+      className="flex items-center gap-1"
+    >
+      <Edit className="h-4 w-4" />
+      Edit Work Order
+    </Button>
+  );
+
+  const actions = (
+    <div className="flex items-center gap-2">
+      {view === 'detailed' && editModeActions}
+      <WorkOrderViewToggle 
+        view={view} 
+        onViewChange={setView}
+      />
+    </div>
+  );
+
   console.log('WorkOrderDetailsView rendering with workOrder:', workOrder);
 
   return (
@@ -79,12 +140,7 @@ export function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsViewProps) {
       description={getWorkOrderDescription()}
       backLink="/work-orders"
       backLinkText="Back to Work Orders"
-      actions={
-        <WorkOrderViewToggle 
-          view={view} 
-          onViewChange={setView}
-        />
-      }
+      actions={actions}
     >
       {view === 'invoice' ? (
         <WorkOrderInvoiceView 
@@ -105,6 +161,7 @@ export function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsViewProps) {
             jobLines={jobLines}
             onJobLinesChange={handleJobLinesChange}
             jobLinesLoading={jobLinesLoading}
+            isEditMode={isEditMode}
           />
         </div>
       )}

@@ -13,6 +13,7 @@ interface JobLinesSectionProps {
   jobLines: WorkOrderJobLine[];
   onJobLinesChange: (jobLines: WorkOrderJobLine[]) => void;
   shopId?: string;
+  isEditMode?: boolean;
 }
 
 export function JobLinesSection({
@@ -20,7 +21,8 @@ export function JobLinesSection({
   description,
   jobLines,
   onJobLinesChange,
-  shopId
+  shopId,
+  isEditMode = false
 }: JobLinesSectionProps) {
   const [localJobLines, setLocalJobLines] = useState<WorkOrderJobLine[]>(jobLines);
 
@@ -73,10 +75,12 @@ export function JobLinesSection({
             <CardTitle className="text-lg">Job Lines</CardTitle>
             <Badge variant="secondary">{localJobLines.length}</Badge>
           </div>
-          <AddJobLineDialog 
-            workOrderId={workOrderId}
-            onJobLineAdd={handleAddJobLine}
-          />
+          {isEditMode && (
+            <AddJobLineDialog 
+              workOrderId={workOrderId}
+              onJobLineAdd={handleAddJobLine}
+            />
+          )}
         </div>
         
         {localJobLines.length > 0 && (
@@ -92,9 +96,15 @@ export function JobLinesSection({
           <div className="text-center py-8 border-2 border-dashed border-slate-200 rounded-lg">
             <Wrench className="h-8 w-8 mx-auto text-slate-400 mb-2" />
             <p className="text-slate-500 mb-4">No job lines added yet</p>
-            <p className="text-sm text-slate-400">
-              Add job lines to break down the work into specific tasks
-            </p>
+            {isEditMode ? (
+              <p className="text-sm text-slate-400">
+                Add job lines to break down the work into specific tasks
+              </p>
+            ) : (
+              <p className="text-sm text-slate-400">
+                Job lines will appear here when added in edit mode
+              </p>
+            )}
           </div>
         ) : (
           <div className="space-y-3">
@@ -104,6 +114,7 @@ export function JobLinesSection({
                 jobLine={jobLine}
                 onUpdate={handleUpdateJobLine}
                 onDelete={handleDeleteJobLine}
+                isEditMode={isEditMode}
               />
             ))}
           </div>
