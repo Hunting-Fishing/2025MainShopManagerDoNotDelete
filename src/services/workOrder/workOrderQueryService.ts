@@ -1,14 +1,10 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { WorkOrder } from "@/types/workOrder";
+import { supabase } from '@/lib/supabase';
+import { WorkOrder } from '@/types/workOrder';
+import { normalizeWorkOrder } from '@/utils/workOrders/formatters';
 
-/**
- * Get all work orders with complete relationship data
- */
-export const getAllWorkOrders = async (): Promise<WorkOrder[]> => {
+export async function getAllWorkOrders(): Promise<WorkOrder[]> {
   try {
-    console.log('Fetching all work orders with relationships...');
-    
     const { data, error } = await supabase
       .from('work_orders')
       .select(`
@@ -41,24 +37,14 @@ export const getAllWorkOrders = async (): Promise<WorkOrder[]> => {
       throw error;
     }
 
-    console.log('Raw work orders data:', data);
-
-    // Transform the data to match our WorkOrder interface
-    const workOrders: WorkOrder[] = (data || []).map((order: any) => {
-      // Handle customer data
-      const customer = order.customers;
-      const customerName = customer 
-        ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim()
-        : 'Unknown Customer';
-      
-      // Handle vehicle data - vehicles is an array, get first element
-      const vehicle = order.vehicles?.[0];
+    return (data || []).map((workOrder: any) => {
+      const customer = workOrder.customers?.[0];
+      const vehicle = workOrder.vehicles?.[0];
       
       return {
-        ...order,
-        // Customer fields for backward compatibility
-        customer: customerName,
-        customer_name: customerName,
+        ...normalizeWorkOrder(workOrder),
+        // Customer data
+        customer_name: customer ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() : '',
         customer_email: customer?.email || '',
         customer_phone: customer?.phone || '',
         customer_address: customer?.address || '',
@@ -66,15 +52,17 @@ export const getAllWorkOrders = async (): Promise<WorkOrder[]> => {
         customer_state: customer?.state || '',
         customer_zip: customer?.postal_code || '',
         
-        // Vehicle fields for backward compatibility
+        // Vehicle data
         vehicle_year: vehicle?.year?.toString() || '',
         vehicle_make: vehicle?.make || '',
         vehicle_model: vehicle?.model || '',
         vehicle_vin: vehicle?.vin || '',
         vehicle_license_plate: vehicle?.license_plate || '',
         
-        // Structured customer and vehicle objects
-        customers: customer,
+        // Customer backwards compatibility
+        customer: customer ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() : '',
+        
+        // Vehicle object for new interface
         vehicle: vehicle ? {
           id: vehicle.id,
           year: vehicle.year,
@@ -86,22 +74,14 @@ export const getAllWorkOrders = async (): Promise<WorkOrder[]> => {
         } : undefined
       };
     });
-
-    console.log('Transformed work orders:', workOrders);
-    return workOrders;
   } catch (error) {
     console.error('Error in getAllWorkOrders:', error);
     throw error;
   }
-};
+}
 
-/**
- * Get a single work order by ID with complete relationship data
- */
-export const getWorkOrderById = async (id: string): Promise<WorkOrder | null> => {
+export async function getWorkOrderById(id: string): Promise<WorkOrder | null> {
   try {
-    console.log('Fetching work order by ID:', id);
-    
     const { data, error } = await supabase
       .from('work_orders')
       .select(`
@@ -136,26 +116,16 @@ export const getWorkOrderById = async (id: string): Promise<WorkOrder | null> =>
     }
 
     if (!data) {
-      console.log('Work order not found:', id);
       return null;
     }
 
-    console.log('Raw work order data:', data);
-
-    // Handle customer data
-    const customer = data.customers;
-    const customerName = customer 
-      ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim()
-      : 'Unknown Customer';
-    
-    // Handle vehicle data - vehicles is an array, get first element
+    const customer = data.customers?.[0];
     const vehicle = data.vehicles?.[0];
 
-    const workOrder: WorkOrder = {
-      ...data,
-      // Customer fields for backward compatibility
-      customer: customerName,
-      customer_name: customerName,
+    return {
+      ...normalizeWorkOrder(data),
+      // Customer data
+      customer_name: customer ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() : '',
       customer_email: customer?.email || '',
       customer_phone: customer?.phone || '',
       customer_address: customer?.address || '',
@@ -163,15 +133,17 @@ export const getWorkOrderById = async (id: string): Promise<WorkOrder | null> =>
       customer_state: customer?.state || '',
       customer_zip: customer?.postal_code || '',
       
-      // Vehicle fields for backward compatibility
+      // Vehicle data
       vehicle_year: vehicle?.year?.toString() || '',
       vehicle_make: vehicle?.make || '',
       vehicle_model: vehicle?.model || '',
       vehicle_vin: vehicle?.vin || '',
       vehicle_license_plate: vehicle?.license_plate || '',
       
-      // Structured customer and vehicle objects
-      customers: customer,
+      // Customer backwards compatibility
+      customer: customer ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() : '',
+      
+      // Vehicle object for new interface
       vehicle: vehicle ? {
         id: vehicle.id,
         year: vehicle.year,
@@ -182,19 +154,13 @@ export const getWorkOrderById = async (id: string): Promise<WorkOrder | null> =>
         trim: vehicle.trim
       } : undefined
     };
-
-    console.log('Transformed work order:', workOrder);
-    return workOrder;
   } catch (error) {
     console.error('Error in getWorkOrderById:', error);
     throw error;
   }
-};
+}
 
-/**
- * Get work orders by customer ID
- */
-export const getWorkOrdersByCustomerId = async (customerId: string): Promise<WorkOrder[]> => {
+export async function getWorkOrdersByCustomerId(customerId: string): Promise<WorkOrder[]> {
   try {
     console.log('Fetching work orders for customer:', customerId);
     
@@ -231,24 +197,16 @@ export const getWorkOrdersByCustomerId = async (customerId: string): Promise<Wor
       throw error;
     }
 
-    console.log('Raw work orders data for customer:', data);
+    console.log('Raw work orders data:', data);
 
-    // Transform the data to match our WorkOrder interface
-    const workOrders: WorkOrder[] = (data || []).map((order: any) => {
-      // Handle customer data
-      const customer = order.customers;
-      const customerName = customer 
-        ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim()
-        : 'Unknown Customer';
-      
-      // Handle vehicle data - vehicles is an array, get first element
-      const vehicle = order.vehicles?.[0];
+    return (data || []).map((workOrder: any) => {
+      const customer = workOrder.customers?.[0];
+      const vehicle = workOrder.vehicles?.[0];
       
       return {
-        ...order,
-        // Customer fields for backward compatibility
-        customer: customerName,
-        customer_name: customerName,
+        ...normalizeWorkOrder(workOrder),
+        // Customer data
+        customer_name: customer ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() : '',
         customer_email: customer?.email || '',
         customer_phone: customer?.phone || '',
         customer_address: customer?.address || '',
@@ -256,15 +214,17 @@ export const getWorkOrdersByCustomerId = async (customerId: string): Promise<Wor
         customer_state: customer?.state || '',
         customer_zip: customer?.postal_code || '',
         
-        // Vehicle fields for backward compatibility
+        // Vehicle data
         vehicle_year: vehicle?.year?.toString() || '',
         vehicle_make: vehicle?.make || '',
         vehicle_model: vehicle?.model || '',
         vehicle_vin: vehicle?.vin || '',
         vehicle_license_plate: vehicle?.license_plate || '',
         
-        // Structured customer and vehicle objects
-        customers: customer,
+        // Customer backwards compatibility - FIXED: changed from 'customers' to 'customer'
+        customer: customer ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() : '',
+        
+        // Vehicle object for new interface
         vehicle: vehicle ? {
           id: vehicle.id,
           year: vehicle.year,
@@ -276,22 +236,14 @@ export const getWorkOrdersByCustomerId = async (customerId: string): Promise<Wor
         } : undefined
       };
     });
-
-    console.log('Transformed work orders for customer:', workOrders);
-    return workOrders;
   } catch (error) {
     console.error('Error in getWorkOrdersByCustomerId:', error);
     throw error;
   }
-};
+}
 
-/**
- * Get work orders by status
- */
-export const getWorkOrdersByStatus = async (status: string): Promise<WorkOrder[]> => {
+export async function getWorkOrdersByStatus(status: string): Promise<WorkOrder[]> {
   try {
-    console.log('Fetching work orders by status:', status);
-    
     const { data, error } = await supabase
       .from('work_orders')
       .select(`
@@ -325,24 +277,14 @@ export const getWorkOrdersByStatus = async (status: string): Promise<WorkOrder[]
       throw error;
     }
 
-    console.log('Raw work orders data for status:', data);
-
-    // Transform the data to match our WorkOrder interface
-    const workOrders: WorkOrder[] = (data || []).map((order: any) => {
-      // Handle customer data
-      const customer = order.customers;
-      const customerName = customer 
-        ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim()
-        : 'Unknown Customer';
-      
-      // Handle vehicle data - vehicles is an array, get first element
-      const vehicle = order.vehicles?.[0];
+    return (data || []).map((workOrder: any) => {
+      const customer = workOrder.customers?.[0];
+      const vehicle = workOrder.vehicles?.[0];
       
       return {
-        ...order,
-        // Customer fields for backward compatibility
-        customer: customerName,
-        customer_name: customerName,
+        ...normalizeWorkOrder(workOrder),
+        // Customer data
+        customer_name: customer ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() : '',
         customer_email: customer?.email || '',
         customer_phone: customer?.phone || '',
         customer_address: customer?.address || '',
@@ -350,15 +292,17 @@ export const getWorkOrdersByStatus = async (status: string): Promise<WorkOrder[]
         customer_state: customer?.state || '',
         customer_zip: customer?.postal_code || '',
         
-        // Vehicle fields for backward compatibility
+        // Vehicle data
         vehicle_year: vehicle?.year?.toString() || '',
         vehicle_make: vehicle?.make || '',
         vehicle_model: vehicle?.model || '',
         vehicle_vin: vehicle?.vin || '',
         vehicle_license_plate: vehicle?.license_plate || '',
         
-        // Structured customer and vehicle objects
-        customers: customer,
+        // Customer backwards compatibility
+        customer: customer ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() : '',
+        
+        // Vehicle object for new interface
         vehicle: vehicle ? {
           id: vehicle.id,
           year: vehicle.year,
@@ -370,22 +314,14 @@ export const getWorkOrdersByStatus = async (status: string): Promise<WorkOrder[]
         } : undefined
       };
     });
-
-    console.log('Transformed work orders for status:', workOrders);
-    return workOrders;
   } catch (error) {
     console.error('Error in getWorkOrdersByStatus:', error);
     throw error;
   }
-};
+}
 
-/**
- * Get unique technicians from work orders
- */
-export const getUniqueTechnicians = async (): Promise<string[]> => {
+export async function getUniqueTechnicians(): Promise<string[]> {
   try {
-    console.log('Fetching unique technicians...');
-    
     const { data, error } = await supabase
       .from('work_orders')
       .select('technician_id')
@@ -396,12 +332,10 @@ export const getUniqueTechnicians = async (): Promise<string[]> => {
       throw error;
     }
 
-    const uniqueTechnicians = [...new Set((data || []).map(order => order.technician_id))];
-    console.log('Unique technicians:', uniqueTechnicians);
-    
-    return uniqueTechnicians;
+    const uniqueTechnicians = [...new Set(data.map(item => item.technician_id))];
+    return uniqueTechnicians.filter(Boolean);
   } catch (error) {
     console.error('Error in getUniqueTechnicians:', error);
     throw error;
   }
-};
+}
