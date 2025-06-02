@@ -50,10 +50,33 @@ export function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsViewProps) {
     }
   };
 
+  // Get work order title with better error handling
+  const getWorkOrderTitle = () => {
+    try {
+      const shortId = workOrder.id?.slice(0, 8) || 'Unknown';
+      return `Work Order #${shortId}`;
+    } catch (error) {
+      console.error('Error getting work order title:', error);
+      return 'Work Order Details';
+    }
+  };
+
+  // Get work order description with fallback
+  const getWorkOrderDescription = () => {
+    try {
+      return workOrder.description || 'No description available';
+    } catch (error) {
+      console.error('Error getting work order description:', error);
+      return 'Description unavailable';
+    }
+  };
+
+  console.log('WorkOrderDetailsView rendering with workOrder:', workOrder);
+
   return (
     <WorkOrderPageLayout
-      title={`Work Order #${workOrder.id.slice(0, 8)}`}
-      description={workOrder.description || 'No description available'}
+      title={getWorkOrderTitle()}
+      description={getWorkOrderDescription()}
       backLink="/work-orders"
       backLinkText="Back to Work Orders"
       actions={

@@ -49,16 +49,27 @@ export function CreateWorkOrderFromCustomerDialog({
         priority: formData.priority
       });
 
+      // Add vehicle information if selected
       if (formData.vehicleId && customer.vehicles) {
         const selectedVehicle = customer.vehicles.find(v => v.id === formData.vehicleId);
         if (selectedVehicle) {
-          // NEW: Add vehicleId to params
+          console.log('Selected vehicle for work order:', selectedVehicle);
+          
+          // Add vehicle_id as the primary identifier
           params.append('vehicleId', selectedVehicle.id!);
+          
+          // Add vehicle details for form pre-population
           params.append('vehicleMake', selectedVehicle.make || '');
           params.append('vehicleModel', selectedVehicle.model || '');
           params.append('vehicleYear', selectedVehicle.year?.toString() || '');
           params.append('vehicleLicensePlate', selectedVehicle.license_plate || '');
           params.append('vehicleVin', selectedVehicle.vin || '');
+          
+          // Create vehicle info string for backward compatibility
+          const vehicleInfo = `${selectedVehicle.year || ''} ${selectedVehicle.make || ''} ${selectedVehicle.model || ''}`.trim();
+          if (vehicleInfo) {
+            params.append('vehicleInfo', vehicleInfo);
+          }
         }
       }
 

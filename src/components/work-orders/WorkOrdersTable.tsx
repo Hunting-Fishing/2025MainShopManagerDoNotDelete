@@ -12,26 +12,46 @@ interface WorkOrdersTableProps {
   workOrders: WorkOrder[];
 }
 
-// Helper function to get vehicle information with improved logic
+// Helper function to get vehicle information with improved error handling
 const getVehicleInfo = (workOrder: WorkOrder): string => {
-  // First, try to use vehicle table data if available
-  if (workOrder.vehicle) {
-    const { year, make, model, license_plate } = workOrder.vehicle;
-    const vehicleText = `${year || ''} ${make || ''} ${model || ''}`.trim();
-    const plateText = license_plate ? ` (${license_plate})` : '';
-    return vehicleText + plateText || 'Vehicle details available';
+  try {
+    // First, try to use vehicle table data if available
+    if (workOrder.vehicle) {
+      const { year, make, model, license_plate } = workOrder.vehicle;
+      const vehicleText = `${year || ''} ${make || ''} ${model || ''}`.trim();
+      const plateText = license_plate ? ` (${license_plate})` : '';
+      return vehicleText + plateText || 'Vehicle details available';
+    }
+    
+    // Fallback to individual vehicle fields from work order
+    const { vehicle_make, vehicle_model, vehicle_year, vehicle_license_plate } = workOrder;
+    
+    if (vehicle_make || vehicle_model || vehicle_year) {
+      const vehicleText = `${vehicle_year || ''} ${vehicle_make || ''} ${vehicle_model || ''}`.trim();
+      const plateText = vehicle_license_plate ? ` (${vehicle_license_plate})` : '';
+      return vehicleText + plateText;
+    }
+    
+    // If we have a vehicle_id but no vehicle data, show that we have a vehicle reference
+    if (workOrder.vehicle_id) {
+      return 'Vehicle assigned (loading details...)';
+    }
+    
+    return 'No vehicle assigned';
+  } catch (error) {
+    console.error('Error getting vehicle info:', error);
+    return 'Vehicle information unavailable';
   }
-  
-  // Fallback to individual vehicle fields
-  const { vehicle_make, vehicle_model, vehicle_year, vehicle_license_plate } = workOrder;
-  
-  if (vehicle_make || vehicle_model || vehicle_year) {
-    const vehicleText = `${vehicle_year || ''} ${vehicle_make || ''} ${vehicle_model || ''}`.trim();
-    const plateText = vehicle_license_plate ? ` (${vehicle_license_plate})` : '';
-    return vehicleText + plateText;
+};
+
+// Helper function to get customer name with fallback handling
+const getCustomerName = (workOrder: WorkOrder): string => {
+  try {
+    return workOrder.customer_name || workOrder.customer || 'Unknown Customer';
+  } catch (error) {
+    console.error('Error getting customer name:', error);
+    return 'Customer information unavailable';
   }
-  
-  return 'No vehicle assigned';
 };
 
 // Helper function to get status badge variant
@@ -110,19 +130,28 @@ const WorkOrdersTable: React.FC<WorkOrdersTableProps> = ({ workOrders }) => {
                   {workOrder.id.slice(0, 8)}...
                 </TableCell>
                 <TableCell>
-                  {workOrder.customer_name || workOrder.customer || 'Unknown Customer'}
+                  <div className="font-medium">
+                    {getCustomerName(workOrder)}
+                  </div>
+                  {workOrder.customer_email && (
+                    <div className="text-sm text-muted-foreground">
+                      {workOrder.customer_email}
+                    </div>
+                  )}
                 </TableCell>
                 <TableCell>
                   <div className="text-sm">
                     {getVehicleInfo(workOrder)}
                   </div>
                 </TableCell>
-                <TableCell className="max-w-xs truncate">
-                  {workOrder.description || 'No description'}
+                <TableCell className="max-w-xs">
+                  <div className="truncate" title={workOrder.description || 'No description'}>
+                    {workOrder.description || 'No description'}
+                  </div>
                 </TableCell>
                 <TableCell>
                   <Badge variant={getStatusVariant(workOrder.status)}>
-                    {workOrder.status}
+                    {workOrder.status?.replace('-', ' ') || 'Unknown'}
                   </Badge>
                 </TableCell>
                 <TableCell>
@@ -135,7 +164,10 @@ const WorkOrdersTable: React.FC<WorkOrdersTableProps> = ({ workOrders }) => {
                 <TableCell>
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Clock className="h-3 w-3" />
-                    {new Date(workOrder.created_at).toLocaleDateString()}
+                    {workOrder.created_at ? 
+                      new Date(workOrder.created_at).toLocaleDateString() : 
+                      'Unknown date'
+                    }
                   </div>
                 </TableCell>
                 <TableCell>

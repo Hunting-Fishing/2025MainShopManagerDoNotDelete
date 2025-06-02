@@ -8720,6 +8720,38 @@ export type Database = {
           work_order_id: string
         }[]
       }
+      get_work_order_with_details: {
+        Args: { work_order_id: string }
+        Returns: {
+          id: string
+          customer_id: string
+          vehicle_id: string
+          advisor_id: string
+          technician_id: string
+          estimated_hours: number
+          total_cost: number
+          created_by: string
+          created_at: string
+          updated_at: string
+          start_time: string
+          end_time: string
+          service_category_id: string
+          invoiced_at: string
+          status: string
+          description: string
+          service_type: string
+          invoice_id: string
+          customer_first_name: string
+          customer_last_name: string
+          customer_email: string
+          customer_phone: string
+          vehicle_year: string
+          vehicle_make: string
+          vehicle_model: string
+          vehicle_vin: string
+          vehicle_license_plate: string
+        }[]
+      }
       has_permission: {
         Args: {
           user_id: string
