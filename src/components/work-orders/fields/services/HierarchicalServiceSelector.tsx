@@ -23,6 +23,13 @@ export function HierarchicalServiceSelector({
 }: HierarchicalServiceSelectorProps) {
   const [viewMode, setViewMode] = useState<'enhanced' | 'compact'>('enhanced');
 
+  // Debug logging
+  console.log('HierarchicalServiceSelector render:', {
+    viewMode,
+    categoriesCount: categories.length,
+    selectedServicesCount: selectedServices.length
+  });
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
