@@ -6,6 +6,7 @@ import { ServiceViewModeToggle } from './ServiceViewModeToggle';
 import { ServiceCompactView } from './ServiceCompactView';
 import { ServiceCategoryList } from './ServiceCategoryList';
 import { SearchInput } from './SearchInput';
+import { ServiceDebugPanel } from './ServiceDebugPanel';
 import { useServiceSearch } from '@/hooks/useServiceSearch';
 
 interface HierarchicalServiceSelectorProps {
@@ -58,6 +59,9 @@ export function HierarchicalServiceSelector({
           onViewModeChange={handleViewModeChange} 
         />
       </div>
+
+      {/* Debug Panel */}
+      <ServiceDebugPanel categories={categories} />
 
       {/* Search Input */}
       <SearchInput
