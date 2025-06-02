@@ -14,10 +14,10 @@ export async function saveJobLinesToDatabase(workOrderId: string, jobLines: Work
 }
 
 export async function addJobLineToDatabase(workOrderId: string, jobLine: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>): Promise<WorkOrderJobLine> {
-  // Generate a new ID and timestamps
+  // Generate a proper UUID instead of custom string format
   const newJobLine: WorkOrderJobLine = {
     ...jobLine,
-    id: `jl-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    id: crypto.randomUUID(), // Use proper UUID format instead of custom string
     workOrderId,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
