@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { WorkOrder } from '@/types/workOrder';
 
@@ -24,58 +23,7 @@ export const getAllWorkOrders = async (): Promise<WorkOrder[]> => {
     // Fetch customer and vehicle data separately for each work order
     const enrichedWorkOrders = await Promise.all(
       workOrders.map(async (workOrder) => {
-        let customerData = null;
-        let vehicleData = null;
-
-        // Fetch customer data if customer_id exists
-        if (workOrder.customer_id) {
-          try {
-            const { data: customer } = await supabase
-              .from('customers')
-              .select('first_name, last_name, email, phone')
-              .eq('id', workOrder.customer_id)
-              .single();
-            
-            if (customer) {
-              customerData = {
-                customer_name: `${customer.first_name} ${customer.last_name}`,
-                customer_email: customer.email,
-                customer_phone: customer.phone
-              };
-            }
-          } catch (err) {
-            console.warn(`Could not fetch customer data for work order ${workOrder.id}:`, err);
-          }
-        }
-
-        // Fetch vehicle data if vehicle_id exists
-        if (workOrder.vehicle_id) {
-          try {
-            const { data: vehicle } = await supabase
-              .from('vehicles')
-              .select('year, make, model, vin, license_plate')
-              .eq('id', workOrder.vehicle_id)
-              .single();
-            
-            if (vehicle) {
-              vehicleData = {
-                vehicle_year: vehicle.year?.toString() || '',
-                vehicle_make: vehicle.make || '',
-                vehicle_model: vehicle.model || '',
-                vehicle_vin: vehicle.vin || '',
-                vehicle_license_plate: vehicle.license_plate || ''
-              };
-            }
-          } catch (err) {
-            console.warn(`Could not fetch vehicle data for work order ${workOrder.id}:`, err);
-          }
-        }
-
-        return {
-          ...workOrder,
-          ...customerData,
-          ...vehicleData
-        };
+        return enrichWorkOrderWithRelatedData(workOrder);
       })
     );
 
@@ -371,3 +319,76 @@ export const getUniqueTechnicians = async (): Promise<string[]> => {
     return [];
   }
 };
+
+/**
+ * Enriches work order data with customer and vehicle information
+ */
+async function enrichWorkOrderWithRelatedData(workOrder: any): Promise<WorkOrder> {
+  const enrichedWorkOrder: WorkOrder = {
+    ...workOrder,
+    customer_name: '',
+    customer_email: '',
+    customer_phone: '',
+    vehicle_year: '',
+    vehicle_make: '',
+    vehicle_model: '',
+    vehicle_vin: '',
+    vehicle_license_plate: '',
+  };
+
+  // Fetch customer data if customer_id exists
+  if (workOrder.customer_id) {
+    try {
+      const { data: customer, error: customerError } = await supabase
+        .from('customers')
+        .select('first_name, last_name, email, phone')
+        .eq('id', workOrder.customer_id)
+        .maybeSingle();
+
+      if (customerError) {
+        console.warn('Error fetching customer:', customerError);
+      } else if (customer) {
+        enrichedWorkOrder.customer_name = `${customer.first_name || ''} ${customer.last_name || ''}`.trim();
+        enrichedWorkOrder.customer_email = customer.email || '';
+        enrichedWorkOrder.customer_phone = customer.phone || '';
+      }
+    } catch (error) {
+      console.warn('Error enriching work order with customer data:', error);
+    }
+  }
+
+  // Fetch vehicle data if vehicle_id exists
+  if (workOrder.vehicle_id) {
+    try {
+      const { data: vehicleData, error: vehicleError } = await supabase
+        .from('vehicles')
+        .select('id, year, make, model, vin, license_plate')
+        .eq('id', workOrder.vehicle_id)
+        .maybeSingle();
+
+      if (vehicleError) {
+        console.warn('Error fetching vehicle:', vehicleError);
+      } else if (vehicleData) {
+        enrichedWorkOrder.vehicle_year = vehicleData.year?.toString() || '';
+        enrichedWorkOrder.vehicle_make = vehicleData.make || '';
+        enrichedWorkOrder.vehicle_model = vehicleData.model || '';
+        enrichedWorkOrder.vehicle_vin = vehicleData.vin || '';
+        enrichedWorkOrder.vehicle_license_plate = vehicleData.license_plate || '';
+        
+        // Create the vehicle object with the id property
+        enrichedWorkOrder.vehicle = {
+          id: vehicleData.id,
+          year: vehicleData.year,
+          make: vehicleData.make,
+          model: vehicleData.model,
+          vin: vehicleData.vin,
+          license_plate: vehicleData.license_plate,
+        };
+      }
+    } catch (error) {
+      console.warn('Error enriching work order with vehicle data:', error);
+    }
+  }
+
+  return enrichedWorkOrder;
+}
