@@ -30,10 +30,9 @@ const WorkOrderRow: React.FC<{ workOrder: WorkOrder }> = ({ workOrder }) => {
         <div className="flex items-center gap-2">
           #{workOrder.id.slice(0, 8)}
           {hasWarnings && (
-            <AlertTriangle 
-              className="h-4 w-4 text-yellow-500" 
-              title={`Warnings: ${validation.warnings.join(', ')}`}
-            />
+            <div title={`Warnings: ${validation.warnings.join(', ')}`}>
+              <AlertTriangle className="h-4 w-4 text-yellow-500" />
+            </div>
           )}
         </div>
       </TableCell>
