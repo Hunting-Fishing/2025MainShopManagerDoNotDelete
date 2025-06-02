@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import { Eye, Plus, AlertTriangle, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { WorkOrder } from '@/types/workOrder';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { getWorkOrdersByVehicleId } from '@/services/workOrder';
 import { 
   getCustomerName, 
   getWorkOrderDate, 
@@ -17,8 +18,8 @@ import {
 
 interface VehicleWorkOrdersProps {
   vehicleId: string;
-  customerId: string;
-  workOrders: WorkOrder[];
+  customerId?: string;
+  workOrders?: WorkOrder[];
   loading?: boolean;
   error?: string;
 }
@@ -73,10 +74,47 @@ const WorkOrderRow: React.FC<{ workOrder: WorkOrder }> = ({ workOrder }) => {
 export const VehicleWorkOrders: React.FC<VehicleWorkOrdersProps> = ({
   vehicleId,
   customerId,
-  workOrders,
-  loading = false,
-  error
+  workOrders: providedWorkOrders,
+  loading: providedLoading = false,
+  error: providedError
 }) => {
+  const [internalWorkOrders, setInternalWorkOrders] = useState<WorkOrder[]>([]);
+  const [internalLoading, setInternalLoading] = useState(false);
+  const [internalError, setInternalError] = useState<string | null>(null);
+
+  // If work orders are provided, use them; otherwise fetch them
+  const workOrders = providedWorkOrders || internalWorkOrders;
+  const loading = providedLoading || internalLoading;
+  const error = providedError || internalError;
+
+  useEffect(() => {
+    // Only fetch if work orders aren't provided
+    if (!providedWorkOrders && vehicleId) {
+      const fetchWorkOrders = async () => {
+        try {
+          setInternalLoading(true);
+          setInternalError(null);
+          console.log('VehicleWorkOrders: Fetching work orders for vehicle:', vehicleId);
+          
+          // We'll need to create this function or use an alternative approach
+          // For now, let's use the existing function and filter by vehicle_id
+          const { getAllWorkOrders } = await import('@/services/workOrder');
+          const allWorkOrders = await getAllWorkOrders();
+          const vehicleWorkOrders = allWorkOrders.filter(wo => wo.vehicle_id === vehicleId);
+          
+          setInternalWorkOrders(vehicleWorkOrders);
+        } catch (err: any) {
+          console.error('VehicleWorkOrders: Error fetching work orders:', err);
+          setInternalError(err.message || 'Failed to load work orders');
+        } finally {
+          setInternalLoading(false);
+        }
+      };
+
+      fetchWorkOrders();
+    }
+  }, [vehicleId, providedWorkOrders]);
+
   if (loading) {
     return (
       <Card>
@@ -115,7 +153,7 @@ export const VehicleWorkOrders: React.FC<VehicleWorkOrdersProps> = ({
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Work Orders</CardTitle>
         <Button asChild>
-          <Link to={`/work-orders/create?vehicleId=${vehicleId}&customerId=${customerId}`}>
+          <Link to={`/work-orders/create?vehicleId=${vehicleId}${customerId ? `&customerId=${customerId}` : ''}`}>
             <Plus className="mr-2 h-4 w-4" />
             Create Work Order
           </Link>
@@ -126,7 +164,7 @@ export const VehicleWorkOrders: React.FC<VehicleWorkOrdersProps> = ({
           <div className="text-center py-8">
             <p className="text-muted-foreground mb-4">No work orders found for this vehicle.</p>
             <Button asChild variant="outline">
-              <Link to={`/work-orders/create?vehicleId=${vehicleId}&customerId=${customerId}`}>
+              <Link to={`/work-orders/create?vehicleId=${vehicleId}${customerId ? `&customerId=${customerId}` : ''}`}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create First Work Order
               </Link>
