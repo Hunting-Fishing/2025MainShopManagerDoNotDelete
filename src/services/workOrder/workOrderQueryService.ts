@@ -123,10 +123,14 @@ export const getWorkOrderById = async (id: string): Promise<WorkOrder | null> =>
   }
 };
 
+/**
+ * Get work orders by customer ID with enriched customer and vehicle data
+ */
 export const getWorkOrdersByCustomerId = async (customerId: string): Promise<WorkOrder[]> => {
   try {
-    console.log('Fetching work orders for customer ID:', customerId);
+    console.log('Fetching work orders for customer:', customerId);
     
+    // First, fetch basic work order data without embedded relationships
     const { data: workOrders, error } = await supabase
       .from('work_orders')
       .select('*')
@@ -134,79 +138,25 @@ export const getWorkOrdersByCustomerId = async (customerId: string): Promise<Wor
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching work orders for customer:', error);
+      console.error('Error fetching work orders:', error);
       throw error;
     }
 
     if (!workOrders || workOrders.length === 0) {
-      console.log('No work orders found for customer');
+      console.log('No work orders found for customer:', customerId);
       return [];
     }
 
-    // Fetch customer data once for all work orders
-    let customerData = null;
-    try {
-      const { data: customer } = await supabase
-        .from('customers')
-        .select('first_name, last_name, email, phone')
-        .eq('id', customerId)
-        .single();
-      
-      if (customer) {
-        customerData = {
-          customer_name: `${customer.first_name} ${customer.last_name}`,
-          customer_email: customer.email,
-          customer_phone: customer.phone
-        };
-      }
-    } catch (err) {
-      console.warn(`Could not fetch customer data for customer ${customerId}:`, err);
-    }
+    console.log(`Found ${workOrders.length} work orders for customer ${customerId}`);
 
-    // Fetch vehicle data for each work order that has a vehicle_id
+    // Fetch customer and vehicle data separately for each work order
     const enrichedWorkOrders = await Promise.all(
       workOrders.map(async (workOrder) => {
-        let vehicleData = null;
-
-        if (workOrder.vehicle_id) {
-          try {
-            const { data: vehicle } = await supabase
-              .from('vehicles')
-              .select('year, make, model, vin, license_plate')
-              .eq('id', workOrder.vehicle_id)
-              .single();
-            
-            if (vehicle) {
-              vehicleData = {
-                vehicle_year: vehicle.year?.toString() || '',
-                vehicle_make: vehicle.make || '',
-                vehicle_model: vehicle.model || '',
-                vehicle_vin: vehicle.vin || '',
-                vehicle_license_plate: vehicle.license_plate || '',
-                vehicle: {
-                  id: workOrder.vehicle_id,
-                  year: vehicle.year,
-                  make: vehicle.make,
-                  model: vehicle.model,
-                  vin: vehicle.vin,
-                  license_plate: vehicle.license_plate
-                }
-              };
-            }
-          } catch (err) {
-            console.warn(`Could not fetch vehicle data for work order ${workOrder.id}:`, err);
-          }
-        }
-
-        return {
-          ...workOrder,
-          ...customerData,
-          ...vehicleData
-        };
+        return enrichWorkOrderWithRelatedData(workOrder);
       })
     );
 
-    console.log('Work orders for customer fetched and enriched:', enrichedWorkOrders);
+    console.log('Enriched work orders:', enrichedWorkOrders);
     return enrichedWorkOrders;
   } catch (error) {
     console.error('Error in getWorkOrdersByCustomerId:', error);
@@ -375,7 +325,7 @@ async function enrichWorkOrderWithRelatedData(workOrder: any): Promise<WorkOrder
         enrichedWorkOrder.vehicle_vin = vehicleData.vin || '';
         enrichedWorkOrder.vehicle_license_plate = vehicleData.license_plate || '';
         
-        // Create the vehicle object with the id property
+        // Create the vehicle object with the id property from the fetched data
         enrichedWorkOrder.vehicle = {
           id: vehicleData.id,
           year: vehicleData.year,
