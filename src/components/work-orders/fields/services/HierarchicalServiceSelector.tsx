@@ -23,12 +23,18 @@ export function HierarchicalServiceSelector({
 }: HierarchicalServiceSelectorProps) {
   const [viewMode, setViewMode] = useState<'enhanced' | 'compact'>('enhanced');
 
-  // Debug logging
+  // Enhanced debug logging
   console.log('HierarchicalServiceSelector render:', {
     viewMode,
     categoriesCount: categories.length,
-    selectedServicesCount: selectedServices.length
+    selectedServicesCount: selectedServices.length,
+    component: 'HierarchicalServiceSelector'
   });
+
+  const handleViewModeChange = (mode: 'enhanced' | 'compact') => {
+    console.log('HierarchicalServiceSelector viewMode changing:', { from: viewMode, to: mode });
+    setViewMode(mode);
+  };
 
   return (
     <div className="space-y-4">
@@ -36,24 +42,35 @@ export function HierarchicalServiceSelector({
         <h4 className="text-sm font-medium text-slate-700">Select Services</h4>
         <ServiceViewModeToggle 
           viewMode={viewMode} 
-          onViewModeChange={setViewMode} 
+          onViewModeChange={handleViewModeChange} 
         />
       </div>
 
+      {/* Debug indicator to see which view is actually rendering */}
+      <div className="text-xs text-gray-500 bg-yellow-100 p-1 rounded">
+        Current view mode: {viewMode}
+      </div>
+
       {viewMode === 'enhanced' ? (
-        <ServiceCategoryList
-          categories={categories}
-          selectedServices={selectedServices}
-          onServiceSelect={onServiceSelect}
-          onRemoveService={onRemoveService}
-          onUpdateServices={onUpdateServices}
-        />
+        <div>
+          <div className="text-xs text-green-600 mb-2">Rendering: ServiceCategoryList (Enhanced)</div>
+          <ServiceCategoryList
+            categories={categories}
+            selectedServices={selectedServices}
+            onServiceSelect={onServiceSelect}
+            onRemoveService={onRemoveService}
+            onUpdateServices={onUpdateServices}
+          />
+        </div>
       ) : (
-        <ServiceCompactView
-          categories={categories}
-          selectedServices={selectedServices}
-          onServiceSelect={onServiceSelect}
-        />
+        <div>
+          <div className="text-xs text-blue-600 mb-2">Rendering: ServiceCompactView (Compact)</div>
+          <ServiceCompactView
+            categories={categories}
+            selectedServices={selectedServices}
+            onServiceSelect={onServiceSelect}
+          />
+        </div>
       )}
     </div>
   );

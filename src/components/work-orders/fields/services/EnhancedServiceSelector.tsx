@@ -27,6 +27,13 @@ export function EnhancedServiceSelector({
   const [lastAddedServiceId, setLastAddedServiceId] = useState<string | null>(null);
   const selectedServicesRef = useRef<HTMLDivElement>(null);
 
+  // Debug logging
+  console.log('EnhancedServiceSelector render:', {
+    isExpanded,
+    categoriesCount: categories.length,
+    selectedServicesCount: selectedServices.length
+  });
+
   // Calculate summary
   const summary: ServiceSelectionSummary = {
     totalServices: selectedServices.length,
@@ -124,7 +131,7 @@ export function EnhancedServiceSelector({
         </div>
       )}
 
-      {/* Service Selector Section */}
+      {/* Service Selector Section - This is the key part that needs to render correctly */}
       {isExpanded ? (
         <div className="space-y-4">
           {selectedServices.length > 0 && (
@@ -133,6 +140,7 @@ export function EnhancedServiceSelector({
             </div>
           )}
           
+          {/* This should be the ONLY place that renders the service selector */}
           <HierarchicalServiceSelector
             categories={categories}
             selectedServices={selectedServices}
