@@ -134,7 +134,11 @@ export function EnhancedServiceSelector({
           )}
           
           <HierarchicalServiceSelector
+            categories={categories}
+            selectedServices={selectedServices}
             onServiceSelect={handleServiceSelect}
+            onRemoveService={handleRemoveService}
+            onUpdateServices={onUpdateServices}
           />
         </div>
       ) : (
