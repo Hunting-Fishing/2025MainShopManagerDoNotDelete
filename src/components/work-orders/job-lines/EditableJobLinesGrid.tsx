@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ResponsiveGrid } from '@/components/ui/responsive-grid';
 import { Clock, DollarSign, Plus, Wrench, Package } from 'lucide-react';
 import { AddJobLineDialog } from './AddJobLineDialog';
+import { AddInventoryDialog } from '../inventory/AddInventoryDialog';
 import { toast } from 'sonner';
 
 interface EditableJobLinesGridProps {
@@ -28,49 +29,82 @@ export function EditableJobLinesGrid({
   workOrderId,
   shopId 
 }: EditableJobLinesGridProps) {
-  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showAddJobLineDialog, setShowAddJobLineDialog] = useState(false);
+  const [showAddInventoryDialog, setShowAddInventoryDialog] = useState(false);
 
   const totalHours = jobLines.reduce((sum, line) => sum + (line.estimatedHours || 0), 0);
   const totalAmount = jobLines.reduce((sum, line) => sum + (line.totalAmount || 0), 0);
 
-  const handleAddPartsLine = () => {
-    // Create a parts-specific job line
+  const handleAddJobLine = () => {
+    setShowAddJobLineDialog(true);
+  };
+
+  const handleAddInventoryItem = () => {
+    setShowAddInventoryDialog(true);
+  };
+
+  const handleJobLineAdded = (newJobLine: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>) => {
+    onAddJobLine(newJobLine);
+    setShowAddJobLineDialog(false);
+    toast.success('Job line added successfully');
+  };
+
+  const handleInventoryItemAdded = (inventoryItem: any) => {
+    // Create a parts-specific job line for the inventory item
     const partsJobLine: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'> = {
       workOrderId,
-      name: 'Parts & Materials',
+      name: inventoryItem.name,
       category: 'Parts',
-      description: 'Parts and materials for this work order',
+      description: `${inventoryItem.name} - ${inventoryItem.sku || ''}`,
       estimatedHours: 0,
-      laborRate: 0,
-      totalAmount: 0,
-      status: 'pending'
+      laborRate: inventoryItem.unit_price || 0,
+      totalAmount: inventoryItem.unit_price || 0,
+      status: 'pending',
+      notes: `Inventory Item: ${inventoryItem.sku || 'N/A'}`
     };
     
     onAddJobLine(partsJobLine);
-    toast.success('Parts line added successfully');
+    setShowAddInventoryDialog(false);
+    toast.success('Inventory item added as job line');
   };
 
   if (jobLines.length === 0) {
     return (
-      <Card className="border-dashed border-2">
-        <CardContent className="flex flex-col items-center justify-center py-8">
-          <Wrench className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold text-muted-foreground mb-2">No Job Lines Found</h3>
-          <p className="text-sm text-muted-foreground text-center mb-4">
-            Job lines will be automatically parsed from the work order description, or you can add them manually.
-          </p>
-          <div className="flex items-center gap-2">
-            <Button onClick={() => setShowAddDialog(true)} className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add Job Line
-            </Button>
-            <Button onClick={handleAddPartsLine} variant="outline" className="flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              Add Parts Line
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <>
+        <Card className="border-dashed border-2">
+          <CardContent className="flex flex-col items-center justify-center py-8">
+            <Wrench className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold text-muted-foreground mb-2">No Job Lines Found</h3>
+            <p className="text-sm text-muted-foreground text-center mb-4">
+              Job lines will be automatically parsed from the work order description, or you can add them manually.
+            </p>
+            <div className="flex items-center gap-2">
+              <Button onClick={handleAddJobLine} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Add Job Line
+              </Button>
+              <Button onClick={handleAddInventoryItem} variant="outline" className="flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                Add Parts/Inventory
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <AddJobLineDialog
+          workOrderId={workOrderId}
+          onJobLineAdd={handleJobLineAdded}
+          open={showAddJobLineDialog}
+          onOpenChange={setShowAddJobLineDialog}
+        />
+
+        <AddInventoryDialog
+          workOrderId={workOrderId}
+          onInventoryAdd={handleInventoryItemAdded}
+          open={showAddInventoryDialog}
+          onOpenChange={setShowAddInventoryDialog}
+        />
+      </>
     );
   }
 
@@ -84,7 +118,7 @@ export function EditableJobLinesGrid({
           </div>
           <div className="flex items-center gap-2">
             <Button 
-              onClick={() => setShowAddDialog(true)} 
+              onClick={handleAddJobLine}
               size="sm"
               className="flex items-center gap-2"
             >
@@ -92,13 +126,13 @@ export function EditableJobLinesGrid({
               Add Job Line
             </Button>
             <Button 
-              onClick={handleAddPartsLine}
+              onClick={handleAddInventoryItem}
               variant="outline"
               size="sm"
               className="flex items-center gap-2"
             >
               <Package className="h-4 w-4" />
-              Add Parts Line
+              Add Parts/Inventory
             </Button>
           </div>
         </div>
@@ -150,9 +184,16 @@ export function EditableJobLinesGrid({
 
       <AddJobLineDialog
         workOrderId={workOrderId}
-        onJobLineAdd={onAddJobLine}
-        open={showAddDialog}
-        onOpenChange={setShowAddDialog}
+        onJobLineAdd={handleJobLineAdded}
+        open={showAddJobLineDialog}
+        onOpenChange={setShowAddJobLineDialog}
+      />
+
+      <AddInventoryDialog
+        workOrderId={workOrderId}
+        onInventoryAdd={handleInventoryItemAdded}
+        open={showAddInventoryDialog}
+        onOpenChange={setShowAddInventoryDialog}
       />
     </div>
   );
