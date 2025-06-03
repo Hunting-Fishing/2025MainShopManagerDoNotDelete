@@ -1,33 +1,21 @@
 
 import React, { useState } from 'react';
-import { ServiceMainCategory } from '@/types/serviceHierarchy';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
-  Plus, 
-  Search, 
-  Edit, 
+  ChevronDown, 
+  ChevronRight, 
   Trash2, 
-  MoreVertical, 
-  Eye, 
-  EyeOff,
-  RefreshCw,
-  AlertCircle
+  Edit, 
+  Copy,
+  Plus
 } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { useServiceFiltering } from '@/hooks/useServiceFiltering';
-import { ServiceAdvancedFilters } from './ServiceAdvancedFilters';
-import { toast } from 'sonner';
+import { ServiceMainCategory } from '@/types/serviceHierarchy';
+import { DeleteCategoryDialog } from './DeleteCategoryDialog';
+import { deleteServiceCategory, deleteServiceSubcategory, deleteServiceJob } from '@/lib/services/serviceApi';
+import { toast } from '@/hooks/use-toast';
 
 interface ServiceCategoriesManagerProps {
   categories: ServiceMainCategory[];
@@ -40,262 +28,279 @@ const ServiceCategoriesManager: React.FC<ServiceCategoriesManagerProps> = ({
   isLoading,
   onRefresh
 }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [showFilters, setShowFilters] = useState(false);
-  
-  const {
-    filters,
-    filteredJobs,
-    filterStats,
-    updateFilters,
-    resetFilters
-  } = useServiceFiltering(categories);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [expandedSubcategories, setExpandedSubcategories] = useState<Set<string>>(new Set());
+  const [deleteDialog, setDeleteDialog] = useState<{
+    isOpen: boolean;
+    category: ServiceMainCategory | null;
+  }>({ isOpen: false, category: null });
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  // Filter categories based on search
-  const filteredCategories = categories.filter(category =>
-    category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    category.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const toggleCategory = (categoryId: string) => {
+    const newExpanded = new Set(expandedCategories);
+    if (newExpanded.has(categoryId)) {
+      newExpanded.delete(categoryId);
+    } else {
+      newExpanded.add(categoryId);
+    }
+    setExpandedCategories(newExpanded);
+  };
 
-  const handleCategoryAction = (action: string, categoryId: string) => {
-    switch (action) {
-      case 'edit':
-        toast.info(`Edit category ${categoryId} - Feature coming soon`);
-        break;
-      case 'delete':
-        toast.info(`Delete category ${categoryId} - Feature coming soon`);
-        break;
-      case 'duplicate':
-        toast.info(`Duplicate category ${categoryId} - Feature coming soon`);
-        break;
-      default:
-        break;
+  const toggleSubcategory = (subcategoryId: string) => {
+    const newExpanded = new Set(expandedSubcategories);
+    if (newExpanded.has(subcategoryId)) {
+      newExpanded.delete(subcategoryId);
+    } else {
+      newExpanded.add(subcategoryId);
+    }
+    setExpandedSubcategories(newExpanded);
+  };
+
+  const handleDeleteCategory = (category: ServiceMainCategory) => {
+    setDeleteDialog({ isOpen: true, category });
+  };
+
+  const confirmDeleteCategory = async (categoryId: string) => {
+    setIsDeleting(true);
+    try {
+      await deleteServiceCategory(categoryId);
+      toast({
+        title: "Category Deleted",
+        description: "Service category has been successfully deleted.",
+        variant: "default",
+      });
+      onRefresh();
+    } catch (error) {
+      console.error('Failed to delete category:', error);
+      toast({
+        title: "Delete Failed", 
+        description: "Failed to delete service category. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
-  const handleAddCategory = () => {
-    toast.info('Add new category - Feature coming soon');
+  const handleDeleteSubcategory = async (subcategoryId: string, subcategoryName: string) => {
+    if (!confirm(`Are you sure you want to delete "${subcategoryName}" subcategory? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await deleteServiceSubcategory(subcategoryId);
+      toast({
+        title: "Subcategory Deleted",
+        description: "Service subcategory has been successfully deleted.",
+        variant: "default",
+      });
+      onRefresh();
+    } catch (error) {
+      console.error('Failed to delete subcategory:', error);
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete service subcategory. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteJob = async (jobId: string, jobName: string) => {
+    if (!confirm(`Are you sure you want to delete "${jobName}" job? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await deleteServiceJob(jobId);
+      toast({
+        title: "Job Deleted",
+        description: "Service job has been successfully deleted.",
+        variant: "default",
+      });
+      onRefresh();
+    } catch (error) {
+      console.error('Failed to delete job:', error);
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete service job. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditCategory = (category: ServiceMainCategory) => {
+    toast({
+      title: "Feature Coming Soon",
+      description: "Edit functionality will be available in a future update.",
+      variant: "default",
+    });
+  };
+
+  const handleDuplicateCategory = (category: ServiceMainCategory) => {
+    toast({
+      title: "Feature Coming Soon", 
+      description: "Duplicate functionality will be available in a future update.",
+      variant: "default",
+    });
   };
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-center py-12">
-          <RefreshCw className="h-6 w-6 animate-spin" />
-          <span className="ml-2">Loading service categories...</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (categories.length === 0) {
-    return (
-      <div className="space-y-6">
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            No service categories found. Start by adding your first category.
-          </AlertDescription>
-        </Alert>
-        <Button onClick={handleAddCategory} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Add First Category
-        </Button>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Service Categories</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <p className="text-gray-500">Loading service categories...</p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header and Controls */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h3 className="text-lg font-medium">Service Categories</h3>
-          <p className="text-sm text-gray-600">
-            Manage your service hierarchy and organization
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => setShowFilters(!showFilters)}
-            className="gap-2"
-          >
-            {showFilters ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            {showFilters ? 'Hide' : 'Show'} Filters
-          </Button>
-          <Button onClick={handleAddCategory} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Add Category
-          </Button>
-        </div>
-      </div>
-
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-        <Input
-          placeholder="Search categories..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
-        />
-      </div>
-
-      {/* Advanced Filters */}
-      {showFilters && (
-        <ServiceAdvancedFilters
-          filters={filters}
-          onFiltersChange={updateFilters}
-          categories={categories}
-          onReset={resetFilters}
-        />
-      )}
-
-      {/* Filter Stats */}
-      {showFilters && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold">{filterStats.filteredJobs}</div>
-              <div className="text-sm text-gray-600">Filtered Jobs</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold">{filterStats.totalJobs}</div>
-              <div className="text-sm text-gray-600">Total Jobs</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold">{filterStats.jobsWithPrice}</div>
-              <div className="text-sm text-gray-600">With Prices</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold">{filterStats.categoriesWithJobs}</div>
-              <div className="text-sm text-gray-600">Active Categories</div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Categories List */}
-      <div className="grid gap-4">
-        {filteredCategories.map((category) => (
-          <Card key={category.id} className="hover:shadow-md transition-shadow">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-lg">{category.name}</CardTitle>
-                  {category.description && (
-                    <p className="text-sm text-gray-600 mt-1">{category.description}</p>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">
-                    {category.subcategories.length} subcategories
-                  </Badge>
-                  <Badge variant="secondary">
-                    {category.subcategories.reduce((total, sub) => total + sub.jobs.length, 0)} jobs
-                  </Badge>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => handleCategoryAction('edit', category.id)}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleCategoryAction('duplicate', category.id)}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Duplicate
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem 
-                        onClick={() => handleCategoryAction('delete', category.id)}
-                        className="text-red-600"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {category.subcategories.map((subcategory) => (
-                  <div key={subcategory.id} className="border rounded-lg p-3 bg-gray-50">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium">{subcategory.name}</h4>
-                      <Badge variant="outline" className="text-xs">
-                        {subcategory.jobs.length} jobs
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Service Categories</CardTitle>
+            <Button onClick={onRefresh} variant="outline" size="sm">
+              Refresh
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {categories.map((category) => (
+              <Collapsible
+                key={category.id}
+                open={expandedCategories.has(category.id)}
+                onOpenChange={() => toggleCategory(category.id)}
+              >
+                <div className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <CollapsibleTrigger className="flex items-center gap-2 hover:bg-gray-50 p-2 rounded flex-1">
+                      {expandedCategories.has(category.id) ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                      <span className="font-medium">{category.name}</span>
+                      <Badge variant="secondary">
+                        {category.subcategories.length} subcategories
                       </Badge>
+                    </CollapsibleTrigger>
+                    
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleEditCategory(category)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDuplicateCategory(category)}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => handleDeleteCategory(category)}
+                        disabled={isDeleting}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-                    {subcategory.description && (
-                      <p className="text-sm text-gray-600 mb-2">{subcategory.description}</p>
-                    )}
-                    {subcategory.jobs.length > 0 && (
-                      <div className="space-y-1">
-                        {subcategory.jobs.slice(0, 3).map((job) => (
-                          <div key={job.id} className="flex items-center justify-between text-sm">
-                            <span>{job.name}</span>
-                            <div className="flex items-center gap-2">
-                              {job.price && (
-                                <Badge variant="secondary" className="text-xs">
-                                  ${job.price}
-                                </Badge>
-                              )}
-                              {job.estimatedTime && (
-                                <Badge variant="outline" className="text-xs">
-                                  {job.estimatedTime}min
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                        {subcategory.jobs.length > 3 && (
-                          <div className="text-xs text-gray-500">
-                            +{subcategory.jobs.length - 3} more jobs
-                          </div>
-                        )}
-                      </div>
-                    )}
                   </div>
-                ))}
-                {category.subcategories.length === 0 && (
-                  <Alert>
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>
-                      This category has no subcategories. Add some to organize your services.
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
 
-      {filteredCategories.length === 0 && searchQuery && (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            No categories found matching "{searchQuery}". Try adjusting your search terms.
-          </AlertDescription>
-        </Alert>
-      )}
-    </div>
+                  <CollapsibleContent className="mt-4">
+                    <div className="space-y-3 ml-6">
+                      {category.subcategories.map((subcategory) => (
+                        <Collapsible
+                          key={subcategory.id}
+                          open={expandedSubcategories.has(subcategory.id)}
+                          onOpenChange={() => toggleSubcategory(subcategory.id)}
+                        >
+                          <div className="border rounded p-3 bg-gray-50">
+                            <div className="flex items-center justify-between">
+                              <CollapsibleTrigger className="flex items-center gap-2 hover:bg-gray-100 p-1 rounded flex-1">
+                                {expandedSubcategories.has(subcategory.id) ? (
+                                  <ChevronDown className="h-3 w-3" />
+                                ) : (
+                                  <ChevronRight className="h-3 w-3" />
+                                )}
+                                <span className="text-sm font-medium">{subcategory.name}</span>
+                                <Badge variant="outline" className="text-xs">
+                                  {subcategory.jobs.length} jobs
+                                </Badge>
+                              </CollapsibleTrigger>
+                              
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  size="xs"
+                                  variant="outline"
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  onClick={() => handleDeleteSubcategory(subcategory.id, subcategory.name)}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+
+                            <CollapsibleContent className="mt-2">
+                              <div className="space-y-2 ml-4">
+                                {subcategory.jobs.map((job) => (
+                                  <div key={job.id} className="flex items-center justify-between py-1">
+                                    <div className="flex-1">
+                                      <span className="text-sm">{job.name}</span>
+                                      {job.price && (
+                                        <span className="text-xs text-gray-500 ml-2">
+                                          ${job.price}
+                                        </span>
+                                      )}
+                                      {job.estimatedTime && (
+                                        <span className="text-xs text-gray-500 ml-2">
+                                          {job.estimatedTime}min
+                                        </span>
+                                      )}
+                                    </div>
+                                    <Button
+                                      size="xs"
+                                      variant="outline"
+                                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                      onClick={() => handleDeleteJob(job.id, job.name)}
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            </CollapsibleContent>
+                          </div>
+                        </Collapsible>
+                      ))}
+                    </div>
+                  </CollapsibleContent>
+                </div>
+              </Collapsible>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <DeleteCategoryDialog
+        isOpen={deleteDialog.isOpen}
+        category={deleteDialog.category}
+        onClose={() => setDeleteDialog({ isOpen: false, category: null })}
+        onConfirm={confirmDeleteCategory}
+      />
+    </>
   );
 };
 
