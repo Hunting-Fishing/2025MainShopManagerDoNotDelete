@@ -94,6 +94,19 @@ export const comprehensiveAutomotiveServices: ServiceMainCategory[] = [
           { id: '4-1-1', name: 'Timing Belt Replacement', estimatedTime: 240, price: 450 },
           { id: '4-1-2', name: 'Spark Plug Replacement', estimatedTime: 60, price: 120 }
         ]
+      },
+      {
+        id: '4-2',
+        name: 'Belts & Cooling System',
+        description: 'Belt services and cooling system maintenance',
+        jobs: [
+          { id: '4-2-1', name: 'Serpentine Belt Replacement', description: 'R&R serpentine belt replacement service', estimatedTime: 45, price: 85 },
+          { id: '4-2-2', name: 'Serpentine Belt Adjustment', description: 'Adjust serpentine belt tension', estimatedTime: 20, price: 35 },
+          { id: '4-2-3', name: 'Serpentine Belt Inspection', description: 'Inspect serpentine belt condition', estimatedTime: 15, price: 25 },
+          { id: '4-2-4', name: 'Belt Tensioner Replacement', description: 'Replace serpentine belt tensioner', estimatedTime: 60, price: 120 },
+          { id: '4-2-5', name: 'Drive Belt Replacement', description: 'Replace accessory drive belt', estimatedTime: 40, price: 75 },
+          { id: '4-2-6', name: 'V-Belt Replacement', description: 'Replace V-belt', estimatedTime: 35, price: 65 }
+        ]
       }
     ]
   },
@@ -115,7 +128,7 @@ export const comprehensiveAutomotiveServices: ServiceMainCategory[] = [
   }
 ];
 
-// Enhanced search synonyms for better brake line discovery
+// Enhanced search synonyms for better automotive repair terminology recognition
 export const serviceSearchSynonyms: Record<string, string[]> = {
   'brake line': ['brake hose', 'hydraulic line', 'brake tubing', 'fluid line', 'brake pipe'],
   'brake fluid': ['hydraulic fluid', 'brake oil'],
@@ -123,5 +136,16 @@ export const serviceSearchSynonyms: Record<string, string[]> = {
   'brake rotor': ['brake disc', 'rotor disc'],
   'oil change': ['lube service', 'oil service'],
   'tire': ['wheel', 'rim'],
-  'transmission': ['trans', 'gearbox']
+  'transmission': ['trans', 'gearbox'],
+  'serpentine belt': ['drive belt', 'accessory belt', 'belt', 'serpentine', 'fan belt'],
+  'belt': ['serpentine belt', 'drive belt', 'accessory belt', 'v-belt', 'fan belt'],
+  'replace': ['replacement', 'r&r', 'r & r', 'install', 'change', 'swap'],
+  'replacement': ['replace', 'r&r', 'r & r', 'install', 'change', 'swap'],
+  'r&r': ['replace', 'replacement', 'remove and replace', 'install', 'change'],
+  'r & r': ['replace', 'replacement', 'remove and replace', 'install', 'change'],
+  'service': ['repair', 'maintenance', 'check', 'inspect'],
+  'repair': ['service', 'fix', 'maintenance'],
+  'inspection': ['inspect', 'check', 'examine', 'test'],
+  'tensioner': ['belt tensioner', 'serpentine tensioner', 'drive belt tensioner']
 };
+

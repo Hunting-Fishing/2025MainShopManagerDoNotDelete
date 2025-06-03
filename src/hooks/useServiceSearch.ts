@@ -53,7 +53,7 @@ export function useServiceSearch(categories: ServiceMainCategory[]) {
       return [];
     }
 
-    // Generate suggestions based on search synonyms and common terms
+    // Generate suggestions based on search synonyms and automotive terms
     const suggestions = [];
     const query = debouncedQuery.toLowerCase();
     
@@ -67,12 +67,28 @@ export function useServiceSearch(categories: ServiceMainCategory[]) {
       }
     }
     
-    // Add common automotive terms that include the query
+    // Add common automotive repair terms
     const commonTerms = [
+      'serpentine belt replacement', 'serpentine belt service', 'belt replacement', 'drive belt replacement',
       'brake line repair', 'brake line replacement', 'brake hose', 'fluid line',
-      'oil change', 'brake pad', 'tire rotation', 'tune up', 'transmission service',
-      'air filter', 'cabin filter', 'spark plug', 'battery', 'alternator'
+      'oil change', 'brake pad replacement', 'tire rotation', 'tune up', 'transmission service',
+      'air filter replacement', 'cabin filter', 'spark plug replacement', 'battery service', 'alternator repair',
+      'belt tensioner replacement', 'timing belt replacement', 'v-belt replacement'
     ];
+
+    // Handle R&R variations
+    if (query.includes('r&r') || query.includes('r & r') || query.includes('replace')) {
+      const replacementSuggestions = [
+        'serpentine belt replacement',
+        'brake line replacement', 
+        'brake pad replacement',
+        'timing belt replacement',
+        'air filter replacement'
+      ];
+      suggestions.push(...replacementSuggestions.filter(term => 
+        !suggestions.includes(term) && term.toLowerCase() !== query
+      ));
+    }
 
     const additionalSuggestions = commonTerms
       .filter(term => 
@@ -82,7 +98,7 @@ export function useServiceSearch(categories: ServiceMainCategory[]) {
       )
       .slice(0, 3);
 
-    return [...suggestions, ...additionalSuggestions].slice(0, 5);
+    return [...suggestions, ...additionalSuggestions].slice(0, 6);
   }, [debouncedQuery]);
 
   return {
@@ -94,3 +110,4 @@ export function useServiceSearch(categories: ServiceMainCategory[]) {
     isSearching: debouncedQuery.trim().length > 0
   };
 }
+
