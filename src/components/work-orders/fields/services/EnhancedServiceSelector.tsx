@@ -27,13 +27,6 @@ export function EnhancedServiceSelector({
   const [lastAddedServiceId, setLastAddedServiceId] = useState<string | null>(null);
   const selectedServicesRef = useRef<HTMLDivElement>(null);
 
-  // Debug logging
-  console.log('EnhancedServiceSelector render:', {
-    isExpanded,
-    categoriesCount: categories.length,
-    selectedServicesCount: selectedServices.length
-  });
-
   // Calculate summary
   const summary: ServiceSelectionSummary = {
     totalServices: selectedServices.length,
@@ -64,11 +57,6 @@ export function EnhancedServiceSelector({
 
     // Set as last added for animation
     setLastAddedServiceId(newSelectedService.id);
-
-    // Collapse the selector after selection if it's not the first service
-    if (selectedServices.length > 0) {
-      setIsExpanded(false);
-    }
 
     // Scroll to selected services after a brief delay
     setTimeout(() => {
@@ -131,16 +119,21 @@ export function EnhancedServiceSelector({
         </div>
       )}
 
-      {/* Service Selector Section - This is the key part that needs to render correctly */}
+      {/* Service Selector Section */}
       {isExpanded ? (
         <div className="space-y-4">
           {selectedServices.length > 0 && (
             <div className="flex items-center justify-between border-t pt-4">
               <h4 className="text-sm font-medium text-slate-700">Add More Services</h4>
+              <button
+                onClick={() => setIsExpanded(false)}
+                className="text-xs text-gray-500 hover:text-gray-700"
+              >
+                Collapse
+              </button>
             </div>
           )}
           
-          {/* This should be the ONLY place that renders the service selector */}
           <HierarchicalServiceSelector
             categories={categories}
             selectedServices={selectedServices}

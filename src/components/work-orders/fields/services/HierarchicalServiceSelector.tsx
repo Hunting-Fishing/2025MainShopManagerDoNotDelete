@@ -1,13 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ServiceMainCategory, ServiceJob } from '@/types/serviceHierarchy';
 import { SelectedService } from '@/types/selectedService';
-import { ServiceViewModeToggle } from './ServiceViewModeToggle';
-import { ServiceCompactView } from './ServiceCompactView';
-import { ServiceCategoryList } from './ServiceCategoryList';
+import { ServiceCategoryFilter } from './ServiceCategoryFilter';
 import { SearchInput } from './SearchInput';
-import { ServiceDebugPanel } from './ServiceDebugPanel';
 import { useServiceSearch } from '@/hooks/useServiceSearch';
+import { useKeyboardNavigation } from '@/hooks/useKeyboardNavigation';
+import { Button } from '@/components/ui/button';
+import { Plus, ChevronRight, Keyboard } from 'lucide-react';
 
 interface HierarchicalServiceSelectorProps {
   categories: ServiceMainCategory[];
@@ -24,8 +24,15 @@ export function HierarchicalServiceSelector({
   onRemoveService,
   onUpdateServices
 }: HierarchicalServiceSelectorProps) {
-  const [viewMode, setViewMode] = useState<'enhanced' | 'compact'>('enhanced');
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   
+  // Filter categories based on selected category filters
+  const filteredByCategory = useMemo(() => {
+    if (selectedCategoryIds.length === 0) return categories;
+    return categories.filter(category => selectedCategoryIds.includes(category.id));
+  }, [categories, selectedCategoryIds]);
+
+  // Apply search functionality to filtered categories
   const {
     searchQuery,
     setSearchQuery,
@@ -33,140 +40,205 @@ export function HierarchicalServiceSelector({
     searchStats,
     suggestions,
     isSearching
-  } = useServiceSearch(categories);
+  } = useServiceSearch(filteredByCategory);
 
-  // Enhanced debug logging
-  console.log('HierarchicalServiceSelector render:', {
-    viewMode,
-    categoriesCount: categories.length,
-    filteredCategoriesCount: filteredCategories.length,
-    selectedServicesCount: selectedServices.length,
-    searchQuery,
-    isSearching,
-    suggestions,
-    component: 'HierarchicalServiceSelector'
-  });
+  // Keyboard navigation
+  const { navigation, currentCategory, currentSubcategory, currentJob } = useKeyboardNavigation(
+    filteredCategories,
+    onServiceSelect
+  );
 
-  const handleViewModeChange = (mode: 'enhanced' | 'compact') => {
-    console.log('HierarchicalServiceSelector viewMode changing:', { from: viewMode, to: mode });
-    setViewMode(mode);
+  const handleCategoryToggle = (categoryId: string) => {
+    setSelectedCategoryIds(prev => 
+      prev.includes(categoryId)
+        ? prev.filter(id => id !== categoryId)
+        : [...prev, categoryId]
+    );
   };
 
-  const handleSuggestionSelect = (suggestion: string) => {
-    setSearchQuery(suggestion);
+  const handleClearFilters = () => {
+    setSelectedCategoryIds([]);
+  };
+
+  const isSelected = (serviceId: string) => 
+    selectedServices.some(service => service.serviceId === serviceId);
+
+  const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
+    if (!isSelected(service.id)) {
+      onServiceSelect(service, categoryName, subcategoryName);
+    }
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h4 className="text-sm font-medium text-slate-700">Select Services</h4>
-        <ServiceViewModeToggle 
-          viewMode={viewMode} 
-          onViewModeChange={handleViewModeChange} 
-        />
-      </div>
-
-      {/* Debug Panel */}
-      <ServiceDebugPanel categories={categories} />
-
-      {/* Enhanced Search Input */}
-      <SearchInput
-        value={searchQuery}
-        onChange={setSearchQuery}
-        placeholder="Search services... (try 'belt', 'brake pad', 'oil change')"
-        className="w-full"
-        suggestions={suggestions}
-        onSuggestionSelect={handleSuggestionSelect}
+    <div className="bg-white border rounded-lg overflow-hidden" tabIndex={0}>
+      {/* Category Filter */}
+      <ServiceCategoryFilter
+        categories={categories}
+        selectedCategoryIds={selectedCategoryIds}
+        onCategoryToggle={handleCategoryToggle}
+        onClearFilters={handleClearFilters}
       />
 
-      {/* Enhanced Search Results Summary */}
-      {searchStats && (
-        <div className="text-xs bg-blue-50 px-3 py-2 rounded-md border border-blue-200">
-          <div className="flex items-center justify-between">
-            <span className="text-blue-700">
-              Found <strong>{searchStats.jobs}</strong> services in <strong>{searchStats.subcategories}</strong> subcategories 
-              across <strong>{searchStats.categories}</strong> categories
-            </span>
+      {/* Search Input */}
+      <div className="p-3 border-b">
+        <SearchInput
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="Search services... (Use arrow keys to navigate)"
+          suggestions={suggestions}
+        />
+        
+        {/* Keyboard Navigation Hint */}
+        <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
+          <Keyboard className="h-3 w-3" />
+          <span>Use ↑↓ to navigate, ←→ to switch columns, Enter to select</span>
+        </div>
+
+        {/* Search Stats */}
+        {searchStats && (
+          <div className="mt-2 text-xs text-gray-600">
+            Found {searchStats.jobs} services in {searchStats.categories} categories
             {searchStats.highRelevanceJobs > 0 && (
-              <span className="text-blue-600 text-xs bg-blue-100 px-2 py-1 rounded">
-                {searchStats.highRelevanceJobs} exact matches
+              <span className="ml-2 text-blue-600">
+                ({searchStats.highRelevanceJobs} highly relevant)
               </span>
             )}
           </div>
-          <div className="text-blue-600 mt-1">
-            Searching for: "<strong>{searchStats.query}</strong>"
-          </div>
-        </div>
-      )}
-
-      {/* Search quality indicator */}
-      {isSearching && (
-        <div className="text-xs text-gray-600 bg-gray-50 px-3 py-2 rounded-md border">
-          💡 Enhanced search active - finding services with "{searchQuery}" even when surrounded by other words
-        </div>
-      )}
-
-      {/* Debug indicator to see which view is actually rendering */}
-      <div className="text-xs text-gray-500 bg-yellow-100 p-1 rounded">
-        Current view mode: {viewMode} | Categories: {filteredCategories.length}
-        {isSearching && ` | Searching: "${searchQuery}"`}
+        )}
       </div>
 
-      {viewMode === 'enhanced' ? (
-        <div>
-          <div className="text-xs text-green-600 mb-2">Rendering: ServiceCategoryList (Enhanced)</div>
-          <ServiceCategoryList
-            categories={filteredCategories}
-            selectedServices={selectedServices}
-            onServiceSelect={onServiceSelect}
-            onRemoveService={onRemoveService}
-            onUpdateServices={onUpdateServices}
-          />
-        </div>
-      ) : (
-        <div>
-          <div className="text-xs text-blue-600 mb-2">Rendering: ServiceCompactView (Compact)</div>
-          <ServiceCompactView
-            categories={filteredCategories}
-            selectedServices={selectedServices}
-            onServiceSelect={onServiceSelect}
-          />
-        </div>
-      )}
-
-      {/* Enhanced No Results Message */}
-      {isSearching && filteredCategories.length === 0 && (
-        <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg border">
-          <div className="space-y-2">
-            <p className="font-medium">No services found for "{searchQuery}"</p>
-            <div className="text-sm space-y-1">
-              <p>Try these search tips:</p>
-              <ul className="list-disc list-inside text-left max-w-md mx-auto space-y-1">
-                <li>Use simpler terms like "belt", "brake", "oil"</li>
-                <li>Try automotive keywords like "tune up", "transmission"</li>
-                <li>Check spelling or try shorter keywords</li>
-                <li>Search for service types like "maintenance", "repair"</li>
-              </ul>
-            </div>
-            {suggestions.length > 0 && (
-              <div className="mt-3">
-                <p className="text-sm font-medium mb-2">Did you mean:</p>
-                <div className="flex flex-wrap gap-2 justify-center">
-                  {suggestions.slice(0, 3).map(suggestion => (
-                    <button
-                      key={suggestion}
-                      onClick={() => handleSuggestionSelect(suggestion)}
-                      className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm hover:bg-blue-200 transition-colors"
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+      {/* Service Selector Grid */}
+      <div className="grid grid-cols-3 h-96">
+        {/* Categories Column */}
+        <div className="border-r">
+          <div className="p-2 bg-gray-50 border-b">
+            <h3 className="font-medium text-sm">Categories ({filteredCategories.length})</h3>
+          </div>
+          <div className="overflow-y-auto h-full">
+            {filteredCategories.map((category, index) => {
+              const isActive = navigation.activeColumn === 'categories' && navigation.selectedCategoryIndex === index;
+              return (
+                <button
+                  key={category.id}
+                  data-nav={`category-${index}`}
+                  className={`w-full text-left px-3 py-2 border-b hover:bg-blue-50 transition-colors ${
+                    isActive ? 'bg-blue-100 border-blue-300' : ''
+                  }`}
+                  onClick={() => {
+                    // Handle category click logic if needed
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">{category.name}</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-gray-500">
+                        {category.subcategories.length}
+                      </span>
+                      <ChevronRight className="h-3 w-3 text-gray-400" />
+                    </div>
+                  </div>
+                  {category.description && (
+                    <p className="text-xs text-gray-500 mt-1">{category.description}</p>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
-      )}
+
+        {/* Subcategories Column */}
+        <div className="border-r">
+          <div className="p-2 bg-gray-50 border-b">
+            <h3 className="font-medium text-sm">
+              Subcategories {currentCategory && `(${currentCategory.subcategories.length})`}
+            </h3>
+          </div>
+          <div className="overflow-y-auto h-full">
+            {currentCategory?.subcategories.map((subcategory, index) => {
+              const isActive = navigation.activeColumn === 'subcategories' && navigation.selectedSubcategoryIndex === index;
+              return (
+                <button
+                  key={subcategory.id}
+                  data-nav={`subcategory-${index}`}
+                  className={`w-full text-left px-3 py-2 border-b hover:bg-blue-50 transition-colors ${
+                    isActive ? 'bg-blue-100 border-blue-300' : ''
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">{subcategory.name}</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-gray-500">
+                        {subcategory.jobs.length}
+                      </span>
+                      <ChevronRight className="h-3 w-3 text-gray-400" />
+                    </div>
+                  </div>
+                  {subcategory.description && (
+                    <p className="text-xs text-gray-500 mt-1">{subcategory.description}</p>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Jobs Column */}
+        <div>
+          <div className="p-2 bg-gray-50 border-b">
+            <h3 className="font-medium text-sm">
+              Services {currentSubcategory && `(${currentSubcategory.jobs.length})`}
+            </h3>
+          </div>
+          <div className="overflow-y-auto h-full">
+            {currentSubcategory?.jobs.map((job, index) => {
+              const isActive = navigation.activeColumn === 'jobs' && navigation.selectedJobIndex === index;
+              const isJobSelected = isSelected(job.id);
+              
+              return (
+                <div
+                  key={job.id}
+                  data-nav={`job-${index}`}
+                  className={`p-3 border-b hover:bg-blue-50 transition-colors ${
+                    isActive ? 'bg-blue-100 border-blue-300' : ''
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-medium truncate">{job.name}</h4>
+                      {job.description && (
+                        <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                          {job.description}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-3 mt-2">
+                        {job.estimatedTime && (
+                          <span className="text-xs text-gray-500">
+                            {job.estimatedTime} min
+                          </span>
+                        )}
+                        {job.price && (
+                          <span className="text-xs font-medium text-green-600">
+                            ${job.price}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant={isJobSelected ? "secondary" : "outline"}
+                      onClick={() => handleServiceSelect(job, currentCategory!.name, currentSubcategory!.name)}
+                      disabled={isJobSelected}
+                      className="ml-2 shrink-0"
+                    >
+                      {isJobSelected ? 'Added' : <Plus className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
