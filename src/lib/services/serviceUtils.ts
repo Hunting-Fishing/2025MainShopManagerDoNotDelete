@@ -61,6 +61,36 @@ export function searchAllJobs(categories: ServiceMainCategory[], query: string):
 }
 
 /**
+ * Format estimated time in a human-readable format
+ */
+export function formatEstimatedTime(minutes: number): string {
+  if (minutes < 60) {
+    return `${minutes} min`;
+  }
+  
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  
+  if (remainingMinutes === 0) {
+    return `${hours} hr${hours !== 1 ? 's' : ''}`;
+  }
+  
+  return `${hours}h ${remainingMinutes}m`;
+}
+
+/**
+ * Format price in currency format
+ */
+export function formatPrice(price: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  }).format(price);
+}
+
+/**
  * Validate service data integrity
  */
 export function validateServiceData(categories: ServiceMainCategory[]): boolean {

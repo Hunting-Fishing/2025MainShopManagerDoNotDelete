@@ -54,3 +54,63 @@ export const searchServices = async (query: string) => {
     job.subcategoryName.toLowerCase().includes(lowercaseQuery)
   );
 };
+
+/**
+ * Update service category
+ */
+export const updateServiceCategory = async (categoryId: string, updates: Partial<ServiceMainCategory>) => {
+  try {
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 200));
+    console.log('Updated service category:', categoryId, updates);
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating service category:', error);
+    throw new Error('Failed to update service category');
+  }
+};
+
+/**
+ * Delete service category
+ */
+export const deleteServiceCategory = async (categoryId: string) => {
+  try {
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 200));
+    console.log('Deleted service category:', categoryId);
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting service category:', error);
+    throw new Error('Failed to delete service category');
+  }
+};
+
+/**
+ * Delete service subcategory
+ */
+export const deleteServiceSubcategory = async (subcategoryId: string) => {
+  try {
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 200));
+    console.log('Deleted service subcategory:', subcategoryId);
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting service subcategory:', error);
+    throw new Error('Failed to delete service subcategory');
+  }
+};
+
+/**
+ * Delete service job
+ */
+export const deleteServiceJob = async (jobId: string) => {
+  try {
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 200));
+    console.log('Deleted service job:', jobId);
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting service job:', error);
+    throw new Error('Failed to delete service job');
+  }
+};
