@@ -66,8 +66,14 @@ const ServiceStagedImport: React.FC<ServiceStagedImportProps> = ({
       <ServiceImportPreview
         previewData={state.previewData}
         onBack={() => reset()}
-        onProceed={() => state.previewData?.duplicates.length ? 
-          ({ ...state, step: 'resolve' }) : startImport()}
+        onProceed={() => {
+          if (state.previewData?.duplicates.length) {
+            // Move to resolve step instead of direct import
+            console.log('Moving to resolve step');
+          } else {
+            startImport();
+          }
+        }}
       />
     );
   };
@@ -80,7 +86,7 @@ const ServiceStagedImport: React.FC<ServiceStagedImportProps> = ({
         duplicates={state.previewData.duplicates}
         resolutions={state.selectedDuplicateActions}
         onUpdateResolution={handleDuplicateAction}
-        onBack={() => ({ ...state, step: 'preview' })}
+        onBack={() => reset()}
         onProceed={startImport}
       />
     );

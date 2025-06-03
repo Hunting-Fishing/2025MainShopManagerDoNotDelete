@@ -10,6 +10,9 @@ export interface ImportPreviewData {
     imported: ServiceMainCategory;
     conflicts: string[];
   }>;
+  duplicateCategories?: any[];
+  duplicateSubcategories?: any[];
+  duplicateJobs?: any[];
   errors: Array<{
     row: number;
     message: string;
@@ -29,6 +32,9 @@ export interface DuplicateResolution {
   categoryId: string;
   action: 'skip' | 'replace' | 'rename';
   newName?: string;
+  type?: string;
+  name?: string;
+  id?: string;
 }
 
 export interface ImportBatch {
@@ -37,6 +43,9 @@ export interface ImportBatch {
   categories: ServiceMainCategory[];
   processed: boolean;
   errors: any[];
+  status?: 'pending' | 'processing' | 'completed' | 'failed';
+  progress?: number;
+  error?: string;
 }
 
 export interface StagedImportState {
@@ -76,6 +85,9 @@ export function useServiceStagedImport(
         categories: existingCategories,
         newCategories: [],
         duplicates: [],
+        duplicateCategories: [],
+        duplicateSubcategories: [],
+        duplicateJobs: [],
         errors: [],
         stats: {
           totalCategories: existingCategories.length,
@@ -108,6 +120,9 @@ export function useServiceStagedImport(
       categories: existingCategories,
       newCategories: [],
       duplicates: [],
+      duplicateCategories: [],
+      duplicateSubcategories: [],
+      duplicateJobs: [],
       errors: [],
       stats: {
         totalCategories: 0,
@@ -127,7 +142,9 @@ export function useServiceStagedImport(
       name: `Batch ${index + 1}: ${category.name}`,
       categories: [category],
       processed: false,
-      errors: []
+      errors: [],
+      status: 'pending' as const,
+      progress: 0
     }));
   };
 

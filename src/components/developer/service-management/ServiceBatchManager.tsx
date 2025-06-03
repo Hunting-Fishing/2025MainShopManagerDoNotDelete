@@ -1,210 +1,114 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { CheckCircle, AlertCircle, Clock, Play } from 'lucide-react';
 import { ImportBatch } from '@/hooks/useServiceStagedImport';
-import { 
-  Play, 
-  Pause, 
-  CheckCircle, 
-  XCircle, 
-  Clock,
-  Package
-} from 'lucide-react';
 
 interface ServiceBatchManagerProps {
   batches: ImportBatch[];
-  onImportBatch: (batchId: string, onProgress?: (progress: number) => void) => Promise<void>;
-  onComplete: () => void;
+  onProcessBatch: (batchId: string) => Promise<void>;
+  onProcessAll: () => Promise<void>;
+  isProcessing: boolean;
 }
 
 export const ServiceBatchManager: React.FC<ServiceBatchManagerProps> = ({
   batches,
-  onImportBatch,
-  onComplete
+  onProcessBatch,
+  onProcessAll,
+  isProcessing
 }) => {
-  const [importingBatchId, setImportingBatchId] = useState<string | null>(null);
-
-  const handleImportBatch = async (batchId: string) => {
-    setImportingBatchId(batchId);
-    try {
-      await onImportBatch(batchId, (progress) => {
-        // Progress is handled by the hook
-      });
-    } finally {
-      setImportingBatchId(null);
-    }
-  };
-
-  const handleImportAll = async () => {
-    for (const batch of batches) {
-      if (batch.status === 'pending') {
-        await handleImportBatch(batch.id);
-      }
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (batch: ImportBatch) => {
+    const status = batch.status || (batch.processed ? 'completed' : 'pending');
+    
     switch (status) {
-      case 'pending': return <Clock className="h-4 w-4 text-gray-500" />;
-      case 'importing': return <Play className="h-4 w-4 text-blue-500" />;
-      case 'completed': return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'failed': return <XCircle className="h-4 w-4 text-red-500" />;
-      default: return null;
+      case 'completed':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'failed':
+        return <AlertCircle className="h-4 w-4 text-red-500" />;
+      case 'processing':
+        return <Clock className="h-4 w-4 text-blue-500 animate-spin" />;
+      default:
+        return <Clock className="h-4 w-4 text-gray-400" />;
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (batch: ImportBatch) => {
+    const status = batch.status || (batch.processed ? 'completed' : 'pending');
+    
     switch (status) {
-      case 'pending': return <Badge variant="secondary">Pending</Badge>;
-      case 'importing': return <Badge variant="default">Importing</Badge>;
-      case 'completed': return <Badge variant="default" className="bg-green-500">Completed</Badge>;
-      case 'failed': return <Badge variant="destructive">Failed</Badge>;
-      default: return null;
+      case 'completed':
+        return <Badge variant="secondary" className="bg-green-100 text-green-800">Completed</Badge>;
+      case 'failed':
+        return <Badge variant="destructive">Failed</Badge>;
+      case 'processing':
+        return <Badge className="bg-blue-100 text-blue-800">Processing</Badge>;
+      default:
+        return <Badge variant="outline">Pending</Badge>;
     }
   };
-
-  const completedBatches = batches.filter(b => b.status === 'completed').length;
-  const totalBatches = batches.length;
-  const overallProgress = totalBatches > 0 ? (completedBatches / totalBatches) * 100 : 0;
-
-  const allCompleted = batches.every(b => b.status === 'completed');
-  const hasFailures = batches.some(b => b.status === 'failed');
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Import Batches ({completedBatches}/{totalBatches})
-            </span>
-            <div className="flex gap-2">
-              <Button 
-                onClick={handleImportAll}
-                disabled={importingBatchId !== null || allCompleted}
-                size="sm"
-              >
-                Import All Batches
-              </Button>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">Overall Progress</span>
-              <span className="text-sm text-gray-600">{Math.round(overallProgress)}%</span>
-            </div>
-            <Progress value={overallProgress} className="h-2" />
-          </div>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle>Import Batches</CardTitle>
+          <Button onClick={onProcessAll} disabled={isProcessing}>
+            <Play className="h-4 w-4 mr-2" />
+            Process All
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {batches.map((batch) => {
+            const status = batch.status || (batch.processed ? 'completed' : 'pending');
+            const progress = batch.progress || 0;
+            
+            return (
+              <div key={batch.id} className="border rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    {getStatusIcon(batch)}
+                    <span className="font-medium">{batch.name}</span>
+                  </div>
+                  {getStatusBadge(batch)}
+                </div>
+                
+                <div className="text-sm text-gray-600 mb-2">
+                  {batch.categories.length} categories
+                </div>
 
-          <ScrollArea className="h-96">
-            <div className="space-y-3">
-              {batches.map((batch) => (
-                <Card key={batch.id}>
-                  <CardContent className="pt-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        {getStatusIcon(batch.status)}
-                        <span className="font-medium">{batch.name}</span>
-                        {getStatusBadge(batch.status)}
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600">
-                          {batch.categories.length} categories
-                        </span>
-                        
-                        {batch.status === 'pending' && (
-                          <Button
-                            size="sm"
-                            onClick={() => handleImportBatch(batch.id)}
-                            disabled={importingBatchId !== null}
-                          >
-                            Import
-                          </Button>
-                        )}
-                        
-                        {batch.status === 'failed' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleImportBatch(batch.id)}
-                            disabled={importingBatchId !== null}
-                          >
-                            Retry
-                          </Button>
-                        )}
-                      </div>
-                    </div>
+                {status === 'processing' && (
+                  <div className="mb-2">
+                    <Progress value={progress} className="h-2" />
+                    <p className="text-xs text-gray-500 mt-1">{progress}% complete</p>
+                  </div>
+                )}
 
-                    {(batch.status === 'importing' || batch.status === 'completed') && (
-                      <div className="mb-2">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs text-gray-600">Progress</span>
-                          <span className="text-xs text-gray-600">{batch.progress}%</span>
-                        </div>
-                        <Progress value={batch.progress} className="h-1" />
-                      </div>
-                    )}
+                {batch.errors && batch.errors.length > 0 && (
+                  <div className="text-sm text-red-600 mb-2">
+                    {batch.errors.length} error{batch.errors.length !== 1 ? 's' : ''}
+                  </div>
+                )}
 
-                    {batch.error && (
-                      <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
-                        Error: {batch.error}
-                      </div>
-                    )}
-
-                    <div className="text-xs text-gray-500">
-                      Categories: {batch.categories.map(c => c.name).join(', ')}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </ScrollArea>
-        </CardContent>
-      </Card>
-
-      {allCompleted && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <CheckCircle className="h-12 w-12 mx-auto text-green-500 mb-4" />
-              <h3 className="text-lg font-semibold mb-2">All Batches Completed!</h3>
-              <p className="text-gray-600 mb-4">
-                Successfully imported {totalBatches} batches with all service data.
-              </p>
-              <Button onClick={onComplete}>
-                Complete Import
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {hasFailures && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <XCircle className="h-8 w-8 mx-auto text-red-500 mb-4" />
-              <h4 className="font-semibold mb-2">Some Batches Failed</h4>
-              <p className="text-sm text-gray-600 mb-4">
-                You can retry failed batches or continue with the successful imports.
-              </p>
-              <div className="flex gap-2 justify-center">
-                <Button variant="outline" onClick={onComplete}>
-                  Continue with Successful Imports
-                </Button>
+                <div className="flex justify-end">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onProcessBatch(batch.id)}
+                    disabled={status === 'completed' || status === 'processing' || isProcessing}
+                  >
+                    {status === 'completed' ? 'Completed' : 'Process'}
+                  </Button>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
