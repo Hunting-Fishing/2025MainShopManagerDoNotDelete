@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
 
-export interface PreviewData {
+export interface ImportPreviewData {
   categories: ServiceMainCategory[];
   newCategories: ServiceMainCategory[];
   duplicates: Array<{
@@ -25,10 +25,24 @@ export interface PreviewData {
   };
 }
 
+export interface DuplicateResolution {
+  categoryId: string;
+  action: 'skip' | 'replace' | 'rename';
+  newName?: string;
+}
+
+export interface ImportBatch {
+  id: string;
+  name: string;
+  categories: ServiceMainCategory[];
+  processed: boolean;
+  errors: any[];
+}
+
 export interface StagedImportState {
   step: 'upload' | 'preview' | 'resolve' | 'processing' | 'complete';
   file: File | null;
-  previewData: PreviewData | null;
+  previewData: ImportPreviewData | null;
   selectedDuplicateActions: Record<string, 'skip' | 'replace' | 'rename'>;
   isProcessing: boolean;
   progress: number;
@@ -49,12 +63,16 @@ export function useServiceStagedImport(
     error: null
   });
 
+  const [currentStep, setCurrentStep] = useState<'upload' | 'preview' | 'resolve' | 'processing' | 'complete'>('upload');
+  const [duplicateResolutions, setDuplicateResolutions] = useState<DuplicateResolution[]>([]);
+  const [importBatches, setImportBatches] = useState<ImportBatch[]>([]);
+
   const handleFileUpload = async (file: File) => {
     setState(prev => ({ ...prev, file, step: 'preview', error: null }));
     
     try {
       // Mock preview data for now - in real implementation, parse the Excel file
-      const mockPreviewData: PreviewData = {
+      const mockPreviewData: ImportPreviewData = {
         categories: existingCategories,
         newCategories: [],
         duplicates: [],
@@ -82,6 +100,40 @@ export function useServiceStagedImport(
         step: 'upload' 
       }));
     }
+  };
+
+  const processFile = async (file: File): Promise<ImportPreviewData> => {
+    // Mock implementation
+    return {
+      categories: existingCategories,
+      newCategories: [],
+      duplicates: [],
+      errors: [],
+      stats: {
+        totalCategories: 0,
+        totalSubcategories: 0,
+        totalJobs: 0,
+        newItems: 0,
+        duplicateItems: 0,
+        errorItems: 0
+      }
+    };
+  };
+
+  const createBatches = (data: ImportPreviewData): ImportBatch[] => {
+    // Mock implementation - create batches from categories
+    return data.newCategories.map((category, index) => ({
+      id: `batch-${index}`,
+      name: `Batch ${index + 1}: ${category.name}`,
+      categories: [category],
+      processed: false,
+      errors: []
+    }));
+  };
+
+  const importBatch = async (batch: ImportBatch): Promise<void> => {
+    // Mock implementation
+    await new Promise(resolve => setTimeout(resolve, 1000));
   };
 
   const handleDuplicateAction = (categoryId: string, action: 'skip' | 'replace' | 'rename') => {
@@ -134,10 +186,23 @@ export function useServiceStagedImport(
       progress: 0,
       error: null
     });
+    setCurrentStep('upload');
+    setDuplicateResolutions([]);
+    setImportBatches([]);
   };
 
   return {
     state,
+    isLoading: state.isProcessing,
+    previewData: state.previewData,
+    duplicateResolutions,
+    setDuplicateResolutions,
+    importBatches,
+    currentStep,
+    setCurrentStep,
+    processFile,
+    createBatches,
+    importBatch,
     handleFileUpload,
     handleDuplicateAction,
     startImport,

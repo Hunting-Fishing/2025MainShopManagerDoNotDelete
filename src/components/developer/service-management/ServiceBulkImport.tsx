@@ -5,12 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Upload, Download, FileSpreadsheet } from 'lucide-react';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
-import { ServiceStagedImport } from './ServiceStagedImport';
+import ServiceStagedImport from './ServiceStagedImport';
 
 interface ServiceBulkImportProps {
   categories: ServiceMainCategory[];
   onImport: (data: any) => Promise<void>;
-  onExport: () => Promise<void>; // Changed to match expected signature
+  onExport: () => Promise<void>;
 }
 
 const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({
@@ -21,7 +21,11 @@ const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({
   const [activeTab, setActiveTab] = useState('staged');
 
   const handleExport = async () => {
-    await onExport();
+    try {
+      await onExport();
+    } catch (error) {
+      console.error('Export failed:', error);
+    }
   };
 
   return (
