@@ -1,299 +1,285 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { WorkOrder } from '@/types/workOrder';
-import { normalizeWorkOrder } from '@/utils/workOrders/formatters';
+import { WorkOrder, TimeEntry, WorkOrderInventoryItem } from '@/types/workOrder';
+import { WorkOrderJobLine } from '@/types/jobLine';
+import { normalizeWorkOrder } from '@/utils/workOrders';
 
-/**
- * Enhanced work order enrichment with robust error handling
- */
+// Enhanced function to enrich work order with all related data including job lines
 export const enrichWorkOrderWithRelatedData = async (workOrder: any): Promise<WorkOrder> => {
+  console.log('Enriching work order with related data:', workOrder.id);
+  
   try {
-    console.log('Enriching work order:', workOrder.id);
-    
-    let enrichedWorkOrder = { ...workOrder };
+    // Fetch time entries
+    const { data: timeEntries, error: timeError } = await supabase.rpc('get_work_order_time_entries', {
+      work_order_id: workOrder.id
+    });
 
-    // Enrich with customer data if customer_id exists
-    if (workOrder.customer_id) {
-      try {
-        const { data: customer, error: customerError } = await supabase
-          .from('customers')
-          .select('id, first_name, last_name, email, phone')
-          .eq('id', workOrder.customer_id)
-          .maybeSingle();
-
-        if (customerError) {
-          console.error('Error fetching customer:', customerError);
-        } else if (customer) {
-          enrichedWorkOrder.customer_name = `${customer.first_name || ''} ${customer.last_name || ''}`.trim();
-          enrichedWorkOrder.customer_email = customer.email;
-          enrichedWorkOrder.customer_phone = customer.phone;
-          enrichedWorkOrder.customer = enrichedWorkOrder.customer_name; // Backward compatibility
-        }
-      } catch (error) {
-        console.error('Failed to enrich customer data:', error);
-      }
+    if (timeError) {
+      console.error('Error fetching time entries:', timeError);
     }
 
-    // Enrich with vehicle data if vehicle_id exists
-    if (workOrder.vehicle_id) {
-      try {
-        const { data: vehicle, error: vehicleError } = await supabase
-          .from('vehicles')
-          .select('id, year, make, model, vin, license_plate')
-          .eq('id', workOrder.vehicle_id)
-          .maybeSingle();
+    // Fetch inventory items
+    const { data: inventoryItems, error: inventoryError } = await supabase.rpc('get_work_order_inventory_items', {
+      work_order_id: workOrder.id
+    });
 
-        if (vehicleError) {
-          console.error('Error fetching vehicle:', vehicleError);
-        } else if (vehicle) {
-          enrichedWorkOrder.vehicle_year = vehicle.year?.toString() || '';
-          enrichedWorkOrder.vehicle_make = vehicle.make || '';
-          enrichedWorkOrder.vehicle_model = vehicle.model || '';
-          enrichedWorkOrder.vehicle_vin = vehicle.vin || '';
-          enrichedWorkOrder.vehicle_license_plate = vehicle.license_plate || '';
-          enrichedWorkOrder.vehicle = vehicle; // Store full vehicle object
-        }
-      } catch (error) {
-        console.error('Failed to enrich vehicle data:', error);
-      }
+    if (inventoryError) {
+      console.error('Error fetching inventory items:', inventoryError);
     }
 
-    // Enrich with technician data if technician_id exists
-    if (workOrder.technician_id) {
-      try {
-        const { data: technician, error: technicianError } = await supabase
-          .from('profiles')
-          .select('id, first_name, last_name, email')
-          .eq('id', workOrder.technician_id)
-          .maybeSingle();
+    // Fetch job lines
+    const { data: jobLinesData, error: jobLinesError } = await supabase.rpc('get_work_order_job_lines', {
+      work_order_id_param: workOrder.id
+    });
 
-        if (technicianError) {
-          console.error('Error fetching technician:', technicianError);
-        } else if (technician) {
-          enrichedWorkOrder.technician = `${technician.first_name || ''} ${technician.last_name || ''}`.trim();
-        }
-      } catch (error) {
-        console.error('Failed to enrich technician data:', error);
-      }
+    if (jobLinesError) {
+      console.error('Error fetching job lines:', jobLinesError);
     }
 
-    // Normalize the work order to ensure consistent structure
-    return normalizeWorkOrder(enrichedWorkOrder);
+    // Map job lines to proper format
+    const jobLines: WorkOrderJobLine[] = (jobLinesData || []).map((item: any): WorkOrderJobLine => ({
+      id: item.id,
+      workOrderId: item.work_order_id,
+      name: item.name,
+      category: item.category,
+      subcategory: item.subcategory,
+      description: item.description,
+      estimatedHours: item.estimated_hours,
+      laborRate: item.labor_rate,
+      totalAmount: item.total_amount,
+      status: item.status as WorkOrderJobLine['status'],
+      notes: item.notes,
+      createdAt: item.created_at,
+      updatedAt: item.updated_at
+    }));
+
+    console.log(`Fetched ${jobLines.length} job lines for work order ${workOrder.id}`);
+
+    // Create enriched work order with all related data
+    const enrichedWorkOrder: WorkOrder = {
+      ...normalizeWorkOrder(workOrder),
+      timeEntries: timeEntries || [],
+      inventoryItems: inventoryItems || [],
+      jobLines: jobLines
+    };
+
+    return enrichedWorkOrder;
   } catch (error) {
-    console.error('Error enriching work order:', error);
-    // Return normalized work order even if enrichment fails
-    return normalizeWorkOrder(workOrder);
+    console.error('Error enriching work order data:', error);
+    // Return basic work order if enrichment fails
+    return {
+      ...normalizeWorkOrder(workOrder),
+      timeEntries: [],
+      inventoryItems: [],
+      jobLines: []
+    };
   }
 };
 
-/**
- * Get all work orders with proper enrichment
- */
 export const getAllWorkOrders = async (): Promise<WorkOrder[]> => {
   try {
-    console.log('Fetching all work orders...');
-    
-    const { data: workOrders, error } = await supabase
+    const { data, error } = await supabase
       .from('work_orders')
-      .select('*')
+      .select(`
+        *,
+        customers (
+          id,
+          first_name,
+          last_name,
+          email,
+          phone
+        ),
+        vehicles (
+          id,
+          year,
+          make,
+          model,
+          vin,
+          license_plate
+        )
+      `)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching work orders:', error);
-      throw new Error(`Failed to fetch work orders: ${error.message}`);
-    }
+    if (error) throw error;
 
-    if (!workOrders || workOrders.length === 0) {
+    if (!data || data.length === 0) {
       console.log('No work orders found');
       return [];
     }
 
-    console.log(`Found ${workOrders.length} work orders, enriching data...`);
-
-    // Enrich all work orders with related data
+    // Enrich each work order with related data including job lines
     const enrichedWorkOrders = await Promise.all(
-      workOrders.map(async (workOrder) => {
-        try {
-          return await enrichWorkOrderWithRelatedData(workOrder);
-        } catch (error) {
-          console.error(`Failed to enrich work order ${workOrder.id}:`, error);
-          // Return normalized work order even if enrichment fails
-          return normalizeWorkOrder(workOrder);
-        }
+      data.map(async (workOrder) => {
+        return enrichWorkOrderWithRelatedData(workOrder);
       })
     );
 
-    console.log('Work orders enriched successfully');
+    console.log(`Retrieved ${enrichedWorkOrders.length} work orders with full data`);
     return enrichedWorkOrders;
+
   } catch (error) {
-    console.error('Error in getAllWorkOrders:', error);
-    throw error;
+    console.error('Error fetching work orders:', error);
+    throw new Error('Failed to fetch work orders');
   }
 };
 
-/**
- * Get work order by ID with enrichment
- */
 export const getWorkOrderById = async (id: string): Promise<WorkOrder | null> => {
   try {
     console.log('Fetching work order by ID:', id);
-    
-    const { data: workOrder, error } = await supabase
+
+    const { data, error } = await supabase
       .from('work_orders')
-      .select('*')
+      .select(`
+        *,
+        customers (
+          id,
+          first_name,
+          last_name,
+          email,
+          phone
+        ),
+        vehicles (
+          id,
+          year,
+          make,
+          model,
+          vin,
+          license_plate
+        )
+      `)
       .eq('id', id)
       .maybeSingle();
 
     if (error) {
-      console.error('Error fetching work order:', error);
-      throw new Error(`Failed to fetch work order: ${error.message}`);
+      console.error('Database error fetching work order:', error);
+      throw error;
     }
 
-    if (!workOrder) {
-      console.log('Work order not found');
+    if (!data) {
+      console.log('Work order not found:', id);
       return null;
     }
 
-    // Enrich the work order with related data
-    const enrichedWorkOrder = await enrichWorkOrderWithRelatedData(workOrder);
-    console.log('Work order enriched successfully');
+    console.log('Found work order, enriching with related data...');
     
+    // Enrich with all related data including job lines
+    const enrichedWorkOrder = await enrichWorkOrderWithRelatedData(data);
+    
+    console.log('Work order enriched successfully with job lines:', enrichedWorkOrder.jobLines?.length || 0);
     return enrichedWorkOrder;
+
   } catch (error) {
     console.error('Error in getWorkOrderById:', error);
-    throw error;
+    throw new Error(`Failed to fetch work order: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
 
-/**
- * Get work orders by customer ID with enrichment
- */
 export const getWorkOrdersByCustomerId = async (customerId: string): Promise<WorkOrder[]> => {
   try {
-    console.log('Fetching work orders for customer:', customerId);
-    
-    const { data: workOrders, error } = await supabase
+    const { data, error } = await supabase
       .from('work_orders')
-      .select('*')
+      .select(`
+        *,
+        customers (
+          id,
+          first_name,
+          last_name,
+          email,
+          phone
+        ),
+        vehicles (
+          id,
+          year,
+          make,
+          model,
+          vin,
+          license_plate
+        )
+      `)
       .eq('customer_id', customerId)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching work orders by customer:', error);
-      throw new Error(`Failed to fetch work orders: ${error.message}`);
-    }
+    if (error) throw error;
 
-    if (!workOrders || workOrders.length === 0) {
-      console.log('No work orders found for customer');
+    if (!data || data.length === 0) {
       return [];
     }
 
-    console.log(`Found ${workOrders.length} work orders for customer, enriching data...`);
-
-    // Enrich all work orders with related data
+    // Enrich each work order with related data including job lines
     const enrichedWorkOrders = await Promise.all(
-      workOrders.map(async (workOrder) => {
-        try {
-          return await enrichWorkOrderWithRelatedData(workOrder);
-        } catch (error) {
-          console.error(`Failed to enrich work order ${workOrder.id}:`, error);
-          return normalizeWorkOrder(workOrder);
-        }
+      data.map(async (workOrder) => {
+        return enrichWorkOrderWithRelatedData(workOrder);
       })
     );
 
-    console.log('Customer work orders enriched successfully');
     return enrichedWorkOrders;
+
   } catch (error) {
-    console.error('Error in getWorkOrdersByCustomerId:', error);
-    throw error;
+    console.error('Error fetching work orders by customer:', error);
+    throw new Error('Failed to fetch customer work orders');
   }
 };
 
-/**
- * Get work orders by status with enrichment
- */
 export const getWorkOrdersByStatus = async (status: string): Promise<WorkOrder[]> => {
   try {
-    console.log('Fetching work orders by status:', status);
-    
-    const { data: workOrders, error } = await supabase
+    const { data, error } = await supabase
       .from('work_orders')
-      .select('*')
+      .select(`
+        *,
+        customers (
+          id,
+          first_name,
+          last_name,
+          email,
+          phone
+        ),
+        vehicles (
+          id,
+          year,
+          make,
+          model,
+          vin,
+          license_plate
+        )
+      `)
       .eq('status', status)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching work orders by status:', error);
-      throw new Error(`Failed to fetch work orders: ${error.message}`);
-    }
+    if (error) throw error;
 
-    if (!workOrders || workOrders.length === 0) {
-      console.log('No work orders found for status');
+    if (!data || data.length === 0) {
       return [];
     }
 
-    console.log(`Found ${workOrders.length} work orders for status, enriching data...`);
-
-    // Enrich all work orders with related data
+    // Enrich each work order with related data including job lines
     const enrichedWorkOrders = await Promise.all(
-      workOrders.map(async (workOrder) => {
-        try {
-          return await enrichWorkOrderWithRelatedData(workOrder);
-        } catch (error) {
-          console.error(`Failed to enrich work order ${workOrder.id}:`, error);
-          return normalizeWorkOrder(workOrder);
-        }
+      data.map(async (workOrder) => {
+        return enrichWorkOrderWithRelatedData(workOrder);
       })
     );
 
-    console.log('Status work orders enriched successfully');
     return enrichedWorkOrders;
+
   } catch (error) {
-    console.error('Error in getWorkOrdersByStatus:', error);
-    throw error;
+    console.error('Error fetching work orders by status:', error);
+    throw new Error('Failed to fetch work orders by status');
   }
 };
 
-/**
- * Get unique technicians from work orders
- */
 export const getUniqueTechnicians = async (): Promise<string[]> => {
   try {
-    const { data: workOrders, error } = await supabase
+    const { data, error } = await supabase
       .from('work_orders')
       .select('technician_id')
       .not('technician_id', 'is', null);
 
-    if (error) {
-      console.error('Error fetching technicians:', error);
-      return [];
-    }
+    if (error) throw error;
 
-    // Get unique technician IDs
-    const technicianIds = [...new Set(workOrders.map(wo => wo.technician_id).filter(Boolean))];
-    
-    if (technicianIds.length === 0) {
-      return [];
-    }
+    const uniqueTechnicians = [...new Set(data?.map(item => item.technician_id).filter(Boolean))];
+    return uniqueTechnicians;
 
-    // Fetch technician profiles
-    const { data: technicians, error: techError } = await supabase
-      .from('profiles')
-      .select('id, first_name, last_name')
-      .in('id', technicianIds);
-
-    if (techError) {
-      console.error('Error fetching technician profiles:', techError);
-      return [];
-    }
-
-    // Return formatted technician names
-    return technicians.map(tech => 
-      `${tech.first_name || ''} ${tech.last_name || ''}`.trim()
-    ).filter(name => name.length > 0);
   } catch (error) {
-    console.error('Error in getUniqueTechnicians:', error);
+    console.error('Error fetching unique technicians:', error);
     return [];
   }
 };

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,7 +5,7 @@ import { WorkOrderJobLine } from '@/types/jobLine';
 import { AddJobLineDialog } from '../job-lines/AddJobLineDialog';
 import { JobLineCard } from '../job-lines/JobLineCard';
 import { Wrench } from 'lucide-react';
-import { generateTempJobLineId } from '@/services/jobLineParserEnhanced';
+import { generateTempJobLineId } from '@/services/jobLineService';
 
 interface JobLinesSectionProps {
   workOrderId: string;
@@ -29,35 +28,47 @@ export function JobLinesSection({
 
   // Sync with parent state
   useEffect(() => {
+    console.log('JobLinesSection: Syncing job lines from props:', jobLines.length);
     setLocalJobLines(jobLines);
   }, [jobLines]);
 
   const handleAddJobLine = (newJobLineData: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>) => {
+    console.log('Adding new job line:', newJobLineData);
+    
     const newJobLine: WorkOrderJobLine = {
       ...newJobLineData,
-      id: generateTempJobLineId(), // Use proper UUID generation
+      id: generateTempJobLineId(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
     const updatedJobLines = [...localJobLines, newJobLine];
+    console.log('Updated job lines count:', updatedJobLines.length);
+    
     setLocalJobLines(updatedJobLines);
     onJobLinesChange(updatedJobLines);
   };
 
   const handleUpdateJobLine = (updatedJobLine: WorkOrderJobLine) => {
+    console.log('Updating job line:', updatedJobLine.id);
+    
     const updatedJobLines = localJobLines.map(jobLine =>
       jobLine.id === updatedJobLine.id ? {
         ...updatedJobLine,
         updatedAt: new Date().toISOString()
       } : jobLine
     );
+    
     setLocalJobLines(updatedJobLines);
     onJobLinesChange(updatedJobLines);
   };
 
   const handleDeleteJobLine = (jobLineId: string) => {
+    console.log('Deleting job line:', jobLineId);
+    
     const updatedJobLines = localJobLines.filter(jobLine => jobLine.id !== jobLineId);
+    console.log('Job lines after deletion:', updatedJobLines.length);
+    
     setLocalJobLines(updatedJobLines);
     onJobLinesChange(updatedJobLines);
   };
@@ -69,6 +80,8 @@ export function JobLinesSection({
   const totalAmount = localJobLines.reduce((total, jobLine) => 
     total + (jobLine.totalAmount || 0), 0
   );
+
+  console.log('JobLinesSection rendering with job lines:', localJobLines.length);
 
   return (
     <Card className="border-slate-200 dark:border-slate-700">

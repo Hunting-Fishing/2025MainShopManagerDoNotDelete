@@ -10,7 +10,7 @@ import { WorkOrderInvoiceView } from './details/WorkOrderInvoiceView';
 import { WorkOrderViewToggle } from './details/WorkOrderViewToggle';
 import { Button } from '@/components/ui/button';
 import { Edit, Save, X } from 'lucide-react';
-import { loadJobLinesFromDatabase, saveJobLinesToDatabase } from '@/services/jobLineParserEnhanced';
+import { saveJobLinesToDatabase } from '@/services/jobLineService';
 import { toast } from 'sonner';
 
 interface WorkOrderDetailsViewProps {
@@ -19,30 +19,18 @@ interface WorkOrderDetailsViewProps {
 
 export function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsViewProps) {
   const navigate = useNavigate();
-  const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
-  const [jobLinesLoading, setJobLinesLoading] = useState(true);
+  // Use job lines from the enriched work order data
+  const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>(workOrder.jobLines || []);
   const [view, setView] = useState<'detailed' | 'invoice'>('detailed');
   const [isEditMode, setIsEditMode] = useState(false);
 
-  // Load job lines from database
+  // Update job lines when work order changes
   useEffect(() => {
-    const loadJobLines = async () => {
-      try {
-        setJobLinesLoading(true);
-        const lines = await loadJobLinesFromDatabase(workOrder.id);
-        setJobLines(lines);
-      } catch (error) {
-        console.error('Error loading job lines:', error);
-        toast.error('Failed to load job lines');
-      } finally {
-        setJobLinesLoading(false);
-      }
-    };
-
-    if (workOrder.id) {
-      loadJobLines();
+    if (workOrder.jobLines) {
+      console.log('Setting job lines from work order data:', workOrder.jobLines.length);
+      setJobLines(workOrder.jobLines);
     }
-  }, [workOrder.id]);
+  }, [workOrder.jobLines]);
 
   const handleJobLinesChange = async (updatedJobLines: WorkOrderJobLine[]) => {
     try {
@@ -57,7 +45,6 @@ export function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsViewProps) {
 
   const handleEditToggle = () => {
     if (isEditMode) {
-      // If we're saving/exiting edit mode, you might want to save changes here
       setIsEditMode(false);
       toast.success('Changes saved successfully');
     } else {
@@ -67,7 +54,10 @@ export function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsViewProps) {
 
   const handleCancelEdit = () => {
     setIsEditMode(false);
-    // Optionally reload data to discard changes
+    // Reset job lines to original state
+    if (workOrder.jobLines) {
+      setJobLines(workOrder.jobLines);
+    }
   };
 
   // Get work order title with better error handling
@@ -132,7 +122,7 @@ export function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsViewProps) {
     </div>
   );
 
-  console.log('WorkOrderDetailsView rendering with workOrder:', workOrder);
+  console.log('WorkOrderDetailsView rendering with job lines:', jobLines.length);
 
   return (
     <WorkOrderPageLayout
@@ -160,7 +150,7 @@ export function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsViewProps) {
             onUpdateNotes={() => {}}
             jobLines={jobLines}
             onJobLinesChange={handleJobLinesChange}
-            jobLinesLoading={jobLinesLoading}
+            jobLinesLoading={false} // No longer loading separately
             isEditMode={isEditMode}
           />
         </div>
