@@ -1,247 +1,198 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { 
-  Upload, 
-  Download, 
-  FileText, 
-  AlertTriangle, 
-  CheckCircle,
-  Settings
-} from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
-import { toast } from 'sonner';
+import { ServiceStagedImport } from './ServiceStagedImport';
+import { generateExcelTemplate } from '@/lib/services/excelParser';
+import { exportToExcel } from '@/utils/export';
+import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/use-toast";
+import { Upload, Download } from 'lucide-react';
 
 interface ServiceBulkImportProps {
   categories: ServiceMainCategory[];
-  onImport: (data: any) => Promise<void>;
+  onImport: (data: any) => void;
   onExport: () => void;
 }
 
-export const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({
+const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({
   categories,
   onImport,
   onExport
 }) => {
-  const [importData, setImportData] = useState('');
-  const [importing, setImporting] = useState(false);
-  const [exporting, setExporting] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const { toast } = useToast();
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0];
+    setFile(selectedFile);
+  };
 
   const handleImport = async () => {
-    if (!importData.trim()) {
-      toast.error('Please enter data to import');
+    if (!file) {
+      toast({
+        title: "No file selected",
+        description: "Please select a file to import.",
+        variant: "destructive",
+      });
       return;
     }
 
-    setImporting(true);
     try {
-      const data = JSON.parse(importData);
-      await onImport(data);
-      toast.success('Data imported successfully');
-      setImportData('');
+      // Implement your import logic here
+      onImport(file);
+      toast({
+        title: "Import initiated",
+        description: "Service data import is in progress.",
+      });
     } catch (error) {
-      toast.error('Failed to import data. Please check the format.');
-      console.error('Import error:', error);
-    } finally {
-      setImporting(false);
+      console.error("Error during import:", error);
+      toast({
+        title: "Import failed",
+        description: "An error occurred during the import process.",
+        variant: "destructive",
+      });
     }
   };
 
-  const handleExport = async () => {
-    setExporting(true);
+  const handleTemplateDownload = () => {
     try {
-      const exportData = {
-        categories: categories,
-        exportDate: new Date().toISOString(),
-        version: '1.0'
-      };
-      
-      const dataStr = JSON.stringify(exportData, null, 2);
-      const dataBlob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(dataBlob);
-      
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `service-categories-${new Date().toISOString().split('T')[0]}.json`;
-      link.click();
-      
-      URL.revokeObjectURL(url);
-      toast.success('Data exported successfully');
-      onExport();
+      const template = generateExcelTemplate();
+      const blob = new Blob([template], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'service_template.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      toast({
+        title: "Template downloaded",
+        description: "Service template downloaded successfully.",
+      });
     } catch (error) {
-      toast.error('Failed to export data');
-      console.error('Export error:', error);
-    } finally {
-      setExporting(false);
+      console.error("Error generating template:", error);
+      toast({
+        title: "Template generation failed",
+        description: "An error occurred while generating the template.",
+        variant: "destructive",
+      });
     }
   };
 
-  const generateSampleData = () => {
-    const sampleData = {
-      categories: [
-        {
-          id: 'sample-1',
-          name: 'Sample Category',
-          description: 'This is a sample category',
-          subcategories: [
-            {
-              id: 'sample-1-1',
-              name: 'Sample Subcategory',
-              description: 'This is a sample subcategory',
-              jobs: [
-                {
-                  id: 'sample-1-1-1',
-                  name: 'Sample Job',
-                  description: 'This is a sample job description',
-                  estimatedTime: 60,
-                  price: 100
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    };
-    setImportData(JSON.stringify(sampleData, null, 2));
+  const handleExportData = () => {
+    if (!categories || categories.length === 0) {
+      toast({
+        title: "No data to export",
+        description: "There is no service data available for export.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Convert categories data to a format suitable for excel export
+      const exportData = categories.flatMap(category =>
+        category.subcategories.flatMap(subcategory =>
+          subcategory.jobs.map(job => ({
+            Category: category.name,
+            Subcategory: subcategory.name,
+            Job: job.name,
+            Description: job.description,
+            EstimatedTime: job.estimatedTime,
+            Price: job.price,
+          }))
+        )
+      );
+
+      exportToExcel(exportData, 'Service_Data');
+      toast({
+        title: "Export initiated",
+        description: "Service data export is in progress.",
+      });
+    } catch (error) {
+      console.error("Error during export:", error);
+      toast({
+        title: "Export failed",
+        description: "An error occurred during the export process.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
     <div className="space-y-6">
-      {/* Export Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Download className="h-5 w-5" />
-            Export Service Data
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <p className="text-sm text-gray-600">
-              Export your current service catalog as JSON for backup or migration purposes.
-            </p>
-            
-            <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{categories.length}</div>
-                <div className="text-sm text-gray-600">Categories</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">
-                  {categories.reduce((sum, cat) => sum + cat.subcategories.length, 0)}
-                </div>
-                <div className="text-sm text-gray-600">Subcategories</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">
-                  {categories.reduce((sum, cat) => 
-                    sum + cat.subcategories.reduce((subSum, sub) => subSum + sub.jobs.length, 0), 0
-                  )}
-                </div>
-                <div className="text-sm text-gray-600">Jobs</div>
-              </div>
-            </div>
+      <Tabs defaultValue="staged" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="staged">Staged Import</TabsTrigger>
+          <TabsTrigger value="bulk">Bulk Import</TabsTrigger>
+          <TabsTrigger value="export">Export</TabsTrigger>
+        </TabsList>
 
-            <Button 
-              onClick={handleExport}
-              disabled={exporting || categories.length === 0}
-              className="w-full gap-2"
-            >
-              <Download className="h-4 w-4" />
-              {exporting ? 'Exporting...' : 'Export as JSON'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+        <TabsContent value="staged">
+          <ServiceStagedImport
+            categories={categories}
+            onImportComplete={() => onImport({})}
+          />
+        </TabsContent>
 
-      {/* Import Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Upload className="h-5 w-5" />
-            Import Service Data
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-start gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded">
-              <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
-              <div className="text-sm text-yellow-800">
-                <strong>Warning:</strong> Importing data will replace your current service catalog. 
-                Make sure to export your current data first as a backup.
+        <TabsContent value="bulk">
+          <Card>
+            <CardHeader>
+              <CardTitle>Bulk Import</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col space-y-4">
+                <p>Upload a file to bulk import service data.</p>
+                <input
+                  type="file"
+                  accept=".xlsx, .xls"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  id="bulk-import-file"
+                />
+                <label htmlFor="bulk-import-file">
+                  <Button asChild variant="secondary">
+                    <label
+                      htmlFor="bulk-import-file"
+                      className="cursor-pointer flex items-center gap-2"
+                    >
+                      <Upload className="h-4 w-4" />
+                      <span>{file ? `Selected: ${file.name}` : 'Select File'}</span>
+                    </label>
+                  </Button>
+                </label>
+                <Button onClick={handleImport} disabled={!file}>
+                  Import
+                </Button>
               </div>
-            </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-            <div>
-              <Label htmlFor="import-data">JSON Data</Label>
-              <Textarea
-                id="import-data"
-                placeholder="Paste your JSON data here..."
-                value={importData}
-                onChange={(e) => setImportData(e.target.value)}
-                rows={10}
-                className="font-mono text-sm"
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={generateSampleData}
-                className="gap-2"
-              >
-                <FileText className="h-4 w-4" />
-                Load Sample Data
+        <TabsContent value="export">
+          <Card>
+            <CardHeader>
+              <CardTitle>Export / Template</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col space-y-4">
+              <p>Download a template or export existing data.</p>
+              <Button variant="secondary" onClick={handleTemplateDownload} className="w-full">
+                <Download className="h-4 w-4 mr-2" />
+                Download Template
               </Button>
-              
-              <Button
-                onClick={handleImport}
-                disabled={importing || !importData.trim()}
-                className="gap-2"
-              >
-                <Upload className="h-4 w-4" />
-                {importing ? 'Importing...' : 'Import Data'}
+              <Button variant="secondary" onClick={handleExportData} className="w-full">
+                <Download className="h-4 w-4 mr-2" />
+                Export Data
               </Button>
-            </div>
-
-            {/* Format Guide */}
-            <div className="border-t pt-4">
-              <h4 className="font-medium mb-2">Expected JSON Format:</h4>
-              <pre className="text-xs bg-gray-100 p-3 rounded overflow-x-auto">
-{`{
-  "categories": [
-    {
-      "id": "unique-id",
-      "name": "Category Name",
-      "description": "Optional description",
-      "subcategories": [
-        {
-          "id": "unique-subcategory-id",
-          "name": "Subcategory Name",
-          "description": "Optional description",
-          "jobs": [
-            {
-              "id": "unique-job-id",
-              "name": "Job Name",
-              "description": "Job description",
-              "estimatedTime": 60,
-              "price": 100
-            }
-          ]
-        }
-      ]
-    }
-  ]
-}`}
-              </pre>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
+
+export default ServiceBulkImport;
