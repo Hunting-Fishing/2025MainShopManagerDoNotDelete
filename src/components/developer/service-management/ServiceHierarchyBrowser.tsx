@@ -40,8 +40,10 @@ const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = ({
     onRefresh();
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     console.log('Export triggered');
+    // Mock export functionality
+    await new Promise(resolve => setTimeout(resolve, 1000));
   };
 
   return (

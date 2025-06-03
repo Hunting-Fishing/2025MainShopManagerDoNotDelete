@@ -10,7 +10,7 @@ import { ServiceStagedImport } from './ServiceStagedImport';
 interface ServiceBulkImportProps {
   categories: ServiceMainCategory[];
   onImport: (data: any) => Promise<void>;
-  onExport: () => void;
+  onExport: () => Promise<void>; // Changed to match expected signature
 }
 
 const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({
@@ -19,6 +19,10 @@ const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({
   onExport
 }) => {
   const [activeTab, setActiveTab] = useState('staged');
+
+  const handleExport = async () => {
+    await onExport();
+  };
 
   return (
     <div className="space-y-6">
@@ -51,7 +55,7 @@ const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({
                   <p className="text-gray-600 mb-4">
                     Download your current service catalog as an Excel file
                   </p>
-                  <Button onClick={onExport} className="gap-2">
+                  <Button onClick={handleExport} className="gap-2">
                     <Download className="h-4 w-4" />
                     Export to Excel
                   </Button>
