@@ -1,5 +1,37 @@
-
 import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
+
+/**
+ * Format estimated time from minutes to human-readable format
+ */
+export const formatEstimatedTime = (minutes: number): string => {
+  if (!minutes || minutes <= 0) return 'N/A';
+  
+  if (minutes < 60) {
+    return `${minutes} min`;
+  }
+  
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  
+  if (remainingMinutes === 0) {
+    return `${hours}h`;
+  }
+  
+  return `${hours}h ${remainingMinutes}m`;
+};
+
+/**
+ * Format price as currency
+ */
+export const formatPrice = (price: number): string => {
+  if (!price || price <= 0) return 'N/A';
+  
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2
+  }).format(price);
+};
 
 /**
  * Search through service categories by name or description
