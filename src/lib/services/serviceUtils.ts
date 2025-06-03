@@ -1,32 +1,100 @@
 
-export const formatEstimatedTime = (minutes: number): string => {
-  if (minutes < 60) {
-    return `${minutes}m`;
+import { ServiceMainCategory, ServiceJob } from '@/types/serviceHierarchy';
+import { enhancedSearch, sortByRelevance } from '@/utils/search/enhancedSearch';
+
+/**
+ * Search through service categories with enhanced brake line support
+ */
+export function searchServiceCategories(
+  categories: ServiceMainCategory[],
+  query: string
+): ServiceMainCategory[] {
+  if (!query.trim()) return categories;
+  
+  const results: ServiceMainCategory[] = [];
+  
+  for (const category of categories) {
+    // Check if category matches
+    const categoryMatch = enhancedSearch(category.name, query) || 
+                         (category.description ? enhancedSearch(category.description, query) : null);
+    
+    const matchingSubcategories = [];
+    
+    for (const subcategory of category.subcategories) {
+      // Check if subcategory matches
+      const subcategoryMatch = enhancedSearch(subcategory.name, query) || 
+                              (subcategory.description ? enhancedSearch(subcategory.description, query) : null);
+      
+      // Get matching jobs with enhanced search
+      const matchingJobs = sortByRelevance(subcategory.jobs, query);
+      
+      // Include subcategory if it matches, has matching jobs, or category matches
+      if (subcategoryMatch || matchingJobs.length > 0 || categoryMatch) {
+        matchingSubcategories.push({
+          ...subcategory,
+          jobs: matchingJobs.length > 0 ? matchingJobs : subcategory.jobs
+        });
+      }
+    }
+    
+    // Include category if it matches or has matching subcategories
+    if (categoryMatch || matchingSubcategories.length > 0) {
+      results.push({
+        ...category,
+        subcategories: matchingSubcategories
+      });
+    }
   }
   
-  const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
+  return results;
+}
+
+/**
+ * Get all jobs that match a search query across all categories
+ */
+export function searchAllJobs(categories: ServiceMainCategory[], query: string): ServiceJob[] {
+  const allJobs = categories.flatMap(category => 
+    category.subcategories.flatMap(subcategory => subcategory.jobs)
+  );
   
-  if (remainingMinutes === 0) {
-    return `${hours}h`;
+  return sortByRelevance(allJobs, query);
+}
+
+/**
+ * Validate service data integrity
+ */
+export function validateServiceData(categories: ServiceMainCategory[]): boolean {
+  try {
+    for (const category of categories) {
+      if (!category.id || !category.name || !category.subcategories) {
+        console.error('Invalid category data:', category);
+        return false;
+      }
+      
+      for (const subcategory of category.subcategories) {
+        if (!subcategory.id || !subcategory.name || !subcategory.jobs) {
+          console.error('Invalid subcategory data:', subcategory);
+          return false;
+        }
+        
+        for (const job of subcategory.jobs) {
+          if (!job.id || !job.name) {
+            console.error('Invalid job data:', job);
+            return false;
+          }
+        }
+      }
+    }
+    
+    console.log('Service data validation passed:', {
+      categories: categories.length,
+      totalJobs: categories.reduce((total, cat) => 
+        total + cat.subcategories.reduce((subTotal, sub) => subTotal + sub.jobs.length, 0), 0)
+    });
+    
+    return true;
+  } catch (error) {
+    console.error('Service data validation failed:', error);
+    return false;
   }
-  
-  return `${hours}h ${remainingMinutes}m`;
-};
-
-export const formatPrice = (price: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(price);
-};
-
-export const calculateTotalPrice = (services: Array<{ price?: number }>): number => {
-  return services.reduce((total, service) => total + (service.price || 0), 0);
-};
-
-export const calculateTotalTime = (services: Array<{ estimatedTime?: number }>): number => {
-  return services.reduce((total, service) => total + (service.estimatedTime || 0), 0);
-};
+}
