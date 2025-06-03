@@ -2,7 +2,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { PhaseProgressItem } from "@/types/dashboard";
-import { Loader2 } from "lucide-react";
+import { Loader2, ExternalLink } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface WorkOrderPhaseProgressProps {
   data: PhaseProgressItem[];
@@ -46,9 +47,16 @@ export function WorkOrderPhaseProgress({ data, isLoading }: WorkOrderPhaseProgre
       </CardHeader>
       <CardContent className="space-y-4">
         {data.map((item) => (
-          <div key={item.id} className="space-y-2">
+          <Link 
+            key={item.id} 
+            to={`/work-orders/${item.id}`}
+            className="block space-y-2 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
+          >
             <div className="flex justify-between items-center">
-              <span className="font-medium truncate">{item.name}</span>
+              <span className="font-medium truncate group-hover:text-primary transition-colors flex items-center gap-2">
+                {item.name}
+                <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </span>
               <span className="text-sm text-muted-foreground">
                 {item.completedPhases} / {item.totalPhases} phases
               </span>
@@ -57,7 +65,7 @@ export function WorkOrderPhaseProgress({ data, isLoading }: WorkOrderPhaseProgre
               <Progress value={item.progress} className="h-2" />
               <span className="text-sm font-medium">{item.progress}%</span>
             </div>
-          </div>
+          </Link>
         ))}
       </CardContent>
     </Card>
