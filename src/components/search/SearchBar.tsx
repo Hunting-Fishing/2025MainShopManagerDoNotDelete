@@ -1,9 +1,11 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { SearchResults } from '@/components/search/SearchResults';
 import { performSearch, SearchResult } from '@/utils/search';
+import { enhancedSearch } from '@/utils/search/enhancedSearch';
 
 export function SearchBar() {
   const navigate = useNavigate();
@@ -24,6 +26,11 @@ export function SearchBar() {
         setSearchResults(results);
         setShowResults(true);
         
+        // Save to search history
+        const history = JSON.parse(localStorage.getItem('globalSearchHistory') || '[]');
+        const newHistory = [searchQuery, ...history.filter((item: string) => item !== searchQuery)].slice(0, 10);
+        localStorage.setItem('globalSearchHistory', JSON.stringify(newHistory));
+        
         // Track search analytics
         if (results.length === 0) {
           console.log('Search with no results:', searchQuery);
@@ -36,7 +43,7 @@ export function SearchBar() {
     }
   };
 
-  // Update search results as user types
+  // Update search results as user types with enhanced search
   useEffect(() => {
     if (searchQuery.trim() && searchQuery.length >= 2) {
       setIsSearching(true);
@@ -114,7 +121,7 @@ export function SearchBar() {
         <Input
           ref={inputRef}
           type="search"
-          placeholder="Search for work orders, inventory, customers..."
+          placeholder="Enhanced search: try 'belt', 'brake pad', 'oil change'..."
           className="pl-10 w-full pr-10"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -146,7 +153,7 @@ export function SearchBar() {
             <div className="h-2 w-2 bg-slate-200 rounded-full"></div>
             <div className="h-2 w-2 bg-slate-300 rounded-full"></div>
             <div className="h-2 w-2 bg-slate-400 rounded-full"></div>
-            <span className="text-sm text-slate-500">Searching...</span>
+            <span className="text-sm text-slate-500">Enhanced searching...</span>
           </div>
         </div>
       )}
@@ -160,7 +167,10 @@ export function SearchBar() {
       {showResults && searchQuery.trim().length >= 2 && searchResults.length === 0 && !isSearching && (
         <div className="absolute mt-1 w-full z-50 bg-white shadow-lg rounded-md p-4 text-center">
           <p className="text-slate-500">No results found for "{searchQuery}"</p>
-          <p className="text-xs text-slate-400 mt-1">Try using different keywords or check spelling</p>
+          <p className="text-xs text-slate-400 mt-1">Try using automotive terms like "belt", "brake", "oil change"</p>
+          <div className="mt-2 text-xs text-slate-400">
+            <p>💡 Enhanced search looks for words anywhere in service names</p>
+          </div>
         </div>
       )}
     </div>
