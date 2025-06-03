@@ -5,7 +5,7 @@ import { ServiceMainCategory } from '@/types/serviceHierarchy';
 import ServiceCategoriesManager from './ServiceCategoriesManager';
 import { DuplicateSearchButton } from './DuplicateSearchButton';
 import ServiceQualityAnalysis from './ServiceQualityAnalysis';
-import { ServiceBulkImport } from './ServiceBulkImport';
+import ServiceBulkImport from './ServiceBulkImport';
 import { ServiceDebugInfo } from './ServiceDebugInfo';
 import ServicesPriceReport from './ServicesPriceReport';
 import ServiceAnalytics from './ServiceAnalytics';
