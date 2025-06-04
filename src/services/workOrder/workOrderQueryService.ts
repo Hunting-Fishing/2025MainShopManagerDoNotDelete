@@ -1,42 +1,20 @@
-
-import { supabase } from "@/lib/supabase";
-import { WorkOrder } from "@/types/workOrder";
+import { supabase } from '@/integrations/supabase/client';
+import { WorkOrder } from '@/types/workOrder';
 
 /**
  * Get all work orders with enriched data
  */
 export const getAllWorkOrders = async (): Promise<WorkOrder[]> => {
   try {
+    console.log('Fetching all work orders with enriched data...');
+    
     const { data, error } = await supabase
       .from('work_orders')
       .select(`
         *,
-        customers!work_orders_customer_id_fkey (
-          id,
-          first_name,
-          last_name,
-          email,
-          phone,
-          address,
-          city,
-          state,
-          postal_code
-        ),
-        vehicles!work_orders_vehicle_id_fkey (
-          id,
-          year,
-          make,
-          model,
-          vin,
-          license_plate,
-          trim
-        ),
-        profiles!work_orders_technician_id_fkey (
-          id,
-          first_name,
-          last_name,
-          email
-        )
+        customers!work_orders_customer_id_fkey(id, first_name, last_name, email),
+        vehicles!work_orders_vehicle_id_fkey(id, year, make, model, vin, license_plate),
+        profiles!work_orders_technician_id_fkey(id, first_name, last_name, email)
       `)
       .order('created_at', { ascending: false });
 
@@ -45,39 +23,52 @@ export const getAllWorkOrders = async (): Promise<WorkOrder[]> => {
       throw error;
     }
 
-    // Transform the data to match our WorkOrder interface
-    const workOrders: WorkOrder[] = (data || []).map((workOrder: any) => {
+    console.log('Raw work orders data:', data);
+
+    // Transform and enrich the data
+    const enrichedWorkOrders: WorkOrder[] = (data || []).map((workOrder: any) => {
+      // Handle customer data
       const customer = workOrder.customers;
+      const customer_name = customer ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() : '';
+      const customer_id = customer?.id || workOrder.customer_id;
+
+      // Handle vehicle data
       const vehicle = workOrder.vehicles;
+      const vehicle_year = vehicle?.year ? String(vehicle.year) : '';
+      const vehicle_make = vehicle?.make || '';
+      const vehicle_model = vehicle?.model || '';
+      const vehicle_vin = vehicle?.vin || '';
+      const vehicle_license_plate = vehicle?.license_plate || '';
+
+      // Handle technician data
       const technician = workOrder.profiles;
+      const technician_name = technician ? `${technician.first_name || ''} ${technician.last_name || ''}`.trim() : '';
 
       return {
         ...workOrder,
-        // Customer information
-        customer_name: customer ? `${customer.first_name} ${customer.last_name}` : '',
-        customer_id: customer?.id || workOrder.customer_id,
+        customer: customer_name,
+        customer_name,
+        customer_id,
         customer_email: customer?.email || '',
-        customer_phone: customer?.phone || '',
-        customer_address: customer?.address || '',
-        customer_city: customer?.city || '',
-        customer_state: customer?.state || '',
-        customer_zip: customer?.postal_code || '',
-        
-        // Vehicle information
-        vehicle_year: vehicle?.year || '',
-        vehicle_make: vehicle?.make || '',
-        vehicle_model: vehicle?.model || '',
-        vehicle_vin: vehicle?.vin || '',
-        vehicle_license_plate: vehicle?.license_plate || '',
-        vehicle: vehicle || undefined,
-        
-        // Technician information
-        technician: technician ? `${technician.first_name} ${technician.last_name}` : '',
+        vehicle_year,
+        vehicle_make,
+        vehicle_model,
+        vehicle_vin,
+        vehicle_license_plate,
+        technician: technician_name,
+        vehicle: vehicle ? {
+          id: vehicle.id,
+          year: vehicle_year,
+          make: vehicle_make,
+          model: vehicle_model,
+          vin: vehicle_vin,
+          license_plate: vehicle_license_plate
+        } : undefined
       };
     });
 
-    console.log('Fetched work orders:', workOrders.length);
-    return workOrders;
+    console.log('Enriched work orders:', enrichedWorkOrders);
+    return enrichedWorkOrders;
   } catch (error) {
     console.error('Error in getAllWorkOrders:', error);
     throw error;
@@ -89,36 +80,15 @@ export const getAllWorkOrders = async (): Promise<WorkOrder[]> => {
  */
 export const getWorkOrderById = async (id: string): Promise<WorkOrder | null> => {
   try {
+    console.log('Fetching work order by ID with enriched data:', id);
+    
     const { data, error } = await supabase
       .from('work_orders')
       .select(`
         *,
-        customers!work_orders_customer_id_fkey (
-          id,
-          first_name,
-          last_name,
-          email,
-          phone,
-          address,
-          city,
-          state,
-          postal_code
-        ),
-        vehicles!work_orders_vehicle_id_fkey (
-          id,
-          year,
-          make,
-          model,
-          vin,
-          license_plate,
-          trim
-        ),
-        profiles!work_orders_technician_id_fkey (
-          id,
-          first_name,
-          last_name,
-          email
-        )
+        customers!work_orders_customer_id_fkey(id, first_name, last_name, email, phone, address, city, state, zip),
+        vehicles!work_orders_vehicle_id_fkey(id, year, make, model, vin, license_plate, trim),
+        profiles!work_orders_technician_id_fkey(id, first_name, last_name, email)
       `)
       .eq('id', id)
       .maybeSingle();
@@ -129,40 +99,78 @@ export const getWorkOrderById = async (id: string): Promise<WorkOrder | null> =>
     }
 
     if (!data) {
-      console.log('Work order not found:', id);
+      console.log('Work order not found for ID:', id);
       return null;
     }
 
-    const customer = data.customers;
-    const vehicle = data.vehicles;
-    const technician = data.profiles;
+    console.log('Raw work order data:', data);
 
-    const workOrder: WorkOrder = {
+    // Handle customer data
+    const customer = data.customers;
+    const customer_name = customer ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() : '';
+
+    // Handle vehicle data
+    const vehicle = data.vehicles;
+    const vehicle_year = vehicle?.year ? String(vehicle.year) : '';
+
+    // Handle technician data
+    const technician = data.profiles;
+    const technician_name = technician ? `${technician.first_name || ''} ${technician.last_name || ''}`.trim() : '';
+
+    // Fetch job lines
+    const { data: jobLinesData } = await supabase
+      .from('work_order_job_lines')
+      .select('*')
+      .eq('work_order_id', id)
+      .order('display_order', { ascending: true });
+
+    // Fetch time entries
+    const { data: timeEntriesData } = await supabase
+      .from('work_order_time_entries')
+      .select('*')
+      .eq('work_order_id', id)
+      .order('created_at', { ascending: false });
+
+    // Fetch inventory items
+    const { data: inventoryItemsData } = await supabase
+      .from('work_order_inventory_items')
+      .select('*')
+      .eq('work_order_id', id)
+      .order('created_at', { ascending: false });
+
+    const enrichedWorkOrder: WorkOrder = {
       ...data,
-      // Customer information
-      customer_name: customer ? `${customer.first_name} ${customer.last_name}` : '',
-      customer_id: customer?.id || data.customer_id,
+      customer: customer_name,
+      customer_name,
       customer_email: customer?.email || '',
       customer_phone: customer?.phone || '',
       customer_address: customer?.address || '',
       customer_city: customer?.city || '',
       customer_state: customer?.state || '',
-      customer_zip: customer?.postal_code || '',
-      
-      // Vehicle information
-      vehicle_year: vehicle?.year || '',
+      customer_zip: customer?.zip || '',
+      vehicle_year,
       vehicle_make: vehicle?.make || '',
       vehicle_model: vehicle?.model || '',
       vehicle_vin: vehicle?.vin || '',
       vehicle_license_plate: vehicle?.license_plate || '',
-      vehicle: vehicle || undefined,
-      
-      // Technician information
-      technician: technician ? `${technician.first_name} ${technician.last_name}` : '',
+      technician: technician_name,
+      vehicle: vehicle ? {
+        id: vehicle.id,
+        year: vehicle_year,
+        make: vehicle.make || '',
+        model: vehicle.model || '',
+        vin: vehicle.vin || '',
+        license_plate: vehicle.license_plate || '',
+        trim: vehicle.trim || ''
+      } : undefined,
+      jobLines: jobLinesData || [],
+      timeEntries: timeEntriesData || [],
+      inventoryItems: inventoryItemsData || [],
+      inventory_items: inventoryItemsData || []
     };
 
-    console.log('Fetched work order by ID:', workOrder);
-    return workOrder;
+    console.log('Enriched work order:', enrichedWorkOrder);
+    return enrichedWorkOrder;
   } catch (error) {
     console.error('Error in getWorkOrderById:', error);
     throw error;
@@ -174,78 +182,61 @@ export const getWorkOrderById = async (id: string): Promise<WorkOrder | null> =>
  */
 export const getWorkOrdersByCustomerId = async (customerId: string): Promise<WorkOrder[]> => {
   try {
+    console.log('Fetching work orders for customer ID:', customerId);
+    
     const { data, error } = await supabase
       .from('work_orders')
       .select(`
         *,
-        customers!work_orders_customer_id_fkey (
-          id,
-          first_name,
-          last_name,
-          email,
-          phone,
-          address,
-          city,
-          state,
-          postal_code
-        ),
-        vehicles!work_orders_vehicle_id_fkey (
-          id,
-          year,
-          make,
-          model,
-          vin,
-          license_plate,
-          trim
-        ),
-        profiles!work_orders_technician_id_fkey (
-          id,
-          first_name,
-          last_name,
-          email
-        )
+        customers!work_orders_customer_id_fkey(id, first_name, last_name, email),
+        vehicles!work_orders_vehicle_id_fkey(id, year, make, model, vin, license_plate),
+        profiles!work_orders_technician_id_fkey(id, first_name, last_name, email)
       `)
       .eq('customer_id', customerId)
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching work orders by customer ID:', error);
+      console.error('Error fetching work orders for customer:', error);
       throw error;
     }
 
-    // Transform the data to match our WorkOrder interface
-    const workOrders: WorkOrder[] = (data || []).map((workOrder: any) => {
+    // Transform and enrich the data
+    const enrichedWorkOrders: WorkOrder[] = (data || []).map((workOrder: any) => {
+      // Handle customer data
       const customer = workOrder.customers;
+      const customer_name = customer ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() : '';
+
+      // Handle vehicle data
       const vehicle = workOrder.vehicles;
+      const vehicle_year = vehicle?.year ? String(vehicle.year) : '';
+
+      // Handle technician data
       const technician = workOrder.profiles;
+      const technician_name = technician ? `${technician.first_name || ''} ${technician.last_name || ''}`.trim() : '';
 
       return {
         ...workOrder,
-        // Customer information
-        customer_name: customer ? `${customer.first_name} ${customer.last_name}` : '',
-        customer_id: customer?.id || workOrder.customer_id,
+        customer: customer_name,
+        customer_name,
         customer_email: customer?.email || '',
-        customer_phone: customer?.phone || '',
-        customer_address: customer?.address || '',
-        customer_city: customer?.city || '',
-        customer_state: customer?.state || '',
-        customer_zip: customer?.postal_code || '',
-        
-        // Vehicle information
-        vehicle_year: vehicle?.year || '',
+        vehicle_year,
         vehicle_make: vehicle?.make || '',
         vehicle_model: vehicle?.model || '',
         vehicle_vin: vehicle?.vin || '',
         vehicle_license_plate: vehicle?.license_plate || '',
-        vehicle: vehicle || undefined,
-        
-        // Technician information
-        technician: technician ? `${technician.first_name} ${technician.last_name}` : '',
+        technician: technician_name,
+        vehicle: vehicle ? {
+          id: vehicle.id,
+          year: vehicle_year,
+          make: vehicle.make || '',
+          model: vehicle.model || '',
+          vin: vehicle.vin || '',
+          license_plate: vehicle.license_plate || ''
+        } : undefined
       };
     });
 
-    console.log('Fetched work orders by customer ID:', workOrders.length);
-    return workOrders;
+    return enrichedWorkOrders;
   } catch (error) {
     console.error('Error in getWorkOrdersByCustomerId:', error);
     throw error;
