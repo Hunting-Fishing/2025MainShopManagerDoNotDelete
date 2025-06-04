@@ -1,5 +1,5 @@
 
-import { HomeIcon, Users, Calendar, FileText, Settings, Wrench, Package, DollarSign, BarChart3, MessageSquare, Bell, Car, ClipboardList, FileCheck, UserCheck, HeadphonesIcon, Gift, Truck, Building2, ShoppingCart } from "lucide-react";
+import { HomeIcon, Users, Calendar as CalendarIcon, FileText, Settings as SettingsIcon, Wrench, Package, DollarSign, BarChart3, MessageSquare, Bell, Car, ClipboardList, FileCheck, UserCheck, HeadphonesIcon, Gift, Truck, Building2, ShoppingCart } from "lucide-react";
 
 // Import page components
 import Dashboard from "./pages/Dashboard";
@@ -45,7 +45,7 @@ export const navItems = [
   {
     title: "Calendar",
     to: "/calendar",
-    icon: <Calendar className="h-4 w-4" />,
+    icon: <CalendarIcon className="h-4 w-4" />,
     page: <Calendar />,
   },
   {
@@ -141,7 +141,7 @@ export const navItems = [
   {
     title: "Settings",
     to: "/settings",
-    icon: <Settings className="h-4 w-4" />,
+    icon: <SettingsIcon className="h-4 w-4" />,
     page: <Settings />,
   },
 ];
