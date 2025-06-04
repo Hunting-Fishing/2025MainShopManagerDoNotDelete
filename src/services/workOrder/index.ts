@@ -7,7 +7,7 @@ export {
   getAllWorkOrders, 
   getWorkOrderById,
   getWorkOrdersByCustomerId,
-  getWorkOrdersByStatus,
+  getWorkOrdersForCalendar,
   getUniqueTechnicians
 } from './workOrderQueryService';
 
