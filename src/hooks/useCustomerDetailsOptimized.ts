@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Customer, CustomerCommunication, CustomerNote } from '@/types/customer';
 import { WorkOrder } from '@/types/workOrder';
-import { Interaction } from '@/types/interaction';
+import { CustomerInteraction } from '@/types/interaction';
 import { CustomerLoyalty } from '@/types/loyalty';
 import { getWorkOrdersByCustomerId } from '@/services/workOrder';
 
@@ -45,7 +45,8 @@ export const useCustomerDetailsOptimized = (customerId: string | undefined) => {
     queryKey: ['customerWorkOrders', customerId],
     queryFn: async () => {
       if (!customerId) return [];
-      return await getWorkOrdersByCustomerId(customerId);
+      const workOrders = await getWorkOrdersByCustomerId(customerId);
+      return Array.isArray(workOrders) ? workOrders : [];
     },
     enabled: !!customerId,
   });
@@ -68,7 +69,7 @@ export const useCustomerDetailsOptimized = (customerId: string | undefined) => {
         .order('created_at', { ascending: false });
         
       if (error) throw error;
-      return data as Interaction[];
+      return data as CustomerInteraction[];
     },
     enabled: !!customerId,
   });
@@ -159,7 +160,7 @@ export const useCustomerDetailsOptimized = (customerId: string | undefined) => {
     ]);
   }, [refetchCustomer, refetchWorkOrders, refetchInteractions, refetchCommunications, refetchNotes, refetchLoyalty]);
 
-  const handleInteractionAdded = useCallback((newInteraction: Interaction) => {
+  const handleInteractionAdded = useCallback((newInteraction: CustomerInteraction) => {
     refetchInteractions();
   }, [refetchInteractions]);
 

@@ -34,7 +34,7 @@ export function CalendarFilters({
   setStatusFilter,
 }: CalendarFiltersProps) {
   // State to hold technicians once fetched
-  const [technicians, setTechnicians] = useState<string[]>([]);
+  const [technicians, setTechnicians] = useState<Array<{id: string; name: string}>>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch technicians on component mount
@@ -42,9 +42,7 @@ export function CalendarFilters({
     const loadTechnicians = async () => {
       try {
         const techData = await getUniqueTechnicians();
-        // Extract just the names from the technician objects
-        const techNames = techData.map(tech => tech.name);
-        setTechnicians(techNames);
+        setTechnicians(techData);
       } catch (error) {
         console.error("Error loading technicians:", error);
       } finally {
@@ -72,9 +70,9 @@ export function CalendarFilters({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Technicians</SelectItem>
-          {technicians && technicians.map((tech) => (
-            <SelectItem key={tech} value={tech}>
-              {tech}
+          {technicians.map((tech) => (
+            <SelectItem key={tech.id} value={tech.name}>
+              {tech.name}
             </SelectItem>
           ))}
         </SelectContent>
