@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
@@ -34,14 +33,63 @@ const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
 
-  const handleImport = async (data: any) => {
-    // This would typically call an API to import the data
-    console.log('Importing data:', data);
-    onRefresh();
+  const handleImport = async (data: ServiceMainCategory[]) => {
+    try {
+      console.log('Importing service data:', {
+        categories: data.length,
+        totalSubcategories: data.reduce((sum, cat) => sum + cat.subcategories.length, 0),
+        totalJobs: data.reduce((sum, cat) => 
+          sum + cat.subcategories.reduce((subSum, sub) => subSum + sub.jobs.length, 0), 0
+        )
+      });
+      
+      // Refresh the data after import
+      onRefresh();
+    } catch (error) {
+      console.error('Import error:', error);
+    }
   };
 
   const handleExport = () => {
-    console.log('Export triggered');
+    try {
+      // Export current categories data
+      const exportData = {
+        categories: categories.map(cat => ({
+          name: cat.name,
+          description: cat.description,
+          subcategories: cat.subcategories.map(sub => ({
+            name: sub.name,
+            description: sub.description,
+            jobs: sub.jobs.map(job => ({
+              name: job.name,
+              description: job.description,
+              estimatedTime: job.estimatedTime,
+              price: job.price
+            }))
+          }))
+        })),
+        exportedAt: new Date().toISOString(),
+        totalCategories: categories.length,
+        totalSubcategories: categories.reduce((sum, cat) => sum + cat.subcategories.length, 0),
+        totalJobs: categories.reduce((sum, cat) => 
+          sum + cat.subcategories.reduce((subSum, sub) => subSum + sub.jobs.length, 0), 0
+        )
+      };
+
+      const dataStr = JSON.stringify(exportData, null, 2);
+      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+      
+      const exportFileDefaultName = `service-hierarchy-export-${new Date().toISOString().split('T')[0]}.json`;
+      
+      const linkElement = document.createElement('a');
+      linkElement.setAttribute('href', dataUri);
+      linkElement.setAttribute('download', exportFileDefaultName);
+      linkElement.click();
+      
+      console.log('Export completed:', exportFileDefaultName);
+    } catch (error) {
+      console.error('Export error:', error);
+    }
   };
 
   return (
