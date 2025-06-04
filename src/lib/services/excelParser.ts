@@ -4,7 +4,6 @@ import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/ser
 
 export interface ParsedExcelData {
   categories: ServiceMainCategory[];
-  duplicates: any[];
   stats: {
     totalCategories: number;
     totalSubcategories: number;
@@ -12,21 +11,12 @@ export interface ParsedExcelData {
   };
 }
 
-export interface ExcelRow {
-  Category?: string;
-  Subcategory?: string;
-  Service?: string;
-  Job?: string;
-  Description?: string;
-  'Estimated Time'?: number;
-  'Estimated Time (minutes)'?: number;
-  Price?: number;
-  Cost?: number;
+interface ExcelRow {
   [key: string]: any;
 }
 
 export const parseExcelFile = async (file: File): Promise<ParsedExcelData> => {
-  console.log('📋 Starting Excel file parsing:', file.name, file.size, 'bytes');
+  console.log('📋 Starting Excel file parsing...');
   
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -36,33 +26,40 @@ export const parseExcelFile = async (file: File): Promise<ParsedExcelData> => {
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
         
-        // Get the first worksheet
-        const sheetName = workbook.SheetNames[0];
-        console.log('📊 Available sheets:', workbook.SheetNames);
-        console.log('📄 Using sheet:', sheetName);
+        console.log('📊 Workbook sheets:', workbook.SheetNames);
         
+        // Use the first sheet
+        const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         
         // Convert to JSON with header row
         const jsonData: ExcelRow[] = XLSX.utils.sheet_to_json(worksheet, { 
           header: 1,
-          defval: '',
-          raw: false
+          defval: ''
+        }).map((row: any[]) => {
+          // Convert array rows to objects with proper headers
+          const headers = ['category', 'subcategory', 'job', 'description', 'price', 'estimatedTime'];
+          const rowObj: ExcelRow = {};
+          headers.forEach((header, index) => {
+            rowObj[header] = row[index] || '';
+          });
+          return rowObj;
         });
         
-        console.log('📊 Raw sheet data (first 5 rows):', jsonData.slice(0, 5));
+        console.log('📋 Raw JSON data:', jsonData.slice(0, 5)); // Log first 5 rows
         
-        // Process the raw data to handle headers properly
-        const processedData = processRawExcelData(jsonData);
-        console.log('🔄 Processed Excel data:', processedData);
+        if (!jsonData || jsonData.length === 0) {
+          throw new Error('No data found in Excel file');
+        }
         
-        const parsedData = processExcelData(processedData);
-        console.log('✅ Final parsed data:', parsedData);
+        const processedData = processWorksheetData(jsonData);
+        console.log('✅ Processed data:', processedData);
         
-        resolve(parsedData);
+        resolve(processedData);
+        
       } catch (error) {
         console.error('❌ Excel parsing error:', error);
-        reject(error);
+        reject(new Error(`Failed to parse Excel file: ${error instanceof Error ? error.message : 'Unknown error'}`));
       }
     };
     
@@ -74,221 +71,112 @@ export const parseExcelFile = async (file: File): Promise<ParsedExcelData> => {
   });
 };
 
-const processRawExcelData = (rawData: any[][]): ExcelRow[] => {
-  if (rawData.length === 0) {
-    console.warn('⚠️ Empty Excel data');
-    return [];
-  }
+const processWorksheetData = (rows: ExcelRow[]): ParsedExcelData => {
+  console.log('🔄 Processing worksheet data with', rows.length, 'rows');
   
-  // Find the header row (first non-empty row)
-  let headerRowIndex = 0;
-  for (let i = 0; i < rawData.length; i++) {
-    if (rawData[i] && rawData[i].some(cell => cell && cell.toString().trim())) {
-      headerRowIndex = i;
-      break;
-    }
-  }
+  const categories = new Map<string, ServiceMainCategory>();
+  let totalSubcategories = 0;
+  let totalJobs = 0;
   
-  const headers = rawData[headerRowIndex] || [];
-  console.log('📋 Found headers at row', headerRowIndex + 1, ':', headers);
+  // Skip header row if it exists
+  const dataRows = rows.slice(1).filter(row => 
+    row.category && row.category.toString().trim() !== ''
+  );
   
-  // Clean and normalize headers
-  const cleanHeaders = headers.map((header: any) => {
-    if (!header) return '';
-    return header.toString().trim().toLowerCase();
-  });
+  console.log('📊 Processing', dataRows.length, 'data rows');
   
-  console.log('🧹 Cleaned headers:', cleanHeaders);
-  
-  // Process data rows
-  const processedRows: ExcelRow[] = [];
-  
-  for (let i = headerRowIndex + 1; i < rawData.length; i++) {
-    const row = rawData[i];
-    if (!row || !row.some(cell => cell && cell.toString().trim())) {
-      continue; // Skip empty rows
-    }
-    
-    const processedRow: ExcelRow = {};
-    
-    for (let j = 0; j < Math.max(headers.length, row.length); j++) {
-      const header = cleanHeaders[j] || `column_${j}`;
-      const value = row[j];
-      
-      if (value !== undefined && value !== null && value !== '') {
-        processedRow[header] = value.toString().trim();
-      }
-    }
-    
-    console.log(`📝 Processed row ${i + 1}:`, processedRow);
-    processedRows.push(processedRow);
-  }
-  
-  console.log(`✅ Processed ${processedRows.length} data rows from Excel`);
-  return processedRows;
-};
-
-const processExcelData = (rows: ExcelRow[]): ParsedExcelData => {
-  console.log('🔄 Processing', rows.length, 'rows into service hierarchy');
-  
-  const categoriesMap = new Map<string, ServiceMainCategory>();
-  const subcategoriesMap = new Map<string, ServiceSubcategory>();
-  
-  rows.forEach((row, index) => {
+  dataRows.forEach((row, index) => {
     try {
-      // Try multiple possible column names for each field
-      const categoryName = findColumnValue(row, [
-        'category', 'categories', 'service category', 'main category', 'cat'
-      ]);
+      const categoryName = cleanValue(row.category);
+      const subcategoryName = cleanValue(row.subcategory);
+      const jobName = cleanValue(row.job);
       
-      const subcategoryName = findColumnValue(row, [
-        'subcategory', 'subcategories', 'sub category', 'service subcategory', 'subcat'
-      ]);
-      
-      const jobName = findColumnValue(row, [
-        'service', 'job', 'service name', 'job name', 'task', 'work', 'description'
-      ]);
-      
-      console.log(`🔍 Row ${index + 1} extracted:`, {
-        category: categoryName,
-        subcategory: subcategoryName,
-        job: jobName,
-        rawRow: row
-      });
+      console.log(`Row ${index + 1}:`, { categoryName, subcategoryName, jobName });
       
       if (!categoryName) {
-        console.warn(`⚠️ Row ${index + 1}: No category found`, row);
+        console.warn(`Row ${index + 1}: Missing category name`);
         return;
       }
       
-      if (!subcategoryName) {
-        console.warn(`⚠️ Row ${index + 1}: No subcategory found`, row);
-        return;
-      }
-      
-      if (!jobName) {
-        console.warn(`⚠️ Row ${index + 1}: No job/service name found`, row);
-        return;
-      }
-      
-      // Create or get category
-      const categoryKey = categoryName.trim();
-      if (!categoriesMap.has(categoryKey)) {
-        const newCategory: ServiceMainCategory = {
-          id: `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          name: categoryKey,
-          description: findColumnValue(row, ['category description', 'cat description']) || '',
+      // Get or create category
+      if (!categories.has(categoryName)) {
+        categories.set(categoryName, {
+          id: `cat-${categoryName.toLowerCase().replace(/\s+/g, '-')}`,
+          name: categoryName,
+          description: '',
           subcategories: [],
-          position: categoriesMap.size + 1
-        };
-        
-        categoriesMap.set(categoryKey, newCategory);
-        console.log('➕ Created category:', newCategory.name);
+          position: categories.size + 1
+        });
       }
       
-      const category = categoriesMap.get(categoryKey)!;
+      const category = categories.get(categoryName)!;
       
-      // Create or get subcategory
-      const subcategoryKey = `${categoryKey}_${subcategoryName.trim()}`;
-      if (!subcategoriesMap.has(subcategoryKey)) {
-        const subcategory: ServiceSubcategory = {
-          id: `sub_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          name: subcategoryName.trim(),
-          description: findColumnValue(row, ['subcategory description', 'subcat description']) || '',
-          jobs: [],
-          category_id: category.id
-        };
+      if (subcategoryName) {
+        // Find or create subcategory
+        let subcategory = category.subcategories.find(sub => sub.name === subcategoryName);
         
-        subcategoriesMap.set(subcategoryKey, subcategory);
-        category.subcategories.push(subcategory);
-        console.log('➕ Created subcategory:', subcategory.name, 'in', category.name);
+        if (!subcategory) {
+          subcategory = {
+            id: `sub-${subcategoryName.toLowerCase().replace(/\s+/g, '-')}`,
+            name: subcategoryName,
+            description: '',
+            jobs: []
+          };
+          category.subcategories.push(subcategory);
+          totalSubcategories++;
+        }
+        
+        if (jobName) {
+          // Add job to subcategory
+          const job: ServiceJob = {
+            id: `job-${jobName.toLowerCase().replace(/\s+/g, '-')}-${totalJobs}`,
+            name: jobName,
+            description: cleanValue(row.description) || '',
+            price: parsePrice(row.price),
+            estimatedTime: parseTime(row.estimatedTime)
+          };
+          
+          subcategory.jobs.push(job);
+          totalJobs++;
+        }
       }
-      
-      const subcategory = subcategoriesMap.get(subcategoryKey)!;
-      
-      // Extract pricing and time information
-      const estimatedTime = parseNumber(findColumnValue(row, [
-        'estimated time', 'time', 'duration', 'hours', 'minutes', 'est time'
-      ]));
-      
-      const price = parseNumber(findColumnValue(row, [
-        'price', 'cost', 'amount', 'rate', 'fee', 'charge'
-      ]));
-      
-      // Create job
-      const job: ServiceJob = {
-        id: `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        name: jobName.trim(),
-        description: findColumnValue(row, ['job description', 'service description', 'details']) || '',
-        estimatedTime: estimatedTime,
-        price: price,
-        subcategory_id: subcategory.id
-      };
-      
-      subcategory.jobs.push(job);
-      console.log('➕ Created job:', job.name, 'in', subcategory.name);
-      
     } catch (error) {
-      console.error(`❌ Error processing row ${index + 1}:`, error, row);
+      console.error(`Error processing row ${index + 1}:`, error, row);
     }
   });
   
-  const categories = Array.from(categoriesMap.values());
+  const categoriesArray = Array.from(categories.values());
   
-  const stats = {
-    totalCategories: categories.length,
-    totalSubcategories: categories.reduce((sum, cat) => sum + cat.subcategories.length, 0),
-    totalJobs: categories.reduce((sum, cat) => 
-      sum + cat.subcategories.reduce((subSum, sub) => subSum + sub.jobs.length, 0), 0
-    )
-  };
-  
-  console.log('📈 Processing complete:', stats);
-  console.log('📋 Categories created:', categories.map(c => c.name));
+  console.log('📈 Processing complete:', {
+    categories: categoriesArray.length,
+    subcategories: totalSubcategories,
+    jobs: totalJobs
+  });
   
   return {
-    categories,
-    duplicates: [], // TODO: Implement duplicate detection
-    stats
+    categories: categoriesArray,
+    stats: {
+      totalCategories: categoriesArray.length,
+      totalSubcategories,
+      totalJobs
+    }
   };
 };
 
-// Helper function to find a value in a row using multiple possible column names
-const findColumnValue = (row: ExcelRow, possibleNames: string[]): string | undefined => {
-  for (const name of possibleNames) {
-    // Check exact match
-    if (row[name] && row[name].toString().trim()) {
-      return row[name].toString().trim();
-    }
-    
-    // Check case-insensitive match
-    const keys = Object.keys(row);
-    const matchingKey = keys.find(key => 
-      key.toLowerCase() === name.toLowerCase()
-    );
-    
-    if (matchingKey && row[matchingKey] && row[matchingKey].toString().trim()) {
-      return row[matchingKey].toString().trim();
-    }
-    
-    // Check partial match (contains)
-    const partialMatch = keys.find(key => 
-      key.toLowerCase().includes(name.toLowerCase()) || 
-      name.toLowerCase().includes(key.toLowerCase())
-    );
-    
-    if (partialMatch && row[partialMatch] && row[partialMatch].toString().trim()) {
-      return row[partialMatch].toString().trim();
-    }
-  }
-  
-  return undefined;
+const cleanValue = (value: any): string => {
+  if (value === null || value === undefined) return '';
+  return String(value).trim();
 };
 
-const parseNumber = (value: any): number | undefined => {
-  if (value === null || value === undefined || value === '') return undefined;
-  
-  const stringValue = value.toString().replace(/[^0-9.-]/g, '');
-  const num = parseFloat(stringValue);
-  return isNaN(num) ? undefined : num;
+const parsePrice = (value: any): number | undefined => {
+  if (!value) return undefined;
+  const cleaned = String(value).replace(/[$,]/g, '');
+  const parsed = parseFloat(cleaned);
+  return isNaN(parsed) ? undefined : parsed;
+};
+
+const parseTime = (value: any): number | undefined => {
+  if (!value) return undefined;
+  const parsed = parseInt(String(value));
+  return isNaN(parsed) ? undefined : parsed;
 };
