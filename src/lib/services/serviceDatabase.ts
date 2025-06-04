@@ -51,10 +51,8 @@ export const fetchServiceCategoriesFromDB = async (): Promise<ServiceMainCategor
         subcategory_id,
         price,
         estimated_time,
-        position,
-        is_active
+        position
       `)
-      .eq('is_active', true)
       .order('position');
 
     if (jobsError) throw jobsError;
@@ -86,7 +84,7 @@ export const fetchServiceCategoriesFromDB = async (): Promise<ServiceMainCategor
               estimated_duration: job.estimated_time,
               skill_level: 'standard', // Default value since column doesn't exist
               display_order: job.position,
-              is_active: job.is_active,
+              is_active: true, // Default value since column doesn't exist
               // Backward compatibility fields
               estimatedTime: job.estimated_time,
               price: job.price
