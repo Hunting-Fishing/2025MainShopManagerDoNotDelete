@@ -2,14 +2,12 @@
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Upload, FileSpreadsheet, AlertCircle, CheckCircle } from 'lucide-react';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
 import { useServiceStagedImport } from '@/hooks/useServiceStagedImport';
 import { ServiceImportPreview } from './ServiceImportPreview';
-import { parseExcelFile, validateExcelStructure } from '@/lib/services/excelParser';
 
 interface ServiceStagedImportProps {
   existingCategories: ServiceMainCategory[];
@@ -21,193 +19,181 @@ const ServiceStagedImport: React.FC<ServiceStagedImportProps> = ({
   onImportComplete
 }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [validationStatus, setValidationStatus] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle');
-  const [parsePreview, setParsePreview] = useState<{
-    totalWorksheets: number;
-    sampleData: { worksheet: string; subcategories: string[]; jobCount: number }[];
-  } | null>(null);
+  const [dragActive, setDragActive] = useState(false);
 
   const {
     previewData,
     importProgress,
     isImporting,
+    isGeneratingPreview,
     error,
     generatePreview,
     executeImport,
     reset
   } = useServiceStagedImport(existingCategories);
 
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
+  const handleFileSelect = useCallback((file: File) => {
+    if (file.type !== 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' && 
+        file.type !== 'application/vnd.ms-excel') {
+      alert('Please select a valid Excel file (.xlsx or .xls)');
+      return;
+    }
     setSelectedFile(file);
-    setValidationStatus('validating');
-    setParsePreview(null);
+    generatePreview(file);
+  }, [generatePreview]);
 
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      handleFileSelect(files[0]);
+    }
+  }, [handleFileSelect]);
+
+  const handleImport = async () => {
     try {
-      // Validate file structure
-      const isValid = await validateExcelStructure(file);
-      
-      if (!isValid) {
-        setValidationStatus('invalid');
-        return;
-      }
-
-      // Generate parse preview
-      const parsed = await parseExcelFile(file);
-      const sampleData = parsed.categories.slice(0, 5).map(cat => ({
-        worksheet: cat.name,
-        subcategories: cat.subcategories?.slice(0, 3).map(sub => sub.name) || [],
-        jobCount: cat.subcategories?.reduce((sum, sub) => sum + (sub.jobs?.length || 0), 0) || 0
-      }));
-
-      setParsePreview({
-        totalWorksheets: parsed.categories.length,
-        sampleData
-      });
-      setValidationStatus('valid');
-      
+      await executeImport();
+      await onImportComplete(previewData?.parsedData);
     } catch (error) {
-      console.error('File validation failed:', error);
-      setValidationStatus('invalid');
+      console.error('Import failed:', error);
     }
   };
 
-  const handleGeneratePreview = async () => {
-    if (!selectedFile) return;
-    await generatePreview(selectedFile);
-  };
-
-  const handleReset = () => {
+  const handleBack = () => {
     setSelectedFile(null);
-    setValidationStatus('idle');
-    setParsePreview(null);
     reset();
   };
 
+  // If we have preview data, show the preview component
   if (previewData) {
     return (
       <ServiceImportPreview
         previewData={previewData}
-        onBack={handleReset}
-        onProceed={executeImport}
+        onBack={handleBack}
+        onProceed={handleImport}
       />
     );
   }
 
-  return (
-    <div className="space-y-6">
+  // If importing, show progress
+  if (isImporting) {
+    return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Upload className="h-5 w-5" />
-            Upload Excel File
+            <FileSpreadsheet className="h-5 w-5" />
+            Importing Service Data
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Alert>
-            <FileSpreadsheet className="h-4 w-4" />
-            <AlertDescription>
-              <strong>Expected Excel Format:</strong>
-              <ul className="mt-2 space-y-1">
-                <li>• Each <strong>worksheet</strong> represents a service category</li>
-                <li>• <strong>Row 1</strong> contains subcategory names</li>
-                <li>• <strong>Rows 2+</strong> contain service jobs under each subcategory</li>
-                <li>• Jobs are mapped to subcategories by column position</li>
-              </ul>
-            </AlertDescription>
-          </Alert>
-
-          <div className="space-y-4">
-            <Input
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={handleFileSelect}
-              className="cursor-pointer"
-            />
-
-            {validationStatus === 'validating' && (
-              <div className="flex items-center gap-2 text-blue-600">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                <span>Validating file structure...</span>
-              </div>
-            )}
-
-            {validationStatus === 'invalid' && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  Invalid file format. Please ensure your Excel file has the correct structure with worksheets containing subcategories in row 1 and jobs in subsequent rows.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {validationStatus === 'valid' && parsePreview && (
-              <Alert>
-                <CheckCircle className="h-4 w-4" />
-                <AlertDescription>
-                  <div className="space-y-2">
-                    <p><strong>File validated successfully!</strong></p>
-                    <p>Found {parsePreview.totalWorksheets} worksheets (categories)</p>
-                    
-                    {parsePreview.sampleData.length > 0 && (
-                      <div className="mt-3">
-                        <p className="font-medium">Sample worksheets:</p>
-                        <div className="space-y-1 text-sm">
-                          {parsePreview.sampleData.map((sample, idx) => (
-                            <div key={idx} className="ml-2">
-                              <strong>{sample.worksheet}</strong>: {sample.jobCount} jobs across subcategories like {sample.subcategories.join(', ')}
-                            </div>
-                          ))}
-                          {parsePreview.totalWorksheets > 5 && (
-                            <div className="ml-2 text-gray-600">
-                              ...and {parsePreview.totalWorksheets - 5} more worksheets
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </AlertDescription>
-              </Alert>
-            )}
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>Import Progress</span>
+              <span>{importProgress}%</span>
+            </div>
+            <Progress value={importProgress} className="w-full" />
           </div>
+          
+          {importProgress === 100 && (
+            <Alert>
+              <CheckCircle className="h-4 w-4" />
+              <AlertDescription>
+                Import completed successfully! The data has been added to your service catalog.
+              </AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
 
-          {isImporting && (
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Importing services...</span>
-                <span>{importProgress}%</span>
-              </div>
-              <Progress value={importProgress} className="h-2" />
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Upload className="h-5 w-5" />
+          Import Service Data
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        <div
+          className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+            dragActive 
+              ? 'border-blue-500 bg-blue-50' 
+              : 'border-gray-300 hover:border-gray-400'
+          }`}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragActive(true);
+          }}
+          onDragLeave={() => setDragActive(false)}
+          onDrop={handleDrop}
+        >
+          <Upload className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+          <h3 className="text-lg font-semibold mb-2">
+            {isGeneratingPreview ? 'Processing File...' : 'Upload Excel File'}
+          </h3>
+          <p className="text-gray-600 mb-4">
+            {isGeneratingPreview 
+              ? 'Analyzing your service data...'
+              : 'Drag & drop your Excel file here, or click to browse'
+            }
+          </p>
+          
+          {!isGeneratingPreview && (
+            <div className="space-y-4">
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleFileSelect(file);
+                }}
+                className="hidden"
+                id="file-upload"
+              />
+              <label htmlFor="file-upload">
+                <Button as="span" className="cursor-pointer">
+                  Select File
+                </Button>
+              </label>
+              
+              {selectedFile && (
+                <p className="text-sm text-gray-500">
+                  Selected: {selectedFile.name}
+                </p>
+              )}
             </div>
           )}
 
-          {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
+          {isGeneratingPreview && (
+            <div className="space-y-2">
+              <Progress value={50} className="w-full max-w-xs mx-auto" />
+              <p className="text-sm text-gray-500">Generating preview...</p>
+            </div>
           )}
+        </div>
 
-          <div className="flex gap-2">
-            <Button
-              onClick={handleGeneratePreview}
-              disabled={!selectedFile || validationStatus !== 'valid' || isImporting}
-              className="flex-1"
-            >
-              Generate Import Preview
-            </Button>
-            {selectedFile && (
-              <Button onClick={handleReset} variant="outline">
-                Reset
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+        <div className="bg-blue-50 p-4 rounded-lg">
+          <h4 className="font-medium mb-2">Excel Format Requirements:</h4>
+          <ul className="text-sm text-gray-600 space-y-1">
+            <li>• Each worksheet represents a service category</li>
+            <li>• Row 1: Subcategory names (column headers)</li>
+            <li>• Rows 2+: Service job names under each subcategory</li>
+            <li>• Supported formats: .xlsx, .xls</li>
+          </ul>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

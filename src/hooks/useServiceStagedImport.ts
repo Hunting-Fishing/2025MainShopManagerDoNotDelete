@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
 import { parseExcelFile } from '@/lib/services/excelParser';
@@ -27,10 +28,10 @@ export const useServiceStagedImport = (existingCategories: ServiceMainCategory[]
     setIsGeneratingPreview(true);
     
     try {
-      console.log('Starting Excel parse for preview...');
+      console.log('🔄 Starting Excel parse for preview...');
       const parsedData = await parseExcelFile(file);
       
-      console.log(`Parsed ${parsedData.categories.length} categories with ${parsedData.totalJobs} total jobs`);
+      console.log(`✅ Parsed ${parsedData.categories.length} categories with ${parsedData.totalJobs} total jobs`);
       
       // Check for duplicates against existing data
       const duplicates: string[] = [];
@@ -66,7 +67,7 @@ export const useServiceStagedImport = (existingCategories: ServiceMainCategory[]
       setPreviewData(preview);
       
     } catch (error) {
-      console.error('Preview generation failed:', error);
+      console.error('❌ Preview generation failed:', error);
       setError(error instanceof Error ? error.message : 'Failed to generate preview');
     } finally {
       setIsGeneratingPreview(false);
@@ -74,14 +75,17 @@ export const useServiceStagedImport = (existingCategories: ServiceMainCategory[]
   }, [existingCategories]);
 
   const executeImport = useCallback(async () => {
-    if (!previewData) return;
+    if (!previewData) {
+      setError('No preview data available for import');
+      return;
+    }
     
     setError(null);
     setIsImporting(true);
     setImportProgress(0);
     
     try {
-      console.log('Starting service import...');
+      console.log('🔄 Starting service import...');
       const totalOperations = previewData.stats.totalCategories + 
                              previewData.stats.totalSubcategories + 
                              previewData.stats.totalJobs;
@@ -91,11 +95,12 @@ export const useServiceStagedImport = (existingCategories: ServiceMainCategory[]
         completedOperations++;
         const progress = Math.round((completedOperations / totalOperations) * 100);
         setImportProgress(progress);
+        console.log(`📊 Import progress: ${progress}%`);
       };
       
       await importServiceData(previewData.parsedData, updateProgress);
       
-      console.log('Import completed successfully');
+      console.log('✅ Import completed successfully');
       setImportProgress(100);
       
       // Reset state after successful import
@@ -103,12 +108,13 @@ export const useServiceStagedImport = (existingCategories: ServiceMainCategory[]
         setPreviewData(null);
         setImportProgress(0);
         setIsImporting(false);
-      }, 1000);
+      }, 2000); // Show success for 2 seconds
       
     } catch (error) {
-      console.error('Import failed:', error);
+      console.error('❌ Import failed:', error);
       setError(error instanceof Error ? error.message : 'Import failed');
       setIsImporting(false);
+      setImportProgress(0);
     }
   }, [previewData]);
 
