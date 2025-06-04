@@ -83,6 +83,42 @@ export const deleteServiceCategory = async (id: string) => {
   if (error) throw error;
 };
 
+export const updateServiceSubcategory = async (id: string, updates: Partial<ServiceSubcategory>) => {
+  const { error } = await supabase
+    .from('service_subcategories')
+    .update(updates)
+    .eq('id', id);
+  
+  if (error) throw error;
+};
+
+export const deleteServiceSubcategory = async (id: string) => {
+  const { error } = await supabase
+    .from('service_subcategories')
+    .delete()
+    .eq('id', id);
+  
+  if (error) throw error;
+};
+
+export const updateServiceJob = async (id: string, updates: Partial<ServiceJob>) => {
+  const { error } = await supabase
+    .from('service_jobs')
+    .update(updates)
+    .eq('id', id);
+  
+  if (error) throw error;
+};
+
+export const deleteServiceJob = async (id: string) => {
+  const { error } = await supabase
+    .from('service_jobs')
+    .delete()
+    .eq('id', id);
+  
+  if (error) throw error;
+};
+
 export const searchServices = async (query: string, limit: number = 100): Promise<ServiceJob[]> => {
   try {
     const { data, error } = await supabase
