@@ -112,3 +112,59 @@ export const searchServiceJobs = async (query: string): Promise<ServiceJob[]> =>
     (job.description && job.description.toLowerCase().includes(query.toLowerCase()))
   );
 };
+
+// Update functions for service management
+export const updateServiceCategory = async (id: string, updates: Partial<{ name: string; description: string; position: number }>) => {
+  const { error } = await supabase
+    .from('service_categories')
+    .update(updates)
+    .eq('id', id);
+  
+  if (error) throw error;
+};
+
+export const updateServiceSubcategory = async (id: string, updates: Partial<{ name: string; description: string }>) => {
+  const { error } = await supabase
+    .from('service_subcategories')
+    .update(updates)
+    .eq('id', id);
+  
+  if (error) throw error;
+};
+
+export const updateServiceJob = async (id: string, updates: Partial<{ name: string; description: string; estimated_time: number; price: number }>) => {
+  const { error } = await supabase
+    .from('service_jobs')
+    .update(updates)
+    .eq('id', id);
+  
+  if (error) throw error;
+};
+
+// Delete functions for service management
+export const deleteServiceCategory = async (id: string) => {
+  const { error } = await supabase
+    .from('service_categories')
+    .delete()
+    .eq('id', id);
+  
+  if (error) throw error;
+};
+
+export const deleteServiceSubcategory = async (id: string) => {
+  const { error } = await supabase
+    .from('service_subcategories')
+    .delete()
+    .eq('id', id);
+  
+  if (error) throw error;
+};
+
+export const deleteServiceJob = async (id: string) => {
+  const { error } = await supabase
+    .from('service_jobs')
+    .delete()
+    .eq('id', id);
+  
+  if (error) throw error;
+};
