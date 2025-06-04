@@ -28,9 +28,36 @@ export const importServiceData = async (
     // Clear existing data if requested
     if (clearExisting) {
       console.log('🧹 Clearing existing service data...');
-      const { error: clearError } = await supabase.rpc('clear_service_data');
-      if (clearError) {
-        throw clearError;
+      
+      // Clear in the correct order due to foreign key constraints
+      const { error: jobsError } = await supabase
+        .from('service_jobs')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all except non-existent ID
+      
+      if (jobsError) {
+        console.error('Error clearing jobs:', jobsError);
+        throw jobsError;
+      }
+      
+      const { error: subcategoriesError } = await supabase
+        .from('service_subcategories')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+      
+      if (subcategoriesError) {
+        console.error('Error clearing subcategories:', subcategoriesError);
+        throw subcategoriesError;
+      }
+      
+      const { error: categoriesError } = await supabase
+        .from('service_categories')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+      
+      if (categoriesError) {
+        console.error('Error clearing categories:', categoriesError);
+        throw categoriesError;
       }
     }
     
