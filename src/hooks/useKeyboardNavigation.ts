@@ -35,17 +35,11 @@ export function useKeyboardNavigation(
           
           if (prev.activeColumn === 'categories') {
             newNav.selectedCategoryIndex = Math.min(prev.selectedCategoryIndex + 1, categories.length - 1);
-            // Reset child selections when category changes
-            if (newNav.selectedCategoryIndex !== prev.selectedCategoryIndex) {
-              newNav.selectedSubcategoryIndex = 0;
-              newNav.selectedJobIndex = 0;
-            }
+            newNav.selectedSubcategoryIndex = 0;
+            newNav.selectedJobIndex = 0;
           } else if (prev.activeColumn === 'subcategories' && currentCategory) {
             newNav.selectedSubcategoryIndex = Math.min(prev.selectedSubcategoryIndex + 1, currentCategory.subcategories.length - 1);
-            // Reset job selection when subcategory changes
-            if (newNav.selectedSubcategoryIndex !== prev.selectedSubcategoryIndex) {
-              newNav.selectedJobIndex = 0;
-            }
+            newNav.selectedJobIndex = 0;
           } else if (prev.activeColumn === 'jobs' && currentSubcategory) {
             newNav.selectedJobIndex = Math.min(prev.selectedJobIndex + 1, currentSubcategory.jobs.length - 1);
           }
@@ -61,17 +55,11 @@ export function useKeyboardNavigation(
           
           if (prev.activeColumn === 'categories') {
             newNav.selectedCategoryIndex = Math.max(prev.selectedCategoryIndex - 1, 0);
-            // Reset child selections when category changes
-            if (newNav.selectedCategoryIndex !== prev.selectedCategoryIndex) {
-              newNav.selectedSubcategoryIndex = 0;
-              newNav.selectedJobIndex = 0;
-            }
+            newNav.selectedSubcategoryIndex = 0;
+            newNav.selectedJobIndex = 0;
           } else if (prev.activeColumn === 'subcategories') {
             newNav.selectedSubcategoryIndex = Math.max(prev.selectedSubcategoryIndex - 1, 0);
-            // Reset job selection when subcategory changes
-            if (newNav.selectedSubcategoryIndex !== prev.selectedSubcategoryIndex) {
-              newNav.selectedJobIndex = 0;
-            }
+            newNav.selectedJobIndex = 0;
           } else if (prev.activeColumn === 'jobs') {
             newNav.selectedJobIndex = Math.max(prev.selectedJobIndex - 1, 0);
           }
@@ -148,7 +136,7 @@ export function useKeyboardNavigation(
 
   return {
     navigation,
-    setNavigation, // Now exposed for mouse interactions
+    setNavigation,
     currentCategory,
     currentSubcategory,
     currentJob

@@ -1,18 +1,11 @@
 
-
 export interface ServiceJob {
   id: string;
   name: string;
   description?: string;
-  estimatedTime?: number; // in minutes - keeping for backward compatibility
-  price?: number; // keeping for backward compatibility
-  subcategory_id: string;
-  category_id: string;
-  base_price: number;
-  estimated_duration: number;
-  skill_level: string;
-  display_order: number;
-  is_active: boolean;
+  estimatedTime?: number; // in minutes
+  price?: number;
+  subcategory_id?: string; // Added to link jobs to subcategories
 }
 
 export interface ServiceSubcategory {
@@ -20,8 +13,7 @@ export interface ServiceSubcategory {
   name: string;
   description?: string;
   jobs: ServiceJob[];
-  category_id: string;
-  display_order: number;
+  category_id?: string; // Added to link subcategories to categories
 }
 
 export interface ServiceMainCategory {
@@ -29,9 +21,7 @@ export interface ServiceMainCategory {
   name: string;
   description?: string;
   subcategories: ServiceSubcategory[];
-  display_order: number;
-  is_active: boolean;
-  position?: number; // keeping for backward compatibility
+  position?: number; // Added position field
 }
 
 export interface ServiceHierarchyState {
@@ -39,4 +29,3 @@ export interface ServiceHierarchyState {
   isLoading: boolean;
   error: string | null;
 }
-

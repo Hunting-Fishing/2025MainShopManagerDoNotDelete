@@ -5,7 +5,7 @@ import { ServiceMainCategory } from '@/types/serviceHierarchy';
 import ServiceCategoriesManager from './ServiceCategoriesManager';
 import { DuplicateSearchButton } from './DuplicateSearchButton';
 import ServiceQualityAnalysis from './ServiceQualityAnalysis';
-import ServiceBulkImport from './ServiceBulkImport';
+import { ServiceBulkImport } from './ServiceBulkImport';
 import { ServiceDebugInfo } from './ServiceDebugInfo';
 import ServicesPriceReport from './ServicesPriceReport';
 import ServiceAnalytics from './ServiceAnalytics';
@@ -40,10 +40,8 @@ const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = ({
     onRefresh();
   };
 
-  const handleExport = async () => {
+  const handleExport = () => {
     console.log('Export triggered');
-    // Mock export functionality
-    await new Promise(resolve => setTimeout(resolve, 1000));
   };
 
   return (

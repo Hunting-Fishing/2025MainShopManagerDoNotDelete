@@ -1,9 +1,22 @@
 
 import { useState, useMemo } from 'react';
 import { useDebounce } from './useDebounce';
-import { ServiceMainCategory } from '@/types/serviceHierarchy';
-import { searchServiceCategories, searchAllJobs } from '@/lib/services/serviceUtils';
-import { serviceSearchSynonyms } from '@/data/comprehensiveServices';
+import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
+import { enhancedSearch, sortByRelevance, SearchMatch } from '@/utils/search/enhancedSearch';
+
+interface EnhancedServiceJob extends ServiceJob {
+  searchMatch?: SearchMatch;
+}
+
+interface EnhancedServiceSubcategory extends ServiceSubcategory {
+  jobs: EnhancedServiceJob[];
+  searchMatch?: SearchMatch;
+}
+
+interface EnhancedServiceMainCategory extends ServiceMainCategory {
+  subcategories: EnhancedServiceSubcategory[];
+  searchMatch?: SearchMatch;
+}
 
 export function useServiceSearch(categories: ServiceMainCategory[]) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -14,11 +27,50 @@ export function useServiceSearch(categories: ServiceMainCategory[]) {
       return categories;
     }
 
-    console.log('Searching for:', debouncedQuery, 'in', categories.length, 'categories');
-    const results = searchServiceCategories(categories, debouncedQuery);
-    console.log('Search results:', results.length, 'categories found');
+    const query = debouncedQuery.toLowerCase();
+    const results: EnhancedServiceMainCategory[] = [];
     
-    return results;
+    for (const category of categories) {
+      // Check if category matches
+      const categoryMatch = enhancedSearch(category.name, query) || 
+                           (category.description ? enhancedSearch(category.description, query) : null);
+      
+      const filteredSubcategories: EnhancedServiceSubcategory[] = [];
+      
+      for (const subcategory of category.subcategories) {
+        // Check if subcategory matches
+        const subcategoryMatch = enhancedSearch(subcategory.name, query) || 
+                                (subcategory.description ? enhancedSearch(subcategory.description, query) : null);
+        
+        // Get matching jobs using enhanced search with relevance scoring
+        const matchingJobs = sortByRelevance(subcategory.jobs, query);
+        
+        // Include subcategory if it matches, has matching jobs, or category matches
+        if (subcategoryMatch || matchingJobs.length > 0 || categoryMatch) {
+          filteredSubcategories.push({
+            ...subcategory,
+            jobs: matchingJobs.length > 0 ? matchingJobs : subcategory.jobs,
+            searchMatch: subcategoryMatch || undefined
+          });
+        }
+      }
+      
+      // Include category if it matches or has matching subcategories
+      if (categoryMatch || filteredSubcategories.length > 0) {
+        results.push({
+          ...category,
+          subcategories: filteredSubcategories,
+          searchMatch: categoryMatch || undefined
+        });
+      }
+    }
+    
+    // Sort categories by relevance if they have search matches
+    return results.sort((a, b) => {
+      const aScore = a.searchMatch?.score || 0;
+      const bScore = b.searchMatch?.score || 0;
+      return bScore - aScore;
+    });
   }, [categories, debouncedQuery]);
 
   const searchStats = useMemo(() => {
@@ -33,11 +85,13 @@ export function useServiceSearch(categories: ServiceMainCategory[]) {
     const totalSubcategories = filteredCategories.reduce((total, category) => 
       total + category.subcategories.length, 0);
 
-    // Get all matching jobs for high relevance count
-    const allMatchingJobs = searchAllJobs(filteredCategories, debouncedQuery);
-    const highRelevanceJobs = allMatchingJobs.filter(job => 
-      (job as any).searchMatch?.score && (job as any).searchMatch.score >= 80
-    ).length;
+    // Count jobs with high relevance scores (80+)
+    const highRelevanceJobs = filteredCategories.reduce((total, category) => 
+      total + category.subcategories.reduce((subTotal, subcategory) => 
+        subTotal + subcategory.jobs.filter(job => 
+          (job as EnhancedServiceJob).searchMatch?.score && 
+          (job as EnhancedServiceJob).searchMatch!.score >= 80
+        ).length, 0), 0);
 
     return {
       categories: filteredCategories.length,
@@ -49,62 +103,30 @@ export function useServiceSearch(categories: ServiceMainCategory[]) {
   }, [filteredCategories, debouncedQuery]);
 
   const suggestions = useMemo(() => {
-    if (!debouncedQuery.trim() || debouncedQuery.length < 2) {
+    if (!debouncedQuery.trim() || debouncedQuery.length < 3) {
       return [];
     }
 
-    // Generate suggestions based on search synonyms and automotive terms
-    const suggestions: string[] = [];
-    const query = debouncedQuery.toLowerCase();
-    
-    // Check if query matches any synonyms and suggest the main term
-    for (const [mainTerm, synonyms] of Object.entries(serviceSearchSynonyms)) {
-      if (Array.isArray(synonyms) && synonyms.some(synonym => synonym.includes(query)) && !mainTerm.includes(query)) {
-        suggestions.push(mainTerm);
-      }
-      if (mainTerm.includes(query) && mainTerm !== query) {
-        suggestions.push(mainTerm);
-      }
-    }
-    
-    // Add common automotive repair terms
+    // Generate search suggestions based on common automotive terms
     const commonTerms = [
-      'serpentine belt replacement', 'serpentine belt service', 'belt replacement', 'drive belt replacement',
-      'brake line repair', 'brake line replacement', 'brake hose', 'fluid line',
-      'oil change', 'brake pad replacement', 'tire rotation', 'tune up', 'transmission service',
-      'air filter replacement', 'cabin filter', 'spark plug replacement', 'battery service', 'alternator repair',
-      'belt tensioner replacement', 'timing belt replacement', 'v-belt replacement'
+      'oil change', 'brake pad', 'tire rotation', 'tune up', 'transmission service',
+      'air filter', 'cabin filter', 'spark plug', 'battery', 'alternator',
+      'timing belt', 'serpentine belt', 'water pump', 'radiator', 'muffler',
+      'catalytic converter', 'shock absorber', 'strut', 'wheel bearing'
     ];
 
-    // Handle R&R variations
-    if (query.includes('r&r') || query.includes('r & r') || query.includes('replace')) {
-      const replacementSuggestions = [
-        'serpentine belt replacement',
-        'brake line replacement', 
-        'brake pad replacement',
-        'timing belt replacement',
-        'air filter replacement'
-      ];
-      suggestions.push(...replacementSuggestions.filter(term => 
-        !suggestions.includes(term) && term.toLowerCase() !== query
-      ));
-    }
-
-    const additionalSuggestions = commonTerms
+    return commonTerms
       .filter(term => 
-        term.toLowerCase().includes(query) && 
-        term.toLowerCase() !== query &&
-        !suggestions.includes(term)
+        term.toLowerCase().includes(debouncedQuery.toLowerCase()) && 
+        term.toLowerCase() !== debouncedQuery.toLowerCase()
       )
-      .slice(0, 3);
-
-    return [...suggestions, ...additionalSuggestions].slice(0, 6);
+      .slice(0, 5);
   }, [debouncedQuery]);
 
   return {
     searchQuery,
     setSearchQuery,
-    filteredCategories,
+    filteredCategories: filteredCategories as ServiceMainCategory[],
     searchStats,
     suggestions,
     isSearching: debouncedQuery.trim().length > 0

@@ -3,11 +3,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ServiceMainCategory, ServiceJob } from '@/types/serviceHierarchy';
 import { SelectedService, ServiceSelectionSummary } from '@/types/selectedService';
 import { HierarchicalServiceSelector } from './HierarchicalServiceSelector';
-import { CompactServiceSelector } from './CompactServiceSelector';
 import { SelectedServiceCard } from './SelectedServiceCard';
 import { ServiceSelectionSummary as SummaryComponent } from './ServiceSelectionSummary';
 import { CollapsedServiceSelector } from './CollapsedServiceSelector';
-import { ServiceViewModeToggle } from './ServiceViewModeToggle';
 import { ResponsiveGrid } from '@/components/ui/responsive-grid';
 
 interface EnhancedServiceSelectorProps {
@@ -26,7 +24,6 @@ export function EnhancedServiceSelector({
   onUpdateServices
 }: EnhancedServiceSelectorProps) {
   const [isExpanded, setIsExpanded] = useState(selectedServices.length === 0);
-  const [viewMode, setViewMode] = useState<'enhanced' | 'compact'>('enhanced');
   const [lastAddedServiceId, setLastAddedServiceId] = useState<string | null>(null);
   const selectedServicesRef = useRef<HTMLDivElement>(null);
 
@@ -85,11 +82,6 @@ export function EnhancedServiceSelector({
     setIsExpanded(true);
   };
 
-  const handleViewModeChange = (mode: 'enhanced' | 'compact') => {
-    console.log('🔄 View mode changed from', viewMode, 'to', mode);
-    setViewMode(mode);
-  };
-
   // Clear the last added service animation after it's been shown
   useEffect(() => {
     if (lastAddedServiceId) {
@@ -99,16 +91,6 @@ export function EnhancedServiceSelector({
       return () => clearTimeout(timer);
     }
   }, [lastAddedServiceId]);
-
-  console.log('🔍 EnhancedServiceSelector:', {
-    categoriesCount: categories.length,
-    selectedServicesCount: selectedServices.length,
-    isExpanded,
-    viewMode,
-    totalJobs: categories.reduce((sum, cat) => 
-      sum + cat.subcategories.reduce((subSum, sub) => subSum + sub.jobs.length, 0), 0
-    )
-  });
 
   return (
     <div className="space-y-4">
@@ -143,49 +125,22 @@ export function EnhancedServiceSelector({
           {selectedServices.length > 0 && (
             <div className="flex items-center justify-between border-t pt-4">
               <h4 className="text-sm font-medium text-slate-700">Add More Services</h4>
-              <div className="flex items-center gap-2">
-                <ServiceViewModeToggle 
-                  viewMode={viewMode} 
-                  onViewModeChange={handleViewModeChange}
-                />
-                <button
-                  onClick={() => setIsExpanded(false)}
-                  className="text-xs text-gray-500 hover:text-gray-700"
-                >
-                  Collapse
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* View Mode Toggle for initial state */}
-          {selectedServices.length === 0 && (
-            <div className="flex justify-end">
-              <ServiceViewModeToggle 
-                viewMode={viewMode} 
-                onViewModeChange={handleViewModeChange}
-              />
+              <button
+                onClick={() => setIsExpanded(false)}
+                className="text-xs text-gray-500 hover:text-gray-700"
+              >
+                Collapse
+              </button>
             </div>
           )}
           
-          {/* Render appropriate view based on mode */}
-          {viewMode === 'compact' ? (
-            <CompactServiceSelector
-              categories={categories}
-              selectedServices={selectedServices}
-              onServiceSelect={handleServiceSelect}
-              onRemoveService={handleRemoveService}
-              onUpdateServices={onUpdateServices}
-            />
-          ) : (
-            <HierarchicalServiceSelector
-              categories={categories}
-              selectedServices={selectedServices}
-              onServiceSelect={handleServiceSelect}
-              onRemoveService={handleRemoveService}
-              onUpdateServices={onUpdateServices}
-            />
-          )}
+          <HierarchicalServiceSelector
+            categories={categories}
+            selectedServices={selectedServices}
+            onServiceSelect={handleServiceSelect}
+            onRemoveService={handleRemoveService}
+            onUpdateServices={onUpdateServices}
+          />
         </div>
       ) : (
         <CollapsedServiceSelector

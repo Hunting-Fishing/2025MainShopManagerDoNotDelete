@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
-import { fetchServiceCategories } from '@/lib/services/serviceApi';
-import { ServiceMainCategory } from '@/types/serviceHierarchy';
+import { supabase } from '@/integrations/supabase/client';
+import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
 
 export const useServiceCategories = () => {
   const [categories, setCategories] = useState<ServiceMainCategory[]>([]);
@@ -9,25 +9,71 @@ export const useServiceCategories = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadServiceCategories();
+    fetchServiceCategories();
   }, []);
 
-  const loadServiceCategories = async () => {
+  const fetchServiceCategories = async () => {
     try {
       setLoading(true);
       setError(null);
-      console.log('🔄 Loading service categories via useServiceCategories hook...');
-      
-      const data = await fetchServiceCategories();
-      console.log('✅ Service categories loaded:', {
-        categoriesCount: data.length,
-        totalSubcategories: data.reduce((sum, cat) => sum + cat.subcategories.length, 0),
-        totalJobs: data.reduce((sum, cat) => sum + cat.subcategories.reduce((subSum, sub) => subSum + sub.jobs.length, 0), 0)
+
+      // Fetch all categories, subcategories, and jobs in separate queries
+      const [categoriesResult, subcategoriesResult, jobsResult] = await Promise.all([
+        supabase
+          .from('service_categories')
+          .select('*')
+          .order('position', { ascending: true }),
+        supabase
+          .from('service_subcategories')
+          .select('*')
+          .order('name', { ascending: true }),
+        supabase
+          .from('service_jobs')
+          .select('*')
+          .order('name', { ascending: true })
+      ]);
+
+      if (categoriesResult.error) throw categoriesResult.error;
+      if (subcategoriesResult.error) throw subcategoriesResult.error;
+      if (jobsResult.error) throw jobsResult.error;
+
+      // Build the hierarchical structure
+      const hierarchicalCategories: ServiceMainCategory[] = categoriesResult.data.map(category => {
+        const categorySubcategories = subcategoriesResult.data
+          .filter(sub => sub.category_id === category.id)
+          .map(subcategory => {
+            const subcategoryJobs = jobsResult.data
+              .filter(job => job.subcategory_id === subcategory.id)
+              .map(job => ({
+                id: job.id,
+                name: job.name,
+                description: job.description,
+                estimatedTime: job.estimated_time,
+                price: job.price,
+                subcategory_id: job.subcategory_id
+              } as ServiceJob));
+
+            return {
+              id: subcategory.id,
+              name: subcategory.name,
+              description: subcategory.description,
+              jobs: subcategoryJobs,
+              category_id: subcategory.category_id
+            } as ServiceSubcategory;
+          });
+
+        return {
+          id: category.id,
+          name: category.name,
+          description: category.description,
+          subcategories: categorySubcategories,
+          position: category.position
+        } as ServiceMainCategory;
       });
-      
-      setCategories(data);
+
+      setCategories(hierarchicalCategories);
     } catch (err) {
-      console.error('❌ Error in useServiceCategories:', err);
+      console.error('Error fetching service categories:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch service categories');
     } finally {
       setLoading(false);
@@ -38,6 +84,6 @@ export const useServiceCategories = () => {
     categories,
     loading,
     error,
-    refetch: loadServiceCategories
+    refetch: fetchServiceCategories
   };
 };

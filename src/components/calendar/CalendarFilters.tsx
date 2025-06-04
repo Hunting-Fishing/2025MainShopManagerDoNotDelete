@@ -34,7 +34,7 @@ export function CalendarFilters({
   setStatusFilter,
 }: CalendarFiltersProps) {
   // State to hold technicians once fetched
-  const [technicians, setTechnicians] = useState<Array<{id: string; name: string}>>([]);
+  const [technicians, setTechnicians] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch technicians on component mount
@@ -70,9 +70,9 @@ export function CalendarFilters({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Technicians</SelectItem>
-          {technicians.map((tech) => (
-            <SelectItem key={tech.id} value={tech.name}>
-              {tech.name}
+          {technicians && technicians.map((tech) => (
+            <SelectItem key={tech} value={tech}>
+              {tech}
             </SelectItem>
           ))}
         </SelectContent>

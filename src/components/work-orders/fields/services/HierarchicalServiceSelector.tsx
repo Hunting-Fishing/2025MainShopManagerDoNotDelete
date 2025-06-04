@@ -1,14 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ServiceMainCategory, ServiceJob } from '@/types/serviceHierarchy';
 import { SelectedService } from '@/types/selectedService';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { ServiceCategoryFilter } from './ServiceCategoryFilter';
+import { SearchInput } from './SearchInput';
+import { useServiceSearch } from '@/hooks/useServiceSearch';
+import { useKeyboardNavigation } from '@/hooks/useKeyboardNavigation';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { getCategoryColor } from '@/utils/categoryColors';
-import { ChevronDown, ChevronRight, Search, Plus, Clock, DollarSign } from 'lucide-react';
+import { Plus, ChevronRight, Keyboard } from 'lucide-react';
 
 interface HierarchicalServiceSelectorProps {
   categories: ServiceMainCategory[];
@@ -25,251 +24,221 @@ export function HierarchicalServiceSelector({
   onRemoveService,
   onUpdateServices
 }: HierarchicalServiceSelectorProps) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
-  const [expandedSubcategories, setExpandedSubcategories] = useState<Set<string>>(new Set());
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  
+  // Filter categories based on selected category filters
+  const filteredByCategory = useMemo(() => {
+    if (selectedCategoryIds.length === 0) return categories;
+    return categories.filter(category => selectedCategoryIds.includes(category.id));
+  }, [categories, selectedCategoryIds]);
 
-  // Filter categories based on search
-  const filteredCategories = categories.map(category => {
-    if (!searchTerm.trim()) return category;
+  // Apply search functionality to filtered categories
+  const {
+    searchQuery,
+    setSearchQuery,
+    filteredCategories,
+    searchStats,
+    suggestions,
+    isSearching
+  } = useServiceSearch(filteredByCategory);
 
-    const filteredSubcategories = category.subcategories.map(subcategory => {
-      const filteredJobs = subcategory.jobs.filter(job =>
-        job.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        job.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        subcategory.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+  // Keyboard navigation
+  const { navigation, currentCategory, currentSubcategory, currentJob } = useKeyboardNavigation(
+    filteredCategories,
+    onServiceSelect
+  );
 
-      return filteredJobs.length > 0 ? { ...subcategory, jobs: filteredJobs } : null;
-    }).filter(Boolean);
-
-    return filteredSubcategories.length > 0 ? 
-      { ...category, subcategories: filteredSubcategories } : null;
-  }).filter(Boolean);
-
-  const isServiceSelected = (serviceId: string) => {
-    return selectedServices.some(selected => selected.serviceId === serviceId);
+  const handleCategoryToggle = (categoryId: string) => {
+    setSelectedCategoryIds(prev => 
+      prev.includes(categoryId)
+        ? prev.filter(id => id !== categoryId)
+        : [...prev, categoryId]
+    );
   };
 
-  const toggleCategory = (categoryId: string) => {
-    const newExpanded = new Set(expandedCategories);
-    if (newExpanded.has(categoryId)) {
-      newExpanded.delete(categoryId);
-    } else {
-      newExpanded.add(categoryId);
-    }
-    setExpandedCategories(newExpanded);
+  const handleClearFilters = () => {
+    setSelectedCategoryIds([]);
   };
 
-  const toggleSubcategory = (subcategoryId: string) => {
-    const newExpanded = new Set(expandedSubcategories);
-    if (newExpanded.has(subcategoryId)) {
-      newExpanded.delete(subcategoryId);
-    } else {
-      newExpanded.add(subcategoryId);
+  const isSelected = (serviceId: string) => 
+    selectedServices.some(service => service.serviceId === serviceId);
+
+  const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
+    if (!isSelected(service.id)) {
+      onServiceSelect(service, categoryName, subcategoryName);
     }
-    setExpandedSubcategories(newExpanded);
   };
-
-  // Auto-expand categories when searching
-  React.useEffect(() => {
-    if (searchTerm.trim()) {
-      const categoriesToExpand = new Set(filteredCategories.map(cat => cat.id));
-      const subcategoriesToExpand = new Set(
-        filteredCategories.flatMap(cat => cat.subcategories.map(sub => sub.id))
-      );
-      setExpandedCategories(categoriesToExpand);
-      setExpandedSubcategories(subcategoriesToExpand);
-    }
-  }, [searchTerm, filteredCategories]);
-
-  console.log('🔍 HierarchicalServiceSelector:', {
-    originalCategories: categories.length,
-    filteredCategories: filteredCategories.length,
-    selectedCount: selectedServices.length,
-    searchTerm,
-    totalJobs: filteredCategories.reduce((sum, cat) => 
-      sum + cat.subcategories.reduce((subSum, sub) => subSum + sub.jobs.length, 0), 0
-    )
-  });
 
   return (
-    <div className="space-y-4">
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-        <Input
-          placeholder="Search services, categories, or descriptions..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
+    <div className="bg-white border rounded-lg overflow-hidden" tabIndex={0}>
+      {/* Category Filter */}
+      <ServiceCategoryFilter
+        categories={categories}
+        selectedCategoryIds={selectedCategoryIds}
+        onCategoryToggle={handleCategoryToggle}
+        onClearFilters={handleClearFilters}
+      />
+
+      {/* Search Input */}
+      <div className="p-3 border-b">
+        <SearchInput
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="Search services... (Use arrow keys to navigate)"
+          suggestions={suggestions}
         />
+        
+        {/* Keyboard Navigation Hint */}
+        <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
+          <Keyboard className="h-3 w-3" />
+          <span>Use ↑↓ to navigate, ←→ to switch columns, Enter to select</span>
+        </div>
+
+        {/* Search Stats */}
+        {searchStats && (
+          <div className="mt-2 text-xs text-gray-600">
+            Found {searchStats.jobs} services in {searchStats.categories} categories
+            {searchStats.highRelevanceJobs > 0 && (
+              <span className="ml-2 text-blue-600">
+                ({searchStats.highRelevanceJobs} highly relevant)
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Results Stats */}
-      {searchTerm && (
-        <div className="text-sm text-gray-600 bg-blue-50 p-2 rounded">
-          Found {filteredCategories.reduce((sum, cat) => 
-            sum + cat.subcategories.reduce((subSum, sub) => subSum + sub.jobs.length, 0), 0
-          )} services in {filteredCategories.length} categories
+      {/* Service Selector Grid */}
+      <div className="grid grid-cols-3 h-96">
+        {/* Categories Column */}
+        <div className="border-r">
+          <div className="p-2 bg-gray-50 border-b">
+            <h3 className="font-medium text-sm">Categories ({filteredCategories.length})</h3>
+          </div>
+          <div className="overflow-y-auto h-full">
+            {filteredCategories.map((category, index) => {
+              const isActive = navigation.activeColumn === 'categories' && navigation.selectedCategoryIndex === index;
+              return (
+                <button
+                  key={category.id}
+                  data-nav={`category-${index}`}
+                  className={`w-full text-left px-3 py-2 border-b hover:bg-blue-50 transition-colors ${
+                    isActive ? 'bg-blue-100 border-blue-300' : ''
+                  }`}
+                  onClick={() => {
+                    // Handle category click logic if needed
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">{category.name}</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-gray-500">
+                        {category.subcategories.length}
+                      </span>
+                      <ChevronRight className="h-3 w-3 text-gray-400" />
+                    </div>
+                  </div>
+                  {category.description && (
+                    <p className="text-xs text-gray-500 mt-1">{category.description}</p>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      )}
 
-      {/* Categories */}
-      <div className="space-y-3">
-        {filteredCategories.map((category) => {
-          const categoryColorClasses = getCategoryColor(category.name);
-          const isExpanded = expandedCategories.has(category.id);
+        {/* Subcategories Column */}
+        <div className="border-r">
+          <div className="p-2 bg-gray-50 border-b">
+            <h3 className="font-medium text-sm">
+              Subcategories {currentCategory && `(${currentCategory.subcategories.length})`}
+            </h3>
+          </div>
+          <div className="overflow-y-auto h-full">
+            {currentCategory?.subcategories.map((subcategory, index) => {
+              const isActive = navigation.activeColumn === 'subcategories' && navigation.selectedSubcategoryIndex === index;
+              return (
+                <button
+                  key={subcategory.id}
+                  data-nav={`subcategory-${index}`}
+                  className={`w-full text-left px-3 py-2 border-b hover:bg-blue-50 transition-colors ${
+                    isActive ? 'bg-blue-100 border-blue-300' : ''
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">{subcategory.name}</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-gray-500">
+                        {subcategory.jobs.length}
+                      </span>
+                      <ChevronRight className="h-3 w-3 text-gray-400" />
+                    </div>
+                  </div>
+                  {subcategory.description && (
+                    <p className="text-xs text-gray-500 mt-1">{subcategory.description}</p>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-          return (
-            <Card key={category.id} className="overflow-hidden">
-              <Collapsible open={isExpanded} onOpenChange={() => toggleCategory(category.id)}>
-                <CollapsibleTrigger asChild>
-                  <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        {isExpanded ? (
-                          <ChevronDown className="h-4 w-4 text-gray-500" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4 text-gray-500" />
+        {/* Jobs Column */}
+        <div>
+          <div className="p-2 bg-gray-50 border-b">
+            <h3 className="font-medium text-sm">
+              Services {currentSubcategory && `(${currentSubcategory.jobs.length})`}
+            </h3>
+          </div>
+          <div className="overflow-y-auto h-full">
+            {currentSubcategory?.jobs.map((job, index) => {
+              const isActive = navigation.activeColumn === 'jobs' && navigation.selectedJobIndex === index;
+              const isJobSelected = isSelected(job.id);
+              
+              return (
+                <div
+                  key={job.id}
+                  data-nav={`job-${index}`}
+                  className={`p-3 border-b hover:bg-blue-50 transition-colors ${
+                    isActive ? 'bg-blue-100 border-blue-300' : ''
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-medium truncate">{job.name}</h4>
+                      {job.description && (
+                        <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                          {job.description}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-3 mt-2">
+                        {job.estimatedTime && (
+                          <span className="text-xs text-gray-500">
+                            {job.estimatedTime} min
+                          </span>
                         )}
-                        <Badge className={categoryColorClasses}>
-                          {category.name}
-                        </Badge>
-                        <span className="text-sm text-gray-600">
-                          {category.subcategories.reduce((sum, sub) => sum + sub.jobs.length, 0)} services
-                        </span>
+                        {job.price && (
+                          <span className="text-xs font-medium text-green-600">
+                            ${job.price}
+                          </span>
+                        )}
                       </div>
                     </div>
-                    {category.description && (
-                      <p className="text-sm text-gray-600 mt-2 ml-7">
-                        {category.description}
-                      </p>
-                    )}
-                  </CardHeader>
-                </CollapsibleTrigger>
-
-                <CollapsibleContent>
-                  <CardContent className="pt-0 px-4 pb-4">
-                    <div className="space-y-3">
-                      {category.subcategories.map((subcategory) => {
-                        const isSubExpanded = expandedSubcategories.has(subcategory.id);
-
-                        return (
-                          <div key={subcategory.id} className="border rounded-lg">
-                            <Collapsible 
-                              open={isSubExpanded} 
-                              onOpenChange={() => toggleSubcategory(subcategory.id)}
-                            >
-                              <CollapsibleTrigger asChild>
-                                <div className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 transition-colors">
-                                  <div className="flex items-center gap-2">
-                                    {isSubExpanded ? (
-                                      <ChevronDown className="h-3 w-3 text-gray-500" />
-                                    ) : (
-                                      <ChevronRight className="h-3 w-3 text-gray-500" />
-                                    )}
-                                    <Badge variant="outline" className="text-xs">
-                                      {subcategory.name}
-                                    </Badge>
-                                    <span className="text-xs text-gray-500">
-                                      {subcategory.jobs.length} services
-                                    </span>
-                                  </div>
-                                </div>
-                              </CollapsibleTrigger>
-
-                              <CollapsibleContent>
-                                <div className="px-3 pb-3 space-y-2">
-                                  {subcategory.jobs.map((job) => {
-                                    const isSelected = isServiceSelected(job.id);
-
-                                    return (
-                                      <div
-                                        key={job.id}
-                                        className={`p-3 border rounded-lg transition-all duration-200 ${
-                                          isSelected 
-                                            ? 'bg-blue-50 border-blue-200' 
-                                            : 'hover:bg-gray-50 border-gray-200'
-                                        }`}
-                                      >
-                                        <div className="flex items-start justify-between">
-                                          <div className="flex-1 min-w-0">
-                                            <h4 className="font-medium text-sm text-gray-900 mb-1">
-                                              {job.name}
-                                            </h4>
-                                            
-                                            {job.description && (
-                                              <p className="text-xs text-gray-600 mb-2">
-                                                {job.description}
-                                              </p>
-                                            )}
-                                            
-                                            <div className="flex items-center gap-3">
-                                              {job.estimatedTime && (
-                                                <div className="flex items-center gap-1 text-xs text-gray-500">
-                                                  <Clock className="h-3 w-3" />
-                                                  <span>{job.estimatedTime} min</span>
-                                                </div>
-                                              )}
-                                              {job.price && (
-                                                <div className="flex items-center gap-1 text-xs text-gray-500">
-                                                  <DollarSign className="h-3 w-3" />
-                                                  <span>${job.price}</span>
-                                                </div>
-                                              )}
-                                            </div>
-                                          </div>
-                                          
-                                          <Button
-                                            size="sm"
-                                            variant={isSelected ? "secondary" : "outline"}
-                                            onClick={() => {
-                                              if (isSelected) {
-                                                const selectedService = selectedServices.find(s => s.serviceId === job.id);
-                                                if (selectedService) {
-                                                  onRemoveService(selectedService.id);
-                                                }
-                                              } else {
-                                                onServiceSelect(job, category.name, subcategory.name);
-                                              }
-                                            }}
-                                            className="ml-2 h-7 text-xs"
-                                          >
-                                            {isSelected ? (
-                                              <>✓ Selected</>
-                                            ) : (
-                                              <>
-                                                <Plus className="h-3 w-3 mr-1" />
-                                                Add
-                                              </>
-                                            )}
-                                          </Button>
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </CollapsibleContent>
-                            </Collapsible>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </CollapsibleContent>
-              </Collapsible>
-            </Card>
-          );
-        })}
-      </div>
-
-      {filteredCategories.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
-          {searchTerm ? 'No services found matching your search' : 'No services available'}
+                    <Button
+                      size="sm"
+                      variant={isJobSelected ? "secondary" : "outline"}
+                      onClick={() => handleServiceSelect(job, currentCategory!.name, currentSubcategory!.name)}
+                      disabled={isJobSelected}
+                      className="ml-2 shrink-0"
+                    >
+                      {isJobSelected ? 'Added' : <Plus className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

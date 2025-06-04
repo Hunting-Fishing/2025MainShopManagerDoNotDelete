@@ -1,190 +1,228 @@
-import { ServiceMainCategory, ServiceJob } from '@/types/serviceHierarchy';
+
+import { ServiceMainCategory } from '@/types/serviceHierarchy';
 import { supabase } from '@/integrations/supabase/client';
-import { fetchServiceCategoriesFromDB, checkServiceDataExists } from './serviceDatabase';
 
-// Fallback mock data for when database is empty
-const mockServiceData = {
-  categories: [
-    {
-      id: "1",
-      name: "Oil Change & Maintenance", 
-      description: "Regular maintenance services",
-      display_order: 1,
-      is_active: true,
-      subcategories: [
-        {
-          id: "1-1",
-          name: "Oil Changes",
-          description: "Oil change services",
-          category_id: "1", 
-          display_order: 1,
-          jobs: [
-            { 
-              id: "1-1-1", 
-              name: "Standard Oil Change", 
-              description: "Standard oil change service",
-              subcategory_id: "1-1",
-              category_id: "1",
-              base_price: 35,
-              estimated_duration: 30,
-              skill_level: "basic",
-              display_order: 1,
-              is_active: true,
-              estimatedTime: 30,
-              price: 35
-            },
-            { 
-              id: "1-1-2", 
-              name: "Synthetic Oil Change", 
-              description: "Synthetic oil change service",
-              subcategory_id: "1-1",
-              category_id: "1",
-              base_price: 65,
-              estimated_duration: 30,
-              skill_level: "basic",
-              display_order: 2,
-              is_active: true,
-              estimatedTime: 30,
-              price: 65
-            }
-          ]
-        }
-      ]
-    }
-  ]
-};
-
-export const fetchServiceCategories = async (): Promise<ServiceMainCategory[]> => {
+export async function fetchServiceCategories(): Promise<ServiceMainCategory[]> {
   try {
-    console.log('🔄 Fetching service categories...');
+    console.log('Fetching service categories...');
     
-    // First check if database has data
-    const hasData = await checkServiceDataExists();
-    
-    if (hasData) {
-      console.log('📊 Using live database data');
-      return await fetchServiceCategoriesFromDB();
-    } else {
-      console.log('📋 Database empty, using mock data');
-      // Simulate API delay for consistency
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const categories = mockServiceData.categories.map(category => ({
+    // First, try to fetch categories with a simplified query structure
+    const { data: categories, error: categoriesError } = await supabase
+      .from('service_categories')
+      .select(`
+        id,
+        name,
+        description,
+        service_subcategories (
+          id,
+          name,
+          description,
+          service_jobs (
+            id,
+            name,
+            description,
+            estimated_time,
+            price
+          )
+        )
+      `)
+      .order('name', { ascending: true });
+
+    if (categoriesError) {
+      console.error('Error fetching service categories:', categoriesError);
+      return [];
+    }
+
+    if (!categories || categories.length === 0) {
+      console.warn('No service categories found in database');
+      return [];
+    }
+
+    console.log('Raw categories data:', categories);
+
+    // Transform the data to match our ServiceMainCategory type with error handling
+    const transformedCategories: ServiceMainCategory[] = categories.map(category => {
+      // Safely handle subcategories
+      const subcategories = Array.isArray(category.service_subcategories) 
+        ? category.service_subcategories 
+        : [];
+
+      return {
         id: category.id,
-        name: category.name,
-        description: category.description,
-        display_order: category.display_order,
-        is_active: category.is_active,
-        subcategories: category.subcategories.map(subcategory => ({
-          id: subcategory.id,
-          name: subcategory.name,
-          description: subcategory.description,
-          category_id: subcategory.category_id,
-          display_order: subcategory.display_order,
-          jobs: subcategory.jobs.map(job => ({
-            id: job.id,
-            name: job.name,
-            description: job.description,
-            subcategory_id: job.subcategory_id,
-            category_id: job.category_id,
-            base_price: job.base_price,
-            estimated_duration: job.estimated_duration,
-            skill_level: job.skill_level,
-            display_order: job.display_order,
-            is_active: job.is_active,
-            // Keep backward compatibility fields
-            estimatedTime: job.estimatedTime,
-            price: job.price
-          }))
-        }))
-      }));
+        name: category.name || 'Unnamed Category',
+        description: category.description || undefined,
+        subcategories: subcategories.map(subcategory => {
+          // Safely handle jobs
+          const jobs = Array.isArray(subcategory.service_jobs) 
+            ? subcategory.service_jobs 
+            : [];
 
-      console.log('✅ Mock service categories loaded:', {
-        categoriesCount: categories.length,
-        totalSubcategories: categories.reduce((sum, cat) => sum + cat.subcategories.length, 0),
-        totalJobs: categories.reduce((sum, cat) => sum + cat.subcategories.reduce((subSum, sub) => subSum + sub.jobs.length, 0), 0)
-      });
+          return {
+            id: subcategory.id,
+            name: subcategory.name || 'Unnamed Subcategory',
+            description: subcategory.description || undefined,
+            category_id: category.id,
+            jobs: jobs.map(job => ({
+              id: job.id,
+              name: job.name || 'Unnamed Job',
+              description: job.description || undefined,
+              estimatedTime: job.estimated_time || undefined,
+              price: job.price ? Number(job.price) : undefined,
+              subcategory_id: subcategory.id
+            }))
+          };
+        })
+      };
+    });
 
-      return categories;
+    console.log('Transformed categories:', transformedCategories);
+    return transformedCategories;
+    
+  } catch (error) {
+    console.error('Error in fetchServiceCategories:', error);
+    return [];
+  }
+}
+
+export async function updateServiceCategory(
+  categoryId: string, 
+  updates: { name?: string; description?: string }
+): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('service_categories')
+      .update(updates)
+      .eq('id', categoryId);
+
+    if (error) {
+      throw new Error(`Failed to update service category: ${error.message}`);
     }
   } catch (error) {
-    console.error('❌ Error fetching service categories:', error);
-    throw new Error('Failed to fetch service categories');
+    console.error('Error updating service category:', error);
+    throw error;
   }
-};
+}
 
-// Deprecated - use fetchServiceCategories instead
-export const getServiceCategories = fetchServiceCategories;
+export async function deleteServiceCategory(categoryId: string): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('service_categories')
+      .delete()
+      .eq('id', categoryId);
 
-// Helper function to get a flattened list of all jobs
-export const fetchAllServiceJobs = async (): Promise<ServiceJob[]> => {
-  const categories = await fetchServiceCategories();
-  return categories.flatMap(category => 
-    category.subcategories.flatMap(subcategory => subcategory.jobs)
-  );
-};
+    if (error) {
+      throw new Error(`Failed to delete service category: ${error.message}`);
+    }
+  } catch (error) {
+    console.error('Error deleting service category:', error);
+    throw error;
+  }
+}
 
-// Helper function to search jobs by name
-export const searchServiceJobs = async (query: string): Promise<ServiceJob[]> => {
-  const allJobs = await fetchAllServiceJobs();
-  return allJobs.filter(job => 
-    job.name.toLowerCase().includes(query.toLowerCase()) ||
-    (job.description && job.description.toLowerCase().includes(query.toLowerCase()))
-  );
-};
+export async function deleteServiceSubcategory(subcategoryId: string): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('service_subcategories')
+      .delete()
+      .eq('id', subcategoryId);
 
-// Update functions for service management
-export const updateServiceCategory = async (id: string, updates: Partial<{ name: string; description: string; position: number }>) => {
-  const { error } = await supabase
-    .from('service_categories')
-    .update(updates)
-    .eq('id', id);
-  
-  if (error) throw error;
-};
+    if (error) {
+      throw new Error(`Failed to delete service subcategory: ${error.message}`);
+    }
+  } catch (error) {
+    console.error('Error deleting service subcategory:', error);
+    throw error;
+  }
+}
 
-export const updateServiceSubcategory = async (id: string, updates: Partial<{ name: string; description: string }>) => {
-  const { error } = await supabase
-    .from('service_subcategories')
-    .update(updates)
-    .eq('id', id);
-  
-  if (error) throw error;
-};
+export async function deleteServiceJob(jobId: string): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('service_jobs')
+      .delete()
+      .eq('id', jobId);
 
-export const updateServiceJob = async (id: string, updates: Partial<{ name: string; description: string; estimated_time: number; price: number }>) => {
-  const { error } = await supabase
-    .from('service_jobs')
-    .update(updates)
-    .eq('id', id);
-  
-  if (error) throw error;
-};
+    if (error) {
+      throw new Error(`Failed to delete service job: ${error.message}`);
+    }
+  } catch (error) {
+    console.error('Error deleting service job:', error);
+    throw error;
+  }
+}
 
-// Delete functions for service management
-export const deleteServiceCategory = async (id: string) => {
-  const { error } = await supabase
-    .from('service_categories')
-    .delete()
-    .eq('id', id);
-  
-  if (error) throw error;
-};
+// Additional helper functions for creating new services
+export async function createServiceCategory(
+  category: { name: string; description?: string; position?: number }
+): Promise<string> {
+  try {
+    const { data, error } = await supabase
+      .from('service_categories')
+      .insert([category])
+      .select('id')
+      .single();
 
-export const deleteServiceSubcategory = async (id: string) => {
-  const { error } = await supabase
-    .from('service_subcategories')
-    .delete()
-    .eq('id', id);
-  
-  if (error) throw error;
-};
+    if (error) {
+      throw new Error(`Failed to create service category: ${error.message}`);
+    }
 
-export const deleteServiceJob = async (id: string) => {
-  const { error } = await supabase
-    .from('service_jobs')
-    .delete()
-    .eq('id', id);
-  
-  if (error) throw error;
-};
+    return data.id;
+  } catch (error) {
+    console.error('Error creating service category:', error);
+    throw error;
+  }
+}
+
+export async function createServiceSubcategory(
+  subcategory: { 
+    category_id: string; 
+    name: string; 
+    description?: string; 
+    position?: number;
+  }
+): Promise<string> {
+  try {
+    const { data, error } = await supabase
+      .from('service_subcategories')
+      .insert([subcategory])
+      .select('id')
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to create service subcategory: ${error.message}`);
+    }
+
+    return data.id;
+  } catch (error) {
+    console.error('Error creating service subcategory:', error);
+    throw error;
+  }
+}
+
+export async function createServiceJob(
+  job: {
+    subcategory_id: string;
+    name: string;
+    description?: string;
+    estimated_time?: number;
+    price?: number;
+    position?: number;
+  }
+): Promise<string> {
+  try {
+    const { data, error } = await supabase
+      .from('service_jobs')
+      .insert([job])
+      .select('id')
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to create service job: ${error.message}`);
+    }
+
+    return data.id;
+  } catch (error) {
+    console.error('Error creating service job:', error);
+    throw error;
+  }
+}

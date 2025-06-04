@@ -1,257 +1,343 @@
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { 
   TrendingUp, 
   AlertTriangle, 
   CheckCircle, 
   Clock, 
-  DollarSign,
-  FileText,
-  Wrench
+  DollarSign, 
+  Users,
+  BarChart3,
+  Target,
+  Zap,
+  Star
 } from 'lucide-react';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
+import { getCategoryColor } from '@/utils/categoryColors';
 
 interface ServiceQualityAnalysisProps {
   categories: ServiceMainCategory[];
   onRefresh: () => void;
 }
 
+interface QualityMetric {
+  id: string;
+  name: string;
+  value: number;
+  target: number;
+  status: 'good' | 'warning' | 'critical';
+  trend: 'up' | 'down' | 'stable';
+  description: string;
+}
+
+interface QualityIssue {
+  id: string;
+  type: 'missing_price' | 'missing_description' | 'missing_time' | 'duplicate_name' | 'inconsistent_pricing';
+  severity: 'low' | 'medium' | 'high';
+  category: string;
+  subcategory?: string;
+  job?: string;
+  description: string;
+  suggestion: string;
+}
+
 const ServiceQualityAnalysis: React.FC<ServiceQualityAnalysisProps> = ({
   categories,
   onRefresh
 }) => {
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
   // Calculate quality metrics
-  const totalCategories = categories.length;
-  const totalSubcategories = categories.reduce((sum, cat) => sum + cat.subcategories.length, 0);
-  const totalJobs = categories.reduce((sum, cat) => 
-    sum + cat.subcategories.reduce((subSum, sub) => subSum + sub.jobs.length, 0), 0);
-
-  // Quality checks
-  const categoriesWithDescription = categories.filter(cat => cat.description).length;
-  const jobsWithDescription = categories.reduce((sum, cat) => 
-    sum + cat.subcategories.reduce((subSum, sub) => 
-      subSum + sub.jobs.filter(job => job.description).length, 0), 0);
-  const jobsWithPrice = categories.reduce((sum, cat) => 
-    sum + cat.subcategories.reduce((subSum, sub) => 
-      subSum + sub.jobs.filter(job => job.price).length, 0), 0);
-  const jobsWithTime = categories.reduce((sum, cat) => 
-    sum + cat.subcategories.reduce((subSum, sub) => 
-      subSum + sub.jobs.filter(job => job.estimatedTime).length, 0), 0);
-
-  // Calculate percentages
-  const descriptionCoverage = totalCategories > 0 ? (categoriesWithDescription / totalCategories) * 100 : 0;
-  const jobDescriptionCoverage = totalJobs > 0 ? (jobsWithDescription / totalJobs) * 100 : 0;
-  const priceCoverage = totalJobs > 0 ? (jobsWithPrice / totalJobs) * 100 : 0;
-  const timeCoverage = totalJobs > 0 ? (jobsWithTime / totalJobs) * 100 : 0;
-
-  // Overall quality score
-  const overallScore = (descriptionCoverage + jobDescriptionCoverage + priceCoverage + timeCoverage) / 4;
-
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600';
-    if (score >= 60) return 'text-yellow-600';
-    return 'text-red-600';
-  };
-
-  const getScoreBadge = (score: number) => {
-    if (score >= 80) return { label: 'Excellent', variant: 'default' as const, color: 'bg-green-100 text-green-800' };
-    if (score >= 60) return { label: 'Good', variant: 'secondary' as const, color: 'bg-yellow-100 text-yellow-800' };
-    return { label: 'Needs Improvement', variant: 'destructive' as const, color: 'bg-red-100 text-red-800' };
-  };
-
-  const issues = [
-    ...(descriptionCoverage < 80 ? [{ 
-      type: 'Category Descriptions', 
-      count: totalCategories - categoriesWithDescription,
-      severity: 'medium' as const
-    }] : []),
-    ...(jobDescriptionCoverage < 80 ? [{ 
-      type: 'Service Descriptions', 
-      count: totalJobs - jobsWithDescription,
-      severity: 'medium' as const
-    }] : []),
-    ...(priceCoverage < 60 ? [{ 
-      type: 'Service Pricing', 
-      count: totalJobs - jobsWithPrice,
-      severity: 'high' as const
-    }] : []),
-    ...(timeCoverage < 60 ? [{ 
-      type: 'Time Estimates', 
-      count: totalJobs - jobsWithTime,
-      severity: 'high' as const
-    }] : [])
-  ];
-
-  if (totalCategories === 0) {
-    return (
-      <Card>
-        <CardContent className="p-8">
-          <div className="text-center">
-            <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Data to Analyze</h3>
-            <p className="text-gray-600">Add some service categories to see quality analysis.</p>
-          </div>
-        </CardContent>
-      </Card>
+  const qualityMetrics = useMemo(() => {
+    const totalJobs = categories.reduce((sum, cat) => 
+      sum + cat.subcategories.reduce((subSum, sub) => subSum + sub.jobs.length, 0), 0
     );
-  }
+
+    const jobsWithPrice = categories.reduce((sum, cat) => 
+      sum + cat.subcategories.reduce((subSum, sub) => 
+        subSum + sub.jobs.filter(job => job.price && job.price > 0).length, 0
+      ), 0
+    );
+
+    const jobsWithTime = categories.reduce((sum, cat) => 
+      sum + cat.subcategories.reduce((subSum, sub) => 
+        subSum + sub.jobs.filter(job => job.estimatedTime && job.estimatedTime > 0).length, 0
+      ), 0
+    );
+
+    const jobsWithDescription = categories.reduce((sum, cat) => 
+      sum + cat.subcategories.reduce((subSum, sub) => 
+        subSum + sub.jobs.filter(job => job.description && job.description.length > 10).length, 0
+      ), 0
+    );
+
+    const priceCompleteness = totalJobs > 0 ? (jobsWithPrice / totalJobs) * 100 : 0;
+    const timeCompleteness = totalJobs > 0 ? (jobsWithTime / totalJobs) * 100 : 0;
+    const descriptionCompleteness = totalJobs > 0 ? (jobsWithDescription / totalJobs) * 100 : 0;
+    const overallQuality = (priceCompleteness + timeCompleteness + descriptionCompleteness) / 3;
+
+    return [
+      {
+        id: 'overall',
+        name: 'Overall Quality Score',
+        value: overallQuality,
+        target: 90,
+        status: overallQuality >= 90 ? 'good' : overallQuality >= 70 ? 'warning' : 'critical',
+        trend: 'stable',
+        description: 'Combined score based on price, time, and description completeness'
+      },
+      {
+        id: 'price',
+        name: 'Price Completeness',
+        value: priceCompleteness,
+        target: 95,
+        status: priceCompleteness >= 95 ? 'good' : priceCompleteness >= 80 ? 'warning' : 'critical',
+        trend: 'up',
+        description: 'Percentage of jobs with pricing information'
+      },
+      {
+        id: 'time',
+        name: 'Time Estimation',
+        value: timeCompleteness,
+        target: 85,
+        status: timeCompleteness >= 85 ? 'good' : timeCompleteness >= 70 ? 'warning' : 'critical',
+        trend: 'stable',
+        description: 'Percentage of jobs with time estimates'
+      },
+      {
+        id: 'description',
+        name: 'Description Quality',
+        value: descriptionCompleteness,
+        target: 80,
+        status: descriptionCompleteness >= 80 ? 'good' : descriptionCompleteness >= 60 ? 'warning' : 'critical',
+        trend: 'up',
+        description: 'Percentage of jobs with detailed descriptions'
+      }
+    ] as QualityMetric[];
+  }, [categories]);
+
+  // Identify quality issues
+  const qualityIssues = useMemo(() => {
+    const issues: QualityIssue[] = [];
+
+    categories.forEach(category => {
+      category.subcategories.forEach(subcategory => {
+        subcategory.jobs.forEach(job => {
+          // Missing price
+          if (!job.price || job.price <= 0) {
+            issues.push({
+              id: `${job.id}-price`,
+              type: 'missing_price',
+              severity: 'high',
+              category: category.name,
+              subcategory: subcategory.name,
+              job: job.name,
+              description: `Job "${job.name}" is missing pricing information`,
+              suggestion: 'Add competitive pricing based on market research'
+            });
+          }
+
+          // Missing description
+          if (!job.description || job.description.length < 10) {
+            issues.push({
+              id: `${job.id}-description`,
+              type: 'missing_description',
+              severity: 'medium',
+              category: category.name,
+              subcategory: subcategory.name,
+              job: job.name,
+              description: `Job "${job.name}" has insufficient description`,
+              suggestion: 'Add detailed description explaining what the service includes'
+            });
+          }
+
+          // Missing time estimate
+          if (!job.estimatedTime || job.estimatedTime <= 0) {
+            issues.push({
+              id: `${job.id}-time`,
+              type: 'missing_time',
+              severity: 'medium',
+              category: category.name,
+              subcategory: subcategory.name,
+              job: job.name,
+              description: `Job "${job.name}" is missing time estimate`,
+              suggestion: 'Add realistic time estimate based on technician experience'
+            });
+          }
+        });
+      });
+    });
+
+    return issues.sort((a, b) => {
+      const severityOrder = { high: 3, medium: 2, low: 1 };
+      return severityOrder[b.severity] - severityOrder[a.severity];
+    });
+  }, [categories]);
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'good':
+        return <CheckCircle className="h-5 w-5 text-green-500" />;
+      case 'warning':
+        return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
+      case 'critical':
+        return <AlertTriangle className="h-5 w-5 text-red-500" />;
+      default:
+        return <Clock className="h-5 w-5 text-gray-500" />;
+    }
+  };
+
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case 'high':
+        return 'bg-red-100 text-red-800';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'low':
+        return 'bg-blue-100 text-blue-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   return (
     <div className="space-y-6">
-      {/* Overall Score */}
+      {/* Quality Metrics Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {qualityMetrics.map((metric) => (
+          <Card key={metric.id}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">{metric.name}</CardTitle>
+              {getStatusIcon(metric.status)}
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{metric.value.toFixed(1)}%</div>
+              <p className="text-xs text-muted-foreground">
+                Target: {metric.target}%
+              </p>
+              <div className="mt-2">
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className={`h-2 rounded-full ${
+                      metric.status === 'good' ? 'bg-green-500' : 
+                      metric.status === 'warning' ? 'bg-yellow-500' : 'bg-red-500'
+                    }`}
+                    style={{ width: `${Math.min(metric.value, 100)}%` }}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Quality Issues */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Service Quality Score
+            <AlertTriangle className="h-5 w-5" />
+            Quality Issues ({qualityIssues.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <div className={`text-3xl font-bold ${getScoreColor(overallScore)}`}>
-                {overallScore.toFixed(0)}%
-              </div>
-              <Badge className={getScoreBadge(overallScore).color}>
-                {getScoreBadge(overallScore).label}
-              </Badge>
+          {qualityIssues.length === 0 ? (
+            <div className="text-center py-8">
+              <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-green-900 mb-2">
+                Excellent Service Quality!
+              </h3>
+              <p className="text-green-600">
+                No quality issues found. Your service catalog is well-maintained.
+              </p>
             </div>
-            <div className="text-right">
-              <div className="text-sm text-gray-600">Overall Quality</div>
-              <Progress value={overallScore} className="w-32 mt-1" />
+          ) : (
+            <div className="space-y-4">
+              {qualityIssues.slice(0, 10).map((issue) => (
+                <div key={issue.id} className="border rounded-lg p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge className={getSeverityColor(issue.severity)}>
+                          {issue.severity.toUpperCase()}
+                        </Badge>
+                        <Badge variant="outline" className={getCategoryColor(issue.category)}>
+                          {issue.category}
+                        </Badge>
+                        {issue.subcategory && (
+                          <span className="text-sm text-gray-500">
+                            → {issue.subcategory}
+                          </span>
+                        )}
+                      </div>
+                      <h4 className="font-medium mb-1">{issue.description}</h4>
+                      <p className="text-sm text-gray-600 mb-2">{issue.suggestion}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              
+              {qualityIssues.length > 10 && (
+                <div className="text-center pt-4 border-t">
+                  <p className="text-sm text-gray-500">
+                    Showing 10 of {qualityIssues.length} issues
+                  </p>
+                  <Button variant="outline" size="sm" className="mt-2">
+                    View All Issues
+                  </Button>
+                </div>
+              )}
             </div>
-          </div>
-          <p className="text-gray-600 text-sm">
-            Based on completeness of descriptions, pricing, and time estimates
-          </p>
+          )}
         </CardContent>
       </Card>
 
-      {/* Quality Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <FileText className="h-8 w-8 text-blue-600" />
-              <div>
-                <div className="text-sm text-gray-600">Category Descriptions</div>
-                <div className="text-xl font-semibold">{descriptionCoverage.toFixed(0)}%</div>
-                <div className="text-xs text-gray-500">{categoriesWithDescription}/{totalCategories}</div>
-              </div>
-            </div>
-            <Progress value={descriptionCoverage} className="mt-2" />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Wrench className="h-8 w-8 text-green-600" />
-              <div>
-                <div className="text-sm text-gray-600">Service Descriptions</div>
-                <div className="text-xl font-semibold">{jobDescriptionCoverage.toFixed(0)}%</div>
-                <div className="text-xs text-gray-500">{jobsWithDescription}/{totalJobs}</div>
-              </div>
-            </div>
-            <Progress value={jobDescriptionCoverage} className="mt-2" />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <DollarSign className="h-8 w-8 text-purple-600" />
-              <div>
-                <div className="text-sm text-gray-600">Pricing Information</div>
-                <div className="text-xl font-semibold">{priceCoverage.toFixed(0)}%</div>
-                <div className="text-xs text-gray-500">{jobsWithPrice}/{totalJobs}</div>
-              </div>
-            </div>
-            <Progress value={priceCoverage} className="mt-2" />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Clock className="h-8 w-8 text-orange-600" />
-              <div>
-                <div className="text-sm text-gray-600">Time Estimates</div>
-                <div className="text-xl font-semibold">{timeCoverage.toFixed(0)}%</div>
-                <div className="text-xs text-gray-500">{jobsWithTime}/{totalJobs}</div>
-              </div>
-            </div>
-            <Progress value={timeCoverage} className="mt-2" />
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Issues and Recommendations */}
-      {issues.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-yellow-600" />
-              Quality Issues
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {issues.map((issue, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <AlertTriangle className={`h-4 w-4 ${
-                      issue.severity === 'high' ? 'text-red-500' : 'text-yellow-500'
-                    }`} />
-                    <div>
-                      <div className="font-medium">{issue.type}</div>
-                      <div className="text-sm text-gray-600">
-                        {issue.count} item{issue.count !== 1 ? 's' : ''} missing information
-                      </div>
-                    </div>
-                  </div>
-                  <Badge variant={issue.severity === 'high' ? 'destructive' : 'secondary'}>
-                    {issue.severity === 'high' ? 'High Priority' : 'Medium Priority'}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 pt-4 border-t">
-              <p className="text-sm text-gray-600 mb-3">
-                Improve your service quality by adding missing information to increase customer trust and booking rates.
-              </p>
-              <Button onClick={onRefresh} className="gap-2">
-                <CheckCircle className="h-4 w-4" />
-                Refresh Analysis
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Summary Stats */}
+      {/* Category Breakdown */}
       <Card>
         <CardHeader>
-          <CardTitle>Service Catalog Overview</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Category Quality Breakdown
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{totalCategories}</div>
-              <div className="text-sm text-gray-600">Categories</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{totalSubcategories}</div>
-              <div className="text-sm text-gray-600">Subcategories</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">{totalJobs}</div>
-              <div className="text-sm text-gray-600">Services</div>
-            </div>
+          <div className="space-y-4">
+            {categories.map((category) => {
+              const totalJobs = category.subcategories.reduce((sum, sub) => sum + sub.jobs.length, 0);
+              const jobsWithPrice = category.subcategories.reduce((sum, sub) => 
+                sum + sub.jobs.filter(job => job.price && job.price > 0).length, 0
+              );
+              const completeness = totalJobs > 0 ? (jobsWithPrice / totalJobs) * 100 : 0;
+              
+              return (
+                <div key={category.id} className="flex items-center justify-between p-3 border rounded">
+                  <div className="flex items-center gap-3">
+                    <Badge className={getCategoryColor(category.name)}>
+                      {category.name}
+                    </Badge>
+                    <span className="text-sm text-gray-600">
+                      {totalJobs} jobs
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-24 bg-gray-200 rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full ${
+                          completeness >= 90 ? 'bg-green-500' : 
+                          completeness >= 70 ? 'bg-yellow-500' : 'bg-red-500'
+                        }`}
+                        style={{ width: `${completeness}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-medium w-12 text-right">
+                      {completeness.toFixed(0)}%
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
