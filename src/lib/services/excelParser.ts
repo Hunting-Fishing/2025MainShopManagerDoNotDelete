@@ -2,171 +2,165 @@
 import * as XLSX from 'xlsx';
 import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
 
-// Export the main parsing function with the correct name
-export function parseExcelFile(file: File): Promise<ServiceMainCategory[]> {
-  return parseExcelToServiceCategories(file);
+export interface ParsedExcelData {
+  categories: ServiceMainCategory[];
+  duplicates: any[];
+  stats: {
+    totalCategories: number;
+    totalSubcategories: number;
+    totalJobs: number;
+  };
 }
 
-export function parseExcelToServiceCategories(file: File): Promise<ServiceMainCategory[]> {
+export interface ExcelRow {
+  Category?: string;
+  Subcategory?: string;
+  Service?: string;
+  Job?: string;
+  Description?: string;
+  'Estimated Time'?: number;
+  'Estimated Time (minutes)'?: number;
+  Price?: number;
+  Cost?: number;
+  [key: string]: any;
+}
+
+export const parseExcelFile = async (file: File): Promise<ParsedExcelData> => {
+  console.log('📋 Starting Excel file parsing:', file.name);
+  
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-
-    reader.onload = async (e: any) => {
+    
+    reader.onload = (e) => {
       try {
-        console.log('Starting Excel file parsing...');
-        const data = new Uint8Array(e.target.result);
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
-
-        const categories: ServiceMainCategory[] = [];
-        let categoryIndex = 0;
-
-        for (const sheetName of workbook.SheetNames) {
-          console.log(`Processing sheet: ${sheetName}`);
-          const worksheet = workbook.Sheets[sheetName];
-          const aoa = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' }) as any[][];
-
-          if (!aoa || aoa.length < 2) {
-            console.warn(`Sheet "${sheetName}" is empty or has an invalid format.`);
-            continue;
-          }
-
-          // Get subcategory names from first row (starting from column B)
-          const subcategoryNames: string[] = aoa[0].slice(1).filter(name => name && name.toString().trim());
-          console.log(`Found subcategories: ${subcategoryNames.join(', ')}`);
-
-          // Create subcategories
-          const subcategories: ServiceSubcategory[] = subcategoryNames.map(name => ({
-            id: crypto.randomUUID(),
-            name: name.toString().trim(),
-            description: '',
-            jobs: []
-          }));
-
-          // Process job data (starting from row 2)
-          const jobsData: string[][] = aoa.slice(1);
-          
-          for (const rowData of jobsData) {
-            if (!rowData[0] || !rowData[0].toString().trim()) continue;
-
-            const jobName = rowData[0].toString().trim();
-            
-            // Process each subcategory column
-            for (let i = 1; i < rowData.length && i <= subcategoryNames.length; i++) {
-              const jobDescription = rowData[i] ? rowData[i].toString().trim() : '';
-              if (!jobDescription) continue;
-
-              const subcategoryIndex = i - 1;
-              if (subcategoryIndex < subcategories.length) {
-                subcategories[subcategoryIndex].jobs.push({
-                  id: crypto.randomUUID(),
-                  name: jobDescription,
-                  description: jobName,
-                  estimatedTime: 60,
-                  price: 50
-                });
-              }
-            }
-
-            // Add small delay to prevent blocking
-            if (jobsData.indexOf(rowData) % 10 === 0) {
-              await new Promise(resolve => setTimeout(resolve, 1));
-            }
-          }
-
-          categories.push({
-            id: crypto.randomUUID(),
-            name: sheetName,
-            description: '',
-            subcategories: subcategories,
-            position: categoryIndex++
-          });
-
-          console.log(`Completed processing sheet: ${sheetName} with ${subcategories.length} subcategories`);
-        }
-
-        console.log(`Excel parsing completed. Total categories: ${categories.length}`);
-        resolve(categories);
-
+        
+        // Get the first worksheet
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        
+        // Convert to JSON
+        const jsonData: ExcelRow[] = XLSX.utils.sheet_to_json(worksheet);
+        console.log('📊 Raw Excel data:', jsonData);
+        
+        const parsedData = processExcelData(jsonData);
+        console.log('✅ Parsed Excel data:', parsedData);
+        
+        resolve(parsedData);
       } catch (error) {
-        console.error('Error parsing Excel file:', error);
+        console.error('❌ Excel parsing error:', error);
         reject(error);
       }
     };
-
-    reader.onerror = (error) => {
-      console.error('Error reading file:', error);
-      reject(error);
+    
+    reader.onerror = () => {
+      reject(new Error('Failed to read file'));
     };
-
+    
     reader.readAsArrayBuffer(file);
   });
-}
+};
 
-// Export with the correct name
-export function generateExcelTemplate(): ArrayBuffer {
-  return generateServiceTemplate();
-}
-
-export function generateServiceTemplate(): ArrayBuffer {
-  console.log('Generating service template...');
+const processExcelData = (rows: ExcelRow[]): ParsedExcelData => {
+  const categoriesMap = new Map<string, ServiceMainCategory>();
+  const subcategoriesMap = new Map<string, ServiceSubcategory>();
   
-  const workbook = XLSX.utils.book_new();
-  
-  // Sample data for demonstration
-  const sampleCategories = [
-    {
-      name: 'Automotive Services',
-      subcategories: ['Oil Change', 'Brake Service', 'Engine Repair'],
-      jobs: [
-        ['Basic Oil Change', 'Synthetic Oil Change', 'Oil Filter Replacement'],
-        ['Brake Pad Replacement', 'Brake Rotor Service', 'Brake Fluid Flush'],
-        ['Engine Diagnostics', 'Engine Tune-up', 'Engine Overhaul']
-      ]
-    },
-    {
-      name: 'Electrical Services', 
-      subcategories: ['Battery Service', 'Alternator Service', 'Wiring'],
-      jobs: [
-        ['Battery Test', 'Battery Replacement', 'Battery Cleaning'],
-        ['Alternator Test', 'Alternator Replacement', 'Alternator Repair'],
-        ['Wire Repair', 'Harness Replacement', 'Electrical Diagnostics']
-      ]
+  rows.forEach((row, index) => {
+    try {
+      // Get category name (try different column names)
+      const categoryName = row.Category || row.category || row.CATEGORY;
+      if (!categoryName) {
+        console.warn(`Row ${index + 1}: No category found`, row);
+        return;
+      }
+      
+      // Get subcategory name
+      const subcategoryName = row.Subcategory || row.subcategory || row.SUBCATEGORY || row.SubCategory;
+      if (!subcategoryName) {
+        console.warn(`Row ${index + 1}: No subcategory found`, row);
+        return;
+      }
+      
+      // Get job/service name
+      const jobName = row.Service || row.Job || row.service || row.job || row.SERVICE || row.JOB;
+      if (!jobName) {
+        console.warn(`Row ${index + 1}: No job/service name found`, row);
+        return;
+      }
+      
+      // Create or get category
+      const categoryKey = categoryName.trim();
+      if (!categoriesMap.has(categoryKey)) {
+        categoriesMap.set(categoryKey, {
+          id: `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          name: categoryKey,
+          description: row.CategoryDescription || row['Category Description'] || '',
+          subcategories: [],
+          position: categoriesMap.size + 1
+        });
+      }
+      
+      const category = categoriesMap.get(categoryKey)!;
+      
+      // Create or get subcategory
+      const subcategoryKey = `${categoryKey}_${subcategoryName.trim()}`;
+      if (!subcategoriesMap.has(subcategoryKey)) {
+        const subcategory: ServiceSubcategory = {
+          id: `sub_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          name: subcategoryName.trim(),
+          description: row.SubcategoryDescription || row['Subcategory Description'] || '',
+          jobs: [],
+          category_id: category.id
+        };
+        
+        subcategoriesMap.set(subcategoryKey, subcategory);
+        category.subcategories.push(subcategory);
+      }
+      
+      const subcategory = subcategoriesMap.get(subcategoryKey)!;
+      
+      // Create job
+      const estimatedTime = parseNumber(row['Estimated Time'] || row['Estimated Time (minutes)'] || row.Time || row.Duration);
+      const price = parseNumber(row.Price || row.Cost || row.price || row.cost);
+      
+      const job: ServiceJob = {
+        id: `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        name: jobName.trim(),
+        description: row.Description || row.description || '',
+        estimatedTime: estimatedTime,
+        price: price,
+        subcategory_id: subcategory.id
+      };
+      
+      subcategory.jobs.push(job);
+      
+    } catch (error) {
+      console.error(`Error processing row ${index + 1}:`, error, row);
     }
-  ];
-  
-  sampleCategories.forEach(category => {
-    console.log(`Creating sheet for category: ${category.name}`);
-    
-    // Create worksheet data
-    const wsData: any[][] = [];
-    
-    // Header row (row 1): empty cell in A1, then subcategory names
-    const headerRow = ['', ...category.subcategories];
-    wsData.push(headerRow);
-    
-    // Find the maximum number of jobs in any subcategory
-    const maxJobs = Math.max(...category.jobs.map(jobList => jobList.length));
-    
-    // Data rows: jobs for each subcategory
-    for (let i = 0; i < maxJobs; i++) {
-      const dataRow = [''];
-      category.jobs.forEach(jobList => {
-        dataRow.push(jobList[i] || '');
-      });
-      wsData.push(dataRow);
-    }
-    
-    // Create worksheet
-    const worksheet = XLSX.utils.aoa_to_sheet(wsData);
-    
-    // Add the worksheet to workbook
-    XLSX.utils.book_append_sheet(workbook, worksheet, category.name);
   });
   
-  // Write workbook to ArrayBuffer using correct XLSX API
-  console.log('Writing workbook to buffer...');
-  const buffer = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
+  const categories = Array.from(categoriesMap.values());
   
-  console.log('Template generated successfully');
-  return buffer;
-}
+  const stats = {
+    totalCategories: categories.length,
+    totalSubcategories: categories.reduce((sum, cat) => sum + cat.subcategories.length, 0),
+    totalJobs: categories.reduce((sum, cat) => 
+      sum + cat.subcategories.reduce((subSum, sub) => subSum + sub.jobs.length, 0), 0
+    )
+  };
+  
+  console.log('📈 Processing complete:', stats);
+  
+  return {
+    categories,
+    duplicates: [], // TODO: Implement duplicate detection
+    stats
+  };
+};
+
+const parseNumber = (value: any): number | undefined => {
+  if (value === null || value === undefined || value === '') return undefined;
+  const num = typeof value === 'number' ? value : parseFloat(String(value).replace(/[^0-9.-]/g, ''));
+  return isNaN(num) ? undefined : num;
+};

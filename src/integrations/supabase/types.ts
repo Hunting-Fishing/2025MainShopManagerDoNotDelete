@@ -8671,6 +8671,10 @@ export type Database = {
         Args: { item_id: string; requested_quantity: number }
         Returns: boolean
       }
+      clear_service_data: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       count_email_events: {
         Args: { campaign_id_param: string; event_type_param: string }
         Returns: number
@@ -8863,6 +8867,24 @@ export type Database = {
       increment_usage_count: {
         Args: { template_id: string }
         Returns: number
+      }
+      insert_service_category: {
+        Args: { p_name: string; p_description?: string; p_position?: number }
+        Returns: string
+      }
+      insert_service_job: {
+        Args: {
+          p_subcategory_id: string
+          p_name: string
+          p_description?: string
+          p_estimated_time?: number
+          p_price?: number
+        }
+        Returns: string
+      }
+      insert_service_subcategory: {
+        Args: { p_category_id: string; p_name: string; p_description?: string }
+        Returns: string
       }
       insert_work_order_inventory_item: {
         Args: {

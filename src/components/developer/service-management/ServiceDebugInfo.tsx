@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Database, RefreshCw, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
 import { supabase } from '@/integrations/supabase/client';
-import { RefreshCw, Database } from 'lucide-react';
 
 interface ServiceDebugInfoProps {
   categories: ServiceMainCategory[];
@@ -18,192 +19,245 @@ export const ServiceDebugInfo: React.FC<ServiceDebugInfoProps> = ({
   isLoading,
   error
 }) => {
-  const [debugInfo, setDebugInfo] = React.useState<any>(null);
-  const [isChecking, setIsChecking] = React.useState(false);
+  const [dbStats, setDbStats] = useState<any>(null);
+  const [dbLoading, setDbLoading] = useState(false);
+  const [dbError, setDbError] = useState<string | null>(null);
 
-  const checkDatabaseDirectly = async () => {
-    setIsChecking(true);
+  const fetchDatabaseStats = async () => {
+    setDbLoading(true);
+    setDbError(null);
+    
     try {
-      console.log('🔍 Checking database directly...');
+      console.log('🔍 Fetching database statistics...');
       
-      // Check each table directly
+      // Get counts from each table
       const [categoriesResult, subcategoriesResult, jobsResult] = await Promise.all([
-        supabase.from('service_categories').select('*'),
-        supabase.from('service_subcategories').select('*'),
-        supabase.from('service_jobs').select('*')
+        supabase.from('service_categories').select('*', { count: 'exact', head: true }),
+        supabase.from('service_subcategories').select('*', { count: 'exact', head: true }),
+        supabase.from('service_jobs').select('*', { count: 'exact', head: true })
       ]);
-
-      const debugData = {
-        categories: {
-          count: categoriesResult.data?.length || 0,
-          data: categoriesResult.data || [],
-          error: categoriesResult.error
+      
+      if (categoriesResult.error) throw categoriesResult.error;
+      if (subcategoriesResult.error) throw subcategoriesResult.error;
+      if (jobsResult.error) throw jobsResult.error;
+      
+      // Get sample data
+      const [sampleCategories, sampleSubcategories, sampleJobs] = await Promise.all([
+        supabase.from('service_categories').select('*').limit(3),
+        supabase.from('service_subcategories').select('*').limit(3),
+        supabase.from('service_jobs').select('*').limit(3)
+      ]);
+      
+      setDbStats({
+        counts: {
+          categories: categoriesResult.count || 0,
+          subcategories: subcategoriesResult.count || 0,
+          jobs: jobsResult.count || 0
         },
-        subcategories: {
-          count: subcategoriesResult.data?.length || 0,
-          data: subcategoriesResult.data || [],
-          error: subcategoriesResult.error
-        },
-        jobs: {
-          count: jobsResult.data?.length || 0,
-          data: jobsResult.data || [],
-          error: jobsResult.error
+        samples: {
+          categories: sampleCategories.data || [],
+          subcategories: sampleSubcategories.data || [],
+          jobs: sampleJobs.data || []
         }
-      };
-
-      console.log('🔍 Direct database check results:', debugData);
-      setDebugInfo(debugData);
-    } catch (err) {
-      console.error('❌ Error checking database:', err);
-      setDebugInfo({ error: err });
+      });
+      
+      console.log('✅ Database stats fetched successfully');
+      
+    } catch (error) {
+      console.error('❌ Failed to fetch database stats:', error);
+      setDbError(error instanceof Error ? error.message : 'Failed to fetch database stats');
     } finally {
-      setIsChecking(false);
+      setDbLoading(false);
     }
   };
 
-  React.useEffect(() => {
-    checkDatabaseDirectly();
+  useEffect(() => {
+    fetchDatabaseStats();
   }, []);
 
-  const totalJobs = categories.reduce((sum, cat) => 
-    sum + cat.subcategories.reduce((subSum, sub) => subSum + sub.jobs.length, 0), 0
-  );
+  const getStatusIcon = () => {
+    if (error || dbError) return <XCircle className="h-4 w-4 text-red-500" />;
+    if (isLoading || dbLoading) return <RefreshCw className="h-4 w-4 text-blue-500 animate-spin" />;
+    return <CheckCircle className="h-4 w-4 text-green-500" />;
+  };
+
+  const getStatusColor = () => {
+    if (error || dbError) return 'destructive';
+    if (isLoading || dbLoading) return 'secondary';
+    return 'success';
+  };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* Connection Status */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Database className="h-5 w-5" />
-            Service Data Debug Information
+            Database Connection Status
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <h4 className="font-semibold mb-2">API Response</h4>
-              <div className="space-y-1 text-sm">
-                <div className="flex justify-between">
-                  <span>Categories:</span>
-                  <Badge variant={categories.length > 0 ? "default" : "destructive"}>
-                    {categories.length}
-                  </Badge>
-                </div>
-                <div className="flex justify-between">
-                  <span>Total Subcategories:</span>
-                  <Badge variant={categories.reduce((sum, cat) => sum + cat.subcategories.length, 0) > 0 ? "default" : "destructive"}>
-                    {categories.reduce((sum, cat) => sum + cat.subcategories.length, 0)}
-                  </Badge>
-                </div>
-                <div className="flex justify-between">
-                  <span>Total Jobs:</span>
-                  <Badge variant={totalJobs > 0 ? "default" : "destructive"}>
-                    {totalJobs}
-                  </Badge>
-                </div>
-                <div className="flex justify-between">
-                  <span>Loading:</span>
-                  <Badge variant={isLoading ? "secondary" : "outline"}>
-                    {isLoading ? "Yes" : "No"}
-                  </Badge>
-                </div>
-                {error && (
-                  <div className="text-red-600 text-xs mt-2">
-                    Error: {error}
-                  </div>
-                )}
-              </div>
-            </div>
+        <CardContent>
+          <div className="flex items-center gap-2 mb-4">
+            {getStatusIcon()}
+            <Badge variant={getStatusColor()}>
+              {error || dbError ? 'Error' : isLoading || dbLoading ? 'Loading' : 'Connected'}
+            </Badge>
+            <Button 
+              onClick={fetchDatabaseStats} 
+              disabled={dbLoading} 
+              size="sm" 
+              variant="outline"
+              className="ml-auto"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${dbLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
 
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <h4 className="font-semibold">Direct Database Check</h4>
-                <Button 
-                  onClick={checkDatabaseDirectly} 
-                  disabled={isChecking}
-                  size="sm"
-                  variant="outline"
-                >
-                  <RefreshCw className={`h-3 w-3 ${isChecking ? 'animate-spin' : ''}`} />
-                </Button>
+          {(error || dbError) && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                {error || dbError}
+              </AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Database Statistics */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Database Statistics</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {dbStats ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center p-4 bg-blue-50 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-900">
+                    {dbStats.counts.categories}
+                  </div>
+                  <div className="text-sm text-blue-700">Categories in DB</div>
+                </div>
+                <div className="text-center p-4 bg-green-50 rounded-lg">
+                  <div className="text-2xl font-bold text-green-900">
+                    {dbStats.counts.subcategories}
+                  </div>
+                  <div className="text-sm text-green-700">Subcategories in DB</div>
+                </div>
+                <div className="text-center p-4 bg-purple-50 rounded-lg">
+                  <div className="text-2xl font-bold text-purple-900">
+                    {dbStats.counts.jobs}
+                  </div>
+                  <div className="text-sm text-purple-700">Jobs in DB</div>
+                </div>
               </div>
-              {debugInfo && (
-                <div className="space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <span>DB Categories:</span>
-                    <Badge variant={debugInfo.categories?.count > 0 ? "default" : "destructive"}>
-                      {debugInfo.categories?.count || 0}
-                    </Badge>
+
+              {/* Sample Data */}
+              {dbStats.samples.categories.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="font-medium mb-2">Sample Categories from Database:</h4>
+                  <div className="space-y-2">
+                    {dbStats.samples.categories.map((cat: any) => (
+                      <div key={cat.id} className="p-2 bg-gray-50 rounded text-sm">
+                        <strong>{cat.name}</strong>
+                        {cat.description && <span className="text-gray-600"> - {cat.description}</span>}
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex justify-between">
-                    <span>DB Subcategories:</span>
-                    <Badge variant={debugInfo.subcategories?.count > 0 ? "default" : "destructive"}>
-                      {debugInfo.subcategories?.count || 0}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>DB Jobs:</span>
-                    <Badge variant={debugInfo.jobs?.count > 0 ? "default" : "destructive"}>
-                      {debugInfo.jobs?.count || 0}
-                    </Badge>
-                  </div>
-                  {(debugInfo.categories?.error || debugInfo.subcategories?.error || debugInfo.jobs?.error) && (
-                    <div className="text-red-600 text-xs mt-2">
-                      DB Errors detected - check console
-                    </div>
-                  )}
                 </div>
               )}
             </div>
+          ) : (
+            <div className="text-center py-4 text-gray-500">
+              {dbLoading ? 'Loading database statistics...' : 'No database statistics available'}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Frontend Data Statistics */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Frontend Data Statistics</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="text-center p-4 bg-orange-50 rounded-lg">
+              <div className="text-2xl font-bold text-orange-900">
+                {categories.length}
+              </div>
+              <div className="text-sm text-orange-700">Categories Loaded</div>
+            </div>
+            <div className="text-center p-4 bg-teal-50 rounded-lg">
+              <div className="text-2xl font-bold text-teal-900">
+                {categories.reduce((sum, cat) => sum + cat.subcategories.length, 0)}
+              </div>
+              <div className="text-sm text-teal-700">Subcategories Loaded</div>
+            </div>
+            <div className="text-center p-4 bg-pink-50 rounded-lg">
+              <div className="text-2xl font-bold text-pink-900">
+                {categories.reduce((sum, cat) => 
+                  sum + cat.subcategories.reduce((subSum, sub) => subSum + sub.jobs.length, 0), 0
+                )}
+              </div>
+              <div className="text-sm text-pink-700">Jobs Loaded</div>
+            </div>
           </div>
 
-          {debugInfo && (
+          {categories.length > 0 && (
             <div className="mt-4">
-              <h4 className="font-semibold mb-2">Sample Data</h4>
-              <div className="grid grid-cols-3 gap-4 text-xs">
-                <div>
-                  <h5 className="font-medium">Categories (first 3):</h5>
-                  <pre className="bg-gray-100 p-2 rounded text-xs overflow-auto max-h-20">
-                    {JSON.stringify(debugInfo.categories?.data?.slice(0, 3), null, 1)}
-                  </pre>
-                </div>
-                <div>
-                  <h5 className="font-medium">Subcategories (first 3):</h5>
-                  <pre className="bg-gray-100 p-2 rounded text-xs overflow-auto max-h-20">
-                    {JSON.stringify(debugInfo.subcategories?.data?.slice(0, 3), null, 1)}
-                  </pre>
-                </div>
-                <div>
-                  <h5 className="font-medium">Jobs (first 3):</h5>
-                  <pre className="bg-gray-100 p-2 rounded text-xs overflow-auto max-h-20">
-                    {JSON.stringify(debugInfo.jobs?.data?.slice(0, 3), null, 1)}
-                  </pre>
-                </div>
+              <h4 className="font-medium mb-2">Loaded Categories:</h4>
+              <div className="space-y-1">
+                {categories.slice(0, 5).map((cat) => (
+                  <div key={cat.id} className="p-2 bg-gray-50 rounded text-sm">
+                    <strong>{cat.name}</strong> 
+                    <span className="text-gray-600"> ({cat.subcategories.length} subcategories)</span>
+                  </div>
+                ))}
+                {categories.length > 5 && (
+                  <div className="text-sm text-gray-500">
+                    ...and {categories.length - 5} more categories
+                  </div>
+                )}
               </div>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {categories.length === 0 && !isLoading && (
-        <Card className="border-yellow-200 bg-yellow-50">
-          <CardContent className="p-4">
-            <h4 className="font-semibold text-yellow-800 mb-2">No Service Data Found</h4>
-            <p className="text-yellow-700 text-sm mb-3">
-              The service database appears to be empty. This could mean:
-            </p>
-            <ul className="text-yellow-700 text-sm space-y-1 ml-4 list-disc">
-              <li>The Excel upload didn't complete successfully</li>
-              <li>The data wasn't saved to the database</li>
-              <li>There's a formatting issue with the uploaded file</li>
-              <li>The import process encountered an error</li>
-            </ul>
-            <p className="text-yellow-700 text-sm mt-3">
-              Try uploading your Excel file again through the Import/Export tab.
-            </p>
-          </CardContent>
-        </Card>
-      )}
+      {/* Data Sync Status */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Data Sync Status</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {dbStats && (
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span>Categories sync:</span>
+                <Badge variant={dbStats.counts.categories === categories.length ? 'success' : 'secondary'}>
+                  {dbStats.counts.categories === categories.length ? 'In Sync' : 'Out of Sync'}
+                </Badge>
+              </div>
+              <div className="text-sm text-gray-600">
+                Database: {dbStats.counts.categories}, Frontend: {categories.length}
+              </div>
+              
+              {dbStats.counts.categories !== categories.length && (
+                <Alert>
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    Database and frontend data are out of sync. Try refreshing the page or reimporting data.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
