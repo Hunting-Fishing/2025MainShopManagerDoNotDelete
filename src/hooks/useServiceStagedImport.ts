@@ -1,204 +1,133 @@
-
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
-import { parseExcelFile, ParsedExcelData } from '@/lib/services/excelParser';
-import { importServiceData, checkForDuplicates } from '@/lib/services/serviceImporter';
+import { parseExcelFile } from '@/lib/services/excelParser';
+import { importServiceData } from '@/services/serviceHierarchyService';
+import { ParsedServiceData } from '@/lib/services/excelParser';
 
 export interface ImportPreviewData {
-  categories: ServiceMainCategory[];
-  duplicates: any[];
+  parsedData: ParsedServiceData;
   stats: {
     totalCategories: number;
     totalSubcategories: number;
     totalJobs: number;
   };
+  duplicates: string[];
+  validationErrors: string[];
 }
 
-export interface StagedImportState {
-  step: 'upload' | 'preview' | 'resolve' | 'processing' | 'complete';
-  previewData: ImportPreviewData | null;
-  selectedDuplicateActions: Record<string, string>;
-  progress: number;
-  error: string | null;
-  importResult?: {
-    categoriesCreated: number;
-    subcategoriesCreated: number;
-    jobsCreated: number;
-    errors: string[];
-  };
-}
+export const useServiceStagedImport = (existingCategories: ServiceMainCategory[]) => {
+  const [previewData, setPreviewData] = useState<ImportPreviewData | null>(null);
+  const [importProgress, setImportProgress] = useState<number>(0);
+  const [isImporting, setIsImporting] = useState<boolean>(false);
+  const [isGeneratingPreview, setIsGeneratingPreview] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
-export const useServiceStagedImport = (
-  existingCategories: ServiceMainCategory[],
-  onImportComplete: (data: any) => Promise<void>
-) => {
-  const [state, setState] = useState<StagedImportState>({
-    step: 'upload',
-    previewData: null,
-    selectedDuplicateActions: {},
-    progress: 0,
-    error: null
-  });
-
-  const handleFileUpload = async (file: File) => {
+  const generatePreview = useCallback(async (file: File) => {
+    setError(null);
+    setIsGeneratingPreview(true);
+    
     try {
-      console.log('📤 Starting file upload:', file.name, file.size, 'bytes', file.type);
-      setState(prev => ({ ...prev, error: null, step: 'preview', progress: 10 }));
-
-      // Validate file type
-      if (!file.name.toLowerCase().endsWith('.xlsx') && !file.name.toLowerCase().endsWith('.xls')) {
-        throw new Error('Please upload an Excel file (.xlsx or .xls)');
-      }
-
-      // Check file size (allow up to 50MB for large datasets)
-      if (file.size > 50 * 1024 * 1024) {
-        throw new Error('File size too large. Please use a file smaller than 50MB.');
-      }
-
-      // Parse Excel file
-      console.log('📋 Processing Excel file...');
-      setState(prev => ({ ...prev, progress: 30 }));
-      
+      console.log('Starting Excel parse for preview...');
       const parsedData = await parseExcelFile(file);
-      console.log('📊 Parsed data result:', parsedData);
       
-      setState(prev => ({ ...prev, progress: 60 }));
+      console.log(`Parsed ${parsedData.categories.length} categories with ${parsedData.totalJobs} total jobs`);
       
-      // Validate parsed data
-      if (!parsedData.categories || parsedData.categories.length === 0) {
-        throw new Error('No service categories found in the Excel file. Please check the file format and column headers.');
-      }
-      
-      // Check if we're within reasonable limits
-      if (parsedData.stats.totalJobs > 10000) {
-        console.warn(`⚠️ Large dataset detected: ${parsedData.stats.totalJobs} jobs. This may take longer to process.`);
-      }
-      
-      // Check for duplicates
-      console.log('🔍 Checking for duplicates...');
-      const duplicates = await checkForDuplicates(parsedData.categories);
-      setState(prev => ({ ...prev, progress: 80 }));
-      
-      const previewData: ImportPreviewData = {
-        categories: parsedData.categories,
-        duplicates,
-        stats: parsedData.stats
-      };
-
-      console.log('✅ File processing complete:', previewData);
-      setState(prev => ({ 
-        ...prev, 
-        previewData,
-        step: duplicates.length > 0 ? 'resolve' : 'preview',
-        progress: 100
-      }));
-
-    } catch (error) {
-      console.error('❌ File upload error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Upload failed';
-      setState(prev => ({ 
-        ...prev, 
-        error: errorMessage,
-        step: 'upload',
-        progress: 0
-      }));
-    }
-  };
-
-  const handleDuplicateAction = (itemId: string, action: string) => {
-    setState(prev => ({
-      ...prev,
-      selectedDuplicateActions: {
-        ...prev.selectedDuplicateActions,
-        [itemId]: action
-      }
-    }));
-  };
-
-  const startImport = async () => {
-    if (!state.previewData) {
-      setState(prev => ({ ...prev, error: 'No data to import' }));
-      return;
-    }
-
-    try {
-      console.log('🚀 Starting import process...');
-      const totalItems = state.previewData.stats.totalJobs;
-      console.log(`📊 Importing ${totalItems} total items (categories, subcategories, jobs)`);
-      
-      setState(prev => ({ ...prev, step: 'processing', progress: 0, error: null }));
-
-      // Filter out categories based on duplicate resolution
-      let categoriesToImport = state.previewData.categories;
-      
-      if (state.previewData.duplicates.length > 0) {
-        categoriesToImport = state.previewData.categories.filter(category => {
-          const duplicate = state.previewData?.duplicates.find(d => d.name === category.name);
-          if (duplicate) {
-            const action = state.selectedDuplicateActions[duplicate.id] || 'skip';
-            return action !== 'skip';
+      // Check for duplicates against existing data
+      const duplicates: string[] = [];
+      parsedData.categories.forEach(category => {
+        const existingCategory = existingCategories.find(c => 
+          c.name.toLowerCase() === category.name.toLowerCase()
+        );
+        if (existingCategory) {
+          duplicates.push(`Category: ${category.name}`);
+        }
+        
+        category.subcategories?.forEach(subcategory => {
+          const existingSubcategory = existingCategory?.subcategories?.find(s =>
+            s.name.toLowerCase() === subcategory.name.toLowerCase()
+          );
+          if (existingSubcategory) {
+            duplicates.push(`Subcategory: ${category.name} > ${subcategory.name}`);
           }
-          return true;
         });
-      }
-
-      console.log('📊 Categories to import:', categoriesToImport.length);
-      setState(prev => ({ ...prev, progress: 20 }));
-
-      // Show progress message for large imports
-      if (totalItems > 1000) {
-        console.log('📦 Large import detected - this may take several minutes to complete');
-      }
-
-      // Import the data
-      console.log('💾 Importing to database...');
-      const importResult = await importServiceData(categoriesToImport, true);
+      });
       
-      setState(prev => ({ ...prev, progress: 80 }));
-
-      if (!importResult.success && importResult.errors.length > 0) {
-        throw new Error(`Import failed: ${importResult.errors.join(', ')}`);
-      }
-
-      // Call the completion handler
-      await onImportComplete(state.previewData);
-      setState(prev => ({ ...prev, progress: 90 }));
+      const preview: ImportPreviewData = {
+        parsedData,
+        stats: {
+          totalCategories: parsedData.categories.length,
+          totalSubcategories: parsedData.totalSubcategories,
+          totalJobs: parsedData.totalJobs
+        },
+        duplicates: duplicates.slice(0, 50), // Limit duplicates shown
+        validationErrors: []
+      };
       
-      console.log('✅ Import process complete');
-      setState(prev => ({ 
-        ...prev, 
-        step: 'complete', 
-        progress: 100,
-        importResult
-      }));
-
+      setPreviewData(preview);
+      
     } catch (error) {
-      console.error('❌ Import error:', error);
-      setState(prev => ({ 
-        ...prev, 
-        error: error instanceof Error ? error.message : 'Import failed',
-        step: 'preview',
-        progress: 0
-      }));
+      console.error('Preview generation failed:', error);
+      setError(error instanceof Error ? error.message : 'Failed to generate preview');
+    } finally {
+      setIsGeneratingPreview(false);
     }
-  };
+  }, [existingCategories]);
 
-  const reset = () => {
-    console.log('🔄 Resetting import state');
-    setState({
-      step: 'upload',
-      previewData: null,
-      selectedDuplicateActions: {},
-      progress: 0,
-      error: null
-    });
-  };
+  const executeImport = useCallback(async () => {
+    if (!previewData) return;
+    
+    setError(null);
+    setIsImporting(true);
+    setImportProgress(0);
+    
+    try {
+      console.log('Starting service import...');
+      const totalOperations = previewData.stats.totalCategories + 
+                             previewData.stats.totalSubcategories + 
+                             previewData.stats.totalJobs;
+      let completedOperations = 0;
+      
+      const updateProgress = () => {
+        completedOperations++;
+        const progress = Math.round((completedOperations / totalOperations) * 100);
+        setImportProgress(progress);
+      };
+      
+      await importServiceData(previewData.parsedData, updateProgress);
+      
+      console.log('Import completed successfully');
+      setImportProgress(100);
+      
+      // Reset state after successful import
+      setTimeout(() => {
+        setPreviewData(null);
+        setImportProgress(0);
+        setIsImporting(false);
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Import failed:', error);
+      setError(error instanceof Error ? error.message : 'Import failed');
+      setIsImporting(false);
+    }
+  }, [previewData]);
+
+  const reset = useCallback(() => {
+    setPreviewData(null);
+    setImportProgress(0);
+    setIsImporting(false);
+    setIsGeneratingPreview(false);
+    setError(null);
+  }, []);
 
   return {
-    state,
-    handleFileUpload,
-    handleDuplicateAction,
-    startImport,
+    previewData,
+    importProgress,
+    isImporting,
+    isGeneratingPreview,
+    error,
+    generatePreview,
+    executeImport,
     reset
   };
 };
