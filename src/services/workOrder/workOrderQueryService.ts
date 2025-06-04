@@ -1,299 +1,434 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { WorkOrder, WorkOrderInventoryItem, TimeEntry } from '@/types/workOrder';
-import { loadJobLinesFromDatabase } from '../jobLineService';
+import { WorkOrderJobLine } from '@/types/jobLine';
 
 /**
- * Get all work orders with basic information
+ * Get all work orders with related data
  */
 export async function getAllWorkOrders(): Promise<WorkOrder[]> {
   try {
     console.log('Fetching all work orders...');
     
-    const { data: workOrders, error } = await supabase
+    // First, get all work orders
+    const { data: workOrders, error: workOrdersError } = await supabase
       .from('work_orders')
-      .select('*')
+      .select(`
+        id,
+        customer_id,
+        vehicle_id,
+        advisor_id,
+        technician_id,
+        estimated_hours,
+        total_cost,
+        created_by,
+        created_at,
+        updated_at,
+        start_time,
+        end_time,
+        service_category_id,
+        invoiced_at,
+        status,
+        description,
+        service_type,
+        invoice_id,
+        work_order_number
+      `)
       .order('created_at', { ascending: false });
-    
-    if (error) {
-      console.error('Error fetching work orders:', error);
-      throw error;
+
+    if (workOrdersError) {
+      console.error('Error fetching work orders:', workOrdersError);
+      throw workOrdersError;
     }
-    
-    // Now that we have the work orders, fetch related data separately
-    const enrichedWorkOrders = await enrichWorkOrdersWithRelatedData(workOrders || []);
-    
-    console.log(`Fetched ${enrichedWorkOrders.length} work orders`);
+
+    if (!workOrders || workOrders.length === 0) {
+      console.log('No work orders found');
+      return [];
+    }
+
+    console.log(`Found ${workOrders.length} work orders`);
+
+    // Get unique customer, vehicle, and technician IDs
+    const customerIds = [...new Set(workOrders.map(wo => wo.customer_id).filter(Boolean))];
+    const vehicleIds = [...new Set(workOrders.map(wo => wo.vehicle_id).filter(Boolean))];
+    const technicianIds = [...new Set(workOrders.map(wo => wo.technician_id).filter(Boolean))];
+
+    console.log('Fetching related data...', { 
+      customers: customerIds.length, 
+      vehicles: vehicleIds.length, 
+      technicians: technicianIds.length 
+    });
+
+    // Fetch related data in parallel
+    const [customersResult, vehiclesResult, techniciansResult] = await Promise.all([
+      customerIds.length > 0 ? supabase.from('customers').select('*').in('id', customerIds) : { data: [], error: null },
+      vehicleIds.length > 0 ? supabase.from('vehicles').select('*').in('id', vehicleIds) : { data: [], error: null },
+      technicianIds.length > 0 ? supabase.from('profiles').select('*').in('id', technicianIds) : { data: [], error: null }
+    ]);
+
+    // Handle any errors from the related data fetches
+    if (customersResult.error) {
+      console.error('Error fetching customers:', customersResult.error);
+    }
+    if (vehiclesResult.error) {
+      console.error('Error fetching vehicles:', vehiclesResult.error);
+    }
+    if (techniciansResult.error) {
+      console.error('Error fetching technicians:', techniciansResult.error);
+    }
+
+    // Create lookup maps for efficient data joining
+    const customersMap = new Map((customersResult.data || []).map(customer => [customer.id, customer]));
+    const vehiclesMap = new Map((vehiclesResult.data || []).map(vehicle => [vehicle.id, vehicle]));
+    const techniciansMap = new Map((techniciansResult.data || []).map(tech => [tech.id, tech]));
+
+    // Transform work orders to include related data
+    const enrichedWorkOrders: WorkOrder[] = await Promise.all(
+      workOrders.map(async (workOrder) => {
+        const customer = customersMap.get(workOrder.customer_id);
+        const vehicle = vehiclesMap.get(workOrder.vehicle_id);
+        const technician = techniciansMap.get(workOrder.technician_id);
+
+        // Fetch time entries and inventory items for this work order
+        const [timeEntriesResult, inventoryItemsResult, jobLinesResult] = await Promise.all([
+          supabase.rpc('get_work_order_time_entries', { work_order_id: workOrder.id }),
+          supabase.rpc('get_work_order_inventory_items', { work_order_id: workOrder.id }),
+          supabase.rpc('get_work_order_job_lines', { work_order_id_param: workOrder.id })
+        ]);
+
+        // Map time entries
+        const timeEntries: TimeEntry[] = (timeEntriesResult.data || []).map((entry: any) => ({
+          id: entry.id,
+          work_order_id: entry.work_order_id,
+          employee_id: entry.employee_id,
+          employee_name: entry.employee_name,
+          start_time: entry.start_time,
+          end_time: entry.end_time,
+          duration: entry.duration,
+          billable: entry.billable,
+          notes: entry.notes,
+          created_at: entry.created_at
+        }));
+
+        // Map inventory items with calculated total
+        const inventoryItems: WorkOrderInventoryItem[] = (inventoryItemsResult.data || []).map((item: any) => ({
+          id: item.id,
+          workOrderId: item.work_order_id,
+          name: item.name,
+          sku: item.sku,
+          category: item.category,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          total: item.quantity * item.unit_price // Calculate total here
+        }));
+
+        // Map job lines
+        const jobLines: WorkOrderJobLine[] = (jobLinesResult.data || []).map((jobLine: any) => ({
+          id: jobLine.id,
+          workOrderId: jobLine.work_order_id,
+          name: jobLine.name,
+          category: jobLine.category,
+          subcategory: jobLine.subcategory,
+          description: jobLine.description,
+          estimatedHours: jobLine.estimated_hours,
+          laborRate: jobLine.labor_rate,
+          totalAmount: jobLine.total_amount,
+          status: jobLine.status as WorkOrderJobLine['status'],
+          notes: jobLine.notes,
+          createdAt: jobLine.created_at,
+          updatedAt: jobLine.updated_at
+        }));
+
+        return {
+          ...workOrder,
+          // Customer info
+          customer_name: customer ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() : '',
+          customer_email: customer?.email || '',
+          customer_phone: customer?.phone || '',
+          customer_address: customer?.address || '',
+          customer_city: customer?.city || '',
+          customer_state: customer?.state || '',
+          customer_zip: customer?.postal_code || '',
+          // Vehicle info  
+          vehicle_make: vehicle?.make || '',
+          vehicle_model: vehicle?.model || '',
+          vehicle_year: vehicle?.year || '',
+          vehicle_vin: vehicle?.vin || '',
+          vehicle_license_plate: vehicle?.license_plate || '',
+          // Technician info
+          technician: technician ? `${technician.first_name || ''} ${technician.last_name || ''}`.trim() : '',
+          // Vehicle object
+          vehicle: vehicle ? {
+            id: vehicle.id,
+            year: vehicle.year,
+            make: vehicle.make,
+            model: vehicle.model,
+            vin: vehicle.vin,
+            license_plate: vehicle.license_plate,
+            trim: vehicle.trim || ''
+          } : undefined,
+          // Related data
+          timeEntries,
+          inventoryItems,
+          jobLines,
+          // Legacy compatibility
+          customer: customer ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() : '',
+          date: workOrder.created_at,
+          dueDate: workOrder.end_time,
+          priority: 'medium',
+          location: '',
+          notes: workOrder.description || ''
+        };
+      })
+    );
+
+    console.log(`Successfully enriched ${enrichedWorkOrders.length} work orders with related data`);
     return enrichedWorkOrders;
+
   } catch (error) {
     console.error('Error in getAllWorkOrders:', error);
-    return [];
+    throw new Error('Failed to fetch work orders');
   }
 }
 
 /**
- * Get a single work order by ID with all related data
+ * Get a specific work order by ID with all related data
  */
-export async function getWorkOrderById(workOrderId: string): Promise<WorkOrder | null> {
+export async function getWorkOrderById(id: string): Promise<WorkOrder | null> {
   try {
-    console.log('Fetching work order by ID:', workOrderId);
+    console.log('Fetching work order by ID:', id);
     
-    // Get the base work order data
-    const { data: workOrder, error } = await supabase
+    // Get the specific work order
+    const { data: workOrder, error: workOrderError } = await supabase
       .from('work_orders')
-      .select('*')
-      .eq('id', workOrderId)
+      .select(`
+        id,
+        customer_id,
+        vehicle_id,
+        advisor_id,
+        technician_id,
+        estimated_hours,
+        total_cost,
+        created_by,
+        created_at,
+        updated_at,
+        start_time,
+        end_time,
+        service_category_id,
+        invoiced_at,
+        status,
+        description,
+        service_type,
+        invoice_id,
+        work_order_number
+      `)
+      .eq('id', id)
       .single();
-    
-    if (error) {
-      console.error('Error fetching work order by ID:', error);
-      throw error;
+
+    if (workOrderError) {
+      if (workOrderError.code === 'PGRST116') {
+        console.log('Work order not found:', id);
+        return null;
+      }
+      console.error('Error fetching work order:', workOrderError);
+      throw workOrderError;
     }
-    
+
     if (!workOrder) {
-      console.log('Work order not found:', workOrderId);
+      console.log('Work order not found:', id);
       return null;
     }
-    
-    // Get related time entries
-    const { data: timeEntries, error: timeEntriesError } = await supabase
-      .rpc('get_work_order_time_entries', { work_order_id: workOrderId });
-      
-    if (timeEntriesError) {
-      console.error('Error fetching time entries:', timeEntriesError);
-    }
-    
-    // Get related inventory items
-    const { data: inventoryItems, error: inventoryError } = await supabase
-      .rpc('get_work_order_inventory_items', { work_order_id: workOrderId });
-      
-    if (inventoryError) {
-      console.error('Error fetching inventory items:', inventoryError);
-    }
-    
-    // Get related job lines
-    let jobLines = [];
-    try {
-      jobLines = await loadJobLinesFromDatabase(workOrderId);
-    } catch (jobLinesError) {
-      console.error('Error fetching job lines:', jobLinesError);
-    }
-    
-    // Get customer data if customer_id exists
-    let customer = null;
-    if (workOrder.customer_id) {
-      const { data: customerData, error: customerError } = await supabase
-        .from('customers')
-        .select('*')
-        .eq('id', workOrder.customer_id)
-        .single();
-        
-      if (customerError) {
-        console.error('Error fetching customer data:', customerError);
-      } else {
-        customer = customerData;
-      }
-    }
-    
-    // Get vehicle data if vehicle_id exists
-    let vehicle = null;
-    if (workOrder.vehicle_id) {
-      const { data: vehicleData, error: vehicleError } = await supabase
-        .from('vehicles')
-        .select('*')
-        .eq('id', workOrder.vehicle_id)
-        .single();
-        
-      if (vehicleError) {
-        console.error('Error fetching vehicle data:', vehicleError);
-      } else {
-        vehicle = vehicleData;
-      }
-    }
-    
-    // Get technician data if technician_id exists
-    let technician = null;
-    if (workOrder.technician_id) {
-      const { data: technicianData, error: technicianError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', workOrder.technician_id)
-        .single();
-        
-      if (technicianError) {
-        console.error('Error fetching technician data:', technicianError);
-      } else {
-        technician = technicianData;
-      }
-    }
-    
-    // Enrich the work order with related data
+
+    console.log('Found work order, fetching related data...');
+
+    // Fetch related data in parallel
+    const [customerResult, vehicleResult, technicianResult, timeEntriesResult, inventoryItemsResult, jobLinesResult] = await Promise.all([
+      workOrder.customer_id ? supabase.from('customers').select('*').eq('id', workOrder.customer_id).single() : { data: null, error: null },
+      workOrder.vehicle_id ? supabase.from('vehicles').select('*').eq('id', workOrder.vehicle_id).single() : { data: null, error: null },
+      workOrder.technician_id ? supabase.from('profiles').select('*').eq('id', workOrder.technician_id).single() : { data: null, error: null },
+      supabase.rpc('get_work_order_time_entries', { work_order_id: workOrder.id }),
+      supabase.rpc('get_work_order_inventory_items', { work_order_id: workOrder.id }),
+      supabase.rpc('get_work_order_job_lines', { work_order_id_param: workOrder.id })
+    ]);
+
+    const customer = customerResult.data;
+    const vehicle = vehicleResult.data;
+    const technician = technicianResult.data;
+
+    // Map time entries
+    const timeEntries: TimeEntry[] = (timeEntriesResult.data || []).map((entry: any) => ({
+      id: entry.id,
+      work_order_id: entry.work_order_id,
+      employee_id: entry.employee_id,
+      employee_name: entry.employee_name,
+      start_time: entry.start_time,
+      end_time: entry.end_time,
+      duration: entry.duration,
+      billable: entry.billable,
+      notes: entry.notes,
+      created_at: entry.created_at
+    }));
+
+    // Map inventory items with calculated total
+    const inventoryItems: WorkOrderInventoryItem[] = (inventoryItemsResult.data || []).map((item: any) => ({
+      id: item.id,
+      workOrderId: item.work_order_id,
+      name: item.name,
+      sku: item.sku,
+      category: item.category,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      total: item.quantity * item.unit_price // Calculate total here
+    }));
+
+    // Map job lines
+    const jobLines: WorkOrderJobLine[] = (jobLinesResult.data || []).map((jobLine: any) => ({
+      id: jobLine.id,
+      workOrderId: jobLine.work_order_id,
+      name: jobLine.name,
+      category: jobLine.category,
+      subcategory: jobLine.subcategory,
+      description: jobLine.description,
+      estimatedHours: jobLine.estimated_hours,
+      laborRate: jobLine.labor_rate,
+      totalAmount: jobLine.total_amount,
+      status: jobLine.status as WorkOrderJobLine['status'],
+      notes: jobLine.notes,
+      createdAt: jobLine.created_at,
+      updatedAt: jobLine.updated_at
+    }));
+
     const enrichedWorkOrder: WorkOrder = {
       ...workOrder,
-      timeEntries: timeEntries || [],
-      inventoryItems: inventoryItems || [],
-      jobLines: jobLines || [],
-      // Add customer fields if customer data exists
-      ...(customer ? {
-        customer_name: `${customer.first_name} ${customer.last_name}`,
-        customer_email: customer.email,
-        customer_phone: customer.phone,
-        customer_address: customer.address,
-        customer_city: customer.city,
-        customer_state: customer.state,
-        customer_zip: customer.postal_code
-      } : {}),
-      // Add vehicle fields if vehicle data exists
-      ...(vehicle ? {
-        vehicle_make: vehicle.make,
-        vehicle_model: vehicle.model,
-        vehicle_year: vehicle.year,
-        vehicle_vin: vehicle.vin,
-        vehicle_license_plate: vehicle.license_plate,
-        // Create a vehicle object that matches the expected format in types
-        vehicle: {
-          id: vehicle.id,
-          year: vehicle.year,
-          make: vehicle.make,
-          model: vehicle.model,
-          vin: vehicle.vin,
-          license_plate: vehicle.license_plate,
-          trim: vehicle.trim || ''
-        }
-      } : {}),
-      // Add technician name if technician data exists
-      ...(technician ? {
-        technician: `${technician.first_name} ${technician.last_name}`
-      } : {})
+      // Customer info
+      customer_name: customer ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() : '',
+      customer_email: customer?.email || '',
+      customer_phone: customer?.phone || '',
+      customer_address: customer?.address || '',
+      customer_city: customer?.city || '',
+      customer_state: customer?.state || '',
+      customer_zip: customer?.postal_code || '',
+      // Vehicle info
+      vehicle_make: vehicle?.make || '',
+      vehicle_model: vehicle?.model || '',
+      vehicle_year: vehicle?.year || '',
+      vehicle_vin: vehicle?.vin || '',
+      vehicle_license_plate: vehicle?.license_plate || '',
+      // Technician info
+      technician: technician ? `${technician.first_name || ''} ${technician.last_name || ''}`.trim() : '',
+      // Vehicle object
+      vehicle: vehicle ? {
+        id: vehicle.id,
+        year: vehicle.year,
+        make: vehicle.make,
+        model: vehicle.model,
+        vin: vehicle.vin,
+        license_plate: vehicle.license_plate,
+        trim: vehicle.trim || ''
+      } : undefined,
+      // Related data
+      timeEntries,
+      inventoryItems,
+      jobLines,
+      // Legacy compatibility
+      customer: customer ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() : '',
+      date: workOrder.created_at,
+      dueDate: workOrder.end_time,
+      priority: 'medium',
+      location: '',
+      notes: workOrder.description || ''
     };
-    
-    console.log('Successfully fetched enriched work order');
+
+    console.log('Successfully enriched work order with related data');
     return enrichedWorkOrder;
+
   } catch (error) {
     console.error('Error in getWorkOrderById:', error);
-    return null;
+    throw new Error('Failed to fetch work order');
   }
 }
 
-/**
- * Utility function to enrich work orders with related data
- */
-async function enrichWorkOrdersWithRelatedData(workOrders: any[]): Promise<WorkOrder[]> {
-  try {
-    // For each work order, fetch the customer name
-    const enriched = await Promise.all(workOrders.map(async (workOrder) => {
-      let customerName = '';
-      let vehicleInfo = '';
-      
-      // Get customer name if customer_id exists
-      if (workOrder.customer_id) {
-        const { data: customer, error } = await supabase
-          .from('customers')
-          .select('first_name, last_name')
-          .eq('id', workOrder.customer_id)
-          .single();
-          
-        if (!error && customer) {
-          customerName = `${customer.first_name} ${customer.last_name}`;
-        }
-      }
-      
-      // Get vehicle info if vehicle_id exists
-      if (workOrder.vehicle_id) {
-        const { data: vehicle, error } = await supabase
-          .from('vehicles')
-          .select('year, make, model')
-          .eq('id', workOrder.vehicle_id)
-          .single();
-          
-        if (!error && vehicle) {
-          vehicleInfo = `${vehicle.year} ${vehicle.make} ${vehicle.model}`;
-        }
-      }
-      
-      return {
-        ...workOrder,
-        customer: customerName,
-        vehicle_info: vehicleInfo
-      };
-    }));
-    
-    return enriched;
-  } catch (error) {
-    console.error('Error enriching work orders with related data:', error);
-    return workOrders;
-  }
-}
-
-/**
- * Get unique technicians for work order filter
- */
-export async function getUniqueTechnicians(): Promise<string[]> {
-  try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, first_name, last_name')
-      .order('last_name', { ascending: true });
-    
-    if (error) {
-      console.error('Error fetching technicians:', error);
-      throw error;
-    }
-    
-    // Format technician names
-    const technicians = data?.map(tech => 
-      `${tech.first_name} ${tech.last_name}`
-    ) || [];
-    
-    return technicians;
-  } catch (error) {
-    console.error('Error in getUniqueTechnicians:', error);
-    return [];
-  }
-}
-
-/**
- * Get work orders by customer ID
- */
 export async function getWorkOrdersByCustomerId(customerId: string): Promise<WorkOrder[]> {
   try {
+    console.log('Fetching work orders for customer:', customerId);
+    
     const { data, error } = await supabase
       .from('work_orders')
       .select('*')
       .eq('customer_id', customerId)
       .order('created_at', { ascending: false });
-    
+
     if (error) {
       console.error('Error fetching work orders by customer ID:', error);
       throw error;
     }
-    
+
     return data || [];
   } catch (error) {
     console.error('Error in getWorkOrdersByCustomerId:', error);
-    return [];
+    throw new Error('Failed to fetch work orders for customer');
   }
 }
 
-/**
- * Get work orders by status
- */
 export async function getWorkOrdersByStatus(status: string): Promise<WorkOrder[]> {
   try {
+    console.log('Fetching work orders by status:', status);
+    
     const { data, error } = await supabase
       .from('work_orders')
       .select('*')
       .eq('status', status)
       .order('created_at', { ascending: false });
-    
+
     if (error) {
       console.error('Error fetching work orders by status:', error);
       throw error;
     }
-    
+
     return data || [];
   } catch (error) {
     console.error('Error in getWorkOrdersByStatus:', error);
-    return [];
+    throw new Error('Failed to fetch work orders by status');
+  }
+}
+
+export async function getUniqueTechnicians(): Promise<{ id: string; name: string }[]> {
+  try {
+    console.log('Fetching unique technicians...');
+    
+    // Get all unique technician IDs from work orders
+    const { data: workOrders, error: workOrdersError } = await supabase
+      .from('work_orders')
+      .select('technician_id')
+      .not('technician_id', 'is', null);
+
+    if (workOrdersError) {
+      console.error('Error fetching technician IDs:', workOrdersError);
+      throw workOrdersError;
+    }
+
+    const technicianIds = [...new Set(workOrders?.map(wo => wo.technician_id).filter(Boolean) || [])];
+
+    if (technicianIds.length === 0) {
+      return [];
+    }
+
+    // Fetch technician details
+    const { data: technicians, error: techniciansError } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name')
+      .in('id', technicianIds);
+
+    if (techniciansError) {
+      console.error('Error fetching technicians:', techniciansError);
+      throw techniciansError;
+    }
+
+    return (technicians || []).map(tech => ({
+      id: tech.id,
+      name: `${tech.first_name || ''} ${tech.last_name || ''}`.trim() || 'Unknown'
+    }));
+  } catch (error) {
+    console.error('Error in getUniqueTechnicians:', error);
+    throw new Error('Failed to fetch unique technicians');
   }
 }
