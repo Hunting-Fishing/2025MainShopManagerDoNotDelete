@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { ServiceSelectionSummary } from '@/types/selectedService';
+import type { ServiceSelectionSummary } from '@/types/selectedService';
 import { Clock, DollarSign, Package } from 'lucide-react';
 
 interface ServiceSelectionSummaryProps {
