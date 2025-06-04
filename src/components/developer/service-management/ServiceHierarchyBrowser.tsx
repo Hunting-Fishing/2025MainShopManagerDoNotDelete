@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   fetchServiceCategories,
@@ -90,7 +91,7 @@ export const ServiceHierarchyBrowser: React.FC = () => {
         }}
       />
 
-      <Accordion type="multiple" collapsible>
+      <Accordion type="multiple">
         {categories.map(category => (
           <AccordionItem key={category.id} value={category.id}>
             <AccordionTrigger>{category.name}</AccordionTrigger>
@@ -105,3 +106,4 @@ export const ServiceHierarchyBrowser: React.FC = () => {
     </div>
   );
 };
+
