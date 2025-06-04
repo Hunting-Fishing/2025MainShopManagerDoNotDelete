@@ -49,7 +49,6 @@ export const fetchServiceCategoriesFromDB = async (): Promise<ServiceMainCategor
         name,
         description,
         subcategory_id,
-        category_id,
         price,
         estimated_time,
         skill_level,
@@ -83,7 +82,7 @@ export const fetchServiceCategoriesFromDB = async (): Promise<ServiceMainCategor
               name: job.name,
               description: job.description,
               subcategory_id: job.subcategory_id,
-              category_id: job.category_id,
+              category_id: subcategory.category_id, // Get from subcategory since jobs table doesn't have category_id
               base_price: job.price,
               estimated_duration: job.estimated_time,
               skill_level: job.skill_level,
