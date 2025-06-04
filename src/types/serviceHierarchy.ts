@@ -5,7 +5,13 @@ export interface ServiceJob {
   description?: string;
   estimatedTime?: number; // in minutes
   price?: number;
-  subcategory_id?: string; // Added to link jobs to subcategories
+  subcategory_id: string;
+  category_id: string;
+  base_price: number;
+  estimated_duration: number;
+  skill_level: string;
+  display_order: number;
+  is_active: boolean;
 }
 
 export interface ServiceSubcategory {
@@ -13,7 +19,8 @@ export interface ServiceSubcategory {
   name: string;
   description?: string;
   jobs: ServiceJob[];
-  category_id?: string; // Added to link subcategories to categories
+  category_id: string;
+  display_order: number;
 }
 
 export interface ServiceMainCategory {
@@ -21,7 +28,8 @@ export interface ServiceMainCategory {
   name: string;
   description?: string;
   subcategories: ServiceSubcategory[];
-  position?: number; // Added position field
+  display_order: number;
+  is_active: boolean;
 }
 
 export interface ServiceHierarchyState {
