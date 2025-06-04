@@ -1,8 +1,8 @@
-
 import { ServiceMainCategory, ServiceJob } from '@/types/serviceHierarchy';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchServiceCategoriesFromDB, checkServiceDataExists } from './serviceDatabase';
 
-// Mock data - this would normally come from Supabase
+// Fallback mock data for when database is empty
 const mockServiceData = {
   categories: [
     {
@@ -56,48 +56,57 @@ const mockServiceData = {
 
 export const fetchServiceCategories = async (): Promise<ServiceMainCategory[]> => {
   try {
-    console.log('🔄 Fetching service categories from mock data...');
+    console.log('🔄 Fetching service categories...');
     
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // First check if database has data
+    const hasData = await checkServiceDataExists();
     
-    const categories = mockServiceData.categories.map(category => ({
-      id: category.id,
-      name: category.name,
-      description: category.description,
-      display_order: category.display_order,
-      is_active: category.is_active,
-      subcategories: category.subcategories.map(subcategory => ({
-        id: subcategory.id,
-        name: subcategory.name,
-        description: subcategory.description,
-        category_id: subcategory.category_id,
-        display_order: subcategory.display_order,
-        jobs: subcategory.jobs.map(job => ({
-          id: job.id,
-          name: job.name,
-          description: job.description,
-          subcategory_id: job.subcategory_id,
-          category_id: job.category_id,
-          base_price: job.base_price,
-          estimated_duration: job.estimated_duration,
-          skill_level: job.skill_level,
-          display_order: job.display_order,
-          is_active: job.is_active,
-          // Keep backward compatibility fields
-          estimatedTime: job.estimatedTime,
-          price: job.price
+    if (hasData) {
+      console.log('📊 Using live database data');
+      return await fetchServiceCategoriesFromDB();
+    } else {
+      console.log('📋 Database empty, using mock data');
+      // Simulate API delay for consistency
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const categories = mockServiceData.categories.map(category => ({
+        id: category.id,
+        name: category.name,
+        description: category.description,
+        display_order: category.display_order,
+        is_active: category.is_active,
+        subcategories: category.subcategories.map(subcategory => ({
+          id: subcategory.id,
+          name: subcategory.name,
+          description: subcategory.description,
+          category_id: subcategory.category_id,
+          display_order: subcategory.display_order,
+          jobs: subcategory.jobs.map(job => ({
+            id: job.id,
+            name: job.name,
+            description: job.description,
+            subcategory_id: job.subcategory_id,
+            category_id: job.category_id,
+            base_price: job.base_price,
+            estimated_duration: job.estimated_duration,
+            skill_level: job.skill_level,
+            display_order: job.display_order,
+            is_active: job.is_active,
+            // Keep backward compatibility fields
+            estimatedTime: job.estimatedTime,
+            price: job.price
+          }))
         }))
-      }))
-    }));
+      }));
 
-    console.log('✅ Service categories loaded:', {
-      categoriesCount: categories.length,
-      totalSubcategories: categories.reduce((sum, cat) => sum + cat.subcategories.length, 0),
-      totalJobs: categories.reduce((sum, cat) => sum + cat.subcategories.reduce((subSum, sub) => subSum + sub.jobs.length, 0), 0)
-    });
+      console.log('✅ Mock service categories loaded:', {
+        categoriesCount: categories.length,
+        totalSubcategories: categories.reduce((sum, cat) => sum + cat.subcategories.length, 0),
+        totalJobs: categories.reduce((sum, cat) => sum + cat.subcategories.reduce((subSum, sub) => subSum + sub.jobs.length, 0), 0)
+      });
 
-    return categories;
+      return categories;
+    }
   } catch (error) {
     console.error('❌ Error fetching service categories:', error);
     throw new Error('Failed to fetch service categories');
