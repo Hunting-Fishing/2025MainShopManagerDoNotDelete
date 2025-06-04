@@ -42,15 +42,27 @@ export const useServiceStagedImport = (
 
   const handleFileUpload = async (file: File) => {
     try {
-      console.log('📤 Starting file upload:', file.name, file.size, 'bytes');
+      console.log('📤 Starting file upload:', file.name, file.size, 'bytes', file.type);
       setState(prev => ({ ...prev, error: null, step: 'preview', progress: 10 }));
+
+      // Validate file type
+      if (!file.name.toLowerCase().endsWith('.xlsx') && !file.name.toLowerCase().endsWith('.xls')) {
+        throw new Error('Please upload an Excel file (.xlsx or .xls)');
+      }
 
       // Parse Excel file
       console.log('📋 Processing Excel file...');
       setState(prev => ({ ...prev, progress: 30 }));
       
       const parsedData = await parseExcelFile(file);
+      console.log('📊 Parsed data result:', parsedData);
+      
       setState(prev => ({ ...prev, progress: 60 }));
+      
+      // Validate parsed data
+      if (!parsedData.categories || parsedData.categories.length === 0) {
+        throw new Error('No service categories found in the Excel file. Please check the file format and column headers.');
+      }
       
       // Check for duplicates
       console.log('🔍 Checking for duplicates...');
@@ -73,9 +85,10 @@ export const useServiceStagedImport = (
 
     } catch (error) {
       console.error('❌ File upload error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Upload failed';
       setState(prev => ({ 
         ...prev, 
-        error: error instanceof Error ? error.message : 'Upload failed',
+        error: errorMessage,
         step: 'upload',
         progress: 0
       }));
@@ -116,6 +129,7 @@ export const useServiceStagedImport = (
         });
       }
 
+      console.log('📊 Categories to import:', categoriesToImport.length);
       setState(prev => ({ ...prev, progress: 20 }));
 
       // Import the data
