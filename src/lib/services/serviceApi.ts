@@ -1,4 +1,6 @@
-import { ServiceMainCategory } from '@/types/serviceHierarchy';
+
+import { ServiceMainCategory, ServiceJob } from '@/types/serviceHierarchy';
+import { supabase } from '@/integrations/supabase/client';
 
 // Mock data - this would normally come from Supabase
 const mockServiceData = {

@@ -82,6 +82,9 @@ export const performEnhancedSearch = (
   return results.sort((a, b) => b.searchMatch.score - a.searchMatch.score);
 };
 
+// Export the main function with a cleaner name for backward compatibility
+export const enhancedSearch = performEnhancedSearch;
+
 /**
  * Expand query terms with synonyms
  */
