@@ -59,6 +59,7 @@ export function IntegratedServiceSelector({
         </div>
         <p className="text-sm text-blue-700 mb-4">
           Select services for this work order. You can choose multiple services and customize them as needed.
+          Use the view toggle to switch between detailed hierarchical view and compact grid view.
         </p>
         
         <EnhancedServiceSelector
