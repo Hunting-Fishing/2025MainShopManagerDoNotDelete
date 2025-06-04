@@ -1,235 +1,293 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Upload, Download, FileSpreadsheet, AlertCircle } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
+import { Upload, FileText, AlertCircle, CheckCircle, Download, Cloud } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { StorageFileBrowser } from './StorageFileBrowser';
+import { Progress } from '@/components/ui/progress';
+import { ServiceMainCategory } from '@/types/serviceHierarchy';
 import { importFromStorage } from '@/lib/services/storageImportService';
-import { useToast } from '@/hooks/use-toast';
+import { StorageFileBrowser } from './StorageFileBrowser';
 
 interface ServiceBulkImportProps {
-  onImportComplete: () => void;
+  categories?: ServiceMainCategory[];
+  onImport: (data: ServiceMainCategory[]) => Promise<void>;
+  onExport: () => void;
 }
 
-export function ServiceBulkImport({ onImportComplete }: ServiceBulkImportProps) {
+interface ImportProgress {
+  stage: string;
+  progress: number;
+  message: string;
+}
+
+export const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({
+  categories = [],
+  onImport,
+  onExport
+}) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
-  const [importProgress, setImportProgress] = useState(0);
-  const [importStatus, setImportStatus] = useState('');
-  const { toast } = useToast();
+  const [importProgress, setImportProgress] = useState<ImportProgress | null>(null);
+  const [importStatus, setImportStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [importError, setImportError] = useState<string | null>(null);
+  const [previewData, setPreviewData] = useState<ServiceMainCategory[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleStorageImport = async (fileName: string) => {
-    console.log('Starting storage import for file:', fileName);
-    setIsImporting(true);
-    setImportProgress(0);
-    setImportStatus('Downloading file from storage...');
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
     try {
-      const result = await importFromStorage(
-        fileName,
-        (progress, status) => {
-          setImportProgress(progress);
-          setImportStatus(status);
-        }
-      );
+      setImportStatus('loading');
+      setImportError(null);
+      setImportProgress({ stage: 'reading', progress: 25, message: 'Reading file...' });
 
-      toast({
-        title: "Import Successful",
-        description: `Imported ${result.categoriesCreated} categories, ${result.subcategoriesCreated} subcategories, and ${result.jobsCreated} jobs.`,
-      });
-
-      onImportComplete();
+      const text = await file.text();
+      setImportProgress({ stage: 'parsing', progress: 50, message: 'Parsing data...' });
+      
+      const rawData = parseCSV(text);
+      const validatedData = validateData(rawData);
+      
+      setImportProgress({ stage: 'preview', progress: 75, message: 'Preparing preview...' });
+      setPreviewData(validatedData);
+      
+      setImportProgress({ stage: 'complete', progress: 100, message: 'File loaded successfully' });
+      setImportStatus('success');
     } catch (error) {
-      console.error('Storage import failed:', error);
-      toast({
-        title: "Import Failed",
-        description: error instanceof Error ? error.message : "An unexpected error occurred during import.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsImporting(false);
-      setImportProgress(0);
-      setImportStatus('');
+      console.error('Import error:', error);
+      setImportError(error instanceof Error ? error.message : 'Import failed');
+      setImportStatus('error');
     }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    setSelectedFile(file || null);
+  const handleStorageImport = async (fileName: string) => {
+    try {
+      setImportStatus('loading');
+      setImportError(null);
+
+      const data = await importFromStorage(
+        'service-imports',
+        fileName,
+        setImportProgress
+      );
+
+      setPreviewData(data);
+      setImportStatus('success');
+    } catch (error) {
+      console.error('Storage import error:', error);
+      setImportError(error instanceof Error ? error.message : 'Storage import failed');
+      setImportStatus('error');
+    }
   };
 
-  const handleImport = async () => {
-    if (!selectedFile) {
-      toast({
-        title: "No File Selected",
-        description: "Please select a file to import.",
-        variant: "destructive",
+  const parseCSV = (text: string): any[] => {
+    const lines = text.split('\n').filter(line => line.trim());
+    if (lines.length === 0) return [];
+    
+    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+    const data = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+      const row: any = {};
+      
+      headers.forEach((header, index) => {
+        row[header] = values[index] || '';
       });
+      
+      data.push(row);
+    }
+    
+    return data;
+  };
+
+  const validateData = (data: any[]): ServiceMainCategory[] => {
+    return data.map((row, index) => ({
+      id: row.id || `category-${index}`,
+      name: row.name || '',
+      description: row.description || '',
+      subcategories: [],
+      position: parseInt(row.position) || index
+    }));
+  };
+
+  const exportToCSV = () => {
+    if (!categories || categories.length === 0) {
+      setImportError('No data to export');
       return;
     }
 
-    setIsImporting(true);
-    setImportProgress(0);
-    setImportStatus('Importing...');
+    const csvContent = [
+      'id,name,description,position',
+      ...categories.map(cat => 
+        `"${cat.id}","${cat.name}","${cat.description || ''}","${cat.position || 0}"`
+      )
+    ].join('\n');
 
-    const reader = new FileReader();
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'service-categories.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
-    reader.onprogress = (event) => {
-      if (event.lengthComputable) {
-        const progress = Math.round((event.loaded / event.total) * 100);
-        setImportProgress(progress);
-        setImportStatus(`Importing: ${progress}%`);
+  const confirmImport = async () => {
+    if (previewData.length === 0) return;
+    
+    try {
+      setImportStatus('loading');
+      setImportProgress({ stage: 'importing', progress: 0, message: 'Starting import...' });
+      
+      await onImport(previewData);
+      
+      setImportProgress({ stage: 'complete', progress: 100, message: 'Import completed successfully' });
+      setImportStatus('success');
+      setPreviewData([]);
+      
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
       }
-    };
+    } catch (error) {
+      console.error('Import confirmation error:', error);
+      setImportError(error instanceof Error ? error.message : 'Import failed');
+      setImportStatus('error');
+    }
+  };
 
-    reader.onload = async (event) => {
-      try {
-        // Assuming the file content is a string (e.g., CSV, JSON)
-        const fileContent = event.target?.result as string;
-
-        // Parse the file content (you might need to adjust this based on your file format)
-        // For example, if it's a CSV file, you can use a library like PapaParse to parse it
-        // If it's a JSON file, you can use JSON.parse()
-        // Here, we'll just assume it's a simple string
-        // const parsedData = JSON.parse(fileContent);
-
-        // Simulate import process
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        toast({
-          title: "Import Successful",
-          description: "Data imported successfully!",
-        });
-
-        onImportComplete();
-      } catch (error) {
-        console.error('Import failed:', error);
-        toast({
-          title: "Import Failed",
-          description: error instanceof Error ? error.message : "An unexpected error occurred during import.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsImporting(false);
-        setImportProgress(0);
-        setImportStatus('');
-      }
-    };
-
-    reader.onerror = () => {
-      toast({
-        title: "File Read Error",
-        description: "Failed to read the file.",
-        variant: "destructive",
-      });
-      setIsImporting(false);
-      setImportProgress(0);
-      setImportStatus('');
-    };
-
-    reader.readAsText(selectedFile);
+  const resetImport = () => {
+    setImportStatus('idle');
+    setImportError(null);
+    setImportProgress(null);
+    setPreviewData([]);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
+    <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <FileSpreadsheet className="h-5 w-5" />
-          Bulk Import Services
+        <CardTitle className="flex items-center">
+          <Upload className="mr-2 h-5 w-5" />
+          Bulk Import/Export Services
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-6">
         <Tabs defaultValue="local" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="local" className="flex items-center gap-2">
-              <Upload className="h-4 w-4" />
+            <TabsTrigger value="local" className="flex items-center">
+              <FileText className="h-4 w-4 mr-2" />
               Local File
             </TabsTrigger>
-            <TabsTrigger value="storage" className="flex items-center gap-2">
-              <Download className="h-4 w-4" />
-              From Storage
+            <TabsTrigger value="storage" className="flex items-center">
+              <Cloud className="h-4 w-4 mr-2" />
+              Storage
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="local" className="space-y-4">
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">
-                Upload an Excel file containing service hierarchy data.
-                The file should contain columns for Category, Subcategory, Job Name, Description, Estimated Time, and Price.
-              </p>
-              <input
-                type="file"
-                id="file-upload"
-                accept=".xlsx,.xls"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-              <div className="flex items-center justify-between">
-                <label
-                  htmlFor="file-upload"
-                  className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 px-4 py-2 cursor-pointer"
-                >
-                  {selectedFile ? `File Selected: ${selectedFile.name}` : 'Select File'}
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="file-upload" className="block text-sm font-medium mb-2">
+                  Choose CSV File
                 </label>
-                <Button
-                  variant="default"
-                  onClick={handleImport}
-                  disabled={!selectedFile || isImporting}
-                >
-                  Import
-                </Button>
+                <input
+                  ref={fileInputRef}
+                  id="file-upload"
+                  type="file"
+                  accept=".csv"
+                  onChange={handleFileUpload}
+                  disabled={importStatus === 'loading'}
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                />
               </div>
             </div>
-
-            {isImporting && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Import Progress</span>
-                  <span className="text-sm text-muted-foreground">{Math.round(importProgress)}%</span>
-                </div>
-                <Progress value={importProgress} className="w-full" />
-                {importStatus && (
-                  <p className="text-sm text-muted-foreground">{importStatus}</p>
-                )}
-              </div>
-            )}
           </TabsContent>
 
           <TabsContent value="storage" className="space-y-4">
-            <div className="space-y-4">
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  Select an Excel file from the storage bucket to import service hierarchy data.
-                  The file should contain columns for Category, Subcategory, Job Name, Description, Estimated Time, and Price.
-                </AlertDescription>
-              </Alert>
-
-              <StorageFileBrowser
-                bucketName="work-order-jobs"
-                onFileSelect={handleStorageImport}
-                accept=".xlsx,.xls"
-                disabled={isImporting}
-              />
-
-              {isImporting && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Import Progress</span>
-                    <span className="text-sm text-muted-foreground">{Math.round(importProgress)}%</span>
-                  </div>
-                  <Progress value={importProgress} className="w-full" />
-                  {importStatus && (
-                    <p className="text-sm text-muted-foreground">{importStatus}</p>
-                  )}
-                </div>
-              )}
-            </div>
+            <StorageFileBrowser
+              bucketName="service-imports"
+              onFileSelect={handleStorageImport}
+              accept=".csv,.json"
+              disabled={importStatus === 'loading'}
+            />
           </TabsContent>
         </Tabs>
+
+        {importProgress && (
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="capitalize">{importProgress.stage}</span>
+              <span>{Math.round(importProgress.progress)}%</span>
+            </div>
+            <Progress value={importProgress.progress} className="w-full" />
+            <p className="text-sm text-gray-600">{importProgress.message}</p>
+          </div>
+        )}
+
+        {importError && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{importError}</AlertDescription>
+          </Alert>
+        )}
+
+        {importStatus === 'success' && previewData.length > 0 && (
+          <div className="space-y-4">
+            <Alert>
+              <CheckCircle className="h-4 w-4" />
+              <AlertDescription>
+                Successfully loaded {previewData.length} categories. Review the data below and confirm to import.
+              </AlertDescription>
+            </Alert>
+            
+            <div className="max-h-48 overflow-y-auto border rounded-md p-4 bg-gray-50">
+              <h4 className="font-medium mb-2">Preview ({previewData.length} items):</h4>
+              <div className="space-y-1 text-sm">
+                {previewData.slice(0, 5).map((category, index) => (
+                  <div key={index} className="flex justify-between">
+                    <span>{category.name}</span>
+                    <span className="text-gray-500">{category.description}</span>
+                  </div>
+                ))}
+                {previewData.length > 5 && (
+                  <div className="text-gray-500 italic">
+                    ... and {previewData.length - 5} more items
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex space-x-2">
+              <Button onClick={confirmImport} disabled={importStatus === 'loading'}>
+                Confirm Import
+              </Button>
+              <Button variant="outline" onClick={resetImport}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
+
+        <div className="pt-4 border-t">
+          <div className="flex justify-between items-center">
+            <div>
+              <h4 className="font-medium">Export Current Data</h4>
+              <p className="text-sm text-gray-600">Download current service categories as CSV</p>
+            </div>
+            <Button variant="outline" onClick={exportToCSV}>
+              <Download className="mr-2 h-4 w-4" />
+              Export CSV
+            </Button>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
-}
+};
