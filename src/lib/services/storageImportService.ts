@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
 import * as XLSX from 'xlsx';
@@ -11,11 +10,22 @@ interface ImportProgress {
 
 export class StorageImportService {
   static async downloadFile(bucketName: string, fileName: string): Promise<Blob> {
+    console.log(`Downloading file: ${fileName} from bucket: ${bucketName}`);
+    
+    // Handle URL encoded filenames
+    const encodedFileName = encodeURIComponent(fileName);
+    console.log(`Encoded filename: ${encodedFileName}`);
+    
     const { data, error } = await supabase.storage
       .from(bucketName)
       .download(fileName);
     
-    if (error) throw error;
+    if (error) {
+      console.error('Download error:', error);
+      throw error;
+    }
+    
+    console.log('File downloaded successfully, size:', data.size);
     return data;
   }
 
@@ -88,7 +98,10 @@ export class StorageImportService {
   }
 
   static async parseFile(blob: Blob, fileName: string): Promise<any[]> {
+    console.log(`Parsing file: ${fileName}, size: ${blob.size} bytes`);
+    
     const extension = fileName.split('.').pop()?.toLowerCase();
+    console.log(`File extension: ${extension}`);
     
     switch (extension) {
       case 'csv':
@@ -133,6 +146,8 @@ export const importFromStorage = async (
   onProgress: (progress: ImportProgress) => void
 ): Promise<ServiceMainCategory[]> => {
   try {
+    console.log(`Starting import from storage: ${bucketName}/${fileName}`);
+    
     onProgress({
       stage: 'downloading',
       progress: 0,
@@ -148,6 +163,7 @@ export const importFromStorage = async (
     });
 
     const rawData = await StorageImportService.parseFile(blob, fileName);
+    console.log(`Parsed ${rawData.length} rows from file`);
     
     // Convert raw data to ServiceMainCategory structure
     // This is a simplified conversion - you might need to adjust based on your file structure
@@ -165,6 +181,7 @@ export const importFromStorage = async (
       message: `Successfully imported ${categories.length} categories`
     });
 
+    console.log(`Import completed: ${categories.length} categories`);
     return categories;
   } catch (error) {
     console.error('Storage import failed:', error);
