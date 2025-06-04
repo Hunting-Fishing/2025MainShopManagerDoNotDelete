@@ -7827,6 +7827,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_vehicles_customer"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_vehicles_customer_id"
             columns: ["customer_id"]
             isOneToOne: false
@@ -7874,6 +7881,13 @@ export type Database = {
           work_order_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_activities_work_order"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "work_order_activities_work_order_id_fkey"
             columns: ["work_order_id"]
@@ -8041,6 +8055,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_inventory_items_work_order"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "work_order_inventory_items_work_order_id_fkey"
             columns: ["work_order_id"]
             isOneToOne: false
@@ -8102,6 +8123,13 @@ export type Database = {
           work_order_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_job_lines_work_order"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "work_order_job_lines_work_order_id_fkey"
             columns: ["work_order_id"]
@@ -8321,6 +8349,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_time_entries_work_order"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "work_order_time_entries_work_order_id_fkey"
             columns: ["work_order_id"]
             isOneToOne: false
@@ -8395,10 +8430,31 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_work_orders_advisor"
+            columns: ["advisor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_work_orders_created_by"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_work_orders_customer"
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_work_orders_technician"
+            columns: ["technician_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -8615,6 +8671,10 @@ export type Database = {
         Args: { item_id: string; requested_quantity: number }
         Returns: boolean
       }
+      clear_service_data: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       count_email_events: {
         Args: { campaign_id_param: string; event_type_param: string }
         Returns: number
@@ -8807,6 +8867,24 @@ export type Database = {
       increment_usage_count: {
         Args: { template_id: string }
         Returns: number
+      }
+      insert_service_category: {
+        Args: { p_name: string; p_description?: string; p_position?: number }
+        Returns: string
+      }
+      insert_service_job: {
+        Args: {
+          p_subcategory_id: string
+          p_name: string
+          p_description?: string
+          p_estimated_time?: number
+          p_price?: number
+        }
+        Returns: string
+      }
+      insert_service_subcategory: {
+        Args: { p_category_id: string; p_name: string; p_description?: string }
+        Returns: string
       }
       insert_work_order_inventory_item: {
         Args: {

@@ -1,20 +1,14 @@
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { 
-  Upload, 
-  Download, 
-  FileText, 
-  AlertTriangle, 
-  CheckCircle,
-  Settings
-} from 'lucide-react';
+import { Upload, Download, AlertCircle, CheckCircle2, FileSpreadsheet } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Progress } from '@/components/ui/progress';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
+import { importExcelData } from '@/lib/services/serviceDatabase';
 import { toast } from 'sonner';
+import * as XLSX from 'xlsx';
 
 interface ServiceBulkImportProps {
   categories: ServiceMainCategory[];
@@ -27,218 +21,288 @@ export const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({
   onImport,
   onExport
 }) => {
-  const [importData, setImportData] = useState('');
   const [importing, setImporting] = useState(false);
-  const [exporting, setExporting] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [importStats, setImportStats] = useState<{
+    categories: number;
+    subcategories: number;
+    jobs: number;
+  } | null>(null);
 
-  const handleImport = async () => {
-    if (!importData.trim()) {
-      toast.error('Please enter data to import');
+  const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+      toast.error('Please upload an Excel file (.xlsx or .xls)');
       return;
     }
 
     setImporting(true);
+    setProgress(0);
+    setImportStatus('idle');
+
     try {
-      const data = JSON.parse(importData);
-      await onImport(data);
-      toast.success('Data imported successfully');
-      setImportData('');
+      // Read the Excel file
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      
+      // Convert to JSON with header mapping
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+        header: 1,
+        defval: '',
+        blankrows: false
+      });
+
+      if (jsonData.length < 2) {
+        throw new Error('Excel file must contain headers and at least one data row');
+      }
+
+      setProgress(25);
+
+      // Map Excel columns to our expected format
+      const headers = jsonData[0] as string[];
+      const dataRows = jsonData.slice(1) as any[][];
+      
+      const mappedData = dataRows.map(row => {
+        const rowData: any = {};
+        headers.forEach((header, index) => {
+          const normalizedHeader = header.toLowerCase().trim();
+          
+          // Map common Excel column names to our expected fields
+          if (normalizedHeader.includes('category') && !normalizedHeader.includes('sub')) {
+            rowData.category = row[index];
+          } else if (normalizedHeader.includes('subcategory') || normalizedHeader.includes('sub category')) {
+            rowData.subcategory = row[index];
+          } else if (normalizedHeader.includes('job') && normalizedHeader.includes('name')) {
+            rowData.job_name = row[index];
+          } else if (normalizedHeader.includes('description')) {
+            rowData.job_description = row[index];
+          } else if (normalizedHeader.includes('time') || normalizedHeader.includes('duration')) {
+            rowData.estimated_time = row[index];
+          } else if (normalizedHeader.includes('price') || normalizedHeader.includes('cost')) {
+            rowData.price = row[index];
+          }
+        });
+        
+        return rowData;
+      }).filter(row => row.category && row.job_name); // Only include rows with required fields
+
+      setProgress(50);
+
+      if (dataRows.length > 10000) {
+        toast.warning(`Large dataset detected (${dataRows.length} rows). This may take several minutes to process.`);
+      }
+
+      // Import the data
+      await importExcelData(mappedData);
+      
+      setProgress(75);
+
+      // Calculate import statistics
+      const uniqueCategories = new Set(mappedData.map(row => row.category)).size;
+      const uniqueSubcategories = new Set(mappedData.map(row => `${row.category}_${row.subcategory || 'General'}`)).size;
+      const totalJobs = mappedData.length;
+
+      setImportStats({
+        categories: uniqueCategories,
+        subcategories: uniqueSubcategories,
+        jobs: totalJobs
+      });
+
+      setProgress(100);
+      setImportStatus('success');
+      
+      // Call the parent onImport callback
+      await onImport(mappedData);
+      
+      toast.success(`Successfully imported ${totalJobs} jobs across ${uniqueCategories} categories`);
+      
     } catch (error) {
-      toast.error('Failed to import data. Please check the format.');
       console.error('Import error:', error);
+      setImportStatus('error');
+      toast.error(`Import failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setImporting(false);
+      // Reset file input
+      event.target.value = '';
     }
-  };
+  }, [onImport]);
 
-  const handleExport = async () => {
-    setExporting(true);
+  const handleExport = useCallback(() => {
     try {
-      const exportData = {
-        categories: categories,
-        exportDate: new Date().toISOString(),
-        version: '1.0'
-      };
+      // Flatten the hierarchical data for Excel export
+      const exportData: any[] = [];
       
-      const dataStr = JSON.stringify(exportData, null, 2);
-      const dataBlob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(dataBlob);
-      
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `service-categories-${new Date().toISOString().split('T')[0]}.json`;
-      link.click();
-      
-      URL.revokeObjectURL(url);
-      toast.success('Data exported successfully');
-      onExport();
-    } catch (error) {
-      toast.error('Failed to export data');
-      console.error('Export error:', error);
-    } finally {
-      setExporting(false);
-    }
-  };
+      categories.forEach(category => {
+        category.subcategories.forEach(subcategory => {
+          subcategory.jobs.forEach(job => {
+            exportData.push({
+              Category: category.name,
+              'Category Description': category.description || '',
+              Subcategory: subcategory.name,
+              'Subcategory Description': subcategory.description || '',
+              'Job Name': job.name,
+              'Job Description': job.description || '',
+              'Estimated Time (minutes)': job.estimatedTime || '',
+              'Price': job.price || ''
+            });
+          });
+        });
+      });
 
-  const generateSampleData = () => {
-    const sampleData = {
-      categories: [
-        {
-          id: 'sample-1',
-          name: 'Sample Category',
-          description: 'This is a sample category',
-          subcategories: [
-            {
-              id: 'sample-1-1',
-              name: 'Sample Subcategory',
-              description: 'This is a sample subcategory',
-              jobs: [
-                {
-                  id: 'sample-1-1-1',
-                  name: 'Sample Job',
-                  description: 'This is a sample job description',
-                  estimatedTime: 60,
-                  price: 100
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    };
-    setImportData(JSON.stringify(sampleData, null, 2));
-  };
+      // Create workbook and worksheet
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Services');
+
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+      const filename = `service-hierarchy-export-${timestamp}.xlsx`;
+
+      // Download the file
+      XLSX.writeFile(workbook, filename);
+      
+      toast.success(`Exported ${exportData.length} jobs to ${filename}`);
+      onExport();
+      
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Export failed. Please try again.');
+    }
+  }, [categories, onExport]);
+
+  const totalJobs = categories.reduce((total, cat) => 
+    total + cat.subcategories.reduce((subTotal, sub) => subTotal + sub.jobs.length, 0), 0
+  );
 
   return (
     <div className="space-y-6">
-      {/* Export Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Download className="h-5 w-5" />
-            Export Service Data
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <p className="text-sm text-gray-600">
-              Export your current service catalog as JSON for backup or migration purposes.
-            </p>
-            
-            <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{categories.length}</div>
-                <div className="text-sm text-gray-600">Categories</div>
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Import Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Upload className="h-5 w-5" />
+              Import Services
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Upload an Excel file (.xlsx) with service hierarchy data. The system can handle up to 10,000 jobs.
+              </p>
+              <div className="text-xs text-muted-foreground">
+                Expected columns: Category, Subcategory, Job Name, Description, Estimated Time, Price
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">
-                  {categories.reduce((sum, cat) => sum + cat.subcategories.length, 0)}
+            </div>
+
+            <div className="space-y-3">
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileUpload}
+                disabled={importing}
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50"
+              />
+
+              {importing && (
+                <div className="space-y-2">
+                  <Progress value={progress} className="w-full" />
+                  <p className="text-xs text-center text-muted-foreground">
+                    Importing services... {progress}%
+                  </p>
                 </div>
-                <div className="text-sm text-gray-600">Subcategories</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">
-                  {categories.reduce((sum, cat) => 
-                    sum + cat.subcategories.reduce((subSum, sub) => subSum + sub.jobs.length, 0), 0
-                  )}
-                </div>
-                <div className="text-sm text-gray-600">Jobs</div>
+              )}
+            </div>
+
+            {importStatus === 'success' && importStats && (
+              <Alert>
+                <CheckCircle2 className="h-4 w-4" />
+                <AlertDescription>
+                  Import successful! Added {importStats.jobs} jobs across {importStats.categories} categories and {importStats.subcategories} subcategories.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {importStatus === 'error' && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Import failed. Please check the file format and try again.
+                </AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Export Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Download className="h-5 w-5" />
+              Export Services
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Export current service hierarchy to Excel format for backup or editing.
+              </p>
+              <div className="text-xs text-muted-foreground">
+                Current database: {categories.length} categories, {totalJobs} total jobs
               </div>
             </div>
 
             <Button 
               onClick={handleExport}
-              disabled={exporting || categories.length === 0}
-              className="w-full gap-2"
+              className="w-full"
+              variant="outline"
             >
-              <Download className="h-4 w-4" />
-              {exporting ? 'Exporting...' : 'Export as JSON'}
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Export to Excel
             </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* Import Section */}
+      {/* Template Download */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Upload className="h-5 w-5" />
-            Import Service Data
-          </CardTitle>
+          <CardTitle>Template & Guidelines</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-start gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded">
-              <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
-              <div className="text-sm text-yellow-800">
-                <strong>Warning:</strong> Importing data will replace your current service catalog. 
-                Make sure to export your current data first as a backup.
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              For best results, ensure your Excel file follows this structure:
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+              <div className="bg-gray-50 p-2 rounded">
+                <strong>Category</strong><br />
+                Main service category
+              </div>
+              <div className="bg-gray-50 p-2 rounded">
+                <strong>Subcategory</strong><br />
+                Service subcategory (optional)
+              </div>
+              <div className="bg-gray-50 p-2 rounded">
+                <strong>Job Name</strong><br />
+                Service job name (required)
+              </div>
+              <div className="bg-gray-50 p-2 rounded">
+                <strong>Description</strong><br />
+                Job description (optional)
               </div>
             </div>
-
-            <div>
-              <Label htmlFor="import-data">JSON Data</Label>
-              <Textarea
-                id="import-data"
-                placeholder="Paste your JSON data here..."
-                value={importData}
-                onChange={(e) => setImportData(e.target.value)}
-                rows={10}
-                className="font-mono text-sm"
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={generateSampleData}
-                className="gap-2"
-              >
-                <FileText className="h-4 w-4" />
-                Load Sample Data
-              </Button>
-              
-              <Button
-                onClick={handleImport}
-                disabled={importing || !importData.trim()}
-                className="gap-2"
-              >
-                <Upload className="h-4 w-4" />
-                {importing ? 'Importing...' : 'Import Data'}
-              </Button>
-            </div>
-
-            {/* Format Guide */}
-            <div className="border-t pt-4">
-              <h4 className="font-medium mb-2">Expected JSON Format:</h4>
-              <pre className="text-xs bg-gray-100 p-3 rounded overflow-x-auto">
-{`{
-  "categories": [
-    {
-      "id": "unique-id",
-      "name": "Category Name",
-      "description": "Optional description",
-      "subcategories": [
-        {
-          "id": "unique-subcategory-id",
-          "name": "Subcategory Name",
-          "description": "Optional description",
-          "jobs": [
-            {
-              "id": "unique-job-id",
-              "name": "Job Name",
-              "description": "Job description",
-              "estimatedTime": 60,
-              "price": 100
-            }
-          ]
-        }
-      ]
-    }
-  ]
-}`}
-              </pre>
-            </div>
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Large datasets (1000+ rows) will be processed in batches. Please be patient during import.
+              </AlertDescription>
+            </Alert>
           </div>
         </CardContent>
       </Card>
