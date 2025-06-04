@@ -50,6 +50,11 @@ export const useServiceStagedImport = (
         throw new Error('Please upload an Excel file (.xlsx or .xls)');
       }
 
+      // Check file size (allow up to 50MB for large datasets)
+      if (file.size > 50 * 1024 * 1024) {
+        throw new Error('File size too large. Please use a file smaller than 50MB.');
+      }
+
       // Parse Excel file
       console.log('📋 Processing Excel file...');
       setState(prev => ({ ...prev, progress: 30 }));
@@ -62,6 +67,11 @@ export const useServiceStagedImport = (
       // Validate parsed data
       if (!parsedData.categories || parsedData.categories.length === 0) {
         throw new Error('No service categories found in the Excel file. Please check the file format and column headers.');
+      }
+      
+      // Check if we're within reasonable limits
+      if (parsedData.stats.totalJobs > 10000) {
+        console.warn(`⚠️ Large dataset detected: ${parsedData.stats.totalJobs} jobs. This may take longer to process.`);
       }
       
       // Check for duplicates
@@ -113,6 +123,9 @@ export const useServiceStagedImport = (
 
     try {
       console.log('🚀 Starting import process...');
+      const totalItems = state.previewData.stats.totalJobs;
+      console.log(`📊 Importing ${totalItems} total items (categories, subcategories, jobs)`);
+      
       setState(prev => ({ ...prev, step: 'processing', progress: 0, error: null }));
 
       // Filter out categories based on duplicate resolution
@@ -131,6 +144,11 @@ export const useServiceStagedImport = (
 
       console.log('📊 Categories to import:', categoriesToImport.length);
       setState(prev => ({ ...prev, progress: 20 }));
+
+      // Show progress message for large imports
+      if (totalItems > 1000) {
+        console.log('📦 Large import detected - this may take several minutes to complete');
+      }
 
       // Import the data
       console.log('💾 Importing to database...');
