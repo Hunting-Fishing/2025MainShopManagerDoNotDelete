@@ -11,14 +11,14 @@ export const importServiceData = async (
     console.log('Starting service import...');
     
     for (const category of parsedData.categories) {
-      // Insert main category
+      // Insert main category with correct field names
       const { data: categoryData, error: categoryError } = await supabase
         .from('service_categories')
         .insert({
           id: category.id,
           name: category.name,
           description: category.description,
-          display_order: category.display_order,
+          position: category.display_order, // Use 'position' instead of 'display_order'
           is_active: category.is_active
         })
         .select()
@@ -40,7 +40,7 @@ export const importServiceData = async (
             name: subcategory.name,
             description: subcategory.description,
             category_id: subcategory.category_id,
-            display_order: subcategory.display_order
+            position: subcategory.display_order // Use 'position' instead of 'display_order'
           })
           .select()
           .single();
@@ -62,10 +62,10 @@ export const importServiceData = async (
               description: job.description,
               subcategory_id: job.subcategory_id,
               category_id: job.category_id,
-              base_price: job.base_price,
-              estimated_duration: job.estimated_duration,
+              price: job.base_price, // Use 'price' instead of 'base_price'
+              estimated_time: job.estimated_duration, // Use 'estimated_time' instead of 'estimated_duration'
               skill_level: job.skill_level,
-              display_order: job.display_order,
+              position: job.display_order, // Use 'position' instead of 'display_order'
               is_active: job.is_active
             });
           
