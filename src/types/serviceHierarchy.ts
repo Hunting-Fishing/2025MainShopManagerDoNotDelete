@@ -1,10 +1,11 @@
 
+
 export interface ServiceJob {
   id: string;
   name: string;
   description?: string;
-  estimatedTime?: number; // in minutes
-  price?: number;
+  estimatedTime?: number; // in minutes - keeping for backward compatibility
+  price?: number; // keeping for backward compatibility
   subcategory_id: string;
   category_id: string;
   base_price: number;
@@ -30,6 +31,7 @@ export interface ServiceMainCategory {
   subcategories: ServiceSubcategory[];
   display_order: number;
   is_active: boolean;
+  position?: number; // keeping for backward compatibility
 }
 
 export interface ServiceHierarchyState {
@@ -37,3 +39,4 @@ export interface ServiceHierarchyState {
   isLoading: boolean;
   error: string | null;
 }
+

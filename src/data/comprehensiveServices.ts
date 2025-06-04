@@ -1,151 +1,436 @@
 
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
 
-export const comprehensiveAutomotiveServices: ServiceMainCategory[] = [
+export const comprehensiveServices: ServiceMainCategory[] = [
   {
-    id: '1',
+    id: 'oil-maintenance',
     name: 'Oil Change & Maintenance',
     description: 'Regular maintenance services',
+    display_order: 1,
+    is_active: true,
     position: 1,
     subcategories: [
       {
-        id: '1-1',
+        id: 'oil-changes',
         name: 'Oil Changes',
+        category_id: 'oil-maintenance',
+        display_order: 1,
         jobs: [
-          { id: '1-1-1', name: 'Standard Oil Change', estimatedTime: 30, price: 35 },
-          { id: '1-1-2', name: 'Synthetic Oil Change', estimatedTime: 30, price: 65 },
-          { id: '1-1-3', name: 'High Mileage Oil Change', estimatedTime: 30, price: 45 }
+          { 
+            id: 'standard-oil', 
+            name: 'Standard Oil Change', 
+            estimatedTime: 30, 
+            price: 35,
+            subcategory_id: 'oil-changes',
+            category_id: 'oil-maintenance',
+            base_price: 35,
+            estimated_duration: 30,
+            skill_level: 'beginner',
+            display_order: 1,
+            is_active: true
+          },
+          { 
+            id: 'synthetic-oil', 
+            name: 'Synthetic Oil Change', 
+            estimatedTime: 30, 
+            price: 65,
+            subcategory_id: 'oil-changes',
+            category_id: 'oil-maintenance',
+            base_price: 65,
+            estimated_duration: 30,
+            skill_level: 'beginner',
+            display_order: 2,
+            is_active: true
+          },
+          { 
+            id: 'high-mileage-oil', 
+            name: 'High Mileage Oil Change', 
+            estimatedTime: 30, 
+            price: 45,
+            subcategory_id: 'oil-changes',
+            category_id: 'oil-maintenance',
+            base_price: 45,
+            estimated_duration: 30,
+            skill_level: 'beginner',
+            display_order: 3,
+            is_active: true
+          }
         ]
       },
       {
-        id: '1-2',
+        id: 'filter-services',
         name: 'Filter Services',
+        category_id: 'oil-maintenance',
+        display_order: 2,
         jobs: [
-          { id: '1-2-1', name: 'Air Filter Replacement', estimatedTime: 15, price: 25 },
-          { id: '1-2-2', name: 'Cabin Filter Replacement', estimatedTime: 20, price: 30 },
-          { id: '1-2-3', name: 'Fuel Filter Replacement', estimatedTime: 45, price: 65 }
+          { 
+            id: 'air-filter', 
+            name: 'Air Filter Replacement', 
+            estimatedTime: 15, 
+            price: 25,
+            subcategory_id: 'filter-services',
+            category_id: 'oil-maintenance',
+            base_price: 25,
+            estimated_duration: 15,
+            skill_level: 'beginner',
+            display_order: 1,
+            is_active: true
+          },
+          { 
+            id: 'cabin-filter', 
+            name: 'Cabin Filter Replacement', 
+            estimatedTime: 20, 
+            price: 30,
+            subcategory_id: 'filter-services',
+            category_id: 'oil-maintenance',
+            base_price: 30,
+            estimated_duration: 20,
+            skill_level: 'beginner',
+            display_order: 2,
+            is_active: true
+          },
+          { 
+            id: 'fuel-filter', 
+            name: 'Fuel Filter Replacement', 
+            estimatedTime: 45, 
+            price: 65,
+            subcategory_id: 'filter-services',
+            category_id: 'oil-maintenance',
+            base_price: 65,
+            estimated_duration: 45,
+            skill_level: 'intermediate',
+            display_order: 3,
+            is_active: true
+          }
         ]
       }
     ]
   },
   {
-    id: '2',
-    name: 'Brakes & Wheels',
-    description: 'Complete brake system and wheel services',
+    id: 'brakes',
+    name: 'Brakes',
+    description: 'Brake system services',
+    display_order: 2,
+    is_active: true,
     position: 2,
     subcategories: [
       {
-        id: '2-1',
+        id: 'brake-pads',
         name: 'Brake Pads',
+        category_id: 'brakes',
+        display_order: 1,
         jobs: [
-          { id: '2-1-1', name: 'Front Brake Pad Replacement', estimatedTime: 90, price: 150 },
-          { id: '2-1-2', name: 'Rear Brake Pad Replacement', estimatedTime: 90, price: 140 }
-        ]
-      },
-      {
-        id: '2-2',
-        name: 'Brake Lines & Hydraulics',
-        description: 'Brake line, hose, and hydraulic system services',
-        jobs: [
-          { id: '2-2-1', name: 'Brake Line Repair', description: 'Repair damaged brake lines', estimatedTime: 120, price: 180 },
-          { id: '2-2-2', name: 'Brake Line Replacement', description: 'Replace worn or damaged brake lines', estimatedTime: 180, price: 250 },
-          { id: '2-2-3', name: 'Brake Hose Replacement', description: 'Replace flexible brake hoses', estimatedTime: 90, price: 120 },
-          { id: '2-2-4', name: 'Brake Fluid Line Service', description: 'Service and flush brake fluid lines', estimatedTime: 60, price: 85 },
-          { id: '2-2-5', name: 'Master Cylinder Line Service', description: 'Service brake lines connected to master cylinder', estimatedTime: 150, price: 200 },
-          { id: '2-2-6', name: 'Brake Line Inspection', description: 'Comprehensive brake line inspection', estimatedTime: 30, price: 45 }
-        ]
-      },
-      {
-        id: '2-3',
-        name: 'Brake Rotors',
-        jobs: [
-          { id: '2-3-1', name: 'Rotor Resurfacing', estimatedTime: 60, price: 80 },
-          { id: '2-3-2', name: 'Rotor Replacement', estimatedTime: 90, price: 200 }
+          { 
+            id: 'front-brake-pads', 
+            name: 'Front Brake Pad Replacement', 
+            description: 'Replace front brake pads and inspect rotors',
+            estimatedTime: 90, 
+            price: 150,
+            subcategory_id: 'brake-pads',
+            category_id: 'brakes',
+            base_price: 150,
+            estimated_duration: 90,
+            skill_level: 'intermediate',
+            display_order: 1,
+            is_active: true
+          },
+          { 
+            id: 'rear-brake-pads', 
+            name: 'Rear Brake Pad Replacement', 
+            description: 'Replace rear brake pads and inspect rotors',
+            estimatedTime: 90, 
+            price: 140,
+            subcategory_id: 'brake-pads',
+            category_id: 'brakes',
+            base_price: 140,
+            estimated_duration: 90,
+            skill_level: 'intermediate',
+            display_order: 2,
+            is_active: true
+          },
+          { 
+            id: 'brake-rotor-replacement', 
+            name: 'Brake Rotor Replacement', 
+            description: 'Replace brake rotors and pads',
+            estimatedTime: 120, 
+            price: 300,
+            subcategory_id: 'brake-pads',
+            category_id: 'brakes',
+            base_price: 300,
+            estimated_duration: 120,
+            skill_level: 'intermediate',
+            display_order: 3,
+            is_active: true
+          },
+          { 
+            id: 'brake-fluid-flush', 
+            name: 'Brake Fluid Flush', 
+            description: 'Complete brake fluid system flush',
+            estimatedTime: 60, 
+            price: 80,
+            subcategory_id: 'brake-pads',
+            category_id: 'brakes',
+            base_price: 80,
+            estimated_duration: 60,
+            skill_level: 'intermediate',
+            display_order: 4,
+            is_active: true
+          },
+          { 
+            id: 'brake-caliper-service', 
+            name: 'Brake Caliper Service', 
+            description: 'Service or replace brake calipers',
+            estimatedTime: 180, 
+            price: 250,
+            subcategory_id: 'brake-pads',
+            category_id: 'brakes',
+            base_price: 250,
+            estimated_duration: 180,
+            skill_level: 'advanced',
+            display_order: 5,
+            is_active: true
+          },
+          { 
+            id: 'brake-line-replacement', 
+            name: 'Brake Line Replacement', 
+            description: 'Replace damaged brake lines',
+            estimatedTime: 150, 
+            price: 200,
+            subcategory_id: 'brake-pads',
+            category_id: 'brakes',
+            base_price: 200,
+            estimated_duration: 150,
+            skill_level: 'advanced',
+            display_order: 6,
+            is_active: true
+          }
         ]
       }
     ]
   },
   {
-    id: '3',
-    name: 'Tires & Wheels',
-    description: 'Tire and wheel services',
+    id: 'tires',
+    name: 'Tires',
+    description: 'Tire services',
+    display_order: 3,
+    is_active: true,
     position: 3,
     subcategories: [
       {
-        id: '3-1',
+        id: 'tire-installation',
         name: 'Tire Installation',
+        category_id: 'tires',
+        display_order: 1,
         jobs: [
-          { id: '3-1-1', name: 'Tire Mount & Balance', estimatedTime: 60, price: 80 },
-          { id: '3-1-2', name: 'Tire Rotation', estimatedTime: 30, price: 25 }
+          { 
+            id: 'tire-mount-balance', 
+            name: 'Tire Mount & Balance', 
+            estimatedTime: 60, 
+            price: 80,
+            subcategory_id: 'tire-installation',
+            category_id: 'tires',
+            base_price: 80,
+            estimated_duration: 60,
+            skill_level: 'intermediate',
+            display_order: 1,
+            is_active: true
+          },
+          { 
+            id: 'tire-rotation', 
+            name: 'Tire Rotation', 
+            estimatedTime: 30, 
+            price: 25,
+            subcategory_id: 'tire-installation',
+            category_id: 'tires',
+            base_price: 25,
+            estimated_duration: 30,
+            skill_level: 'beginner',
+            display_order: 2,
+            is_active: true
+          }
         ]
       }
     ]
   },
   {
-    id: '4',
+    id: 'engine',
     name: 'Engine Services',
-    description: 'Engine repair and maintenance',
+    description: 'Engine maintenance and repair',
+    display_order: 4,
+    is_active: true,
     position: 4,
     subcategories: [
       {
-        id: '4-1',
-        name: 'Engine Repair',
+        id: 'tune-up',
+        name: 'Tune-Up Services',
+        category_id: 'engine',
+        display_order: 1,
         jobs: [
-          { id: '4-1-1', name: 'Timing Belt Replacement', estimatedTime: 240, price: 450 },
-          { id: '4-1-2', name: 'Spark Plug Replacement', estimatedTime: 60, price: 120 }
+          { 
+            id: 'basic-tune-up', 
+            name: 'Basic Tune-Up', 
+            estimatedTime: 120, 
+            price: 150,
+            subcategory_id: 'tune-up',
+            category_id: 'engine',
+            base_price: 150,
+            estimated_duration: 120,
+            skill_level: 'intermediate',
+            display_order: 1,
+            is_active: true
+          },
+          { 
+            id: 'complete-tune-up', 
+            name: 'Complete Tune-Up', 
+            estimatedTime: 180, 
+            price: 250,
+            subcategory_id: 'tune-up',
+            category_id: 'engine',
+            base_price: 250,
+            estimated_duration: 180,
+            skill_level: 'intermediate',
+            display_order: 2,
+            is_active: true
+          }
         ]
       },
       {
-        id: '4-2',
-        name: 'Belts & Cooling System',
-        description: 'Belt services and cooling system maintenance',
+        id: 'engine-repair',
+        name: 'Engine Repair',
+        category_id: 'engine',
+        display_order: 2,
         jobs: [
-          { id: '4-2-1', name: 'Serpentine Belt Replacement', description: 'R&R serpentine belt replacement service', estimatedTime: 45, price: 85 },
-          { id: '4-2-2', name: 'Serpentine Belt Adjustment', description: 'Adjust serpentine belt tension', estimatedTime: 20, price: 35 },
-          { id: '4-2-3', name: 'Serpentine Belt Inspection', description: 'Inspect serpentine belt condition', estimatedTime: 15, price: 25 },
-          { id: '4-2-4', name: 'Belt Tensioner Replacement', description: 'Replace serpentine belt tensioner', estimatedTime: 60, price: 120 },
-          { id: '4-2-5', name: 'Drive Belt Replacement', description: 'Replace accessory drive belt', estimatedTime: 40, price: 75 },
-          { id: '4-2-6', name: 'V-Belt Replacement', description: 'Replace V-belt', estimatedTime: 35, price: 65 }
+          { 
+            id: 'timing-belt', 
+            name: 'Timing Belt Replacement', 
+            description: 'Replace timing belt and inspect related components',
+            estimatedTime: 240, 
+            price: 400,
+            subcategory_id: 'engine-repair',
+            category_id: 'engine',
+            base_price: 400,
+            estimated_duration: 240,
+            skill_level: 'advanced',
+            display_order: 1,
+            is_active: true
+          },
+          { 
+            id: 'water-pump', 
+            name: 'Water Pump Replacement', 
+            description: 'Replace water pump and coolant system service',
+            estimatedTime: 180, 
+            price: 300,
+            subcategory_id: 'engine-repair',
+            category_id: 'engine',
+            base_price: 300,
+            estimated_duration: 180,
+            skill_level: 'advanced',
+            display_order: 2,
+            is_active: true
+          },
+          { 
+            id: 'head-gasket', 
+            name: 'Head Gasket Replacement', 
+            description: 'Engine head gasket replacement',
+            estimatedTime: 480, 
+            price: 1200,
+            subcategory_id: 'engine-repair',
+            category_id: 'engine',
+            base_price: 1200,
+            estimated_duration: 480,
+            skill_level: 'expert',
+            display_order: 3,
+            is_active: true
+          },
+          { 
+            id: 'engine-rebuild', 
+            name: 'Engine Rebuild', 
+            description: 'Complete engine rebuild service',
+            estimatedTime: 960, 
+            price: 3000,
+            subcategory_id: 'engine-repair',
+            category_id: 'engine',
+            base_price: 3000,
+            estimated_duration: 960,
+            skill_level: 'expert',
+            display_order: 4,
+            is_active: true
+          },
+          { 
+            id: 'transmission-service', 
+            name: 'Transmission Service', 
+            description: 'Transmission fluid change and inspection',
+            estimatedTime: 90, 
+            price: 120,
+            subcategory_id: 'engine-repair',
+            category_id: 'engine',
+            base_price: 120,
+            estimated_duration: 90,
+            skill_level: 'intermediate',
+            display_order: 5,
+            is_active: true
+          },
+          { 
+            id: 'transmission-rebuild', 
+            name: 'Transmission Rebuild', 
+            description: 'Complete transmission rebuild',
+            estimatedTime: 720, 
+            price: 2500,
+            subcategory_id: 'engine-repair',
+            category_id: 'engine',
+            base_price: 2500,
+            estimated_duration: 720,
+            skill_level: 'expert',
+            display_order: 6,
+            is_active: true
+          }
         ]
       }
     ]
   },
   {
-    id: '5',
-    name: 'Transmission',
-    description: 'Transmission services and repair',
+    id: 'electrical',
+    name: 'Electrical',
+    description: 'Electrical system services',
+    display_order: 5,
+    is_active: true,
     position: 5,
     subcategories: [
       {
-        id: '5-1',
-        name: 'Transmission Service',
+        id: 'battery-alternator',
+        name: 'Battery & Alternator',
+        category_id: 'electrical',
+        display_order: 1,
         jobs: [
-          { id: '5-1-1', name: 'Transmission Fluid Change', estimatedTime: 60, price: 120 },
-          { id: '5-1-2', name: 'Transmission Repair', estimatedTime: 480, price: 1200 }
+          { 
+            id: 'battery-replacement', 
+            name: 'Battery Replacement', 
+            estimatedTime: 30, 
+            price: 120,
+            subcategory_id: 'battery-alternator',
+            category_id: 'electrical',
+            base_price: 120,
+            estimated_duration: 30,
+            skill_level: 'beginner',
+            display_order: 1,
+            is_active: true
+          },
+          { 
+            id: 'alternator-replacement', 
+            name: 'Alternator Replacement', 
+            estimatedTime: 120, 
+            price: 300,
+            subcategory_id: 'battery-alternator',
+            category_id: 'electrical',
+            base_price: 300,
+            estimated_duration: 120,
+            skill_level: 'intermediate',
+            display_order: 2,
+            is_active: true
+          }
         ]
       }
     ]
   }
 ];
-
-// Enhanced search synonyms for better automotive repair terminology recognition
-export const serviceSearchSynonyms: Record<string, string[]> = {
-  'brake line': ['brake hose', 'hydraulic line', 'brake tubing', 'fluid line', 'brake pipe'],
-  'brake fluid': ['hydraulic fluid', 'brake oil'],
-  'brake pad': ['brake shoe', 'friction pad'],
-  'brake rotor': ['brake disc', 'rotor disc'],
-  'oil change': ['lube service', 'oil service'],
-  'tire': ['wheel', 'rim'],
-  'transmission': ['trans', 'gearbox'],
-  'serpentine belt': ['drive belt', 'accessory belt', 'belt', 'serpentine', 'fan belt'],
-  'belt': ['serpentine belt', 'drive belt', 'accessory belt', 'v-belt', 'fan belt'],
-  'replace': ['replacement', 'r&r', 'r & r', 'install', 'change', 'swap'],
-  'replacement': ['replace', 'r&r', 'r & r', 'install', 'change', 'swap'],
-  'r&r': ['replace', 'replacement', 'remove and replace', 'install', 'change'],
-  'r & r': ['replace', 'replacement', 'remove and replace', 'install', 'change'],
-  'service': ['repair', 'maintenance', 'check', 'inspect'],
-  'repair': ['service', 'fix', 'maintenance'],
-  'inspection': ['inspect', 'check', 'examine', 'test'],
-  'tensioner': ['belt tensioner', 'serpentine tensioner', 'drive belt tensioner']
-};
 

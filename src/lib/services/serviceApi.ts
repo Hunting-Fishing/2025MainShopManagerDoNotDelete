@@ -15,7 +15,7 @@ export const fetchServiceCategories = async (): Promise<ServiceMainCategory[]> =
       supabase
         .from('service_categories')
         .select('*')
-        .order('position', { ascending: true }),
+        .order('display_order', { ascending: true }),
       supabase
         .from('service_subcategories')
         .select('*')
@@ -61,9 +61,15 @@ export const fetchServiceCategories = async (): Promise<ServiceMainCategory[]> =
               id: job.id,
               name: job.name,
               description: job.description,
-              estimatedTime: job.estimated_time,
-              price: job.price,
-              subcategory_id: job.subcategory_id
+              estimatedTime: job.estimated_duration,
+              price: job.base_price,
+              subcategory_id: job.subcategory_id,
+              category_id: job.category_id,
+              base_price: job.base_price,
+              estimated_duration: job.estimated_duration,
+              skill_level: job.skill_level,
+              display_order: job.display_order,
+              is_active: job.is_active
             } as ServiceJob));
 
           return {
@@ -71,7 +77,8 @@ export const fetchServiceCategories = async (): Promise<ServiceMainCategory[]> =
             name: subcategory.name,
             description: subcategory.description,
             jobs: subcategoryJobs,
-            category_id: subcategory.category_id
+            category_id: subcategory.category_id,
+            display_order: subcategory.display_order
           } as ServiceSubcategory;
         });
 
@@ -80,7 +87,9 @@ export const fetchServiceCategories = async (): Promise<ServiceMainCategory[]> =
         name: category.name,
         description: category.description,
         subcategories: categorySubcategories,
-        position: category.position
+        display_order: category.display_order,
+        is_active: category.is_active,
+        position: category.display_order // for backward compatibility
       } as ServiceMainCategory;
     });
 
