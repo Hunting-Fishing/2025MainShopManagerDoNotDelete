@@ -42,7 +42,9 @@ export function CalendarFilters({
     const loadTechnicians = async () => {
       try {
         const techData = await getUniqueTechnicians();
-        setTechnicians(techData);
+        // Extract just the names from the technician objects
+        const techNames = techData.map(tech => tech.name);
+        setTechnicians(techNames);
       } catch (error) {
         console.error("Error loading technicians:", error);
       } finally {
