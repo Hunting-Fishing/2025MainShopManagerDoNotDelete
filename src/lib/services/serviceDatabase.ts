@@ -41,7 +41,7 @@ export const fetchServiceCategoriesFromDB = async (): Promise<ServiceMainCategor
 
     if (subcategoriesError) throw subcategoriesError;
 
-    // Fetch jobs for all subcategories
+    // Fetch jobs for all subcategories - only select columns that exist
     const { data: jobs, error: jobsError } = await supabase
       .from('service_jobs')
       .select(`
@@ -51,7 +51,6 @@ export const fetchServiceCategoriesFromDB = async (): Promise<ServiceMainCategor
         subcategory_id,
         price,
         estimated_time,
-        skill_level,
         position,
         is_active
       `)
@@ -85,7 +84,7 @@ export const fetchServiceCategoriesFromDB = async (): Promise<ServiceMainCategor
               category_id: subcategory.category_id, // Get from subcategory since jobs table doesn't have category_id
               base_price: job.price,
               estimated_duration: job.estimated_time,
-              skill_level: job.skill_level,
+              skill_level: 'standard', // Default value since column doesn't exist
               display_order: job.position,
               is_active: job.is_active,
               // Backward compatibility fields
