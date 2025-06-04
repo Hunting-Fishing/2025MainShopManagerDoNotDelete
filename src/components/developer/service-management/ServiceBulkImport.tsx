@@ -28,6 +28,14 @@ const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({
     }
   };
 
+  const handleImportComplete = async (data: any) => {
+    try {
+      await onImport(data);
+    } catch (error) {
+      console.error('Import failed:', error);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -47,7 +55,7 @@ const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({
             <TabsContent value="staged" className="mt-6">
               <ServiceStagedImport 
                 existingCategories={categories}
-                onImportComplete={onImport}
+                onImportComplete={handleImportComplete}
               />
             </TabsContent>
             
