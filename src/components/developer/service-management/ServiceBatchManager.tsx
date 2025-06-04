@@ -1,112 +1,61 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, AlertCircle, Clock, Play } from 'lucide-react';
-import { ImportBatch } from '@/hooks/useServiceStagedImport';
+import { Database, CheckCircle } from 'lucide-react';
 
 interface ServiceBatchManagerProps {
-  batches: ImportBatch[];
-  onProcessBatch: (batchId: string) => Promise<void>;
-  onProcessAll: () => Promise<void>;
-  isProcessing: boolean;
+  progress: number;
+  currentBatch?: string;
+  totalBatches?: number;
+  processedItems?: number;
 }
 
 export const ServiceBatchManager: React.FC<ServiceBatchManagerProps> = ({
-  batches,
-  onProcessBatch,
-  onProcessAll,
-  isProcessing
+  progress,
+  currentBatch = "Processing...",
+  totalBatches = 1,
+  processedItems = 0
 }) => {
-  const getStatusIcon = (batch: ImportBatch) => {
-    const status = batch.status || (batch.processed ? 'completed' : 'pending');
-    
-    switch (status) {
-      case 'completed':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'failed':
-        return <AlertCircle className="h-4 w-4 text-red-500" />;
-      case 'processing':
-        return <Clock className="h-4 w-4 text-blue-500 animate-spin" />;
-      default:
-        return <Clock className="h-4 w-4 text-gray-400" />;
-    }
-  };
-
-  const getStatusBadge = (batch: ImportBatch) => {
-    const status = batch.status || (batch.processed ? 'completed' : 'pending');
-    
-    switch (status) {
-      case 'completed':
-        return <Badge variant="secondary" className="bg-green-100 text-green-800">Completed</Badge>;
-      case 'failed':
-        return <Badge variant="destructive">Failed</Badge>;
-      case 'processing':
-        return <Badge className="bg-blue-100 text-blue-800">Processing</Badge>;
-      default:
-        return <Badge variant="outline">Pending</Badge>;
-    }
-  };
-
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Import Batches</CardTitle>
-          <Button onClick={onProcessAll} disabled={isProcessing}>
-            <Play className="h-4 w-4 mr-2" />
-            Process All
-          </Button>
-        </div>
+        <CardTitle className="flex items-center gap-2">
+          <Database className="h-5 w-5" />
+          Batch Processing
+        </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {batches.map((batch) => {
-            const status = batch.status || (batch.processed ? 'completed' : 'pending');
-            const progress = batch.progress || 0;
-            
-            return (
-              <div key={batch.id} className="border rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    {getStatusIcon(batch)}
-                    <span className="font-medium">{batch.name}</span>
-                  </div>
-                  {getStatusBadge(batch)}
-                </div>
-                
-                <div className="text-sm text-gray-600 mb-2">
-                  {batch.categories.length} categories
-                </div>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span>Progress</span>
+            <span>{progress}%</span>
+          </div>
+          <Progress value={progress} className="h-2" />
+        </div>
 
-                {status === 'processing' && (
-                  <div className="mb-2">
-                    <Progress value={progress} className="h-2" />
-                    <p className="text-xs text-gray-500 mt-1">{progress}% complete</p>
-                  </div>
-                )}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="text-center p-3 bg-blue-50 rounded-lg">
+            <div className="text-lg font-semibold text-blue-900">{processedItems}</div>
+            <div className="text-xs text-blue-700">Items Processed</div>
+          </div>
+          <div className="text-center p-3 bg-green-50 rounded-lg">
+            <div className="text-lg font-semibold text-green-900">{totalBatches}</div>
+            <div className="text-xs text-green-700">Total Batches</div>
+          </div>
+        </div>
 
-                {batch.errors && batch.errors.length > 0 && (
-                  <div className="text-sm text-red-600 mb-2">
-                    {batch.errors.length} error{batch.errors.length !== 1 ? 's' : ''}
-                  </div>
-                )}
-
-                <div className="flex justify-end">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => onProcessBatch(batch.id)}
-                    disabled={status === 'completed' || status === 'processing' || isProcessing}
-                  >
-                    {status === 'completed' ? 'Completed' : 'Process'}
-                  </Button>
-                </div>
-              </div>
-            );
-          })}
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="bg-blue-50">
+            {currentBatch}
+          </Badge>
+          {progress === 100 && (
+            <Badge variant="outline" className="bg-green-50 text-green-700">
+              <CheckCircle className="h-3 w-3 mr-1" />
+              Complete
+            </Badge>
+          )}
         </div>
       </CardContent>
     </Card>

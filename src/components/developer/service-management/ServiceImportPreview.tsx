@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, CheckCircle, Info } from 'lucide-react';
+import { ArrowLeft, ArrowRight, FileSpreadsheet } from 'lucide-react';
 import { ImportPreviewData } from '@/hooks/useServiceStagedImport';
 
 interface ServiceImportPreviewProps {
@@ -17,123 +17,72 @@ export const ServiceImportPreview: React.FC<ServiceImportPreviewProps> = ({
   onBack,
   onProceed
 }) => {
-  const { stats, errors, duplicates } = previewData;
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Import Preview</h3>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={onBack}>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <FileSpreadsheet className="h-5 w-5" />
+          Import Preview
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-3 gap-4">
+          <div className="text-center p-4 bg-blue-50 rounded-lg">
+            <div className="text-2xl font-bold text-blue-900">
+              {previewData.stats.totalCategories}
+            </div>
+            <div className="text-sm text-blue-700">Categories</div>
+          </div>
+          <div className="text-center p-4 bg-green-50 rounded-lg">
+            <div className="text-2xl font-bold text-green-900">
+              {previewData.stats.totalSubcategories}
+            </div>
+            <div className="text-sm text-green-700">Subcategories</div>
+          </div>
+          <div className="text-center p-4 bg-purple-50 rounded-lg">
+            <div className="text-2xl font-bold text-purple-900">
+              {previewData.stats.totalJobs}
+            </div>
+            <div className="text-sm text-purple-700">Jobs</div>
+          </div>
+        </div>
+
+        {previewData.duplicates.length > 0 && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Badge variant="outline" className="bg-yellow-100">
+                {previewData.duplicates.length} Duplicates Found
+              </Badge>
+            </div>
+            <p className="text-sm text-yellow-700">
+              Some items in your upload match existing data. You'll need to resolve these conflicts before importing.
+            </p>
+          </div>
+        )}
+
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <h4 className="font-medium mb-2">Preview Summary:</h4>
+          <ul className="text-sm text-gray-600 space-y-1">
+            <li>• {previewData.stats.totalCategories} categories will be imported</li>
+            <li>• {previewData.stats.totalSubcategories} subcategories will be created</li>
+            <li>• {previewData.stats.totalJobs} service jobs will be added</li>
+            {previewData.duplicates.length > 0 && (
+              <li>• {previewData.duplicates.length} duplicates need resolution</li>
+            )}
+          </ul>
+        </div>
+
+        <div className="flex justify-between">
+          <Button onClick={onBack} variant="outline">
+            <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
-          <Button onClick={onProceed} disabled={errors.length > 0}>
-            {duplicates.length > 0 ? 'Resolve Duplicates' : 'Import Data'}
+          <Button onClick={onProceed}>
+            {previewData.duplicates.length > 0 ? 'Resolve Duplicates' : 'Import Data'}
+            <ArrowRight className="h-4 w-4 ml-2" />
           </Button>
         </div>
-      </div>
-
-      {/* Statistics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600">{stats.totalCategories}</div>
-            <div className="text-sm text-gray-600">Categories</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">{stats.totalSubcategories}</div>
-            <div className="text-sm text-gray-600">Subcategories</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-purple-600">{stats.totalJobs}</div>
-            <div className="text-sm text-gray-600">Jobs</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-orange-600">{stats.newItems}</div>
-            <div className="text-sm text-gray-600">New Items</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Warnings and Errors */}
-      {duplicates.length > 0 && (
-        <Card className="border-yellow-200 bg-yellow-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-yellow-800">
-              <AlertTriangle className="h-5 w-5" />
-              Duplicates Detected
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-yellow-700 mb-3">
-              {duplicates.length} potential duplicate{duplicates.length !== 1 ? 's' : ''} found. 
-              You'll need to decide how to handle them.
-            </p>
-            <div className="space-y-2">
-              {duplicates.slice(0, 3).map((duplicate, index) => (
-                <div key={index} className="flex items-center justify-between bg-white p-3 rounded border">
-                  <span className="font-medium">{duplicate.imported.name}</span>
-                  <Badge variant="secondary">Duplicate</Badge>
-                </div>
-              ))}
-              {duplicates.length > 3 && (
-                <p className="text-sm text-yellow-600">
-                  And {duplicates.length - 3} more...
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {errors.length > 0 && (
-        <Card className="border-red-200 bg-red-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-red-800">
-              <AlertTriangle className="h-5 w-5" />
-              Import Errors
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-red-700 mb-3">
-              {errors.length} error{errors.length !== 1 ? 's' : ''} must be fixed before importing.
-            </p>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {errors.map((error, index) => (
-                <div key={index} className="bg-white p-3 rounded border border-red-200">
-                  <div className="flex items-start gap-2">
-                    <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="font-medium text-red-800">Row {error.row}</p>
-                      <p className="text-sm text-red-600">{error.message}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {duplicates.length === 0 && errors.length === 0 && (
-        <Card className="border-green-200 bg-green-50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-green-800">
-              <CheckCircle className="h-5 w-5" />
-              <span className="font-medium">Ready to Import</span>
-            </div>
-            <p className="text-green-700 mt-1">
-              No issues detected. Your data is ready to be imported.
-            </p>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+      </CardContent>
+    </Card>
   );
 };
