@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, Download, Loader2 } from 'lucide-react';
+import { FileText, Download, Loader2, FileSpreadsheet } from 'lucide-react';
 
 interface StorageFile {
   name: string;
@@ -24,7 +24,7 @@ interface StorageFileBrowserProps {
 export const StorageFileBrowser: React.FC<StorageFileBrowserProps> = ({
   bucketName,
   onFileSelect,
-  accept = '.csv,.json',
+  accept = '.csv,.json,.xlsx,.xls',
   disabled = false
 }) => {
   const [files, setFiles] = useState<StorageFile[]>([]);
@@ -75,6 +75,14 @@ export const StorageFileBrowser: React.FC<StorageFileBrowserProps> = ({
     return `${(size / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  const getFileIcon = (fileName: string) => {
+    const extension = fileName.split('.').pop()?.toLowerCase();
+    if (extension === 'xlsx' || extension === 'xls') {
+      return <FileSpreadsheet className="h-4 w-4 mr-2 text-green-500" />;
+    }
+    return <FileText className="h-4 w-4 mr-2 text-blue-500" />;
+  };
+
   if (loading) {
     return (
       <Card>
@@ -106,21 +114,26 @@ export const StorageFileBrowser: React.FC<StorageFileBrowserProps> = ({
           <FileText className="h-5 w-5 mr-2" />
           Select File from Storage
         </CardTitle>
+        <p className="text-sm text-gray-600">
+          Bucket: {bucketName} • Supported: CSV, JSON, Excel files
+        </p>
       </CardHeader>
       <CardContent>
         {files.length === 0 ? (
           <div className="text-center py-6 text-gray-500">
-            No compatible files found in bucket "{bucketName}"
+            <FileSpreadsheet className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+            <p>No compatible files found in bucket "{bucketName}"</p>
+            <p className="text-xs mt-1">Upload CSV, JSON, or Excel files to see them here</p>
           </div>
         ) : (
           <div className="space-y-2 max-h-64 overflow-y-auto">
             {files.map((file) => (
               <div
                 key={file.name}
-                className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
+                className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <div className="flex items-center flex-1">
-                  <FileText className="h-4 w-4 mr-2 text-blue-500" />
+                  {getFileIcon(file.name)}
                   <div>
                     <div className="font-medium">{file.name}</div>
                     <div className="text-sm text-gray-500">
