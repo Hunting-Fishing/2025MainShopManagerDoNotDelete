@@ -54,12 +54,12 @@ export function useServiceSearch(categories: ServiceMainCategory[]) {
     }
 
     // Generate suggestions based on search synonyms and automotive terms
-    const suggestions = [];
+    const suggestions: string[] = [];
     const query = debouncedQuery.toLowerCase();
     
     // Check if query matches any synonyms and suggest the main term
     for (const [mainTerm, synonyms] of Object.entries(serviceSearchSynonyms)) {
-      if (synonyms.some(synonym => synonym.includes(query)) && !mainTerm.includes(query)) {
+      if (Array.isArray(synonyms) && synonyms.some(synonym => synonym.includes(query)) && !mainTerm.includes(query)) {
         suggestions.push(mainTerm);
       }
       if (mainTerm.includes(query) && mainTerm !== query) {
@@ -110,4 +110,3 @@ export function useServiceSearch(categories: ServiceMainCategory[]) {
     isSearching: debouncedQuery.trim().length > 0
   };
 }
-

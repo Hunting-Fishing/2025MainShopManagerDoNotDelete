@@ -1,195 +1,201 @@
 
-import { ServiceJob } from '@/types/serviceHierarchy';
-import { serviceSearchSynonyms } from '@/data/comprehensiveServices';
+import { ServiceMainCategory, ServiceJob } from "@/types/serviceHierarchy";
+import { searchServiceCategories } from "./searchService";
+import { serviceSearchSynonyms } from "@/data/comprehensiveServices";
+
+export interface EnhancedSearchOptions {
+  includeDescriptions?: boolean;
+  fuzzyMatching?: boolean;
+  synonymMatching?: boolean;
+  minScore?: number;
+}
 
 export interface SearchMatch {
   score: number;
+  matchType: 'exact' | 'partial' | 'fuzzy' | 'synonym';
   matchedTerms: string[];
-  matchType: 'exact' | 'partial' | 'synonym' | 'description' | 'abbreviation';
 }
 
-export interface SearchableServiceJob extends ServiceJob {
-  searchMatch?: SearchMatch;
-}
-
-/**
- * Normalize automotive repair abbreviations and terminology
- */
-function normalizeAutomotiveTerms(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/\br\s*&\s*r\b/g, 'replace') // Handle R&R variations
-    .replace(/\br\s*and\s*r\b/g, 'replace') // Handle "R and R"
-    .replace(/\bremove\s+and\s+replace\b/g, 'replace')
-    .replace(/\bremove\s*\/\s*replace\b/g, 'replace')
-    .replace(/\bs\/r\b/g, 'replace') // Service/Replace abbreviation
-    .replace(/\binst\b/g, 'install') // Installation abbreviation
-    .trim();
+export interface EnhancedSearchResult extends ServiceJob {
+  searchMatch: SearchMatch;
+  categoryName: string;
+  subcategoryName: string;
 }
 
 /**
- * Enhanced search that includes synonym matching and automotive terminology
+ * Enhanced search function with scoring and synonym matching
  */
-export function enhancedSearch(text: string, query: string): SearchMatch | null {
-  const normalizedText = normalizeAutomotiveTerms(text);
-  const normalizedQuery = normalizeAutomotiveTerms(query);
-  
-  // Exact match gets highest score
-  if (normalizedText === normalizedQuery) {
-    return { score: 100, matchedTerms: [query], matchType: 'exact' };
+export const performEnhancedSearch = (
+  categories: ServiceMainCategory[],
+  query: string,
+  options: EnhancedSearchOptions = {}
+): EnhancedSearchResult[] => {
+  const {
+    includeDescriptions = true,
+    fuzzyMatching = true,
+    synonymMatching = true,
+    minScore = 0.3
+  } = options;
+
+  if (!query.trim()) {
+    return [];
   }
-  
-  // Check for direct text inclusion
-  if (normalizedText.includes(normalizedQuery)) {
-    const isWholeWord = new RegExp(`\\b${normalizedQuery}\\b`).test(normalizedText);
-    return { 
-      score: isWholeWord ? 90 : 70, 
-      matchedTerms: [query], 
-      matchType: 'partial' 
-    };
-  }
-  
-  // Check for automotive abbreviations
-  const abbreviationMatches = checkAbbreviationMatches(normalizedText, normalizedQuery);
-  if (abbreviationMatches) {
-    return abbreviationMatches;
-  }
-  
-  // Check synonyms - enhanced for automotive terminology
-  for (const [mainTerm, synonyms] of Object.entries(serviceSearchSynonyms)) {
-    // If the query matches a main term, check if text contains any synonyms
-    if (normalizedQuery.includes(mainTerm)) {
-      for (const synonym of synonyms) {
-        if (normalizedText.includes(synonym)) {
-          return { 
-            score: 85, 
-            matchedTerms: [mainTerm, synonym], 
-            matchType: 'synonym' 
-          };
+
+  const normalizedQuery = query.toLowerCase().trim();
+  const queryTerms = normalizedQuery.split(/\s+/);
+  const results: EnhancedSearchResult[] = [];
+
+  // Get synonyms for the query
+  const expandedTerms = synonymMatching ? getExpandedTerms(normalizedQuery) : [normalizedQuery];
+
+  categories.forEach(category => {
+    category.subcategories.forEach(subcategory => {
+      subcategory.jobs.forEach(job => {
+        const searchText = [
+          job.name,
+          ...(includeDescriptions && job.description ? [job.description] : [])
+        ].join(' ').toLowerCase();
+
+        let bestMatch: SearchMatch | null = null;
+
+        // Check each expanded term (including synonyms)
+        for (const term of expandedTerms) {
+          const match = calculateMatch(searchText, term, queryTerms);
+          if (match && (!bestMatch || match.score > bestMatch.score)) {
+            bestMatch = match;
+          }
         }
-      }
-    }
-    
-    // If the query matches a synonym, check if text contains the main term or other synonyms
-    if (synonyms.some(synonym => normalizedQuery.includes(synonym))) {
-      if (normalizedText.includes(mainTerm)) {
-        return { 
-          score: 85, 
-          matchedTerms: [mainTerm], 
-          matchType: 'synonym' 
-        };
-      }
-      for (const synonym of synonyms) {
-        if (normalizedText.includes(synonym) && synonym !== normalizedQuery) {
-          return { 
-            score: 80, 
-            matchedTerms: [synonym], 
-            matchType: 'synonym' 
-          };
+
+        if (bestMatch && bestMatch.score >= minScore) {
+          results.push({
+            ...job,
+            searchMatch: bestMatch,
+            categoryName: category.name,
+            subcategoryName: subcategory.name
+          });
         }
-      }
-    }
-  }
-  
-  // Word-by-word matching for partial queries
-  const queryWords = normalizedQuery.split(' ').filter(word => word.length > 2);
-  const textWords = normalizedText.split(' ');
-  
-  const matchingWords = queryWords.filter(queryWord => 
-    textWords.some(textWord => 
-      textWord.includes(queryWord) || 
-      queryWord.includes(textWord)
-    )
-  );
-  
-  if (matchingWords.length > 0) {
-    const matchRatio = matchingWords.length / queryWords.length;
-    return { 
-      score: Math.round(matchRatio * 60), 
-      matchedTerms: matchingWords, 
-      matchType: 'partial' 
-    };
-  }
-  
-  return null;
-}
-
-/**
- * Check for automotive abbreviation matches
- */
-function checkAbbreviationMatches(text: string, query: string): SearchMatch | null {
-  const abbreviations = {
-    'replace': ['r&r', 'r & r', 'remove and replace', 'inst', 'install'],
-    'belt': ['serpentine', 'drive belt', 'accessory belt'],
-    'service': ['svc', 'maint', 'maintenance'],
-    'inspection': ['insp', 'check'],
-    'repair': ['rep', 'fix']
-  };
-  
-  for (const [fullTerm, abbrevs] of Object.entries(abbreviations)) {
-    // Check if query is an abbreviation and text contains full term
-    if (abbrevs.some(abbrev => query.includes(abbrev)) && text.includes(fullTerm)) {
-      return {
-        score: 85,
-        matchedTerms: [fullTerm],
-        matchType: 'abbreviation'
-      };
-    }
-    
-    // Check if query contains full term and text contains abbreviation
-    if (query.includes(fullTerm) && abbrevs.some(abbrev => text.includes(abbrev))) {
-      return {
-        score: 80,
-        matchedTerms: [fullTerm],
-        matchType: 'abbreviation'
-      };
-    }
-  }
-  
-  return null;
-}
-
-/**
- * Sort services by search relevance with enhanced scoring
- */
-export function sortByRelevance(jobs: ServiceJob[], query: string): SearchableServiceJob[] {
-  if (!query.trim()) return jobs;
-  
-  const searchResults: SearchableServiceJob[] = [];
-  
-  for (const job of jobs) {
-    // Search in name (highest priority)
-    let match = enhancedSearch(job.name, query);
-    
-    // Search in description if no name match
-    if (!match && job.description) {
-      match = enhancedSearch(job.description, query);
-      if (match) {
-        match.score = Math.round(match.score * 0.8); // Slightly lower score for description matches
-        match.matchType = 'description';
-      }
-    }
-    
-    if (match) {
-      searchResults.push({ ...job, searchMatch: match });
-    }
-  }
-  
-  // Sort by relevance score (highest first), then by match type priority
-  return searchResults.sort((a, b) => {
-    const scoreA = a.searchMatch?.score || 0;
-    const scoreB = b.searchMatch?.score || 0;
-    
-    if (scoreA !== scoreB) {
-      return scoreB - scoreA;
-    }
-    
-    // If scores are equal, prioritize by match type
-    const typeOrder = { 'exact': 5, 'abbreviation': 4, 'synonym': 3, 'partial': 2, 'description': 1 };
-    const typeA = typeOrder[a.searchMatch?.matchType || 'description'] || 0;
-    const typeB = typeOrder[b.searchMatch?.matchType || 'description'] || 0;
-    
-    return typeB - typeA;
+      });
+    });
   });
+
+  // Sort by relevance score (highest first)
+  return results.sort((a, b) => b.searchMatch.score - a.searchMatch.score);
+};
+
+/**
+ * Expand query terms with synonyms
+ */
+function getExpandedTerms(query: string): string[] {
+  const terms = [query];
+  
+  // Check if query matches any synonyms
+  for (const [mainTerm, synonyms] of Object.entries(serviceSearchSynonyms)) {
+    if (Array.isArray(synonyms)) {
+      if (synonyms.some(synonym => query.includes(synonym.toLowerCase()))) {
+        terms.push(mainTerm.toLowerCase());
+      }
+      if (mainTerm.toLowerCase().includes(query)) {
+        terms.push(...synonyms.map(s => s.toLowerCase()));
+      }
+    }
+  }
+  
+  return [...new Set(terms)]; // Remove duplicates
+};
+
+/**
+ * Calculate match score for a search term against text
+ */
+function calculateMatch(text: string, searchTerm: string, queryTerms: string[]): SearchMatch | null {
+  // Exact match
+  if (text.includes(searchTerm)) {
+    return {
+      score: 1.0,
+      matchType: 'exact',
+      matchedTerms: [searchTerm]
+    };
+  }
+
+  // Partial word matches
+  const textWords = text.split(/\s+/);
+  const matchedWords = textWords.filter(word => 
+    queryTerms.some(term => word.includes(term) || term.includes(word))
+  );
+
+  if (matchedWords.length > 0) {
+    const score = Math.min(0.9, (matchedWords.length / queryTerms.length) * 0.8);
+    return {
+      score,
+      matchType: 'partial',
+      matchedTerms: matchedWords
+    };
+  }
+
+  // Fuzzy matching (simple character overlap)
+  const overlap = calculateCharacterOverlap(text, searchTerm);
+  if (overlap > 0.5) {
+    return {
+      score: Math.min(0.7, overlap * 0.6),
+      matchType: 'fuzzy', 
+      matchedTerms: [searchTerm]
+    };
+  }
+
+  return null;
 }
 
+/**
+ * Calculate character overlap between two strings
+ */
+function calculateCharacterOverlap(str1: string, str2: string): number {
+  const chars1 = str1.toLowerCase().split('');
+  const chars2 = str2.toLowerCase().split('');
+  
+  const intersection = chars1.filter(char => chars2.includes(char));
+  const union = [...new Set([...chars1, ...chars2])];
+  
+  return intersection.length / union.length;
+}
+
+/**
+ * Get search suggestions based on partial input
+ */
+export const getSearchSuggestions = (
+  categories: ServiceMainCategory[],
+  partialQuery: string,
+  maxSuggestions: number = 5
+): string[] => {
+  if (!partialQuery.trim() || partialQuery.length < 2) {
+    return [];
+  }
+
+  const query = partialQuery.toLowerCase();
+  const suggestions = new Set<string>();
+
+  // Add main terms from synonyms
+  for (const [mainTerm, synonyms] of Object.entries(serviceSearchSynonyms)) {
+    if (Array.isArray(synonyms)) {
+      if (mainTerm.toLowerCase().includes(query)) {
+        suggestions.add(mainTerm);
+      }
+      synonyms.forEach(synonym => {
+        if (synonym.toLowerCase().includes(query)) {
+          suggestions.add(mainTerm);
+        }
+      });
+    }
+  }
+
+  // Add job names that match
+  categories.forEach(category => {
+    category.subcategories.forEach(subcategory => {
+      subcategory.jobs.forEach(job => {
+        if (job.name.toLowerCase().includes(query)) {
+          suggestions.add(job.name);
+        }
+      });
+    });
+  });
+
+  return Array.from(suggestions).slice(0, maxSuggestions);
+};

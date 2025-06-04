@@ -1,104 +1,104 @@
+import { ServiceMainCategory } from '@/types/serviceHierarchy';
 
-import { supabase } from '@/integrations/supabase/client';
-import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
+// Mock data - this would normally come from Supabase
+const mockServiceData = {
+  categories: [
+    {
+      id: "1",
+      name: "Oil Change & Maintenance", 
+      description: "Regular maintenance services",
+      display_order: 1,
+      is_active: true,
+      subcategories: [
+        {
+          id: "1-1",
+          name: "Oil Changes",
+          description: "Oil change services",
+          category_id: "1", 
+          display_order: 1,
+          jobs: [
+            { 
+              id: "1-1-1", 
+              name: "Standard Oil Change", 
+              description: "Standard oil change service",
+              subcategory_id: "1-1",
+              category_id: "1",
+              base_price: 35,
+              estimated_duration: 30,
+              skill_level: "basic",
+              display_order: 1,
+              is_active: true,
+              estimatedTime: 30,
+              price: 35
+            },
+            { 
+              id: "1-1-2", 
+              name: "Synthetic Oil Change", 
+              description: "Synthetic oil change service",
+              subcategory_id: "1-1",
+              category_id: "1",
+              base_price: 65,
+              estimated_duration: 30,
+              skill_level: "basic",
+              display_order: 2,
+              is_active: true,
+              estimatedTime: 30,
+              price: 65
+            }
+          ]
+        }
+      ]
+    }
+  ]
+};
 
-/**
- * Centralized service data fetching - single source of truth
- * This should be the ONLY function used to fetch service categories
- */
 export const fetchServiceCategories = async (): Promise<ServiceMainCategory[]> => {
   try {
-    console.log('🔄 Fetching service categories from Supabase...');
+    console.log('🔄 Fetching service categories from mock data...');
     
-    // Fetch all data in parallel for better performance
-    const [categoriesResult, subcategoriesResult, jobsResult] = await Promise.all([
-      supabase
-        .from('service_categories')
-        .select('*')
-        .order('display_order', { ascending: true }),
-      supabase
-        .from('service_subcategories')
-        .select('*')
-        .order('name', { ascending: true }),
-      supabase
-        .from('service_jobs')
-        .select('*')
-        .order('name', { ascending: true })
-    ]);
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    const categories = mockServiceData.categories.map(category => ({
+      id: category.id,
+      name: category.name,
+      description: category.description,
+      display_order: category.display_order,
+      is_active: category.is_active,
+      subcategories: category.subcategories.map(subcategory => ({
+        id: subcategory.id,
+        name: subcategory.name,
+        description: subcategory.description,
+        category_id: subcategory.category_id,
+        display_order: subcategory.display_order,
+        jobs: subcategory.jobs.map(job => ({
+          id: job.id,
+          name: job.name,
+          description: job.description,
+          subcategory_id: job.subcategory_id,
+          category_id: job.category_id,
+          base_price: job.base_price,
+          estimated_duration: job.estimated_duration,
+          skill_level: job.skill_level,
+          display_order: job.display_order,
+          is_active: job.is_active,
+          // Keep backward compatibility fields
+          estimatedTime: job.estimatedTime,
+          price: job.price
+        }))
+      }))
+    }));
 
-    // Check for errors
-    if (categoriesResult.error) {
-      console.error('❌ Error fetching categories:', categoriesResult.error);
-      throw categoriesResult.error;
-    }
-    if (subcategoriesResult.error) {
-      console.error('❌ Error fetching subcategories:', subcategoriesResult.error);
-      throw subcategoriesResult.error;
-    }
-    if (jobsResult.error) {
-      console.error('❌ Error fetching jobs:', jobsResult.error);
-      throw jobsResult.error;
-    }
-
-    const categories = categoriesResult.data || [];
-    const subcategories = subcategoriesResult.data || [];
-    const jobs = jobsResult.data || [];
-
-    console.log('✅ Service data fetched:', {
-      categories: categories.length,
-      subcategories: subcategories.length,
-      jobs: jobs.length
+    console.log('✅ Service categories loaded:', {
+      categoriesCount: categories.length,
+      totalSubcategories: categories.reduce((sum, cat) => sum + cat.subcategories.length, 0),
+      totalJobs: categories.reduce((sum, cat) => sum + cat.subcategories.reduce((subSum, sub) => subSum + sub.jobs.length, 0), 0)
     });
 
-    // Build hierarchical structure
-    const hierarchicalCategories: ServiceMainCategory[] = categories.map(category => {
-      const categorySubcategories = subcategories
-        .filter(sub => sub.category_id === category.id)
-        .map(subcategory => {
-          const subcategoryJobs = jobs
-            .filter(job => job.subcategory_id === subcategory.id)
-            .map(job => ({
-              id: job.id,
-              name: job.name,
-              description: job.description,
-              estimatedTime: job.estimated_duration,
-              price: job.base_price,
-              subcategory_id: job.subcategory_id,
-              category_id: job.category_id,
-              base_price: job.base_price,
-              estimated_duration: job.estimated_duration,
-              skill_level: job.skill_level,
-              display_order: job.display_order,
-              is_active: job.is_active
-            } as ServiceJob));
-
-          return {
-            id: subcategory.id,
-            name: subcategory.name,
-            description: subcategory.description,
-            jobs: subcategoryJobs,
-            category_id: subcategory.category_id,
-            display_order: subcategory.display_order
-          } as ServiceSubcategory;
-        });
-
-      return {
-        id: category.id,
-        name: category.name,
-        description: category.description,
-        subcategories: categorySubcategories,
-        display_order: category.display_order,
-        is_active: category.is_active,
-        position: category.display_order // for backward compatibility
-      } as ServiceMainCategory;
-    });
-
-    console.log('🏗️ Built hierarchical structure with', hierarchicalCategories.length, 'categories');
-    return hierarchicalCategories;
-
+    return categories;
   } catch (error) {
-    console.error('❌ Failed to fetch service categories:', error);
-    throw new Error(`Failed to fetch service categories: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error('❌ Error fetching service categories:', error);
+    throw new Error('Failed to fetch service categories');
   }
 };
 
