@@ -1,274 +1,188 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
 
-export interface ImportProgress {
-  stage: string;
-  progress: number;
-  message: string;
-  details?: string;
+export interface ImportResult {
+  totalImported: number;
+  categories: number;
+  subcategories: number;
+  jobs: number;
 }
 
-export interface ServiceImportData {
-  categories: ServiceMainCategory[];
-  totalItems: number;
+export interface ServiceRow {
+  Category?: string;
+  Subcategory?: string;
+  Service?: string;
+  Description?: string;
+  EstimatedTime?: string | number;
+  Price?: string | number;
+  [key: string]: any;
 }
 
-// Insert service category into database
-export const insertServiceCategory = async (category: Omit<ServiceMainCategory, 'id' | 'subcategories'>) => {
-  console.log('Inserting category:', category);
+export const importServiceHierarchy = async (rawData: any[]): Promise<ImportResult> => {
+  console.log('Starting service hierarchy import with data:', rawData);
   
-  const { data, error } = await supabase
-    .from('service_categories')
-    .insert({
-      name: category.name,
-      description: category.description || null,
-      position: category.position || 0
-    })
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Error inserting category:', error);
-    throw error;
+  if (!rawData || rawData.length === 0) {
+    throw new Error('No data provided for import');
   }
 
-  return data;
-};
+  // Process and validate the data
+  const processedData = rawData.map((row, index) => {
+    console.log(`Processing row ${index + 1}:`, row);
+    
+    // Handle different possible column names (case insensitive)
+    const category = findValue(row, ['category', 'Category', 'CATEGORY', 'main_category', 'Main Category']);
+    const subcategory = findValue(row, ['subcategory', 'Subcategory', 'SUBCATEGORY', 'sub_category', 'Sub Category']);
+    const service = findValue(row, ['service', 'Service', 'SERVICE', 'job', 'Job', 'service_name', 'Service Name']);
+    const description = findValue(row, ['description', 'Description', 'DESCRIPTION', 'desc', 'Desc']);
+    const estimatedTime = parseNumber(findValue(row, ['estimated_time', 'Estimated Time', 'EstimatedTime', 'time', 'Time', 'duration', 'Duration']));
+    const price = parseNumber(findValue(row, ['price', 'Price', 'PRICE', 'cost', 'Cost', 'amount', 'Amount']));
 
-// Insert service subcategory into database
-export const insertServiceSubcategory = async (
-  categoryId: string, 
-  subcategory: Omit<ServiceSubcategory, 'id' | 'jobs' | 'category_id'>
-) => {
-  console.log('Inserting subcategory:', subcategory, 'for category:', categoryId);
-  
-  const { data, error } = await supabase
-    .from('service_subcategories')
-    .insert({
-      category_id: categoryId,
-      name: subcategory.name,
-      description: subcategory.description || null
-    })
-    .select()
-    .single();
+    return {
+      category: category || '',
+      subcategory: subcategory || '',
+      service: service || '',
+      description: description || '',
+      estimatedTime,
+      price
+    };
+  }).filter(row => row.category && row.service); // Only keep rows with at least category and service
 
-  if (error) {
-    console.error('Error inserting subcategory:', error);
-    throw error;
+  console.log(`Filtered to ${processedData.length} valid rows`);
+
+  if (processedData.length === 0) {
+    throw new Error('No valid service data found. Please ensure your file has Category and Service columns.');
   }
 
-  return data;
-};
-
-// Insert service job into database
-export const insertServiceJob = async (
-  subcategoryId: string, 
-  job: Omit<ServiceJob, 'id' | 'subcategory_id'>
-) => {
-  console.log('Inserting job:', job, 'for subcategory:', subcategoryId);
+  // Group data by categories and subcategories
+  const categoryMap = new Map();
   
-  const { data, error } = await supabase
-    .from('service_jobs')
-    .insert({
-      subcategory_id: subcategoryId,
-      name: job.name,
-      description: job.description || null,
-      estimated_time: job.estimatedTime || null,
-      price: job.price || null
-    })
-    .select()
-    .single();
+  processedData.forEach(row => {
+    if (!categoryMap.has(row.category)) {
+      categoryMap.set(row.category, new Map());
+    }
+    
+    const subcategoryKey = row.subcategory || 'General';
+    if (!categoryMap.get(row.category).has(subcategoryKey)) {
+      categoryMap.get(row.category).set(subcategoryKey, []);
+    }
+    
+    categoryMap.get(row.category).get(subcategoryKey).push(row);
+  });
 
-  if (error) {
-    console.error('Error inserting job:', error);
-    throw error;
-  }
+  console.log('Organized data into categories:', Array.from(categoryMap.keys()));
 
-  return data;
-};
-
-// Clear all existing service data
-export const clearServiceData = async () => {
-  console.log('Clearing existing service data...');
-  
-  const { error } = await supabase.rpc('clear_service_data');
-  
-  if (error) {
-    console.error('Error clearing service data:', error);
-    throw error;
-  }
-};
-
-// Bulk import service hierarchy data
-export const bulkImportServiceData = async (
-  data: ServiceMainCategory[],
-  onProgress: (progress: ImportProgress) => void,
-  clearExisting: boolean = false
-): Promise<void> => {
-  let processed = 0;
-  const totalItems = data.reduce((total, category) => {
-    return total + 1 + category.subcategories.reduce((subTotal, sub) => {
-      return subTotal + 1 + sub.jobs.length;
-    }, 0);
-  }, 0);
+  let categoriesCreated = 0;
+  let subcategoriesCreated = 0;
+  let jobsCreated = 0;
 
   try {
-    // Clear existing data if requested
-    if (clearExisting) {
-      onProgress({
-        stage: 'clearing',
-        progress: 0,
-        message: 'Clearing existing service data...'
-      });
-      
-      await clearServiceData();
-    }
-
-    onProgress({
-      stage: 'importing',
-      progress: 0,
-      message: 'Starting import...',
-      details: `Importing ${data.length} categories with ${totalItems} total items`
-    });
-
     // Import categories, subcategories, and jobs
-    for (const category of data) {
-      // Insert category
-      const insertedCategory = await insertServiceCategory({
-        name: category.name,
-        description: category.description,
-        position: category.position
-      });
+    for (const [categoryName, subcategoryMap] of categoryMap) {
+      console.log(`Creating category: ${categoryName}`);
       
-      processed++;
-      onProgress({
-        stage: 'importing',
-        progress: (processed / totalItems) * 100,
-        message: `Imported category: ${category.name}`
-      });
+      // Create or get category
+      const { data: categoryData, error: categoryError } = await supabase
+        .from('service_categories')
+        .upsert({
+          name: categoryName,
+          description: `${categoryName} services`,
+          position: categoriesCreated + 1
+        }, {
+          onConflict: 'name'
+        })
+        .select()
+        .single();
 
-      // Insert subcategories
-      for (const subcategory of category.subcategories) {
-        const insertedSubcategory = await insertServiceSubcategory(insertedCategory.id, {
-          name: subcategory.name,
-          description: subcategory.description
-        });
+      if (categoryError) {
+        console.error('Category creation error:', categoryError);
+        throw new Error(`Failed to create category "${categoryName}": ${categoryError.message}`);
+      }
+
+      categoriesCreated++;
+      console.log('Category created/updated:', categoryData);
+
+      for (const [subcategoryName, services] of subcategoryMap) {
+        console.log(`Creating subcategory: ${subcategoryName} under ${categoryName}`);
         
-        processed++;
-        onProgress({
-          stage: 'importing',
-          progress: (processed / totalItems) * 100,
-          message: `Imported subcategory: ${subcategory.name}`
-        });
+        // Create or get subcategory
+        const { data: subcategoryData, error: subcategoryError } = await supabase
+          .from('service_subcategories')
+          .upsert({
+            category_id: categoryData.id,
+            name: subcategoryName,
+            description: `${subcategoryName} services`
+          }, {
+            onConflict: 'category_id,name'
+          })
+          .select()
+          .single();
 
-        // Insert jobs
-        for (const job of subcategory.jobs) {
-          await insertServiceJob(insertedSubcategory.id, {
-            name: job.name,
-            description: job.description,
-            estimatedTime: job.estimatedTime,
-            price: job.price
-          });
+        if (subcategoryError) {
+          console.error('Subcategory creation error:', subcategoryError);
+          throw new Error(`Failed to create subcategory "${subcategoryName}": ${subcategoryError.message}`);
+        }
+
+        subcategoriesCreated++;
+        console.log('Subcategory created/updated:', subcategoryData);
+
+        // Create jobs for this subcategory
+        for (const service of services) {
+          console.log(`Creating job: ${service.service}`);
           
-          processed++;
-          onProgress({
-            stage: 'importing',
-            progress: (processed / totalItems) * 100,
-            message: `Imported job: ${job.name}`
-          });
+          const { data: jobData, error: jobError } = await supabase
+            .from('service_jobs')
+            .upsert({
+              subcategory_id: subcategoryData.id,
+              name: service.service,
+              description: service.description || '',
+              estimated_time: service.estimatedTime || null,
+              price: service.price || null
+            }, {
+              onConflict: 'subcategory_id,name'
+            })
+            .select()
+            .single();
+
+          if (jobError) {
+            console.error('Job creation error:', jobError);
+            throw new Error(`Failed to create job "${service.service}": ${jobError.message}`);
+          }
+
+          jobsCreated++;
+          console.log('Job created/updated:', jobData);
         }
       }
     }
 
-    onProgress({
-      stage: 'complete',
-      progress: 100,
-      message: `Successfully imported ${processed} items`,
-      details: `${data.length} categories with all subcategories and jobs`
-    });
+    const result = {
+      totalImported: jobsCreated,
+      categories: categoriesCreated,
+      subcategories: subcategoriesCreated,
+      jobs: jobsCreated
+    };
+
+    console.log('Import completed successfully:', result);
+    return result;
 
   } catch (error) {
-    console.error('Bulk import failed:', error);
-    throw new Error(`Import failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error('Import failed:', error);
+    throw error;
   }
 };
 
-// Map Excel data to service hierarchy structure
-export const mapExcelDataToServiceHierarchy = (rawData: any[]): ServiceMainCategory[] => {
-  console.log('Mapping Excel data to service hierarchy:', rawData);
-  
-  const categoryMap = new Map<string, ServiceMainCategory>();
-  
-  rawData.forEach((row, index) => {
-    try {
-      // Try different possible column names for flexibility
-      const categoryName = row.category || row.Category || row.CATEGORY || 
-                          row.service_category || row['Service Category'] || 
-                          row.main_category || row['Main Category'] ||
-                          `Category ${index + 1}`;
-      
-      const subcategoryName = row.subcategory || row.Subcategory || row.SUBCATEGORY ||
-                             row.service_subcategory || row['Service Subcategory'] ||
-                             row.sub_category || row['Sub Category'] ||
-                             'General';
-      
-      const jobName = row.job || row.Job || row.JOB ||
-                     row.service || row.Service || row.SERVICE ||
-                     row.job_name || row['Job Name'] ||
-                     row.service_name || row['Service Name'] ||
-                     row.name || row.Name || row.NAME ||
-                     `Service ${index + 1}`;
-      
-      const description = row.description || row.Description || row.DESCRIPTION || '';
-      const estimatedTime = parseFloat(row.estimated_time || row['Estimated Time'] || row.time || 0) || undefined;
-      const price = parseFloat(row.price || row.Price || row.PRICE || row.cost || row.Cost || 0) || undefined;
-
-      // Get or create category
-      let category = categoryMap.get(categoryName);
-      if (!category) {
-        category = {
-          id: `cat-${categoryName.toLowerCase().replace(/\s+/g, '-')}`,
-          name: categoryName,
-          description: `Category for ${categoryName}`,
-          subcategories: [],
-          position: categoryMap.size
-        };
-        categoryMap.set(categoryName, category);
-      }
-
-      // Find or create subcategory
-      let subcategory = category.subcategories.find(sub => sub.name === subcategoryName);
-      if (!subcategory) {
-        subcategory = {
-          id: `sub-${subcategoryName.toLowerCase().replace(/\s+/g, '-')}-${category.subcategories.length}`,
-          name: subcategoryName,
-          description: `Subcategory for ${subcategoryName}`,
-          jobs: [],
-          category_id: category.id
-        };
-        category.subcategories.push(subcategory);
-      }
-
-      // Add job
-      const job: ServiceJob = {
-        id: `job-${jobName.toLowerCase().replace(/\s+/g, '-')}-${subcategory.jobs.length}`,
-        name: jobName,
-        description: description,
-        estimatedTime: estimatedTime,
-        price: price,
-        subcategory_id: subcategory.id
-      };
-
-      subcategory.jobs.push(job);
-      
-    } catch (error) {
-      console.error(`Error processing row ${index}:`, row, error);
-      // Continue processing other rows
+// Helper function to find a value by multiple possible keys
+function findValue(obj: any, keys: string[]): string | undefined {
+  for (const key of keys) {
+    if (obj[key] !== undefined && obj[key] !== null && obj[key] !== '') {
+      return String(obj[key]).trim();
     }
-  });
+  }
+  return undefined;
+}
 
-  const result = Array.from(categoryMap.values());
-  console.log('Mapped service hierarchy:', result);
-  return result;
-};
+// Helper function to parse numbers
+function parseNumber(value: string | undefined): number | undefined {
+  if (!value) return undefined;
+  const num = parseFloat(String(value).replace(/[^0-9.-]/g, ''));
+  return isNaN(num) ? undefined : num;
+}

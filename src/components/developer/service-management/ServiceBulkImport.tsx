@@ -1,10 +1,11 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Upload, FileText, AlertCircle } from 'lucide-react';
 import { StorageFileBrowser } from './StorageFileBrowser';
-import { StorageImportService, importFromStorage } from '@/lib/services/storageImportService';
+import { importFromStorage } from '@/lib/services/storageImportService';
 import { importServiceHierarchy } from '@/lib/services/serviceImportApi';
 
 export interface ServiceBulkImportProps {
@@ -116,7 +117,10 @@ export const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onImportCo
             </div>
           )}
 
-          <StorageFileBrowser onFileSelect={handleFileSelect} />
+          <StorageFileBrowser 
+            bucketName="service-imports"
+            onFileSelect={handleFileSelect} 
+          />
 
           {selectedFile && (
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
