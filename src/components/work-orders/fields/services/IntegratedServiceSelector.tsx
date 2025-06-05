@@ -1,11 +1,11 @@
 
 import React from 'react';
-import { ServiceMainCategory, ServiceJob } from '@/types/serviceHierarchy';
+import { ServiceSector, ServiceJob } from '@/types/serviceHierarchy';
 import { SelectedService } from '@/types/selectedService';
 import { EnhancedServiceSelector } from './EnhancedServiceSelector';
 
 interface IntegratedServiceSelectorProps {
-  categories: ServiceMainCategory[];
+  sectors: ServiceSector[];
   onServiceSelect: (service: ServiceJob, categoryName: string, subcategoryName: string) => void;
   selectedServices: SelectedService[];
   onRemoveService: (serviceId: string) => void;
@@ -13,15 +13,14 @@ interface IntegratedServiceSelectorProps {
 }
 
 export function IntegratedServiceSelector({
-  categories,
+  sectors,
   onServiceSelect,
   selectedServices,
   onRemoveService,
   onUpdateServices
 }: IntegratedServiceSelectorProps) {
-  // Debug logging to trace component hierarchy
   console.log('IntegratedServiceSelector render:', {
-    categoriesCount: categories.length,
+    sectorsCount: sectors.length,
     selectedServicesCount: selectedServices.length
   });
 
@@ -33,9 +32,8 @@ export function IntegratedServiceSelector({
           Select services for this work order. You can choose multiple services and customize them as needed.
         </p>
         
-        {/* This should ONLY render EnhancedServiceSelector, which then renders HierarchicalServiceSelector */}
         <EnhancedServiceSelector
-          categories={categories}
+          sectors={sectors}
           onServiceSelect={onServiceSelect}
           selectedServices={selectedServices}
           onRemoveService={onRemoveService}

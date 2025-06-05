@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect } from "react";
 import { IntegratedServiceSelector } from "./services/IntegratedServiceSelector";
-import { ServiceMainCategory, ServiceJob } from "@/types/serviceHierarchy";
+import { ServiceSector, ServiceJob } from "@/types/serviceHierarchy";
 import { SelectedService } from "@/types/selectedService";
-import { fetchServiceCategories } from "@/lib/services/serviceApi";
+import { useServiceSectors } from "@/hooks/useServiceCategories";
 
 interface ServicesSectionProps {
   onServiceSelect?: (service: ServiceJob, categoryName: string, subcategoryName: string) => void;
@@ -16,27 +16,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
   selectedServices = [],
   onUpdateServices
 }) => {
-  const [serviceCategories, setServiceCategories] = useState<ServiceMainCategory[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const loadServiceCategories = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const categories = await fetchServiceCategories();
-        setServiceCategories(categories);
-      } catch (err) {
-        console.error("Failed to load service categories:", err);
-        setError("Failed to load service categories. Please try again.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadServiceCategories();
-  }, []);
+  const { sectors, loading, error } = useServiceSectors();
 
   const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
     if (onServiceSelect) {
@@ -57,7 +37,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
     }
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="text-center py-8">
         <p className="text-gray-500">Loading services...</p>
@@ -73,7 +53,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
     );
   }
 
-  if (serviceCategories.length === 0) {
+  if (sectors.length === 0) {
     return (
       <div className="text-center py-8 border rounded-md bg-gray-50">
         <p className="text-gray-500">No services available</p>
@@ -84,7 +64,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
 
   return (
     <IntegratedServiceSelector
-      categories={serviceCategories}
+      sectors={sectors}
       onServiceSelect={handleServiceSelect}
       selectedServices={selectedServices}
       onRemoveService={handleRemoveService}

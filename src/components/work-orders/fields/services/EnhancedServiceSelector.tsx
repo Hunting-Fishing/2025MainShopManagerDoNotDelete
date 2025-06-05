@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { ServiceMainCategory, ServiceJob } from '@/types/serviceHierarchy';
+import { ServiceSector, ServiceJob } from '@/types/serviceHierarchy';
 import { SelectedService, ServiceSelectionSummary } from '@/types/selectedService';
 import { HierarchicalServiceSelector } from './HierarchicalServiceSelector';
 import { SelectedServiceCard } from './SelectedServiceCard';
@@ -9,7 +9,7 @@ import { CollapsedServiceSelector } from './CollapsedServiceSelector';
 import { ResponsiveGrid } from '@/components/ui/responsive-grid';
 
 interface EnhancedServiceSelectorProps {
-  categories: ServiceMainCategory[];
+  sectors: ServiceSector[];
   onServiceSelect: (service: ServiceJob, categoryName: string, subcategoryName: string) => void;
   selectedServices: SelectedService[];
   onRemoveService: (serviceId: string) => void;
@@ -17,7 +17,7 @@ interface EnhancedServiceSelectorProps {
 }
 
 export function EnhancedServiceSelector({
-  categories,
+  sectors,
   onServiceSelect,
   selectedServices,
   onRemoveService,
@@ -135,7 +135,7 @@ export function EnhancedServiceSelector({
           )}
           
           <HierarchicalServiceSelector
-            categories={categories}
+            sectors={sectors}
             selectedServices={selectedServices}
             onServiceSelect={handleServiceSelect}
             onRemoveService={handleRemoveService}

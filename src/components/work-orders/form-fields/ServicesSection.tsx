@@ -4,9 +4,9 @@ import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { IntegratedServiceSelector } from "@/components/work-orders/fields/services/IntegratedServiceSelector";
-import { ServiceMainCategory, ServiceJob } from "@/types/serviceHierarchy";
+import { ServiceSector, ServiceJob } from "@/types/serviceHierarchy";
 import { SelectedService } from "@/types/selectedService";
-import { fetchServiceCategories } from "@/lib/services/serviceApi";
+import { useServiceSectors } from "@/hooks/useServiceCategories";
 import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
 
 interface ServicesSectionProps {
@@ -14,28 +14,8 @@ interface ServicesSectionProps {
 }
 
 export const ServicesSection: React.FC<ServicesSectionProps> = ({ form }) => {
-  const [serviceCategories, setServiceCategories] = useState<ServiceMainCategory[]>([]);
+  const { sectors, loading, error } = useServiceSectors();
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const loadServiceCategories = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const categories = await fetchServiceCategories();
-        setServiceCategories(categories);
-      } catch (err) {
-        console.error("Failed to load service categories:", err);
-        setError("Failed to load service categories. Please try again.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadServiceCategories();
-  }, []);
 
   // Update form description when services change
   useEffect(() => {
@@ -87,7 +67,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ form }) => {
       />
 
       {/* Integrated Service Selector */}
-      {isLoading ? (
+      {loading ? (
         <div className="text-center py-8">
           <p className="text-gray-500">Loading services...</p>
         </div>
@@ -102,9 +82,9 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ form }) => {
             Retry
           </Button>
         </div>
-      ) : serviceCategories.length > 0 ? (
+      ) : sectors.length > 0 ? (
         <IntegratedServiceSelector
-          categories={serviceCategories}
+          sectors={sectors}
           onServiceSelect={handleServiceSelect}
           selectedServices={selectedServices}
           onRemoveService={handleRemoveService}
