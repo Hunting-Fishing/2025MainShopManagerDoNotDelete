@@ -22,10 +22,20 @@ export interface ServiceMainCategory {
   description?: string;
   subcategories: ServiceSubcategory[];
   position?: number; // Added position field
+  sector_id?: string; // Added to link categories to sectors
+}
+
+export interface ServiceSector {
+  id: string;
+  name: string;
+  description?: string;
+  categories: ServiceMainCategory[];
+  position?: number;
+  is_active?: boolean;
 }
 
 export interface ServiceHierarchyState {
-  categories: ServiceMainCategory[];
+  sectors: ServiceSector[];
   isLoading: boolean;
   error: string | null;
 }

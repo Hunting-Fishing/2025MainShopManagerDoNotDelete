@@ -1,24 +1,20 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
+import { ServiceSector, ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
 
 interface ImportResult {
+  sectors: number;
   categories: number;
   subcategories: number;
   jobs: number;
   totalImported: number;
 }
 
-export const importServiceHierarchy = async (rawData: any[]): Promise<ImportResult> => {
-  console.log('Starting service hierarchy import...');
+export const importServiceHierarchy = async (rawData: any[], sectorName: string = 'Automotive Services'): Promise<ImportResult> => {
+  console.log('Starting 4-tier service hierarchy import...');
   console.log('Raw data structure:', rawData);
 
   try {
-    // Parse the Excel data structure where:
-    // - Each row represents job data across multiple subcategories
-    // - Column headers are subcategory names
-    // - First column might be a category indicator or job name
-    
     if (!rawData || rawData.length === 0) {
       throw new Error('No data to import');
     }
@@ -41,15 +37,50 @@ export const importServiceHierarchy = async (rawData: any[]): Promise<ImportResu
       throw new Error('No valid subcategories found in the Excel file');
     }
 
-    // Create a single main category for this import
-    const categoryName = 'Automotive Services'; // Default category name
+    // Step 1: Create or get the service sector
+    let sectorData;
+    const { data: existingSector, error: sectorFetchError } = await supabase
+      .from('service_sectors')
+      .select('*')
+      .eq('name', sectorName)
+      .single();
+
+    if (sectorFetchError && sectorFetchError.code !== 'PGRST116') {
+      throw sectorFetchError;
+    }
+
+    if (existingSector) {
+      sectorData = existingSector;
+      console.log('Using existing sector:', sectorData);
+    } else {
+      const { data: newSector, error: sectorError } = await supabase
+        .from('service_sectors')
+        .insert({
+          name: sectorName,
+          description: `Imported ${sectorName.toLowerCase()} services`,
+          position: 0
+        })
+        .select()
+        .single();
+
+      if (sectorError) {
+        console.error('Error inserting sector:', sectorError);
+        throw sectorError;
+      }
+
+      sectorData = newSector;
+      console.log('Created sector:', sectorData);
+    }
+
+    // Step 2: Create a main category for this import
+    const categoryName = 'General Services'; // You can make this dynamic based on sheet name
     
-    // Insert main category
     const { data: categoryData, error: categoryError } = await supabase
       .from('service_categories')
       .insert({
         name: categoryName,
-        description: 'Imported automotive services',
+        description: `Imported services for ${categoryName}`,
+        sector_id: sectorData.id,
         position: 0
       })
       .select()
@@ -62,7 +93,7 @@ export const importServiceHierarchy = async (rawData: any[]): Promise<ImportResu
 
     console.log('Created category:', categoryData);
 
-    // Create subcategories
+    // Step 3: Create subcategories
     const subcategoriesData = [];
     for (let i = 0; i < subcategoryNames.length; i++) {
       const subcategoryName = subcategoryNames[i].trim();
@@ -87,7 +118,7 @@ export const importServiceHierarchy = async (rawData: any[]): Promise<ImportResu
       console.log('Created subcategory:', subData);
     }
 
-    // Process jobs
+    // Step 4: Process jobs
     let totalJobs = 0;
     
     for (const row of rawData) {
@@ -139,10 +170,11 @@ export const importServiceHierarchy = async (rawData: any[]): Promise<ImportResu
     }
 
     const result: ImportResult = {
+      sectors: 1,
       categories: 1,
       subcategories: subcategoriesData.length,
       jobs: totalJobs,
-      totalImported: 1 + subcategoriesData.length + totalJobs
+      totalImported: 1 + 1 + subcategoriesData.length + totalJobs
     };
 
     console.log('Import completed successfully:', result);

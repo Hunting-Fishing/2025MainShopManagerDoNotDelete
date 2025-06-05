@@ -1,11 +1,14 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
+import { ServiceSector, ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
 
-export const fetchServiceCategories = async (): Promise<ServiceMainCategory[]> => {
+export const fetchServiceSectors = async (): Promise<ServiceSector[]> => {
   try {
-    // Fetch all categories, subcategories, and jobs in optimized queries
-    const [categoriesResult, subcategoriesResult, jobsResult] = await Promise.all([
+    // Fetch all sectors, categories, subcategories, and jobs in optimized queries
+    const [sectorsResult, categoriesResult, subcategoriesResult, jobsResult] = await Promise.all([
+      supabase
+        .from('service_sectors')
+        .select('*')
+        .order('position', { ascending: true }),
       supabase
         .from('service_categories')
         .select('*')
@@ -20,45 +23,71 @@ export const fetchServiceCategories = async (): Promise<ServiceMainCategory[]> =
         .order('position', { ascending: true })
     ]);
 
+    if (sectorsResult.error) throw sectorsResult.error;
     if (categoriesResult.error) throw categoriesResult.error;
     if (subcategoriesResult.error) throw subcategoriesResult.error;
     if (jobsResult.error) throw jobsResult.error;
 
-    // Build the hierarchical structure efficiently
-    const hierarchicalCategories: ServiceMainCategory[] = categoriesResult.data.map(category => {
-      const categorySubcategories = subcategoriesResult.data
-        .filter(sub => sub.category_id === category.id)
-        .map(subcategory => {
-          const subcategoryJobs = jobsResult.data
-            .filter(job => job.subcategory_id === subcategory.id)
-            .map(job => ({
-              id: job.id,
-              name: job.name,
-              description: job.description,
-              estimatedTime: job.estimated_time,
-              price: job.price,
-              subcategory_id: job.subcategory_id
-            } as ServiceJob));
+    // Build the 4-tier hierarchical structure
+    const hierarchicalSectors: ServiceSector[] = sectorsResult.data.map(sector => {
+      const sectorCategories = categoriesResult.data
+        .filter(cat => cat.sector_id === sector.id)
+        .map(category => {
+          const categorySubcategories = subcategoriesResult.data
+            .filter(sub => sub.category_id === category.id)
+            .map(subcategory => {
+              const subcategoryJobs = jobsResult.data
+                .filter(job => job.subcategory_id === subcategory.id)
+                .map(job => ({
+                  id: job.id,
+                  name: job.name,
+                  description: job.description,
+                  estimatedTime: job.estimated_time,
+                  price: job.price,
+                  subcategory_id: job.subcategory_id
+                } as ServiceJob));
+
+              return {
+                id: subcategory.id,
+                name: subcategory.name,
+                description: subcategory.description,
+                jobs: subcategoryJobs,
+                category_id: subcategory.category_id
+              } as ServiceSubcategory;
+            });
 
           return {
-            id: subcategory.id,
-            name: subcategory.name,
-            description: subcategory.description,
-            jobs: subcategoryJobs,
-            category_id: subcategory.category_id
-          } as ServiceSubcategory;
+            id: category.id,
+            name: category.name,
+            description: category.description,
+            subcategories: categorySubcategories,
+            position: category.position,
+            sector_id: category.sector_id
+          } as ServiceMainCategory;
         });
 
       return {
-        id: category.id,
-        name: category.name,
-        description: category.description,
-        subcategories: categorySubcategories,
-        position: category.position
-      } as ServiceMainCategory;
+        id: sector.id,
+        name: sector.name,
+        description: sector.description,
+        categories: sectorCategories,
+        position: sector.position,
+        is_active: sector.is_active
+      } as ServiceSector;
     });
 
-    return hierarchicalCategories;
+    return hierarchicalSectors;
+  } catch (error) {
+    console.error('Error fetching service sectors:', error);
+    throw error;
+  }
+};
+
+// Keep the existing fetchServiceCategories for backward compatibility
+export const fetchServiceCategories = async (): Promise<ServiceMainCategory[]> => {
+  try {
+    const sectors = await fetchServiceSectors();
+    return sectors.flatMap(sector => sector.categories);
   } catch (error) {
     console.error('Error fetching service categories:', error);
     throw error;
@@ -128,7 +157,10 @@ export const searchServices = async (query: string, limit: number = 100): Promis
         service_subcategories!inner (
           name,
           service_categories!inner (
-            name
+            name,
+            service_sectors!inner (
+              name
+            )
           )
         )
       `)

@@ -6341,6 +6341,7 @@ export type Database = {
           is_active: boolean | null
           name: string
           position: number | null
+          sector_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -6350,6 +6351,7 @@ export type Database = {
           is_active?: boolean | null
           name: string
           position?: number | null
+          sector_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -6359,9 +6361,18 @@ export type Database = {
           is_active?: boolean | null
           name?: string
           position?: number | null
+          sector_id?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "service_categories_sector_id_fkey"
+            columns: ["sector_id"]
+            isOneToOne: false
+            referencedRelation: "service_sectors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       service_hierarchy: {
         Row: {
@@ -6589,6 +6600,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      service_sectors: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          position: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          position?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          position?: number | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       service_subcategories: {
         Row: {
@@ -8880,6 +8921,10 @@ export type Database = {
           p_estimated_time?: number
           p_price?: number
         }
+        Returns: string
+      }
+      insert_service_sector: {
+        Args: { p_name: string; p_description?: string; p_position?: number }
         Returns: string
       }
       insert_service_subcategory: {
