@@ -1,250 +1,201 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { ServiceSector, ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
-
-interface ImportResult {
-  sectors: number;
-  categories: number;
-  subcategories: number;
-  jobs: number;
-  totalImported: number;
-}
 
 interface ExcelSheetData {
   sheetName: string;
   data: any[];
 }
 
-export const importServiceHierarchy = async (
-  rawData: ExcelSheetData[] | any[], 
-  sectorName: string = 'Automotive Services'
-): Promise<ImportResult> => {
-  console.log('Starting 4-tier service hierarchy import...');
-  console.log('Raw data structure:', rawData);
+interface ImportResult {
+  totalImported: number;
+  sectors: number;
+  categories: number;
+  subcategories: number;
+  jobs: number;
+}
 
+export const importServiceHierarchy = async (rawData: ExcelSheetData[]): Promise<ImportResult> => {
   try {
-    if (!rawData || rawData.length === 0) {
-      throw new Error('No data to import');
+    console.log('Starting service hierarchy import with data:', rawData);
+
+    if (!Array.isArray(rawData) || rawData.length === 0) {
+      throw new Error('No valid sheet data provided');
     }
 
-    // Determine if we have multi-sheet data or single sheet data
-    const isMultiSheet = Array.isArray(rawData) && rawData.length > 0 && 
-                        typeof rawData[0] === 'object' && 'sheetName' in rawData[0];
-    
-    let sheetsData: ExcelSheetData[];
-    
-    if (isMultiSheet) {
-      sheetsData = rawData as ExcelSheetData[];
-      console.log(`Processing ${sheetsData.length} sheets as categories`);
-    } else {
-      // Convert single sheet data to multi-sheet format
-      console.log('Converting single sheet data to multi-sheet format');
-      sheetsData = [{
-        sheetName: 'General Services',
-        data: rawData as any[]
-      }];
-    }
-
-    if (sheetsData.length === 0) {
-      throw new Error('No valid sheets found in the Excel file');
-    }
-
-    // Step 1: Create or get the service sector
-    let sectorData;
-    const { data: existingSector, error: sectorFetchError } = await supabase
+    // Step 1: Create or get the "Automotive Services" sector
+    const { data: existingSector, error: sectorCheckError } = await supabase
       .from('service_sectors')
-      .select('*')
-      .eq('name', sectorName)
+      .select('id')
+      .eq('name', 'Automotive Services')
       .single();
 
-    if (sectorFetchError && sectorFetchError.code !== 'PGRST116') {
-      throw sectorFetchError;
-    }
+    let sectorId: string;
 
     if (existingSector) {
-      sectorData = existingSector;
-      console.log('Using existing sector:', sectorData);
+      sectorId = existingSector.id;
+      console.log('Using existing Automotive Services sector:', sectorId);
     } else {
-      const { data: newSector, error: sectorError } = await supabase
+      const { data: newSector, error: sectorCreateError } = await supabase
         .from('service_sectors')
-        .insert({
-          name: sectorName,
-          description: `Imported ${sectorName.toLowerCase()} services`,
-          position: 0
-        })
-        .select()
+        .insert([{
+          name: 'Automotive Services',
+          description: 'Automotive service categories and jobs',
+          position: 1,
+          is_active: true
+        }])
+        .select('id')
         .single();
 
-      if (sectorError) {
-        console.error('Error inserting sector:', sectorError);
-        throw sectorError;
-      }
-
-      sectorData = newSector;
-      console.log('Created sector:', sectorData);
+      if (sectorCreateError) throw sectorCreateError;
+      sectorId = newSector.id;
+      console.log('Created new Automotive Services sector:', sectorId);
     }
 
-    let totalJobs = 0;
-    let totalSubcategories = 0;
-    const categoriesCreated = [];
+    let totalImported = 0;
+    let categoriesCreated = 0;
+    let subcategoriesCreated = 0;
+    let jobsCreated = 0;
 
     // Step 2: Process each sheet as a category
-    for (let sheetIndex = 0; sheetIndex < sheetsData.length; sheetIndex++) {
-      const sheet = sheetsData[sheetIndex];
+    for (let sheetIndex = 0; sheetIndex < rawData.length; sheetIndex++) {
+      const sheet = rawData[sheetIndex];
       const categoryName = sheet.sheetName;
       
-      console.log(`Processing sheet "${categoryName}" as category...`);
-      
-      if (!sheet.data || sheet.data.length === 0) {
-        console.warn(`Sheet "${categoryName}" has no data, skipping...`);
+      console.log(`Processing category: ${categoryName} with ${sheet.data.length} rows`);
+
+      if (!sheet.data || sheet.data.length < 2) {
+        console.warn(`Skipping sheet "${categoryName}" - insufficient data`);
         continue;
       }
 
-      // Create main category for this sheet
-      const { data: categoryData, error: categoryError } = await supabase
+      // Create category
+      const { data: category, error: categoryError } = await supabase
         .from('service_categories')
-        .insert({
+        .insert([{
           name: categoryName,
           description: `Services for ${categoryName}`,
-          sector_id: sectorData.id,
-          position: sheetIndex
-        })
-        .select()
+          position: sheetIndex + 1,
+          sector_id: sectorId
+        }])
+        .select('id')
         .single();
 
       if (categoryError) {
-        console.error('Error inserting category:', categoryError);
-        throw categoryError;
-      }
-
-      console.log('Created category:', categoryData);
-      categoriesCreated.push(categoryData);
-
-      // Get the headers (subcategory names) from the first row structure
-      const firstRow = sheet.data[0];
-      if (!firstRow) {
-        console.warn(`Sheet "${categoryName}" has no header row, skipping...`);
+        console.error(`Error creating category ${categoryName}:`, categoryError);
         continue;
       }
 
-      const headers = Object.keys(firstRow);
-      console.log(`Sheet "${categoryName}" headers:`, headers);
+      categoriesCreated++;
+      const categoryId = category.id;
+      console.log(`Created category: ${categoryName} (${categoryId})`);
 
-      // Filter out empty headers - these will be our subcategories
-      const subcategoryNames = headers.filter(header => 
-        header && 
-        header.trim() !== '' && 
-        header.toLowerCase() !== 'service' && // Skip common descriptor columns
-        header.toLowerCase() !== 'job' &&
-        header.toLowerCase() !== 'task'
-      );
+      // Get subcategory names from first row (excluding first column which might be empty)
+      const headerRow = sheet.data[0];
+      const subcategoryNames = headerRow
+        .slice(1) // Skip first column
+        .filter(name => name && name.toString().trim())
+        .map(name => name.toString().trim());
 
-      console.log(`Valid subcategory names for "${categoryName}":`, subcategoryNames);
+      console.log(`Found ${subcategoryNames.length} subcategories:`, subcategoryNames);
 
       if (subcategoryNames.length === 0) {
-        console.warn(`No valid subcategories found in sheet "${categoryName}"`);
+        console.warn(`No subcategories found in sheet "${categoryName}"`);
         continue;
       }
 
-      // Step 3: Create subcategories for this category
-      const subcategoriesData = [];
-      for (let i = 0; i < subcategoryNames.length; i++) {
-        const subcategoryName = subcategoryNames[i].trim();
-        
-        const { data: subData, error: subError } = await supabase
-          .from('service_subcategories')
-          .insert({
-            name: subcategoryName,
-            description: `${categoryName} - ${subcategoryName} services`,
-            category_id: categoryData.id,
-            position: i
-          })
-          .select()
-          .single();
+      // Create subcategories
+      const subcategoryInserts = subcategoryNames.map((name, index) => ({
+        name,
+        description: `${name} services`,
+        position: index + 1,
+        category_id: categoryId
+      }));
 
-        if (subError) {
-          console.error('Error inserting subcategory:', subError);
-          throw subError;
-        }
+      const { data: subcategories, error: subcategoryError } = await supabase
+        .from('service_subcategories')
+        .insert(subcategoryInserts)
+        .select('id, name');
 
-        subcategoriesData.push(subData);
-        totalSubcategories++;
-        console.log('Created subcategory:', subData);
+      if (subcategoryError) {
+        console.error(`Error creating subcategories for ${categoryName}:`, subcategoryError);
+        continue;
       }
 
-      // Step 4: Process jobs for this sheet
-      let sheetJobs = 0;
-      
-      for (const row of sheet.data) {
-        // Skip empty rows
-        if (!row || Object.values(row).every(value => !value || String(value).trim() === '')) {
-          continue;
+      subcategoriesCreated += subcategories.length;
+      console.log(`Created ${subcategories.length} subcategories for ${categoryName}`);
+
+      // Create a mapping of subcategory names to IDs
+      const subcategoryMap = new Map();
+      subcategories.forEach(sub => {
+        subcategoryMap.set(sub.name, sub.id);
+      });
+
+      // Process job data (rows 2 onwards, up to 100 rows)
+      const jobRows = sheet.data.slice(1, 100); // Skip header row, limit to 99 data rows
+      const jobsToInsert = [];
+
+      let jobPosition = 1;
+      for (const row of jobRows) {
+        if (!row || !row[0] || !row[0].toString().trim()) {
+          continue; // Skip empty rows
         }
 
-        // Process each subcategory column in this row
-        for (let i = 0; i < subcategoryNames.length; i++) {
-          const subcategoryName = subcategoryNames[i];
-          const jobName = row[subcategoryName];
-          
-          if (jobName && String(jobName).trim() !== '') {
-            const subcategoryData = subcategoriesData[i];
-            
-            try {
-              const { data: jobData, error: jobError } = await supabase
-                .from('service_jobs')
-                .insert({
-                  name: String(jobName).trim(),
-                  description: `${categoryName} - ${subcategoryName} service`,
-                  subcategory_id: subcategoryData.id,
-                  estimated_time: 60, // Default 1 hour
-                  price: 50, // Default $50
-                  position: sheetJobs
-                })
-                .select()
-                .single();
+        // Process each subcategory column for this row
+        for (let colIndex = 1; colIndex < Math.min(row.length, subcategoryNames.length + 1); colIndex++) {
+          const jobName = row[colIndex];
+          if (!jobName || !jobName.toString().trim()) {
+            continue; // Skip empty cells
+          }
 
-              if (jobError) {
-                console.error('Error inserting job:', jobError);
-                // Continue with other jobs instead of throwing
-                continue;
-              }
+          const subcategoryName = subcategoryNames[colIndex - 1];
+          const subcategoryId = subcategoryMap.get(subcategoryName);
 
-              sheetJobs++;
-              totalJobs++;
-              
-              if (totalJobs % 10 === 0) {
-                console.log(`Imported ${totalJobs} jobs so far...`);
-              }
-            } catch (error) {
-              console.error('Error processing job:', jobName, error);
-              // Continue with other jobs
-              continue;
-            }
+          if (subcategoryId) {
+            jobsToInsert.push({
+              name: jobName.toString().trim(),
+              description: `${jobName} service`,
+              estimated_time: 60, // Default 1 hour
+              price: 100, // Default price
+              position: jobPosition++,
+              subcategory_id: subcategoryId
+            });
           }
         }
+      }
 
-        // Add small delay to prevent overwhelming the database
-        if (sheet.data.indexOf(row) % 20 === 0) {
-          await new Promise(resolve => setTimeout(resolve, 1));
+      // Insert jobs in batches to avoid large single operations
+      const batchSize = 100;
+      for (let i = 0; i < jobsToInsert.length; i += batchSize) {
+        const batch = jobsToInsert.slice(i, i + batchSize);
+        
+        const { error: jobError } = await supabase
+          .from('service_jobs')
+          .insert(batch);
+
+        if (jobError) {
+          console.error(`Error inserting jobs batch for ${categoryName}:`, jobError);
+        } else {
+          jobsCreated += batch.length;
+          console.log(`Inserted ${batch.length} jobs for ${categoryName} (batch ${Math.floor(i/batchSize) + 1})`);
         }
       }
 
-      console.log(`Completed sheet "${categoryName}": ${sheetJobs} jobs created`);
+      totalImported += jobsToInsert.length;
     }
 
-    const result: ImportResult = {
+    const result = {
+      totalImported,
       sectors: 1,
-      categories: categoriesCreated.length,
-      subcategories: totalSubcategories,
-      jobs: totalJobs,
-      totalImported: 1 + categoriesCreated.length + totalSubcategories + totalJobs
+      categories: categoriesCreated,
+      subcategories: subcategoriesCreated,
+      jobs: jobsCreated
     };
 
-    console.log('Import completed successfully:', result);
+    console.log('Import completed:', result);
     return result;
 
   } catch (error) {
-    console.error('Service import failed:', error);
-    throw new Error(`Import failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error('Error importing service hierarchy:', error);
+    throw error;
   }
 };

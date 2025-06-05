@@ -50,32 +50,21 @@ export const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onImportCo
     try {
       console.log(`Starting import of file: ${selectedFile}`);
       
-      // Step 1: Import from storage
+      // Step 1: Import from storage with enhanced processing
       const rawData = await importFromStorage('work-order-files', selectedFile, setProgress);
+      
+      if (!rawData || rawData.length === 0) {
+        throw new Error('No data found in the selected file');
+      }
+
+      console.log(`Successfully parsed ${rawData.length} sheets from Excel file`);
       
       // Step 2: Import to database
       setProgress({
         stage: 'database',
-        progress: 80,
-        message: 'Importing to database...'
+        progress: 75,
+        message: `Importing ${rawData.length} categories to database...`
       });
-
-      // Check if we have multi-sheet data
-      const isMultiSheet = Array.isArray(rawData) && rawData.length > 0 && 
-                          typeof rawData[0] === 'object' && 'sheetName' in rawData[0];
-      
-      if (isMultiSheet) {
-        const sheetsData = rawData as ExcelSheetData[];
-        console.log(`Processing ${sheetsData.length} sheets:`, sheetsData.map(s => s.sheetName));
-        
-        setProgress({
-          stage: 'database',
-          progress: 85,
-          message: `Processing ${sheetsData.length} categories from Excel sheets...`
-        });
-      } else {
-        console.log('Processing single data source...');
-      }
 
       const result = await importServiceHierarchy(rawData);
       
@@ -86,8 +75,9 @@ export const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onImportCo
       });
 
       setSuccess(
-        `Import completed! Created ${result.sectors} sector, ${result.categories} categories, ` +
-        `${result.subcategories} subcategories, and ${result.jobs} jobs.`
+        `Import completed successfully! ` +
+        `Created ${result.categories} categories, ${result.subcategories} subcategories, ` +
+        `and ${result.jobs} individual service jobs from ${rawData.length} Excel sheets.`
       );
       
       // Call the completion callback if provided
@@ -114,12 +104,13 @@ export const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onImportCo
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h4 className="font-medium text-blue-900 mb-2">Excel File Format</h4>
+            <h4 className="font-medium text-blue-900 mb-2">Enhanced Excel Import (Up to 20 Sheets, 100 Rows Each)</h4>
             <ul className="text-sm text-blue-800 space-y-1">
-              <li>• Each sheet represents a service category</li>
+              <li>• Each sheet represents a service category (up to 20 sheets supported)</li>
               <li>• Row 1 should contain subcategory headers</li>
-              <li>• Rows 2+ contain individual service jobs</li>
+              <li>• Rows 2-100 can contain individual service jobs</li>
               <li>• All sheets will be imported under "Automotive Services" sector</li>
+              <li>• Large files with extensive data are now fully supported</li>
             </ul>
           </div>
 
