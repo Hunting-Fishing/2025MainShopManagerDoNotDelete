@@ -2,13 +2,15 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Upload } from 'lucide-react';
+import { Upload, Table, TreePine } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ServiceHierarchyTree } from './ServiceHierarchyTree';
+import { ServiceHierarchyExcelView } from './ServiceHierarchyExcelView';
 import { StorageFileBrowser } from './StorageFileBrowser';
 import { ServiceImportProgress } from './ServiceImportProgress';
 import { batchImportServices } from '@/lib/services/batchServiceImporter';
 import { importFromStorage } from '@/lib/services/storageImportService';
+import { useServiceSectors } from '@/hooks/useServiceCategories';
 
 interface ImportState {
   isImporting: boolean;
@@ -21,6 +23,8 @@ interface ImportState {
 
 export function ServiceHierarchyBrowser() {
   const [showFileBrowser, setShowFileBrowser] = useState(false);
+  const [viewMode, setViewMode] = useState<'tree' | 'table'>('tree');
+  const { sectors, loading, error, refetch } = useServiceSectors();
   const [importState, setImportState] = useState<ImportState>({
     isImporting: false,
     progress: 0,
@@ -81,7 +85,7 @@ export function ServiceHierarchyBrowser() {
 
       // Refresh the service sectors data
       setTimeout(() => {
-        window.location.reload();
+        refetch();
       }, 2000);
 
     } catch (error) {
@@ -104,6 +108,35 @@ export function ServiceHierarchyBrowser() {
     }));
   };
 
+  const handleSaveTableChanges = async (data: any) => {
+    // This would implement the actual save logic
+    // For now, just show a success message and refetch data
+    console.log('Saving table changes:', data);
+    await refetch();
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading service hierarchy...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-600 mb-4">Error loading service hierarchy: {error}</p>
+        <Button onClick={refetch} variant="outline">
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Import Progress */}
@@ -119,7 +152,32 @@ export function ServiceHierarchyBrowser() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Actions</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Actions</CardTitle>
+            <div className="flex items-center space-x-2">
+              {/* View Mode Toggle */}
+              <div className="flex items-center border rounded-lg p-1">
+                <Button
+                  variant={viewMode === 'tree' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('tree')}
+                  className="h-8"
+                >
+                  <TreePine className="h-4 w-4 mr-1" />
+                  Tree
+                </Button>
+                <Button
+                  variant={viewMode === 'table' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('table')}
+                  className="h-8"
+                >
+                  <Table className="h-4 w-4 mr-1" />
+                  Table
+                </Button>
+              </div>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <Button onClick={() => setShowFileBrowser(true)}>
@@ -142,8 +200,15 @@ export function ServiceHierarchyBrowser() {
         </DialogContent>
       </Dialog>
 
-      {/* Enhanced Service Hierarchy Tree */}
-      <ServiceHierarchyTree />
+      {/* View Content */}
+      {viewMode === 'tree' ? (
+        <ServiceHierarchyTree />
+      ) : (
+        <ServiceHierarchyExcelView 
+          sectors={sectors} 
+          onSave={handleSaveTableChanges}
+        />
+      )}
     </div>
   );
 }
