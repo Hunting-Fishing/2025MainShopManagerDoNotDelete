@@ -46,7 +46,7 @@ export const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onImportCo
       console.log(`Starting import of file: ${selectedFile}`);
       
       // Step 1: Import from storage
-      const rawData = await importFromStorage('service-imports', selectedFile, setProgress);
+      const rawData = await importFromStorage('work-order-files', selectedFile, setProgress);
       
       // Step 2: Import to database
       setProgress({
@@ -118,7 +118,7 @@ export const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onImportCo
           )}
 
           <StorageFileBrowser 
-            bucketName="service-imports"
+            bucketName="work-order-files"
             onFileSelect={handleFileSelect} 
           />
 
