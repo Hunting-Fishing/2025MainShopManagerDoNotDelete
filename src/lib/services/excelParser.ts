@@ -13,9 +13,14 @@ export function parseExcelToServiceCategories(file: File): Promise<ServiceMainCa
 
     reader.onload = async (e: any) => {
       try {
-        console.log('Starting Excel file parsing...');
+        console.log('Starting Excel file parsing with enhanced processing...');
         const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
+        const workbook = XLSX.read(data, { 
+          type: 'array',
+          cellDates: true,
+          cellNF: false,
+          cellText: false
+        });
 
         const categories: ServiceMainCategory[] = [];
         let categoryIndex = 0;
@@ -23,7 +28,18 @@ export function parseExcelToServiceCategories(file: File): Promise<ServiceMainCa
         for (const sheetName of workbook.SheetNames) {
           console.log(`Processing sheet: ${sheetName}`);
           const worksheet = workbook.Sheets[sheetName];
-          const aoa = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' }) as any[][];
+          
+          // Get the full range of the worksheet to ensure we capture all data
+          const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1:A1');
+          console.log(`Sheet range: ${worksheet['!ref']}, processing ${range.e.r + 1} rows`);
+          
+          const aoa = XLSX.utils.sheet_to_json(worksheet, { 
+            header: 1, 
+            defval: '',
+            range: 0, // Process from beginning
+            // Remove any artificial limits
+            raw: false
+          }) as any[][];
 
           if (!aoa || aoa.length < 2) {
             console.warn(`Sheet "${sheetName}" is empty or has an invalid format.`);
@@ -32,7 +48,7 @@ export function parseExcelToServiceCategories(file: File): Promise<ServiceMainCa
 
           // Get subcategory names from first row (starting from column B)
           const subcategoryNames: string[] = aoa[0].slice(1).filter(name => name && name.toString().trim());
-          console.log(`Found subcategories: ${subcategoryNames.join(', ')}`);
+          console.log(`Found ${subcategoryNames.length} subcategories: ${subcategoryNames.join(', ')}`);
 
           // Create subcategories
           const subcategories: ServiceSubcategory[] = subcategoryNames.map(name => ({
@@ -42,9 +58,11 @@ export function parseExcelToServiceCategories(file: File): Promise<ServiceMainCa
             jobs: []
           }));
 
-          // Process job data (starting from row 2)
+          // Process ALL job data (starting from row 2) - no artificial limits
           const jobsData: string[][] = aoa.slice(1);
+          console.log(`Processing ${jobsData.length} job rows for sheet: ${sheetName}`);
           
+          let processedJobs = 0;
           for (const rowData of jobsData) {
             if (!rowData[0] || !rowData[0].toString().trim()) continue;
 
@@ -64,11 +82,12 @@ export function parseExcelToServiceCategories(file: File): Promise<ServiceMainCa
                   estimatedTime: 60,
                   price: 50
                 });
+                processedJobs++;
               }
             }
 
-            // Add small delay to prevent blocking
-            if (jobsData.indexOf(rowData) % 10 === 0) {
+            // Reduce delay frequency for better performance
+            if (jobsData.indexOf(rowData) % 50 === 0 && jobsData.indexOf(rowData) > 0) {
               await new Promise(resolve => setTimeout(resolve, 1));
             }
           }
@@ -81,10 +100,14 @@ export function parseExcelToServiceCategories(file: File): Promise<ServiceMainCa
             position: categoryIndex++
           });
 
-          console.log(`Completed processing sheet: ${sheetName} with ${subcategories.length} subcategories`);
+          const totalJobsInCategory = subcategories.reduce((acc, sub) => acc + sub.jobs.length, 0);
+          console.log(`Completed processing sheet: ${sheetName} with ${subcategories.length} subcategories and ${totalJobsInCategory} total jobs`);
         }
 
-        console.log(`Excel parsing completed. Total categories: ${categories.length}`);
+        const totalServices = categories.reduce((acc, cat) => 
+          acc + cat.subcategories.reduce((subAcc, sub) => subAcc + sub.jobs.length, 0), 0);
+        
+        console.log(`Excel parsing completed. Total categories: ${categories.length}, Total services: ${totalServices}`);
         resolve(categories);
 
       } catch (error) {

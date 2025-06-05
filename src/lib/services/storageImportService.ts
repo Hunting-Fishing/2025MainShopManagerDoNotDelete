@@ -47,14 +47,14 @@ export const importFromStorage = async (
     // Convert blob to array buffer
     const arrayBuffer = await fileData.arrayBuffer();
     
-    // Parse Excel file with increased limits
+    // Parse Excel file with increased limits and better performance
     const workbook = XLSX.read(arrayBuffer, { 
       type: 'array',
       cellDates: true,
       cellNF: false,
       cellText: false,
       sheetStubs: false,
-      // Increase sheet processing limits
+      // Remove artificial limits
       bookVBA: false,
       bookDeps: false,
       bookFiles: false,
@@ -62,7 +62,7 @@ export const importFromStorage = async (
     });
 
     const sheetsData: ExcelSheetData[] = [];
-    const totalSheets = Math.min(workbook.SheetNames.length, 20); // Process up to 20 sheets
+    const totalSheets = workbook.SheetNames.length; // Process ALL sheets, not just 20
     
     console.log(`Processing ${totalSheets} sheets from Excel file`);
 
@@ -79,22 +79,22 @@ export const importFromStorage = async (
 
       const worksheet = workbook.Sheets[sheetName];
       
-      // Convert sheet to JSON with increased row limit
+      // Convert sheet to JSON without artificial row limits
       const sheetData = XLSX.utils.sheet_to_json(worksheet, {
         header: 1,
         defval: '',
         blankrows: false,
         range: 0, // Start from first row
-        // This will read up to 100 rows per sheet
         raw: false
+        // Remove the artificial 100 row limit
       }) as any[][];
 
-      // Filter out completely empty rows and limit to 100 rows
-      const filteredData = sheetData
-        .filter(row => row && row.some(cell => cell && cell.toString().trim()))
-        .slice(0, 100);
+      // Filter out completely empty rows but don't limit the number of rows
+      const filteredData = sheetData.filter(row => 
+        row && row.some(cell => cell && cell.toString().trim())
+      );
 
-      console.log(`Sheet "${sheetName}": ${filteredData.length} rows processed`);
+      console.log(`Sheet "${sheetName}": ${filteredData.length} rows processed (no artificial limits)`);
 
       if (filteredData.length > 0) {
         sheetsData.push({
@@ -103,8 +103,8 @@ export const importFromStorage = async (
         });
       }
 
-      // Add small delay to prevent blocking
-      if (i % 5 === 0) {
+      // Reduce delay frequency for better performance on large files
+      if (i % 10 === 0 && i > 0) {
         await new Promise(resolve => setTimeout(resolve, 1));
       }
     }
@@ -113,7 +113,7 @@ export const importFromStorage = async (
       onProgress({
         stage: 'complete',
         progress: 70,
-        message: `Parsed ${sheetsData.length} sheets with data`
+        message: `Parsed ${sheetsData.length} sheets with data (all available data processed)`
       });
     }
 
