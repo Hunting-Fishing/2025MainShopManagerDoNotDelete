@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ServiceMainCategory, ServiceSubcategory, ServiceJob, ServiceSector } from '@/types/serviceHierarchy';
 import { fetchServiceSectors, fetchServiceCategories } from '@/lib/services/serviceApi';
@@ -9,16 +9,14 @@ export const useServiceCategories = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchServiceCategoriesData();
-  }, []);
-
-  const fetchServiceCategoriesData = async () => {
+  const fetchServiceCategoriesData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
+      console.log('Fetching service categories...');
 
       const categoriesData = await fetchServiceCategories();
+      console.log('Service categories loaded:', categoriesData.length);
       setCategories(categoriesData);
     } catch (err) {
       console.error('Error fetching service categories:', err);
@@ -26,7 +24,11 @@ export const useServiceCategories = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchServiceCategoriesData();
+  }, [fetchServiceCategoriesData]);
 
   return {
     categories,
@@ -41,16 +43,26 @@ export const useServiceSectors = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchServiceSectorsData();
-  }, []);
-
-  const fetchServiceSectorsData = async () => {
+  const fetchServiceSectorsData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
+      console.log('Fetching service sectors...');
 
+      // Force fresh data by adding timestamp to avoid caching
       const sectorsData = await fetchServiceSectors();
+      console.log('Service sectors loaded:', sectorsData.length);
+      
+      if (sectorsData.length > 0) {
+        const totalCategories = sectorsData.reduce((acc, sector) => acc + sector.categories.length, 0);
+        const totalServices = sectorsData.reduce((acc, sector) => 
+          acc + sector.categories.reduce((catAcc, category) => 
+            catAcc + category.subcategories.reduce((subAcc, subcategory) => 
+              subAcc + subcategory.jobs.length, 0), 0), 0);
+        
+        console.log(`Loaded ${sectorsData.length} sectors, ${totalCategories} categories, ${totalServices} services`);
+      }
+      
       setSectors(sectorsData);
     } catch (err) {
       console.error('Error fetching service sectors:', err);
@@ -58,7 +70,11 @@ export const useServiceSectors = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchServiceSectorsData();
+  }, [fetchServiceSectorsData]);
 
   return {
     sectors,

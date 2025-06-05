@@ -3,10 +3,11 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload, FileText, AlertCircle } from 'lucide-react';
+import { Upload, FileText, AlertCircle, CheckCircle } from 'lucide-react';
 import { StorageFileBrowser } from './StorageFileBrowser';
 import { importFromStorage } from '@/lib/services/storageImportService';
 import { importServiceHierarchy } from '@/lib/services/serviceImportApi';
+import { toast } from 'sonner';
 
 export interface ServiceBulkImportProps {
   onImportComplete?: () => Promise<void>;
@@ -16,11 +17,6 @@ interface ImportProgress {
   stage: string;
   progress: number;
   message: string;
-}
-
-interface ExcelSheetData {
-  sheetName: string;
-  data: any[];
 }
 
 export const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onImportComplete }) => {
@@ -34,6 +30,7 @@ export const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onImportCo
     setSelectedFile(fileName);
     setError('');
     setSuccess('');
+    setProgress(null);
   };
 
   const handleImport = async () => {
@@ -51,10 +48,16 @@ export const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onImportCo
       console.log(`Starting import of file: ${selectedFile}`);
       
       // Step 1: Import from storage with enhanced processing
+      setProgress({
+        stage: 'download',
+        progress: 10,
+        message: `Reading Excel file: ${selectedFile}...`
+      });
+
       const rawData = await importFromStorage('work-order-files', selectedFile, setProgress);
       
       if (!rawData || rawData.length === 0) {
-        throw new Error('No data found in the selected file');
+        throw new Error('No data found in the selected file. Please ensure your Excel file contains data.');
       }
 
       console.log(`Successfully parsed ${rawData.length} sheets from Excel file`);
@@ -63,31 +66,47 @@ export const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onImportCo
       setProgress({
         stage: 'database',
         progress: 75,
-        message: `Importing ${rawData.length} categories to database...`
+        message: `Importing ${rawData.length} categories to "Automotive Services" sector...`
       });
 
       const result = await importServiceHierarchy(rawData);
       
+      if (result.errors.length > 0) {
+        console.warn('Import completed with some errors:', result.errors);
+        toast.error(`Import completed with ${result.errors.length} errors. Check console for details.`);
+      }
+      
       setProgress({
         stage: 'complete',
         progress: 100,
-        message: `Successfully imported ${result.totalImported} services across ${result.categories} categories`
+        message: `Successfully imported ${result.totalImported} services`
       });
 
-      setSuccess(
+      const successMessage = 
         `Import completed successfully! ` +
         `Created ${result.categories} categories, ${result.subcategories} subcategories, ` +
-        `and ${result.jobs} individual service jobs from ${rawData.length} Excel sheets.`
-      );
+        `and ${result.jobs} individual service jobs from ${rawData.length} Excel sheets. ` +
+        `All data imported to "Automotive Services" sector.`;
+
+      setSuccess(successMessage);
+      toast.success('Service import completed successfully!');
       
-      // Call the completion callback if provided
+      // Step 3: Trigger UI refresh
+      setProgress({
+        stage: 'refresh',
+        progress: 100,
+        message: 'Refreshing service hierarchy display...'
+      });
+
       if (onImportComplete) {
         await onImportComplete();
       }
       
     } catch (error) {
       console.error('Import failed:', error);
-      setError(error instanceof Error ? error.message : 'Import failed');
+      const errorMessage = error instanceof Error ? error.message : 'Import failed';
+      setError(errorMessage);
+      toast.error(`Import failed: ${errorMessage}`);
     } finally {
       setImporting(false);
     }
@@ -99,18 +118,19 @@ export const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onImportCo
         <CardHeader>
           <CardTitle className="flex items-center">
             <Upload className="h-5 w-5 mr-2" />
-            Bulk Import Services
+            Enhanced Service Import
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h4 className="font-medium text-blue-900 mb-2">Enhanced Excel Import (Up to 20 Sheets, 100 Rows Each)</h4>
+            <h4 className="font-medium text-blue-900 mb-2">4-Tier Service Hierarchy Import</h4>
             <ul className="text-sm text-blue-800 space-y-1">
-              <li>• Each sheet represents a service category (up to 20 sheets supported)</li>
-              <li>• Row 1 should contain subcategory headers</li>
-              <li>• Rows 2-100 can contain individual service jobs</li>
-              <li>• All sheets will be imported under "Automotive Services" sector</li>
-              <li>• Large files with extensive data are now fully supported</li>
+              <li>• Excel files with up to 20 sheets supported (100 rows each)</li>
+              <li>• Each sheet becomes a service category</li>
+              <li>• Column headers become subcategories</li>
+              <li>• Cell values become individual service jobs</li>
+              <li>• All data imports to "Automotive Services" sector</li>
+              <li>• Duplicates are automatically handled</li>
             </ul>
           </div>
 
@@ -123,7 +143,7 @@ export const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onImportCo
 
           {success && (
             <Alert>
-              <FileText className="h-4 w-4" />
+              <CheckCircle className="h-4 w-4" />
               <AlertDescription>{success}</AlertDescription>
             </Alert>
           )}
@@ -159,7 +179,7 @@ export const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onImportCo
                 disabled={importing}
                 className="ml-4"
               >
-                {importing ? 'Importing...' : 'Import'}
+                {importing ? 'Importing...' : 'Import to Automotive Services'}
               </Button>
             </div>
           )}
