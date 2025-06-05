@@ -30,8 +30,9 @@ export function ServiceBasedJobLineForm({ workOrderId, onSubmit, onCancel }: Ser
       description: service.description,
       categoryName,
       subcategoryName,
-      estimatedTime: service.estimated_time,
-      price: service.price
+      estimatedTime: service.estimatedTime,
+      price: service.price,
+      serviceId: service.id // Added missing serviceId property
     };
 
     setSelectedServices(prev => [...prev, selectedService]);
