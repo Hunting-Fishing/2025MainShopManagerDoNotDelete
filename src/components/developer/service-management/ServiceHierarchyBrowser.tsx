@@ -1,70 +1,54 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
+import { Tree, Loader2, Building, Table } from 'lucide-react';
+import { Sector } from './Sector';
+import { useServiceSectors } from '@/hooks/useServiceCategories';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ServiceSectorsList } from './ServiceSectorsList';
 import { ServiceHierarchyExcelView } from './ServiceHierarchyExcelView';
-import { useServiceSectors } from '@/hooks/useServiceCategories';
-import { Loader2, Search, Plus, TreePine, Table } from 'lucide-react';
+import { ServiceSector } from '@/types/serviceHierarchy';
+import { cn } from '@/lib/utils';
+import { ChevronDown } from 'lucide-react';
+
+interface SectorSectionProps {
+  sector: ServiceSector;
+}
+
+const SectorSection: React.FC<SectorSectionProps> = ({ sector }) => {
+  const [isOpen, setIsOpen] = useState(true);
+
+  return (
+    <div className="border rounded-md shadow-sm">
+      <div
+        className="flex items-center justify-between p-3 cursor-pointer bg-gray-50 hover:bg-gray-100"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <div className="flex items-center space-x-3">
+          <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          <h3 className="text-lg font-semibold">{sector.name}</h3>
+        </div>
+        <span className="text-sm text-gray-500">{sector.categories.length} Categories</span>
+      </div>
+      {isOpen && (
+        <div className="p-4">
+          {sector.categories.map((category) => (
+            <Sector key={category.id} category={category} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export function ServiceHierarchyBrowser() {
-  const { sectors, loading, error } = useServiceSectors();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [expandedSectors, setExpandedSectors] = useState<Set<string>>(new Set());
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const { sectors, loading, error, refetch } = useServiceSectors();
+  const [view, setView] = useState<'tree' | 'excel'>('tree');
 
-  const toggleSector = (sectorId: string) => {
-    setExpandedSectors((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(sectorId)) {
-        newSet.delete(sectorId);
-      } else {
-        newSet.add(sectorId);
-      }
-      return newSet;
-    });
-  };
-
-  const toggleCategory = (categoryId: string) => {
-    setExpandedCategories((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(categoryId)) {
-        newSet.delete(categoryId);
-      } else {
-        newSet.add(categoryId);
-      }
-      return newSet;
-    });
-  };
-
-  const filteredSectors = sectors.filter((sector) => {
-    const sectorMatch = sector.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const categoryMatch = sector.categories.some((category) =>
-      category.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-    const subcategoryMatch = sector.categories.some((category) =>
-      category.subcategories.some((subcategory) =>
-        subcategory.name.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    );
-    const jobMatch = sector.categories.some((category) =>
-      category.subcategories.some((subcategory) =>
-        subcategory.jobs.some((job) => job.name.toLowerCase().includes(searchQuery.toLowerCase()))
-      )
-    );
-    return sectorMatch || categoryMatch || subcategoryMatch || jobMatch;
-  });
-
-  const handleSaveChanges = async (updatedSectors: any[]) => {
-    try {
-      // TODO: Implement save functionality
-      console.log('Saving changes:', updatedSectors);
-      // This would typically call an API to update the service hierarchy
-    } catch (error) {
-      console.error('Error saving changes:', error);
-    }
+  const handleSave = async (data: any) => {
+    console.log('Saving data:', data);
+    // Implementation for saving changes
+    // This would call the appropriate service to update the data
+    await refetch();
   };
 
   if (loading) {
@@ -94,158 +78,48 @@ export function ServiceHierarchyBrowser() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <ServiceSectorsList />
       
-      <Card>
-        <CardHeader>
-          <CardTitle>Service Hierarchy Management</CardTitle>
+      <Card className="h-[800px] flex flex-col">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <CardTitle>Service Hierarchy Browser</CardTitle>
+            <Tabs value={view} onValueChange={(value: any) => setView(value)} className="w-auto">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="tree" className="flex items-center space-x-2">
+                  <Tree className="h-4 w-4" />
+                  <span>Tree View</span>
+                </TabsTrigger>
+                <TabsTrigger value="excel" className="flex items-center space-x-2">
+                  <Table className="h-4 w-4" />
+                  <span>Excel Table</span>
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="tree" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="tree" className="flex items-center gap-2">
-                <TreePine className="h-4 w-4" />
-                Tree View
-              </TabsTrigger>
-              <TabsTrigger value="table" className="flex items-center gap-2">
-                <Table className="h-4 w-4" />
-                Excel Table
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="tree" className="space-y-4">
-              <div className="flex items-center space-x-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    placeholder="Search services..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Sector
-                </Button>
-              </div>
-
+        
+        <CardContent className="flex-1 overflow-hidden p-0">
+          {view === 'tree' ? (
+            <div className="p-6 h-full overflow-auto">
               {sectors.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
-                  <TreePine className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <p>No service sectors found</p>
-                  <p className="text-sm">Create your first service sector to get started</p>
+                  <Building className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p>No service hierarchy found</p>
+                  <p className="text-sm">Import services to populate the hierarchy</p>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {filteredSectors.map((sector) => (
-                    <Card key={sector.id} className="border">
-                      <CardHeader 
-                        className="cursor-pointer hover:bg-gray-50"
-                        onClick={() => toggleSector(sector.id)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <TreePine className="h-5 w-5 text-blue-600" />
-                            <CardTitle className="text-lg">{sector.name}</CardTitle>
-                            <Badge variant="outline">
-                              {sector.categories.length} categories
-                            </Badge>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Button variant="ghost" size="sm">
-                              <Plus className="h-4 w-4 mr-1" />
-                              Add Category
-                            </Button>
-                          </div>
-                        </div>
-                        {sector.description && (
-                          <p className="text-sm text-gray-600 mt-2">{sector.description}</p>
-                        )}
-                      </CardHeader>
-                      
-                      {expandedSectors.has(sector.id) && (
-                        <CardContent className="pt-0">
-                          <div className="space-y-3 ml-6">
-                            {sector.categories.map((category) => (
-                              <div key={category.id} className="border-l-2 border-gray-200 pl-4">
-                                <div 
-                                  className="flex items-center justify-between p-3 bg-gray-50 rounded cursor-pointer hover:bg-gray-100"
-                                  onClick={() => toggleCategory(category.id)}
-                                >
-                                  <div className="flex items-center space-x-2">
-                                    <span className="font-medium">{category.name}</span>
-                                    <Badge variant="secondary" className="text-xs">
-                                      {category.subcategories.length} subcategories
-                                    </Badge>
-                                  </div>
-                                  <Button variant="ghost" size="sm">
-                                    <Plus className="h-3 w-3 mr-1" />
-                                    Add Subcategory
-                                  </Button>
-                                </div>
-                                
-                                {expandedCategories.has(category.id) && (
-                                  <div className="mt-3 space-y-2 ml-4">
-                                    {category.subcategories.map((subcategory) => (
-                                      <div key={subcategory.id} className="p-2 bg-white rounded border">
-                                        <div className="flex items-center justify-between">
-                                          <span className="text-sm font-medium">{subcategory.name}</span>
-                                          <div className="flex items-center space-x-2">
-                                            <Badge variant="outline" className="text-xs">
-                                              {subcategory.jobs.length} services
-                                            </Badge>
-                                            <Button variant="ghost" size="sm">
-                                              <Plus className="h-3 w-3 mr-1" />
-                                              Add Service
-                                            </Button>
-                                          </div>
-                                        </div>
-                                        
-                                        {subcategory.jobs.length > 0 && (
-                                          <div className="mt-2 space-y-1">
-                                            {subcategory.jobs.map((job) => (
-                                              <div key={job.id} className="text-xs p-2 bg-gray-50 rounded flex items-center justify-between">
-                                                <span>{job.name}</span>
-                                                <div className="flex items-center space-x-2">
-                                                  {job.estimatedTime && (
-                                                    <Badge variant="outline" className="text-xs">
-                                                      {job.estimatedTime}min
-                                                    </Badge>
-                                                  )}
-                                                  {job.price && (
-                                                    <Badge variant="outline" className="text-xs">
-                                                      ${job.price}
-                                                    </Badge>
-                                                  )}
-                                                </div>
-                                              </div>
-                                            ))}
-                                          </div>
-                                        )}
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      )}
-                    </Card>
+                <div className="space-y-6">
+                  {sectors.map((sector) => (
+                    <SectorSection key={sector.id} sector={sector} />
                   ))}
                 </div>
               )}
-            </TabsContent>
-            
-            <TabsContent value="table">
-              <ServiceHierarchyExcelView 
-                sectors={sectors}
-                onSave={handleSaveChanges}
-              />
-            </TabsContent>
-          </Tabs>
+            </div>
+          ) : (
+            <ServiceHierarchyExcelView sectors={sectors} onSave={handleSave} />
+          )}
         </CardContent>
       </Card>
     </div>
