@@ -3,205 +3,200 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, Download, Loader2, FileSpreadsheet, RefreshCw } from 'lucide-react';
+import { FileText, Upload, RefreshCw } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 interface StorageFile {
   name: string;
-  id: string | null;
-  updated_at: string | null;
-  created_at: string | null;
-  last_accessed_at: string | null;
-  metadata: Record<string, any> | null;
+  id: string;
+  updated_at: string;
+  created_at: string;
+  last_accessed_at: string;
+  metadata: any;
 }
 
 interface StorageFileBrowserProps {
   bucketName: string;
   onFileSelect: (fileName: string) => void;
-  accept?: string;
-  disabled?: boolean;
+  accept?: string[];
+  title?: string;
 }
 
 export const StorageFileBrowser: React.FC<StorageFileBrowserProps> = ({
   bucketName,
   onFileSelect,
-  accept = '.csv,.json,.xlsx,.xls',
-  disabled = false
+  accept = ['.csv', '.json', '.xlsx', '.xls'],
+  title = 'Select File to Import'
 }) => {
   const [files, setFiles] = useState<StorageFile[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadFiles();
-  }, [bucketName]);
-
   const loadFiles = async () => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      setLoading(true);
-      setError(null);
-      
       console.log(`Loading files from bucket: ${bucketName}`);
-
-      const { data, error: listError } = await supabase.storage
+      console.log(`Accepted file types: ${accept.join(', ')}`);
+      
+      // First, let's list ALL files to see what's actually in the bucket
+      const { data: allFiles, error: listError } = await supabase.storage
         .from(bucketName)
         .list('', {
           limit: 100,
           offset: 0,
-          sortBy: { column: 'updated_at', order: 'desc' }
+          sortBy: { column: 'created_at', order: 'desc' }
         });
-
-      console.log('Raw storage response:', { data, error: listError });
 
       if (listError) {
         console.error('Storage list error:', listError);
         throw listError;
       }
 
-      if (!data) {
-        console.log('No data returned from storage');
+      console.log('All files in bucket:', allFiles);
+
+      if (!allFiles || allFiles.length === 0) {
+        console.log('No files found in bucket');
         setFiles([]);
+        setError(`No files found in bucket "${bucketName}"`);
         return;
       }
 
-      console.log(`Found ${data.length} total files in storage`);
-
-      // Parse accepted extensions - handle both with and without dots
-      const acceptedExtensions = accept.split(',').map(ext => {
-        const cleanExt = ext.trim().toLowerCase();
-        return cleanExt.startsWith('.') ? cleanExt : `.${cleanExt}`;
-      });
-      
-      console.log('Accepted extensions:', acceptedExtensions);
-
-      // Filter files based on accept prop - be more permissive with filtering
-      const filteredFiles = data?.filter(file => {
-        if (!file.name) {
-          console.log('Skipping file with no name:', file);
-          return false;
-        }
+      // Filter files based on accepted extensions
+      const filteredFiles = allFiles.filter(file => {
+        if (!file.name) return false;
         
-        // Get file extension
+        // Get file extension (handle multiple dots in filename)
         const nameParts = file.name.split('.');
-        if (nameParts.length < 2) {
-          console.log('Skipping file with no extension:', file.name);
-          return false;
-        }
+        const extension = nameParts.length > 1 ? '.' + nameParts[nameParts.length - 1].toLowerCase() : '';
         
-        const extension = '.' + nameParts.pop()?.toLowerCase();
         console.log(`File: ${file.name}, Extension: ${extension}`);
         
-        const isAccepted = acceptedExtensions.includes(extension) || acceptedExtensions.includes('*');
-        console.log(`File ${file.name} accepted: ${isAccepted}`);
+        const isAccepted = accept.some(acceptedExt => 
+          acceptedExt.toLowerCase() === extension.toLowerCase()
+        );
         
+        console.log(`File ${file.name} ${isAccepted ? 'accepted' : 'rejected'}`);
         return isAccepted;
-      }) || [];
+      });
 
-      console.log(`Filtered to ${filteredFiles.length} compatible files:`, filteredFiles.map(f => f.name));
+      console.log(`Filtered files (${filteredFiles.length}):`, filteredFiles);
+
+      if (filteredFiles.length === 0) {
+        setError(`No compatible files found. Looking for: ${accept.join(', ')}`);
+      }
+
       setFiles(filteredFiles);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error loading files:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load files');
+      setError(err.message || 'Failed to load files');
+      toast({
+        title: "Error",
+        description: "Failed to load files from storage",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const formatFileSize = (size: number | undefined): string => {
-    if (!size) return 'Unknown size';
-    if (size < 1024) return `${size} B`;
-    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
-    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  useEffect(() => {
+    loadFiles();
+  }, [bucketName]);
+
+  const handleFileSelect = (fileName: string) => {
+    console.log(`File selected: ${fileName}`);
+    onFileSelect(fileName);
   };
 
-  const getFileIcon = (fileName: string) => {
-    const extension = fileName.split('.').pop()?.toLowerCase();
-    if (extension === 'xlsx' || extension === 'xls') {
-      return <FileSpreadsheet className="h-4 w-4 mr-2 text-green-500" />;
-    }
-    return <FileText className="h-4 w-4 mr-2 text-blue-500" />;
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes) return 'Unknown size';
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
   };
 
-  if (loading) {
-    return (
-      <Card>
-        <CardContent className="pt-6 flex items-center justify-center">
-          <Loader2 className="h-6 w-6 animate-spin mr-2" />
-          Loading files...
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="text-red-600 mb-2">Error: {error}</div>
-          <Button onClick={loadFiles} className="mt-2">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Retry
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
+  };
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center">
-          <FileText className="h-5 w-5 mr-2" />
-          Select File from Storage
-        </CardTitle>
-        <p className="text-sm text-gray-600">
-          Bucket: {bucketName} • Supported: CSV, JSON, Excel files
-        </p>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg">{title}</CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={loadFiles}
+            disabled={loading}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
-        {files.length === 0 ? (
-          <div className="text-center py-6 text-gray-500">
-            <FileSpreadsheet className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-            <p>No compatible files found in bucket "{bucketName}"</p>
-            <p className="text-xs mt-1">Upload CSV, JSON, or Excel files to see them here</p>
-            <Button onClick={loadFiles} variant="outline" className="mt-4">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh Files
-            </Button>
+        {loading && (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-2 text-sm text-gray-600">Loading files...</p>
           </div>
-        ) : (
-          <div className="space-y-2 max-h-64 overflow-y-auto">
+        )}
+
+        {error && (
+          <div className="text-center py-8">
+            <p className="text-red-500 mb-4">{error}</p>
+            <div className="text-sm text-gray-600">
+              <p>Debug info:</p>
+              <p>Bucket: {bucketName}</p>
+              <p>Accepted types: {accept.join(', ')}</p>
+            </div>
+          </div>
+        )}
+
+        {!loading && !error && files.length === 0 && (
+          <div className="text-center py-8">
+            <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500">No compatible files found</p>
+            <p className="text-sm text-gray-400 mt-2">
+              Supported formats: {accept.join(', ')}
+            </p>
+          </div>
+        )}
+
+        {!loading && files.length > 0 && (
+          <div className="space-y-2">
             {files.map((file) => (
               <div
-                key={file.name}
-                className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+                key={file.id || file.name}
+                className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                onClick={() => handleFileSelect(file.name)}
               >
-                <div className="flex items-center flex-1">
-                  {getFileIcon(file.name)}
+                <div className="flex items-center space-x-3">
+                  <FileText className="h-5 w-5 text-blue-600" />
                   <div>
-                    <div className="font-medium">{decodeURIComponent(file.name)}</div>
-                    <div className="text-sm text-gray-500">
-                      {formatFileSize(file.metadata?.size)} • 
-                      {file.updated_at && new Date(file.updated_at).toLocaleDateString()}
-                    </div>
+                    <p className="font-medium text-sm">{file.name}</p>
+                    <p className="text-xs text-gray-500">
+                      {formatDate(file.created_at)} • {formatFileSize(file.metadata?.size)}
+                    </p>
                   </div>
                 </div>
                 <Button
+                  variant="outline"
                   size="sm"
-                  onClick={() => onFileSelect(file.name)}
-                  disabled={disabled}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleFileSelect(file.name);
+                  }}
                 >
-                  <Download className="h-4 w-4 mr-1" />
-                  Import
+                  Select
                 </Button>
               </div>
             ))}
           </div>
         )}
-        
-        <Button onClick={loadFiles} variant="outline" className="w-full mt-4">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh Files
-        </Button>
       </CardContent>
     </Card>
   );

@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
 import * as XLSX from 'xlsx';
@@ -11,10 +12,6 @@ interface ImportProgress {
 export class StorageImportService {
   static async downloadFile(bucketName: string, fileName: string): Promise<Blob> {
     console.log(`Downloading file: ${fileName} from bucket: ${bucketName}`);
-    
-    // Handle URL encoded filenames
-    const encodedFileName = encodeURIComponent(fileName);
-    console.log(`Encoded filename: ${encodedFileName}`);
     
     const { data, error } = await supabase.storage
       .from(bucketName)
@@ -53,6 +50,8 @@ export class StorageImportService {
   }
 
   static async parseExcel(blob: Blob): Promise<any[]> {
+    console.log('Parsing Excel file...');
+    
     const arrayBuffer = await blob.arrayBuffer();
     const workbook = XLSX.read(arrayBuffer, { type: 'array' });
     
@@ -62,25 +61,40 @@ export class StorageImportService {
       throw new Error('Excel file contains no worksheets');
     }
     
+    console.log(`Reading worksheet: ${worksheetName}`);
     const worksheet = workbook.Sheets[worksheetName];
     
-    // Convert worksheet to JSON
-    const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+    // Convert worksheet to JSON with headers
+    const data = XLSX.utils.sheet_to_json(worksheet, { 
+      header: 1,
+      defval: ''
+    });
     
     if (data.length === 0) return [];
     
-    // Get headers from first row
+    // Get headers from first row and convert to objects
     const headers = data[0] as string[];
     const rows = data.slice(1) as any[][];
     
+    console.log('Excel headers:', headers);
+    console.log('Excel data rows:', rows.length);
+    
     // Convert to object format
-    return rows.map(row => {
-      const obj: any = {};
-      headers.forEach((header, index) => {
-        obj[header] = row[index] || '';
+    const result = rows
+      .filter(row => row && row.some(cell => cell !== '')) // Filter out empty rows
+      .map((row, index) => {
+        const obj: any = {};
+        headers.forEach((header, colIndex) => {
+          const value = row[colIndex];
+          obj[header] = value !== undefined ? String(value).trim() : '';
+        });
+        
+        console.log(`Row ${index + 1}:`, obj);
+        return obj;
       });
-      return obj;
-    });
+    
+    console.log(`Parsed ${result.length} valid rows from Excel`);
+    return result;
   }
 
   static async parseJSON(blob: Blob): Promise<any[]> {
@@ -115,36 +129,13 @@ export class StorageImportService {
         throw new Error(`Unsupported file format: ${extension}`);
     }
   }
-
-  static async batchInsert(
-    data: ServiceMainCategory[], 
-    onProgress: (progress: ImportProgress) => void
-  ): Promise<void> {
-    const batchSize = 100;
-    let processed = 0;
-    
-    for (let i = 0; i < data.length; i += batchSize) {
-      const batch = data.slice(i, i + batchSize);
-      
-      onProgress({
-        stage: 'inserting',
-        progress: (processed / data.length) * 100,
-        message: `Inserting batch ${Math.floor(i / batchSize) + 1}...`
-      });
-      
-      // Process batch (implement actual database insertion logic here)
-      await new Promise(resolve => setTimeout(resolve, 100)); // Simulate processing
-      
-      processed += batch.length;
-    }
-  }
 }
 
 export const importFromStorage = async (
   bucketName: string,
   fileName: string,
   onProgress: (progress: ImportProgress) => void
-): Promise<ServiceMainCategory[]> => {
+): Promise<any[]> => {
   try {
     console.log(`Starting import from storage: ${bucketName}/${fileName}`);
     
@@ -165,24 +156,30 @@ export const importFromStorage = async (
     const rawData = await StorageImportService.parseFile(blob, fileName);
     console.log(`Parsed ${rawData.length} rows from file`);
     
-    // Convert raw data to ServiceMainCategory structure
-    // This is a simplified conversion - you might need to adjust based on your file structure
-    const categories: ServiceMainCategory[] = rawData.map((row, index) => ({
-      id: row.id || `category-${index}`,
-      name: row.name || row.category_name || `Category ${index + 1}`,
-      description: row.description || '',
-      subcategories: [],
-      position: parseInt(row.position) || index
-    }));
+    if (rawData.length === 0) {
+      throw new Error('No data found in the file');
+    }
+
+    onProgress({
+      stage: 'processing',
+      progress: 75,
+      message: 'Processing data...'
+    });
+
+    // Log the structure of the first few rows to help with debugging
+    console.log('Sample of parsed data:');
+    rawData.slice(0, 3).forEach((row, index) => {
+      console.log(`Row ${index + 1}:`, row);
+    });
 
     onProgress({
       stage: 'complete',
       progress: 100,
-      message: `Successfully imported ${categories.length} categories`
+      message: `Successfully parsed ${rawData.length} rows`
     });
 
-    console.log(`Import completed: ${categories.length} categories`);
-    return categories;
+    console.log(`Storage import completed: ${rawData.length} rows`);
+    return rawData;
   } catch (error) {
     console.error('Storage import failed:', error);
     throw new Error(error instanceof Error ? error.message : 'Import failed');
