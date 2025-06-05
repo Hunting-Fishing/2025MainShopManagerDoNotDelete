@@ -18,6 +18,11 @@ interface ImportProgress {
   message: string;
 }
 
+interface ExcelSheetData {
+  sheetName: string;
+  data: any[];
+}
+
 export const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onImportComplete }) => {
   const [selectedFile, setSelectedFile] = useState<string>('');
   const [importing, setImporting] = useState(false);
@@ -55,15 +60,35 @@ export const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onImportCo
         message: 'Importing to database...'
       });
 
+      // Check if we have multi-sheet data
+      const isMultiSheet = Array.isArray(rawData) && rawData.length > 0 && 
+                          typeof rawData[0] === 'object' && 'sheetName' in rawData[0];
+      
+      if (isMultiSheet) {
+        const sheetsData = rawData as ExcelSheetData[];
+        console.log(`Processing ${sheetsData.length} sheets:`, sheetsData.map(s => s.sheetName));
+        
+        setProgress({
+          stage: 'database',
+          progress: 85,
+          message: `Processing ${sheetsData.length} categories from Excel sheets...`
+        });
+      } else {
+        console.log('Processing single data source...');
+      }
+
       const result = await importServiceHierarchy(rawData);
       
       setProgress({
         stage: 'complete',
         progress: 100,
-        message: `Successfully imported ${result.totalImported} services`
+        message: `Successfully imported ${result.totalImported} services across ${result.categories} categories`
       });
 
-      setSuccess(`Import completed! Created ${result.categories} categories, ${result.subcategories} subcategories, and ${result.jobs} jobs.`);
+      setSuccess(
+        `Import completed! Created ${result.sectors} sector, ${result.categories} categories, ` +
+        `${result.subcategories} subcategories, and ${result.jobs} jobs.`
+      );
       
       // Call the completion callback if provided
       if (onImportComplete) {
@@ -88,6 +113,16 @@ export const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onImportCo
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h4 className="font-medium text-blue-900 mb-2">Excel File Format</h4>
+            <ul className="text-sm text-blue-800 space-y-1">
+              <li>• Each sheet represents a service category</li>
+              <li>• Row 1 should contain subcategory headers</li>
+              <li>• Rows 2+ contain individual service jobs</li>
+              <li>• All sheets will be imported under "Automotive Services" sector</li>
+            </ul>
+          </div>
+
           {error && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />

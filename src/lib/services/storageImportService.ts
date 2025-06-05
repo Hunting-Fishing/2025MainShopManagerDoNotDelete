@@ -9,6 +9,11 @@ interface ImportProgress {
   message: string;
 }
 
+interface ExcelSheetData {
+  sheetName: string;
+  data: any[];
+}
+
 export class StorageImportService {
   static async downloadFile(bucketName: string, fileName: string): Promise<Blob> {
     console.log(`Downloading file: ${fileName} from bucket: ${bucketName}`);
@@ -49,52 +54,68 @@ export class StorageImportService {
     return data;
   }
 
-  static async parseExcel(blob: Blob): Promise<any[]> {
-    console.log('Parsing Excel file...');
+  static async parseExcel(blob: Blob): Promise<ExcelSheetData[]> {
+    console.log('Parsing Excel file with multi-sheet support...');
     
     const arrayBuffer = await blob.arrayBuffer();
     const workbook = XLSX.read(arrayBuffer, { type: 'array' });
     
-    // Get the first worksheet
-    const worksheetName = workbook.SheetNames[0];
-    if (!worksheetName) {
+    if (workbook.SheetNames.length === 0) {
       throw new Error('Excel file contains no worksheets');
     }
     
-    console.log(`Reading worksheet: ${worksheetName}`);
-    const worksheet = workbook.Sheets[worksheetName];
+    console.log(`Found ${workbook.SheetNames.length} worksheets:`, workbook.SheetNames);
     
-    // Convert worksheet to JSON with headers
-    const data = XLSX.utils.sheet_to_json(worksheet, { 
-      header: 1,
-      defval: ''
-    });
+    const sheetsData: ExcelSheetData[] = [];
     
-    if (data.length === 0) return [];
-    
-    // Get headers from first row and convert to objects
-    const headers = data[0] as string[];
-    const rows = data.slice(1) as any[][];
-    
-    console.log('Excel headers:', headers);
-    console.log('Excel data rows:', rows.length);
-    
-    // Convert to object format
-    const result = rows
-      .filter(row => row && row.some(cell => cell !== '')) // Filter out empty rows
-      .map((row, index) => {
-        const obj: any = {};
-        headers.forEach((header, colIndex) => {
-          const value = row[colIndex];
-          obj[header] = value !== undefined ? String(value).trim() : '';
-        });
-        
-        console.log(`Row ${index + 1}:`, obj);
-        return obj;
+    for (const sheetName of workbook.SheetNames) {
+      console.log(`Processing sheet: ${sheetName}`);
+      const worksheet = workbook.Sheets[sheetName];
+      
+      // Convert worksheet to JSON with headers
+      const sheetData = XLSX.utils.sheet_to_json(worksheet, { 
+        header: 1,
+        defval: ''
       });
+      
+      if (sheetData.length === 0) {
+        console.warn(`Sheet "${sheetName}" is empty, skipping...`);
+        continue;
+      }
+      
+      // Get headers from first row and convert to objects
+      const headers = sheetData[0] as string[];
+      const rows = sheetData.slice(1) as any[][];
+      
+      console.log(`Sheet "${sheetName}" headers:`, headers);
+      console.log(`Sheet "${sheetName}" data rows:`, rows.length);
+      
+      // Convert to object format
+      const processedData = rows
+        .filter(row => row && row.some(cell => cell !== '')) // Filter out empty rows
+        .map((row, index) => {
+          const obj: any = {};
+          headers.forEach((header, colIndex) => {
+            const value = row[colIndex];
+            obj[header] = value !== undefined ? String(value).trim() : '';
+          });
+          
+          if (index < 3) { // Log first 3 rows for debugging
+            console.log(`Sheet "${sheetName}" Row ${index + 1}:`, obj);
+          }
+          return obj;
+        });
+      
+      sheetsData.push({
+        sheetName,
+        data: processedData
+      });
+      
+      console.log(`Processed sheet "${sheetName}": ${processedData.length} valid rows`);
+    }
     
-    console.log(`Parsed ${result.length} valid rows from Excel`);
-    return result;
+    console.log(`Excel parsing completed: ${sheetsData.length} sheets processed`);
+    return sheetsData;
   }
 
   static async parseJSON(blob: Blob): Promise<any[]> {
@@ -111,7 +132,7 @@ export class StorageImportService {
     throw new Error('Invalid JSON format: expected array or object');
   }
 
-  static async parseFile(blob: Blob, fileName: string): Promise<any[]> {
+  static async parseFile(blob: Blob, fileName: string): Promise<ExcelSheetData[] | any[]> {
     console.log(`Parsing file: ${fileName}, size: ${blob.size} bytes`);
     
     const extension = fileName.split('.').pop()?.toLowerCase();
@@ -119,12 +140,14 @@ export class StorageImportService {
     
     switch (extension) {
       case 'csv':
-        return this.parseCSV(blob);
+        const csvData = await this.parseCSV(blob);
+        return [{ sheetName: 'Sheet1', data: csvData }];
       case 'json':
-        return this.parseJSON(blob);
+        const jsonData = await this.parseJSON(blob);
+        return [{ sheetName: 'Sheet1', data: jsonData }];
       case 'xlsx':
       case 'xls':
-        return this.parseExcel(blob);
+        return await this.parseExcel(blob);
       default:
         throw new Error(`Unsupported file format: ${extension}`);
     }
@@ -135,7 +158,7 @@ export const importFromStorage = async (
   bucketName: string,
   fileName: string,
   onProgress: (progress: ImportProgress) => void
-): Promise<any[]> => {
+): Promise<ExcelSheetData[] | any[]> => {
   try {
     console.log(`Starting import from storage: ${bucketName}/${fileName}`);
     
@@ -153,10 +176,21 @@ export const importFromStorage = async (
       message: 'Parsing file content...'
     });
 
-    const rawData = await StorageImportService.parseFile(blob, fileName);
-    console.log(`Parsed ${rawData.length} rows from file`);
+    const parsedData = await StorageImportService.parseFile(blob, fileName);
     
-    if (rawData.length === 0) {
+    let totalRows = 0;
+    if (Array.isArray(parsedData) && parsedData.length > 0 && 'sheetName' in parsedData[0]) {
+      // Multi-sheet data
+      const sheetsData = parsedData as ExcelSheetData[];
+      totalRows = sheetsData.reduce((acc, sheet) => acc + sheet.data.length, 0);
+      console.log(`Parsed ${sheetsData.length} sheets with ${totalRows} total rows`);
+    } else {
+      // Single sheet/CSV/JSON data
+      totalRows = (parsedData as any[]).length;
+      console.log(`Parsed ${totalRows} rows from single data source`);
+    }
+    
+    if (totalRows === 0) {
       throw new Error('No data found in the file');
     }
 
@@ -166,20 +200,28 @@ export const importFromStorage = async (
       message: 'Processing data...'
     });
 
-    // Log the structure of the first few rows to help with debugging
-    console.log('Sample of parsed data:');
-    rawData.slice(0, 3).forEach((row, index) => {
-      console.log(`Row ${index + 1}:`, row);
-    });
+    // Log sample data for debugging
+    if (Array.isArray(parsedData) && parsedData.length > 0 && 'sheetName' in parsedData[0]) {
+      const sheetsData = parsedData as ExcelSheetData[];
+      console.log('Sample of parsed sheets data:');
+      sheetsData.slice(0, 2).forEach((sheet, index) => {
+        console.log(`Sheet ${index + 1} (${sheet.sheetName}):`, sheet.data.slice(0, 2));
+      });
+    } else {
+      console.log('Sample of parsed data:');
+      (parsedData as any[]).slice(0, 3).forEach((row, index) => {
+        console.log(`Row ${index + 1}:`, row);
+      });
+    }
 
     onProgress({
       stage: 'complete',
       progress: 100,
-      message: `Successfully parsed ${rawData.length} rows`
+      message: `Successfully parsed ${totalRows} rows`
     });
 
-    console.log(`Storage import completed: ${rawData.length} rows`);
-    return rawData;
+    console.log(`Storage import completed: ${totalRows} total rows`);
+    return parsedData;
   } catch (error) {
     console.error('Storage import failed:', error);
     throw new Error(error instanceof Error ? error.message : 'Import failed');
