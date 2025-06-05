@@ -2,9 +2,9 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { IntegratedServiceSelector } from "@/components/work-orders/fields/services/IntegratedServiceSelector";
-import { ServiceMainCategory, ServiceJob } from "@/types/serviceHierarchy";
+import { ServiceSector, ServiceJob } from "@/types/serviceHierarchy";
 import { SelectedService } from "@/types/selectedService";
-import { fetchServiceCategories } from "@/lib/services/serviceApi";
+import { fetchServiceSectors } from "@/lib/services/serviceApi";
 import { Settings } from "lucide-react";
 
 interface WorkOrderInfoSectionProps {
@@ -18,26 +18,26 @@ export const WorkOrderInfoSection: React.FC<WorkOrderInfoSectionProps> = ({
   selectedServices = [],
   onUpdateServices
 }) => {
-  const [serviceCategories, setServiceCategories] = useState<ServiceMainCategory[]>([]);
+  const [serviceSectors, setServiceSectors] = useState<ServiceSector[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadServiceCategories = async () => {
+    const loadServiceSectors = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        const categories = await fetchServiceCategories();
-        setServiceCategories(categories);
+        const sectors = await fetchServiceSectors();
+        setServiceSectors(sectors);
       } catch (err) {
-        console.error("Failed to load service categories:", err);
-        setError("Failed to load service categories. Please try again.");
+        console.error("Failed to load service sectors:", err);
+        setError("Failed to load service sectors. Please try again.");
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadServiceCategories();
+    loadServiceSectors();
   }, []);
 
   const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
@@ -76,9 +76,9 @@ export const WorkOrderInfoSection: React.FC<WorkOrderInfoSectionProps> = ({
           <div className="text-center py-8">
             <p className="text-red-500">{error}</p>
           </div>
-        ) : serviceCategories.length > 0 ? (
+        ) : serviceSectors.length > 0 ? (
           <IntegratedServiceSelector
-            categories={serviceCategories}
+            sectors={serviceSectors}
             onServiceSelect={handleServiceSelect}
             selectedServices={selectedServices}
             onRemoveService={handleRemoveService}
