@@ -1,26 +1,80 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { ServiceSectorsList } from './ServiceSectorsList';
 import { ServiceHierarchyExcelView } from './ServiceHierarchyExcelView';
 import { useServiceSectors } from '@/hooks/useServiceCategories';
-import { Loader2, Building, TreePine, Table, Plus, Upload } from 'lucide-react';
+import { Loader2, Search, Plus, TreePine, Table } from 'lucide-react';
 
 export function ServiceHierarchyBrowser() {
-  const { sectors, loading, error, refetch } = useServiceSectors();
-  const [activeTab, setActiveTab] = useState('overview');
+  const { sectors, loading, error } = useServiceSectors();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [expandedSectors, setExpandedSectors] = useState<Set<string>>(new Set());
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+
+  const toggleSector = (sectorId: string) => {
+    setExpandedSectors((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectorId)) {
+        newSet.delete(sectorId);
+      } else {
+        newSet.add(sectorId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleCategory = (categoryId: string) => {
+    setExpandedCategories((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(categoryId)) {
+        newSet.delete(categoryId);
+      } else {
+        newSet.add(categoryId);
+      }
+      return newSet;
+    });
+  };
+
+  const filteredSectors = sectors.filter((sector) => {
+    const sectorMatch = sector.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const categoryMatch = sector.categories.some((category) =>
+      category.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    const subcategoryMatch = sector.categories.some((category) =>
+      category.subcategories.some((subcategory) =>
+        subcategory.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    );
+    const jobMatch = sector.categories.some((category) =>
+      category.subcategories.some((subcategory) =>
+        subcategory.jobs.some((job) => job.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+    );
+    return sectorMatch || categoryMatch || subcategoryMatch || jobMatch;
+  });
+
+  const handleSaveChanges = async (updatedSectors: any[]) => {
+    try {
+      // TODO: Implement save functionality
+      console.log('Saving changes:', updatedSectors);
+      // This would typically call an API to update the service hierarchy
+    } catch (error) {
+      console.error('Error saving changes:', error);
+    }
+  };
 
   if (loading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Service Hierarchy Browser</CardTitle>
+          <CardTitle>Service Hierarchy</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <CardContent className="flex items-center justify-center h-32">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </CardContent>
       </Card>
     );
@@ -30,158 +84,170 @@ export function ServiceHierarchyBrowser() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Service Hierarchy Browser</CardTitle>
+          <CardTitle>Service Hierarchy</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-red-600 text-sm">Error loading service hierarchy: {error}</p>
+          <p className="text-red-600 text-sm">Error loading services: {error}</p>
         </CardContent>
       </Card>
     );
   }
 
-  const totalCategories = sectors.reduce((acc, sector) => acc + sector.categories.length, 0);
-  const totalServices = sectors.reduce((acc, sector) => 
-    acc + sector.categories.reduce((catAcc, category) => 
-      catAcc + category.subcategories.reduce((subAcc, subcategory) => 
-        subAcc + subcategory.jobs.length, 0), 0), 0);
-
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Service Hierarchy Browser</h2>
-          <p className="text-muted-foreground">
-            Manage your service structure and categories
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={refetch}>
-            <Building className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-          <Button variant="outline">
-            <Upload className="h-4 w-4 mr-2" />
-            Import Services
-          </Button>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Category
-          </Button>
-        </div>
-      </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="overview" className="flex items-center gap-2">
-            <Building className="h-4 w-4" />
-            Overview
-          </TabsTrigger>
-          <TabsTrigger value="tree" className="flex items-center gap-2">
-            <TreePine className="h-4 w-4" />
-            Tree View
-          </TabsTrigger>
-          <TabsTrigger value="table" className="flex items-center gap-2">
-            <Table className="h-4 w-4" />
-            Excel Table
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="mt-6">
-          <ServiceSectorsList />
-        </TabsContent>
-
-        <TabsContent value="tree" className="mt-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center space-x-2">
-                  <TreePine className="h-5 w-5" />
-                  <span>Service Hierarchy Tree</span>
-                </CardTitle>
-                <div className="flex gap-2">
-                  <Badge variant="outline">{sectors.length} sectors</Badge>
-                  <Badge variant="outline">{totalCategories} categories</Badge>
-                  <Badge variant="outline">{totalServices} services</Badge>
+      <ServiceSectorsList />
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Service Hierarchy Management</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="tree" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="tree" className="flex items-center gap-2">
+                <TreePine className="h-4 w-4" />
+                Tree View
+              </TabsTrigger>
+              <TabsTrigger value="table" className="flex items-center gap-2">
+                <Table className="h-4 w-4" />
+                Excel Table
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="tree" className="space-y-4">
+              <div className="flex items-center space-x-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    placeholder="Search services..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
                 </div>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Sector
+                </Button>
               </div>
-            </CardHeader>
-            <CardContent>
+
               {sectors.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                  <TreePine className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                  <p className="text-lg font-medium">No service hierarchy found</p>
-                  <p className="text-sm">Import services or create your first category to get started</p>
+                <div className="text-center py-8 text-gray-500">
+                  <TreePine className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p>No service sectors found</p>
+                  <p className="text-sm">Create your first service sector to get started</p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {sectors.map((sector) => (
-                    <div key={sector.id} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-lg font-semibold">{sector.name}</h3>
-                        <Badge variant="outline">{sector.categories.length} categories</Badge>
-                      </div>
-                      <div className="space-y-3 ml-4">
-                        {sector.categories.map((category) => (
-                          <div key={category.id} className="border-l-2 border-blue-200 pl-4">
-                            <div className="flex items-center justify-between mb-2">
-                              <h4 className="font-medium text-blue-700">{category.name}</h4>
-                              <Badge variant="outline" className="text-xs">
-                                {category.subcategories.length} subcategories
-                              </Badge>
-                            </div>
-                            <div className="space-y-2 ml-4">
-                              {category.subcategories.map((subcategory) => (
-                                <div key={subcategory.id} className="border-l-2 border-green-200 pl-4">
-                                  <div className="flex items-center justify-between mb-1">
-                                    <h5 className="text-sm font-medium text-green-700">
-                                      {subcategory.name}
-                                    </h5>
-                                    <Badge variant="outline" className="text-xs">
-                                      {subcategory.jobs.length} services
+                  {filteredSectors.map((sector) => (
+                    <Card key={sector.id} className="border">
+                      <CardHeader 
+                        className="cursor-pointer hover:bg-gray-50"
+                        onClick={() => toggleSector(sector.id)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <TreePine className="h-5 w-5 text-blue-600" />
+                            <CardTitle className="text-lg">{sector.name}</CardTitle>
+                            <Badge variant="outline">
+                              {sector.categories.length} categories
+                            </Badge>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Button variant="ghost" size="sm">
+                              <Plus className="h-4 w-4 mr-1" />
+                              Add Category
+                            </Button>
+                          </div>
+                        </div>
+                        {sector.description && (
+                          <p className="text-sm text-gray-600 mt-2">{sector.description}</p>
+                        )}
+                      </CardHeader>
+                      
+                      {expandedSectors.has(sector.id) && (
+                        <CardContent className="pt-0">
+                          <div className="space-y-3 ml-6">
+                            {sector.categories.map((category) => (
+                              <div key={category.id} className="border-l-2 border-gray-200 pl-4">
+                                <div 
+                                  className="flex items-center justify-between p-3 bg-gray-50 rounded cursor-pointer hover:bg-gray-100"
+                                  onClick={() => toggleCategory(category.id)}
+                                >
+                                  <div className="flex items-center space-x-2">
+                                    <span className="font-medium">{category.name}</span>
+                                    <Badge variant="secondary" className="text-xs">
+                                      {category.subcategories.length} subcategories
                                     </Badge>
                                   </div>
-                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 ml-4">
-                                    {subcategory.jobs.map((job) => (
-                                      <div key={job.id} className="text-sm p-2 bg-gray-50 rounded border">
-                                        <div className="font-medium">{job.name}</div>
-                                        {job.description && (
-                                          <div className="text-xs text-gray-600 mt-1">
-                                            {job.description}
+                                  <Button variant="ghost" size="sm">
+                                    <Plus className="h-3 w-3 mr-1" />
+                                    Add Subcategory
+                                  </Button>
+                                </div>
+                                
+                                {expandedCategories.has(category.id) && (
+                                  <div className="mt-3 space-y-2 ml-4">
+                                    {category.subcategories.map((subcategory) => (
+                                      <div key={subcategory.id} className="p-2 bg-white rounded border">
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-sm font-medium">{subcategory.name}</span>
+                                          <div className="flex items-center space-x-2">
+                                            <Badge variant="outline" className="text-xs">
+                                              {subcategory.jobs.length} services
+                                            </Badge>
+                                            <Button variant="ghost" size="sm">
+                                              <Plus className="h-3 w-3 mr-1" />
+                                              Add Service
+                                            </Button>
+                                          </div>
+                                        </div>
+                                        
+                                        {subcategory.jobs.length > 0 && (
+                                          <div className="mt-2 space-y-1">
+                                            {subcategory.jobs.map((job) => (
+                                              <div key={job.id} className="text-xs p-2 bg-gray-50 rounded flex items-center justify-between">
+                                                <span>{job.name}</span>
+                                                <div className="flex items-center space-x-2">
+                                                  {job.estimatedTime && (
+                                                    <Badge variant="outline" className="text-xs">
+                                                      {job.estimatedTime}min
+                                                    </Badge>
+                                                  )}
+                                                  {job.price && (
+                                                    <Badge variant="outline" className="text-xs">
+                                                      ${job.price}
+                                                    </Badge>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            ))}
                                           </div>
                                         )}
-                                        <div className="flex justify-between items-center mt-1">
-                                          {job.estimatedTime && (
-                                            <span className="text-xs text-blue-600">
-                                              {job.estimatedTime}min
-                                            </span>
-                                          )}
-                                          {job.price && (
-                                            <span className="text-xs font-medium text-green-600">
-                                              ${job.price}
-                                            </span>
-                                          )}
-                                        </div>
                                       </div>
                                     ))}
                                   </div>
-                                </div>
-                              ))}
-                            </div>
+                                )}
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    </div>
+                        </CardContent>
+                      )}
+                    </Card>
                   ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="table" className="mt-6">
-          <ServiceHierarchyExcelView />
-        </TabsContent>
-      </Tabs>
+            </TabsContent>
+            
+            <TabsContent value="table">
+              <ServiceHierarchyExcelView 
+                sectors={sectors}
+                onSave={handleSaveChanges}
+              />
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 }
