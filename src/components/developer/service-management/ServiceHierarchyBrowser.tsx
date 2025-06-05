@@ -1,16 +1,14 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Folder, Upload, Database, AlertCircle, RefreshCw, X } from 'lucide-react';
+import { Upload } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useServiceSectors } from '@/hooks/useServiceCategories';
-import { ServiceSectorsList } from './ServiceSectorsList';
+import { ServiceHierarchyTree } from './ServiceHierarchyTree';
 import { StorageFileBrowser } from './StorageFileBrowser';
 import { ServiceImportProgress } from './ServiceImportProgress';
 import { batchImportServices } from '@/lib/services/batchServiceImporter';
 import { importFromStorage } from '@/lib/services/storageImportService';
-import { supabase } from '@/integrations/supabase/client';
 
 interface ImportState {
   isImporting: boolean;
@@ -144,8 +142,8 @@ export function ServiceHierarchyBrowser() {
         </DialogContent>
       </Dialog>
 
-      {/* Service Sectors List */}
-      <ServiceSectorsList />
+      {/* Enhanced Service Hierarchy Tree */}
+      <ServiceHierarchyTree />
     </div>
   );
 }
