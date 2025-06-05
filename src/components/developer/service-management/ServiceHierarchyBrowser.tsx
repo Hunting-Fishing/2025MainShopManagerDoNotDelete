@@ -1,182 +1,285 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Upload, Database, ChevronRight, Folder, RefreshCw } from 'lucide-react';
+import { StorageFileBrowser } from './StorageFileBrowser';
+import { ServiceImportProgress } from './ServiceImportProgress';
+import { importFromStorage } from '@/lib/services/storageImportService';
+import { BatchServiceImporter } from '@/lib/services/batchServiceImporter';
 import { useServiceSectors } from '@/hooks/useServiceCategories';
-import { ServiceBulkImport } from './ServiceBulkImport';
-import { toast } from 'sonner';
+import { Database, Upload, FileText, Trash2 } from 'lucide-react';
 
-export const ServiceHierarchyBrowser: React.FC = () => {
-  const { sectors, loading, error, refetch } = useServiceSectors();
-  const [activeTab, setActiveTab] = useState('browse');
-  const [refreshing, setRefreshing] = useState(false);
+export function ServiceHierarchyBrowser() {
+  const { sectors, loading: sectorsLoading, refetch } = useServiceSectors();
+  const [selectedFile, setSelectedFile] = useState<string>('');
+  
+  // Import state
+  const [isImporting, setIsImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState(0);
+  const [importStage, setImportStage] = useState('');
+  const [importMessage, setImportMessage] = useState('');
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importCompleted, setImportCompleted] = useState(false);
+  const [batchImporter, setBatchImporter] = useState<BatchServiceImporter | null>(null);
 
-  const handleImportComplete = useCallback(async () => {
-    console.log('Import completed, refreshing service sectors...');
-    setRefreshing(true);
+  const totalSectors = sectors.length;
+  const totalCategories = sectors.reduce((acc, sector) => acc + sector.categories.length, 0);
+  const totalServices = sectors.reduce((acc, sector) => 
+    acc + sector.categories.reduce((catAcc, category) => 
+      catAcc + category.subcategories.reduce((subAcc, subcategory) => 
+        subAcc + subcategory.jobs.length, 0), 0), 0);
+
+  const handleImportFile = async () => {
+    if (!selectedFile) return;
+
+    setIsImporting(true);
+    setImportError(null);
+    setImportCompleted(false);
+    setImportProgress(0);
+    setImportStage('download');
+    setImportMessage('Starting import...');
+
     try {
-      await refetch();
-      toast.success('Service data refreshed successfully');
-    } catch (error) {
-      console.error('Failed to refresh data:', error);
-      toast.error('Failed to refresh service data');
-    } finally {
-      setRefreshing(false);
-    }
-  }, [refetch]);
+      // Create batch importer with progress callback
+      const importer = new BatchServiceImporter((progress) => {
+        setImportProgress(progress.progress);
+        setImportStage(progress.stage);
+        setImportMessage(progress.message);
+      });
+      setBatchImporter(importer);
 
-  const handleManualRefresh = useCallback(async () => {
-    console.log('Manual refresh triggered...');
-    setRefreshing(true);
+      // Step 1: Download and parse Excel file (0-30%)
+      setImportMessage('Downloading and parsing Excel file...');
+      const sheetsData = await importFromStorage('service-imports', selectedFile, (progress) => {
+        setImportProgress(progress.progress);
+        setImportStage(progress.stage);
+        setImportMessage(progress.message);
+      });
+
+      if (sheetsData.length === 0) {
+        throw new Error('No data found in the Excel file');
+      }
+
+      // Step 2: Convert sheets data to service data (30-35%)
+      setImportProgress(30);
+      setImportStage('convert');
+      setImportMessage('Converting Excel data to service format...');
+      
+      const services = convertSheetsToServices(sheetsData);
+      console.log(`Converted ${services.length} services from ${sheetsData.length} sheets`);
+
+      // Step 3: Import to database using batch processor (35-100%)
+      const result = await importer.importServices(services);
+
+      if (result.success) {
+        setImportCompleted(true);
+        setImportMessage(`Successfully imported ${result.totalProcessed} services!`);
+        
+        // Refresh the service data
+        await refetch();
+      } else {
+        throw new Error(result.errors.join(', '));
+      }
+
+    } catch (error) {
+      console.error('Import failed:', error);
+      setImportError(error instanceof Error ? error.message : 'Import failed');
+    } finally {
+      setIsImporting(false);
+      setBatchImporter(null);
+    }
+  };
+
+  const handleCancelImport = () => {
+    if (batchImporter) {
+      batchImporter.cancel();
+      setIsImporting(false);
+      setImportError('Import cancelled by user');
+      setBatchImporter(null);
+    }
+  };
+
+  const convertSheetsToServices = (sheetsData: any[]) => {
+    const services: any[] = [];
+
+    sheetsData.forEach(sheet => {
+      const { sheetName, data } = sheet;
+      
+      if (data.length === 0) return;
+
+      // Use sheet name as sector
+      const sectorName = sheetName.trim();
+      
+      // Process each row
+      data.forEach((row: any[], rowIndex: number) => {
+        if (!row || row.length === 0) return;
+        
+        // Skip empty rows
+        if (!row.some(cell => cell && cell.toString().trim())) return;
+
+        // Try to extract service information from the row
+        const [category, subcategory, jobName, description, estimatedTime, price] = row.map(cell => 
+          cell ? cell.toString().trim() : ''
+        );
+
+        if (!category || !subcategory || !jobName) return;
+
+        services.push({
+          sectorName,
+          categoryName: category,
+          subcategoryName: subcategory,
+          jobName,
+          description: description || '',
+          estimatedTime: estimatedTime ? parseInt(estimatedTime) : undefined,
+          price: price ? parseFloat(price) : undefined
+        });
+      });
+    });
+
+    console.log(`Converted ${services.length} services from sheets data`);
+    return services;
+  };
+
+  const handleClearAllData = async () => {
+    if (!confirm('Are you sure you want to clear ALL service data? This action cannot be undone.')) {
+      return;
+    }
+
     try {
+      const { error } = await supabase.rpc('clear_service_data');
+      if (error) throw error;
+      
       await refetch();
-      toast.success('Service data refreshed successfully');
+      console.log('All service data cleared successfully');
     } catch (error) {
-      console.error('Failed to refresh data:', error);
-      toast.error('Failed to refresh service data');
-    } finally {
-      setRefreshing(false);
+      console.error('Failed to clear service data:', error);
     }
-  }, [refetch]);
-
-  if (loading && !refreshing) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center">Loading service hierarchy...</div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center text-red-600">
-            <p>Error: {error}</p>
-            <Button onClick={handleManualRefresh} className="mt-2">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Retry
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  };
 
   return (
     <div className="space-y-6">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="browse" className="flex items-center gap-2">
-            <Database className="h-4 w-4" />
-            Browse Services
-          </TabsTrigger>
-          <TabsTrigger value="import" className="flex items-center gap-2">
-            <Upload className="h-4 w-4" />
-            Import Services
-          </TabsTrigger>
-        </TabsList>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center">
+              <Database className="h-5 w-5 mr-2" />
+              Sectors
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{sectorsLoading ? '...' : totalSectors}</p>
+            <p className="text-sm text-muted-foreground">Service sectors</p>
+          </CardContent>
+        </Card>
         
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center">
+              <FileText className="h-5 w-5 mr-2" />
+              Categories
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{sectorsLoading ? '...' : totalCategories}</p>
+            <p className="text-sm text-muted-foreground">Total categories</p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center">
+              <Upload className="h-5 w-5 mr-2" />
+              Services
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{sectorsLoading ? '...' : totalServices}</p>
+            <p className="text-sm text-muted-foreground">Total services</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Import Progress */}
+      <ServiceImportProgress
+        isImporting={isImporting}
+        progress={importProgress}
+        stage={importStage}
+        message={importMessage}
+        onCancel={handleCancelImport}
+        error={importError}
+        completed={importCompleted}
+      />
+
+      {/* Main Content */}
+      <Tabs defaultValue="import" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="import">Import Services</TabsTrigger>
+          <TabsTrigger value="browse">Browse Hierarchy</TabsTrigger>
+          <TabsTrigger value="manage">Manage Data</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="import" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Import Services from Excel</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <StorageFileBrowser
+                bucketName="service-imports"
+                onFileSelect={setSelectedFile}
+              />
+              
+              {selectedFile && (
+                <div className="flex items-center justify-between p-3 border rounded-lg bg-blue-50">
+                  <span className="text-sm font-medium">Selected: {selectedFile}</span>
+                  <Button
+                    onClick={handleImportFile}
+                    disabled={isImporting}
+                    className="ml-4"
+                  >
+                    {isImporting ? 'Importing...' : 'Import Selected File'}
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="browse" className="space-y-4">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center">
-                  <FileText className="h-5 w-5 mr-2" />
-                  4-Tier Service Hierarchy
-                </CardTitle>
-                <Button 
-                  onClick={handleManualRefresh} 
-                  disabled={refreshing}
-                  variant="outline"
-                  size="sm"
-                >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-                  Refresh
-                </Button>
-              </div>
+              <CardTitle>Service Hierarchy</CardTitle>
             </CardHeader>
             <CardContent>
-              {sectors.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <p>No services found</p>
-                  <p className="text-sm">Import services to get started</p>
-                </div>
+              {sectorsLoading ? (
+                <p>Loading service hierarchy...</p>
+              ) : sectors.length === 0 ? (
+                <p className="text-muted-foreground">No services found. Import some data to get started.</p>
               ) : (
-                <div className="space-y-6">
-                  {sectors.map((sector) => (
-                    <div key={sector.id} className="border rounded-lg p-4 bg-gradient-to-r from-blue-50 to-transparent">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center">
-                          <Folder className="h-5 w-5 mr-2 text-blue-600" />
-                          <h2 className="font-bold text-xl text-blue-800">{sector.name}</h2>
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {sector.categories.length} categories
-                        </div>
-                      </div>
-                      {sector.description && (
-                        <p className="text-gray-600 mb-4">{sector.description}</p>
-                      )}
-                      
-                      {sector.categories.map((category) => (
-                        <div key={category.id} className="ml-6 mt-4 border-l-2 border-blue-200 pl-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center">
-                              <ChevronRight className="h-4 w-4 mr-1 text-blue-500" />
-                              <h3 className="font-semibold text-lg text-blue-700">{category.name}</h3>
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {category.subcategories.length} subcategories
+                <div className="space-y-4">
+                  {sectors.map(sector => (
+                    <div key={sector.id} className="border rounded-lg p-4">
+                      <h3 className="font-semibold text-lg">{sector.name}</h3>
+                      <p className="text-sm text-muted-foreground mb-3">{sector.description}</p>
+                      <div className="space-y-2">
+                        {sector.categories.map(category => (
+                          <div key={category.id} className="ml-4 border-l-2 border-gray-200 pl-4">
+                            <h4 className="font-medium">{category.name}</h4>
+                            <div className="space-y-1">
+                              {category.subcategories.map(subcategory => (
+                                <div key={subcategory.id} className="ml-4 text-sm">
+                                  <span className="font-medium">{subcategory.name}</span>
+                                  <span className="ml-2 text-muted-foreground">
+                                    ({subcategory.jobs.length} services)
+                                  </span>
+                                </div>
+                              ))}
                             </div>
                           </div>
-                          {category.description && (
-                            <p className="text-gray-600 mb-3 text-sm">{category.description}</p>
-                          )}
-                          
-                          {category.subcategories.map((subcategory) => (
-                            <div key={subcategory.id} className="ml-6 mt-3 border-l-2 border-gray-200 pl-4">
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center">
-                                  <ChevronRight className="h-3 w-3 mr-1 text-gray-500" />
-                                  <h4 className="font-medium text-gray-700">{subcategory.name}</h4>
-                                </div>
-                                <div className="text-sm text-gray-400">
-                                  {subcategory.jobs.length} services
-                                </div>
-                              </div>
-                              {subcategory.description && (
-                                <p className="text-gray-500 text-sm mb-2">{subcategory.description}</p>
-                              )}
-                              
-                              {subcategory.jobs.length > 0 && (
-                                <div className="ml-4 mt-2">
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
-                                    {subcategory.jobs.map((job) => (
-                                      <div key={job.id} className="py-1 px-2 text-sm border border-gray-100 rounded bg-gray-50">
-                                        <span className="font-medium text-gray-800">{job.name}</span>
-                                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                                          {job.price && (
-                                            <span className="text-green-600">${job.price}</span>
-                                          )}
-                                          {job.estimatedTime && (
-                                            <span>({job.estimatedTime} min)</span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -184,11 +287,31 @@ export const ServiceHierarchyBrowser: React.FC = () => {
             </CardContent>
           </Card>
         </TabsContent>
-        
-        <TabsContent value="import" className="space-y-4">
-          <ServiceBulkImport onImportComplete={handleImportComplete} />
+
+        <TabsContent value="manage" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Data Management</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="p-4 border border-red-200 rounded-lg bg-red-50">
+                <h3 className="font-medium text-red-900 mb-2">Danger Zone</h3>
+                <p className="text-sm text-red-700 mb-4">
+                  This will permanently delete all service data including sectors, categories, subcategories, and jobs.
+                </p>
+                <Button
+                  variant="destructive"
+                  onClick={handleClearAllData}
+                  className="flex items-center"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Clear All Service Data
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
   );
-};
+}
