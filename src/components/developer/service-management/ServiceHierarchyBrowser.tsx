@@ -1,7 +1,7 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tree, Loader2, Building, Table } from 'lucide-react';
-import { Sector } from './Sector';
+import { TreePine, Loader2, Building, Table } from 'lucide-react';
 import { useServiceSectors } from '@/hooks/useServiceCategories';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ServiceSectorsList } from './ServiceSectorsList';
@@ -32,7 +32,21 @@ const SectorSection: React.FC<SectorSectionProps> = ({ sector }) => {
       {isOpen && (
         <div className="p-4">
           {sector.categories.map((category) => (
-            <Sector key={category.id} category={category} />
+            <div key={category.id} className="mb-4">
+              <h4 className="font-medium text-lg mb-2">{category.name}</h4>
+              {category.subcategories.map((subcategory) => (
+                <div key={subcategory.id} className="ml-4 mb-2">
+                  <h5 className="font-medium text-base">{subcategory.name}</h5>
+                  <div className="ml-4">
+                    {subcategory.jobs.map((job) => (
+                      <div key={job.id} className="text-sm text-gray-600 py-1">
+                        {job.name} - ${job.price} ({job.estimatedTime}min)
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           ))}
         </div>
       )}
@@ -88,7 +102,7 @@ export function ServiceHierarchyBrowser() {
             <Tabs value={view} onValueChange={(value: any) => setView(value)} className="w-auto">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="tree" className="flex items-center space-x-2">
-                  <Tree className="h-4 w-4" />
+                  <TreePine className="h-4 w-4" />
                   <span>Tree View</span>
                 </TabsTrigger>
                 <TabsTrigger value="excel" className="flex items-center space-x-2">

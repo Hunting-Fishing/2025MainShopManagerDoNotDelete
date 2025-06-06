@@ -37,7 +37,7 @@ export function ExcelStyleTable({ data, onCellEdit }: ExcelStyleTableProps) {
   const handleCellSave = () => {
     if (editingCell) {
       const { row, col } = editingCell;
-      let processedValue = editValue;
+      let processedValue: any = editValue;
       
       // Process value based on column type
       if (col === 'estimatedTime' || col === 'price') {
@@ -133,19 +133,21 @@ export function ExcelStyleTable({ data, onCellEdit }: ExcelStyleTableProps) {
         </TableBody>
       </Table>
       
-      <style jsx>{`
-        .excel-table-container {
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        .excel-table th,
-        .excel-table td {
-          font-size: 12px;
-        }
-        .excel-table th {
-          background-color: #f8f9fa;
-          font-weight: 600;
-        }
-      `}</style>
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          .excel-table-container {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          }
+          .excel-table th,
+          .excel-table td {
+            font-size: 12px;
+          }
+          .excel-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+          }
+        `
+      }} />
     </div>
   );
 }
