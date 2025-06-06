@@ -34,7 +34,7 @@ export function ServiceBulkImport() {
 
       setProgress({
         stage: 'Import Complete',
-        message: `Successfully imported ${result.importedCount} services`,
+        message: `Successfully imported ${result.totalImported} services`,
         progress: 100,
         completed: true,
         error: null
@@ -42,7 +42,7 @@ export function ServiceBulkImport() {
 
       toast({
         title: "Import Successful",
-        description: `Imported ${result.importedCount} services successfully`,
+        description: `Imported ${result.totalImported} services successfully`,
       });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
