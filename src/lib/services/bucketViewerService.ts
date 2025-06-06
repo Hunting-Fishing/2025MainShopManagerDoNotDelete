@@ -113,6 +113,8 @@ class BucketViewerService {
 
   async getFolderFiles(folderPath: string): Promise<StorageFile[]> {
     try {
+      console.log(`Getting files in folder: ${folderPath}`);
+      
       const { data: filesList, error } = await supabase.storage
         .from(this.bucketName)
         .list(folderPath, { limit: 1000, sortBy: { column: 'name', order: 'asc' } });
@@ -122,10 +124,18 @@ class BucketViewerService {
         return [];
       }
 
-      return filesList?.filter(item => {
-        if (!item.metadata) return false;
-        const hasExcelExtension = item.name.toLowerCase().endsWith('.xlsx') || 
-                                 item.name.toLowerCase().endsWith('.xls');
+      console.log(`Found ${filesList?.length || 0} items in folder ${folderPath}:`, filesList);
+
+      const excelFiles = filesList?.filter(item => {
+        if (!item.metadata) {
+          console.log(`Skipping non-file item: ${item.name}`);
+          return false;
+        }
+        
+        const fileName = item.name.toLowerCase();
+        const hasExcelExtension = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
+        
+        console.log(`File: ${item.name}, has Excel extension: ${hasExcelExtension}`);
         return hasExcelExtension;
       }).map(item => ({
         name: item.name,
@@ -134,6 +144,9 @@ class BucketViewerService {
         type: item.metadata?.mimetype,
         lastModified: new Date(item.updated_at)
       })) || [];
+
+      console.log(`Filtered ${excelFiles.length} Excel files from folder ${folderPath}`);
+      return excelFiles;
     } catch (error) {
       console.error(`Error getting files in folder ${folderPath}:`, error);
       return [];
@@ -142,22 +155,32 @@ class BucketViewerService {
 
   async getAllSectorFiles(): Promise<SectorFiles[]> {
     try {
+      console.log('Getting all sector files...');
       const bucketInfo = await this.getBucketInfo();
-      if (!bucketInfo.exists) return [];
+      if (!bucketInfo.exists) {
+        console.log('Bucket does not exist');
+        return [];
+      }
+
+      console.log(`Found ${bucketInfo.folders.length} folders:`, bucketInfo.folders.map(f => f.name));
 
       const sectorFiles: SectorFiles[] = [];
 
       for (const folder of bucketInfo.folders) {
+        console.log(`Processing folder: ${folder.name}`);
         const excelFiles = await this.getFolderFiles(folder.name);
-        if (excelFiles.length > 0) {
-          sectorFiles.push({
-            sectorName: folder.name,
-            excelFiles,
-            totalFiles: excelFiles.length
-          });
-        }
+        
+        console.log(`Found ${excelFiles.length} Excel files in ${folder.name}`);
+        
+        // Include all folders in the result, even if they have no Excel files
+        sectorFiles.push({
+          sectorName: folder.name,
+          excelFiles,
+          totalFiles: excelFiles.length
+        });
       }
 
+      console.log('Final sector files result:', sectorFiles);
       return sectorFiles;
     } catch (error) {
       console.error('Error getting all sector files:', error);
