@@ -1,120 +1,22 @@
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { ServiceBulkImport } from './ServiceBulkImport';
 import { ServiceImportProgress } from './ServiceImportProgress';
 import { LiveBucketViewer } from './LiveBucketViewer';
-import { Database, FolderOpen, RefreshCw, Eye } from 'lucide-react';
-import { importServicesFromStorage, type ImportProgress } from '@/lib/services';
-import { useToast } from '@/hooks/use-toast';
-import { useServiceSectors } from '@/hooks/useServiceCategories';
+import { Database, FolderOpen, RefreshCw } from 'lucide-react';
+import { useServiceManagement } from '@/hooks/useServiceManagement';
 
 export function FolderBasedImportManager() {
-  const [isImporting, setIsImporting] = useState(false);
-  const [importProgress, setImportProgress] = useState<ImportProgress>({
-    stage: '',
-    message: '',
-    progress: 0,
-    completed: false,
-    error: null
-  });
-  const { sectors, refetch } = useServiceSectors();
-  const { toast } = useToast();
-  
-  const handleServiceImport = async () => {
-    setIsImporting(true);
-    setImportProgress({
-      stage: 'starting',
-      message: 'Starting import process...',
-      progress: 0,
-      completed: false,
-      error: null
-    });
-    
-    try {
-      const result = await importServicesFromStorage(
-        (progress: ImportProgress) => {
-          setImportProgress(progress);
-        }
-      );
-      
-      setImportProgress({
-        stage: 'complete',
-        message: result.message || 'Service import completed successfully!',
-        progress: 100,
-        completed: true,
-        error: null
-      });
-      
-      setTimeout(async () => {
-        await refetch();
-      }, 1000);
-      
-      toast({
-        title: "Import Completed Successfully",
-        description: result.stats ? 
-          `Imported ${result.stats.totalServices} services across ${result.stats.totalSectors} sectors from ${result.stats.filesProcessed} files.` : 
-          result.message,
-        variant: "default",
-      });
-      
-    } catch (error) {
-      console.error('Service import failed:', error);
-      
-      const errorMessage = error instanceof Error ? error.message : 'Import failed';
-      
-      setImportProgress({
-        stage: 'error',
-        message: errorMessage,
-        progress: 0,
-        completed: false,
-        error: errorMessage
-      });
-      
-      toast({
-        title: "Import Failed",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setIsImporting(false);
-    }
-  };
-  
-  const handleCancel = () => {
-    setIsImporting(false);
-    setImportProgress({
-      stage: 'cancelled',
-      message: 'Import cancelled by user',
-      progress: 0,
-      completed: false,
-      error: null
-    });
-    
-    toast({
-      title: "Import Cancelled",
-      description: "Service import was cancelled",
-      variant: "destructive",
-    });
-  };
-
-  const handleRefreshData = async () => {
-    try {
-      await refetch();
-      toast({
-        title: "Data Refreshed",
-        description: "Service hierarchy has been refreshed",
-        variant: "default",
-      });
-    } catch (error) {
-      toast({
-        title: "Refresh Failed",
-        description: "Failed to refresh service data",
-        variant: "destructive",
-      });
-    }
-  };
+  const {
+    sectors,
+    isImporting,
+    importProgress,
+    handleServiceImport,
+    handleCancel,
+    handleRefreshData
+  } = useServiceManagement();
   
   return (
     <div className="space-y-6">

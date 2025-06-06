@@ -12,9 +12,8 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 import { AlertTriangle, Trash2, Database } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { clearAllServiceData, type ImportProgress } from '@/lib/services';
 import { ServiceImportProgress } from './ServiceImportProgress';
+import { useServiceManagement } from '@/hooks/useServiceManagement';
 
 interface ServiceManagementSettingsProps {
   children: React.ReactNode;
@@ -23,75 +22,22 @@ interface ServiceManagementSettingsProps {
 
 export function ServiceManagementSettings({ children, onDataChange }: ServiceManagementSettingsProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [isClearing, setIsClearing] = useState(false);
-  const [clearProgress, setClearProgress] = useState<ImportProgress>({
-    stage: '',
-    message: '',
-    progress: 0,
-    completed: false,
-    error: null
-  });
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const { toast } = useToast();
-
-  const handleClearDatabase = async () => {
-    setIsClearing(true);
-    setShowConfirmDialog(false);
-    
-    try {
-      setClearProgress({
-        stage: 'clearing',
-        progress: 20,
-        message: 'Clearing service database...',
-        completed: false,
-        error: null
-      });
-
-      await clearAllServiceData();
-
-      setClearProgress({
-        stage: 'complete',
-        progress: 100,
-        message: 'Service database cleared successfully!',
-        completed: true,
-        error: null
-      });
-
-      toast({
-        title: "Database Cleared",
-        description: "All service data has been removed from the database.",
-      });
-
-      // Call the callback to refresh parent component
-      onDataChange?.();
-
-    } catch (error: any) {
-      console.error('Clear database failed:', error);
-      setClearProgress({
-        stage: 'error',
-        progress: 0,
-        message: error instanceof Error ? error.message : "Failed to clear database",
-        error: error instanceof Error ? error.message : "Failed to clear database",
-        completed: false
-      });
-      toast({
-        title: "Clear Failed",
-        description: error instanceof Error ? error.message : "Failed to clear service database",
-        variant: "destructive",
-      });
-    } finally {
-      setIsClearing(false);
-    }
-  };
+  
+  const {
+    isClearing,
+    importProgress,
+    handleClearDatabase
+  } = useServiceManagement();
 
   const resetProgress = () => {
-    setClearProgress({
-      stage: '',
-      message: '',
-      progress: 0,
-      completed: false,
-      error: null
-    });
+    // Progress is managed by the hook
+  };
+
+  const confirmClear = async () => {
+    setShowConfirmDialog(false);
+    await handleClearDatabase();
+    onDataChange?.();
   };
 
   return (
@@ -143,11 +89,11 @@ export function ServiceManagementSettings({ children, onDataChange }: ServiceMan
 
               <ServiceImportProgress
                 isImporting={isClearing}
-                progress={clearProgress.progress}
-                stage={clearProgress.stage}
-                message={clearProgress.message}
-                error={clearProgress.error}
-                completed={clearProgress.completed}
+                progress={importProgress.progress}
+                stage={importProgress.stage}
+                message={importProgress.message}
+                error={importProgress.error}
+                completed={importProgress.completed}
                 operation="clear"
               />
             </CardContent>
@@ -172,7 +118,7 @@ export function ServiceManagementSettings({ children, onDataChange }: ServiceMan
               </Button>
               <Button
                 variant="destructive"
-                onClick={handleClearDatabase}
+                onClick={confirmClear}
               >
                 Yes, Clear Database
               </Button>

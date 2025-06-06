@@ -2,8 +2,8 @@
 import React from 'react';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { X, CheckCircle, AlertCircle, FileSpreadsheet, Database, FolderOpen, Trash2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { CheckCircle, XCircle, AlertCircle, X } from 'lucide-react';
 
 interface ServiceImportProgressProps {
   isImporting: boolean;
@@ -16,187 +16,63 @@ interface ServiceImportProgressProps {
   operation?: 'import' | 'clear';
 }
 
-export function ServiceImportProgress({
-  isImporting,
-  progress,
-  stage,
-  message,
+export function ServiceImportProgress({ 
+  isImporting, 
+  progress, 
+  stage, 
+  message, 
   onCancel,
   error,
-  completed,
+  completed = false,
   operation = 'import'
 }: ServiceImportProgressProps) {
-  if (!isImporting && !completed && !error) return null;
+  if (!isImporting && !completed && !error) {
+    return null;
+  }
 
-  const getOperationText = () => {
-    return operation === 'import' ? {
-      title: 'Importing Services',
-      completedTitle: 'Import Complete',
-      completedMessage: 'Import completed successfully!',
-      progressTitle: 'Importing Services'
-    } : {
-      title: 'Clearing Database',
-      completedTitle: 'Database Cleared',
-      completedMessage: 'Database cleared successfully!',
-      progressTitle: 'Clearing Database'
-    };
+  const getIcon = () => {
+    if (error) return <XCircle className="h-4 w-4 text-red-500" />;
+    if (completed) return <CheckCircle className="h-4 w-4 text-green-500" />;
+    return <AlertCircle className="h-4 w-4 text-blue-500" />;
   };
 
-  const getStageIcon = (currentStage: string) => {
-    if (operation === 'clear') {
-      switch (currentStage) {
-        case 'clearing':
-          return <Trash2 className="h-5 w-5 text-red-600" />;
-        case 'complete':
-          return <CheckCircle className="h-5 w-5 text-green-600" />;
-        case 'error':
-          return <AlertCircle className="h-5 w-5 text-red-600" />;
-        default:
-          return <Database className="h-5 w-5 text-red-600" />;
-      }
-    }
-
-    // Import operation icons
-    switch (currentStage) {
-      case 'starting':
-      case 'folders-found':
-        return <FolderOpen className="h-5 w-5 text-blue-600" />;
-      case 'processing-sector':
-      case 'processing-file':
-        return <FileSpreadsheet className="h-5 w-5 text-orange-600" />;
-      case 'saving-to-database':
-      case 'inserting-sector':
-      case 'database-complete':
-        return <Database className="h-5 w-5 text-purple-600" />;
-      case 'complete':
-        return <CheckCircle className="h-5 w-5 text-green-600" />;
-      case 'error':
-        return <AlertCircle className="h-5 w-5 text-red-600" />;
-      default:
-        return <FileSpreadsheet className="h-5 w-5 text-gray-600" />;
-    }
+  const getVariant = () => {
+    if (error) return 'destructive' as const;
+    if (completed) return 'default' as const;
+    return 'default' as const;
   };
-
-  const getStageColor = (currentStage: string) => {
-    if (operation === 'clear') {
-      switch (currentStage) {
-        case 'clearing':
-          return 'text-red-700';
-        case 'complete':
-          return 'text-green-700';
-        case 'error':
-          return 'text-red-700';
-        default:
-          return 'text-red-700';
-      }
-    }
-
-    // Import operation colors
-    switch (currentStage) {
-      case 'starting':
-      case 'folders-found':
-        return 'text-blue-700';
-      case 'processing-sector':
-      case 'processing-file':
-        return 'text-orange-700';
-      case 'saving-to-database':
-      case 'inserting-sector':
-      case 'database-complete':
-        return 'text-purple-700';
-      case 'complete':
-        return 'text-green-700';
-      case 'error':
-        return 'text-red-700';
-      default:
-        return 'text-gray-700';
-    }
-  };
-
-  const getProgressStages = () => {
-    if (operation === 'clear') {
-      return (
-        <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t">
-          <div className={`flex items-center gap-1 ${['clearing'].includes(stage) || completed ? 'text-red-600' : ''}`}>
-            <div className={`w-2 h-2 rounded-full ${['clearing'].includes(stage) || completed ? 'bg-red-600' : 'bg-gray-300'}`} />
-            <span>Clearing</span>
-          </div>
-          <div className={`flex items-center gap-1 ${completed ? 'text-green-600' : ''}`}>
-            <div className={`w-2 h-2 rounded-full ${completed ? 'bg-green-600' : 'bg-gray-300'}`} />
-            <span>Complete</span>
-          </div>
-        </div>
-      );
-    }
-
-    // Import operation stages
-    return (
-      <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t">
-        <div className={`flex items-center gap-1 ${['starting', 'folders-found'].includes(stage) || completed ? 'text-blue-600' : ''}`}>
-          <div className={`w-2 h-2 rounded-full ${['starting', 'folders-found'].includes(stage) || completed ? 'bg-blue-600' : 'bg-gray-300'}`} />
-          <span>Discovery</span>
-        </div>
-        <div className={`flex items-center gap-1 ${['processing-sector', 'processing-file'].includes(stage) || completed ? 'text-orange-600' : ''}`}>
-          <div className={`w-2 h-2 rounded-full ${['processing-sector', 'processing-file'].includes(stage) || completed ? 'bg-orange-600' : 'bg-gray-300'}`} />
-          <span>Processing</span>
-        </div>
-        <div className={`flex items-center gap-1 ${['saving-to-database', 'inserting-sector', 'database-complete'].includes(stage) || completed ? 'text-purple-600' : ''}`}>
-          <div className={`w-2 h-2 rounded-full ${['saving-to-database', 'inserting-sector', 'database-complete'].includes(stage) || completed ? 'bg-purple-600' : 'bg-gray-300'}`} />
-          <span>Database</span>
-        </div>
-        <div className={`flex items-center gap-1 ${completed ? 'text-green-600' : ''}`}>
-          <div className={`w-2 h-2 rounded-full ${completed ? 'bg-green-600' : 'bg-gray-300'}`} />
-          <span>Complete</span>
-        </div>
-      </div>
-    );
-  };
-
-  const operationText = getOperationText();
 
   return (
-    <div className="space-y-4 p-4 border rounded-lg bg-white">
-      <div className="flex items-center justify-between">
+    <div className="space-y-3">
+      <Alert variant={getVariant()}>
         <div className="flex items-center gap-2">
-          {getStageIcon(stage)}
-          <h3 className="text-lg font-semibold">
-            {error ? `${operation === 'import' ? 'Import' : 'Clear'} Failed` : completed ? operationText.completedTitle : operationText.progressTitle}
-          </h3>
-        </div>
-        {onCancel && !completed && !error && (
-          <Button variant="outline" size="sm" onClick={onCancel}>
-            <X className="h-4 w-4 mr-2" />
-            Cancel
-          </Button>
-        )}
-      </div>
-
-      {error ? (
-        <Alert variant="destructive">
-          <AlertCircle className="h-5 w-5" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      ) : completed ? (
-        <div className="flex items-center gap-2 text-green-600">
-          <CheckCircle className="h-5 w-5" />
-          <span>{operationText.completedMessage}</span>
-        </div>
-      ) : (
-        <>
-          <Progress value={progress} className="w-full" />
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className={`font-medium ${getStageColor(stage)}`}>
-                {stage.charAt(0).toUpperCase() + stage.slice(1).replace(/-/g, ' ')}
-              </span>
-              <span className="text-gray-600">{Math.round(progress)}%</span>
+          {getIcon()}
+          <AlertDescription className="flex-1">
+            <div className="font-medium">
+              {operation === 'clear' ? 'Database Clear' : 'Service Import'} - {stage}
             </div>
-            <p className="text-sm text-gray-600">{message}</p>
+            <div className="text-sm mt-1">{message}</div>
+          </AlertDescription>
+          {isImporting && onCancel && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onCancel}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      </Alert>
+      
+      {(isImporting || completed) && (
+        <div className="space-y-2">
+          <Progress value={progress} className="w-full" />
+          <div className="text-xs text-gray-500 text-right">
+            {progress}% complete
           </div>
-        </>
+        </div>
       )}
-
-      {/* Progress stages indicator */}
-      {(isImporting || completed) && !error && getProgressStages()}
     </div>
   );
 }

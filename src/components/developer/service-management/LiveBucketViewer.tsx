@@ -1,148 +1,190 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { bucketViewerService } from '@/lib/services/bucketViewerService';
-import { Folder, FileText, RefreshCw, Eye, EyeOff } from 'lucide-react';
-import type { StorageFile, SectorFiles } from '@/lib/services/types';
+import { Separator } from '@/components/ui/separator';
+import { 
+  ResizablePanelGroup, 
+  ResizablePanel, 
+  ResizableHandle 
+} from '@/components/ui/resizable';
+import { bucketViewerService } from '@/lib/services';
+import { useQuery } from '@tanstack/react-query';
+import { 
+  Folder, 
+  FileSpreadsheet, 
+  RefreshCw, 
+  Database,
+  HardDrive,
+  Loader2 
+} from 'lucide-react';
 
 export function LiveBucketViewer() {
-  const [bucketInfo, setBucketInfo] = useState<{
-    exists: boolean;
-    files: StorageFile[];
-    folders: { name: string; path: string; lastModified?: Date }[];
-  }>({ exists: false, files: [], folders: [] });
-  const [sectorFiles, setSectorFiles] = useState<SectorFiles[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [showDetails, setShowDetails] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
 
-  const refreshBucketInfo = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      console.log('Refreshing bucket info...');
-      const info = await bucketViewerService.getBucketInfo();
-      setBucketInfo(info);
-      
-      if (info.exists) {
-        const sectors = await bucketViewerService.getAllSectorFiles();
-        setSectorFiles(sectors);
-        console.log('Loaded sector files:', sectors);
-      }
-    } catch (err) {
-      console.error('Error refreshing bucket info:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load bucket info');
-    } finally {
-      setLoading(false);
+  const { 
+    data: bucketInfo, 
+    isLoading: bucketLoading, 
+    refetch: refetchBucket 
+  } = useQuery({
+    queryKey: ['bucket-info'],
+    queryFn: () => bucketViewerService.getBucketInfo(),
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
+  });
+
+  const { 
+    data: folderFiles = [], 
+    isLoading: filesLoading,
+    refetch: refetchFiles 
+  } = useQuery({
+    queryKey: ['folder-files', selectedFolder],
+    queryFn: () => selectedFolder ? bucketViewerService.getFilesInFolder(selectedFolder) : Promise.resolve([]),
+    enabled: !!selectedFolder,
+  });
+
+  const handleRefresh = async () => {
+    await refetchBucket();
+    if (selectedFolder) {
+      await refetchFiles();
     }
   };
 
-  useEffect(() => {
-    refreshBucketInfo();
-  }, []);
+  if (bucketLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Database className="h-5 w-5" />
+            Live Storage Browser
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center h-32">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    );
+  }
 
-  const totalExcelFiles = sectorFiles.reduce((acc, sector) => acc + sector.totalFiles, 0);
+  if (!bucketInfo?.exists) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Database className="h-5 w-5" />
+            Live Storage Browser
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-gray-500">
+            <HardDrive className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+            <p>Storage bucket not found</p>
+            <p className="text-sm">Check bucket configuration</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const totalFiles = bucketInfo.files.length;
+  const totalFolders = bucketInfo.folders.length;
 
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center space-x-2">
-            <Folder className="h-5 w-5" />
-            <span>Live Storage Bucket View</span>
+          <CardTitle className="flex items-center gap-2">
+            <Database className="h-5 w-5" />
+            Live Storage Browser
           </CardTitle>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-2">
+            <Badge variant="outline">{totalFolders} folders</Badge>
+            <Badge variant="outline">{totalFiles} files</Badge>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setShowDetails(!showDetails)}
+              onClick={handleRefresh}
+              disabled={bucketLoading}
             >
-              {showDetails ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              {showDetails ? 'Hide' : 'Show'} Details
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={refreshBucketInfo}
-              disabled={loading}
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
+              <RefreshCw className="h-4 w-4" />
             </Button>
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-            {error}
-          </div>
-        )}
-
-        {!bucketInfo.exists ? (
-          <div className="text-center py-8 text-gray-500">
-            <Folder className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-            <p>No service-data bucket found</p>
-            <p className="text-sm">Upload Excel files to create the bucket</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <Folder className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-                <div className="text-2xl font-bold text-blue-800">{bucketInfo.folders.length}</div>
-                <div className="text-sm text-blue-600">Sectors</div>
-              </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <FileText className="h-8 w-8 mx-auto mb-2 text-green-600" />
-                <div className="text-2xl font-bold text-green-800">{totalExcelFiles}</div>
-                <div className="text-sm text-green-600">Excel Files</div>
-              </div>
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <Badge variant="outline" className="text-lg px-3 py-1">
-                  {bucketInfo.exists ? 'Connected' : 'Not Found'}
-                </Badge>
-                <div className="text-sm text-purple-600 mt-1">Bucket Status</div>
+        <ResizablePanelGroup direction="horizontal" className="min-h-[400px]">
+          <ResizablePanel defaultSize={40} minSize={30}>
+            <div className="pr-4">
+              <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                <Folder className="h-4 w-4" />
+                Sector Folders
+              </h4>
+              <div className="space-y-1 max-h-80 overflow-y-auto">
+                {bucketInfo.folders.map((folder) => (
+                  <Button
+                    key={folder.name}
+                    variant={selectedFolder === folder.name ? "default" : "ghost"}
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={() => setSelectedFolder(folder.name)}
+                  >
+                    <Folder className="h-4 w-4 mr-2" />
+                    {folder.name}
+                  </Button>
+                ))}
               </div>
             </div>
-
-            {showDetails && sectorFiles.length > 0 && (
-              <div className="mt-6">
-                <h4 className="text-lg font-medium mb-4">Sector Details</h4>
-                <div className="space-y-3">
-                  {sectorFiles.map((sector, index) => (
-                    <div key={index} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h5 className="font-medium flex items-center">
-                          <Folder className="h-4 w-4 mr-2 text-blue-500" />
-                          {sector.sectorName}
-                        </h5>
-                        <Badge variant="secondary">{sector.totalFiles} files</Badge>
+          </ResizablePanel>
+          
+          <ResizableHandle withHandle />
+          
+          <ResizablePanel defaultSize={60} minSize={40}>
+            <div className="pl-4">
+              <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                <FileSpreadsheet className="h-4 w-4" />
+                Excel Files
+                {selectedFolder && (
+                  <span className="text-xs text-muted-foreground">
+                    in {selectedFolder}
+                  </span>
+                )}
+              </h4>
+              
+              {!selectedFolder ? (
+                <div className="text-center py-8 text-gray-500">
+                  <FileSpreadsheet className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                  <p className="text-sm">Select a folder to view files</p>
+                </div>
+              ) : filesLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : folderFiles.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <FileSpreadsheet className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                  <p className="text-sm">No Excel files found</p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-80 overflow-y-auto">
+                  {folderFiles.map((file) => (
+                    <div
+                      key={file.path}
+                      className="flex items-center justify-between p-2 border rounded-lg"
+                    >
+                      <div className="flex items-center gap-2">
+                        <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                        <span className="text-sm font-medium">{file.name}</span>
                       </div>
-                      {showDetails && (
-                        <div className="ml-6 space-y-1">
-                          {sector.excelFiles.map((file, fileIndex) => (
-                            <div key={fileIndex} className="text-sm text-gray-600 flex items-center">
-                              <FileText className="h-3 w-3 mr-2" />
-                              {file.name}
-                              {file.size && (
-                                <span className="ml-2 text-xs text-gray-400">
-                                  ({Math.round(file.size / 1024)} KB)
-                                </span>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                      <div className="text-xs text-gray-500">
+                        {file.size ? `${Math.round(file.size / 1024)}KB` : ''}
+                      </div>
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
-          </div>
-        )}
+              )}
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </CardContent>
     </Card>
   );
