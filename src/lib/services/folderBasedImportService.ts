@@ -1,354 +1,441 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import * as XLSX from 'xlsx';
 
-export interface ImportProgress {
+interface ImportProgress {
   stage: string;
   progress: number;
   message: string;
 }
 
-export interface ParsedServiceData {
-  sector: string;
-  category: string;
-  subcategory: string;
-  serviceName: string;
-  description?: string;
-  estimatedTime?: number;
-  price?: number;
+interface ServiceData {
+  sectors: any[];
+  categories: any[];
+  subcategories: any[];
+  jobs: any[];
 }
 
 export const clearServiceDatabase = async (
-  onProgress: (progress: ImportProgress) => void
+  onProgress?: (progress: ImportProgress) => void
 ): Promise<void> => {
   try {
-    onProgress({
-      stage: 'clear',
-      progress: 10,
-      message: 'Starting database cleanup...'
-    });
+    if (onProgress) {
+      onProgress({
+        stage: 'clearing',
+        progress: 10,
+        message: 'Clearing service jobs...'
+      });
+    }
 
-    // Delete in correct order to maintain referential integrity
+    // Clear in reverse order to maintain referential integrity
+    await supabase.from('service_jobs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     
-    // 1. Delete service jobs first
-    onProgress({
-      stage: 'clear',
-      progress: 25,
-      message: 'Removing service jobs...'
-    });
-    
-    const { error: jobsError } = await supabase
-      .from('service_jobs')
-      .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
-    
-    if (jobsError) throw jobsError;
+    if (onProgress) {
+      onProgress({
+        stage: 'clearing',
+        progress: 40,
+        message: 'Clearing service subcategories...'
+      });
+    }
 
-    // 2. Delete service subcategories
-    onProgress({
-      stage: 'clear',
-      progress: 50,
-      message: 'Removing service subcategories...'
-    });
+    await supabase.from('service_subcategories').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     
-    const { error: subcategoriesError } = await supabase
-      .from('service_subcategories')
-      .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
-    
-    if (subcategoriesError) throw subcategoriesError;
+    if (onProgress) {
+      onProgress({
+        stage: 'clearing',
+        progress: 70,
+        message: 'Clearing service categories...'
+      });
+    }
 
-    // 3. Delete service categories
-    onProgress({
-      stage: 'clear',
-      progress: 75,
-      message: 'Removing service categories...'
-    });
+    await supabase.from('service_categories').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     
-    const { error: categoriesError } = await supabase
-      .from('service_categories')
-      .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
-    
-    if (categoriesError) throw categoriesError;
+    if (onProgress) {
+      onProgress({
+        stage: 'clearing',
+        progress: 90,
+        message: 'Clearing service sectors...'
+      });
+    }
 
-    // 4. Delete service sectors
-    onProgress({
-      stage: 'clear',
-      progress: 90,
-      message: 'Removing service sectors...'
-    });
-    
-    const { error: sectorsError } = await supabase
-      .from('service_sectors')
-      .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
-    
-    if (sectorsError) throw sectorsError;
+    await supabase.from('service_sectors').delete().neq('id', '00000000-0000-0000-0000-000000000000');
 
-    onProgress({
-      stage: 'complete',
-      progress: 100,
-      message: 'Database cleared successfully!'
-    });
+    if (onProgress) {
+      onProgress({
+        stage: 'complete',
+        progress: 100,
+        message: 'Database cleared successfully!'
+      });
+    }
 
+    console.log('Service database cleared successfully');
   } catch (error) {
-    console.error('Error clearing database:', error);
+    console.error('Error clearing service database:', error);
     throw new Error(`Failed to clear database: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
 
-export const getServiceCounts = async () => {
+// Updated function to use file input instead of fetch to avoid CORS issues
+export const importFromLocalFiles = async (
+  files: FileList,
+  onProgress?: (progress: ImportProgress) => void
+): Promise<ServiceData> => {
   try {
-    const [sectorsResult, categoriesResult, subcategoriesResult, jobsResult] = await Promise.all([
-      supabase.from('service_sectors').select('id', { count: 'exact', head: true }),
-      supabase.from('service_categories').select('id', { count: 'exact', head: true }),
-      supabase.from('service_subcategories').select('id', { count: 'exact', head: true }),
-      supabase.from('service_jobs').select('id', { count: 'exact', head: true })
-    ]);
+    if (onProgress) {
+      onProgress({
+        stage: 'reading',
+        progress: 10,
+        message: 'Reading uploaded files...'
+      });
+    }
 
-    return {
-      sectors: sectorsResult.count || 0,
-      categories: categoriesResult.count || 0,
-      subcategories: subcategoriesResult.count || 0,
-      jobs: jobsResult.count || 0
+    const serviceData: ServiceData = {
+      sectors: [],
+      categories: [],
+      subcategories: [],
+      jobs: []
     };
+
+    let processedFiles = 0;
+    const totalFiles = files.length;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      
+      if (onProgress) {
+        onProgress({
+          stage: 'processing',
+          progress: 10 + (processedFiles / totalFiles) * 60,
+          message: `Processing file ${i + 1}/${totalFiles}: ${file.name}...`
+        });
+      }
+
+      try {
+        const fileData = await processFile(file);
+        
+        // Merge data from this file
+        serviceData.sectors.push(...fileData.sectors);
+        serviceData.categories.push(...fileData.categories);
+        serviceData.subcategories.push(...fileData.subcategories);
+        serviceData.jobs.push(...fileData.jobs);
+        
+        processedFiles++;
+      } catch (fileError) {
+        console.warn(`Failed to process file ${file.name}:`, fileError);
+        // Continue with other files
+      }
+    }
+
+    if (onProgress) {
+      onProgress({
+        stage: 'importing',
+        progress: 70,
+        message: 'Importing data to database...'
+      });
+    }
+
+    // Import to database
+    await importServiceData(serviceData, onProgress);
+
+    if (onProgress) {
+      onProgress({
+        stage: 'complete',
+        progress: 100,
+        message: `Import completed! Processed ${processedFiles}/${totalFiles} files successfully.`
+      });
+    }
+
+    return serviceData;
+
   } catch (error) {
-    console.error('Error getting service counts:', error);
-    return {
-      sectors: 0,
-      categories: 0,
-      subcategories: 0,
-      jobs: 0
-    };
+    console.error('Error importing from local files:', error);
+    throw new Error(`Import failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
 
-export const importFromFolderStructure = async (
-  bucketName: string,
-  onProgress: (progress: ImportProgress) => void
-): Promise<ParsedServiceData[]> => {
-  // Enhanced implementation for unlimited jobs per subcategory
-  onProgress({
-    stage: 'parsing',
-    progress: 10,
-    message: 'Starting folder structure analysis...'
-  });
-  
+const processFile = async (file: File): Promise<ServiceData> => {
+  const serviceData: ServiceData = {
+    sectors: [],
+    categories: [],
+    subcategories: [],
+    jobs: []
+  };
+
   try {
-    // List all files in the bucket - no limit on number of files per folder
-    const { data: files, error } = await supabase.storage
-      .from(bucketName)
-      .list('', {
-        limit: 10000, // Increased limit to handle large datasets
-        sortBy: { column: 'name', order: 'asc' }
+    const fileExtension = file.name.split('.').pop()?.toLowerCase();
+    
+    if (fileExtension === 'xlsx' || fileExtension === 'xls') {
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { 
+        type: 'array',
+        cellDates: true,
+        cellNF: false,
+        cellText: false
       });
 
-    if (error) throw error;
+      // Process all sheets in the workbook
+      for (const sheetName of workbook.SheetNames) {
+        const worksheet = workbook.Sheets[sheetName];
+        const sheetData = XLSX.utils.sheet_to_json(worksheet, {
+          header: 1,
+          defval: '',
+          blankrows: false,
+          raw: false
+        }) as any[][];
 
-    onProgress({
-      stage: 'parsing',
-      progress: 30,
-      message: `Found ${files?.length || 0} files to process...`
-    });
+        const filteredData = sheetData.filter(row => 
+          row && row.some(cell => cell && cell.toString().trim())
+        );
 
-    const parsedData: ParsedServiceData[] = [];
-    
-    // Process each file without any job count limitations
-    for (const file of files || []) {
-      // Parse file structure: sector/category/subcategory/job.txt
-      const pathParts = file.name.split('/');
+        if (filteredData.length > 0) {
+          const parsedData = parseSheetData(sheetName, filteredData);
+          serviceData.sectors.push(...parsedData.sectors);
+          serviceData.categories.push(...parsedData.categories);
+          serviceData.subcategories.push(...parsedData.subcategories);
+          serviceData.jobs.push(...parsedData.jobs);
+        }
+      }
+    } else if (fileExtension === 'csv') {
+      const text = await file.text();
+      const rows = text.split('\n').map(row => row.split(','));
+      const filteredRows = rows.filter(row => 
+        row && row.some(cell => cell && cell.trim())
+      );
       
-      if (pathParts.length >= 4) {
-        const [sector, category, subcategory, jobFile] = pathParts;
-        const serviceName = jobFile.replace('.txt', '').replace(/[-_]/g, ' ').toUpperCase();
-        
-        // No limit on jobs per subcategory - add all found services
-        parsedData.push({
-          sector,
-          category,
-          subcategory,
-          serviceName,
-          description: `Service: ${serviceName}`,
-          estimatedTime: 60, // Default estimation
-          price: 100 // Default price
+      if (filteredRows.length > 0) {
+        const parsedData = parseSheetData(file.name.replace('.csv', ''), filteredRows);
+        serviceData.sectors.push(...parsedData.sectors);
+        serviceData.categories.push(...parsedData.categories);
+        serviceData.subcategories.push(...parsedData.subcategories);
+        serviceData.jobs.push(...parsedData.jobs);
+      }
+    }
+
+    return serviceData;
+  } catch (error) {
+    console.error(`Error processing file ${file.name}:`, error);
+    throw error;
+  }
+};
+
+const parseSheetData = (sheetName: string, data: any[][]): ServiceData => {
+  const serviceData: ServiceData = {
+    sectors: [],
+    categories: [],
+    subcategories: [],
+    jobs: []
+  };
+
+  // Determine sector name from sheet name or first cell
+  let sectorName = sheetName;
+  if (data.length > 0 && data[0][0]) {
+    sectorName = data[0][0].toString().trim();
+  }
+
+  // Create sector
+  const sectorId = generateId();
+  serviceData.sectors.push({
+    id: sectorId,
+    name: sectorName,
+    description: `Services for ${sectorName}`,
+    position: 1
+  });
+
+  let currentCategory = null;
+  let currentSubcategory = null;
+
+  for (let i = 1; i < data.length; i++) { // Start from 1 to skip header
+    const row = data[i];
+    if (!row || row.length === 0) continue;
+
+    const cell1 = row[0]?.toString().trim();
+    const cell2 = row[1]?.toString().trim();
+    const cell3 = row[2]?.toString().trim();
+
+    // If first column has content, it's likely a category
+    if (cell1 && !cell2 && !cell3) {
+      const categoryId = generateId();
+      currentCategory = {
+        id: categoryId,
+        name: cell1,
+        description: `${cell1} services`,
+        sector_id: sectorId,
+        position: serviceData.categories.length + 1
+      };
+      serviceData.categories.push(currentCategory);
+      currentSubcategory = null;
+    }
+    // If first two columns have content, it's likely a subcategory
+    else if (cell1 && cell2 && !cell3) {
+      if (!currentCategory) {
+        // Create a default category if none exists
+        const categoryId = generateId();
+        currentCategory = {
+          id: categoryId,
+          name: 'General Services',
+          description: 'General service category',
+          sector_id: sectorId,
+          position: 1
+        };
+        serviceData.categories.push(currentCategory);
+      }
+
+      const subcategoryId = generateId();
+      currentSubcategory = {
+        id: subcategoryId,
+        name: cell2,
+        description: `${cell2} services`,
+        category_id: currentCategory.id
+      };
+      serviceData.subcategories.push(currentSubcategory);
+    }
+    // If we have content in the last column, it's likely a job
+    else if (cell3 || (cell1 && currentSubcategory)) {
+      if (!currentSubcategory) {
+        // Create default category and subcategory if none exist
+        if (!currentCategory) {
+          const categoryId = generateId();
+          currentCategory = {
+            id: categoryId,
+            name: 'General Services',
+            description: 'General service category',
+            sector_id: sectorId,
+            position: 1
+          };
+          serviceData.categories.push(currentCategory);
+        }
+
+        const subcategoryId = generateId();
+        currentSubcategory = {
+          id: subcategoryId,
+          name: 'General',
+          description: 'General services',
+          category_id: currentCategory.id
+        };
+        serviceData.subcategories.push(currentSubcategory);
+      }
+
+      const jobName = cell3 || cell1;
+      if (jobName) {
+        const jobId = generateId();
+        serviceData.jobs.push({
+          id: jobId,
+          name: jobName,
+          description: `${jobName} service`,
+          subcategory_id: currentSubcategory.id,
+          estimated_time: 60, // Default 1 hour
+          price: 0
         });
       }
     }
-
-    onProgress({
-      stage: 'parsing',
-      progress: 80,
-      message: `Parsed ${parsedData.length} services with unlimited jobs per subcategory...`
-    });
-
-    onProgress({
-      stage: 'complete',
-      progress: 100,
-      message: `Successfully parsed ${parsedData.length} services from folder structure!`
-    });
-    
-    return parsedData;
-  } catch (error) {
-    console.error('Error importing from folder structure:', error);
-    throw new Error(`Failed to import: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
+
+  return serviceData;
 };
 
-export const importParsedDataToDatabase = async (
-  data: ParsedServiceData[],
-  onProgress: (progress: ImportProgress) => void
+const importServiceData = async (
+  serviceData: ServiceData,
+  onProgress?: (progress: ImportProgress) => void
 ): Promise<void> => {
   try {
-    onProgress({
-      stage: 'importing',
-      progress: 10,
-      message: 'Starting database import...'
-    });
-
-    // Group data by hierarchy levels
-    const sectorMap = new Map<string, Set<string>>();
-    const categoryMap = new Map<string, Set<string>>();
-    const subcategoryMap = new Map<string, ParsedServiceData[]>();
-
-    // Organize all data without job limits
-    data.forEach(item => {
-      if (!sectorMap.has(item.sector)) {
-        sectorMap.set(item.sector, new Set());
-      }
-      sectorMap.get(item.sector)!.add(item.category);
-
-      const categoryKey = `${item.sector}::${item.category}`;
-      if (!categoryMap.has(categoryKey)) {
-        categoryMap.set(categoryKey, new Set());
-      }
-      categoryMap.get(categoryKey)!.add(item.subcategory);
-
-      const subcategoryKey = `${item.sector}::${item.category}::${item.subcategory}`;
-      if (!subcategoryMap.has(subcategoryKey)) {
-        subcategoryMap.set(subcategoryKey, []);
-      }
-      subcategoryMap.get(subcategoryKey)!.push(item);
-    });
-
     // Import sectors
-    onProgress({
-      stage: 'importing',
-      progress: 20,
-      message: `Importing ${sectorMap.size} sectors...`
-    });
+    if (serviceData.sectors.length > 0) {
+      if (onProgress) {
+        onProgress({
+          stage: 'importing',
+          progress: 75,
+          message: `Importing ${serviceData.sectors.length} sectors...`
+        });
+      }
 
-    const sectorIds = new Map<string, string>();
-    for (const [sectorName] of sectorMap) {
-      const { data: sector, error } = await supabase
+      const { error: sectorsError } = await supabase
         .from('service_sectors')
-        .insert({ name: sectorName, description: `${sectorName} services` })
-        .select('id')
-        .single();
-      
-      if (error) throw error;
-      sectorIds.set(sectorName, sector.id);
+        .insert(serviceData.sectors);
+
+      if (sectorsError) throw sectorsError;
     }
 
     // Import categories
-    onProgress({
-      stage: 'importing',
-      progress: 40,
-      message: `Importing ${categoryMap.size} categories...`
-    });
+    if (serviceData.categories.length > 0) {
+      if (onProgress) {
+        onProgress({
+          stage: 'importing',
+          progress: 80,
+          message: `Importing ${serviceData.categories.length} categories...`
+        });
+      }
 
-    const categoryIds = new Map<string, string>();
-    for (const [categoryKey, subcategories] of categoryMap) {
-      const [sectorName, categoryName] = categoryKey.split('::');
-      const sectorId = sectorIds.get(sectorName);
-      
-      const { data: category, error } = await supabase
+      const { error: categoriesError } = await supabase
         .from('service_categories')
-        .insert({ 
-          name: categoryName, 
-          description: `${categoryName} category`,
-          sector_id: sectorId
-        })
-        .select('id')
-        .single();
-      
-      if (error) throw error;
-      categoryIds.set(categoryKey, category.id);
+        .insert(serviceData.categories);
+
+      if (categoriesError) throw categoriesError;
     }
 
     // Import subcategories
-    onProgress({
-      stage: 'importing',
-      progress: 60,
-      message: `Importing ${subcategoryMap.size} subcategories...`
-    });
+    if (serviceData.subcategories.length > 0) {
+      if (onProgress) {
+        onProgress({
+          stage: 'importing',
+          progress: 85,
+          message: `Importing ${serviceData.subcategories.length} subcategories...`
+        });
+      }
 
-    const subcategoryIds = new Map<string, string>();
-    for (const [subcategoryKey] of subcategoryMap) {
-      const [sectorName, categoryName, subcategoryName] = subcategoryKey.split('::');
-      const categoryKey = `${sectorName}::${categoryName}`;
-      const categoryId = categoryIds.get(categoryKey);
-      
-      const { data: subcategory, error } = await supabase
+      const { error: subcategoriesError } = await supabase
         .from('service_subcategories')
-        .insert({ 
-          name: subcategoryName, 
-          description: `${subcategoryName} subcategory`,
-          category_id: categoryId
-        })
-        .select('id')
-        .single();
-      
-      if (error) throw error;
-      subcategoryIds.set(subcategoryKey, subcategory.id);
+        .insert(serviceData.subcategories);
+
+      if (subcategoriesError) throw subcategoriesError;
     }
 
-    // Import all jobs without any limits
-    onProgress({
-      stage: 'importing',
-      progress: 80,
-      message: `Importing ${data.length} jobs (unlimited per subcategory)...`
-    });
+    // Import jobs in batches to handle large datasets
+    if (serviceData.jobs.length > 0) {
+      if (onProgress) {
+        onProgress({
+          stage: 'importing',
+          progress: 90,
+          message: `Importing ${serviceData.jobs.length} jobs...`
+        });
+      }
 
-    const jobBatches = [];
-    for (let i = 0; i < data.length; i += 1000) { // Process in batches of 1000 for performance
-      jobBatches.push(data.slice(i, i + 1000));
+      const batchSize = 1000;
+      for (let i = 0; i < serviceData.jobs.length; i += batchSize) {
+        const batch = serviceData.jobs.slice(i, i + batchSize);
+        const { error: jobsError } = await supabase
+          .from('service_jobs')
+          .insert(batch);
+
+        if (jobsError) throw jobsError;
+
+        if (onProgress && serviceData.jobs.length > batchSize) {
+          const progress = 90 + ((i + batch.length) / serviceData.jobs.length) * 5;
+          onProgress({
+            stage: 'importing',
+            progress,
+            message: `Importing jobs: ${i + batch.length}/${serviceData.jobs.length}...`
+          });
+        }
+      }
     }
 
-    for (const [index, batch] of jobBatches.entries()) {
-      const jobsToInsert = batch.map(item => {
-        const subcategoryKey = `${item.sector}::${item.category}::${item.subcategory}`;
-        const subcategoryId = subcategoryIds.get(subcategoryKey);
-        
-        return {
-          name: item.serviceName,
-          description: item.description,
-          estimated_time: item.estimatedTime,
-          price: item.price,
-          subcategory_id: subcategoryId
-        };
-      });
-
-      const { error } = await supabase
-        .from('service_jobs')
-        .insert(jobsToInsert);
-      
-      if (error) throw error;
-
-      onProgress({
-        stage: 'importing',
-        progress: 80 + (index + 1) / jobBatches.length * 15,
-        message: `Imported batch ${index + 1}/${jobBatches.length} of jobs...`
-      });
-    }
-
-    onProgress({
-      stage: 'complete',
-      progress: 100,
-      message: `Successfully imported ${data.length} services with unlimited jobs per subcategory!`
+    console.log('Service data imported successfully:', {
+      sectors: serviceData.sectors.length,
+      categories: serviceData.categories.length,
+      subcategories: serviceData.subcategories.length,
+      jobs: serviceData.jobs.length
     });
 
   } catch (error) {
-    console.error('Error importing to database:', error);
-    throw new Error(`Failed to import to database: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error('Error importing service data:', error);
+    throw error;
   }
+};
+
+const generateId = (): string => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
 };
