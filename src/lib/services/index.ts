@@ -6,6 +6,8 @@ export {
   clearAllServiceData,
   getServiceCounts,
   importServicesFromStorage,
+  importProcessedDataToDatabase,
+  validateServiceData,
   type ImportProgress,
   type ImportResult,
   type ImportStats,
@@ -17,7 +19,7 @@ export {
 } from './dataCleanupService';
 export { 
   processServiceDataFromSheets,
-  importProcessedDataToDatabase
+  optimizeDatabasePerformance
 } from './serviceDataProcessor';
 export { 
   getStorageBucketInfo,

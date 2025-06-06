@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,11 +26,12 @@ export function ServiceBulkImport({ onImport, disabled = false }: ServiceBulkImp
       setIsLoading(true);
       setBucketStatus('checking');
       
-      const bucketExists = await storageService.checkBucketExists('service-data');
+      // Fixed bucket name to match the correct one
+      const bucketExists = await storageService.checkBucketExists('service-imports');
       
       if (bucketExists) {
         // Get file count
-        const info = await storageService.getBucketInfo('service-data');
+        const info = await storageService.getBucketInfo('service-imports');
         const files = info.files || [];
         setFileCount(files.length);
         setBucketInfo(info);
@@ -50,7 +52,7 @@ export function ServiceBulkImport({ onImport, disabled = false }: ServiceBulkImp
   const handleRefresh = async () => {
     // Clear cache and refresh
     try {
-      await storageService.clearCacheForBucket('service-data');
+      await storageService.clearCacheForBucket('service-imports');
       await checkBucketStatus();
     } catch (error) {
       console.error('Error refreshing bucket info:', error);
@@ -79,7 +81,7 @@ export function ServiceBulkImport({ onImport, disabled = false }: ServiceBulkImp
             <Alert>
               <CheckCircle className="h-4 w-4" />
               <AlertDescription>
-                Found {fileCount} files in the service data bucket. Ready to import!
+                Found {fileCount} files in the service imports bucket. Ready to import!
               </AlertDescription>
             </Alert>
             
@@ -108,7 +110,7 @@ export function ServiceBulkImport({ onImport, disabled = false }: ServiceBulkImp
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Service data storage bucket not found. Please upload service data files to the 'service-data' bucket first.
+              Service imports storage bucket not found. Please upload service data files to the 'service-imports' bucket first.
             </AlertDescription>
           </Alert>
         );
@@ -142,7 +144,7 @@ export function ServiceBulkImport({ onImport, disabled = false }: ServiceBulkImp
       <CardContent>
         <div className="space-y-4">
           <div className="text-sm text-muted-foreground">
-            <p>Upload Excel or CSV files containing service data to the 'service-data' storage bucket.</p>
+            <p>Upload Excel or CSV files containing service data to the 'service-imports' storage bucket.</p>
             <p>Files should contain sectors, categories, subcategories, and jobs in a structured format.</p>
           </div>
           
