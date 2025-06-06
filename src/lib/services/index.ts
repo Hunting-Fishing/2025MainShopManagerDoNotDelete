@@ -1,5 +1,14 @@
 
 export * from './serviceApi';
 export * from './serviceUtils';
-export * from './folderBasedImportService';
-export * from './storageImportService';
+export { 
+  processExcelFileFromStorage,
+  clearAllServiceData,
+  getServiceCounts
+} from './folderBasedImportService';
+export { 
+  ImportProgress as StorageImportProgress 
+} from './storageImportService';
+export { 
+  ImportProgress as FolderImportProgress 
+} from './folderBasedImportService';
