@@ -1,12 +1,7 @@
 
-import * as XLSX from 'xlsx';
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  ServiceSector, 
-  ServiceMainCategory, 
-  ServiceSubcategory, 
-  ServiceJob 
-} from '@/types/serviceHierarchy';
+import * as XLSX from 'xlsx';
+import { getAllSectorFiles } from './storageUtils';
 
 export interface ImportProgress {
   stage: string;
@@ -16,535 +11,301 @@ export interface ImportProgress {
   error: string | null;
 }
 
-export interface ProcessedServiceData {
-  sectors: ServiceSector[];
-  categories: ServiceMainCategory[];
-  subcategories: ServiceSubcategory[];
-  jobs: ServiceJob[];
-}
-
 export interface ImportStats {
   totalSectors: number;
   totalCategories: number;
   totalSubcategories: number;
-  totalJobs: number;
+  totalServices: number;
+  processedFiles: number;
 }
 
 export interface ImportResult {
   success: boolean;
+  stats: ImportStats;
   message: string;
-  stats?: ImportStats;
-  errors?: string[];
 }
 
-// Function to clear all service data from the database
-export const clearAllServiceData = async () => {
+export interface ProcessedServiceData {
+  sectorName: string;
+  categories: Array<{
+    name: string;
+    description?: string;
+    subcategories: Array<{
+      name: string;
+      description?: string;
+      services: Array<{
+        name: string;
+        description?: string;
+        estimatedTime?: number;
+        price?: number;
+      }>;
+    }>;
+  }>;
+}
+
+/**
+ * Import services from storage bucket with folder structure
+ */
+export async function importServicesFromStorage(
+  onProgress?: (progress: ImportProgress) => void
+): Promise<ImportResult> {
+  const updateProgress = (stage: string, message: string, progress: number, error: string | null = null) => {
+    onProgress?.({
+      stage,
+      message,
+      progress,
+      completed: false,
+      error
+    });
+  };
+
   try {
-    const { error } = await supabase.rpc('clear_service_data');
-    if (error) {
-      throw new Error(`Failed to clear service data: ${error.message}`);
+    updateProgress('initializing', 'Starting import process...', 0);
+
+    // Get all sector files from storage
+    const sectorFiles = await getAllSectorFiles('service-imports');
+    const sectorNames = Object.keys(sectorFiles);
+    
+    if (sectorNames.length === 0) {
+      throw new Error('No sector folders with Excel files found in storage');
     }
-    return true;
-  } catch (error) {
-    console.error('Error clearing service data:', error);
-    throw error;
-  }
-};
 
-// Get the current counts of service data in the database
-export const getServiceCounts = async (): Promise<ImportStats> => {
-  try {
-    // Get count of sectors
-    const { data: sectors, error: sectorsError } = await supabase
-      .from('service_sectors')
-      .select('id');
-    
-    if (sectorsError) throw new Error(`Failed to get sectors: ${sectorsError.message}`);
+    updateProgress('loading', `Found ${sectorNames.length} sectors, loading files...`, 10);
 
-    // Get count of categories
-    const { data: categories, error: categoriesError } = await supabase
-      .from('service_categories')
-      .select('id');
-    
-    if (categoriesError) throw new Error(`Failed to get categories: ${categoriesError.message}`);
+    const processedData: ProcessedServiceData[] = [];
+    let processedFiles = 0;
+    const totalFiles = Object.values(sectorFiles).reduce((total, files) => total + files.length, 0);
 
-    // Get count of subcategories
-    const { data: subcategories, error: subcategoriesError } = await supabase
-      .from('service_subcategories')
-      .select('id');
-    
-    if (subcategoriesError) throw new Error(`Failed to get subcategories: ${subcategoriesError.message}`);
+    // Process each sector
+    for (const sectorName of sectorNames) {
+      const files = sectorFiles[sectorName];
+      
+      updateProgress('processing', `Processing sector: ${sectorName}`, 10 + (processedFiles / totalFiles) * 60);
 
-    // Get count of jobs
-    const { data: jobs, error: jobsError } = await supabase
-      .from('service_jobs')
-      .select('id');
-    
-    if (jobsError) throw new Error(`Failed to get jobs: ${jobsError.message}`);
+      const sectorData: ProcessedServiceData = {
+        sectorName,
+        categories: []
+      };
+
+      // Process each Excel file in the sector
+      for (const file of files) {
+        try {
+          // Download the file from storage
+          const { data: fileData, error: downloadError } = await supabase.storage
+            .from('service-imports')
+            .download(file.path);
+
+          if (downloadError) {
+            console.error(`Error downloading file ${file.path}:`, downloadError);
+            continue;
+          }
+
+          // Parse Excel file
+          const arrayBuffer = await fileData.arrayBuffer();
+          const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+          
+          // Process each sheet as a category
+          for (const sheetName of workbook.SheetNames) {
+            const sheet = workbook.Sheets[sheetName];
+            const data = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
+            
+            if (data.length < 2) continue; // Skip empty sheets
+            
+            const categoryData = {
+              name: sheetName,
+              description: `Services from ${file.name}`,
+              subcategories: [] as any[]
+            };
+
+            // Group data by subcategory
+            const subcategoryMap = new Map<string, any[]>();
+            
+            for (let i = 1; i < data.length; i++) {
+              const row = data[i];
+              if (!row || row.length < 2) continue;
+              
+              const subcategoryName = row[1] || 'General';
+              const serviceName = row[2] || row[0];
+              const description = row[3] || '';
+              const estimatedTime = row[4] ? parseInt(row[4]) : undefined;
+              const price = row[5] ? parseFloat(row[5]) : undefined;
+              
+              if (!serviceName) continue;
+              
+              if (!subcategoryMap.has(subcategoryName)) {
+                subcategoryMap.set(subcategoryName, []);
+              }
+              
+              subcategoryMap.get(subcategoryName)!.push({
+                name: serviceName,
+                description,
+                estimatedTime,
+                price
+              });
+            }
+
+            // Convert map to subcategories array
+            for (const [subcategoryName, services] of subcategoryMap.entries()) {
+              categoryData.subcategories.push({
+                name: subcategoryName,
+                description: `${subcategoryName} services`,
+                services
+              });
+            }
+
+            if (categoryData.subcategories.length > 0) {
+              sectorData.categories.push(categoryData);
+            }
+          }
+
+          processedFiles++;
+        } catch (fileError) {
+          console.error(`Error processing file ${file.path}:`, fileError);
+          continue;
+        }
+      }
+
+      if (sectorData.categories.length > 0) {
+        processedData.push(sectorData);
+      }
+    }
+
+    updateProgress('importing', 'Saving data to database...', 70);
+
+    // Clear existing service data
+    await clearAllServiceData();
+
+    // Import processed data to database
+    const stats = await importProcessedDataToDatabase(processedData, updateProgress);
+
+    updateProgress('complete', 'Import completed successfully!', 100);
 
     return {
-      totalSectors: sectors ? sectors.length : 0,
-      totalCategories: categories ? categories.length : 0,
-      totalSubcategories: subcategories ? subcategories.length : 0,
-      totalJobs: jobs ? jobs.length : 0
+      success: true,
+      stats,
+      message: `Successfully imported ${stats.totalServices} services across ${stats.totalSectors} sectors`
     };
+
   } catch (error) {
-    console.error('Error getting service counts:', error);
-    throw error;
+    console.error('Import failed:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    updateProgress('error', errorMessage, 0, errorMessage);
+    
+    return {
+      success: false,
+      stats: {
+        totalSectors: 0,
+        totalCategories: 0,
+        totalSubcategories: 0,
+        totalServices: 0,
+        processedFiles: 0
+      },
+      message: errorMessage
+    };
   }
-};
+}
 
-// Process an Excel file from storage
-export const processExcelFileFromStorage = async (filePath: string): Promise<ProcessedServiceData> => {
-  try {
-    // Download the file from storage
-    const { data, error } = await supabase.storage
-      .from('service-data')
-      .download(filePath);
-    
-    if (error) {
-      throw new Error(`Failed to download file from storage: ${error.message}`);
-    }
-
-    if (!data) {
-      throw new Error('No data received from storage');
-    }
-
-    // Parse the Excel file
-    const buffer = await data.arrayBuffer();
-    const workbook = XLSX.read(buffer, { type: 'array' });
-    
-    // Process the worksheets to extract service data
-    return processServiceDataFromSheets(workbook.Sheets);
-  } catch (error) {
-    console.error(`Error processing Excel file ${filePath}:`, error);
-    throw error;
+async function clearAllServiceData(): Promise<void> {
+  const { error } = await supabase.rpc('clear_service_data');
+  if (error) {
+    throw new Error(`Failed to clear existing service data: ${error.message}`);
   }
-};
+}
 
-// Process service data from Excel worksheets
-export const processServiceDataFromSheets = (sheets: XLSX.WorkSheet | { [sheet: string]: XLSX.WorkSheet }): ProcessedServiceData => {
-  const sectors: ServiceSector[] = [];
-  const categories: ServiceMainCategory[] = [];
-  const subcategories: ServiceSubcategory[] = [];
-  const jobs: ServiceJob[] = [];
-  
-  // Helper function to detect column names in the sheet
-  const detectColumns = (sheet: XLSX.WorkSheet) => {
-    const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1');
-    const headerRow = XLSX.utils.sheet_to_json(sheet, { header: 1 })[0] as string[];
-    
-    const cols: Record<string, number> = {};
-    headerRow.forEach((header, index) => {
-      if (typeof header === 'string') {
-        const normalizedHeader = header.toLowerCase().trim();
-        switch (normalizedHeader) {
-          case 'sector':
-          case 'sectors':
-            cols.sector = index;
-            break;
-          case 'category':
-          case 'categories':
-          case 'main category':
-            cols.category = index;
-            break;
-          case 'subcategory':
-          case 'subcategories':
-          case 'sub-category':
-            cols.subcategory = index;
-            break;
-          case 'job':
-          case 'jobs':
-          case 'service':
-          case 'services':
-            cols.job = index;
-            break;
-          case 'description':
-          case 'desc':
-            cols.description = index;
-            break;
-          case 'price':
-          case 'cost':
-          case 'fee':
-            cols.price = index;
-            break;
-          case 'time':
-          case 'hours':
-          case 'duration':
-          case 'estimated time':
-            cols.time = index;
-            break;
-        }
-      }
-    });
-    
-    return cols;
-  };
-
-  // Process each sheet in the workbook
-  const processSheet = (sheet: XLSX.WorkSheet, sheetName: string) => {
-    const data = XLSX.utils.sheet_to_json(sheet);
-    const columns = detectColumns(sheet);
-    
-    // Validate that we have the minimum required columns
-    if (!columns.sector && !columns.category && !columns.subcategory && !columns.job) {
-      console.warn(`Sheet ${sheetName} does not contain recognizable service hierarchy columns`);
-      return;
-    }
-    
-    // Process each row to build the service hierarchy
-    data.forEach((row: any, index: number) => {
-      // Skip header row
-      if (index === 0) return;
-      
-      // Extract values with fallbacks
-      const sectorName = columns.sector !== undefined ? row[Object.keys(row)[columns.sector]] : '';
-      const categoryName = columns.category !== undefined ? row[Object.keys(row)[columns.category]] : '';
-      const subcategoryName = columns.subcategory !== undefined ? row[Object.keys(row)[columns.subcategory]] : '';
-      const jobName = columns.job !== undefined ? row[Object.keys(row)[columns.job]] : '';
-      const description = columns.description !== undefined ? row[Object.keys(row)[columns.description]] : '';
-      const price = columns.price !== undefined ? parseFloat(row[Object.keys(row)[columns.price]]) : null;
-      const estimatedTime = columns.time !== undefined ? parseFloat(row[Object.keys(row)[columns.time]]) : null;
-      
-      // Process sector
-      if (sectorName && typeof sectorName === 'string') {
-        let sector = sectors.find(s => s.name === sectorName);
-        if (!sector) {
-          const newSector: ServiceSector = {
-            id: `temp_sector_${sectors.length}`,
-            name: sectorName,
-            description: '',
-            categories: [],
-            position: sectors.length,
-            is_active: true
-          };
-          sectors.push(newSector);
-          sector = newSector;
-        }
-        
-        // Process category
-        if (categoryName && typeof categoryName === 'string') {
-          let category = categories.find(c => c.name === categoryName && c.sector_id === sector.id);
-          if (!category) {
-            const newCategory: ServiceMainCategory = {
-              id: `temp_category_${categories.length}`,
-              name: categoryName,
-              description: '',
-              subcategories: [],
-              position: categories.filter(c => c.sector_id === sector.id).length,
-              sector_id: sector.id
-            };
-            categories.push(newCategory);
-            category = newCategory;
-          }
-          
-          // Process subcategory
-          if (subcategoryName && typeof subcategoryName === 'string') {
-            let subcategory = subcategories.find(
-              sc => sc.name === subcategoryName && sc.category_id === category.id
-            );
-            if (!subcategory) {
-              const newSubcategory: ServiceSubcategory = {
-                id: `temp_subcategory_${subcategories.length}`,
-                name: subcategoryName,
-                description: '',
-                jobs: [],
-                category_id: category.id
-              };
-              subcategories.push(newSubcategory);
-              subcategory = newSubcategory;
-            }
-            
-            // Process job
-            if (jobName && typeof jobName === 'string') {
-              const existingJob = jobs.find(
-                j => j.name === jobName && j.subcategory_id === subcategory.id
-              );
-              
-              if (!existingJob) {
-                const newJob: ServiceJob = {
-                  id: `temp_job_${jobs.length}`,
-                  name: jobName,
-                  description: description || '',
-                  estimatedTime: estimatedTime || undefined,
-                  price: price || undefined,
-                  subcategory_id: subcategory.id
-                };
-                jobs.push(newJob);
-              }
-            }
-          }
-        }
-      }
-    });
-  };
-  
-  // If sheets is a workbook with multiple sheets
-  if (typeof sheets !== 'object' || sheets['!ref']) {
-    // Single sheet case (deprecated format)
-    processSheet(sheets as XLSX.WorkSheet, 'Sheet1');
-  } else {
-    // Multiple sheets
-    Object.entries(sheets).forEach(([name, sheet]) => {
-      processSheet(sheet, name);
-    });
-  }
-  
-  // Build the relationships between the entities
-  sectors.forEach(sector => {
-    sector.categories = categories
-      .filter(category => category.sector_id === sector.id)
-      .map(category => {
-        category.subcategories = subcategories
-          .filter(subcategory => subcategory.category_id === category.id)
-          .map(subcategory => {
-            subcategory.jobs = jobs
-              .filter(job => job.subcategory_id === subcategory.id);
-            return subcategory;
-          });
-        return category;
-      });
-  });
-  
-  return {
-    sectors,
-    categories,
-    subcategories,
-    jobs
-  };
-};
-
-// Import the processed service data to the database
-export const importProcessedDataToDatabase = async (data: ProcessedServiceData): Promise<ImportStats> => {
+async function importProcessedDataToDatabase(
+  processedData: ProcessedServiceData[],
+  updateProgress?: (stage: string, message: string, progress: number) => void
+): Promise<ImportStats> {
   const stats: ImportStats = {
     totalSectors: 0,
     totalCategories: 0,
     totalSubcategories: 0,
-    totalJobs: 0
+    totalServices: 0,
+    processedFiles: 0
   };
 
-  try {
-    // Step 1: Insert sectors
-    for (const sector of data.sectors) {
-      const { data: sectorData, error: sectorError } = await supabase
-        .from('service_sectors')
-        .insert({
-          name: sector.name,
-          description: sector.description || '',
-          position: sector.position || 0,
-          is_active: true
-        })
-        .select('id')
-        .single();
+  let progress = 70;
+  const progressIncrement = 25 / processedData.length;
 
-      if (sectorError) throw new Error(`Failed to insert sector ${sector.name}: ${sectorError.message}`);
-      stats.totalSectors++;
+  for (const sectorData of processedData) {
+    updateProgress?.('importing', `Importing sector: ${sectorData.sectorName}`, progress);
+    
+    // Insert sector
+    const { data: sector, error: sectorError } = await supabase.rpc('insert_service_sector', {
+      p_name: sectorData.sectorName,
+      p_description: `${sectorData.sectorName} sector services`,
+      p_position: stats.totalSectors + 1
+    });
 
-      // Update the temporary ID to the real one
-      const realSectorId = sectorData.id;
-      
-      // Step 2: Insert categories for this sector
-      const sectorCategories = data.categories.filter(c => c.sector_id === sector.id);
-      for (const category of sectorCategories) {
-        const { data: categoryData, error: categoryError } = await supabase
-          .from('service_categories')
-          .insert({
-            name: category.name,
-            description: category.description || '',
-            position: category.position || 0,
-            sector_id: realSectorId
-          })
-          .select('id')
-          .single();
+    if (sectorError) {
+      console.error('Error inserting sector:', sectorError);
+      continue;
+    }
 
-        if (categoryError) throw new Error(`Failed to insert category ${category.name}: ${categoryError.message}`);
-        stats.totalCategories++;
+    stats.totalSectors++;
 
-        // Update the temporary ID to the real one
-        const realCategoryId = categoryData.id;
-        
-        // Step 3: Insert subcategories for this category
-        const categorySubcategories = data.subcategories.filter(sc => sc.category_id === category.id);
-        for (const subcategory of categorySubcategories) {
-          const { data: subcategoryData, error: subcategoryError } = await supabase
-            .from('service_subcategories')
-            .insert({
-              name: subcategory.name,
-              description: subcategory.description || '',
-              category_id: realCategoryId
-            })
-            .select('id')
-            .single();
+    // Process categories
+    for (const categoryData of sectorData.categories) {
+      const { data: category, error: categoryError } = await supabase.rpc('insert_service_category', {
+        p_name: categoryData.name,
+        p_description: categoryData.description,
+        p_position: stats.totalCategories + 1
+      });
 
-          if (subcategoryError) throw new Error(`Failed to insert subcategory ${subcategory.name}: ${subcategoryError.message}`);
-          stats.totalSubcategories++;
+      if (categoryError) {
+        console.error('Error inserting category:', categoryError);
+        continue;
+      }
 
-          // Update the temporary ID to the real one
-          const realSubcategoryId = subcategoryData.id;
-          
-          // Step 4: Insert jobs for this subcategory
-          const subcategoryJobs = data.jobs.filter(j => j.subcategory_id === subcategory.id);
-          for (const job of subcategoryJobs) {
-            const { error: jobError } = await supabase
-              .from('service_jobs')
-              .insert({
-                name: job.name,
-                description: job.description || '',
-                estimated_time: job.estimatedTime || null,
-                price: job.price || null,
-                subcategory_id: realSubcategoryId
-              });
+      // Link category to sector
+      await supabase
+        .from('service_categories')
+        .update({ sector_id: sector })
+        .eq('id', category);
 
-            if (jobError) throw new Error(`Failed to insert job ${job.name}: ${jobError.message}`);
-            stats.totalJobs++;
+      stats.totalCategories++;
+
+      // Process subcategories
+      for (const subcategoryData of categoryData.subcategories) {
+        const { data: subcategory, error: subcategoryError } = await supabase.rpc('insert_service_subcategory', {
+          p_category_id: category,
+          p_name: subcategoryData.name,
+          p_description: subcategoryData.description
+        });
+
+        if (subcategoryError) {
+          console.error('Error inserting subcategory:', subcategoryError);
+          continue;
+        }
+
+        stats.totalSubcategories++;
+
+        // Process services
+        for (const serviceData of subcategoryData.services) {
+          const { error: serviceError } = await supabase.rpc('insert_service_job', {
+            p_subcategory_id: subcategory,
+            p_name: serviceData.name,
+            p_description: serviceData.description,
+            p_estimated_time: serviceData.estimatedTime,
+            p_price: serviceData.price
+          });
+
+          if (serviceError) {
+            console.error('Error inserting service:', serviceError);
+            continue;
           }
+
+          stats.totalServices++;
         }
       }
     }
 
-    return stats;
-  } catch (error) {
-    console.error('Error importing service data to database:', error);
-    throw error;
+    progress += progressIncrement;
   }
-};
 
-// Main function to import services from storage
-export const importServicesFromStorage = async (
-  progressCallback: (progress: ImportProgress) => void
-): Promise<ImportResult> => {
-  try {
-    // Step 1: Get the list of files in the storage bucket
-    progressCallback({
-      stage: 'listing',
-      message: 'Checking for service data files in storage...',
-      progress: 10,
-      completed: false,
-      error: null
-    });
+  return stats;
+}
 
-    const { data: files, error: listError } = await supabase
-      .storage
-      .from('service-data')
-      .list();
-
-    if (listError) {
-      throw new Error(`Failed to list files in storage: ${listError.message}`);
-    }
-
-    // Filter to only include Excel files
-    const excelFiles = files?.filter(file => 
-      file.name.endsWith('.xlsx') || file.name.endsWith('.xls')
-    ) || [];
-
-    if (excelFiles.length === 0) {
-      return {
-        success: false,
-        message: 'No Excel files found in the service-data bucket',
-        errors: ['No Excel files found']
-      };
-    }
-
-    progressCallback({
-      stage: 'processing',
-      message: `Found ${excelFiles.length} Excel file(s). Processing...`,
-      progress: 20,
-      completed: false,
-      error: null
-    });
-
-    // Step 2: Clear existing service data
-    progressCallback({
-      stage: 'clearing',
-      message: 'Clearing existing service data...',
-      progress: 30,
-      completed: false,
-      error: null
-    });
-
-    await clearAllServiceData();
-
-    // Step 3: Process each Excel file
-    let processedData: ProcessedServiceData = {
-      sectors: [],
-      categories: [],
-      subcategories: [],
-      jobs: []
-    };
-
-    for (let i = 0; i < excelFiles.length; i++) {
-      const file = excelFiles[i];
-      progressCallback({
-        stage: 'processing',
-        message: `Processing file ${i + 1} of ${excelFiles.length}: ${file.name}`,
-        progress: 30 + (i / excelFiles.length) * 30,
-        completed: false,
-        error: null
-      });
-
-      const fileData = await processExcelFileFromStorage(file.name);
-      
-      // Merge the data
-      processedData.sectors = [...processedData.sectors, ...fileData.sectors];
-      processedData.categories = [...processedData.categories, ...fileData.categories];
-      processedData.subcategories = [...processedData.subcategories, ...fileData.subcategories];
-      processedData.jobs = [...processedData.jobs, ...fileData.jobs];
-    }
-
-    // Step 4: Import processed data to database
-    progressCallback({
-      stage: 'importing',
-      message: 'Importing service data to database...',
-      progress: 70,
-      completed: false,
-      error: null
-    });
-
-    const stats = await importProcessedDataToDatabase(processedData);
-
-    // Step 5: Complete
-    progressCallback({
-      stage: 'complete',
-      message: 'Service data import completed successfully!',
-      progress: 100,
-      completed: true,
-      error: null
-    });
-
-    return {
-      success: true,
-      message: `Successfully imported ${stats.totalSectors} sectors, ${stats.totalCategories} categories, ${stats.totalSubcategories} subcategories, and ${stats.totalJobs} jobs.`,
-      stats
-    };
-
-  } catch (error) {
-    console.error('Error importing services from storage:', error);
-    return {
-      success: false,
-      message: error instanceof Error ? error.message : 'Unknown error occurred',
-      errors: [error instanceof Error ? error.message : 'Unknown error occurred']
-    };
-  }
-};
-
-// Function to remove test data
-export const removeTestData = async (): Promise<boolean> => {
-  try {
-    // Implementation pending
-    return true;
-  } catch (error) {
-    console.error('Error removing test data:', error);
-    throw error;
-  }
-};
-
-// Function to cleanup misplaced service data
-export const cleanupMisplacedServiceData = async (): Promise<boolean> => {
-  try {
-    // Implementation pending
-    return true;
-  } catch (error) {
-    console.error('Error cleaning up misplaced service data:', error);
-    throw error;
-  }
-};
+// Legacy exports for compatibility
+export const processExcelFileFromStorage = importServicesFromStorage;
+export const getServiceCounts = async () => ({ sectors: 0, categories: 0, services: 0 });
