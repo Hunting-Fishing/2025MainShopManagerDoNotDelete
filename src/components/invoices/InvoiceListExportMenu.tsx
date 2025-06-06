@@ -42,11 +42,18 @@ export function InvoiceListExportMenu({ invoices }: InvoiceListExportMenuProps) 
           exportToExcel(exportData, "Invoices_List");
           break;
         case "pdf":
-          // Pass the required third argument for PDF export
-          exportToPDF(exportData, "Invoices_List", {
-            title: "Invoices List",
-            orientation: "landscape"
-          });
+          // Define columns for PDF export
+          const columns = [
+            { header: "Invoice ID", dataKey: "id" },
+            { header: "Work Order ID", dataKey: "workOrderId" },
+            { header: "Customer", dataKey: "customer" },
+            { header: "Description", dataKey: "description" },
+            { header: "Total", dataKey: "total" },
+            { header: "Status", dataKey: "status" },
+            { header: "Due Date", dataKey: "dueDate" },
+            { header: "Created By", dataKey: "createdBy" }
+          ];
+          exportToPDF(exportData, "Invoices_List", columns);
           break;
       }
 
