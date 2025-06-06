@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { AlertTriangle, Trash2, Database } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { clearAllServiceData, type ImportProgress } from '@/lib/services/folderBasedImportService';
+import { clearAllServiceData, type ImportProgress } from '@/lib/services';
 import { ServiceImportProgress } from './ServiceImportProgress';
 
 interface ServiceManagementSettingsProps {
@@ -65,7 +65,7 @@ export function ServiceManagementSettings({ children, onDataChange }: ServiceMan
       // Call the callback to refresh parent component
       onDataChange?.();
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Clear database failed:', error);
       setClearProgress({
         stage: 'error',

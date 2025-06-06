@@ -51,7 +51,7 @@ export function ServiceBulkImport({ onImportComplete }: ServiceBulkImportProps) 
 
       // Call the callback to refresh parent component
       onImportComplete?.();
-    } catch (error) {
+    } catch (error: any) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       setProgress({
         stage: 'Import Failed',
