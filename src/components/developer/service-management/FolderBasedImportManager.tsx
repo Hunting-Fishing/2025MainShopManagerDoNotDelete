@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +8,7 @@ import {
   getServiceCounts, 
   type ImportStats,
   type ImportProgress,
-  type ProcessedServiceData
+  type ImportResult
 } from '@/lib/services';
 import { ServiceImportProgress } from './ServiceImportProgress';
 import { UploadCloud } from 'lucide-react';
