@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import type { ProcessedServiceData, ImportStats, ImportProgress, ImportResult } from './folderBasedImportService';
+import type { ProcessedServiceData, ImportStats, ImportProgress, ImportResult } from './types';
 
 // Export the functions that were missing
 export { 
@@ -9,12 +9,16 @@ export {
   validateServiceData,
   processExcelFileFromStorage,
   clearAllServiceData,
-  getServiceCounts,
-  type ProcessedServiceData,
-  type ImportProgress,
-  type ImportResult,
-  type ImportStats
+  getServiceCounts
 } from './folderBasedImportService';
+
+// Re-export types for convenience
+export type {
+  ProcessedServiceData,
+  ImportProgress,
+  ImportResult,
+  ImportStats
+} from './types';
 
 // Additional utility functions for service data processing
 export async function optimizeDatabasePerformance(): Promise<void> {

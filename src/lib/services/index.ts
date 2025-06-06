@@ -7,11 +7,7 @@ export {
   getServiceCounts,
   importServicesFromStorage,
   importProcessedDataToDatabase,
-  validateServiceData,
-  type ImportProgress,
-  type ImportResult,
-  type ImportStats,
-  type ProcessedServiceData
+  validateServiceData
 } from './folderBasedImportService';
 export { 
   cleanupMisplacedServiceData,
@@ -26,3 +22,12 @@ export {
   getFolderFiles,
   getAllSectorFiles
 } from './storageUtils';
+// Export types from the unified types file
+export type {
+  ImportProgress,
+  ImportResult,
+  ImportStats,
+  ProcessedServiceData,
+  StorageFile,
+  SectorFiles
+} from './types';
