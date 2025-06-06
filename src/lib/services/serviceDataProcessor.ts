@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import type { ProcessedServiceData, ImportStats } from './folderBasedImportService';
+import type { ProcessedServiceData, ImportStats, ImportProgress, ImportResult } from './folderBasedImportService';
 
 // Export the functions that were missing
 export { 
