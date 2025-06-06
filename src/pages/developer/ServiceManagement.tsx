@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ServiceHierarchyBrowser } from '@/components/developer/service-management/ServiceHierarchyBrowser';
+import { ServiceManagementSettings } from '@/components/developer/service-management/ServiceManagementSettings';
 import { Settings, Database, FileText, Search, Building } from 'lucide-react';
 import { useServiceSectors } from '@/hooks/useServiceCategories';
 
@@ -25,10 +25,12 @@ const ServiceManagement: React.FC = () => {
             Manage service sectors, categories, subcategories, and individual services
           </p>
         </div>
-        <Button variant="outline">
-          <Settings className="h-4 w-4 mr-2" />
-          Settings
-        </Button>
+        <ServiceManagementSettings>
+          <Button variant="outline">
+            <Settings className="h-4 w-4 mr-2" />
+            Settings
+          </Button>
+        </ServiceManagementSettings>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
