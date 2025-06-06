@@ -1,8 +1,7 @@
-
 import { useState } from "react";
 import { EmailCampaign } from "@/types/email";
 import { useEmailCampaignList } from "./campaign/useEmailCampaignList";
-import { useEmailCampaignDetails } from "./campaign/useEmailCampaignDetails";
+import { useCampaignDetails } from "./campaign/useCampaignDetails";
 import { useEmailCampaignActions } from "./campaign/useEmailCampaignActions";
 import { useToast } from "@/hooks/use-toast";
 
@@ -12,7 +11,7 @@ export const useEmailCampaigns = () => {
   
   // Use our specialized hooks
   const { campaigns, loading: listLoading, fetchCampaigns } = useEmailCampaignList();
-  const { campaign, loading: detailsLoading, fetchCampaignDetails } = useEmailCampaignDetails();
+  const { campaign, loading: detailsLoading, fetchCampaignDetails } = useCampaignDetails();
   const { 
     processing,
     scheduleCampaign,

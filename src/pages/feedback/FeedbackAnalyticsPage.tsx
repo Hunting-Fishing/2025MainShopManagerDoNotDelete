@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { FeedbackAnalytics } from '@/components/feedback/analytics';
+import { FeedbackAnalytics } from '@/components/feedback/analytics/FeedbackAnalytics';
 
 export default function FeedbackAnalyticsPage() {
   return (
