@@ -1,16 +1,20 @@
 
-
 export * from './serviceApi';
 export * from './serviceUtils';
 export { 
   processExcelFileFromStorage,
   clearAllServiceData,
-  getServiceCounts
+  getServiceCounts,
+  importServicesFromStorage
 } from './folderBasedImportService';
+export { 
+  cleanupMisplacedServiceData,
+  removeTestData
+} from './dataCleanupService';
 export type { 
   ImportProgress as StorageImportProgress 
 } from './storageImportService';
 export type { 
-  ImportProgress as FolderImportProgress 
+  ImportProgress as FolderImportProgress,
+  ImportResult
 } from './folderBasedImportService';
-

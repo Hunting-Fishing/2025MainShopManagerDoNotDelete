@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { importFromStorage } from './storageImportService';
+import { processServiceDataFromSheets, importProcessedDataToDatabase } from './serviceDataProcessor';
 
 export interface ImportProgress {
   stage: string;
@@ -42,8 +43,19 @@ export const processExcelFileFromStorage = async (
       });
     }
 
-    // Use the existing storage import service
+    // Use the existing storage import service to get raw data
     const sheetsData = await importFromStorage(bucketName, fileName, onProgress);
+    
+    if (onProgress) {
+      onProgress({
+        stage: 'processing',
+        progress: 70,
+        message: 'Processing service data...'
+      });
+    }
+    
+    // Process the raw sheet data into structured service data
+    const processedData = processServiceDataFromSheets(sheetsData);
     
     if (onProgress) {
       onProgress({
@@ -54,7 +66,7 @@ export const processExcelFileFromStorage = async (
       });
     }
 
-    return sheetsData;
+    return processedData;
   } catch (error) {
     console.error('Error processing Excel file from storage:', error);
     if (onProgress) {
@@ -83,34 +95,58 @@ export const importServicesFromStorage = async (
       });
     }
 
-    const result = await processExcelFileFromStorage(bucketName, fileName, onProgress);
+    // Process the Excel file to get structured data
+    const processedData = await processExcelFileFromStorage(bucketName, fileName, onProgress);
     
-    // Mock import statistics for now - in a real implementation, this would come from the actual import process
-    const mockStats = {
-      sectors: 2,
-      categories: 20,
-      subcategories: 19,
-      services: 296
-    };
+    if (onProgress) {
+      onProgress({
+        stage: 'importing',
+        progress: 20,
+        message: 'Importing data to database...'
+      });
+    }
+    
+    // Import the processed data to the database
+    const importStats = await importProcessedDataToDatabase(processedData, onProgress);
+    
+    if (onProgress) {
+      onProgress({
+        stage: 'complete',
+        progress: 100,
+        message: 'Services imported successfully',
+        completed: true
+      });
+    }
     
     return {
       success: true,
-      message: 'Services imported successfully',
-      data: result,
-      imported: mockStats,
-      sectors: mockStats.sectors,
-      categories: mockStats.categories,
-      subcategories: mockStats.subcategories,
-      services: mockStats.services,
+      message: `Services imported successfully: ${importStats.services} services across ${importStats.categories} categories`,
+      data: processedData,
+      imported: importStats,
+      sectors: importStats.sectors,
+      categories: importStats.categories,
+      subcategories: importStats.subcategories,
+      services: importStats.services,
       errors: []
     };
   } catch (error) {
     console.error('Error importing services from storage:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    if (onProgress) {
+      onProgress({
+        stage: 'error',
+        progress: 0,
+        message: 'Failed to import services',
+        error: errorMessage
+      });
+    }
+    
     return {
       success: false,
       message: 'Failed to import services',
-      error: error instanceof Error ? error.message : 'Unknown error',
-      errors: [error instanceof Error ? error.message : 'Unknown error'],
+      error: errorMessage,
+      errors: [errorMessage],
       imported: {
         sectors: 0,
         categories: 0,
