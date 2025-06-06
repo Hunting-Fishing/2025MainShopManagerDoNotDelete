@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Upload, AlertTriangle, Info } from 'lucide-react';
+import { Upload, AlertTriangle, Info, FileSpreadsheet } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { importFromStorage, ImportProgress } from '@/lib/services/storageImportService';
 import { ServiceImportProgress } from './ServiceImportProgress';
@@ -109,15 +109,34 @@ export function FolderBasedImportManager() {
             </div>
           </div>
 
+          <div className="flex items-start gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <FileSpreadsheet className="h-5 w-5 text-green-600 mt-0.5" />
+            <div className="text-sm">
+              <p className="font-medium text-green-800">Flexible File Format</p>
+              <ul className="mt-2 text-green-700 space-y-1">
+                <li>• <strong>Supported formats:</strong> Excel (.xlsx, .xls) or CSV (.csv)</li>
+                <li>• <strong>Minimum requirement:</strong> At least one column with service/job names</li>
+                <li>• <strong>Flexible columns:</strong> The system will automatically detect columns like:</li>
+                <li className="ml-4">- Sector, Service Sector, Business Sector</li>
+                <li className="ml-4">- Category, Service Category, Type</li>
+                <li className="ml-4">- Subcategory, Sub Category, Service Type</li>
+                <li className="ml-4">- Job, Service, Service Name, Task, Work</li>
+                <li>• <strong>Optional columns:</strong> Description, Price, Duration, Cost, Time</li>
+                <li>• <strong>Smart fallbacks:</strong> Missing categories will use sheet name or "General"</li>
+              </ul>
+            </div>
+          </div>
+
           <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
             <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
             <div className="text-sm">
-              <p className="font-medium text-amber-800">File Format Requirements</p>
+              <p className="font-medium text-amber-800">Import Tips</p>
               <ul className="mt-2 text-amber-700 space-y-1">
-                <li>• Supported formats: Excel (.xlsx, .xls) or CSV (.csv)</li>
-                <li>• Required columns: Sector, Category, Subcategory, Job/Service</li>
-                <li>• Optional columns: Description, Price, Duration</li>
-                <li>• No limit on number of jobs per subcategory</li>
+                <li>• Column headers are case-insensitive and flexible</li>
+                <li>• First row should contain column headers</li>
+                <li>• Empty rows and columns will be ignored</li>
+                <li>• If categories are missing, the sheet name will be used as the category</li>
+                <li>• Duplicate entries will be automatically skipped</li>
               </ul>
             </div>
           </div>
