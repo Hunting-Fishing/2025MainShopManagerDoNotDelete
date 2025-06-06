@@ -10,231 +10,166 @@ export interface ImportProgress {
 }
 
 interface ServiceData {
-  sector?: string;
-  category?: string;
-  subcategory?: string;
-  job?: string;
-  service?: string;
-  description?: string;
-  price?: string;
-  duration?: string;
-  [key: string]: any;
-}
-
-interface ExcelSheetData {
   sheetName: string;
   data: any[][];
 }
 
 export const processServiceData = async (
-  sheetsData: ExcelSheetData[],
+  sheetsData: ServiceData[],
   onProgress?: (progress: ImportProgress) => void
 ): Promise<void> => {
-  if (onProgress) {
-    onProgress({
-      stage: 'processing',
-      progress: 0,
-      message: 'Starting data processing...'
-    });
-  }
-
   try {
-    // Clear existing service data
-    await clearAllServiceData();
+    let totalSheets = sheetsData.length;
+    let processedSheets = 0;
 
-    if (onProgress) {
-      onProgress({
-        stage: 'processing',
-        progress: 10,
-        message: 'Cleared existing service data...'
-      });
-    }
-
-    let totalJobs = 0;
-    const sectorsMap = new Map();
-    const categoriesMap = new Map();
-    const subcategoriesMap = new Map();
-
-    // Process all sheets to count and organize data
     for (const sheet of sheetsData) {
       if (onProgress) {
         onProgress({
           stage: 'processing',
-          progress: 15,
+          progress: (processedSheets / totalSheets) * 100,
           message: `Processing sheet: ${sheet.sheetName}...`
         });
       }
 
-      if (sheet.data.length === 0) continue;
+      // Process each row of data
+      const [headers, ...rows] = sheet.data;
+      
+      if (!headers || headers.length === 0) {
+        console.warn(`Skipping empty sheet: ${sheet.sheetName}`);
+        continue;
+      }
 
-      const headers = sheet.data[0];
-      const sectorIndex = findColumnIndex(headers, ['sector']);
-      const categoryIndex = findColumnIndex(headers, ['category']);
-      const subcategoryIndex = findColumnIndex(headers, ['subcategory']);
-      const jobIndex = findColumnIndex(headers, ['job', 'service']);
-      const descriptionIndex = findColumnIndex(headers, ['description']);
-      const priceIndex = findColumnIndex(headers, ['price']);
-      const durationIndex = findColumnIndex(headers, ['duration', 'time']);
+      // Expected columns: Sector, Category, Subcategory, Job/Service, Description, Price, Duration
+      const sectorIndex = headers.findIndex(h => h && h.toString().toLowerCase().includes('sector'));
+      const categoryIndex = headers.findIndex(h => h && h.toString().toLowerCase().includes('category'));
+      const subcategoryIndex = headers.findIndex(h => h && h.toString().toLowerCase().includes('subcategory'));
+      const jobIndex = headers.findIndex(h => h && (h.toString().toLowerCase().includes('job') || h.toString().toLowerCase().includes('service')));
 
-      // Process each row
-      for (let i = 1; i < sheet.data.length; i++) {
-        const row = sheet.data[i];
+      if (sectorIndex === -1 || categoryIndex === -1 || subcategoryIndex === -1 || jobIndex === -1) {
+        console.warn(`Missing required columns in sheet: ${sheet.sheetName}`);
+        continue;
+      }
+
+      // Process rows and organize data hierarchically
+      const processedData = new Map();
+
+      for (const row of rows) {
         if (!row || row.length === 0) continue;
 
-        const serviceData: ServiceData = {
-          sector: row[sectorIndex]?.toString().trim() || 'General',
-          category: row[categoryIndex]?.toString().trim() || 'Uncategorized',
-          subcategory: row[subcategoryIndex]?.toString().trim() || 'General',
-          job: row[jobIndex]?.toString().trim(),
-          description: row[descriptionIndex]?.toString().trim() || '',
-          price: row[priceIndex]?.toString().trim() || '',
-          duration: row[durationIndex]?.toString().trim() || ''
-        };
+        const sector = row[sectorIndex]?.toString().trim();
+        const category = row[categoryIndex]?.toString().trim();
+        const subcategory = row[subcategoryIndex]?.toString().trim();
+        const job = row[jobIndex]?.toString().trim();
 
-        if (!serviceData.job) continue;
+        if (!sector || !category || !subcategory || !job) continue;
 
-        // Organize data hierarchically
-        if (!sectorsMap.has(serviceData.sector)) {
-          sectorsMap.set(serviceData.sector, new Map());
+        // Build hierarchical structure
+        if (!processedData.has(sector)) {
+          processedData.set(sector, new Map());
         }
-        const sectorCategories = sectorsMap.get(serviceData.sector);
-
-        if (!sectorCategories.has(serviceData.category)) {
-          sectorCategories.set(serviceData.category, new Map());
+        if (!processedData.get(sector).has(category)) {
+          processedData.get(sector).set(category, new Map());
         }
-        const categorySubcategories = sectorCategories.get(serviceData.category);
-
-        if (!categorySubcategories.has(serviceData.subcategory)) {
-          categorySubcategories.set(serviceData.subcategory, []);
+        if (!processedData.get(sector).get(category).has(subcategory)) {
+          processedData.get(sector).get(category).set(subcategory, []);
         }
-        const subcategoryJobs = categorySubcategories.get(serviceData.subcategory);
 
-        subcategoryJobs.push(serviceData);
-        totalJobs++;
+        processedData.get(sector).get(category).get(subcategory).push({
+          name: job,
+          description: row[headers.findIndex(h => h && h.toString().toLowerCase().includes('description'))] || '',
+          price: parseFloat(row[headers.findIndex(h => h && h.toString().toLowerCase().includes('price'))] || '0') || null,
+          estimatedTime: parseInt(row[headers.findIndex(h => h && h.toString().toLowerCase().includes('duration'))] || '0') || null
+        });
       }
-    }
 
-    if (onProgress) {
-      onProgress({
-        stage: 'processing',
-        progress: 30,
-        message: `Organized ${totalJobs} jobs across ${sectorsMap.size} sectors...`
-      });
-    }
-
-    // Insert data into database
-    let processedJobs = 0;
-    let sectorPosition = 1;
-
-    for (const [sectorName, sectorCategories] of sectorsMap) {
-      // Insert sector
-      const { data: sector, error: sectorError } = await supabase
-        .from('service_sectors')
-        .insert({
-          name: sectorName,
-          description: `${sectorName} services`,
-          position: sectorPosition++
-        })
-        .select()
-        .single();
-
-      if (sectorError) throw sectorError;
-
-      let categoryPosition = 1;
-      for (const [categoryName, categorySubcategories] of sectorCategories) {
-        // Insert category
-        const { data: category, error: categoryError } = await supabase
-          .from('service_categories')
-          .insert({
-            sector_id: sector.id,
-            name: categoryName,
-            description: `${categoryName} in ${sectorName}`,
-            position: categoryPosition++
-          })
-          .select()
-          .single();
-
-        if (categoryError) throw categoryError;
-
-        for (const [subcategoryName, subcategoryJobs] of categorySubcategories) {
-          // Insert subcategory
-          const { data: subcategory, error: subcategoryError } = await supabase
-            .from('service_subcategories')
-            .insert({
-              category_id: category.id,
-              name: subcategoryName,
-              description: `${subcategoryName} services`
-            })
-            .select()
-            .single();
-
-          if (subcategoryError) throw subcategoryError;
-
-          // Insert all jobs for this subcategory
-          const jobsToInsert = subcategoryJobs.map((jobData: ServiceData) => ({
-            subcategory_id: subcategory.id,
-            name: jobData.job,
-            description: jobData.description || null,
-            estimated_time: jobData.duration ? parseInt(jobData.duration) || null : null,
-            price: jobData.price ? parseFloat(jobData.price) || null : null
-          }));
-
-          const { error: jobsError } = await supabase
-            .from('service_jobs')
-            .insert(jobsToInsert);
-
-          if (jobsError) throw jobsError;
-
-          processedJobs += subcategoryJobs.length;
-
-          if (onProgress) {
-            onProgress({
-              stage: 'processing',
-              progress: 30 + (processedJobs / totalJobs) * 60,
-              message: `Processed ${processedJobs}/${totalJobs} jobs...`
-            });
-          }
-        }
-      }
+      // Insert data into database
+      await insertServiceHierarchy(processedData);
+      
+      processedSheets++;
     }
 
     if (onProgress) {
       onProgress({
         stage: 'complete',
         progress: 100,
-        message: `Successfully imported ${totalJobs} jobs across ${sectorsMap.size} sectors!`,
+        message: 'Service data processing completed successfully!',
         completed: true
       });
     }
 
   } catch (error) {
     console.error('Error processing service data:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     if (onProgress) {
       onProgress({
         stage: 'error',
         progress: 0,
-        message: errorMessage,
-        error: errorMessage
+        message: error instanceof Error ? error.message : 'Failed to process service data',
+        error: error instanceof Error ? error.message : 'Failed to process service data'
       });
     }
     throw error;
   }
 };
 
-function findColumnIndex(headers: any[], possibleNames: string[]): number {
-  for (let i = 0; i < headers.length; i++) {
-    const header = headers[i]?.toString().toLowerCase().trim();
-    if (possibleNames.some(name => header?.includes(name.toLowerCase()))) {
-      return i;
+const insertServiceHierarchy = async (processedData: Map<string, any>) => {
+  for (const [sectorName, categories] of processedData) {
+    // Insert sector
+    const { data: sector, error: sectorError } = await supabase
+      .from('service_sectors')
+      .upsert({ name: sectorName }, { onConflict: 'name' })
+      .select()
+      .single();
+
+    if (sectorError) throw sectorError;
+
+    for (const [categoryName, subcategories] of categories) {
+      // Insert category
+      const { data: category, error: categoryError } = await supabase
+        .from('service_categories')
+        .upsert({ 
+          name: categoryName, 
+          sector_id: sector.id 
+        }, { onConflict: 'name,sector_id' })
+        .select()
+        .single();
+
+      if (categoryError) throw categoryError;
+
+      for (const [subcategoryName, jobs] of subcategories) {
+        // Insert subcategory
+        const { data: subcategory, error: subcategoryError } = await supabase
+          .from('service_subcategories')
+          .upsert({ 
+            name: subcategoryName, 
+            category_id: category.id 
+          }, { onConflict: 'name,category_id' })
+          .select()
+          .single();
+
+        if (subcategoryError) throw subcategoryError;
+
+        // Insert jobs
+        for (const job of jobs) {
+          const { error: jobError } = await supabase
+            .from('service_jobs')
+            .upsert({
+              name: job.name,
+              description: job.description,
+              price: job.price,
+              estimated_time: job.estimatedTime,
+              subcategory_id: subcategory.id
+            }, { onConflict: 'name,subcategory_id' });
+
+          if (jobError) throw jobError;
+        }
+      }
     }
   }
-  return -1;
-}
+};
 
 export const clearAllServiceData = async (): Promise<void> => {
   try {
-    // Delete in correct order due to foreign key constraints
+    // Delete in reverse order to respect foreign key constraints
     await supabase.from('service_jobs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     await supabase.from('service_subcategories').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     await supabase.from('service_categories').delete().neq('id', '00000000-0000-0000-0000-000000000000');
@@ -247,26 +182,21 @@ export const clearAllServiceData = async (): Promise<void> => {
 
 export const getServiceCounts = async () => {
   try {
-    const [sectorsResult, categoriesResult, subcategoriesResult, jobsResult] = await Promise.all([
-      supabase.from('service_sectors').select('id', { count: 'exact' }),
-      supabase.from('service_categories').select('id', { count: 'exact' }),
-      supabase.from('service_subcategories').select('id', { count: 'exact' }),
-      supabase.from('service_jobs').select('id', { count: 'exact' })
+    const [sectors, categories, subcategories, jobs] = await Promise.all([
+      supabase.from('service_sectors').select('id', { count: 'exact', head: true }),
+      supabase.from('service_categories').select('id', { count: 'exact', head: true }),
+      supabase.from('service_subcategories').select('id', { count: 'exact', head: true }),
+      supabase.from('service_jobs').select('id', { count: 'exact', head: true })
     ]);
 
     return {
-      sectors: sectorsResult.count || 0,
-      categories: categoriesResult.count || 0,
-      subcategories: subcategoriesResult.count || 0,
-      jobs: jobsResult.count || 0
+      sectors: sectors.count || 0,
+      categories: categories.count || 0,
+      subcategories: subcategories.count || 0,
+      jobs: jobs.count || 0
     };
   } catch (error) {
     console.error('Error getting service counts:', error);
-    return {
-      sectors: 0,
-      categories: 0,
-      subcategories: 0,
-      jobs: 0
-    };
+    return { sectors: 0, categories: 0, subcategories: 0, jobs: 0 };
   }
 };
