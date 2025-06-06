@@ -1,44 +1,41 @@
 
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Upload, FileText, Database, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Upload, Database, FileText, BarChart3, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ServiceBulkImport } from './ServiceBulkImport';
-import { 
-  getServiceCounts, 
-  clearAllServiceData,
-  type ImportStats,
-  type ImportProgress 
-} from '@/lib/services/folderBasedImportService';
+import { ServiceManagementSettings } from './ServiceManagementSettings';
+import { getServiceCounts, type ImportStats } from '@/lib/services';
 
 export function FolderBasedImportManager() {
   const [stats, setStats] = useState<ImportStats>({
     sectors: 0,
     categories: 0,
     subcategories: 0,
-    services: 0,
+    jobs: 0,
     totalImported: 0,
     errors: []
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [isClearing, setIsClearing] = useState(false);
-  const [clearProgress, setClearProgress] = useState<ImportProgress>({
-    stage: '',
-    message: '',
-    progress: 0,
-    completed: false,
-    error: null
-  });
   const { toast } = useToast();
 
-  const loadStats = async () => {
+  const fetchStats = async () => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
       const currentStats = await getServiceCounts();
-      setStats(currentStats);
+      setStats({
+        sectors: currentStats.sectors,
+        categories: currentStats.categories,
+        subcategories: currentStats.subcategories,
+        jobs: currentStats.jobs,
+        totalImported: currentStats.totalImported,
+        errors: currentStats.errors
+      });
     } catch (error) {
-      console.error('Error loading service stats:', error);
+      console.error('Error fetching service stats:', error);
       toast({
         title: "Error",
         description: "Failed to load service statistics",
@@ -50,170 +47,145 @@ export function FolderBasedImportManager() {
   };
 
   useEffect(() => {
-    loadStats();
+    fetchStats();
   }, []);
 
-  const handleClearDatabase = async () => {
-    if (!window.confirm('Are you sure you want to clear all service data? This action cannot be undone.')) {
-      return;
-    }
-
-    setIsClearing(true);
-    setClearProgress({
-      stage: 'clearing',
-      progress: 50,
-      message: 'Clearing service database...',
-      completed: false,
-      error: null
-    });
-
-    try {
-      await clearAllServiceData();
-      
-      setClearProgress({
-        stage: 'complete',
-        progress: 100,
-        message: 'Database cleared successfully!',
-        completed: true,
-        error: null
-      });
-
-      // Refresh stats
-      await loadStats();
-
-      toast({
-        title: "Success",
-        description: "Service database cleared successfully",
-      });
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      setClearProgress({
-        stage: 'error',
-        progress: 0,
-        message: errorMessage,
-        completed: false,
-        error: errorMessage
-      });
-
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setIsClearing(false);
-    }
+  const handleImportComplete = () => {
+    fetchStats();
   };
 
-  const resetProgress = () => {
-    setClearProgress({
-      stage: '',
-      message: '',
-      progress: 0,
-      completed: false,
-      error: null
-    });
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading service management...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Sectors</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{isLoading ? '...' : stats.sectors}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Categories</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{isLoading ? '...' : stats.categories}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Subcategories</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{isLoading ? '...' : stats.subcategories}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Services</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{isLoading ? '...' : stats.services}</div>
-          </CardContent>
-        </Card>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Service Data Management</h2>
+          <p className="text-gray-600 mt-1">
+            Import and manage your service hierarchy from Excel files
+          </p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ServiceBulkImport />
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="overview" className="flex items-center space-x-2">
+            <BarChart3 className="h-4 w-4" />
+            <span>Overview</span>
+          </TabsTrigger>
+          <TabsTrigger value="import" className="flex items-center space-x-2">
+            <Upload className="h-4 w-4" />
+            <span>Import</span>
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="flex items-center space-x-2">
+            <Settings className="h-4 w-4" />
+            <span>Settings</span>
+          </TabsTrigger>
+        </TabsList>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Database className="h-5 w-5" />
-              Database Management
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="text-sm text-gray-600">
-              Manage the service hierarchy database. Use with caution as these actions cannot be undone.
-            </div>
+        <TabsContent value="overview" className="mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Service Sectors</CardTitle>
+                <Database className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.sectors}</div>
+                <p className="text-xs text-muted-foreground">
+                  Total sectors in database
+                </p>
+              </CardContent>
+            </Card>
 
-            <Button
-              variant="destructive"
-              onClick={handleClearDatabase}
-              disabled={isClearing}
-              className="w-full"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              {isClearing ? 'Clearing Database...' : 'Clear All Service Data'}
-            </Button>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Categories</CardTitle>
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.categories}</div>
+                <p className="text-xs text-muted-foreground">
+                  Total categories in database
+                </p>
+              </CardContent>
+            </Card>
 
-            {(isClearing || clearProgress.completed || clearProgress.error) && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{clearProgress.stage}</span>
-                  <span className="text-sm text-gray-500">{Math.round(clearProgress.progress)}%</span>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Subcategories</CardTitle>
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.subcategories}</div>
+                <p className="text-xs text-muted-foreground">
+                  Total subcategories in database
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Service Jobs</CardTitle>
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.jobs}</div>
+                <p className="text-xs text-muted-foreground">
+                  Total service jobs in database
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Import Status</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">
+                    Database contains a total of <strong>{stats.totalImported}</strong> service items
+                  </p>
+                  {stats.errors.length > 0 && (
+                    <div className="mt-2">
+                      <Badge variant="destructive">
+                        {stats.errors.length} error(s) detected
+                      </Badge>
+                    </div>
+                  )}
                 </div>
-                {clearProgress.progress > 0 && (
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-red-600 h-2 rounded-full transition-all duration-300" 
-                      style={{ width: `${clearProgress.progress}%` }}
-                    />
-                  </div>
-                )}
-                <p className="text-sm text-gray-600">{clearProgress.message}</p>
-                {clearProgress.error && (
-                  <p className="text-sm text-red-600">{clearProgress.error}</p>
-                )}
+                <Button onClick={fetchStats} variant="outline">
+                  Refresh Stats
+                </Button>
               </div>
-            )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-            <Button
-              variant="outline"
-              onClick={loadStats}
-              disabled={isLoading}
-              className="w-full"
-            >
-              <FileText className="h-4 w-4 mr-2" />
-              Refresh Statistics
+        <TabsContent value="import" className="mt-6">
+          <ServiceBulkImport onImportComplete={handleImportComplete} />
+        </TabsContent>
+
+        <TabsContent value="settings" className="mt-6">
+          <ServiceManagementSettings onDataChange={handleImportComplete}>
+            <Button variant="outline">
+              <Settings className="h-4 w-4 mr-2" />
+              Open Settings
             </Button>
-          </CardContent>
-        </Card>
-      </div>
+          </ServiceManagementSettings>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

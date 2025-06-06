@@ -18,9 +18,10 @@ import { ServiceImportProgress } from './ServiceImportProgress';
 
 interface ServiceManagementSettingsProps {
   children: React.ReactNode;
+  onDataChange?: () => void;
 }
 
-export function ServiceManagementSettings({ children }: ServiceManagementSettingsProps) {
+export function ServiceManagementSettings({ children, onDataChange }: ServiceManagementSettingsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
   const [clearProgress, setClearProgress] = useState<ImportProgress>({
@@ -61,10 +62,8 @@ export function ServiceManagementSettings({ children }: ServiceManagementSetting
         description: "All service data has been removed from the database.",
       });
 
-      // Refresh the page to update counts
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
+      // Call the callback to refresh parent component
+      onDataChange?.();
 
     } catch (error) {
       console.error('Clear database failed:', error);

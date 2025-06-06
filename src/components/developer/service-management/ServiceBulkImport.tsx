@@ -6,7 +6,11 @@ import { Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { importServicesFromStorage, type ImportProgress } from '@/lib/services';
 
-export function ServiceBulkImport() {
+interface ServiceBulkImportProps {
+  onImportComplete?: () => void;
+}
+
+export function ServiceBulkImport({ onImportComplete }: ServiceBulkImportProps) {
   const [isImporting, setIsImporting] = useState(false);
   const [progress, setProgress] = useState<ImportProgress>({
     stage: '',
@@ -44,6 +48,9 @@ export function ServiceBulkImport() {
         title: "Import Successful",
         description: `Imported ${result.totalImported} services successfully`,
       });
+
+      // Call the callback to refresh parent component
+      onImportComplete?.();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       setProgress({
