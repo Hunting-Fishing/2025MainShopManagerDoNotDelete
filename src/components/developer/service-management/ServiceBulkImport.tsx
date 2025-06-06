@@ -2,9 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, FolderOpen, Upload, Folder, RefreshCw } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { storageService, type SectorFiles } from '@/lib/services/unifiedStorageService';
+import { Upload, Folder, FileSpreadsheet, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
+import { storageService } from '@/lib/services/unifiedStorageService';
 
 interface ServiceBulkImportProps {
   onImport: () => void;
@@ -12,177 +13,199 @@ interface ServiceBulkImportProps {
 }
 
 export function ServiceBulkImport({ onImport, disabled = false }: ServiceBulkImportProps) {
-  const [sectorFiles, setSectorFiles] = useState<SectorFiles>({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [bucketExists, setBucketExists] = useState(false);
-  const [debugInfo, setDebugInfo] = useState<string>('');
+  const [bucketStatus, setBucketStatus] = useState<{
+    exists: boolean;
+    folders: number;
+    files: number;
+    loading: boolean;
+    error: string | null;
+  }>({
+    exists: false,
+    folders: 0,
+    files: 0,
+    loading: true,
+    error: null
+  });
 
-  const checkStorageBucket = async () => {
+  const checkBucketStatus = async () => {
+    setBucketStatus(prev => ({ ...prev, loading: true, error: null }));
+    
     try {
-      setLoading(true);
-      setError(null);
-      setDebugInfo('Starting bucket check...');
-      
-      console.log('Checking if service-imports bucket exists...');
       const exists = await storageService.checkBucketExists('service-imports');
-      console.log('Bucket exists result:', exists);
-      setDebugInfo(`Bucket exists: ${exists}`);
-      setBucketExists(exists);
       
-      if (!exists) {
-        setError('The "service-imports" bucket does not exist in Supabase Storage');
-        setSectorFiles({});
-        setDebugInfo('Bucket does not exist - stopping here');
-        return;
+      if (exists) {
+        const bucketInfo = await storageService.getBucketInfo('service-imports');
+        setBucketStatus({
+          exists: true,
+          folders: bucketInfo.folders.length,
+          files: bucketInfo.files.length,
+          loading: false,
+          error: null
+        });
+      } else {
+        setBucketStatus({
+          exists: false,
+          folders: 0,
+          files: 0,
+          loading: false,
+          error: 'Bucket "service-imports" not found'
+        });
       }
-
-      console.log('Bucket exists, fetching sector files...');
-      setDebugInfo('Bucket exists, now fetching folders and files...');
-      
-      const files = await storageService.getAllSectorFiles('service-imports');
-      setSectorFiles(files);
-      
-      console.log('Found sector files:', files);
-      const sectorCount = Object.keys(files).length;
-      const totalFiles = Object.values(files).reduce((total, fileList) => total + fileList.length, 0);
-      setDebugInfo(`Found ${sectorCount} sectors with ${totalFiles} total Excel files`);
-      
-    } catch (err) {
-      console.error("Error checking storage bucket:", err);
-      const errorMessage = err instanceof Error ? err.message : "Failed to load service import files";
-      setError(errorMessage);
-      setBucketExists(false);
-      setSectorFiles({});
-      setDebugInfo(`Error: ${errorMessage}`);
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.error('Error checking bucket status:', error);
+      setBucketStatus({
+        exists: false,
+        folders: 0,
+        files: 0,
+        loading: false,
+        error: error instanceof Error ? error.message : 'Failed to check bucket status'
+      });
     }
   };
 
-  useEffect(() => {
-    checkStorageBucket();
-  }, []);
-
-  const handleRefresh = () => {
-    storageService.clearCacheForBucket('service-imports');
-    checkStorageBucket();
+  const handleRefresh = async () => {
+    await storageService.clearCacheForBucket('service-imports');
+    await checkBucketStatus();
   };
 
-  const totalFiles = Object.values(sectorFiles).reduce((total, files) => total + files.length, 0);
-  const sectorCount = Object.keys(sectorFiles).length;
+  useEffect(() => {
+    checkBucketStatus();
+  }, []);
 
-  if (loading) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+  const renderBucketStatus = () => {
+    if (bucketStatus.loading) {
+      return (
+        <Alert>
           <RefreshCw className="h-4 w-4 animate-spin" />
-          Checking storage bucket...
-        </div>
-        {debugInfo && (
-          <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
-            Debug: {debugInfo}
+          <AlertDescription>Checking storage bucket status...</AlertDescription>
+        </Alert>
+      );
+    }
+
+    if (bucketStatus.error) {
+      return (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{bucketStatus.error}</AlertDescription>
+        </Alert>
+      );
+    }
+
+    if (!bucketStatus.exists) {
+      return (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Storage bucket "service-imports" not found. Please ensure the bucket exists and contains sector folders.
+          </AlertDescription>
+        </Alert>
+      );
+    }
+
+    return (
+      <Alert>
+        <CheckCircle className="h-4 w-4 text-green-600" />
+        <AlertDescription>
+          <div className="space-y-2">
+            <div>Storage bucket "service-imports" is ready for import</div>
+            <div className="flex gap-4 text-sm">
+              <Badge variant="outline" className="flex items-center gap-1">
+                <Folder className="h-3 w-3" />
+                {bucketStatus.folders} folders
+              </Badge>
+              <Badge variant="outline" className="flex items-center gap-1">
+                <FileSpreadsheet className="h-3 w-3" />
+                {bucketStatus.files} files
+              </Badge>
+            </div>
           </div>
-        )}
-      </div>
+        </AlertDescription>
+      </Alert>
     );
-  }
+  };
+
+  const renderFolderList = async () => {
+    if (!bucketStatus.exists) return null;
+    
+    try {
+      const bucketInfo = await storageService.getBucketInfo('service-imports');
+      
+      if (bucketInfo.folders.length === 0) {
+        return (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              No sector folders found in the bucket. Please ensure folder structure is set up correctly.
+            </AlertDescription>
+          </Alert>
+        );
+      }
+
+      return (
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium">Available Sectors:</h4>
+          <div className="flex flex-wrap gap-2">
+            {bucketInfo.folders.map((folder, index) => (
+              <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                <Folder className="h-3 w-3" />
+                {folder.name}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      );
+    } catch (error) {
+      console.error('Error listing folders:', error);
+      return (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>Failed to list sector folders</AlertDescription>
+        </Alert>
+      );
+    }
+  };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col gap-2">
-          <Button 
-            onClick={onImport} 
-            disabled={disabled || !bucketExists || totalFiles === 0} 
-            className="flex items-center"
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            Import Services from Storage
-          </Button>
-          
-          <p className="text-xs text-muted-foreground">
-            {!bucketExists ? 'Bucket "service-imports" not found' :
-             totalFiles === 0 ? 'No Excel files found in sector folders' :
-             `Found ${totalFiles} Excel file(s) across ${sectorCount} sector(s)`}
-          </p>
-        </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Upload className="h-5 w-5" />
+          Bulk Service Import
+        </CardTitle>
+        <CardDescription>
+          Import service data from Excel files in the storage bucket
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {renderBucketStatus()}
         
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={handleRefresh}
-          disabled={loading}
-        >
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
-      </div>
-
-      {debugInfo && (
-        <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
-          Debug: {debugInfo}
-        </div>
-      )}
-
-      {bucketExists && sectorCount > 0 && (
-        <Card className="mt-4">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center">
-              <Folder className="h-4 w-4 mr-2" />
-              Available Sectors ({sectorCount})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="space-y-2">
-              {Object.entries(sectorFiles).map(([sectorName, files]) => (
-                <div key={sectorName} className="flex justify-between items-center py-2 px-3 bg-muted/50 rounded text-sm">
-                  <span className="font-medium">{sectorName}</span>
-                  <div className="text-right">
-                    <span className="text-muted-foreground">{files.length} file(s)</span>
-                    {files.length > 0 && (
-                      <div className="text-xs text-muted-foreground">
-                        {files.map(f => f.name).join(', ')}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
+        {bucketStatus.exists && (
+          <div className="space-y-4">
+            {renderFolderList()}
+            
+            <div className="flex gap-2">
+              <Button 
+                onClick={onImport} 
+                disabled={disabled || !bucketStatus.exists}
+                className="flex items-center gap-2"
+              >
+                <Upload className="h-4 w-4" />
+                Start Import Process
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                onClick={handleRefresh}
+                disabled={bucketStatus.loading}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${bucketStatus.loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
             </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {!bucketExists && (
-        <Alert variant="destructive" className="mt-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            The "service-imports" bucket was not found in your Supabase Storage. 
-            Please create the bucket and organize your Excel files in sector folders 
-            (e.g., "Automotive", "Lawn-Care") before importing.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {bucketExists && totalFiles === 0 && (
-        <Alert className="mt-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            The "service-imports" bucket exists but no Excel files were found. 
-            Please ensure the bucket contains sector folders (e.g., "Automotive", "Lawn-Care") 
-            with Excel (.xlsx or .xls) files inside each folder.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {error && (
-        <Alert variant="destructive" className="mt-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            {error}
-          </AlertDescription>
-        </Alert>
-      )}
-    </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
