@@ -12,6 +12,7 @@ interface StorageFileBrowserProps {
 
 export function StorageFileBrowser({ bucketName, onFileSelect }: StorageFileBrowserProps) {
   const [files, setFiles] = useState<StorageFile[]>([]);
+  const [folders, setFolders] = useState<string[]>([]);
   const [currentPath, setCurrentPath] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,8 +23,19 @@ export function StorageFileBrowser({ bucketName, onFileSelect }: StorageFileBrow
     
     try {
       console.log(`Loading files from ${bucketName}/${path}`);
-      const fileList = await storageService.listFiles(bucketName, path);
-      setFiles(fileList);
+      
+      if (path === '') {
+        // Load bucket info for root level
+        const bucketInfo = await storageService.getBucketInfo(bucketName);
+        setFiles(bucketInfo.files);
+        setFolders(bucketInfo.folders.map(f => f.name));
+      } else {
+        // Load files in specific folder
+        const fileList = await storageService.getFilesInFolder(bucketName, path);
+        setFiles(fileList);
+        setFolders([]); // For now, we'll just show files in subfolders
+      }
+      
       setCurrentPath(path);
     } catch (err) {
       console.error('Error loading files:', err);
@@ -38,18 +50,17 @@ export function StorageFileBrowser({ bucketName, onFileSelect }: StorageFileBrow
   }, [bucketName]);
 
   const handleFileClick = (file: StorageFile) => {
-    if (file.isFolder) {
-      // Navigate into folder
-      loadFiles(file.path);
-    } else {
-      // Select file
-      onFileSelect?.(file);
-    }
+    // Since we don't have isFolder property, we'll treat all items as files
+    onFileSelect?.(file);
+  };
+
+  const handleFolderClick = (folderName: string) => {
+    // Navigate into folder
+    const newPath = currentPath ? `${currentPath}/${folderName}` : folderName;
+    loadFiles(newPath);
   };
 
   const handleDownload = async (file: StorageFile) => {
-    if (file.isFolder) return;
-    
     try {
       const blob = await storageService.downloadFile(bucketName, file.path);
       if (blob) {
@@ -115,45 +126,55 @@ export function StorageFileBrowser({ bucketName, onFileSelect }: StorageFileBrow
           <div className="text-red-600 py-4">
             Error: {error}
           </div>
-        ) : files.length === 0 ? (
+        ) : (folders.length === 0 && files.length === 0) ? (
           <div className="text-muted-foreground py-8 text-center">
             No files found in this location
           </div>
         ) : (
           <div className="space-y-2">
+            {/* Render folders first */}
+            {folders.map((folder, index) => (
+              <div
+                key={`folder-${index}`}
+                className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
+                onClick={() => handleFolderClick(folder)}
+              >
+                <div className="flex items-center gap-3">
+                  <FolderOpen className="h-5 w-5 text-blue-600" />
+                  <div>
+                    <div className="font-medium">{folder}</div>
+                    <div className="text-sm text-muted-foreground">Folder</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+            
+            {/* Render files */}
             {files.map((file, index) => (
               <div
-                key={index}
+                key={`file-${index}`}
                 className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
                 onClick={() => handleFileClick(file)}
               >
                 <div className="flex items-center gap-3">
-                  {file.isFolder ? (
-                    <FolderOpen className="h-5 w-5 text-blue-600" />
-                  ) : (
-                    <FileText className="h-5 w-5 text-gray-600" />
-                  )}
+                  <FileText className="h-5 w-5 text-gray-600" />
                   <div>
                     <div className="font-medium">{file.name}</div>
-                    {!file.isFolder && (
-                      <div className="text-sm text-muted-foreground">
-                        {formatFileSize(file.size)} • {file.type}
-                      </div>
-                    )}
+                    <div className="text-sm text-muted-foreground">
+                      {formatFileSize(file.size)} • {file.type}
+                    </div>
                   </div>
                 </div>
-                {!file.isFolder && (
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDownload(file);
-                    }}
-                    size="sm"
-                    variant="ghost"
-                  >
-                    <Download className="h-4 w-4" />
-                  </Button>
-                )}
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDownload(file);
+                  }}
+                  size="sm"
+                  variant="ghost"
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
               </div>
             ))}
           </div>
