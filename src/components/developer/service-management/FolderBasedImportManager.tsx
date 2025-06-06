@@ -2,273 +2,211 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { Upload, FileSpreadsheet, AlertCircle, CheckCircle, X } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
-import { importFromStorage, ImportProgress } from '@/lib/services/storageImportService';
-import { importServicesFromStorage } from '@/lib/services/folderBasedImportService';
+import { Upload, FileText, Database, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
+import { StorageFileBrowser } from '@/components/storage/StorageFileBrowser';
 import { ServiceImportProgress } from './ServiceImportProgress';
-
-// Updated interface to match what the service actually returns
-interface ImportResult {
-  success: boolean;
-  imported: number;
-  errors: string[];
-}
-
-interface StorageFileBrowserProps {
-  bucketName: string;
-  onFileSelect: (filePath: string) => void;
-  disabled?: boolean;
-}
-
-// Simple file browser component
-const StorageFileBrowser: React.FC<StorageFileBrowserProps> = ({
-  bucketName,
-  onFileSelect,
-  disabled = false
-}) => {
-  const [files] = useState<string[]>([
-    'services/automotive-services.xlsx',
-    'services/hvac-services.xlsx',
-    'services/plumbing-services.xlsx'
-  ]);
-
-  return (
-    <div className="space-y-2">
-      <h3 className="text-sm font-medium">Available Files</h3>
-      <div className="border rounded-md p-2 max-h-40 overflow-y-auto">
-        {files.map((file) => (
-          <div 
-            key={file}
-            className="flex items-center justify-between p-2 hover:bg-gray-50 rounded cursor-pointer"
-            onClick={() => !disabled && onFileSelect(file)}
-          >
-            <div className="flex items-center space-x-2">
-              <FileSpreadsheet className="h-4 w-4 text-green-600" />
-              <span className="text-sm">{file}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
+import { importServicesFromStorage, ImportResult } from '@/lib/services/folderBasedImportService';
 
 export function FolderBasedImportManager() {
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [isImporting, setIsImporting] = useState(false);
-  const [importProgress, setImportProgress] = useState<ImportProgress>({
-    stage: 'idle',
+  const [importProgress, setImportProgress] = useState({
     progress: 0,
-    message: ''
+    stage: '',
+    message: '',
+    error: null as string | null,
+    completed: false
   });
-  const [importResults, setImportResults] = useState<ImportResult[]>([]);
+  const [lastImportResult, setLastImportResult] = useState<ImportResult | null>(null);
 
   const handleFileSelect = (filePath: string) => {
-    setSelectedFiles(prev => {
-      if (prev.includes(filePath)) {
-        return prev.filter(f => f !== filePath);
-      } else {
-        return [...prev, filePath];
-      }
-    });
+    setSelectedFiles([filePath]);
+    console.log('Selected file:', filePath);
   };
 
-  const handleImportFiles = async () => {
+  const handleImport = async () => {
     if (selectedFiles.length === 0) {
-      toast({
-        title: "No files selected",
-        description: "Please select at least one file to import",
-        variant: "destructive",
-      });
+      toast.error('Please select at least one file to import');
       return;
     }
 
     setIsImporting(true);
-    setImportResults([]);
-    const results: ImportResult[] = [];
+    setImportProgress({
+      progress: 0,
+      stage: 'starting',
+      message: 'Preparing to import services...',
+      error: null,
+      completed: false
+    });
 
     try {
-      for (let i = 0; i < selectedFiles.length; i++) {
-        const filePath = selectedFiles[i];
+      const bucketName = 'service-imports'; // Default bucket for service imports
+      
+      for (const filePath of selectedFiles) {
+        console.log(`Starting import for file: ${filePath}`);
         
-        setImportProgress({
-          stage: 'processing',
-          progress: (i / selectedFiles.length) * 100,
-          message: `Processing ${filePath}...`
-        });
+        const result = await importServicesFromStorage(
+          bucketName,
+          filePath,
+          (progress) => {
+            setImportProgress({
+              progress: progress.progress || 0,
+              stage: progress.stage || 'processing',
+              message: progress.message || 'Processing...',
+              error: progress.error || null,
+              completed: progress.completed || false
+            });
+          }
+        );
 
-        try {
-          const result = await importServicesFromStorage('services', filePath, setImportProgress);
-          results.push({
-            success: true,
-            imported: result.imported || 0,
-            errors: result.errors || []
-          });
+        setLastImportResult(result);
 
-          toast({
-            title: "Import successful",
-            description: `Successfully imported services from ${filePath}`,
-          });
-        } catch (error) {
-          console.error(`Error importing ${filePath}:`, error);
-          results.push({
-            success: false,
-            imported: 0,
-            errors: [error instanceof Error ? error.message : 'Unknown error']
-          });
-
-          toast({
-            title: "Import failed",
-            description: `Failed to import ${filePath}: ${error instanceof Error ? error.message : 'Unknown error'}`,
-            variant: "destructive",
-          });
+        if (result.success) {
+          toast.success(
+            `Successfully imported ${result.imported} services (${result.sectors} sectors, ${result.categories} categories, ${result.subcategories} subcategories, ${result.services} services)`
+          );
+        } else {
+          toast.error(`Import failed: ${result.errors.join(', ')}`);
         }
       }
-
-      setImportResults(results);
-      
-      // Calculate totals
-      const totalImported = results.reduce((sum, result) => sum + result.imported, 0);
-      const totalErrors = results.reduce((sum, result) => sum + result.errors.length, 0);
-
-      setImportProgress({
-        stage: 'complete',
-        progress: 100,
-        message: `Import completed. ${totalImported} items imported, ${totalErrors} errors`,
-        completed: true
-      });
-
     } catch (error) {
-      console.error('Import process failed:', error);
-      setImportProgress({
-        stage: 'error',
-        progress: 0,
-        message: error instanceof Error ? error.message : 'Import failed',
-        error: error instanceof Error ? error.message : 'Import failed'
-      });
+      console.error('Import error:', error);
+      setImportProgress(prev => ({
+        ...prev,
+        error: error.message,
+        completed: true
+      }));
+      toast.error(`Import failed: ${error.message}`);
     } finally {
       setIsImporting(false);
     }
   };
 
-  const handleClearSelection = () => {
-    setSelectedFiles([]);
-    setImportResults([]);
+  const handleCancelImport = () => {
+    setIsImporting(false);
+    setImportProgress({
+      progress: 0,
+      stage: '',
+      message: '',
+      error: null,
+      completed: false
+    });
+    toast.info('Import cancelled');
   };
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Upload className="h-5 w-5" />
-            <span>Folder-Based Service Import</span>
+          <CardTitle className="flex items-center gap-2">
+            <Database className="h-5 w-5" />
+            Folder-Based Service Import
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="text-sm text-gray-600">
-            Import service hierarchies from Excel files stored in your project's storage.
-            Select one or more files to import service data including sectors, categories, subcategories, and individual services.
+          <div className="text-sm text-muted-foreground">
+            <p>Import services from Excel files organized in a hierarchical folder structure.</p>
+            <p className="mt-2">Each sheet will be treated as a service sector, with columns representing the hierarchy:</p>
+            <ul className="list-disc list-inside mt-2 space-y-1">
+              <li>Column A: Category</li>
+              <li>Column B: Subcategory</li>
+              <li>Column C: Service/Job</li>
+            </ul>
           </div>
 
-          <StorageFileBrowser
-            bucketName="services"
-            onFileSelect={handleFileSelect}
-            disabled={isImporting}
-          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <StorageFileBrowser
+              bucketName="service-imports"
+              onFileSelect={handleFileSelect}
+              disabled={isImporting}
+            />
 
-          {selectedFiles.length > 0 && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h4 className="text-sm font-medium">Selected Files ({selectedFiles.length})</h4>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleClearSelection}
-                  disabled={isImporting}
-                >
-                  <X className="h-4 w-4 mr-1" />
-                  Clear
-                </Button>
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-medium mb-2">Selected Files</h3>
+                {selectedFiles.length === 0 ? (
+                  <div className="text-sm text-muted-foreground p-4 border border-dashed rounded-lg text-center">
+                    <FileText className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
+                    No files selected
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {selectedFiles.map((file, index) => (
+                      <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded">
+                        <FileText className="h-4 w-4" />
+                        <span className="text-sm">{file}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="flex flex-wrap gap-2">
-                {selectedFiles.map((file) => (
-                  <Badge key={file} variant="secondary" className="text-xs">
-                    {file.split('/').pop()}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
 
-          <div className="flex space-x-2">
-            <Button 
-              onClick={handleImportFiles}
-              disabled={selectedFiles.length === 0 || isImporting}
-              className="flex-1"
-            >
-              <Upload className="h-4 w-4 mr-2" />
-              Import Selected Files
-            </Button>
-          </div>
+              <Button
+                onClick={handleImport}
+                disabled={selectedFiles.length === 0 || isImporting}
+                className="w-full"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                {isImporting ? 'Importing...' : 'Import Services'}
+              </Button>
 
-          <ServiceImportProgress
-            isImporting={isImporting}
-            progress={importProgress.progress}
-            stage={importProgress.stage}
-            message={importProgress.message}
-            error={importProgress.error}
-            completed={importProgress.completed}
-          />
-
-          {importResults.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium">Import Results</h4>
-              <div className="space-y-2">
-                {importResults.map((result, index) => (
-                  <div key={index} className="p-3 border rounded-md">
-                    <div className="flex items-center space-x-2">
-                      {result.success ? (
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                      ) : (
-                        <AlertCircle className="h-4 w-4 text-red-600" />
-                      )}
-                      <span className="text-sm font-medium">
-                        File {index + 1}: {result.success ? 'Success' : 'Failed'}
+              {lastImportResult && (
+                <div className="mt-4 p-4 bg-muted rounded-lg">
+                  <h4 className="font-medium mb-2">Last Import Results</h4>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span>Status:</span>
+                      <span className={lastImportResult.success ? 'text-green-600' : 'text-red-600'}>
+                        {lastImportResult.success ? 'Success' : 'Failed'}
                       </span>
                     </div>
-                    <div className="mt-1 text-xs text-gray-600">
-                      {result.imported} items imported
-                      {result.errors.length > 0 && (
-                        <span className="text-red-600 ml-2">
-                          {result.errors.length} errors
-                        </span>
-                      )}
+                    <div className="flex justify-between">
+                      <span>Sectors:</span>
+                      <span>{lastImportResult.sectors}</span>
                     </div>
-                    {result.errors.length > 0 && (
-                      <div className="mt-2 space-y-1">
-                        {result.errors.slice(0, 3).map((error, errorIndex) => (
-                          <div key={errorIndex} className="text-xs text-red-600 bg-red-50 p-1 rounded">
-                            {error}
-                          </div>
-                        ))}
-                        {result.errors.length > 3 && (
-                          <div className="text-xs text-gray-500">
-                            ... and {result.errors.length - 3} more errors
-                          </div>
-                        )}
+                    <div className="flex justify-between">
+                      <span>Categories:</span>
+                      <span>{lastImportResult.categories}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Subcategories:</span>
+                      <span>{lastImportResult.subcategories}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Services:</span>
+                      <span>{lastImportResult.services}</span>
+                    </div>
+                    {lastImportResult.errors.length > 0 && (
+                      <div className="mt-2">
+                        <div className="flex items-center gap-1 text-red-600 mb-1">
+                          <AlertCircle className="h-3 w-3" />
+                          <span className="font-medium">Errors:</span>
+                        </div>
+                        <ul className="text-xs space-y-1 text-red-600">
+                          {lastImportResult.errors.map((error, index) => (
+                            <li key={index}>• {error}</li>
+                          ))}
+                        </ul>
                       </div>
                     )}
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </CardContent>
       </Card>
+
+      <ServiceImportProgress
+        isImporting={isImporting}
+        progress={importProgress.progress}
+        stage={importProgress.stage}
+        message={importProgress.message}
+        error={importProgress.error}
+        completed={importProgress.completed}
+        onCancel={handleCancelImport}
+      />
     </div>
   );
 }
