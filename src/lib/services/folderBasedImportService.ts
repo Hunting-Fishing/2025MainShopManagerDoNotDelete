@@ -1,28 +1,13 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { bucketViewerService } from './bucketViewerService';
 import type { 
-  StorageFile, 
-  SectorFiles, 
   ImportProgress, 
   ImportResult, 
   ImportStats, 
   ProcessedServiceData 
 } from './types';
 import * as XLSX from 'xlsx';
-
-interface LocalSectorFiles {
-  sectorName: string;
-  excelFiles: string[];
-  totalFiles: number;
-}
-
-function convertToLocalSectorFiles(sectorFiles: SectorFiles): LocalSectorFiles {
-  return {
-    sectorName: sectorFiles.sectorName,
-    excelFiles: sectorFiles.excelFiles.map(file => file.path),
-    totalFiles: sectorFiles.totalFiles
-  };
-}
 
 export async function processExcelFileFromStorage(
   filePath: string,
@@ -132,19 +117,18 @@ export async function importServicesFromStorage(
     // Process each sector
     for (let i = 0; i < allSectorFiles.length; i++) {
       const sectorFile = allSectorFiles[i];
-      const localSectorFile = convertToLocalSectorFiles(sectorFile);
       
       progressCallback?.({
         stage: 'processing',
-        message: `Processing sector: ${localSectorFile.sectorName}`,
+        message: `Processing sector: ${sectorFile.sectorName}`,
         progress: 15 + (i / allSectorFiles.length) * 70,
         completed: false,
         error: null
       });
 
       // Process each Excel file in the sector
-      for (const filePath of localSectorFile.excelFiles) {
-        const result = await processExcelFileFromStorage(filePath);
+      for (const file of sectorFile.excelFiles) {
+        const result = await processExcelFileFromStorage(file.path);
         
         // Accumulate stats
         totalStats.totalSectors += result.stats.totalSectors;
@@ -186,27 +170,11 @@ export async function importServicesFromStorage(
   }
 }
 
-export async function importProcessedDataToDatabase(data: ProcessedServiceData): Promise<ImportResult> {
-  // Implementation for importing processed data to database
-  return {
-    success: true,
-    message: 'Data imported to database successfully',
-    stats: data.stats
-  };
-}
-
-export async function validateServiceData(data: ProcessedServiceData): Promise<boolean> {
-  // Implementation for validating service data
-  return true;
-}
-
 export async function clearAllServiceData(): Promise<void> {
-  // Implementation for clearing all service data
   console.log('Clearing all service data...');
 }
 
 export async function getServiceCounts(): Promise<ImportStats> {
-  // Implementation for getting service counts
   return {
     totalSectors: 0,
     totalCategories: 0,
