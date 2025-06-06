@@ -1,6 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { getAllSectorFiles, getFolderFiles } from './storageUtils';
-import { processServiceDataFromSheets, importProcessedDataToDatabase } from './serviceDataProcessor';
+import { storageService } from './unifiedStorageService';
 
 import * as XLSX from 'xlsx';
 
@@ -45,120 +44,202 @@ export interface ProcessedServiceData {
 }
 
 /**
- * Process Excel files from storage bucket and import service data
+ * Process Excel file from Supabase storage
  */
-export async function importServicesFromStorage(
-  onProgress?: (progress: ImportProgress) => void
-): Promise<ImportResult> {
+export const processExcelFileFromStorage = async (
+  bucketName: string,
+  filePath: string,
+  progressCallback?: (progress: ImportProgress) => void
+): Promise<ProcessedServiceData> => {
   try {
-    // Step 1: Get all sector files
-    onProgress?.({
-      stage: 'fetching',
-      message: 'Fetching files from storage...',
+    progressCallback?.({
+      stage: 'downloading',
+      message: `Downloading file: ${filePath}`,
       progress: 10,
       completed: false,
       error: null
     });
 
-    const sectorFiles = await getAllSectorFiles('service-imports');
-    const totalSectors = Object.keys(sectorFiles).length;
-    
-    if (totalSectors === 0) {
-      throw new Error('No sector folders found in service-imports bucket');
+    // Check if bucket exists first
+    const bucketExists = await storageService.checkBucketExists(bucketName);
+    if (!bucketExists) {
+      throw new Error(`Bucket "${bucketName}" does not exist`);
     }
 
-    // Step 2: Process each sector
-    onProgress?.({
+    // Download file from Supabase storage
+    const { data: fileData, error: downloadError } = await supabase.storage
+      .from(bucketName)
+      .download(filePath);
+
+    if (downloadError) {
+      throw new Error(`Failed to download file: ${downloadError.message}`);
+    }
+
+    if (!fileData) {
+      throw new Error('No file data received');
+    }
+
+    progressCallback?.({
       stage: 'processing',
-      message: `Processing ${totalSectors} sectors...`,
-      progress: 20,
+      message: `Processing Excel file: ${filePath}`,
+      progress: 30,
       completed: false,
       error: null
     });
 
-    const allProcessedData: ProcessedServiceData = { sectors: [] };
-    let processedSectors = 0;
+    // Convert blob to array buffer and process with xlsx
+    const arrayBuffer = await fileData.arrayBuffer();
+    const processedData = await processServiceDataFromSheets(arrayBuffer, progressCallback);
 
-    for (const [sectorName, files] of Object.entries(sectorFiles)) {
-      if (files.length === 0) continue;
-
-      onProgress?.({
-        stage: 'processing',
-        message: `Processing sector: ${sectorName} (${files.length} files)`,
-        progress: 20 + (processedSectors / totalSectors) * 40,
-        completed: false,
-        error: null
-      });
-
-      // Process each file in the sector
-      const sectorData = await processServiceDataFromSheets(files);
-      
-      // Add sector name to the processed data
-      if (sectorData.sectors.length > 0) {
-        const sectorWithName = {
-          ...sectorData.sectors[0],
-          name: sectorName
-        };
-        allProcessedData.sectors.push(sectorWithName);
-      }
-
-      processedSectors++;
-    }
-
-    // Step 3: Import to database
-    onProgress?.({
-      stage: 'importing',
-      message: 'Importing data to database...',
-      progress: 70,
-      completed: false,
-      error: null
-    });
-
-    await importProcessedDataToDatabase(allProcessedData);
-
-    // Step 4: Complete
-    onProgress?.({
-      stage: 'complete',
-      message: 'Import completed successfully!',
+    progressCallback?.({
+      stage: 'completed',
+      message: `Successfully processed: ${filePath}`,
       progress: 100,
       completed: true,
       error: null
     });
 
-    const stats: ImportStats = {
-      sectorsProcessed: allProcessedData.sectors.length,
-      categoriesCreated: allProcessedData.sectors.reduce((acc, s) => acc + s.categories.length, 0),
-      subcategoriesCreated: allProcessedData.sectors.reduce((acc, s) => 
-        acc + s.categories.reduce((catAcc, c) => catAcc + c.subcategories.length, 0), 0),
-      jobsCreated: allProcessedData.sectors.reduce((acc, s) => 
-        acc + s.categories.reduce((catAcc, c) => 
-          catAcc + c.subcategories.reduce((subAcc, sub) => subAcc + sub.jobs.length, 0), 0), 0),
-      filesProcessed: Object.values(sectorFiles).reduce((acc, files) => acc + files.length, 0)
-    };
-
-    return {
-      success: true,
-      message: `Successfully imported ${stats.sectorsProcessed} sectors with ${stats.jobsCreated} total services`,
-      stats
-    };
-
+    return processedData;
   } catch (error) {
-    console.error('Import failed:', error);
-    
-    onProgress?.({
-      stage: 'error',
-      message: error instanceof Error ? error.message : 'Import failed',
+    console.error('Error processing Excel file from storage:', error);
+    throw error;
+  }
+};
+
+/**
+ * Import services from all Excel files in the storage bucket folders
+ */
+export const importServicesFromStorage = async (
+  progressCallback?: (progress: ImportProgress) => void
+): Promise<ImportResult> => {
+  const bucketName = 'service-imports';
+  
+  try {
+    progressCallback?.({
+      stage: 'initializing',
+      message: 'Checking storage bucket...',
       progress: 0,
       completed: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: null
+    });
+
+    // Check if bucket exists
+    const bucketExists = await storageService.checkBucketExists(bucketName);
+    if (!bucketExists) {
+      throw new Error(`Bucket "${bucketName}" does not exist. Please create the bucket and upload your Excel files.`);
+    }
+
+    // Get all sector files using the new storage service
+    const sectorFiles = await storageService.getAllSectorFiles(bucketName);
+    
+    if (Object.keys(sectorFiles).length === 0) {
+      throw new Error('No sector folders with Excel files found in the storage bucket');
+    }
+
+    const totalFiles = Object.values(sectorFiles).reduce((sum, files) => sum + files.length, 0);
+    let processedFiles = 0;
+    let totalImported = 0;
+
+    progressCallback?.({
+      stage: 'processing',
+      message: `Found ${totalFiles} Excel files across ${Object.keys(sectorFiles).length} sectors`,
+      progress: 5,
+      completed: false,
+      error: null
+    });
+
+    // Clear existing service data
+    await clearAllServiceData();
+
+    progressCallback?.({
+      stage: 'processing',
+      message: 'Cleared existing service data',
+      progress: 10,
+      completed: false,
+      error: null
+    });
+
+    // Process each sector's files
+    for (const [sectorName, files] of Object.entries(sectorFiles)) {
+      console.log(`Processing sector: ${sectorName} with ${files.length} files`);
+      
+      for (const file of files) {
+        try {
+          progressCallback?.({
+            stage: 'processing',
+            message: `Processing ${file.name} from ${sectorName}`,
+            progress: 10 + (processedFiles / totalFiles) * 80,
+            completed: false,
+            error: null
+          });
+
+          const processedData = await processExcelFileFromStorage(
+            bucketName,
+            file.path,
+            (fileProgress) => {
+              // Relay file-level progress with overall context
+              progressCallback?.({
+                ...fileProgress,
+                message: `${fileProgress.message} (${processedFiles + 1}/${totalFiles})`
+              });
+            }
+          );
+
+          // Import the processed data
+          const importStats = await importProcessedDataToDatabase(processedData);
+          totalImported += importStats.totalImported;
+          
+          processedFiles++;
+          
+          console.log(`Completed processing ${file.name}: imported ${importStats.totalImported} services`);
+          
+        } catch (error) {
+          console.error(`Error processing file ${file.name}:`, error);
+          processedFiles++;
+          // Continue with other files even if one fails
+        }
+      }
+    }
+
+    const result: ImportResult = {
+      success: true,
+      message: `Successfully imported ${totalImported} services from ${processedFiles} files`,
+      stats: {
+        totalFiles: processedFiles,
+        totalImported,
+        sectorsProcessed: Object.keys(sectorFiles).length
+      }
+    };
+
+    progressCallback?.({
+      stage: 'completed',
+      message: result.message,
+      progress: 100,
+      completed: true,
+      error: null
+    });
+
+    return result;
+
+  } catch (error) {
+    console.error('Error importing services from storage:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+    
+    progressCallback?.({
+      stage: 'error',
+      message: errorMessage,
+      progress: 0,
+      completed: false,
+      error: errorMessage
     });
 
     return {
       success: false,
-      message: error instanceof Error ? error.message : 'Import failed'
+      message: errorMessage,
+      stats: { totalFiles: 0, totalImported: 0, sectorsProcessed: 0 }
     };
   }
-}
+};
 
 /**
  * Process a single Excel file from storage
