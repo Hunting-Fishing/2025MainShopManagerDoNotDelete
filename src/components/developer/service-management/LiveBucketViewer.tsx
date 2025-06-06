@@ -2,73 +2,93 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { bucketViewerService } from '@/lib/services/bucketViewerService';
-import { Database, FolderIcon, FileIcon, RefreshCw, AlertCircle } from 'lucide-react';
-import type { StorageFile } from '@/lib/services/types';
+import { 
+  Cloud, 
+  Folder, 
+  FileSpreadsheet, 
+  RefreshCw, 
+  CheckCircle, 
+  XCircle,
+  AlertTriangle
+} from 'lucide-react';
 
 interface BucketInfo {
   exists: boolean;
-  files: StorageFile[];
-  folders: { name: string; path: string; lastModified?: Date }[];
-  error?: string;
+  files: Array<{
+    name: string;
+    path: string;
+    size?: number;
+    type?: string;
+    lastModified?: Date;
+  }>;
+  folders: Array<{
+    name: string;
+    path: string;
+    lastModified?: Date;
+  }>;
 }
 
 export function LiveBucketViewer() {
-  const [bucketInfo, setBucketInfo] = useState<BucketInfo>({
-    exists: false,
-    files: [],
-    folders: []
-  });
+  const [bucketInfo, setBucketInfo] = useState<BucketInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchBucketInfo = async () => {
+  const loadBucketInfo = async () => {
     try {
       setLoading(true);
       setError(null);
-      console.log('Fetching bucket info...');
+      console.log('Loading bucket info...');
       
       const info = await bucketViewerService.getBucketInfo();
+      console.log('Bucket info loaded:', info);
       setBucketInfo(info);
-      
-      if (info.error) {
-        setError(info.error);
-      }
     } catch (err) {
-      console.error('Error fetching bucket info:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch bucket information');
+      console.error('Failed to load bucket info:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load bucket information';
+      setError(errorMessage);
+      setBucketInfo(null);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchBucketInfo();
+    loadBucketInfo();
   }, []);
 
-  const formatFileSize = (bytes?: number) => {
-    if (!bytes) return 'Unknown';
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+  const handleRefresh = () => {
+    loadBucketInfo();
   };
 
-  const formatDate = (date?: Date) => {
-    if (!date) return 'Unknown';
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(date);
+  const getStatusIcon = () => {
+    if (loading) return <RefreshCw className="h-4 w-4 animate-spin" />;
+    if (error) return <XCircle className="h-4 w-4 text-red-500" />;
+    if (bucketInfo?.exists) return <CheckCircle className="h-4 w-4 text-green-500" />;
+    return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+  };
+
+  const getStatusText = () => {
+    if (loading) return 'Loading...';
+    if (error) return 'Error';
+    if (bucketInfo?.exists) return 'Connected';
+    return 'Not Found';
+  };
+
+  const getStatusVariant = () => {
+    if (loading) return 'secondary';
+    if (error) return 'destructive';
+    if (bucketInfo?.exists) return 'default';
+    return 'secondary';
   };
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Database className="h-5 w-5" />
+          <Cloud className="h-5 w-5" />
           Live Storage Browser
         </CardTitle>
         <CardDescription>
@@ -77,14 +97,19 @@ export function LiveBucketViewer() {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
+          {/* Status Section */}
           <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-600">
-              Status: {loading ? 'Loading...' : bucketInfo.exists ? 'Connected' : 'Not Found'}
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">Status:</span>
+              <Badge variant={getStatusVariant()} className="flex items-center gap-1">
+                {getStatusIcon()}
+                {getStatusText()}
+              </Badge>
             </div>
             <Button
-              onClick={fetchBucketInfo}
               variant="outline"
               size="sm"
+              onClick={handleRefresh}
               disabled={loading}
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
@@ -92,79 +117,60 @@ export function LiveBucketViewer() {
             </Button>
           </div>
 
+          {/* Error Display */}
           {error && (
-            <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <AlertCircle className="h-4 w-4 text-red-600 mt-0.5" />
-              <div className="text-sm text-red-700">
-                <p className="font-medium">Storage Error</p>
-                <p>{error}</p>
-              </div>
-            </div>
+            <Alert variant="destructive">
+              <XCircle className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Storage Error</strong>
+                <br />
+                {error}
+              </AlertDescription>
+            </Alert>
           )}
 
-          {!loading && bucketInfo.exists && !error && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="font-medium">Folders:</span> {bucketInfo.folders.length}
+          {/* Bucket Content */}
+          {bucketInfo?.exists && !error && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center p-3 bg-blue-50 rounded-lg">
+                  <Folder className="h-6 w-6 mx-auto mb-1 text-blue-600" />
+                  <div className="text-lg font-semibold">{bucketInfo.folders.length}</div>
+                  <div className="text-xs text-gray-600">Sector Folders</div>
                 </div>
-                <div>
-                  <span className="font-medium">Files:</span> {bucketInfo.files.length}
+                <div className="text-center p-3 bg-green-50 rounded-lg">
+                  <FileSpreadsheet className="h-6 w-6 mx-auto mb-1 text-green-600" />
+                  <div className="text-lg font-semibold">{bucketInfo.files.length}</div>
+                  <div className="text-xs text-gray-600">Excel Files</div>
                 </div>
               </div>
 
+              {/* Folders List */}
               {bucketInfo.folders.length > 0 && (
                 <div>
-                  <h4 className="font-medium text-sm mb-2">Sector Folders:</h4>
-                  <div className="space-y-1 max-h-32 overflow-y-auto">
+                  <h4 className="text-sm font-medium mb-2">Available Sectors:</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                     {bucketInfo.folders.map((folder) => (
-                      <div key={folder.name} className="flex items-center gap-2 text-sm p-2 bg-gray-50 rounded">
-                        <FolderIcon className="h-4 w-4 text-blue-600" />
-                        <span className="flex-1">{folder.name}</span>
-                        <span className="text-xs text-gray-500">
-                          {formatDate(folder.lastModified)}
-                        </span>
+                      <div
+                        key={folder.name}
+                        className="flex items-center gap-2 p-2 bg-gray-50 rounded text-sm"
+                      >
+                        <Folder className="h-4 w-4 text-blue-500" />
+                        <span className="truncate">{folder.name}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {bucketInfo.files.length > 0 && (
-                <div>
-                  <h4 className="font-medium text-sm mb-2">Files:</h4>
-                  <div className="space-y-1 max-h-32 overflow-y-auto">
-                    {bucketInfo.files.map((file) => (
-                      <div key={file.path} className="flex items-center gap-2 text-sm p-2 bg-gray-50 rounded">
-                        <FileIcon className="h-4 w-4 text-green-600" />
-                        <span className="flex-1">{file.name}</span>
-                        <span className="text-xs text-gray-500">
-                          {formatFileSize(file.size)}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {formatDate(file.lastModified)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
+              {/* Empty State */}
               {bucketInfo.folders.length === 0 && bucketInfo.files.length === 0 && (
-                <div className="text-center py-4 text-gray-500">
-                  <Database className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">Bucket is empty</p>
-                  <p className="text-xs">Upload Excel files in sector folders to get started</p>
+                <div className="text-center py-6 text-gray-500">
+                  <Cloud className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                  <p className="text-sm">No files found in the storage bucket</p>
+                  <p className="text-xs">Upload Excel files organized by sector folders</p>
                 </div>
               )}
-            </div>
-          )}
-
-          {!loading && !bucketInfo.exists && !error && (
-            <div className="text-center py-4 text-gray-500">
-              <Database className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">Storage bucket will be created automatically</p>
-              <p className="text-xs">Click refresh to try again</p>
             </div>
           )}
         </div>
