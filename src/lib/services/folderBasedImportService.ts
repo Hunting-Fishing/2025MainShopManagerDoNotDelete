@@ -1,379 +1,294 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { importFromStorage, ImportProgress } from './storageImportService';
 
-export interface ImportProgress {
-  stage: string;
-  progress: number;
-  message: string;
-  error?: string;
-  completed?: boolean;
+export interface ServiceCounts {
+  sectors: number;
+  categories: number;
+  subcategories: number;
+  jobs: number;
 }
 
-interface ServiceRecord {
-  sector: string;
-  category: string;
-  subcategory: string;
-  job: string;
-  description?: string;
-  price?: number;
-  duration?: number;
-}
+export { ImportProgress };
 
-export const processServiceData = async (
+// Extract sector name from file path (e.g., "Automotive/file.xlsx" -> "Automotive")
+const extractSectorFromPath = (filePath: string): string => {
+  const pathParts = filePath.split('/');
+  if (pathParts.length > 1) {
+    return pathParts[0]; // First part is the folder/sector name
+  }
+  return 'General'; // Fallback if no folder structure
+};
+
+const createServiceRecord = async (
+  tableName: string,
+  data: any,
+  parentId?: string,
+  position?: number
+) => {
+  const record = {
+    name: data.name || data.title || 'Unnamed',
+    description: data.description || null,
+    position: position || 0,
+    ...(parentId && { 
+      [`${tableName === 'service_categories' ? 'sector' : 
+         tableName === 'service_subcategories' ? 'category' : 'subcategory'}_id`]: parentId 
+    }),
+    ...(tableName === 'service_jobs' && {
+      estimated_time: data.estimated_time || data.time || null,
+      price: data.price || data.cost || null
+    })
+  };
+
+  const { data: result, error } = await supabase
+    .from(tableName)
+    .insert(record)
+    .select('id')
+    .single();
+
+  if (error) {
+    console.error(`Error creating ${tableName}:`, error);
+    throw new Error(`Failed to create ${tableName}: ${error.message}`);
+  }
+
+  return result.id;
+};
+
+const getColumnValue = (row: any[], headers: string[], possibleNames: string[]): string => {
+  for (const name of possibleNames) {
+    const index = headers.findIndex(h => 
+      h && h.toLowerCase().includes(name.toLowerCase())
+    );
+    if (index >= 0 && row[index]) {
+      return row[index].toString().trim();
+    }
+  }
+  return '';
+};
+
+const processServiceData = async (
   sheetsData: any[],
+  sectorName: string, // Now properly passed from folder name
   onProgress?: (progress: ImportProgress) => void
 ) => {
-  try {
+  let totalProcessed = 0;
+  const totalSheets = sheetsData.length;
+
+  // Create or get the sector using the extracted folder name
+  if (onProgress) {
+    onProgress({
+      stage: 'processing',
+      progress: 70,
+      message: `Creating sector: ${sectorName}...`
+    });
+  }
+
+  const { data: existingSector } = await supabase
+    .from('service_sectors')
+    .select('id')
+    .eq('name', sectorName)
+    .single();
+
+  let sectorId: string;
+  if (existingSector) {
+    sectorId = existingSector.id;
+    console.log(`Using existing sector: ${sectorName} (${sectorId})`);
+  } else {
+    sectorId = await createServiceRecord('service_sectors', { 
+      name: sectorName,
+      description: `${sectorName} services and categories`
+    });
+    console.log(`Created new sector: ${sectorName} (${sectorId})`);
+  }
+
+  for (const sheetData of sheetsData) {
+    const { sheetName, data } = sheetData;
+    
     if (onProgress) {
       onProgress({
-        stage: 'validation',
-        progress: 10,
-        message: 'Validating sheet data...'
+        stage: 'processing',
+        progress: 70 + (totalProcessed / totalSheets) * 25,
+        message: `Processing sheet: ${sheetName}...`
       });
     }
 
-    const serviceRecords: ServiceRecord[] = [];
-    let processedSheets = 0;
+    if (data.length === 0) continue;
 
-    for (const sheet of sheetsData) {
-      if (onProgress) {
-        onProgress({
-          stage: 'processing',
-          progress: 10 + (processedSheets / sheetsData.length) * 40,
-          message: `Processing sheet: ${sheet.sheetName}...`
-        });
+    const headers = data[0] || [];
+    const rows = data.slice(1);
+
+    console.log(`Processing sheet "${sheetName}" with ${rows.length} rows`);
+
+    let categoryId: string | null = null;
+    let subcategoryId: string | null = null;
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || row.every(cell => !cell || cell.toString().trim() === '')) continue;
+
+      const categoryName = getColumnValue(row, headers, ['category', 'main category', 'service category']);
+      const subcategoryName = getColumnValue(row, headers, ['subcategory', 'sub category', 'service subcategory']);
+      const jobName = getColumnValue(row, headers, ['job', 'service', 'service name', 'title', 'name']);
+
+      // Create category if specified and different from current
+      if (categoryName && (!categoryId || categoryName !== currentCategoryName)) {
+        categoryId = await createServiceRecord('service_categories', {
+          name: categoryName,
+          description: `${categoryName} services`
+        }, sectorId);
+        currentCategoryName = categoryName;
+        subcategoryId = null; // Reset subcategory when category changes
+        console.log(`Created category: ${categoryName} under sector ${sectorName}`);
       }
 
-      const records = processSheetData(sheet.sheetName, sheet.data);
-      serviceRecords.push(...records);
-      processedSheets++;
+      // If no category specified, use sheet name as category
+      if (!categoryId) {
+        categoryId = await createServiceRecord('service_categories', {
+          name: sheetName,
+          description: `${sheetName} services`
+        }, sectorId);
+        currentCategoryName = sheetName;
+        console.log(`Created category from sheet name: ${sheetName} under sector ${sectorName}`);
+      }
+
+      // Create subcategory if specified and different from current
+      if (subcategoryName && categoryId && (!subcategoryId || subcategoryName !== currentSubcategoryName)) {
+        subcategoryId = await createServiceRecord('service_subcategories', {
+          name: subcategoryName,
+          description: `${subcategoryName} services`
+        }, categoryId);
+        currentSubcategoryName = subcategoryName;
+        console.log(`Created subcategory: ${subcategoryName}`);
+      }
+
+      // Create default subcategory if none specified
+      if (!subcategoryId && categoryId) {
+        const defaultSubcategoryName = `${currentCategoryName || sheetName} Services`;
+        subcategoryId = await createServiceRecord('service_subcategories', {
+          name: defaultSubcategoryName,
+          description: `General ${defaultSubcategoryName.toLowerCase()}`
+        }, categoryId);
+        currentSubcategoryName = defaultSubcategoryName;
+        console.log(`Created default subcategory: ${defaultSubcategoryName}`);
+      }
+
+      // Create job if specified and we have a subcategory
+      if (jobName && subcategoryId) {
+        const estimatedTime = getColumnValue(row, headers, ['time', 'estimated time', 'duration', 'hours']);
+        const price = getColumnValue(row, headers, ['price', 'cost', 'amount', 'rate']);
+        const description = getColumnValue(row, headers, ['description', 'details', 'notes']);
+
+        await createServiceRecord('service_jobs', {
+          name: jobName,
+          description: description || `${jobName} service`,
+          estimated_time: estimatedTime ? parseInt(estimatedTime) : null,
+          price: price ? parseFloat(price) : null
+        }, subcategoryId);
+        console.log(`Created job: ${jobName}`);
+      }
     }
 
-    if (serviceRecords.length === 0) {
-      throw new Error('No valid service records found in the imported sheets. Please check the file format and column headers.');
-    }
+    totalProcessed++;
+  }
+
+  if (onProgress) {
+    onProgress({
+      stage: 'complete',
+      progress: 95,
+      message: `Successfully imported services for sector: ${sectorName}`,
+      completed: true
+    });
+  }
+};
+
+let currentCategoryName: string | null = null;
+let currentSubcategoryName: string | null = null;
+
+export const importServicesFromStorage = async (
+  bucketName: string,
+  filePath: string, // Now includes folder path
+  onProgress?: (progress: ImportProgress) => void
+): Promise<void> => {
+  try {
+    console.log(`Starting import from: ${bucketName}/${filePath}`);
+    
+    // Extract sector name from file path
+    const sectorName = extractSectorFromPath(filePath);
+    console.log(`Extracted sector name: ${sectorName} from path: ${filePath}`);
 
     if (onProgress) {
       onProgress({
-        stage: 'importing',
-        progress: 50,
-        message: `Importing ${serviceRecords.length} service records...`
+        stage: 'download',
+        progress: 0,
+        message: `Importing services for ${sectorName} sector...`
       });
     }
 
-    await importServiceRecords(serviceRecords, onProgress);
+    // Import the Excel data
+    const sheetsData = await importFromStorage(bucketName, filePath, onProgress);
+    console.log(`Downloaded and parsed ${sheetsData.length} sheets from ${filePath}`);
+
+    // Process the data with the correct sector name
+    await processServiceData(sheetsData, sectorName, onProgress);
 
     if (onProgress) {
       onProgress({
         stage: 'complete',
         progress: 100,
-        message: `Successfully imported ${serviceRecords.length} service records!`,
+        message: `Import completed successfully for ${sectorName} sector!`,
         completed: true
       });
     }
 
+    console.log(`Import completed successfully for sector: ${sectorName}`);
   } catch (error) {
-    console.error('Error processing service data:', error);
+    console.error('Import failed:', error);
+    if (onProgress) {
+      onProgress({
+        stage: 'error',
+        progress: 0,
+        message: error instanceof Error ? error.message : 'Import failed',
+        error: error instanceof Error ? error.message : 'Import failed'
+      });
+    }
     throw error;
   }
 };
 
-const processSheetData = (sheetName: string, data: any[]): ServiceRecord[] => {
-  if (!data || data.length < 2) {
-    console.warn(`Sheet "${sheetName}" has insufficient data`);
-    return [];
-  }
-
-  const headers = data[0];
-  if (!headers || !Array.isArray(headers)) {
-    console.warn(`Sheet "${sheetName}" has invalid headers`);
-    return [];
-  }
-
-  // Normalize headers to lowercase for flexible matching
-  const normalizedHeaders = headers.map((h: any) => 
-    h ? h.toString().toLowerCase().trim() : ''
-  );
-
-  // Find column indices with flexible matching
-  const columnMap = findColumnIndices(normalizedHeaders);
-  
-  if (!columnMap.isValid) {
-    console.warn(`Sheet "${sheetName}": ${columnMap.missingColumns.join(', ')} columns not found`);
-    console.log('Available columns:', normalizedHeaders);
-    return [];
-  }
-
-  const records: ServiceRecord[] = [];
-  
-  // Process data rows (skip header row)
-  for (let i = 1; i < data.length; i++) {
-    const row = data[i];
-    if (!row || !Array.isArray(row)) continue;
-
-    const record = createServiceRecord(row, columnMap, sheetName);
-    if (record) {
-      records.push(record);
-    }
-  }
-
-  console.log(`Sheet "${sheetName}": Processed ${records.length} service records`);
-  return records;
-};
-
-const findColumnIndices = (headers: string[]) => {
-  // Define flexible column name patterns
-  const patterns = {
-    sector: ['sector', 'service sector', 'business sector', 'industry'],
-    category: ['category', 'service category', 'main category', 'type'],
-    subcategory: ['subcategory', 'sub category', 'sub-category', 'service type'],
-    job: ['job', 'service', 'service name', 'task', 'work', 'description']
-  };
-
-  const columnMap: any = {
-    sector: -1,
-    category: -1,
-    subcategory: -1,
-    job: -1,
-    description: -1,
-    price: -1,
-    duration: -1,
-    isValid: false,
-    missingColumns: []
-  };
-
-  // Find required columns
-  for (const [key, possibleNames] of Object.entries(patterns)) {
-    const index = headers.findIndex(header => 
-      possibleNames.some(pattern => header.includes(pattern))
-    );
-    columnMap[key] = index;
-    if (index === -1) {
-      columnMap.missingColumns.push(key);
-    }
-  }
-
-  // Find optional columns
-  const descIndex = headers.findIndex(h => 
-    h.includes('description') || h.includes('details') || h.includes('notes')
-  );
-  columnMap.description = descIndex;
-
-  const priceIndex = headers.findIndex(h => 
-    h.includes('price') || h.includes('cost') || h.includes('rate') || h.includes('amount')
-  );
-  columnMap.price = priceIndex;
-
-  const durationIndex = headers.findIndex(h => 
-    h.includes('duration') || h.includes('time') || h.includes('hours') || h.includes('minutes')
-  );
-  columnMap.duration = durationIndex;
-
-  // Check if we have at least the required columns (job is the minimum requirement)
-  columnMap.isValid = columnMap.job !== -1;
-  
-  // If we don't have explicit categories, we can use the sheet name as category
-  if (columnMap.category === -1 && columnMap.job !== -1) {
-    columnMap.useSheetAsCategory = true;
-    columnMap.isValid = true;
-    columnMap.missingColumns = columnMap.missingColumns.filter((col: string) => col !== 'category');
-  }
-
-  return columnMap;
-};
-
-const createServiceRecord = (row: any[], columnMap: any, sheetName: string): ServiceRecord | null => {
+export const clearAllServiceData = async (): Promise<void> => {
   try {
-    const getValue = (index: number) => {
-      if (index === -1 || !row[index]) return null;
-      return row[index].toString().trim();
-    };
-
-    const job = getValue(columnMap.job);
-    if (!job) return null;
-
-    const record: ServiceRecord = {
-      sector: getValue(columnMap.sector) || 'General',
-      category: columnMap.useSheetAsCategory ? sheetName : (getValue(columnMap.category) || 'General'),
-      subcategory: getValue(columnMap.subcategory) || 'General',
-      job: job
-    };
-
-    // Add optional fields
-    const description = getValue(columnMap.description);
-    if (description) record.description = description;
-
-    const priceStr = getValue(columnMap.price);
-    if (priceStr) {
-      const price = parseFloat(priceStr.replace(/[^\d.-]/g, ''));
-      if (!isNaN(price)) record.price = price;
-    }
-
-    const durationStr = getValue(columnMap.duration);
-    if (durationStr) {
-      const duration = parseFloat(durationStr.replace(/[^\d.-]/g, ''));
-      if (!isNaN(duration)) record.duration = duration;
-    }
-
-    return record;
+    console.log('Clearing all service data...');
+    
+    // Delete in correct order to respect foreign key constraints
+    await supabase.from('service_jobs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await supabase.from('service_subcategories').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await supabase.from('service_categories').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await supabase.from('service_sectors').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    
+    console.log('All service data cleared successfully');
   } catch (error) {
-    console.warn('Error creating service record from row:', error);
-    return null;
+    console.error('Error clearing service data:', error);
+    throw error;
   }
 };
 
-const importServiceRecords = async (
-  records: ServiceRecord[],
-  onProgress?: (progress: ImportProgress) => void
-) => {
-  const sectorsMap = new Map<string, any>();
-  const categoriesMap = new Map<string, any>();
-  const subcategoriesMap = new Map<string, any>();
+export const getServiceCounts = async (): Promise<ServiceCounts> => {
+  try {
+    const [sectorsResult, categoriesResult, subcategoriesResult, jobsResult] = await Promise.all([
+      supabase.from('service_sectors').select('id', { count: 'exact' }),
+      supabase.from('service_categories').select('id', { count: 'exact' }),
+      supabase.from('service_subcategories').select('id', { count: 'exact' }),
+      supabase.from('service_jobs').select('id', { count: 'exact' })
+    ]);
 
-  let processed = 0;
-  const totalRecords = records.length;
-
-  for (const record of records) {
-    // Create or get sector
-    const sectorKey = record.sector.toLowerCase();
-    if (!sectorsMap.has(sectorKey)) {
-      const { data: existingSector } = await supabase
-        .from('service_sectors')
-        .select('id')
-        .eq('name', record.sector)
-        .single();
-
-      if (existingSector) {
-        sectorsMap.set(sectorKey, existingSector);
-      } else {
-        const { data: newSector, error } = await supabase
-          .from('service_sectors')
-          .insert({ name: record.sector })
-          .select()
-          .single();
-
-        if (error) throw error;
-        sectorsMap.set(sectorKey, newSector);
-      }
-    }
-
-    const sector = sectorsMap.get(sectorKey);
-
-    // Create or get category
-    const categoryKey = `${sectorKey}-${record.category.toLowerCase()}`;
-    if (!categoriesMap.has(categoryKey)) {
-      const { data: existingCategory } = await supabase
-        .from('service_categories')
-        .select('id')
-        .eq('name', record.category)
-        .eq('sector_id', sector.id)
-        .single();
-
-      if (existingCategory) {
-        categoriesMap.set(categoryKey, existingCategory);
-      } else {
-        const { data: newCategory, error } = await supabase
-          .from('service_categories')
-          .insert({ 
-            name: record.category, 
-            sector_id: sector.id 
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
-        categoriesMap.set(categoryKey, newCategory);
-      }
-    }
-
-    const category = categoriesMap.get(categoryKey);
-
-    // Create or get subcategory
-    const subcategoryKey = `${categoryKey}-${record.subcategory.toLowerCase()}`;
-    if (!subcategoriesMap.has(subcategoryKey)) {
-      const { data: existingSubcategory } = await supabase
-        .from('service_subcategories')
-        .select('id')
-        .eq('name', record.subcategory)
-        .eq('category_id', category.id)
-        .single();
-
-      if (existingSubcategory) {
-        subcategoriesMap.set(subcategoryKey, existingSubcategory);
-      } else {
-        const { data: newSubcategory, error } = await supabase
-          .from('service_subcategories')
-          .insert({ 
-            name: record.subcategory, 
-            category_id: category.id 
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
-        subcategoriesMap.set(subcategoryKey, newSubcategory);
-      }
-    }
-
-    const subcategory = subcategoriesMap.get(subcategoryKey);
-
-    // Check if job already exists
-    const { data: existingJob } = await supabase
-      .from('service_jobs')
-      .select('id')
-      .eq('name', record.job)
-      .eq('subcategory_id', subcategory.id)
-      .single();
-
-    if (!existingJob) {
-      // Create the job
-      const jobData: any = {
-        name: record.job,
-        subcategory_id: subcategory.id
-      };
-
-      if (record.description) jobData.description = record.description;
-      if (record.price) jobData.price = record.price;
-      if (record.duration) jobData.estimated_time = record.duration;
-
-      const { error } = await supabase
-        .from('service_jobs')
-        .insert(jobData);
-
-      if (error) throw error;
-    }
-
-    processed++;
-    if (onProgress && processed % 10 === 0) {
-      onProgress({
-        stage: 'importing',
-        progress: 50 + (processed / totalRecords) * 50,
-        message: `Imported ${processed}/${totalRecords} service records...`
-      });
-    }
+    return {
+      sectors: sectorsResult.count || 0,
+      categories: categoriesResult.count || 0,
+      subcategories: subcategoriesResult.count || 0,
+      jobs: jobsResult.count || 0
+    };
+  } catch (error) {
+    console.error('Error getting service counts:', error);
+    return { sectors: 0, categories: 0, subcategories: 0, jobs: 0 };
   }
-};
-
-export const clearAllServiceData = async () => {
-  // Delete in reverse order due to foreign key constraints
-  await supabase.from('service_jobs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-  await supabase.from('service_subcategories').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-  await supabase.from('service_categories').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-  await supabase.from('service_sectors').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-};
-
-export const getServiceCounts = async () => {
-  const [sectors, categories, subcategories, jobs] = await Promise.all([
-    supabase.from('service_sectors').select('id', { count: 'exact' }),
-    supabase.from('service_categories').select('id', { count: 'exact' }),
-    supabase.from('service_subcategories').select('id', { count: 'exact' }),
-    supabase.from('service_jobs').select('id', { count: 'exact' })
-  ]);
-
-  return {
-    sectors: sectors.count || 0,
-    categories: categories.count || 0,
-    subcategories: subcategories.count || 0,
-    jobs: jobs.count || 0
-  };
 };
