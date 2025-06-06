@@ -1,379 +1,162 @@
-import { supabase } from '@/integrations/supabase/client';
-import { ServiceMainCategory, ServiceSubcategory, ServiceJob, ServiceSector } from '@/types/serviceHierarchy';
 
-export const fetchServiceSectors = async (): Promise<ServiceSector[]> => {
+import { supabase } from '@/integrations/supabase/client';
+import type { ServiceSector, ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
+
+export async function fetchServiceSectors(): Promise<ServiceSector[]> {
   try {
     console.log('Fetching service sectors...');
-
-    // First, fetch all sectors
-    const { data: sectorsData, error: sectorsError } = await supabase
+    
+    const { data: sectors, error: sectorsError } = await supabase
       .from('service_sectors')
-      .select('*')
+      .select(`
+        id,
+        name,
+        description,
+        position,
+        is_active,
+        service_categories (
+          id,
+          name,
+          description,
+          position,
+          sector_id,
+          service_subcategories (
+            id,
+            name,
+            description,
+            category_id,
+            service_jobs (
+              id,
+              name,
+              description,
+              estimated_time,
+              price,
+              subcategory_id
+            )
+          )
+        )
+      `)
+      .eq('is_active', true)
       .order('position', { ascending: true });
 
     if (sectorsError) {
       console.error('Error fetching sectors:', sectorsError);
-      throw new Error(`Failed to fetch sectors: ${sectorsError.message}`);
+      throw sectorsError;
     }
 
-    console.log(`Found ${sectorsData?.length || 0} sectors`);
+    console.log('Raw sectors data:', sectors);
 
-    if (!sectorsData || sectorsData.length === 0) {
+    if (!sectors || sectors.length === 0) {
+      console.log('No sectors found');
       return [];
     }
 
-    // Fetch all categories for all sectors in one query
-    const { data: categoriesData, error: categoriesError } = await supabase
-      .from('service_categories')
-      .select('*')
-      .in('sector_id', sectorsData.map(s => s.id))
-      .order('position', { ascending: true });
-
-    if (categoriesError) {
-      console.error('Error fetching categories:', categoriesError);
-      throw new Error(`Failed to fetch categories: ${categoriesError.message}`);
-    }
-
-    console.log(`Found ${categoriesData?.length || 0} categories`);
-
-    // Fetch all subcategories for all categories in one query
-    const categoryIds = categoriesData?.map(c => c.id) || [];
-    let subcategoriesData: any[] = [];
-    if (categoryIds.length > 0) {
-      const { data, error: subcategoriesError } = await supabase
-        .from('service_subcategories')
-        .select('*')
-        .in('category_id', categoryIds)
-        .order('created_at', { ascending: true });
-
-      if (subcategoriesError) {
-        console.error('Error fetching subcategories:', subcategoriesError);
-        throw new Error(`Failed to fetch subcategories: ${subcategoriesError.message}`);
-      }
-
-      subcategoriesData = data || [];
-    }
-
-    console.log(`Found ${subcategoriesData.length} subcategories`);
-
-    // Fetch all jobs for all subcategories in one query
-    const subcategoryIds = subcategoriesData.map(sc => sc.id);
-    let jobsData: any[] = [];
-    if (subcategoryIds.length > 0) {
-      const { data, error: jobsError } = await supabase
-        .from('service_jobs')
-        .select('*')
-        .in('subcategory_id', subcategoryIds)
-        .order('created_at', { ascending: true });
-
-      if (jobsError) {
-        console.error('Error fetching jobs:', jobsError);
-        throw new Error(`Failed to fetch jobs: ${jobsError.message}`);
-      }
-
-      jobsData = data || [];
-    }
-
-    console.log(`Found ${jobsData.length} jobs`);
-
-    // Build the hierarchical structure
-    const sectors: ServiceSector[] = sectorsData.map(sector => {
-      const sectorCategories = categoriesData?.filter(cat => cat.sector_id === sector.id) || [];
-      
-      const categories: ServiceMainCategory[] = sectorCategories.map(category => {
-        const categorySubcategories = subcategoriesData.filter(sub => sub.category_id === category.id);
-        
-        const subcategories: ServiceSubcategory[] = categorySubcategories.map(subcategory => {
-          const subcategoryJobs = jobsData.filter(job => job.subcategory_id === subcategory.id);
-          
-          const jobs: ServiceJob[] = subcategoryJobs.map(job => ({
+    // Transform the data to match our TypeScript interfaces
+    const transformedSectors: ServiceSector[] = sectors.map(sector => ({
+      id: sector.id,
+      name: sector.name,
+      description: sector.description,
+      position: sector.position,
+      is_active: sector.is_active,
+      categories: (sector.service_categories || []).map(category => ({
+        id: category.id,
+        name: category.name,
+        description: category.description,
+        position: category.position,
+        sector_id: category.sector_id,
+        subcategories: (category.service_subcategories || []).map(subcategory => ({
+          id: subcategory.id,
+          name: subcategory.name,
+          description: subcategory.description,
+          category_id: subcategory.category_id,
+          jobs: (subcategory.service_jobs || []).map(job => ({
             id: job.id,
             name: job.name,
             description: job.description,
             estimatedTime: job.estimated_time,
             price: job.price,
             subcategory_id: job.subcategory_id
-          }));
+          }))
+        }))
+      }))
+    }));
 
-          return {
-            id: subcategory.id,
-            name: subcategory.name,
-            description: subcategory.description,
-            jobs,
-            category_id: subcategory.category_id
-          };
-        });
+    console.log('Transformed sectors:', transformedSectors);
+    return transformedSectors;
 
-        return {
-          id: category.id,
-          name: category.name,
-          description: category.description,
-          subcategories,
-          position: category.position,
-          sector_id: category.sector_id
-        };
-      });
-
-      return {
-        id: sector.id,
-        name: sector.name,
-        description: sector.description,
-        categories,
-        position: sector.position,
-        is_active: sector.is_active !== false
-      };
-    });
-
-    console.log(`Built hierarchy with ${sectors.length} sectors`);
-    sectors.forEach(sector => {
-      const totalCategories = sector.categories.length;
-      const totalSubcategories = sector.categories.reduce((acc, cat) => acc + cat.subcategories.length, 0);
-      const totalJobs = sector.categories.reduce((acc, cat) => 
-        acc + cat.subcategories.reduce((subAcc, sub) => subAcc + sub.jobs.length, 0), 0);
-      
-      console.log(`Sector "${sector.name}": ${totalCategories} categories, ${totalSubcategories} subcategories, ${totalJobs} jobs`);
-    });
-
-    return sectors;
   } catch (error) {
     console.error('Error in fetchServiceSectors:', error);
     throw error;
   }
-};
+}
 
-export const fetchServiceCategories = async (): Promise<ServiceMainCategory[]> => {
+export async function fetchServiceCategories(): Promise<ServiceMainCategory[]> {
   try {
     console.log('Fetching service categories...');
-
-    // Get all categories
-    const { data: categoriesData, error: categoriesError } = await supabase
+    
+    const { data: categories, error } = await supabase
       .from('service_categories')
-      .select('*')
+      .select(`
+        id,
+        name,
+        description,
+        position,
+        sector_id,
+        service_subcategories (
+          id,
+          name,
+          description,
+          category_id,
+          service_jobs (
+            id,
+            name,
+            description,
+            estimated_time,
+            price,
+            subcategory_id
+          )
+        )
+      `)
       .order('position', { ascending: true });
 
-    if (categoriesError) {
-      console.error('Error fetching categories:', categoriesError);
-      throw new Error(`Failed to fetch categories: ${categoriesError.message}`);
+    if (error) {
+      console.error('Error fetching categories:', error);
+      throw error;
     }
 
-    if (!categoriesData || categoriesData.length === 0) {
+    if (!categories || categories.length === 0) {
+      console.log('No categories found');
       return [];
     }
 
-    // Get all subcategories for these categories
-    const categoryIds = categoriesData.map(c => c.id);
-    const { data: subcategoriesData, error: subcategoriesError } = await supabase
-      .from('service_subcategories')
-      .select('*')
-      .in('category_id', categoryIds)
-      .order('created_at', { ascending: true });
-
-    if (subcategoriesError) {
-      console.error('Error fetching subcategories:', subcategoriesError);
-      throw new Error(`Failed to fetch subcategories: ${subcategoriesError.message}`);
-    }
-
-    // Get all jobs for these subcategories
-    const subcategoryIds = subcategoriesData?.map(sc => sc.id) || [];
-    let jobsData: any[] = [];
-    if (subcategoryIds.length > 0) {
-      const { data, error: jobsError } = await supabase
-        .from('service_jobs')
-        .select('*')
-        .in('subcategory_id', subcategoryIds)
-        .order('created_at', { ascending: true });
-
-      if (jobsError) {
-        console.error('Error fetching jobs:', jobsError);
-        throw new Error(`Failed to fetch jobs: ${jobsError.message}`);
-      }
-
-      jobsData = data || [];
-    }
-
-    // Build the hierarchical structure
-    const categories: ServiceMainCategory[] = categoriesData.map(category => {
-      const categorySubcategories = subcategoriesData?.filter(sub => sub.category_id === category.id) || [];
-      
-      const subcategories: ServiceSubcategory[] = categorySubcategories.map(subcategory => {
-        const subcategoryJobs = jobsData.filter(job => job.subcategory_id === subcategory.id);
-        
-        const jobs: ServiceJob[] = subcategoryJobs.map(job => ({
+    // Transform the data to match our TypeScript interfaces
+    const transformedCategories: ServiceMainCategory[] = categories.map(category => ({
+      id: category.id,
+      name: category.name,
+      description: category.description,
+      position: category.position,
+      sector_id: category.sector_id,
+      subcategories: (category.service_subcategories || []).map(subcategory => ({
+        id: subcategory.id,
+        name: subcategory.name,
+        description: subcategory.description,
+        category_id: subcategory.category_id,
+        jobs: (subcategory.service_jobs || []).map(job => ({
           id: job.id,
           name: job.name,
           description: job.description,
           estimatedTime: job.estimated_time,
           price: job.price,
           subcategory_id: job.subcategory_id
-        }));
+        }))
+      }))
+    }));
 
-        return {
-          id: subcategory.id,
-          name: subcategory.name,
-          description: subcategory.description,
-          jobs,
-          category_id: subcategory.category_id
-        };
-      });
+    console.log('Transformed categories:', transformedCategories);
+    return transformedCategories;
 
-      return {
-        id: category.id,
-        name: category.name,
-        description: category.description,
-        subcategories,
-        position: category.position,
-        sector_id: category.sector_id
-      };
-    });
-
-    console.log(`Fetched ${categories.length} categories with hierarchy`);
-    return categories;
   } catch (error) {
     console.error('Error in fetchServiceCategories:', error);
     throw error;
   }
-};
-
-export const updateServiceCategory = async (categoryId: string, updates: Partial<ServiceMainCategory>) => {
-  const { data, error } = await supabase
-    .from('service_categories')
-    .update(updates)
-    .eq('id', categoryId)
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Error updating service category:', error);
-    throw error;
-  }
-
-  return data;
-};
-
-export const deleteServiceCategory = async (categoryId: string) => {
-  const { error } = await supabase
-    .from('service_categories')
-    .delete()
-    .eq('id', categoryId);
-
-  if (error) {
-    console.error('Error deleting service category:', error);
-    throw error;
-  }
-};
-
-export const deleteServiceSubcategory = async (subcategoryId: string) => {
-  const { error } = await supabase
-    .from('service_subcategories')
-    .delete()
-    .eq('id', subcategoryId);
-
-  if (error) {
-    console.error('Error deleting service subcategory:', error);
-    throw error;
-  }
-};
-
-export const deleteServiceJob = async (jobId: string) => {
-  const { error } = await supabase
-    .from('service_jobs')
-    .delete()
-    .eq('id', jobId);
-
-  if (error) {
-    console.error('Error deleting service job:', error);
-    throw error;
-  }
-};
-
-export const updateServiceSubcategory = async (subcategoryId: string, updates: Partial<ServiceSubcategory>) => {
-  const { data, error } = await supabase
-    .from('service_subcategories')
-    .update(updates)
-    .eq('id', subcategoryId)
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Error updating service subcategory:', error);
-    throw error;
-  }
-
-  return data;
-};
-
-export const updateServiceJob = async (jobId: string, updates: Partial<ServiceJob>) => {
-  const { data, error } = await supabase
-    .from('service_jobs')
-    .update(updates)
-    .eq('id', jobId)
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Error updating service job:', error);
-    throw error;
-  }
-
-  return data;
-};
-
-export const createServiceSector = async (sector: Omit<ServiceSector, 'id' | 'categories'>) => {
-  const { data, error } = await supabase
-    .from('service_sectors')
-    .insert(sector)
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Error creating service sector:', error);
-    throw error;
-  }
-
-  return data;
-};
-
-export const createServiceCategory = async (category: Omit<ServiceMainCategory, 'id' | 'subcategories'>) => {
-  const { data, error } = await supabase
-    .from('service_categories')
-    .insert(category)
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Error creating service category:', error);
-    throw error;
-  }
-
-  return data;
-};
-
-export const createServiceSubcategory = async (subcategory: Omit<ServiceSubcategory, 'id' | 'jobs'>) => {
-  const { data, error } = await supabase
-    .from('service_subcategories')
-    .insert(subcategory)
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Error creating service subcategory:', error);
-    throw error;
-  }
-
-  return data;
-};
-
-export const createServiceJob = async (job: Omit<ServiceJob, 'id'>) => {
-  const { data, error } = await supabase
-    .from('service_jobs')
-    .insert(job)
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Error creating service job:', error);
-    throw error;
-  }
-
-  return data;
-};
+}
