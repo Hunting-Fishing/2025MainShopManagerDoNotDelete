@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { storageService } from '@/lib/services/unifiedStorageService';
-import { Upload, FileText, AlertCircle, CheckCircle } from 'lucide-react';
+import { Upload, FileText, AlertCircle, CheckCircle, RefreshCw } from 'lucide-react';
 
 interface ServiceBulkImportProps {
   onImport: () => void;
@@ -26,32 +26,39 @@ export function ServiceBulkImport({ onImport, disabled = false }: ServiceBulkImp
       setIsLoading(true);
       setBucketStatus('checking');
       
-      // Fixed bucket name to match the correct one
+      console.log('Checking service-imports bucket status...');
+      
+      // Check if bucket exists and get file info
       const bucketExists = await storageService.checkBucketExists('service-imports');
       
       if (bucketExists) {
-        // Get file count
+        console.log('Bucket exists, getting file info...');
         const info = await storageService.getBucketInfo('service-imports');
         const files = info.files || [];
         setFileCount(files.length);
-        setBucketInfo(info);
+        setBucketInfo({ files: files.map(f => ({ name: f.name })) });
         setBucketStatus('exists');
+        console.log(`Found ${files.length} files in service-imports bucket`);
       } else {
+        console.log('Bucket does not exist or is not accessible');
         setBucketStatus('missing');
         setFileCount(0);
+        setBucketInfo({});
       }
     } catch (error) {
       console.error('Error checking bucket status:', error);
       setBucketStatus('error');
       setFileCount(0);
+      setBucketInfo({});
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleRefresh = async () => {
-    // Clear cache and refresh
+    console.log('Refreshing bucket info...');
     try {
+      // Clear cache and refresh
       await storageService.clearCacheForBucket('service-imports');
       await checkBucketStatus();
     } catch (error) {
@@ -60,6 +67,7 @@ export function ServiceBulkImport({ onImport, disabled = false }: ServiceBulkImp
   };
 
   const handleImport = () => {
+    console.log('Starting service import...');
     onImport();
   };
 
@@ -68,7 +76,7 @@ export function ServiceBulkImport({ onImport, disabled = false }: ServiceBulkImp
       case 'checking':
         return (
           <Alert>
-            <AlertCircle className="h-4 w-4" />
+            <RefreshCw className="h-4 w-4 animate-spin" />
             <AlertDescription>
               Checking storage bucket for service data files...
             </AlertDescription>
@@ -79,9 +87,9 @@ export function ServiceBulkImport({ onImport, disabled = false }: ServiceBulkImp
         return (
           <div className="space-y-4">
             <Alert>
-              <CheckCircle className="h-4 w-4" />
+              <CheckCircle className="h-4 w-4 text-green-600" />
               <AlertDescription>
-                Found {fileCount} files in the service imports bucket. Ready to import!
+                Found {fileCount} files in the service-imports bucket. Ready to import!
               </AlertDescription>
             </Alert>
             
@@ -99,7 +107,7 @@ export function ServiceBulkImport({ onImport, disabled = false }: ServiceBulkImp
                 onClick={handleRefresh}
                 disabled={isLoading}
               >
-                Refresh
+                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
               </Button>
             </div>
           </div>
@@ -107,22 +115,44 @@ export function ServiceBulkImport({ onImport, disabled = false }: ServiceBulkImp
 
       case 'missing':
         return (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Service imports storage bucket not found. Please upload service data files to the 'service-imports' bucket first.
-            </AlertDescription>
-          </Alert>
+          <div className="space-y-4">
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Service imports storage bucket not found or no files uploaded. Please upload service data files to the 'service-imports' bucket first.
+              </AlertDescription>
+            </Alert>
+            
+            <Button 
+              variant="outline" 
+              onClick={handleRefresh}
+              disabled={isLoading}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              Check Again
+            </Button>
+          </div>
         );
 
       case 'error':
         return (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Error checking storage bucket. Please try again or contact support.
-            </AlertDescription>
-          </Alert>
+          <div className="space-y-4">
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Error checking storage bucket. Please try again or contact support.
+              </AlertDescription>
+            </Alert>
+            
+            <Button 
+              variant="outline" 
+              onClick={handleRefresh}
+              disabled={isLoading}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              Retry
+            </Button>
+          </div>
         );
 
       default:
@@ -150,9 +180,16 @@ export function ServiceBulkImport({ onImport, disabled = false }: ServiceBulkImp
           
           {renderStatusContent()}
           
-          {bucketStatus === 'exists' && fileCount > 0 && (
-            <div className="text-xs text-muted-foreground">
-              <p>Found files: {bucketInfo.files?.map(f => f.name).join(', ') || 'Loading...'}</p>
+          {bucketStatus === 'exists' && fileCount > 0 && bucketInfo.files && (
+            <div className="text-xs text-muted-foreground bg-gray-50 p-3 rounded-lg">
+              <p className="font-medium mb-1">Files found:</p>
+              <div className="max-h-32 overflow-y-auto">
+                {bucketInfo.files.map((file, index) => (
+                  <div key={index} className="py-1">
+                    • {file.name}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
