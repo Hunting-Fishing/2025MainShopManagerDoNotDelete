@@ -2,146 +2,137 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { clearAllServiceData, getServiceCounts, ImportProgress } from '@/lib/services/folderBasedImportService';
-import { FolderBasedImportManager } from './FolderBasedImportManager';
-import { ServiceImportProgress } from './ServiceImportProgress';
-import { Trash2, Upload, Settings, Database } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogDescription,
+  DialogFooter
+} from '@/components/ui/dialog';
+import { AlertTriangle, Trash2, Database } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { clearAllServiceData, getServiceCounts, ImportProgress } from '@/lib/services/folderBasedImportService';
+import { ServiceImportProgress } from './ServiceImportProgress';
 
 interface ServiceManagementSettingsProps {
   children: React.ReactNode;
 }
 
 export function ServiceManagementSettings({ children }: ServiceManagementSettingsProps) {
-  const [open, setOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
   const [clearProgress, setClearProgress] = useState<ImportProgress>({
     stage: '',
     message: '',
     progress: 0
   });
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const { toast } = useToast();
 
   const handleClearDatabase = async () => {
     setIsClearing(true);
-    setClearProgress({
-      stage: 'Clearing Data',
-      message: 'Removing all service data...',
-      progress: 50
-    });
-
+    setShowConfirmDialog(false);
+    
     try {
-      await clearAllServiceData();
       setClearProgress({
-        stage: 'Complete',
-        message: 'All service data has been cleared successfully.',
+        stage: 'clearing',
+        progress: 20,
+        message: 'Clearing service database...'
+      });
+
+      await clearAllServiceData();
+
+      setClearProgress({
+        stage: 'complete',
         progress: 100,
+        message: 'Service database cleared successfully!',
         completed: true
       });
-      
+
       toast({
         title: "Database Cleared",
-        description: "All service data has been removed successfully.",
+        description: "All service data has been removed from the database.",
       });
+
+      // Refresh the page to update counts
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+
     } catch (error) {
-      console.error('Failed to clear database:', error);
+      console.error('Clear database failed:', error);
       setClearProgress({
-        stage: 'Error',
-        message: error instanceof Error ? error.message : 'Failed to clear database',
+        stage: 'error',
         progress: 0,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: error instanceof Error ? error.message : "Failed to clear database",
+        error: error instanceof Error ? error.message : "Failed to clear database"
       });
-      
       toast({
         title: "Clear Failed",
-        description: "Failed to clear service data. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to clear service database",
         variant: "destructive",
       });
     } finally {
-      setTimeout(() => {
-        setIsClearing(false);
-        setClearProgress({
-          stage: '',
-          message: '',
-          progress: 0
-        });
-      }, 2000);
+      setIsClearing(false);
     }
   };
 
+  const resetProgress = () => {
+    setClearProgress({
+      stage: '',
+      message: '',
+      progress: 0
+    });
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      setIsOpen(open);
+      if (!open) {
+        resetProgress();
+      }
+    }}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            Service Management Settings
-          </DialogTitle>
+          <DialogTitle>Service Management Settings</DialogTitle>
           <DialogDescription>
-            Import service data from files or manage existing data.
+            Configure and manage your service hierarchy data
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-6">
-          {/* Import Section */}
+        <div className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Upload className="h-5 w-5" />
-                Import Service Data
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <FolderBasedImportManager />
-            </CardContent>
-          </Card>
-
-          {/* Database Management Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="text-lg flex items-center gap-2">
                 <Database className="h-5 w-5" />
                 Database Management
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div>
-                  <h4 className="font-medium">Clear All Service Data</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Remove all sectors, categories, subcategories, and jobs from the database.
+              <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium text-red-800">Warning: Destructive Action</p>
+                  <p className="mt-1 text-red-700">
+                    This will permanently delete all service sectors, categories, subcategories, and jobs from the database.
                   </p>
                 </div>
-                
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive" disabled={isClearing}>
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Clear Database
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete all service sectors, 
-                        categories, subcategories, and jobs from the database.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleClearDatabase}>
-                        Yes, clear all data
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
               </div>
+
+              <Button
+                variant="destructive"
+                onClick={() => setShowConfirmDialog(true)}
+                disabled={isClearing}
+                className="w-full"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                {isClearing ? 'Clearing Database...' : 'Clear Service Database'}
+              </Button>
 
               <ServiceImportProgress
                 isImporting={isClearing}
@@ -154,6 +145,32 @@ export function ServiceManagementSettings({ children }: ServiceManagementSetting
             </CardContent>
           </Card>
         </div>
+
+        <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm Database Clear</DialogTitle>
+              <DialogDescription>
+                Are you absolutely sure you want to clear the entire service database? 
+                This action cannot be undone and will delete all service data.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowConfirmDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleClearDatabase}
+              >
+                Yes, Clear Database
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </DialogContent>
     </Dialog>
   );

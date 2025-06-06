@@ -2,10 +2,12 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Upload, FileSpreadsheet, AlertTriangle } from 'lucide-react';
+import { Upload, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { importFromFiles, ImportProgress } from '@/lib/services/folderBasedImportService';
+import { importFromStorage, ImportProgress } from '@/lib/services/storageImportService';
 import { ServiceImportProgress } from './ServiceImportProgress';
+import { StorageFileBrowser } from './StorageFileBrowser';
+import { processServiceData } from '@/lib/services/folderBasedImportService';
 
 export function FolderBasedImportManager() {
   const [isImporting, setIsImporting] = useState(false);
@@ -14,25 +16,68 @@ export function FolderBasedImportManager() {
     message: '',
     progress: 0
   });
+  const [selectedFile, setSelectedFile] = useState<string>('');
   const { toast } = useToast();
 
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
+  const handleFileSelect = (fileName: string) => {
+    setSelectedFile(fileName);
+  };
+
+  const handleImportFromStorage = async () => {
+    if (!selectedFile) {
+      toast({
+        title: "No File Selected",
+        description: "Please select a file from storage first.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsImporting(true);
     
     try {
-      await importFromFiles(files, (progress) => {
-        setImportProgress(progress);
+      // Import from storage bucket
+      const sheetsData = await importFromStorage(
+        'service-imports', 
+        selectedFile, 
+        (progress) => {
+          setImportProgress(progress);
+        }
+      );
+
+      // Process the imported data
+      setImportProgress({
+        stage: 'processing',
+        progress: 80,
+        message: 'Processing service data...'
+      });
+
+      await processServiceData(sheetsData, (progress) => {
+        setImportProgress({
+          ...progress,
+          progress: 80 + (progress.progress * 0.2) // Scale to 80-100%
+        });
+      });
+
+      setImportProgress({
+        stage: 'complete',
+        progress: 100,
+        message: 'Import completed successfully!',
+        completed: true
       });
 
       toast({
         title: "Import Successful",
-        description: "Service data has been imported successfully.",
+        description: "Service data has been imported successfully from storage.",
       });
     } catch (error) {
-      console.error('Import failed:', error);
+      console.error('Storage import failed:', error);
+      setImportProgress({
+        stage: 'error',
+        progress: 0,
+        message: error instanceof Error ? error.message : "Failed to import service data",
+        error: error instanceof Error ? error.message : "Failed to import service data"
+      });
       toast({
         title: "Import Failed",
         description: error instanceof Error ? error.message : "Failed to import service data",
@@ -40,8 +85,6 @@ export function FolderBasedImportManager() {
       });
     } finally {
       setIsImporting(false);
-      // Reset file input
-      event.target.value = '';
     }
   };
 
@@ -51,7 +94,7 @@ export function FolderBasedImportManager() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Upload className="h-5 w-5" />
-            Import Service Data from Files
+            Import Service Data from Storage
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -68,32 +111,27 @@ export function FolderBasedImportManager() {
             </div>
           </div>
 
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-            <FileSpreadsheet className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">Select Service Data Files</h3>
-            <p className="text-gray-600 mb-4">
-              Choose Excel or CSV files containing your service hierarchy data
-            </p>
-            
-            <label htmlFor="file-upload" className="cursor-pointer">
-              <Button variant="outline" disabled={isImporting} asChild>
-                <span>
-                  <Upload className="h-4 w-4 mr-2" />
-                  {isImporting ? 'Importing...' : 'Select Files'}
-                </span>
+          <StorageFileBrowser
+            bucketName="service-imports"
+            onFileSelect={handleFileSelect}
+          />
+
+          {selectedFile && (
+            <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div>
+                <p className="font-medium text-blue-800">Selected File</p>
+                <p className="text-blue-600">{selectedFile}</p>
+              </div>
+              <Button 
+                onClick={handleImportFromStorage}
+                disabled={isImporting}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                {isImporting ? 'Importing...' : 'Import from Storage'}
               </Button>
-            </label>
-            
-            <input
-              id="file-upload"
-              type="file"
-              multiple
-              accept=".xlsx,.xls,.csv"
-              onChange={handleFileSelect}
-              className="hidden"
-              disabled={isImporting}
-            />
-          </div>
+            </div>
+          )}
 
           <ServiceImportProgress
             isImporting={isImporting}
