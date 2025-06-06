@@ -1,7 +1,15 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { storageService, type SectorFiles } from './unifiedStorageService';
+import { getAllSectorFiles } from './storageUtils';
 import * as XLSX from 'xlsx';
+
+export interface ProcessedServiceData {
+  sector: string;
+  category: string;
+  subcategory: string;
+  job: string;
+  categories?: any[]; // Add this for compatibility
+}
 
 export interface ImportProgress {
   stage: string;
@@ -9,13 +17,6 @@ export interface ImportProgress {
   progress: number;
   completed: boolean;
   error: string | null;
-}
-
-export interface ImportResult {
-  success: boolean;
-  message: string;
-  stats?: ImportStats;
-  error?: string;
 }
 
 export interface ImportStats {
@@ -26,114 +27,120 @@ export interface ImportStats {
   filesProcessed: number;
 }
 
-export interface ProcessedServiceData {
-  sectorName: string;
-  categories: Array<{
-    name: string;
-    subcategories: Array<{
-      name: string;
-      services: string[];
-    }>;
-  }>;
+export interface ImportResult {
+  success: boolean;
+  message: string;
+  stats?: ImportStats;
+  error?: string;
 }
 
-// Helper function to get total files count from SectorFiles
+interface SectorFiles {
+  [sectorName: string]: string[]; // Each sector maps to an array of file URLs
+}
+
+// Helper function to get total files count from SectorFiles object
 function getTotalFilesCount(sectorFiles: SectorFiles): number {
   return Object.values(sectorFiles).reduce((total, files) => total + files.length, 0);
 }
 
-// Helper function to get all files from SectorFiles
-function getAllFiles(sectorFiles: SectorFiles): Array<{ sectorName: string; files: any[] }> {
-  return Object.entries(sectorFiles).map(([sectorName, files]) => ({
-    sectorName,
-    files
-  }));
+// Helper function to get all files from SectorFiles object
+function getAllFiles(sectorFiles: SectorFiles): Array<{ sectorName: string; fileUrl: string }> {
+  const allFiles: Array<{ sectorName: string; fileUrl: string }> = [];
+  
+  for (const [sectorName, files] of Object.entries(sectorFiles)) {
+    for (const fileUrl of files) {
+      allFiles.push({ sectorName, fileUrl });
+    }
+  }
+  
+  return allFiles;
 }
 
 export async function importServicesFromStorage(
   onProgress?: (progress: ImportProgress) => void
 ): Promise<ImportResult> {
   try {
-    // Step 1: Discovery - Find all sector files
     onProgress?.({
-      stage: 'starting',
-      message: 'Discovering service files in storage...',
-      progress: 0,
+      stage: 'fetching',
+      message: 'Fetching sector files from storage...',
+      progress: 5,
       completed: false,
       error: null
     });
 
-    const sectorFiles = await storageService.getAllSectorFiles('service-data');
+    // Get all sector files from storage
+    const sectorFiles = await getAllSectorFiles();
     
     if (!sectorFiles || Object.keys(sectorFiles).length === 0) {
-      throw new Error('No service files found in storage');
+      throw new Error('No sector files found in storage');
     }
 
     const totalFiles = getTotalFilesCount(sectorFiles);
-    const sectorsFound = Object.keys(sectorFiles).length;
-
+    const allFiles = getAllFiles(sectorFiles);
+    
     onProgress?.({
-      stage: 'folders-found',
-      message: `Found ${sectorsFound} sectors with ${totalFiles} total files`,
+      stage: 'processing',
+      message: `Found ${totalFiles} files across ${Object.keys(sectorFiles).length} sectors. Processing...`,
       progress: 10,
       completed: false,
       error: null
     });
 
-    // Step 2: Process each sector and its files
+    // Process all files
     const allProcessedData: ProcessedServiceData[] = [];
-    let filesProcessed = 0;
+    let processedFiles = 0;
 
-    const allSectorData = getAllFiles(sectorFiles);
-
-    for (const { sectorName, files } of allSectorData) {
-      onProgress?.({
-        stage: 'processing-sector',
-        message: `Processing sector: ${sectorName} (${files.length} files)`,
-        progress: 20 + (filesProcessed / totalFiles) * 50,
-        completed: false,
-        error: null
-      });
-
-      for (const file of files) {
+    for (const { sectorName, fileUrl } of allFiles) {
+      try {
         onProgress?.({
-          stage: 'processing-file',
-          message: `Processing file: ${file.name} in ${sectorName}`,
-          progress: 20 + (filesProcessed / totalFiles) * 50,
+          stage: 'processing',
+          message: `Processing ${sectorName} file ${processedFiles + 1} of ${totalFiles}...`,
+          progress: 10 + (processedFiles / totalFiles) * 70,
           completed: false,
           error: null
         });
 
-        try {
-          const processedData = await processExcelFileFromStorage('service-data', file.path);
-          if (processedData) {
-            // Override the sector name with the folder name
-            processedData.sectorName = sectorName;
-            allProcessedData.push(processedData);
-          }
-        } catch (fileError) {
-          console.error(`Error processing file ${file.name}:`, fileError);
-          // Continue with other files even if one fails
-        }
+        const processedData = await processExcelFileFromStorage(fileUrl, sectorName);
+        allProcessedData.push(...processedData);
+        processedFiles++;
 
-        filesProcessed++;
+      } catch (fileError) {
+        console.error(`Error processing file ${fileUrl}:`, fileError);
+        // Continue with other files instead of failing completely
       }
     }
 
-    // Step 3: Import to database
+    if (allProcessedData.length === 0) {
+      throw new Error('No valid service data was processed from any files');
+    }
+
     onProgress?.({
-      stage: 'saving-to-database',
-      message: 'Saving processed data to database...',
-      progress: 70,
+      stage: 'importing',
+      message: `Importing ${allProcessedData.length} services to database...`,
+      progress: 85,
       completed: false,
       error: null
     });
 
-    const importStats = await importProcessedDataToDatabase(allProcessedData, onProgress);
+    // Import to database
+    await importProcessedDataToDatabase(allProcessedData);
+
+    // Calculate stats
+    const sectors = [...new Set(allProcessedData.map(item => item.sector))];
+    const categories = [...new Set(allProcessedData.map(item => `${item.sector}|${item.category}`))];
+    const subcategories = [...new Set(allProcessedData.map(item => `${item.sector}|${item.category}|${item.subcategory}`))];
+
+    const stats: ImportStats = {
+      totalSectors: sectors.length,
+      totalCategories: categories.length,
+      totalSubcategories: subcategories.length,
+      totalServices: allProcessedData.length,
+      filesProcessed
+    };
 
     onProgress?.({
       stage: 'complete',
-      message: 'Service import completed successfully!',
+      message: `Successfully imported ${allProcessedData.length} services from ${processedFiles} files!`,
       progress: 100,
       completed: true,
       error: null
@@ -141,16 +148,14 @@ export async function importServicesFromStorage(
 
     return {
       success: true,
-      message: `Successfully imported services from ${sectorsFound} sectors`,
-      stats: {
-        ...importStats,
-        filesProcessed
-      }
+      message: `Import completed successfully! Processed ${processedFiles} files and imported ${allProcessedData.length} services.`,
+      stats
     };
 
   } catch (error) {
-    console.error('Service import failed:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error during import';
+    console.error('Import failed:', error);
+    
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     
     onProgress?.({
       stage: 'error',
@@ -162,246 +167,216 @@ export async function importServicesFromStorage(
 
     return {
       success: false,
-      message: errorMessage,
+      message: 'Import failed',
       error: errorMessage
     };
   }
 }
 
 export async function processExcelFileFromStorage(
-  bucketName: string,
-  filePath: string
-): Promise<ProcessedServiceData | null> {
+  fileUrl: string, 
+  sectorName: string
+): Promise<ProcessedServiceData[]> {
   try {
-    const { data, error } = await supabase.storage
-      .from(bucketName)
-      .download(filePath);
-
-    if (error) {
-      throw new Error(`Failed to download file: ${error.message}`);
+    // Download the file from storage
+    const response = await fetch(fileUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch file: ${response.statusText}`);
     }
-
-    if (!data) {
-      throw new Error('No data received from file download');
-    }
-
-    // Convert blob to array buffer
-    const arrayBuffer = await data.arrayBuffer();
+    
+    const arrayBuffer = await response.arrayBuffer();
     const workbook = XLSX.read(arrayBuffer, { type: 'array' });
     
+    // Process the first sheet
     const sheetName = workbook.SheetNames[0];
-    if (!sheetName) {
-      throw new Error('No sheets found in Excel file');
-    }
-
     const worksheet = workbook.Sheets[sheetName];
-    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+    const jsonData: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
     
-    if (!Array.isArray(jsonData) || jsonData.length === 0) {
-      throw new Error('No data found in Excel sheet');
+    const processedData: ProcessedServiceData[] = [];
+    
+    // Skip header row and process data
+    for (let i = 1; i < jsonData.length; i++) {
+      const row = jsonData[i];
+      if (row && row.length >= 3) {
+        const [category, subcategory, job] = row;
+        
+        if (category && subcategory && job) {
+          processedData.push({
+            sector: sectorName,
+            category: String(category).trim(),
+            subcategory: String(subcategory).trim(),
+            job: String(job).trim()
+          });
+        }
+      }
     }
-
-    return parseExcelData(jsonData, filePath);
+    
+    return processedData;
   } catch (error) {
-    console.error(`Error processing Excel file ${filePath}:`, error);
+    console.error(`Error processing Excel file ${fileUrl}:`, error);
     throw error;
   }
 }
 
-function parseExcelData(data: any[][], filePath: string): ProcessedServiceData {
-  const processedData: ProcessedServiceData = {
-    sectorName: extractSectorFromPath(filePath),
-    categories: []
-  };
-
-  let currentCategory: { name: string; subcategories: Array<{ name: string; services: string[] }> } | null = null;
-  let currentSubcategory: { name: string; services: string[] } | null = null;
-
-  for (const row of data) {
-    if (!row || row.length === 0) continue;
-
-    const cellA = String(row[0] || '').trim();
-    const cellB = String(row[1] || '').trim();
-    const cellC = String(row[2] || '').trim();
-
-    // Category detection (first column has value, others are empty or minimal)
-    if (cellA && (!cellB || cellB.length < 3) && (!cellC || cellC.length < 3)) {
-      // Save previous category
-      if (currentCategory && currentSubcategory) {
-        currentCategory.subcategories.push(currentSubcategory);
-      }
-      if (currentCategory) {
-        processedData.categories.push(currentCategory);
-      }
-
-      // Start new category
-      currentCategory = { name: cellA, subcategories: [] };
-      currentSubcategory = null;
+export async function importProcessedDataToDatabase(data: ProcessedServiceData[]): Promise<void> {
+  // Clear existing data first
+  await clearAllServiceData();
+  
+  // Group data by sector
+  const sectorMap = new Map<string, ProcessedServiceData[]>();
+  
+  for (const item of data) {
+    if (!sectorMap.has(item.sector)) {
+      sectorMap.set(item.sector, []);
     }
-    // Subcategory detection (indented or second column)
-    else if (cellB && !cellC) {
-      // Save previous subcategory
-      if (currentSubcategory && currentCategory) {
-        currentCategory.subcategories.push(currentSubcategory);
-      }
-
-      // Start new subcategory
-      currentSubcategory = { name: cellB, services: [] };
-    }
-    // Service detection (third column or continuation)
-    else if (cellC && currentSubcategory) {
-      currentSubcategory.services.push(cellC);
-    }
-    // Handle single-column services
-    else if (cellA && currentSubcategory && !cellB && !cellC) {
-      currentSubcategory.services.push(cellA);
-    }
+    sectorMap.get(item.sector)!.push(item);
   }
-
-  // Save final subcategory and category
-  if (currentSubcategory && currentCategory) {
-    currentCategory.subcategories.push(currentSubcategory);
-  }
-  if (currentCategory) {
-    processedData.categories.push(currentCategory);
-  }
-
-  return processedData;
-}
-
-function extractSectorFromPath(filePath: string): string {
-  const pathParts = filePath.split('/');
-  return pathParts[pathParts.length - 2] || 'Unknown';
-}
-
-export async function importProcessedDataToDatabase(
-  processedDataArray: ProcessedServiceData[],
-  onProgress?: (progress: ImportProgress) => void
-): Promise<ImportStats> {
-  const stats: ImportStats = {
-    totalSectors: 0,
-    totalCategories: 0,
-    totalSubcategories: 0,
-    totalServices: 0,
-    filesProcessed: processedDataArray.length
-  };
-
-  for (let i = 0; i < processedDataArray.length; i++) {
-    const processedData = processedDataArray[i];
-    
-    onProgress?.({
-      stage: 'inserting-sector',
-      message: `Inserting sector: ${processedData.sectorName}`,
-      progress: 70 + (i / processedDataArray.length) * 25,
-      completed: false,
-      error: null
-    });
-
+  
+  // Process each sector
+  for (const [sectorName, sectorData] of sectorMap.entries()) {
     // Insert sector
-    const { data: sectorData, error: sectorError } = await supabase
+    const { data: sector, error: sectorError } = await supabase
       .from('service_sectors')
-      .insert({ name: processedData.sectorName })
-      .select('id')
+      .insert([{ name: sectorName, description: `${sectorName} services` }])
+      .select()
       .single();
-
+    
     if (sectorError) {
       console.error('Error inserting sector:', sectorError);
       continue;
     }
-
-    stats.totalSectors++;
-
-    // Insert categories, subcategories, and jobs
-    for (const category of processedData.categories) {
-      const { data: categoryData, error: categoryError } = await supabase
-        .from('service_categories')
-        .insert({ 
-          name: category.name,
-          sector_id: sectorData.id
-        })
-        .select('id')
+    
+    // Group by category within sector
+    const categoryMap = new Map<string, ProcessedServiceData[]>();
+    
+    for (const item of sectorData) {
+      if (!categoryMap.has(item.category)) {
+        categoryMap.set(item.category, []);
+      }
+      categoryMap.get(item.category)!.push(item);
+    }
+    
+    // Process each category
+    for (const [categoryName, categoryData] of categoryMap.entries()) {
+      // Insert category
+      const { data: category, error: categoryError } = await supabase
+        .from('service_main_categories')
+        .insert([{ 
+          name: categoryName,
+          description: `${categoryName} in ${sectorName}`,
+          sector_id: sector.id
+        }])
+        .select()
         .single();
-
+      
       if (categoryError) {
         console.error('Error inserting category:', categoryError);
         continue;
       }
-
-      stats.totalCategories++;
-
-      for (const subcategory of category.subcategories) {
-        const { data: subcategoryData, error: subcategoryError } = await supabase
+      
+      // Group by subcategory within category
+      const subcategoryMap = new Map<string, ProcessedServiceData[]>();
+      
+      for (const item of categoryData) {
+        if (!subcategoryMap.has(item.subcategory)) {
+          subcategoryMap.set(item.subcategory, []);
+        }
+        subcategoryMap.get(item.subcategory)!.push(item);
+      }
+      
+      // Process each subcategory
+      for (const [subcategoryName, subcategoryData] of subcategoryMap.entries()) {
+        // Insert subcategory
+        const { data: subcategory, error: subcategoryError } = await supabase
           .from('service_subcategories')
-          .insert({
-            name: subcategory.name,
-            category_id: categoryData.id
-          })
-          .select('id')
+          .insert([{
+            name: subcategoryName,
+            description: `${subcategoryName} services`,
+            main_category_id: category.id
+          }])
+          .select()
           .single();
-
+        
         if (subcategoryError) {
           console.error('Error inserting subcategory:', subcategoryError);
           continue;
         }
-
-        stats.totalSubcategories++;
-
-        for (const service of subcategory.services) {
-          const { error: jobError } = await supabase
-            .from('service_jobs')
-            .insert({
-              name: service,
-              subcategory_id: subcategoryData.id
-            });
-
-          if (jobError) {
-            console.error('Error inserting job:', jobError);
-            continue;
-          }
-
-          stats.totalServices++;
+        
+        // Insert all jobs for this subcategory
+        const jobsToInsert = subcategoryData.map(item => ({
+          name: item.job,
+          description: `${item.job} service`,
+          subcategory_id: subcategory.id
+        }));
+        
+        const { error: jobsError } = await supabase
+          .from('service_jobs')
+          .insert(jobsToInsert);
+        
+        if (jobsError) {
+          console.error('Error inserting jobs:', jobsError);
         }
       }
     }
   }
-
-  onProgress?.({
-    stage: 'database-complete',
-    message: 'Database import completed',
-    progress: 95,
-    completed: false,
-    error: null
-  });
-
-  return stats;
 }
 
 export async function validateServiceData(data: ProcessedServiceData[]): Promise<boolean> {
-  // Add validation logic here
-  return data.length > 0;
+  if (!Array.isArray(data) || data.length === 0) {
+    return false;
+  }
+  
+  return data.every(item => 
+    item.sector && 
+    item.category && 
+    item.subcategory && 
+    item.job &&
+    typeof item.sector === 'string' &&
+    typeof item.category === 'string' &&
+    typeof item.subcategory === 'string' &&
+    typeof item.job === 'string'
+  );
 }
 
 export async function clearAllServiceData(): Promise<void> {
-  // Delete in reverse order to respect foreign key constraints
-  await supabase.from('service_jobs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-  await supabase.from('service_subcategories').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-  await supabase.from('service_categories').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-  await supabase.from('service_sectors').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  try {
+    // Delete in correct order due to foreign key constraints
+    await supabase.from('service_jobs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await supabase.from('service_subcategories').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await supabase.from('service_main_categories').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await supabase.from('service_sectors').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    
+    console.log('All service data cleared successfully');
+  } catch (error) {
+    console.error('Error clearing service data:', error);
+    throw error;
+  }
 }
 
 export async function getServiceCounts(): Promise<ImportStats> {
-  const [sectorsResult, categoriesResult, subcategoriesResult, servicesResult] = await Promise.all([
-    supabase.from('service_sectors').select('id', { count: 'exact' }),
-    supabase.from('service_categories').select('id', { count: 'exact' }),
-    supabase.from('service_subcategories').select('id', { count: 'exact' }),
-    supabase.from('service_jobs').select('id', { count: 'exact' })
-  ]);
-
-  return {
-    totalSectors: sectorsResult.count || 0,
-    totalCategories: categoriesResult.count || 0,
-    totalSubcategories: subcategoriesResult.count || 0,
-    totalServices: servicesResult.count || 0,
-    filesProcessed: 0
-  };
+  try {
+    const [sectorsResult, categoriesResult, subcategoriesResult, jobsResult] = await Promise.all([
+      supabase.from('service_sectors').select('id', { count: 'exact' }),
+      supabase.from('service_main_categories').select('id', { count: 'exact' }),
+      supabase.from('service_subcategories').select('id', { count: 'exact' }),
+      supabase.from('service_jobs').select('id', { count: 'exact' })
+    ]);
+    
+    return {
+      totalSectors: sectorsResult.count || 0,
+      totalCategories: categoriesResult.count || 0,
+      totalSubcategories: subcategoriesResult.count || 0,
+      totalServices: jobsResult.count || 0,
+      filesProcessed: 0
+    };
+  } catch (error) {
+    console.error('Error getting service counts:', error);
+    return {
+      totalSectors: 0,
+      totalCategories: 0,
+      totalSubcategories: 0,
+      totalServices: 0,
+      filesProcessed: 0
+    };
+  }
 }
