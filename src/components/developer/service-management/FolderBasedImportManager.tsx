@@ -1,86 +1,109 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Upload, Database, Trash2 } from 'lucide-react';
+import { Upload, RefreshCw, Database, FileText, AlertCircle, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { StorageFileBrowser } from '@/components/storage/StorageFileBrowser';
-import { ServiceImportProgress } from './ServiceImportProgress';
 import { 
-  importServicesFromStorage,
+  importServicesFromStorage, 
+  getServiceCounts, 
   clearAllServiceData,
-  cleanupMisplacedServiceData,
-  removeTestData,
   type ImportProgress,
-  type ImportResult
-} from '@/lib/services';
+  type ImportResult,
+  type ImportStats
+} from '@/lib/services/folderBasedImportService';
 
 export function FolderBasedImportManager() {
-  const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
-  const [importProgress, setImportProgress] = useState<ImportProgress>({
+  const [isClearing, setIsClearing] = useState(false);
+  const [progress, setProgress] = useState<ImportProgress>({
     stage: '',
     message: '',
-    progress: 0
+    progress: 0,
+    completed: false,
+    error: null
   });
-  const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [stats, setStats] = useState<ImportStats>({
+    sectors: 0,
+    categories: 0,
+    subcategories: 0,
+    services: 0,
+    importedCount: 0,
+    errors: []
+  });
   const { toast } = useToast();
 
-  const handleFileSelect = (filePath: string) => {
-    setSelectedFile(filePath);
-    console.log('Selected file:', filePath);
+  // Load current stats on component mount
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const loadStats = async () => {
+    try {
+      const currentStats = await getServiceCounts();
+      setStats(currentStats);
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
   };
 
   const handleImport = async () => {
-    if (!selectedFile) {
-      toast({
-        title: "No File Selected",
-        description: "Please select a file from storage to import.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsImporting(true);
-    setImportResult(null);
-    
+    setProgress({
+      stage: 'Starting...',
+      message: 'Initializing import process',
+      progress: 0,
+      completed: false,
+      error: null
+    });
+
     try {
-      const result = await importServicesFromStorage(
-        'service-data', // bucket name
-        selectedFile,
-        (progress) => {
-          setImportProgress(progress);
-        }
-      );
-      
-      setImportResult(result);
-      
+      const result: ImportResult = await importServicesFromStorage((progressUpdate) => {
+        setProgress(progressUpdate);
+      });
+
       if (result.success) {
+        setProgress({
+          stage: 'Import Complete',
+          message: `Successfully imported ${result.importedCount} services`,
+          progress: 100,
+          completed: true,
+          error: null
+        });
+
         toast({
           title: "Import Successful",
-          description: result.message,
+          description: `Imported ${result.importedCount} services successfully`,
         });
-        
-        // Refresh the page to show updated counts
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
+
+        // Reload stats
+        await loadStats();
       } else {
+        const errorMessage = result.errors?.join(', ') || 'Unknown error';
+        setProgress({
+          stage: 'Import Failed',
+          progress: 0,
+          message: errorMessage,
+          error: errorMessage,
+          completed: false
+        });
+
         toast({
           title: "Import Failed",
-          description: result.error || "Failed to import services",
+          description: errorMessage,
           variant: "destructive",
         });
       }
     } catch (error) {
-      console.error('Import failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      setImportProgress({
-        stage: 'error',
+      setProgress({
+        stage: 'Import Failed',
+        message: errorMessage,
         progress: 0,
-        message: 'Import failed',
-        error: errorMessage
+        error: errorMessage,
+        completed: false
       });
+
       toast({
         title: "Import Failed",
         description: errorMessage,
@@ -91,144 +114,153 @@ export function FolderBasedImportManager() {
     }
   };
 
-  const handleCleanupData = async () => {
-    try {
-      const result = await cleanupMisplacedServiceData();
-      if (result.success) {
-        toast({
-          title: "Cleanup Successful",
-          description: result.message,
-        });
-        // Refresh to show updated data
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
-      }
-    } catch (error) {
-      console.error('Cleanup failed:', error);
-      toast({
-        title: "Cleanup Failed",
-        description: error instanceof Error ? error.message : 'Unknown error',
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleClearAllData = async () => {
-    if (!confirm('Are you sure you want to clear all service data? This cannot be undone.')) {
+  const handleClearData = async () => {
+    if (!confirm('Are you sure you want to clear all service data? This action cannot be undone.')) {
       return;
     }
-    
+
+    setIsClearing(true);
     try {
       await clearAllServiceData();
+      
       toast({
         title: "Data Cleared",
-        description: "All service data has been cleared from the database.",
+        description: "All service data has been cleared successfully",
       });
-      // Refresh to show empty state
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+
+      // Reload stats
+      await loadStats();
+      
+      // Reset progress
+      setProgress({
+        stage: '',
+        message: '',
+        progress: 0,
+        completed: false,
+        error: null
+      });
     } catch (error) {
-      console.error('Clear data failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       toast({
         title: "Clear Failed",
-        description: error instanceof Error ? error.message : 'Unknown error',
+        description: errorMessage,
         variant: "destructive",
       });
+    } finally {
+      setIsClearing(false);
     }
   };
 
-  const resetProgress = () => {
-    setImportProgress({
-      stage: '',
-      message: '',
-      progress: 0
+  const handleRefreshStats = async () => {
+    await loadStats();
+    toast({
+      title: "Stats Refreshed",
+      description: "Service statistics have been updated",
     });
-    setImportResult(null);
   };
 
   return (
     <div className="space-y-6">
+      {/* Current Statistics */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Database className="h-5 w-5" />
+              Current Service Database
+            </CardTitle>
+            <Button variant="outline" size="sm" onClick={handleRefreshStats}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center p-3 bg-blue-50 rounded-lg">
+              <div className="text-2xl font-bold text-blue-800">{stats.sectors}</div>
+              <div className="text-sm text-blue-600">Sectors</div>
+            </div>
+            <div className="text-center p-3 bg-green-50 rounded-lg">
+              <div className="text-2xl font-bold text-green-800">{stats.categories}</div>
+              <div className="text-sm text-green-600">Categories</div>
+            </div>
+            <div className="text-center p-3 bg-yellow-50 rounded-lg">
+              <div className="text-2xl font-bold text-yellow-800">{stats.subcategories}</div>
+              <div className="text-sm text-yellow-600">Subcategories</div>
+            </div>
+            <div className="text-center p-3 bg-purple-50 rounded-lg">
+              <div className="text-2xl font-bold text-purple-800">{stats.services}</div>
+              <div className="text-sm text-purple-600">Services</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Import from Storage */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Upload className="h-5 w-5" />
-            Service Data Import Manager
+            Import from Storage Bucket
           </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Import service data from Excel files stored in Supabase storage. Select a file from the browser below and click Import to process it.
-          </p>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-wrap gap-2">
+          <div className="text-sm text-gray-600">
+            Import service data from Excel files stored in the 'service-data' storage bucket.
+            Files should be organized in folders by sector with proper Excel structure.
+          </div>
+
+          {(isImporting || progress.stage) && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">{progress.stage}</span>
+                <span className="text-sm text-gray-500">{Math.round(progress.progress)}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                  style={{ width: `${progress.progress}%` }}
+                />
+              </div>
+              <p className="text-sm text-gray-600">{progress.message}</p>
+            </div>
+          )}
+
+          {progress.completed && (
+            <div className="flex items-center gap-2 text-green-600">
+              <CheckCircle className="h-4 w-4" />
+              <span className="text-sm">{progress.message}</span>
+            </div>
+          )}
+
+          {progress.error && (
+            <div className="flex items-center gap-2 text-red-600">
+              <AlertCircle className="h-4 w-4" />
+              <span className="text-sm">{progress.error}</span>
+            </div>
+          )}
+
+          <div className="flex gap-2">
             <Button 
               onClick={handleImport}
-              disabled={!selectedFile || isImporting}
-              className="flex items-center gap-2"
+              disabled={isImporting || isClearing}
+              className="flex-1"
             >
-              <Upload className="h-4 w-4" />
-              {isImporting ? 'Importing...' : 'Import Services'}
-            </Button>
-            
-            <Button 
-              variant="outline"
-              onClick={handleCleanupData}
-              disabled={isImporting}
-              className="flex items-center gap-2"
-            >
-              <Database className="h-4 w-4" />
-              Cleanup Data
+              <FileText className="h-4 w-4 mr-2" />
+              {isImporting ? 'Importing...' : 'Import from Storage'}
             </Button>
             
             <Button 
               variant="destructive"
-              onClick={handleClearAllData}
-              disabled={isImporting}
-              className="flex items-center gap-2"
+              onClick={handleClearData}
+              disabled={isImporting || isClearing}
             >
-              <Trash2 className="h-4 w-4" />
-              Clear All Data
+              {isClearing ? 'Clearing...' : 'Clear All Data'}
             </Button>
           </div>
-
-          <ServiceImportProgress
-            isImporting={isImporting}
-            progress={importProgress.progress}
-            stage={importProgress.stage}
-            message={importProgress.message}
-            error={importProgress.error}
-            completed={importProgress.completed}
-            onCancel={resetProgress}
-          />
-
-          {importResult && (
-            <div className="mt-4 p-4 border rounded-lg">
-              <h3 className="font-semibold mb-2">Import Results</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <span className="font-medium">Sectors:</span> {importResult.sectors || 0}
-                </div>
-                <div>
-                  <span className="font-medium">Categories:</span> {importResult.categories || 0}
-                </div>
-                <div>
-                  <span className="font-medium">Subcategories:</span> {importResult.subcategories || 0}
-                </div>
-                <div>
-                  <span className="font-medium">Services:</span> {importResult.services || 0}
-                </div>
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
-
-      <StorageFileBrowser
-        bucketName="service-data"
-        onFileSelect={handleFileSelect}
-        disabled={isImporting}
-      />
     </div>
   );
 }

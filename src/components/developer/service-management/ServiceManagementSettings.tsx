@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { AlertTriangle, Trash2, Database } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { clearAllServiceData, getServiceCounts, ImportProgress } from '@/lib/services/folderBasedImportService';
+import { clearAllServiceData, type ImportProgress } from '@/lib/services/folderBasedImportService';
 import { ServiceImportProgress } from './ServiceImportProgress';
 
 interface ServiceManagementSettingsProps {
@@ -26,7 +26,9 @@ export function ServiceManagementSettings({ children }: ServiceManagementSetting
   const [clearProgress, setClearProgress] = useState<ImportProgress>({
     stage: '',
     message: '',
-    progress: 0
+    progress: 0,
+    completed: false,
+    error: null
   });
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const { toast } = useToast();
@@ -39,7 +41,9 @@ export function ServiceManagementSettings({ children }: ServiceManagementSetting
       setClearProgress({
         stage: 'clearing',
         progress: 20,
-        message: 'Clearing service database...'
+        message: 'Clearing service database...',
+        completed: false,
+        error: null
       });
 
       await clearAllServiceData();
@@ -48,7 +52,8 @@ export function ServiceManagementSettings({ children }: ServiceManagementSetting
         stage: 'complete',
         progress: 100,
         message: 'Service database cleared successfully!',
-        completed: true
+        completed: true,
+        error: null
       });
 
       toast({
@@ -67,7 +72,8 @@ export function ServiceManagementSettings({ children }: ServiceManagementSetting
         stage: 'error',
         progress: 0,
         message: error instanceof Error ? error.message : "Failed to clear database",
-        error: error instanceof Error ? error.message : "Failed to clear database"
+        error: error instanceof Error ? error.message : "Failed to clear database",
+        completed: false
       });
       toast({
         title: "Clear Failed",
@@ -83,7 +89,9 @@ export function ServiceManagementSettings({ children }: ServiceManagementSetting
     setClearProgress({
       stage: '',
       message: '',
-      progress: 0
+      progress: 0,
+      completed: false,
+      error: null
     });
   };
 
