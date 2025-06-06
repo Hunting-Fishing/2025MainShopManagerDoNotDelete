@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 export interface ImportProgress {
@@ -9,18 +8,19 @@ export interface ImportProgress {
   error: string | null;
 }
 
-export interface ImportResult {
+export interface ImportStats {
   totalImported: number;
   errors: string[];
+  sectors?: number;
+  categories?: number;
+  subcategories?: number;
+  services?: number;
 }
 
-export interface ImportStats {
-  sectors: number;
-  categories: number;
-  subcategories: number;
-  jobs: number;
+export interface ImportResult {
+  success: boolean;
   totalImported: number;
-  errors: string[];
+  errors?: string[];
 }
 
 export interface ProcessedServiceData {
@@ -162,7 +162,7 @@ export async function getServiceCounts(): Promise<ImportStats> {
       sectors: sectors?.length || 0,
       categories: categories?.length || 0,
       subcategories: subcategories?.length || 0,
-      jobs: jobs?.length || 0,
+      services: jobs?.length || 0,
       totalImported: (sectors?.length || 0) + (categories?.length || 0) + (subcategories?.length || 0) + (jobs?.length || 0),
       errors: []
     };
@@ -172,7 +172,7 @@ export async function getServiceCounts(): Promise<ImportStats> {
       sectors: 0,
       categories: 0,
       subcategories: 0,
-      jobs: 0,
+      services: 0,
       totalImported: 0,
       errors: [error instanceof Error ? error.message : 'Unknown error']
     };
@@ -277,6 +277,7 @@ export async function importServicesFromStorage(
     });
 
     return {
+      success: true,
       totalImported: importStats.totalImported,
       errors: [...errors, ...importStats.errors]
     };

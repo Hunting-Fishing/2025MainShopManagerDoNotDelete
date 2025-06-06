@@ -7,7 +7,9 @@ export {
   getServiceCounts,
   importServicesFromStorage,
   type ImportProgress,
-  type ImportResult
+  type ImportResult,
+  type ImportStats,
+  type ProcessedServiceData
 } from './folderBasedImportService';
 export { 
   cleanupMisplacedServiceData,
