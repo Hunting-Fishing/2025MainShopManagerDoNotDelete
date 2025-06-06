@@ -3,6 +3,7 @@ import React from 'react';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { X, CheckCircle, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface ServiceImportProgressProps {
   isImporting: boolean;
@@ -40,10 +41,10 @@ export function ServiceImportProgress({
       </div>
 
       {error ? (
-        <div className="flex items-center gap-2 text-red-600">
+        <Alert variant="destructive">
           <AlertCircle className="h-5 w-5" />
-          <span>{error}</span>
-        </div>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       ) : completed ? (
         <div className="flex items-center gap-2 text-green-600">
           <CheckCircle className="h-5 w-5" />

@@ -1,10 +1,15 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react';
+import { Upload, FileText, CheckCircle, AlertTriangle, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { importServicesFromStorage, type ImportProgress } from '@/lib/services';
+import { 
+  importServicesFromStorage, 
+  type ImportProgress,
+  getStorageBucketInfo 
+} from '@/lib/services';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface ServiceBulkImportProps {
   onImportComplete?: () => void;
@@ -19,7 +24,26 @@ export function ServiceBulkImport({ onImportComplete }: ServiceBulkImportProps) 
     completed: false,
     error: null
   });
+  const [bucketInfo, setBucketInfo] = useState<{ exists: boolean; fileCount: number } | null>(null);
+  const [isCheckingBucket, setIsCheckingBucket] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    checkBucketStatus();
+  }, []);
+
+  const checkBucketStatus = async () => {
+    setIsCheckingBucket(true);
+    try {
+      const info = await getStorageBucketInfo('service-data');
+      setBucketInfo(info);
+    } catch (error) {
+      console.error("Error checking bucket status:", error);
+      setBucketInfo({ exists: false, fileCount: 0 });
+    } finally {
+      setIsCheckingBucket(false);
+    }
+  };
 
   const handleImportFromStorage = async () => {
     setIsImporting(true);
@@ -49,6 +73,9 @@ export function ServiceBulkImport({ onImportComplete }: ServiceBulkImportProps) 
         description: `Imported ${result.totalImported} services successfully`,
       });
 
+      // Refresh bucket info after successful import
+      await checkBucketStatus();
+
       // Call the callback to refresh parent component
       onImportComplete?.();
     } catch (error: any) {
@@ -71,6 +98,46 @@ export function ServiceBulkImport({ onImportComplete }: ServiceBulkImportProps) 
     }
   };
 
+  const renderBucketInfo = () => {
+    if (isCheckingBucket) {
+      return <p className="text-sm text-gray-500">Checking storage bucket status...</p>;
+    }
+
+    if (!bucketInfo?.exists) {
+      return (
+        <Alert variant="destructive" className="mb-4">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Bucket Not Found</AlertTitle>
+          <AlertDescription>
+            The "service-data" storage bucket does not exist. Please create this bucket in Supabase Storage and upload your Excel files to it.
+          </AlertDescription>
+        </Alert>
+      );
+    }
+
+    if (bucketInfo.fileCount === 0) {
+      return (
+        <Alert className="mb-4 border-amber-500 bg-amber-50">
+          <AlertTriangle className="h-4 w-4 text-amber-500" />
+          <AlertTitle>No Excel Files Found</AlertTitle>
+          <AlertDescription>
+            No Excel files found in the "service-data" bucket. Please upload your Excel files to this bucket before importing.
+          </AlertDescription>
+        </Alert>
+      );
+    }
+
+    return (
+      <Alert className="mb-4 border-blue-500 bg-blue-50">
+        <Info className="h-4 w-4 text-blue-500" />
+        <AlertTitle>Ready to Import</AlertTitle>
+        <AlertDescription>
+          Found {bucketInfo.fileCount} Excel file(s) in the "service-data" bucket.
+        </AlertDescription>
+      </Alert>
+    );
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -83,6 +150,8 @@ export function ServiceBulkImport({ onImportComplete }: ServiceBulkImportProps) 
         <div className="text-sm text-gray-600">
           Import services from Excel files stored in the 'service-data' storage bucket.
         </div>
+
+        {renderBucketInfo()}
 
         {isImporting && (
           <div className="space-y-2">
@@ -109,14 +178,14 @@ export function ServiceBulkImport({ onImportComplete }: ServiceBulkImportProps) 
 
         {progress.error && (
           <div className="flex items-center gap-2 text-red-600">
-            <AlertCircle className="h-4 w-4" />
+            <AlertTriangle className="h-4 w-4" />
             <span className="text-sm">{progress.error}</span>
           </div>
         )}
 
         <Button 
           onClick={handleImportFromStorage}
-          disabled={isImporting}
+          disabled={isImporting || (bucketInfo && (!bucketInfo.exists || bucketInfo.fileCount === 0))}
           className="w-full"
         >
           <FileText className="h-4 w-4 mr-2" />

@@ -8,10 +8,12 @@ import {
   getServiceCounts, 
   type ImportStats,
   type ImportProgress,
-  type ImportResult
+  type ImportResult,
+  getStorageBucketInfo
 } from '@/lib/services';
 import { ServiceImportProgress } from './ServiceImportProgress';
-import { UploadCloud } from 'lucide-react';
+import { UploadCloud, AlertTriangle, Info } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export function FolderBasedImportManager() {
   const [isImporting, setIsImporting] = useState(false);
@@ -23,7 +25,13 @@ export function FolderBasedImportManager() {
     error: null
   });
   const [importStats, setImportStats] = useState<ImportStats | null>(null);
+  const [bucketInfo, setBucketInfo] = useState<{ exists: boolean; fileCount: number } | null>(null);
+  const [isCheckingBucket, setIsCheckingBucket] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    checkBucketStatus();
+  }, []);
 
   useEffect(() => {
     if (importProgress.completed && importStats) {
@@ -41,6 +49,19 @@ export function FolderBasedImportManager() {
       });
     }
   }, [importProgress, importStats, toast]);
+
+  const checkBucketStatus = async () => {
+    setIsCheckingBucket(true);
+    try {
+      const info = await getStorageBucketInfo('service-data');
+      setBucketInfo(info);
+    } catch (error) {
+      console.error("Error checking bucket status:", error);
+      setBucketInfo({ exists: false, fileCount: 0 });
+    } finally {
+      setIsCheckingBucket(false);
+    }
+  };
 
   const handleImport = async () => {
     setIsImporting(true);
@@ -73,6 +94,9 @@ export function FolderBasedImportManager() {
         completed: true,
         error: null
       });
+
+      // Refresh bucket info after successful import
+      await checkBucketStatus();
     } catch (error: any) {
       console.error("Import error:", error);
       setImportProgress({
@@ -88,7 +112,6 @@ export function FolderBasedImportManager() {
   };
 
   const handleCancel = () => {
-    // Implement cancel logic here, if needed
     setIsImporting(false);
     setImportProgress({
       stage: 'Import Cancelled',
@@ -97,6 +120,46 @@ export function FolderBasedImportManager() {
       completed: false,
       error: null
     });
+  };
+
+  const renderBucketInfo = () => {
+    if (isCheckingBucket) {
+      return <p className="text-sm text-gray-500">Checking storage bucket status...</p>;
+    }
+
+    if (!bucketInfo?.exists) {
+      return (
+        <Alert variant="destructive" className="mb-4">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Bucket Not Found</AlertTitle>
+          <AlertDescription>
+            The "service-data" storage bucket does not exist. Please create this bucket in Supabase Storage and upload your Excel files to it.
+          </AlertDescription>
+        </Alert>
+      );
+    }
+
+    if (bucketInfo.fileCount === 0) {
+      return (
+        <Alert className="mb-4 border-amber-500 bg-amber-50">
+          <AlertTriangle className="h-4 w-4 text-amber-500" />
+          <AlertTitle>No Excel Files Found</AlertTitle>
+          <AlertDescription>
+            No Excel files found in the "service-data" bucket. Please upload your Excel files to this bucket before importing.
+          </AlertDescription>
+        </Alert>
+      );
+    }
+
+    return (
+      <Alert className="mb-4 border-blue-500 bg-blue-50">
+        <Info className="h-4 w-4 text-blue-500" />
+        <AlertTitle>Ready to Import</AlertTitle>
+        <AlertDescription>
+          Found {bucketInfo.fileCount} Excel file(s) in the "service-data" bucket.
+        </AlertDescription>
+      </Alert>
+    );
   };
 
   return (
@@ -109,8 +172,10 @@ export function FolderBasedImportManager() {
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-gray-600">
-          Import service data from structured Excel files in a storage folder.
+          Import service data from structured Excel files in the "service-data" storage bucket.
         </p>
+
+        {renderBucketInfo()}
 
         <ServiceImportProgress
           isImporting={isImporting}
@@ -124,7 +189,7 @@ export function FolderBasedImportManager() {
 
         <Button 
           onClick={handleImport}
-          disabled={isImporting}
+          disabled={isImporting || (bucketInfo && (!bucketInfo.exists || bucketInfo.fileCount === 0))}
           className="w-full"
         >
           {isImporting ? 'Importing...' : 'Start Import'}
