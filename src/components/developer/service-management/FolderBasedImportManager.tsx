@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ServiceBulkImport } from './ServiceBulkImport';
 import { ServiceImportProgress } from './ServiceImportProgress';
-import { Database, FolderOpen, RefreshCw } from 'lucide-react';
-import { importServicesFromStorage, type ImportProgress, type ImportResult, type ImportStats } from '@/lib/services';
+import { LiveBucketViewer } from './LiveBucketViewer';
+import { Database, FolderOpen, RefreshCw, Eye } from 'lucide-react';
+import { importServicesFromStorage, type ImportProgress } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';
 import { useServiceSectors } from '@/hooks/useServiceCategories';
 
@@ -38,7 +39,6 @@ export function FolderBasedImportManager() {
         }
       );
       
-      // Import completed successfully
       setImportProgress({
         stage: 'complete',
         message: result.message || 'Service import completed successfully!',
@@ -47,12 +47,10 @@ export function FolderBasedImportManager() {
         error: null
       });
       
-      // Force refresh the service sectors list to show new data
       setTimeout(async () => {
         await refetch();
       }, 1000);
       
-      // Show success toast with statistics
       toast({
         title: "Import Completed Successfully",
         description: result.stats ? 
@@ -85,7 +83,6 @@ export function FolderBasedImportManager() {
   };
   
   const handleCancel = () => {
-    // In a real implementation, we would abort the import process
     setIsImporting(false);
     setImportProgress({
       stage: 'cancelled',
@@ -121,6 +118,10 @@ export function FolderBasedImportManager() {
   
   return (
     <div className="space-y-6">
+      {/* Live Bucket Viewer */}
+      <LiveBucketViewer />
+
+      {/* Import Section */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
