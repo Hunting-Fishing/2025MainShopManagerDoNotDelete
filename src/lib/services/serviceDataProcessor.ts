@@ -4,7 +4,7 @@ import type { ProcessedServiceData, ImportStats } from './folderBasedImportServi
 
 // Export the functions that were missing
 export { 
-  validateServiceData as processServiceDataFromSheets, 
+  importServicesFromStorage as processServiceDataFromSheets, 
   importProcessedDataToDatabase 
 } from './folderBasedImportService';
 
