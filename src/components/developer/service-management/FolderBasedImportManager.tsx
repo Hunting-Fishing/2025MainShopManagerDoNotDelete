@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Upload, AlertTriangle } from 'lucide-react';
+import { Upload, AlertTriangle, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { importFromStorage, ImportProgress } from '@/lib/services/storageImportService';
 import { ServiceImportProgress } from './ServiceImportProgress';
@@ -19,8 +19,8 @@ export function FolderBasedImportManager() {
   const [selectedFile, setSelectedFile] = useState<string>('');
   const { toast } = useToast();
 
-  const handleFileSelect = (fileName: string) => {
-    setSelectedFile(fileName);
+  const handleFileSelect = (filePath: string) => {
+    setSelectedFile(filePath);
   };
 
   const handleImportFromStorage = async () => {
@@ -98,6 +98,17 @@ export function FolderBasedImportManager() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <Info className="h-5 w-5 text-blue-600 mt-0.5" />
+            <div className="text-sm">
+              <p className="font-medium text-blue-800">Folder Organization</p>
+              <p className="mt-1 text-blue-700">
+                Files should be organized in sector folders (e.g., Automotive, Lawn-Care, Marine). 
+                Each folder represents a different service sector.
+              </p>
+            </div>
+          </div>
+
           <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
             <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
             <div className="text-sm">
