@@ -17,6 +17,3 @@ export {
   processServiceDataFromSheets,
   importProcessedDataToDatabase
 } from './serviceDataProcessor';
-export type { 
-  ImportProgress as StorageImportProgress 
-} from './storageImportService';

@@ -1,7 +1,6 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { importFromStorage } from './storageImportService';
 import { processServiceDataFromSheets, importProcessedDataToDatabase } from './serviceDataProcessor';
+import * as XLSX from 'xlsx';
 
 export interface ImportProgress {
   stage: string;
@@ -29,6 +28,66 @@ export interface ImportResult {
   errors?: string[];
 }
 
+const importFromStorage = async (
+  bucketName: string,
+  fileName: string,
+  onProgress?: (progress: ImportProgress) => void
+) => {
+  try {
+    if (onProgress) {
+      onProgress({
+        stage: 'downloading',
+        progress: 10,
+        message: 'Downloading file from storage...'
+      });
+    }
+
+    // Download the file from Supabase storage
+    const { data, error } = await supabase.storage
+      .from(bucketName)
+      .download(fileName);
+
+    if (error) {
+      console.error('Error downloading file:', error);
+      throw new Error(`Failed to download file: ${error.message}`);
+    }
+
+    if (onProgress) {
+      onProgress({
+        stage: 'parsing',
+        progress: 30,
+        message: 'Parsing Excel file...'
+      });
+    }
+
+    // Convert blob to array buffer
+    const arrayBuffer = await data.arrayBuffer();
+    
+    // Parse the Excel file
+    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+    
+    // Convert all sheets to JSON
+    const sheetsData: Record<string, any[]> = {};
+    workbook.SheetNames.forEach(sheetName => {
+      const worksheet = workbook.Sheets[sheetName];
+      sheetsData[sheetName] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+    });
+
+    if (onProgress) {
+      onProgress({
+        stage: 'parsed',
+        progress: 50,
+        message: `Successfully parsed ${workbook.SheetNames.length} sheets`
+      });
+    }
+
+    return sheetsData;
+  } catch (error) {
+    console.error('Error in importFromStorage:', error);
+    throw error;
+  }
+};
+
 export const processExcelFileFromStorage = async (
   bucketName: string,
   fileName: string,
@@ -43,7 +102,7 @@ export const processExcelFileFromStorage = async (
       });
     }
 
-    // Use the existing storage import service to get raw data
+    // Use the storage import service to get raw data
     const sheetsData = await importFromStorage(bucketName, fileName, onProgress);
     
     if (onProgress) {
