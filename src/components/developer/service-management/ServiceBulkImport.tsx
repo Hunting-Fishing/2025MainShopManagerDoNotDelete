@@ -2,124 +2,95 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Upload, FolderOpen, FileSpreadsheet, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
+import { FolderOpen, FileSpreadsheet, Upload } from 'lucide-react';
 import { storageService } from '@/lib/services/unifiedStorageService';
+import { useToast } from '@/hooks/use-toast';
 
 interface ServiceBulkImportProps {
   onImport: () => void;
   disabled?: boolean;
 }
 
-interface FolderInfo {
-  name: string;
-  path: string;
-  fileCount: number;
-  files: Array<{
-    name: string;
-    size: number;
-    lastModified: string;
-  }>;
-}
-
 export function ServiceBulkImport({ onImport, disabled = false }: ServiceBulkImportProps) {
-  const [bucketStatus, setBucketStatus] = useState<'checking' | 'ready' | 'error' | 'empty'>('checking');
-  const [folders, setFolders] = useState<FolderInfo[]>([]);
-  const [totalFiles, setTotalFiles] = useState(0);
-  const [error, setError] = useState<string | null>(null);
+  const [bucketInfo, setBucketInfo] = useState<{
+    folders: { name: string; fileCount: number; files: { name: string; size: number; lastModified: string; }[] }[];
+    totalFiles: number;
+  }>({ folders: [], totalFiles: 0 });
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
-    checkBucketStructure();
+    loadBucketInfo();
   }, []);
 
-  const checkBucketStructure = async () => {
-    setBucketStatus('checking');
-    setError(null);
-    
+  const loadBucketInfo = async () => {
     try {
-      const bucketInfo = await storageService.getBucketInfo('service-imports');
+      setLoading(true);
+      const info = await storageService.getBucketInfo('service-imports');
       
-      if (!bucketInfo.exists) {
-        setBucketStatus('error');
-        setError('The service-imports bucket does not exist. Please create it first.');
-        return;
-      }
+      // Get detailed info for each folder
+      const foldersWithFiles = await Promise.all(
+        info.folders.map(async (folder) => {
+          try {
+            const files = await storageService.getFilesInFolder('service-imports', folder.path, ['.xlsx']);
+            return {
+              name: folder.name,
+              fileCount: files.length,
+              files: files.map(file => ({
+                name: file.name,
+                size: file.size,
+                lastModified: file.lastModified.toISOString() // Convert Date to string
+              }))
+            };
+          } catch (error) {
+            console.error(`Error loading files for folder ${folder.name}:`, error);
+            return {
+              name: folder.name,
+              fileCount: 0,
+              files: []
+            };
+          }
+        })
+      );
 
-      // Get detailed folder information
-      const folderDetails: FolderInfo[] = [];
-      let totalFileCount = 0;
-
-      for (const folder of bucketInfo.folders) {
-        try {
-          const files = await storageService.getFilesInFolder('service-imports', folder.path, ['.xlsx', '.xls']);
-          
-          folderDetails.push({
-            name: folder.name,
-            path: folder.path,
-            fileCount: files.length,
-            files: files.map(file => ({
-              name: file.name,
-              size: file.size,
-              lastModified: file.lastModified
-            }))
-          });
-          
-          totalFileCount += files.length;
-        } catch (folderError) {
-          console.warn(`Could not access folder ${folder.name}:`, folderError);
-        }
-      }
-
-      setFolders(folderDetails);
-      setTotalFiles(totalFileCount);
+      const totalFiles = foldersWithFiles.reduce((acc, folder) => acc + folder.fileCount, 0);
       
-      if (folderDetails.length === 0) {
-        setBucketStatus('empty');
-      } else if (totalFileCount === 0) {
-        setBucketStatus('empty');
-      } else {
-        setBucketStatus('ready');
-      }
-
-    } catch (err) {
-      console.error('Error checking bucket structure:', err);
-      setError(err instanceof Error ? err.message : 'Failed to check bucket structure');
-      setBucketStatus('error');
+      setBucketInfo({
+        folders: foldersWithFiles,
+        totalFiles
+      });
+    } catch (error) {
+      console.error('Error loading bucket info:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load bucket information",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getStatusIcon = () => {
-    switch (bucketStatus) {
-      case 'checking':
-        return <Loader2 className="h-5 w-5 animate-spin text-blue-500" />;
-      case 'ready':
-        return <CheckCircle className="h-5 w-5 text-green-500" />;
-      case 'error':
-        return <AlertCircle className="h-5 w-5 text-red-500" />;
-      case 'empty':
-        return <FolderOpen className="h-5 w-5 text-yellow-500" />;
-      default:
-        return null;
-    }
-  };
-
-  const getStatusMessage = () => {
-    switch (bucketStatus) {
-      case 'checking':
-        return 'Checking bucket structure...';
-      case 'ready':
-        return `Found ${folders.length} sectors with ${totalFiles} Excel files ready for import!`;
-      case 'error':
-        return error || 'Error checking bucket structure';
-      case 'empty':
-        return folders.length === 0 
-          ? 'No folders found in the service-imports bucket. Please create sector folders first.'
-          : 'No Excel files found in any folders. Please upload .xlsx files to the sector folders.';
-      default:
-        return 'Unknown status';
-    }
-  };
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Upload className="h-5 w-5" />
+            Service Data Import
+          </CardTitle>
+          <CardDescription>
+            Loading bucket information...
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -132,80 +103,80 @@ export function ServiceBulkImport({ onImport, disabled = false }: ServiceBulkImp
           Import service hierarchy data from structured files in storage
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <Alert>
-          <div className="flex items-center gap-2">
-            {getStatusIcon()}
-            <AlertDescription>{getStatusMessage()}</AlertDescription>
+      <CardContent className="space-y-6">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h4 className="font-medium text-blue-900 mb-2">Expected Structure</h4>
+          <div className="text-sm text-blue-700 space-y-1">
+            <p>• Upload Excel files to the 'service-imports' storage bucket</p>
+            <p>• Organize files in folders (each folder represents a sector)</p>
+            <p>• Files should contain sectors, categories, subcategories, and jobs</p>
           </div>
-        </Alert>
+        </div>
 
-        {bucketStatus === 'ready' && folders.length > 0 && (
-          <div className="space-y-3">
-            <h4 className="font-medium text-sm">Bucket Structure:</h4>
-            <div className="space-y-2">
-              {folders.map((folder) => (
-                <div 
-                  key={folder.name} 
-                  className="flex items-center justify-between p-3 border rounded-lg bg-gray-50"
-                >
-                  <div className="flex items-center gap-2">
-                    <FolderOpen className="h-4 w-4 text-blue-500" />
-                    <span className="font-medium">{folder.name}</span>
-                    <Badge variant="secondary" className="ml-2">
-                      {folder.fileCount} files
-                    </Badge>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h4 className="font-medium flex items-center gap-2">
+              <FolderOpen className="h-4 w-4" />
+              Bucket Structure
+            </h4>
+            <Button variant="outline" size="sm" onClick={loadBucketInfo}>
+              Refresh
+            </Button>
+          </div>
+
+          {bucketInfo.folders.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <FolderOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No folders found in the service-imports bucket</p>
+              <p className="text-sm">Create folders and upload Excel files to get started</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {bucketInfo.folders.map((folder) => (
+                <div key={folder.name} className="border rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <FolderOpen className="h-4 w-4 text-blue-600" />
+                      <span className="font-medium">{folder.name}</span>
+                    </div>
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                      <FileSpreadsheet className="h-3 w-3" />
+                      {folder.fileCount} Excel files
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1 text-sm text-gray-500">
-                    <FileSpreadsheet className="h-3 w-3" />
-                    Excel files
-                  </div>
+                  {folder.files.length > 0 && (
+                    <div className="ml-6 space-y-1">
+                      {folder.files.map((file) => (
+                        <div key={file.name} className="text-sm text-muted-foreground flex items-center justify-between">
+                          <span>📄 {file.name}</span>
+                          <span>{(file.size / 1024).toFixed(1)} KB</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
-        {bucketStatus === 'empty' && (
-          <div className="text-sm text-gray-600 space-y-2">
-            <p><strong>Expected structure:</strong></p>
-            <div className="pl-4 border-l-2 border-gray-200">
-              <p>📁 service-imports/</p>
-              <p className="pl-4">📁 Automotive/ (sector folder)</p>
-              <p className="pl-8">📄 Brakes&Wheels.xlsx</p>
-              <p className="pl-8">📄 Engine&Valve Train.xlsx</p>
-              <p className="pl-4">📁 Marine/ (sector folder)</p>
-              <p className="pl-8">📄 Hull&Structure.xlsx</p>
-              <p className="pl-8">📄 Engine Systems.xlsx</p>
+        <div className="border-t pt-4">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">
+              {bucketInfo.totalFiles === 0 
+                ? "Ready to import! Upload files to get started." 
+                : `Found ${bucketInfo.totalFiles} Excel files across ${bucketInfo.folders.length} sectors. Ready to import!`
+              }
             </div>
+            <Button 
+              onClick={onImport} 
+              disabled={disabled || bucketInfo.totalFiles === 0}
+              className="flex items-center gap-2"
+            >
+              <Upload className="h-4 w-4" />
+              Start Import
+            </Button>
           </div>
-        )}
-
-        <div className="flex gap-3">
-          <Button 
-            onClick={onImport}
-            disabled={disabled || bucketStatus !== 'ready'}
-            className="flex-1"
-          >
-            {disabled ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Upload className="mr-2 h-4 w-4" />
-            )}
-            {bucketStatus === 'ready' ? `Import ${totalFiles} Files` : 'Import Services'}
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            onClick={checkBucketStructure}
-            disabled={bucketStatus === 'checking'}
-          >
-            {bucketStatus === 'checking' ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              'Refresh'
-            )}
-          </Button>
         </div>
       </CardContent>
     </Card>
