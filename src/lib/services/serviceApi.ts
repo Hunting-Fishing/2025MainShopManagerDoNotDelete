@@ -1,9 +1,10 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { ServiceSector, ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
 
 export const fetchServiceSectors = async (): Promise<ServiceSector[]> => {
   try {
-    // Fetch all sectors, categories, subcategories, and jobs in optimized queries
+    // Fetch all sectors, categories, subcategories, and jobs with NO LIMITS
     const [sectorsResult, categoriesResult, subcategoriesResult, jobsResult] = await Promise.all([
       supabase
         .from('service_sectors')
@@ -21,6 +22,7 @@ export const fetchServiceSectors = async (): Promise<ServiceSector[]> => {
         .from('service_jobs')
         .select('*')
         .order('position', { ascending: true })
+        .limit(50000) // Increased limit to handle large datasets
     ]);
 
     if (sectorsResult.error) throw sectorsResult.error;
@@ -28,7 +30,9 @@ export const fetchServiceSectors = async (): Promise<ServiceSector[]> => {
     if (subcategoriesResult.error) throw subcategoriesResult.error;
     if (jobsResult.error) throw jobsResult.error;
 
-    // Build the 4-tier hierarchical structure
+    console.log(`Loading unlimited jobs: Found ${jobsResult.data.length} total jobs`);
+
+    // Build the 4-tier hierarchical structure with unlimited jobs per subcategory
     const hierarchicalSectors: ServiceSector[] = sectorsResult.data.map(sector => {
       const sectorCategories = categoriesResult.data
         .filter(cat => cat.sector_id === sector.id)
@@ -36,6 +40,7 @@ export const fetchServiceSectors = async (): Promise<ServiceSector[]> => {
           const categorySubcategories = subcategoriesResult.data
             .filter(sub => sub.category_id === category.id)
             .map(subcategory => {
+              // Get ALL jobs for this subcategory - no limit
               const subcategoryJobs = jobsResult.data
                 .filter(job => job.subcategory_id === subcategory.id)
                 .map(job => ({
@@ -47,14 +52,19 @@ export const fetchServiceSectors = async (): Promise<ServiceSector[]> => {
                   subcategory_id: job.subcategory_id
                 } as ServiceJob));
 
+              console.log(`Subcategory "${subcategory.name}" has ${subcategoryJobs.length} jobs (unlimited)`);
+
               return {
                 id: subcategory.id,
                 name: subcategory.name,
                 description: subcategory.description,
-                jobs: subcategoryJobs,
+                jobs: subcategoryJobs, // All jobs included, no artificial limit
                 category_id: subcategory.category_id
               } as ServiceSubcategory;
             });
+
+          const totalJobs = categorySubcategories.reduce((sum, sub) => sum + sub.jobs.length, 0);
+          console.log(`Category "${category.name}" has ${totalJobs} total jobs across ${categorySubcategories.length} subcategories`);
 
           return {
             id: category.id,
@@ -66,6 +76,10 @@ export const fetchServiceSectors = async (): Promise<ServiceSector[]> => {
           } as ServiceMainCategory;
         });
 
+      const sectorJobCount = sectorCategories.reduce((sum, cat) => 
+        sum + cat.subcategories.reduce((subSum, sub) => subSum + sub.jobs.length, 0), 0);
+      console.log(`Sector "${sector.name}" has ${sectorJobCount} total jobs (unlimited per subcategory)`);
+
       return {
         id: sector.id,
         name: sector.name,
@@ -75,6 +89,12 @@ export const fetchServiceSectors = async (): Promise<ServiceSector[]> => {
         is_active: sector.is_active
       } as ServiceSector;
     });
+
+    const totalJobs = hierarchicalSectors.reduce((sum, sector) => 
+      sum + sector.categories.reduce((catSum, cat) => 
+        catSum + cat.subcategories.reduce((subSum, sub) => subSum + sub.jobs.length, 0), 0), 0);
+    
+    console.log(`Total jobs loaded: ${totalJobs} (unlimited jobs per subcategory enabled)`);
 
     return hierarchicalSectors;
   } catch (error) {
@@ -148,8 +168,9 @@ export const deleteServiceJob = async (id: string) => {
   if (error) throw error;
 };
 
-export const searchServices = async (query: string, limit: number = 100): Promise<ServiceJob[]> => {
+export const searchServices = async (query: string, limit: number = 500): Promise<ServiceJob[]> => {
   try {
+    // Increased default limit to handle large datasets
     const { data, error } = await supabase
       .from('service_jobs')
       .select(`
