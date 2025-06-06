@@ -1,68 +1,59 @@
+import React from 'react';
+import { useFormContext } from 'react-hook-form';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { TagSelector } from './tag/TagSelector';
 
-import React from "react";
-import { UseFormReturn } from "react-hook-form";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { CustomerFormValues } from "./schemas/customerSchema";
-import { PersonalInfoFields } from "./PersonalInfoFields";
-import { BusinessInfoFields } from "./business/BusinessInfoFields";
-import { PaymentBillingFields } from "./payment/PaymentBillingFields";
-import { PreferencesFields } from "./PreferencesFields";
-import { ReferralFields } from "./ReferralFields";
-import { VehiclesFields } from "./VehiclesFields";
-import { SegmentFields } from "./SegmentFields";
-import { HouseholdFields } from "./HouseholdFields";
-
-export interface FormContentProps {
-  form: UseFormReturn<CustomerFormValues>;
-  currentTab: string;
-  formContext?: {
-    availableShops?: Array<{id: string, name: string}>;
-    singleShopMode?: boolean;
-  };
+interface FormContentProps {
+  isNewCustomer: boolean;
 }
 
-export const FormContent: React.FC<FormContentProps> = ({ 
-  form, 
-  currentTab,
-  formContext
-}) => {
+export const FormContent: React.FC<FormContentProps> = ({ isNewCustomer }) => {
+  const { register } = useFormContext();
+
   return (
-    <Tabs value={currentTab}>
-      <TabsContent value="personal" className="mt-6">
-        <PersonalInfoFields form={form} />
-      </TabsContent>
-      
-      <TabsContent value="business" className="mt-6">
-        <BusinessInfoFields 
-          form={form} 
-          availableShops={formContext?.availableShops} 
-          singleShopMode={formContext?.singleShopMode}
-        />
-      </TabsContent>
-      
-      <TabsContent value="payment" className="mt-6">
-        <PaymentBillingFields form={form} />
-      </TabsContent>
-      
-      <TabsContent value="preferences" className="mt-6">
-        <PreferencesFields form={form} />
-      </TabsContent>
-      
-      <TabsContent value="household" className="mt-6">
-        <HouseholdFields form={form} />
-      </TabsContent>
-      
-      <TabsContent value="referral" className="mt-6">
-        <ReferralFields form={form} />
-      </TabsContent>
-      
-      <TabsContent value="segments" className="mt-6">
-        <SegmentFields form={form} />
-      </TabsContent>
-      
-      <TabsContent value="vehicles" className="mt-6">
-        <VehiclesFields form={form} />
-      </TabsContent>
-    </Tabs>
+    <div className="grid gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="firstName">First Name</Label>
+          <Input type="text" id="firstName" {...register("firstName")} />
+        </div>
+        <div>
+          <Label htmlFor="lastName">Last Name</Label>
+          <Input type="text" id="lastName" {...register("lastName")} />
+        </div>
+      </div>
+
+      <div>
+        <Label htmlFor="email">Email</Label>
+        <Input type="email" id="email" {...register("email")} />
+      </div>
+
+      <div>
+        <Label htmlFor="phone">Phone</Label>
+        <Input type="tel" id="phone" {...register("phone")} />
+      </div>
+
+      <div>
+        <Label htmlFor="company">Company</Label>
+        <Input type="text" id="company" {...register("company")} />
+      </div>
+
+      <div>
+        <Label htmlFor="address">Address</Label>
+        <Input type="text" id="address" {...register("address")} />
+      </div>
+
+      <div>
+        <Label htmlFor="notes">Notes</Label>
+        <Textarea id="notes" {...register("notes")} />
+      </div>
+
+      <div>
+        <Label>Tags</Label>
+        <TagSelector name="tags" />
+      </div>
+    </div>
   );
 };
