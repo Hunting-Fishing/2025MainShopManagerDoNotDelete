@@ -5,16 +5,18 @@ export {
   processExcelFileFromStorage,
   clearAllServiceData,
   getServiceCounts,
-  importServicesFromStorage
+  importServicesFromStorage,
+  type ImportProgress,
+  type ImportResult
 } from './folderBasedImportService';
 export { 
   cleanupMisplacedServiceData,
   removeTestData
 } from './dataCleanupService';
+export { 
+  processServiceDataFromSheets,
+  importProcessedDataToDatabase
+} from './serviceDataProcessor';
 export type { 
   ImportProgress as StorageImportProgress 
 } from './storageImportService';
-export type { 
-  ImportProgress as FolderImportProgress,
-  ImportResult
-} from './folderBasedImportService';
