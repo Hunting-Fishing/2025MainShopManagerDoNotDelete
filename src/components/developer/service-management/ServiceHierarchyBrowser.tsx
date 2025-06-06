@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ServiceHierarchyTreeView } from './ServiceHierarchyTreeView';
 import { ServiceHierarchyExcelView } from './ServiceHierarchyExcelView';
 import { ServiceSectorsList } from './ServiceSectorsList';
-import { FolderBasedImportManager } from './FolderBasedImportManager';
+import { FreshServiceImport } from './FreshServiceImport';
 import { useServiceSectors } from '@/hooks/useServiceCategories';
 import { TreePine, Table, Upload, BarChart3 } from 'lucide-react';
 
@@ -15,6 +15,11 @@ export function ServiceHierarchyBrowser() {
   const handleSave = (data: any) => {
     console.log('Saving service data:', data);
     // Implementation for saving changes would go here
+  };
+
+  const handleImportComplete = () => {
+    // Refresh data after successful import
+    refetch();
   };
 
   if (loading) {
@@ -83,7 +88,7 @@ export function ServiceHierarchyBrowser() {
         </TabsContent>
 
         <TabsContent value="import" className="mt-6">
-          <FolderBasedImportManager />
+          <FreshServiceImport />
         </TabsContent>
       </Tabs>
     </div>

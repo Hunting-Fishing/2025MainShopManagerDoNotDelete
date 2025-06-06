@@ -1,13 +1,14 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ServiceHierarchyBrowser } from '@/components/developer/service-management/ServiceHierarchyBrowser';
 import { ServiceManagementSettings } from '@/components/developer/service-management/ServiceManagementSettings';
-import { Settings, Database, FileText, Search, Building } from 'lucide-react';
+import { Settings, Database, FileText, Search, Building, RefreshCw } from 'lucide-react';
 import { useServiceSectors } from '@/hooks/useServiceCategories';
 
 const ServiceManagement: React.FC = () => {
-  const { sectors, loading } = useServiceSectors();
+  const { sectors, loading, refetch } = useServiceSectors();
 
   const totalSectors = sectors.length;
   const totalCategories = sectors.reduce((acc, sector) => acc + sector.categories.length, 0);
@@ -15,6 +16,10 @@ const ServiceManagement: React.FC = () => {
     acc + sector.categories.reduce((catAcc, category) => 
       catAcc + category.subcategories.reduce((subAcc, subcategory) => 
         subAcc + subcategory.jobs.length, 0), 0), 0);
+
+  const handleRefresh = async () => {
+    await refetch();
+  };
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -25,12 +30,18 @@ const ServiceManagement: React.FC = () => {
             Manage service sectors, categories, subcategories, and individual services
           </p>
         </div>
-        <ServiceManagementSettings>
-          <Button variant="outline">
-            <Settings className="h-4 w-4 mr-2" />
-            Settings
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleRefresh} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
           </Button>
-        </ServiceManagementSettings>
+          <ServiceManagementSettings onDataChange={handleRefresh}>
+            <Button variant="outline">
+              <Settings className="h-4 w-4 mr-2" />
+              Settings
+            </Button>
+          </ServiceManagementSettings>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -77,12 +88,12 @@ const ServiceManagement: React.FC = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center">
               <Search className="h-5 w-5 mr-2" />
-              Search Quality
+              Status
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">Good</p>
-            <p className="text-sm text-muted-foreground">Service indexing</p>
+            <p className="text-2xl font-bold">Fresh</p>
+            <p className="text-sm text-muted-foreground">Clean import system</p>
           </CardContent>
         </Card>
       </div>
