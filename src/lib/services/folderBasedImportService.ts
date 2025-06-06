@@ -10,6 +10,13 @@ export interface ImportProgress {
   completed?: boolean;
 }
 
+export interface ImportResult {
+  success: boolean;
+  message: string;
+  data?: any;
+  error?: string;
+}
+
 export const processExcelFileFromStorage = async (
   bucketName: string,
   fileName: string,
@@ -48,6 +55,37 @@ export const processExcelFileFromStorage = async (
       });
     }
     throw error;
+  }
+};
+
+export const importServicesFromStorage = async (
+  bucketName: string,
+  fileName: string,
+  onProgress?: (progress: ImportProgress) => void
+): Promise<ImportResult> => {
+  try {
+    if (onProgress) {
+      onProgress({
+        stage: 'starting',
+        progress: 0,
+        message: 'Starting service import from storage...'
+      });
+    }
+
+    const result = await processExcelFileFromStorage(bucketName, fileName, onProgress);
+    
+    return {
+      success: true,
+      message: 'Services imported successfully',
+      data: result
+    };
+  } catch (error) {
+    console.error('Error importing services from storage:', error);
+    return {
+      success: false,
+      message: 'Failed to import services',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
   }
 };
 
