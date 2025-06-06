@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import type { ServiceSector, ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
 
@@ -157,6 +156,93 @@ export async function fetchServiceCategories(): Promise<ServiceMainCategory[]> {
 
   } catch (error) {
     console.error('Error in fetchServiceCategories:', error);
+    throw error;
+  }
+}
+
+export async function updateServiceCategory(categoryId: string, updates: Partial<ServiceMainCategory>) {
+  try {
+    console.log('Updating service category:', categoryId, updates);
+    
+    const { data, error } = await supabase
+      .from('service_categories')
+      .update(updates)
+      .eq('id', categoryId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating category:', error);
+      throw error;
+    }
+
+    console.log('Category updated successfully:', data);
+    return data;
+  } catch (error) {
+    console.error('Error in updateServiceCategory:', error);
+    throw error;
+  }
+}
+
+export async function deleteServiceCategory(categoryId: string) {
+  try {
+    console.log('Deleting service category:', categoryId);
+    
+    const { error } = await supabase
+      .from('service_categories')
+      .delete()
+      .eq('id', categoryId);
+
+    if (error) {
+      console.error('Error deleting category:', error);
+      throw error;
+    }
+
+    console.log('Category deleted successfully');
+  } catch (error) {
+    console.error('Error in deleteServiceCategory:', error);
+    throw error;
+  }
+}
+
+export async function deleteServiceSubcategory(subcategoryId: string) {
+  try {
+    console.log('Deleting service subcategory:', subcategoryId);
+    
+    const { error } = await supabase
+      .from('service_subcategories')
+      .delete()
+      .eq('id', subcategoryId);
+
+    if (error) {
+      console.error('Error deleting subcategory:', error);
+      throw error;
+    }
+
+    console.log('Subcategory deleted successfully');
+  } catch (error) {
+    console.error('Error in deleteServiceSubcategory:', error);
+    throw error;
+  }
+}
+
+export async function deleteServiceJob(jobId: string) {
+  try {
+    console.log('Deleting service job:', jobId);
+    
+    const { error } = await supabase
+      .from('service_jobs')
+      .delete()
+      .eq('id', jobId);
+
+    if (error) {
+      console.error('Error deleting job:', error);
+      throw error;
+    }
+
+    console.log('Job deleted successfully');
+  } catch (error) {
+    console.error('Error in deleteServiceJob:', error);
     throw error;
   }
 }
