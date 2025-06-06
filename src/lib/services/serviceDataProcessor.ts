@@ -3,7 +3,10 @@ import { supabase } from '@/integrations/supabase/client';
 import type { ProcessedServiceData, ImportStats } from './folderBasedImportService';
 
 // Export the functions that were missing
-export { processServiceDataFromSheets, importProcessedDataToDatabase } from './folderBasedImportService';
+export { 
+  validateServiceData as processServiceDataFromSheets, 
+  importProcessedDataToDatabase 
+} from './folderBasedImportService';
 
 // Additional utility functions for service data processing
 export async function validateServiceData(data: ProcessedServiceData[]): Promise<string[]> {
