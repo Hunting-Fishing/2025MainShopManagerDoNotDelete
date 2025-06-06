@@ -18,7 +18,7 @@ export function ServiceBulkImport({ onImport, disabled = false }: ServiceBulkImp
   useEffect(() => {
     const checkStorageBucket = async () => {
       try {
-        const info = await getStorageBucketInfo('service-data');
+        const info = await getStorageBucketInfo('service-imports');
         setBucketInfo(info);
         setLoading(false);
       } catch (error) {
@@ -45,7 +45,7 @@ export function ServiceBulkImport({ onImport, disabled = false }: ServiceBulkImp
         
         <p className="text-xs text-muted-foreground">
           {loading ? 'Checking storage bucket...' : 
-            !bucketInfo?.exists ? 'Storage bucket "service-data" not found' :
+            !bucketInfo?.exists ? 'Storage bucket "service-imports" not found' :
             bucketInfo.files.length === 0 ? 'No files found in storage bucket' :
             `Found ${bucketInfo.files.length} file(s) ready for import`}
         </p>
@@ -55,7 +55,7 @@ export function ServiceBulkImport({ onImport, disabled = false }: ServiceBulkImp
         <Alert variant="warning" className="mt-4">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Please ensure the "service-data" bucket exists in your Supabase storage and contains Excel files.
+            Please ensure the "service-imports" bucket exists in your Supabase storage and contains Excel files.
           </AlertDescription>
         </Alert>
       )}
