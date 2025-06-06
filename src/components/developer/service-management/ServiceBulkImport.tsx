@@ -16,32 +16,45 @@ export function ServiceBulkImport({ onImport, disabled = false }: ServiceBulkImp
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [bucketExists, setBucketExists] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<string>('');
 
   const checkStorageBucket = async () => {
     try {
       setLoading(true);
       setError(null);
+      setDebugInfo('Starting bucket check...');
       
       console.log('Checking if service-imports bucket exists...');
       const exists = await storageService.checkBucketExists('service-imports');
+      console.log('Bucket exists result:', exists);
+      setDebugInfo(`Bucket exists: ${exists}`);
       setBucketExists(exists);
       
       if (!exists) {
         setError('The "service-imports" bucket does not exist in Supabase Storage');
         setSectorFiles({});
+        setDebugInfo('Bucket does not exist - stopping here');
         return;
       }
 
       console.log('Bucket exists, fetching sector files...');
+      setDebugInfo('Bucket exists, now fetching folders and files...');
+      
       const files = await storageService.getAllSectorFiles('service-imports');
       setSectorFiles(files);
       
       console.log('Found sector files:', files);
+      const sectorCount = Object.keys(files).length;
+      const totalFiles = Object.values(files).reduce((total, fileList) => total + fileList.length, 0);
+      setDebugInfo(`Found ${sectorCount} sectors with ${totalFiles} total Excel files`);
+      
     } catch (err) {
       console.error("Error checking storage bucket:", err);
-      setError(err instanceof Error ? err.message : "Failed to load service import files");
+      const errorMessage = err instanceof Error ? err.message : "Failed to load service import files";
+      setError(errorMessage);
       setBucketExists(false);
       setSectorFiles({});
+      setDebugInfo(`Error: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -66,6 +79,11 @@ export function ServiceBulkImport({ onImport, disabled = false }: ServiceBulkImp
           <RefreshCw className="h-4 w-4 animate-spin" />
           Checking storage bucket...
         </div>
+        {debugInfo && (
+          <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
+            Debug: {debugInfo}
+          </div>
+        )}
       </div>
     );
   }
@@ -100,6 +118,12 @@ export function ServiceBulkImport({ onImport, disabled = false }: ServiceBulkImp
           Refresh
         </Button>
       </div>
+
+      {debugInfo && (
+        <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
+          Debug: {debugInfo}
+        </div>
+      )}
 
       {bucketExists && sectorCount > 0 && (
         <Card className="mt-4">
@@ -141,7 +165,7 @@ export function ServiceBulkImport({ onImport, disabled = false }: ServiceBulkImp
       )}
 
       {bucketExists && totalFiles === 0 && (
-        <Alert variant="warning" className="mt-4">
+        <Alert className="mt-4">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             The "service-imports" bucket exists but no Excel files were found. 
