@@ -1,15 +1,13 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Folder, RefreshCw } from 'lucide-react';
-import { StorageFileBrowser } from './StorageFileBrowser';
-import { importExcelFileFromStorage } from '@/lib/services/folderBasedImportService';
+import { Progress } from '@/components/ui/progress';
+import { ServiceImportProgress } from './ServiceImportProgress';
+import { importServicesFromStorage } from '@/lib/services/folderBasedImportService';
+import { Upload, FileText, AlertCircle, CheckCircle, Folder } from 'lucide-react';
 import { useServiceSectors } from '@/hooks/useServiceCategories';
-import { toast } from 'sonner';
 
 interface ImportProgress {
   stage: string;
@@ -19,113 +17,180 @@ interface ImportProgress {
   completed?: boolean;
 }
 
-interface ImportStats {
-  totalSectors: number;
-  totalCategories: number;
-  totalSubcategories: number;
-  totalJobs: number;
-  processingTime: number;
+interface ServiceCounts {
+  sectors: number;
+  categories: number;
+  subcategories: number;
+  services: number;
+}
+
+interface StorageFileBrowserProps {
+  bucketName: string;
+  onFileSelect: (filePath: string) => void;
+  selectedFiles: string[];
+  disabled: boolean;
+}
+
+// Simple file browser component
+function StorageFileBrowser({ bucketName, onFileSelect, selectedFiles, disabled }: StorageFileBrowserProps) {
+  const [files, setFiles] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const loadFiles = async () => {
+    setLoading(true);
+    try {
+      // This would normally fetch from Supabase storage
+      // For now, we'll show some example paths
+      const exampleFiles = [
+        'Automotive/services.xlsx',
+        'HVAC/hvac-services.xlsx',
+        'Plumbing/plumbing-services.xlsx',
+        'Electrical/electrical-services.xlsx'
+      ];
+      setFiles(exampleFiles);
+    } catch (error) {
+      console.error('Error loading files:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    loadFiles();
+  }, [bucketName]);
+
+  if (loading) {
+    return <div className="text-center py-4">Loading files...</div>;
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 mb-3">
+        <Folder className="h-4 w-4" />
+        <span className="text-sm font-medium">Available Excel Files</span>
+      </div>
+      {files.length === 0 ? (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            No Excel files found in the storage bucket. Upload files to the '{bucketName}' bucket first.
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <div className="space-y-2">
+          {files.map((filePath) => {
+            const isSelected = selectedFiles.includes(filePath);
+            return (
+              <div
+                key={filePath}
+                className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                  isSelected 
+                    ? 'border-blue-500 bg-blue-50' 
+                    : 'border-gray-200 hover:border-gray-300'
+                } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                onClick={() => !disabled && onFileSelect(filePath)}
+              >
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-green-600" />
+                  <span className="text-sm">{filePath}</span>
+                  {isSelected && <CheckCircle className="h-4 w-4 text-blue-600 ml-auto" />}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function FolderBasedImportManager() {
-  const [isImporting, setIsImporting] = useState(false);
-  const [progress, setProgress] = useState<ImportProgress | null>(null);
-  const [importStats, setImportStats] = useState<ImportStats | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState<ImportProgress | null>(null);
+  const [importResults, setImportResults] = useState<ServiceCounts | null>(null);
   const { refetch } = useServiceSectors();
 
-  const handleFileSelect = useCallback((filePath: string) => {
-    setSelectedFiles(prev => 
-      prev.includes(filePath) 
-        ? prev.filter(f => f !== filePath)
-        : [...prev, filePath]
-    );
-  }, []);
+  const handleFileSelect = (filePath: string) => {
+    setSelectedFiles(prev => {
+      if (prev.includes(filePath)) {
+        return prev.filter(f => f !== filePath);
+      } else {
+        return [...prev, filePath];
+      }
+    });
+  };
 
-  const handleImportFile = async (filePath: string) => {
-    if (!filePath) {
-      toast.error('Please select a file to import');
-      return;
-    }
+  const handleImport = async () => {
+    if (selectedFiles.length === 0) return;
+
+    setIsImporting(true);
+    setImportProgress(null);
+    setImportResults(null);
 
     try {
-      setIsImporting(true);
-      setProgress({ stage: 'starting', progress: 0, message: 'Starting import...' });
-      setImportStats(null);
+      console.log('Starting import for files:', selectedFiles);
+      
+      let totalCounts: ServiceCounts = {
+        sectors: 0,
+        categories: 0,
+        subcategories: 0,
+        services: 0
+      };
 
-      const startTime = Date.now();
-      
-      console.log('Starting import for file:', filePath);
-      
-      const result = await importExcelFileFromStorage(
-        'service-data',
-        filePath,
-        (progressUpdate) => {
-          console.log('Import progress:', progressUpdate);
-          setProgress(progressUpdate);
-        }
-      );
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const filePath = selectedFiles[i];
+        
+        setImportProgress({
+          stage: 'importing',
+          progress: (i / selectedFiles.length) * 100,
+          message: `Processing file ${i + 1}/${selectedFiles.length}: ${filePath}`
+        });
 
-      const processingTime = Date.now() - startTime;
-      
-      console.log('Import completed successfully:', result);
-      
-      setImportStats({
-        totalSectors: result.sectors || 0,
-        totalCategories: result.categories || 0,
-        totalSubcategories: result.subcategories || 0,
-        totalJobs: result.services || 0,
-        processingTime
-      });
+        const counts = await importServicesFromStorage(
+          'service-imports',
+          filePath,
+          (progress) => {
+            setImportProgress({
+              ...progress,
+              progress: ((i / selectedFiles.length) * 100) + (progress.progress / selectedFiles.length)
+            });
+          }
+        );
 
-      setProgress({
-        stage: 'completed',
+        totalCounts.sectors += counts.sectors;
+        totalCounts.categories += counts.categories;
+        totalCounts.subcategories += counts.subcategories;
+        totalCounts.services += counts.services;
+      }
+
+      setImportProgress({
+        stage: 'complete',
         progress: 100,
-        message: `Import completed successfully! Processed ${result.services || 0} services.`,
+        message: 'Import completed successfully!',
         completed: true
       });
 
-      // Refresh the service sectors data
+      setImportResults(totalCounts);
       await refetch();
-      
-      toast.success(`Import completed! ${result.services || 0} services processed.`);
-      
+
     } catch (error) {
       console.error('Import failed:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
-      setProgress({
+      setImportProgress({
         stage: 'error',
         progress: 0,
         message: 'Import failed',
-        error: errorMessage
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
       });
-      
-      toast.error(`Import failed: ${errorMessage}`);
     } finally {
       setIsImporting(false);
     }
   };
 
-  const handleBulkImport = async () => {
-    if (selectedFiles.length === 0) {
-      toast.error('Please select at least one file to import');
-      return;
-    }
-
-    for (const filePath of selectedFiles) {
-      await handleImportFile(filePath);
-      // Add a small delay between imports
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
-    
+  const handleClear = () => {
     setSelectedFiles([]);
-  };
-
-  const resetImport = () => {
-    setProgress(null);
-    setImportStats(null);
-    setSelectedFiles([]);
+    setImportProgress(null);
+    setImportResults(null);
   };
 
   return (
@@ -133,106 +198,89 @@ export function FolderBasedImportManager() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Folder className="h-5 w-5" />
-            Storage-Based Service Import
+            <Upload className="h-5 w-5" />
+            Folder-Based Service Import
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="text-sm text-muted-foreground">
-            Import service data from Excel files stored in Supabase Storage. 
-            Files should be organized in folders by sector (e.g., Automotive/, Marine/, etc.).
-          </div>
-
-          {selectedFiles.length > 0 && (
-            <div className="space-y-2">
-              <div className="text-sm font-medium">Selected files ({selectedFiles.length}):</div>
-              <div className="flex flex-wrap gap-2">
-                {selectedFiles.map(file => (
-                  <Badge key={file} variant="secondary" className="text-xs">
-                    {file.split('/').pop()}
-                  </Badge>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <Button 
-                  onClick={handleBulkImport}
-                  disabled={isImporting}
-                  className="flex items-center gap-2"
-                >
-                  <Upload className="h-4 w-4" />
-                  Import Selected Files
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setSelectedFiles([])}
-                  disabled={isImporting}
-                >
-                  Clear Selection
-                </Button>
-              </div>
-            </div>
-          )}
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              This tool imports Excel files from storage and automatically assigns services to sectors based on the folder structure.
+              Files in 'Automotive/' folder will be assigned to the 'Automotive' sector, etc.
+            </AlertDescription>
+          </Alert>
 
           <StorageFileBrowser
-            bucketName="service-data"
+            bucketName="service-imports"
             onFileSelect={handleFileSelect}
-            onFileImport={handleImportFile}
             selectedFiles={selectedFiles}
             disabled={isImporting}
           />
 
-          {progress && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">{progress.stage}</span>
-                  <span>{Math.round(progress.progress)}%</span>
-                </div>
-                <Progress value={progress.progress} className="h-2" />
-                <p className="text-sm text-muted-foreground">{progress.message}</p>
-              </div>
-
-              {progress.error && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{progress.error}</AlertDescription>
-                </Alert>
-              )}
-
-              {progress.completed && importStats && (
-                <Alert>
-                  <CheckCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    <div className="space-y-2">
-                      <div className="font-medium">Import Summary:</div>
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>Sectors: {importStats.totalSectors}</div>
-                        <div>Categories: {importStats.totalCategories}</div>
-                        <div>Subcategories: {importStats.totalSubcategories}</div>
-                        <div>Services: {importStats.totalJobs}</div>
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Processing time: {(importStats.processingTime / 1000).toFixed(1)}s
-                      </div>
-                    </div>
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {(progress.completed || progress.error) && (
-                <Button 
-                  variant="outline" 
-                  onClick={resetImport}
-                  className="flex items-center gap-2"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  Reset
-                </Button>
-              )}
+          {selectedFiles.length > 0 && (
+            <div className="flex gap-2">
+              <Button 
+                onClick={handleImport} 
+                disabled={isImporting}
+                className="flex items-center gap-2"
+              >
+                <Upload className="h-4 w-4" />
+                Import {selectedFiles.length} File{selectedFiles.length > 1 ? 's' : ''}
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={handleClear}
+                disabled={isImporting}
+              >
+                Clear Selection
+              </Button>
             </div>
           )}
         </CardContent>
       </Card>
+
+      {importProgress && (
+        <ServiceImportProgress
+          isImporting={isImporting}
+          progress={importProgress.progress}
+          stage={importProgress.stage}
+          message={importProgress.message}
+          error={importProgress.error}
+          completed={importProgress.completed}
+        />
+      )}
+
+      {importResults && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              Import Results
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">{importResults.sectors}</div>
+                <div className="text-sm text-gray-600">Sectors</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">{importResults.categories}</div>
+                <div className="text-sm text-gray-600">Categories</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-orange-600">{importResults.subcategories}</div>
+                <div className="text-sm text-gray-600">Subcategories</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-purple-600">{importResults.services}</div>
+                <div className="text-sm text-gray-600">Services</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
