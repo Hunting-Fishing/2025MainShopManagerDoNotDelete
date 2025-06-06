@@ -22,236 +22,191 @@ export interface BucketInfo {
 }
 
 export interface SectorFiles {
-  [sectorName: string]: StorageFile[];
+  sectorName: string;
+  excelFiles: StorageFile[];
+  totalFiles: number;
 }
 
 class UnifiedStorageService {
-  private cache = new Map<string, { data: any; timestamp: number }>();
-  private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
-  private getCacheKey(bucketName: string, operation: string, ...params: any[]): string {
-    return `${bucketName}:${operation}:${params.join(':')}`;
-  }
-
-  private setCache(key: string, data: any): void {
-    this.cache.set(key, { data, timestamp: Date.now() });
-  }
-
-  private getCache(key: string): any | null {
-    const cached = this.cache.get(key);
-    if (!cached) return null;
-    
-    if (Date.now() - cached.timestamp > this.CACHE_DURATION) {
-      this.cache.delete(key);
-      return null;
-    }
-    
-    return cached.data;
-  }
-
-  async checkBucketExists(bucketName: string): Promise<boolean> {
-    const cacheKey = this.getCacheKey(bucketName, 'exists');
-    const cached = this.getCache(cacheKey);
-    if (cached !== null) return cached;
-
+  async getBucketInfo(bucketName: string): Promise<BucketInfo> {
     try {
-      console.log(`Checking if bucket '${bucketName}' exists...`);
-      
-      // Try to list files in the bucket to check if it exists
-      const { data, error } = await supabase.storage
+      // List all items in the bucket (no limit)
+      const { data: items, error } = await supabase.storage
         .from(bucketName)
-        .list('', { limit: 1 });
+        .list('', {
+          limit: 1000, // Increased limit
+          offset: 0,
+          sortBy: { column: 'name', order: 'asc' }
+        });
 
       if (error) {
-        console.log(`Bucket '${bucketName}' check failed:`, error.message);
-        // If error contains "not found" or similar, bucket doesn't exist
-        const exists = !error.message.includes('not found') && !error.message.includes('does not exist');
-        this.setCache(cacheKey, exists);
-        return exists;
+        console.error('Error listing bucket contents:', error);
+        return {
+          exists: false,
+          files: [],
+          folders: []
+        };
       }
 
-      console.log(`Bucket '${bucketName}' exists and is accessible`);
-      this.setCache(cacheKey, true);
-      return true;
-    } catch (err) {
-      console.error(`Error checking bucket '${bucketName}':`, err);
-      this.setCache(cacheKey, false);
-      return false;
-    }
-  }
-
-  async getBucketInfo(bucketName: string): Promise<BucketInfo> {
-    const cacheKey = this.getCacheKey(bucketName, 'info');
-    const cached = this.getCache(cacheKey);
-    if (cached) return cached;
-
-    try {
-      console.log(`Getting bucket info for '${bucketName}'...`);
-      
-      const { data, error } = await supabase.storage
-        .from(bucketName)
-        .list('', { limit: 100 });
-
-      if (error) {
-        console.error(`Error getting bucket info for '${bucketName}':`, error);
-        const result = { exists: false, files: [], folders: [] };
-        this.setCache(cacheKey, result);
-        return result;
+      if (!items) {
+        return {
+          exists: false,
+          files: [],
+          folders: []
+        };
       }
 
       const files: StorageFile[] = [];
       const folders: StorageFolder[] = [];
 
-      data.forEach(item => {
-        const commonProps = {
-          name: item.name,
-          path: item.name,
-          lastModified: new Date(item.updated_at || item.created_at || Date.now())
-        };
+      for (const item of items) {
+        if (item.name && item.name !== '.emptyFolderPlaceholder') {
+          const itemData = {
+            name: item.name,
+            path: item.name,
+            lastModified: item.updated_at ? new Date(item.updated_at) : new Date()
+          };
 
-        if (item.metadata?.mimetype || item.name.includes('.')) {
-          files.push({
-            ...commonProps,
-            size: item.metadata?.size || 0,
-            type: item.metadata?.mimetype || 'application/octet-stream'
-          });
-        } else {
-          folders.push(commonProps);
+          if (item.metadata && 'size' in item.metadata) {
+            // It's a file
+            files.push({
+              ...itemData,
+              size: item.metadata.size as number,
+              type: item.metadata.mimetype as string || 'application/octet-stream'
+            });
+          } else {
+            // It's a folder
+            folders.push(itemData);
+          }
         }
-      });
+      }
 
-      console.log(`Found ${files.length} files and ${folders.length} folders in '${bucketName}'`);
-      
-      const result = { exists: true, files, folders };
-      this.setCache(cacheKey, result);
-      return result;
-    } catch (err) {
-      console.error(`Unexpected error getting bucket info for '${bucketName}':`, err);
-      const result = { exists: false, files: [], folders: [] };
-      this.setCache(cacheKey, result);
-      return result;
+      return {
+        exists: true,
+        files,
+        folders
+      };
+    } catch (error) {
+      console.error('Error in getBucketInfo:', error);
+      return {
+        exists: false,
+        files: [],
+        folders: []
+      };
     }
   }
 
-  async getFilesInFolder(bucketName: string, folderPath: string, extensions: string[] = []): Promise<StorageFile[]> {
-    const cacheKey = this.getCacheKey(bucketName, 'folder', folderPath, extensions.join(','));
-    const cached = this.getCache(cacheKey);
-    if (cached) return cached;
-
+  async getFilesInFolder(
+    bucketName: string, 
+    folderPath: string, 
+    allowedExtensions: string[] = []
+  ): Promise<StorageFile[]> {
     try {
-      console.log(`Getting files in folder '${folderPath}' from bucket '${bucketName}'...`);
-      
-      const { data, error } = await supabase.storage
+      // List all files in the folder (no limit)
+      const { data: items, error } = await supabase.storage
         .from(bucketName)
-        .list(folderPath, { limit: 100 });
+        .list(folderPath, {
+          limit: 1000, // Increased limit
+          offset: 0,
+          sortBy: { column: 'name', order: 'asc' }
+        });
 
       if (error) {
-        console.error(`Error getting files in folder '${folderPath}':`, error);
-        this.setCache(cacheKey, []);
+        console.error(`Error listing folder ${folderPath}:`, error);
         return [];
       }
 
-      const files = data
-        .filter(item => {
-          // Filter for files (not folders)
-          const isFile = item.metadata?.mimetype || item.name.includes('.');
-          if (!isFile) return false;
+      if (!items) {
+        return [];
+      }
 
-          // Filter by extensions if provided
-          if (extensions.length > 0) {
-            return extensions.some(ext => item.name.toLowerCase().endsWith(ext.toLowerCase()));
+      const files: StorageFile[] = [];
+
+      for (const item of items) {
+        if (!item.name || item.name === '.emptyFolderPlaceholder') {
+          continue;
+        }
+
+        // Check if it's a file (has metadata with size)
+        if (item.metadata && 'size' in item.metadata) {
+          const fileName = item.name.toLowerCase();
+          
+          // Filter by allowed extensions if specified
+          if (allowedExtensions.length > 0) {
+            const hasAllowedExtension = allowedExtensions.some(ext => 
+              fileName.endsWith(ext.toLowerCase())
+            );
+            if (!hasAllowedExtension) {
+              continue;
+            }
           }
-          return true;
-        })
-        .map(item => ({
-          name: item.name,
-          path: folderPath ? `${folderPath}/${item.name}` : item.name,
-          size: item.metadata?.size || 0,
-          type: item.metadata?.mimetype || 'application/octet-stream',
-          lastModified: new Date(item.updated_at || item.created_at || Date.now())
-        }));
 
-      console.log(`Found ${files.length} files in folder '${folderPath}'`);
-      this.setCache(cacheKey, files);
+          files.push({
+            name: item.name,
+            path: `${folderPath}/${item.name}`,
+            size: item.metadata.size as number,
+            type: item.metadata.mimetype as string || 'application/octet-stream',
+            lastModified: item.updated_at ? new Date(item.updated_at) : new Date()
+          });
+        }
+      }
+
       return files;
-    } catch (err) {
-      console.error(`Unexpected error getting files in folder '${folderPath}':`, err);
-      this.setCache(cacheKey, []);
+    } catch (error) {
+      console.error(`Error in getFilesInFolder for ${folderPath}:`, error);
       return [];
     }
   }
 
-  async getAllSectorFiles(bucketName: string): Promise<SectorFiles> {
-    const cacheKey = this.getCacheKey(bucketName, 'sectors');
-    const cached = this.getCache(cacheKey);
-    if (cached) return cached;
-
+  async getAllSectorFiles(bucketName: string): Promise<SectorFiles[]> {
     try {
-      console.log(`Getting all sector files from bucket '${bucketName}'...`);
-      
+      // First get all folders (sectors)
       const bucketInfo = await this.getBucketInfo(bucketName);
-      if (!bucketInfo.exists) {
-        console.log(`Bucket '${bucketName}' does not exist`);
-        this.setCache(cacheKey, {});
-        return {};
+      
+      if (!bucketInfo.exists || bucketInfo.folders.length === 0) {
+        console.warn('No sectors found in bucket');
+        return [];
       }
 
-      const sectorFiles: SectorFiles = {};
+      const sectorFiles: SectorFiles[] = [];
 
-      // Get files in root directory
-      const rootFiles = await this.getFilesInFolder(bucketName, '', ['.xlsx', '.xls', '.csv']);
-      if (rootFiles.length > 0) {
-        sectorFiles['root'] = rootFiles;
-      }
-
-      // Get files in each folder (representing sectors)
+      // Process each sector folder
       for (const folder of bucketInfo.folders) {
-        const folderFiles = await this.getFilesInFolder(bucketName, folder.name, ['.xlsx', '.xls', '.csv']);
-        if (folderFiles.length > 0) {
-          sectorFiles[folder.name] = folderFiles;
-        }
+        const excelFiles = await this.getFilesInFolder(bucketName, folder.name, ['.xlsx']);
+        
+        sectorFiles.push({
+          sectorName: folder.name,
+          excelFiles,
+          totalFiles: excelFiles.length
+        });
       }
 
-      console.log(`Found files in ${Object.keys(sectorFiles).length} sectors`);
-      this.setCache(cacheKey, sectorFiles);
+      // Sort by sector name for consistent display
+      sectorFiles.sort((a, b) => a.sectorName.localeCompare(b.sectorName));
+
       return sectorFiles;
-    } catch (err) {
-      console.error(`Error getting sector files from bucket '${bucketName}':`, err);
-      this.setCache(cacheKey, {});
-      return {};
+    } catch (error) {
+      console.error('Error in getAllSectorFiles:', error);
+      return [];
     }
   }
 
   async downloadFile(bucketName: string, filePath: string): Promise<Blob | null> {
     try {
-      console.log(`Downloading file '${filePath}' from bucket '${bucketName}'...`);
-      
       const { data, error } = await supabase.storage
         .from(bucketName)
         .download(filePath);
 
       if (error) {
-        console.error(`Error downloading file '${filePath}':`, error);
+        console.error(`Error downloading file ${filePath}:`, error);
         return null;
       }
 
-      console.log(`Successfully downloaded file '${filePath}'`);
       return data;
-    } catch (err) {
-      console.error(`Unexpected error downloading file '${filePath}':`, err);
+    } catch (error) {
+      console.error(`Error in downloadFile for ${filePath}:`, error);
       return null;
     }
-  }
-
-  clearCacheForBucket(bucketName: string): void {
-    console.log(`Clearing cache for bucket '${bucketName}'`);
-    const keysToDelete = Array.from(this.cache.keys()).filter(key => key.startsWith(`${bucketName}:`));
-    keysToDelete.forEach(key => this.cache.delete(key));
-  }
-
-  clearAllCache(): void {
-    console.log('Clearing all storage cache');
-    this.cache.clear();
   }
 }
 

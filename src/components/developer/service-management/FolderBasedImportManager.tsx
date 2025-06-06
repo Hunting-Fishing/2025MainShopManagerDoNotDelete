@@ -41,36 +41,42 @@ export function FolderBasedImportManager() {
       // Import completed successfully
       setImportProgress({
         stage: 'complete',
-        message: 'Service import completed successfully!',
+        message: result.message || 'Service import completed successfully!',
         progress: 100,
         completed: true,
         error: null
       });
       
-      // Refresh the service sectors list to show new data
-      refetch();
+      // Force refresh the service sectors list to show new data
+      setTimeout(async () => {
+        await refetch();
+      }, 1000);
       
       // Show success toast with statistics
       toast({
         title: "Import Completed Successfully",
-        description: result.message || "Services have been imported successfully.",
-        variant: "success",
+        description: result.stats ? 
+          `Imported ${result.stats.totalServices} services across ${result.stats.totalSectors} sectors from ${result.stats.filesProcessed} files.` : 
+          result.message,
+        variant: "default",
       });
       
     } catch (error) {
       console.error('Service import failed:', error);
       
+      const errorMessage = error instanceof Error ? error.message : 'Import failed';
+      
       setImportProgress({
         stage: 'error',
-        message: error instanceof Error ? error.message : 'Import failed',
+        message: errorMessage,
         progress: 0,
         completed: false,
-        error: error instanceof Error ? error.message : 'An unexpected error occurred'
+        error: errorMessage
       });
       
       toast({
         title: "Import Failed",
-        description: error instanceof Error ? error.message : "Failed to import services",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -92,39 +98,87 @@ export function FolderBasedImportManager() {
     toast({
       title: "Import Cancelled",
       description: "Service import was cancelled",
-      variant: "warning",
+      variant: "destructive",
     });
+  };
+
+  const handleRefreshData = async () => {
+    try {
+      await refetch();
+      toast({
+        title: "Data Refreshed",
+        description: "Service hierarchy has been refreshed",
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "Refresh Failed",
+        description: "Failed to refresh service data",
+        variant: "destructive",
+      });
+    }
   };
   
   return (
-    <Card className="mt-6">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <FolderOpen className="h-5 w-5" />
-          Storage-Based Service Import
-        </CardTitle>
-        <CardDescription>
-          Import service data from structured Excel files in a storage folder
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <ServiceBulkImport 
-            onImport={handleServiceImport} 
-            disabled={isImporting} 
-          />
-          
-          <ServiceImportProgress 
-            isImporting={isImporting}
-            progress={importProgress.progress}
-            stage={importProgress.stage}
-            message={importProgress.message}
-            onCancel={handleCancel}
-            error={importProgress.error}
-            completed={importProgress.completed}
-          />
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FolderOpen className="h-5 w-5" />
+            Storage-Based Service Import
+          </CardTitle>
+          <CardDescription>
+            Import service data from structured Excel files in storage folders organized by sector
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <ServiceBulkImport 
+              onImport={handleServiceImport} 
+              disabled={isImporting} 
+            />
+            
+            <ServiceImportProgress 
+              isImporting={isImporting}
+              progress={importProgress.progress}
+              stage={importProgress.stage}
+              message={importProgress.message}
+              onCancel={handleCancel}
+              error={importProgress.error}
+              completed={importProgress.completed}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Data Management Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Database className="h-5 w-5" />
+            Data Management
+          </CardTitle>
+          <CardDescription>
+            Manage imported service data and refresh the display
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button
+              onClick={handleRefreshData}
+              variant="outline"
+              disabled={isImporting}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh Service Data
+            </Button>
+            
+            <div className="text-sm text-gray-600 flex items-center">
+              Current: {sectors.length} sectors loaded
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
