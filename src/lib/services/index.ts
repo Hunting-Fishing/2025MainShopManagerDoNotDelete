@@ -19,3 +19,4 @@ export {
   processServiceDataFromSheets,
   importProcessedDataToDatabase
 } from './serviceDataProcessor';
+export { getStorageBucketInfo } from './storageUtils';
