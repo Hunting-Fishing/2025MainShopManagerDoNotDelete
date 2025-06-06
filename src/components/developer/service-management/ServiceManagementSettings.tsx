@@ -148,6 +148,7 @@ export function ServiceManagementSettings({ children, onDataChange }: ServiceMan
                 message={clearProgress.message}
                 error={clearProgress.error}
                 completed={clearProgress.completed}
+                operation="clear"
               />
             </CardContent>
           </Card>
