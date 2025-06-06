@@ -3,15 +3,11 @@ import { supabase } from '@/integrations/supabase/client';
 import type { StorageFile, SectorFiles } from './types';
 
 export class BucketViewerService {
-  private bucketName = 'service-imports'; // Updated to match console logs
+  private bucketName = 'service-imports';
 
-  async getBucketInfo(): Promise<{
-    exists: boolean;
-    files: StorageFile[];
-    folders: { name: string; path: string; lastModified?: Date }[];
-  }> {
+  async ensureBucketExists(): Promise<boolean> {
     try {
-      console.log(`Fetching bucket info for: ${this.bucketName}`);
+      console.log(`Checking if bucket ${this.bucketName} exists...`);
       
       // Check if bucket exists
       const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
@@ -20,8 +16,47 @@ export class BucketViewerService {
       const bucketExists = buckets?.some(bucket => bucket.name === this.bucketName) || false;
       
       if (!bucketExists) {
-        console.log(`Bucket ${this.bucketName} does not exist`);
-        return { exists: false, files: [], folders: [] };
+        console.log(`Creating bucket: ${this.bucketName}`);
+        // Create the bucket
+        const { error: createError } = await supabase.storage.createBucket(this.bucketName, {
+          public: true,
+          allowedMimeTypes: ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'],
+          fileSizeLimit: 50 * 1024 * 1024 // 50MB
+        });
+        
+        if (createError) {
+          console.error('Error creating bucket:', createError);
+          return false;
+        }
+        
+        console.log(`Successfully created bucket: ${this.bucketName}`);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error ensuring bucket exists:', error);
+      return false;
+    }
+  }
+
+  async getBucketInfo(): Promise<{
+    exists: boolean;
+    files: StorageFile[];
+    folders: { name: string; path: string; lastModified?: Date }[];
+    error?: string;
+  }> {
+    try {
+      console.log(`Fetching bucket info for: ${this.bucketName}`);
+      
+      // Ensure bucket exists first
+      const bucketReady = await this.ensureBucketExists();
+      if (!bucketReady) {
+        return { 
+          exists: false, 
+          files: [], 
+          folders: [], 
+          error: `Failed to create or access bucket: ${this.bucketName}` 
+        };
       }
 
       // List all files in the bucket with pagination
@@ -39,7 +74,15 @@ export class BucketViewerService {
             sortBy: { column: 'name', order: 'asc' } 
           });
 
-        if (filesError) throw filesError;
+        if (filesError) {
+          console.error('Error listing files:', filesError);
+          return { 
+            exists: true, 
+            files: [], 
+            folders: [], 
+            error: `Error listing files: ${filesError.message}` 
+          };
+        }
         
         if (!filesList || filesList.length === 0) break;
         
@@ -79,13 +122,25 @@ export class BucketViewerService {
       return { exists: true, files, folders };
     } catch (error) {
       console.error('Error getting bucket info:', error);
-      return { exists: false, files: [], folders: [] };
+      return { 
+        exists: false, 
+        files: [], 
+        folders: [], 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      };
     }
   }
 
   async getFilesInFolder(folderPath: string, extensions: string[] = ['.xlsx']): Promise<StorageFile[]> {
     try {
       console.log(`Fetching all files in folder: ${folderPath}`);
+      
+      // Ensure bucket exists first
+      const bucketReady = await this.ensureBucketExists();
+      if (!bucketReady) {
+        console.error(`Bucket ${this.bucketName} not ready`);
+        return [];
+      }
       
       const allItems: any[] = [];
       let offset = 0;
@@ -139,7 +194,10 @@ export class BucketViewerService {
     try {
       console.log('Getting all sector files from bucket:', this.bucketName);
       const bucketInfo = await this.getBucketInfo();
-      if (!bucketInfo.exists) return [];
+      if (!bucketInfo.exists) {
+        console.error('Bucket does not exist or cannot be accessed');
+        return [];
+      }
 
       console.log(`Found ${bucketInfo.folders.length} sector folders`);
       const sectorFiles: SectorFiles[] = [];
