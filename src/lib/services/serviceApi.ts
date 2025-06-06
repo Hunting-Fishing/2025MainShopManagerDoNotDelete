@@ -4,8 +4,20 @@ import type { ServiceSector, ServiceMainCategory, ServiceSubcategory, ServiceJob
 export async function fetchServiceSectors(): Promise<ServiceSector[]> {
   try {
     console.log('Fetching service sectors...');
-    
-    const { data: sectors, error: sectorsError } = await supabase
+
+    // First check if tables exist
+    const { error: tableCheckError } = await supabase
+      .from('service_sectors')
+      .select('id')
+      .limit(1);
+
+    if (tableCheckError) {
+      console.error('Service tables do not exist:', tableCheckError);
+      return [];
+    }
+
+    // Fetch sectors with their full hierarchy
+    const { data: sectorsData, error: sectorsError } = await supabase
       .from('service_sectors')
       .select(`
         id,
@@ -18,82 +30,79 @@ export async function fetchServiceSectors(): Promise<ServiceSector[]> {
           name,
           description,
           position,
-          sector_id,
           service_subcategories (
             id,
             name,
             description,
-            category_id,
             service_jobs (
               id,
               name,
               description,
               estimated_time,
-              price,
-              subcategory_id
+              price
             )
           )
         )
       `)
-      .eq('is_active', true)
-      .order('position', { ascending: true });
+      .order('position', { ascending: true })
+      .order('name', { ascending: true });
 
     if (sectorsError) {
       console.error('Error fetching sectors:', sectorsError);
-      throw sectorsError;
+      return [];
     }
 
-    console.log('Raw sectors data:', sectors);
+    console.log('Raw sectors data:', sectorsData);
 
-    if (!sectors || sectors.length === 0) {
+    if (!sectorsData || sectorsData.length === 0) {
       console.log('No sectors found');
       return [];
     }
 
-    // Transform the data to match our TypeScript interfaces
-    const transformedSectors: ServiceSector[] = sectors.map(sector => ({
+    // Transform the data to match our TypeScript types
+    const sectors: ServiceSector[] = sectorsData.map(sector => ({
       id: sector.id,
       name: sector.name,
-      description: sector.description,
-      position: sector.position,
-      is_active: sector.is_active,
-      categories: (sector.service_categories || []).map(category => ({
+      description: sector.description || undefined,
+      position: sector.position || undefined,
+      is_active: sector.is_active ?? true,
+      categories: (sector.service_categories || []).map((category: any) => ({
         id: category.id,
         name: category.name,
-        description: category.description,
-        position: category.position,
-        sector_id: category.sector_id,
-        subcategories: (category.service_subcategories || []).map(subcategory => ({
+        description: category.description || undefined,
+        position: category.position || undefined,
+        sector_id: sector.id,
+        subcategories: (category.service_subcategories || []).map((subcategory: any) => ({
           id: subcategory.id,
           name: subcategory.name,
-          description: subcategory.description,
-          category_id: subcategory.category_id,
-          jobs: (subcategory.service_jobs || []).map(job => ({
+          description: subcategory.description || undefined,
+          category_id: category.id,
+          jobs: (subcategory.service_jobs || []).map((job: any) => ({
             id: job.id,
             name: job.name,
-            description: job.description,
-            estimatedTime: job.estimated_time,
-            price: job.price,
-            subcategory_id: job.subcategory_id
+            description: job.description || undefined,
+            estimatedTime: job.estimated_time || undefined,
+            price: job.price || undefined,
+            subcategory_id: subcategory.id
           }))
         }))
       }))
     }));
 
-    console.log('Transformed sectors:', transformedSectors);
-    return transformedSectors;
+    console.log('Transformed sectors:', sectors.length);
+    return sectors;
 
   } catch (error) {
     console.error('Error in fetchServiceSectors:', error);
-    throw error;
+    return [];
   }
 }
 
 export async function fetchServiceCategories(): Promise<ServiceMainCategory[]> {
   try {
     console.log('Fetching service categories...');
-    
-    const { data: categories, error } = await supabase
+
+    const { data: categoriesData, error } = await supabase
       .from('service_categories')
       .select(`
         id,
@@ -105,58 +114,54 @@ export async function fetchServiceCategories(): Promise<ServiceMainCategory[]> {
           id,
           name,
           description,
-          category_id,
           service_jobs (
             id,
             name,
             description,
             estimated_time,
-            price,
-            subcategory_id
+            price
           )
         )
       `)
-      .order('position', { ascending: true });
+      .order('position', { ascending: true })
+      .order('name', { ascending: true });
 
     if (error) {
       console.error('Error fetching categories:', error);
-      throw error;
-    }
-
-    if (!categories || categories.length === 0) {
-      console.log('No categories found');
       return [];
     }
 
-    // Transform the data to match our TypeScript interfaces
-    const transformedCategories: ServiceMainCategory[] = categories.map(category => ({
+    if (!categoriesData) {
+      return [];
+    }
+
+    const categories: ServiceMainCategory[] = categoriesData.map((category: any) => ({
       id: category.id,
       name: category.name,
-      description: category.description,
-      position: category.position,
+      description: category.description || undefined,
+      position: category.position || undefined,
       sector_id: category.sector_id,
-      subcategories: (category.service_subcategories || []).map(subcategory => ({
+      subcategories: (category.service_subcategories || []).map((subcategory: any) => ({
         id: subcategory.id,
         name: subcategory.name,
-        description: subcategory.description,
-        category_id: subcategory.category_id,
-        jobs: (subcategory.service_jobs || []).map(job => ({
+        description: subcategory.description || undefined,
+        category_id: category.id,
+        jobs: (subcategory.service_jobs || []).map((job: any) => ({
           id: job.id,
           name: job.name,
-          description: job.description,
-          estimatedTime: job.estimated_time,
-          price: job.price,
-          subcategory_id: job.subcategory_id
+          description: job.description || undefined,
+          estimatedTime: job.estimated_time || undefined,
+          price: job.price || undefined,
+          subcategory_id: subcategory.id
         }))
       }))
     }));
 
-    console.log('Transformed categories:', transformedCategories);
-    return transformedCategories;
-
+    console.log('Service categories loaded:', categories.length);
+    return categories;
   } catch (error) {
     console.error('Error in fetchServiceCategories:', error);
-    throw error;
+    return [];
   }
 }
 
