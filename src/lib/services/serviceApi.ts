@@ -1,6 +1,5 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { ServiceSector, ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
+import { ServiceMainCategory, ServiceSubcategory, ServiceJob, ServiceSector } from '@/types/serviceHierarchy';
 
 export const fetchServiceSectors = async (): Promise<ServiceSector[]> => {
   try {
@@ -233,4 +232,148 @@ export const fetchServiceCategories = async (): Promise<ServiceMainCategory[]> =
     console.error('Error in fetchServiceCategories:', error);
     throw error;
   }
+};
+
+export const updateServiceCategory = async (categoryId: string, updates: Partial<ServiceMainCategory>) => {
+  const { data, error } = await supabase
+    .from('service_categories')
+    .update(updates)
+    .eq('id', categoryId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating service category:', error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const deleteServiceCategory = async (categoryId: string) => {
+  const { error } = await supabase
+    .from('service_categories')
+    .delete()
+    .eq('id', categoryId);
+
+  if (error) {
+    console.error('Error deleting service category:', error);
+    throw error;
+  }
+};
+
+export const deleteServiceSubcategory = async (subcategoryId: string) => {
+  const { error } = await supabase
+    .from('service_subcategories')
+    .delete()
+    .eq('id', subcategoryId);
+
+  if (error) {
+    console.error('Error deleting service subcategory:', error);
+    throw error;
+  }
+};
+
+export const deleteServiceJob = async (jobId: string) => {
+  const { error } = await supabase
+    .from('service_jobs')
+    .delete()
+    .eq('id', jobId);
+
+  if (error) {
+    console.error('Error deleting service job:', error);
+    throw error;
+  }
+};
+
+export const updateServiceSubcategory = async (subcategoryId: string, updates: Partial<ServiceSubcategory>) => {
+  const { data, error } = await supabase
+    .from('service_subcategories')
+    .update(updates)
+    .eq('id', subcategoryId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating service subcategory:', error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const updateServiceJob = async (jobId: string, updates: Partial<ServiceJob>) => {
+  const { data, error } = await supabase
+    .from('service_jobs')
+    .update(updates)
+    .eq('id', jobId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating service job:', error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const createServiceSector = async (sector: Omit<ServiceSector, 'id' | 'categories'>) => {
+  const { data, error } = await supabase
+    .from('service_sectors')
+    .insert(sector)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating service sector:', error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const createServiceCategory = async (category: Omit<ServiceMainCategory, 'id' | 'subcategories'>) => {
+  const { data, error } = await supabase
+    .from('service_categories')
+    .insert(category)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating service category:', error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const createServiceSubcategory = async (subcategory: Omit<ServiceSubcategory, 'id' | 'jobs'>) => {
+  const { data, error } = await supabase
+    .from('service_subcategories')
+    .insert(subcategory)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating service subcategory:', error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const createServiceJob = async (job: Omit<ServiceJob, 'id'>) => {
+  const { data, error } = await supabase
+    .from('service_jobs')
+    .insert(job)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating service job:', error);
+    throw error;
+  }
+
+  return data;
 };
