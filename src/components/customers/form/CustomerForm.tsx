@@ -1,7 +1,4 @@
 import React from 'react';
-import { TagSelector } from './tag/TagSelector';
-import { TagBadge } from './tag/TagBadge';
-import { TagSuggestions } from './tag/TagSuggestions';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form } from "@/components/ui/form";

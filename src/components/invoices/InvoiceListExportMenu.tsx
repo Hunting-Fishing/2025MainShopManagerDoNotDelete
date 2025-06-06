@@ -42,8 +42,11 @@ export function InvoiceListExportMenu({ invoices }: InvoiceListExportMenuProps) 
           exportToExcel(exportData, "Invoices_List");
           break;
         case "pdf":
-          // Only pass the two required arguments
-          exportToPDF(exportData, "Invoices_List");
+          // Pass the required third argument for PDF export
+          exportToPDF(exportData, "Invoices_List", {
+            title: "Invoices List",
+            orientation: "landscape"
+          });
           break;
       }
 
