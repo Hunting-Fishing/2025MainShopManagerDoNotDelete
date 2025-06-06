@@ -1,11 +1,12 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import * as XLSX from 'xlsx';
 
-interface ImportProgress {
+export interface ImportProgress {
   stage: string;
   progress: number;
   message: string;
+  error?: string;
+  completed?: boolean;
 }
 
 interface ExcelSheetData {
