@@ -1,285 +1,278 @@
-import { supabase } from '@/integrations/supabase/client';
+
 import * as XLSX from 'xlsx';
+import { supabase } from '@/integrations/supabase/client';
 import {
   insertServiceSector,
   insertServiceCategory,
   insertServiceSubcategory,
   insertServiceJob
 } from './serviceApi';
-import type { 
-  ExcelSectorData, 
-  ExcelCategoryData, 
-  ProcessedServiceData,
-  ImportStats 
-} from '@/types/service';
+import { StorageFile } from '@/types/service';
 
-export async function processExcelFileFromStorage(
-  filePath: string | undefined,
-  sectorName: string
-): Promise<ProcessedServiceData> {
+export async function processExcelFile(file: File, sectorName: string) {
+  try {
+    console.log(`Processing Excel file: ${file.name} for sector: ${sectorName}`);
+    
+    const arrayBuffer = await file.arrayBuffer();
+    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+    
+    // Get the first sheet (assuming one sheet per file)
+    const firstSheetName = workbook.SheetNames[0];
+    if (!firstSheetName) {
+      throw new Error('No sheets found in Excel file');
+    }
+    
+    const worksheet = workbook.Sheets[firstSheetName];
+    if (!worksheet) {
+      throw new Error('Could not read worksheet data');
+    }
+    
+    // Convert sheet to JSON format - this gives us array of arrays
+    const sheetData = XLSX.utils.sheet_to_json(worksheet, { 
+      header: 1, // Use array format instead of object format
+      defval: '' // Default value for empty cells
+    }) as any[][];
+    
+    console.log('Sheet data extracted:', sheetData.length, 'rows');
+    
+    if (sheetData.length < 2) {
+      throw new Error('Excel file must have at least 2 rows (headers and data)');
+    }
+    
+    // Process the data
+    await processExcelData(sheetData, sectorName, file.name);
+    
+    return {
+      success: true,
+      message: `Successfully processed ${file.name}`,
+      stats: {
+        totalSectors: 1,
+        totalCategories: 1,
+        totalSubcategories: 0,
+        totalServices: 0,
+        filesProcessed: 1
+      }
+    };
+  } catch (error) {
+    console.error('Error processing Excel file:', error);
+    throw error;
+  }
+}
+
+export async function processExcelFileFromStorage(filePath: string | undefined, sectorName: string) {
   try {
     if (!filePath) {
       throw new Error('File path is required');
     }
-
+    
     console.log(`Processing Excel file from storage: ${filePath} for sector: ${sectorName}`);
     
-    // Download the file from Supabase storage
-    const { data: fileData, error: downloadError } = await supabase.storage
+    // Download file from storage
+    const { data, error } = await supabase.storage
       .from('service-data')
       .download(filePath);
     
-    if (downloadError || !fileData) {
-      throw new Error(`Failed to download file: ${downloadError?.message}`);
+    if (error) {
+      console.error('Error downloading file from storage:', error);
+      throw new Error(`Failed to download file: ${error.message}`);
+    }
+    
+    if (!data) {
+      throw new Error('No file data received from storage');
     }
     
     // Convert blob to array buffer
-    const arrayBuffer = await fileData.arrayBuffer();
-    
-    // Parse Excel file
+    const arrayBuffer = await data.arrayBuffer();
     const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
     
-    // Convert to JSON with header row
-    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-    
-    if (!jsonData || jsonData.length < 2) {
-      throw new Error('Excel file must have at least 2 rows (header + data)');
+    // Get the first sheet
+    const firstSheetName = workbook.SheetNames[0];
+    if (!firstSheetName) {
+      throw new Error('No sheets found in Excel file');
     }
     
-    // Extract file name without extension as category name
-    const fileName = filePath.split('/').pop()?.replace(/\.[^/.]+$/, '') || 'Unknown Category';
+    const worksheet = workbook.Sheets[firstSheetName];
+    if (!worksheet) {
+      throw new Error('Could not read worksheet data');
+    }
     
-    // Process the Excel data according to your structure
-    const processedData = await processExcelDataToDatabase(jsonData, sectorName, fileName);
+    // Convert sheet to array format
+    const sheetData = XLSX.utils.sheet_to_json(worksheet, { 
+      header: 1,
+      defval: ''
+    }) as any[][];
     
-    return processedData;
+    console.log('Sheet data extracted from storage:', sheetData.length, 'rows');
     
+    if (sheetData.length < 2) {
+      throw new Error('Excel file must have at least 2 rows (headers and data)');
+    }
+    
+    // Extract category name from file path (remove .xlsx extension)
+    const fileName = filePath.split('/').pop() || '';
+    const categoryName = fileName.replace(/\.(xlsx|xls)$/i, '');
+    
+    // Process the data
+    await processExcelData(sheetData, sectorName, categoryName);
+    
+    return {
+      success: true,
+      message: `Successfully processed ${fileName}`,
+      stats: {
+        totalSectors: 1,
+        totalCategories: 1,
+        totalSubcategories: 0,
+        totalServices: 0,
+        filesProcessed: 1
+      }
+    };
   } catch (error) {
     console.error('Error processing Excel file from storage:', error);
     throw error;
   }
 }
 
-async function processExcelDataToDatabase(
-  excelData: any[][],
-  sectorName: string,
-  categoryName: string
-): Promise<ProcessedServiceData> {
+async function processExcelData(sheetData: any[][], sectorName: string, categoryName: string) {
   try {
-    console.log(`Processing data for sector: ${sectorName}, category: ${categoryName}`);
+    console.log(`Processing Excel data for sector: ${sectorName}, category: ${categoryName}`);
     
-    // Get or create sector
-    let sector;
-    const { data: existingSector } = await supabase
-      .from('service_sectors')
-      .select('*')
-      .eq('name', sectorName)
-      .single();
+    // Create or get sector
+    const sector = await insertServiceSector({
+      name: sectorName,
+      description: `${sectorName} services sector`,
+      position: 1,
+      is_active: true
+    });
     
-    if (existingSector) {
-      sector = existingSector;
-    } else {
-      sector = await insertServiceSector({
-        name: sectorName,
-        description: `${sectorName} services`,
-        is_active: true,
-        position: 1
-      });
-    }
+    // Create category (from file name)
+    const category = await insertServiceCategory({
+      name: categoryName,
+      description: `${categoryName} services`,
+      position: 1,
+      sector_id: sector.id
+    });
     
-    // Get or create category
-    let category;
-    const { data: existingCategory } = await supabase
-      .from('service_categories')
-      .select('*')
-      .eq('name', categoryName)
-      .eq('sector_id', sector.id)
-      .single();
+    // Row 1 contains subcategory headers
+    const subcategoryHeaders = sheetData[0] || [];
+    console.log('Subcategory headers:', subcategoryHeaders);
     
-    if (existingCategory) {
-      category = existingCategory;
-    } else {
-      category = await insertServiceCategory({
-        name: categoryName,
-        description: `${categoryName} services`,
-        sector_id: sector.id,
-        position: 1
-      });
-    }
-    
-    // Extract subcategories from row 1 (index 0)
-    const subcategoryHeaders = excelData[0].filter((header: string) => header && header.trim() !== '');
-    
-    let totalServices = 0;
-    const subcategoryCount = subcategoryHeaders.length;
-    
-    // Process each subcategory
+    // Process each column (subcategory)
     for (let colIndex = 0; colIndex < subcategoryHeaders.length; colIndex++) {
-      const subcategoryName = subcategoryHeaders[colIndex].trim();
+      const subcategoryName = subcategoryHeaders[colIndex];
       
-      // Get or create subcategory
-      let subcategory;
-      const { data: existingSubcategory } = await supabase
-        .from('service_subcategories')
-        .select('*')
-        .eq('name', subcategoryName)
-        .eq('category_id', category.id)
-        .single();
-      
-      if (existingSubcategory) {
-        subcategory = existingSubcategory;
-      } else {
-        subcategory = await insertServiceSubcategory({
-          name: subcategoryName,
-          description: `${subcategoryName} services`,
-          category_id: category.id
-        });
+      if (!subcategoryName || subcategoryName.trim() === '') {
+        continue; // Skip empty headers
       }
       
-      // Process services for this subcategory (rows 2-1000, indexes 1-999)
-      for (let rowIndex = 1; rowIndex < Math.min(excelData.length, 1000); rowIndex++) {
-        const row = excelData[rowIndex];
-        const serviceName = row[colIndex];
+      // Create subcategory
+      const subcategory = await insertServiceSubcategory({
+        name: subcategoryName.trim(),
+        description: `${subcategoryName} services in ${categoryName}`,
+        category_id: category.id
+      });
+      
+      // Process services in this column (rows 2-1000)
+      let serviceCount = 0;
+      for (let rowIndex = 1; rowIndex < Math.min(sheetData.length, 1001); rowIndex++) {
+        const row = sheetData[rowIndex];
+        const serviceName = row && row[colIndex] ? row[colIndex] : '';
         
-        if (serviceName && serviceName.trim() !== '') {
-          // Check if service already exists
-          const { data: existingJob } = await supabase
-            .from('service_jobs')
-            .select('*')
-            .eq('name', serviceName.trim())
-            .eq('subcategory_id', subcategory.id)
-            .single();
-          
-          if (!existingJob) {
-            await insertServiceJob({
-              name: serviceName.trim(),
-              description: `${serviceName.trim()} service`,
-              estimatedTime: 60, // Default 1 hour
-              price: 100, // Default price
-              subcategory_id: subcategory.id
-            });
-          }
-          
-          totalServices++;
+        if (serviceName && serviceName.toString().trim() !== '') {
+          // Create service
+          await insertServiceJob({
+            name: serviceName.toString().trim(),
+            description: `${serviceName} service in ${subcategoryName}`,
+            estimatedTime: 60, // Default 1 hour
+            price: 100, // Default price
+            subcategory_id: subcategory.id
+          });
+          serviceCount++;
         }
       }
+      
+      console.log(`Created ${serviceCount} services for subcategory: ${subcategoryName}`);
     }
     
-    const stats: ImportStats = {
-      totalSectors: 1,
-      totalCategories: 1,
-      totalSubcategories: subcategoryCount,
-      totalServices,
-      filesProcessed: 1
-    };
-    
-    console.log(`Import completed. Stats:`, stats);
-    
-    return {
-      sectors: [sector],
-      stats,
-      sectorName,
-      categories: [{
-        name: categoryName,
-        subcategories: subcategoryHeaders.map(name => ({ name, services: [] }))
-      }]
-    };
-    
+    console.log(`Successfully processed category: ${categoryName}`);
   } catch (error) {
-    console.error('Error processing Excel data to database:', error);
+    console.error('Error processing Excel data:', error);
     throw error;
   }
 }
 
-// Excel import types - Updated to match actual structure
-export interface ExcelRowData {
-  category: string;
-  subcategory: string;
-  serviceName: string;
-  description: string;
-  estimatedTime: number;
-  price: number;
-}
-
-export async function processExcelFile(file: File): Promise<any> {
-  try {
-    const reader = new FileReader();
-
-    reader.onload = async (e: any) => {
-      const binaryStr = e.target.result;
-      const workbook = XLSX.read(binaryStr, { type: 'binary' });
-
-      workbook.SheetNames.forEach(sheet => {
-        const data = XLSX.utils.sheet_to_json(workbook.Sheets[sheet]);
-        console.log(data);  // Process the data as needed
+export async function processMultipleExcelFiles(files: File[], sectorName: string) {
+  const results = [];
+  
+  for (const file of files) {
+    try {
+      const result = await processExcelFile(file, sectorName);
+      results.push(result);
+    } catch (error) {
+      console.error(`Error processing file ${file.name}:`, error);
+      results.push({
+        success: false,
+        message: `Failed to process ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        stats: {
+          totalSectors: 0,
+          totalCategories: 0,
+          totalSubcategories: 0,
+          totalServices: 0,
+          filesProcessed: 0
+        }
       });
-    };
-
-    reader.onerror = (error) => {
-      console.error("Error reading file:", error);
-    };
-
-    reader.readAsBinaryString(file);
-    return { success: true, message: 'File processing started.' };
-  } catch (error) {
-    console.error("Error processing Excel file:", error);
-    return { success: false, message: 'Failed to process Excel file.' };
-  }
-}
-
-export async function processMultipleExcelFiles(files: File[]): Promise<any> {
-  try {
-    for (const file of files) {
-      await processExcelFile(file);
     }
-    return { success: true, message: 'All files processed.' };
-  } catch (error) {
-    console.error("Error processing multiple Excel files:", error);
-    return { success: false, message: 'Failed to process all Excel files.' };
   }
+  
+  return results;
 }
 
-export async function validateExcelData(data: any): Promise<boolean> {
-  if (!data || typeof data !== 'object') {
-    console.warn("Invalid data format: Expected an object.");
-    return false;
+export function validateExcelData(data: any[][]): { isValid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  
+  if (!Array.isArray(data) || data.length < 2) {
+    errors.push('Excel file must have at least 2 rows (headers and data)');
   }
-
-  // Add more specific checks based on your data structure
-  if (!data.hasOwnProperty('category') || !data.hasOwnProperty('subcategory') || !data.hasOwnProperty('serviceName')) {
-    console.warn("Missing required fields in data.");
-    return false;
+  
+  if (data.length > 0 && (!Array.isArray(data[0]) || data[0].length === 0)) {
+    errors.push('First row must contain subcategory headers');
   }
-
-  return true;
+  
+  return { isValid: errors.length === 0, errors };
 }
 
-export async function mapExcelToServiceHierarchy(data: any): Promise<any> {
-  if (!Array.isArray(data)) {
-    console.error('Data is not an array.');
-    return null;
-  }
-
-  const hierarchy = {
-    sectors: [
-      {
-        name: 'Default Sector',
-        categories: [
-          {
-            name: 'Default Category',
-            subcategories: [
-              {
-                name: 'Default Subcategory',
-                services: []
-              }
-            ]
-          }
-        ]
+export function mapExcelToServiceHierarchy(data: any[][], sectorName: string, categoryName: string) {
+  // This function can be used for mapping without database operations
+  const subcategoryHeaders = data[0] || [];
+  
+  const subcategories = subcategoryHeaders.map((header: any, colIndex: number) => {
+    if (!header || header.toString().trim() === '') return null;
+    
+    const services = [];
+    for (let rowIndex = 1; rowIndex < Math.min(data.length, 1001); rowIndex++) {
+      const row = data[rowIndex];
+      const serviceName = row && row[colIndex] ? row[colIndex] : '';
+      
+      if (serviceName && serviceName.toString().trim() !== '') {
+        services.push({
+          name: serviceName.toString().trim(),
+          description: `${serviceName} service`,
+          estimatedTime: 60,
+          price: 100
+        });
       }
-    ]
+    }
+    
+    return {
+      name: header.toString().trim(),
+      services
+    };
+  }).filter(Boolean);
+  
+  return {
+    sectorName,
+    categories: [{
+      name: categoryName,
+      subcategories
+    }]
   };
-
-  return hierarchy;
 }
