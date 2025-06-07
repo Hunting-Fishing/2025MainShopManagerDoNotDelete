@@ -1,13 +1,13 @@
 
 import React, { useState, useMemo } from 'react';
-import { ServiceMainCategory, ServiceJob } from '@/types/service';
+import { ServiceMainCategory, ServiceJob, ServiceSector } from '@/types/service';
 import { SelectedService } from '@/types/selectedService';
 import { ServiceCategoryList } from './ServiceCategoryList';
 import { ServiceSearch } from './ServiceSearch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface HierarchicalServiceSelectorProps {
-  categories: ServiceMainCategory[];
+  sectors: ServiceSector[];
   onServiceSelect: (service: ServiceJob, categoryName: string, subcategoryName: string) => void;
   selectedServices?: SelectedService[];
   onRemoveService?: (serviceId: string) => void;
@@ -15,13 +15,18 @@ interface HierarchicalServiceSelectorProps {
 }
 
 export const HierarchicalServiceSelector: React.FC<HierarchicalServiceSelectorProps> = ({
-  categories,
+  sectors,
   onServiceSelect,
   selectedServices = [],
   onRemoveService,
   onUpdateServices
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Convert sectors to categories for the existing CategoryList component
+  const categories = useMemo(() => {
+    return sectors.flatMap(sector => sector.categories);
+  }, [sectors]);
 
   const filteredCategories = useMemo(() => {
     if (!searchTerm) return categories;

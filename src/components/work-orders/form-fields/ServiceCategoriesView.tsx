@@ -1,60 +1,28 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/service';
-import { SelectedService } from '@/types/selectedService';
-import { Clock, DollarSign, Search, Plus } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Clock, DollarSign, ChevronDown, ChevronRight } from 'lucide-react';
+import { ServiceMainCategory } from '@/types/service';
+import { useServiceCategories } from '@/hooks/useServiceCategories';
 
 interface ServiceCategoriesViewProps {
-  categories: ServiceMainCategory[];
-  selectedServices?: SelectedService[];
-  onServiceSelect?: (service: ServiceJob, categoryName: string, subcategoryName: string) => void;
-  onRemoveService?: (serviceId: string) => void;
   showSelectionMode?: boolean;
+  categories?: ServiceMainCategory[];
 }
 
-export const ServiceCategoriesView: React.FC<ServiceCategoriesViewProps> = ({
-  categories,
-  selectedServices = [],
-  onServiceSelect,
-  onRemoveService,
-  showSelectionMode = false
+export const ServiceCategoriesView: React.FC<ServiceCategoriesViewProps> = ({ 
+  showSelectionMode = true,
+  categories: providedCategories
 }) => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const { categories: fetchedCategories, loading } = useServiceCategories();
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [expandedSubcategories, setExpandedSubcategories] = useState<Set<string>>(new Set());
 
-  const filteredCategories = useMemo(() => {
-    if (!searchTerm) return categories;
-    
-    return categories.filter(category =>
-      category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      category.subcategories.some(sub =>
-        sub.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        sub.jobs.some(job =>
-          job.name.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-      )
-    );
-  }, [categories, searchTerm]);
-
-  const isServiceSelected = (serviceId: string) => {
-    return selectedServices.some(selected => selected.serviceId === serviceId);
-  };
-
-  const handleServiceClick = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
-    if (showSelectionMode && onServiceSelect) {
-      onServiceSelect(service, categoryName, subcategoryName);
-    }
-  };
-
-  const handleServiceRemove = (serviceId: string) => {
-    if (onRemoveService) {
-      onRemoveService(serviceId);
-    }
-  };
+  // Use provided categories or fetch from hook
+  const categories = providedCategories || fetchedCategories;
 
   const toggleCategory = (categoryId: string) => {
     const newExpanded = new Set(expandedCategories);
@@ -66,122 +34,150 @@ export const ServiceCategoriesView: React.FC<ServiceCategoriesViewProps> = ({
     setExpandedCategories(newExpanded);
   };
 
+  const toggleSubcategory = (subcategoryId: string) => {
+    const newExpanded = new Set(expandedSubcategories);
+    if (newExpanded.has(subcategoryId)) {
+      newExpanded.delete(subcategoryId);
+    } else {
+      newExpanded.add(subcategoryId);
+    }
+    setExpandedSubcategories(newExpanded);
+  };
+
+  if (loading && !providedCategories) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Service Categories</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!categories || categories.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Service Categories</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground text-center py-8">
+            No service categories available
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center space-x-2">
-        <Search className="h-4 w-4 text-gray-400" />
-        <Input
-          placeholder="Search services..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="flex-1"
-        />
-      </div>
-
-      <div className="space-y-3">
-        {filteredCategories.map((category) => (
-          <Card key={category.id} className="overflow-hidden">
-            <CardHeader 
-              className="cursor-pointer hover:bg-gray-50 transition-colors"
-              onClick={() => toggleCategory(category.id)}
-            >
-              <CardTitle className="flex items-center justify-between">
-                <span>{category.name}</span>
-                <Badge variant="outline">
-                  {category.subcategories.reduce((total, sub) => total + sub.jobs.length, 0)} services
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-
-            {expandedCategories.has(category.id) && (
-              <CardContent className="pt-0">
-                <div className="space-y-4">
-                  {category.subcategories.map((subcategory) => (
-                    <div key={subcategory.id} className="border-l-2 border-gray-200 pl-4">
-                      <h4 className="font-medium text-sm text-gray-700 mb-2">
-                        {subcategory.name}
-                      </h4>
-                      <div className="space-y-2">
-                        {subcategory.jobs.map((job) => (
-                          <div
-                            key={job.id}
-                            className={`p-3 rounded-lg border transition-colors ${
-                              isServiceSelected(job.id)
-                                ? 'bg-blue-50 border-blue-200'
-                                : 'hover:bg-gray-50 border-gray-200'
-                            } ${showSelectionMode ? 'cursor-pointer' : ''}`}
-                            onClick={() => handleServiceClick(job, category.name, subcategory.name)}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium">{job.name}</span>
-                                  {isServiceSelected(job.id) && (
-                                    <Badge variant="default" className="text-xs">
-                                      Selected
-                                    </Badge>
-                                  )}
-                                </div>
-                                {job.description && (
-                                  <p className="text-sm text-gray-600 mt-1">
-                                    {job.description}
-                                  </p>
-                                )}
-                                <div className="flex items-center gap-4 mt-2">
-                                  {job.estimatedTime && (
-                                    <div className="flex items-center gap-1 text-sm text-gray-500">
-                                      <Clock className="h-3 w-3" />
-                                      {job.estimatedTime}m
-                                    </div>
-                                  )}
-                                  {job.price && (
-                                    <div className="flex items-center gap-1 text-sm text-gray-500">
-                                      <DollarSign className="h-3 w-3" />
-                                      ${job.price}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                              {showSelectionMode && (
-                                <div className="flex items-center gap-2">
-                                  {isServiceSelected(job.id) ? (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleServiceRemove(job.id);
-                                      }}
-                                    >
-                                      Remove
-                                    </Button>
-                                  ) : (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleServiceClick(job, category.name, subcategory.name);
-                                      }}
-                                    >
-                                      <Plus className="h-3 w-3 mr-1" />
-                                      Add
-                                    </Button>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+    <Card>
+      <CardHeader>
+        <CardTitle>Service Categories Overview</CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Browse available service categories and their offerings
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {categories.map((category) => (
+          <Collapsible
+            key={category.id}
+            open={expandedCategories.has(category.id)}
+            onOpenChange={() => toggleCategory(category.id)}
+          >
+            <CollapsibleTrigger asChild>
+              <Button
+                variant="ghost"
+                className="w-full justify-between p-4 h-auto bg-slate-50 hover:bg-slate-100"
+              >
+                <div className="flex items-center space-x-3">
+                  {expandedCategories.has(category.id) ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
+                  <div className="text-left">
+                    <h3 className="font-semibold">{category.name}</h3>
+                    {category.description && (
+                      <p className="text-sm text-muted-foreground">
+                        {category.description}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </CardContent>
-            )}
-          </Card>
+                <Badge variant="outline">
+                  {category.subcategories.length} subcategories
+                </Badge>
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pl-6 space-y-2">
+              {category.subcategories.map((subcategory) => (
+                <Collapsible
+                  key={subcategory.id}
+                  open={expandedSubcategories.has(subcategory.id)}
+                  onOpenChange={() => toggleSubcategory(subcategory.id)}
+                >
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-between p-3 h-auto bg-white hover:bg-gray-50 border"
+                    >
+                      <div className="flex items-center space-x-2">
+                        {expandedSubcategories.has(subcategory.id) ? (
+                          <ChevronDown className="h-3 w-3" />
+                        ) : (
+                          <ChevronRight className="h-3 w-3" />
+                        )}
+                        <span className="font-medium">{subcategory.name}</span>
+                      </div>
+                      <Badge variant="secondary" className="text-xs">
+                        {subcategory.jobs.length} services
+                      </Badge>
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pl-6 space-y-1">
+                    {subcategory.jobs.map((job) => (
+                      <div
+                        key={job.id}
+                        className="p-3 bg-gray-50 border rounded-md"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h4 className="font-medium text-sm">{job.name}</h4>
+                            {job.description && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {job.description}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex space-x-2 ml-3">
+                            {job.estimatedTime && (
+                              <Badge variant="outline" className="text-xs">
+                                <Clock className="h-3 w-3 mr-1" />
+                                {job.estimatedTime}m
+                              </Badge>
+                            )}
+                            {job.price && (
+                              <Badge variant="outline" className="text-xs">
+                                <DollarSign className="h-3 w-3 mr-1" />
+                                ${job.price}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </CollapsibleContent>
+                </Collapsible>
+              ))}
+            </CollapsibleContent>
+          </Collapsible>
         ))}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
