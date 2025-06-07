@@ -1,198 +1,159 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { StorageFile, SectorFiles } from '@/types/service';
+import type { SectorFiles, StorageFile } from '@/types/service';
 
-export async function getStorageBucketInfo(bucketName: string = 'service-data') {
+export async function getStorageBucketInfo() {
   try {
-    // Check if bucket exists
-    const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
-    if (bucketsError) throw bucketsError;
+    console.log('Getting storage bucket information...');
     
-    const bucketExists = buckets?.some(bucket => bucket.name === bucketName) || false;
+    const { data: buckets, error } = await supabase.storage.listBuckets();
     
-    if (!bucketExists) {
-      console.log(`Bucket ${bucketName} does not exist`);
-      return { exists: false, files: [], folders: [] };
+    if (error) {
+      console.error('Error listing buckets:', error);
+      throw new Error(`Failed to list buckets: ${error.message}`);
     }
-
-    // List all items in the root of the bucket
-    const { data: filesList, error: filesError } = await supabase.storage
-      .from(bucketName)
-      .list('', { limit: 1000, sortBy: { column: 'name', order: 'asc' } });
-
-    if (filesError) throw filesError;
-
-    const files: StorageFile[] = [];
-    const folders: { name: string; path: string; lastModified?: Date }[] = [];
-
-    filesList?.forEach(item => {
-      if (item.metadata) {
-        // It's a file
-        files.push({
-          name: item.name,
-          path: item.name,
-          size: item.metadata.size,
-          type: item.metadata.mimetype,
-          lastModified: new Date(item.updated_at),
-          id: item.id,
-          updated_at: item.updated_at,
-          created_at: item.created_at,
-          last_accessed_at: item.last_accessed_at,
-          metadata: item.metadata
-        });
-      } else {
-        // It's a folder
-        folders.push({
-          name: item.name,
-          path: item.name,
-          lastModified: new Date(item.updated_at)
-        });
-      }
-    });
-
-    return { exists: true, files, folders };
+    
+    return {
+      buckets: buckets || [],
+      serviceBucket: buckets?.find(bucket => bucket.name === 'service-data')
+    };
   } catch (error) {
-    console.error('Error getting bucket info:', error);
-    return { exists: false, files: [], folders: [] };
+    console.error('Error getting storage bucket info:', error);
+    throw error;
   }
 }
 
-export async function getFolderFiles(bucketName: string, folderPath: string, extensions: string[] = ['.xlsx', '.xls']): Promise<StorageFile[]> {
+export async function getFolderFiles(folderPath: string): Promise<StorageFile[]> {
   try {
-    console.log(`Getting files from folder: ${folderPath} in bucket: ${bucketName}`);
+    console.log(`Getting files from folder: ${folderPath}`);
     
-    const { data: filesList, error } = await supabase.storage
-      .from(bucketName)
+    const { data: files, error } = await supabase.storage
+      .from('service-data')
       .list(folderPath, { limit: 1000, sortBy: { column: 'name', order: 'asc' } });
-
+    
     if (error) {
       console.error(`Error listing files in folder ${folderPath}:`, error);
-      throw error;
+      throw new Error(`Failed to list files in folder ${folderPath}: ${error.message}`);
     }
-
-    if (!filesList) {
-      console.log(`No files found in folder: ${folderPath}`);
+    
+    if (!files) {
       return [];
     }
-
-    const excelFiles = filesList
-      .filter(item => {
-        // Only include files (items with metadata) and filter by extensions
-        if (!item.metadata) return false;
-        
-        const hasValidExtension = extensions.length === 0 || 
-          extensions.some(ext => item.name.toLowerCase().endsWith(ext.toLowerCase()));
-        
-        return hasValidExtension;
+    
+    // Filter for Excel files only and map to StorageFile interface
+    return files
+      .filter(file => {
+        const fileName = file.name.toLowerCase();
+        return file.metadata && (
+          fileName.endsWith('.xlsx') || 
+          fileName.endsWith('.xls')
+        );
       })
-      .map(item => ({
-        name: item.name,
-        path: `${folderPath}/${item.name}`,
-        size: item.metadata?.size,
-        type: item.metadata?.mimetype,
-        lastModified: new Date(item.updated_at),
-        id: item.id,
-        updated_at: item.updated_at,
-        created_at: item.created_at,
-        last_accessed_at: item.last_accessed_at,
-        metadata: item.metadata
+      .map(file => ({
+        name: file.name,
+        path: `${folderPath}/${file.name}`,
+        size: file.metadata?.size,
+        type: file.metadata?.mimetype,
+        lastModified: new Date(file.updated_at),
+        id: file.id,
+        updated_at: file.updated_at,
+        created_at: file.created_at,
+        last_accessed_at: file.last_accessed_at,
+        metadata: file.metadata
       }));
-
-    console.log(`Found ${excelFiles.length} Excel files in folder: ${folderPath}`);
-    return excelFiles;
+      
   } catch (error) {
-    console.error(`Error getting files in folder ${folderPath}:`, error);
-    return [];
+    console.error(`Error getting folder files for ${folderPath}:`, error);
+    throw error;
   }
 }
 
-export async function getAllSectorFiles(bucketName: string = 'service-data'): Promise<SectorFiles[]> {
+export async function getAllSectorFiles(): Promise<SectorFiles[]> {
   try {
-    console.log(`Getting all sector files from bucket: ${bucketName}`);
+    console.log('Getting all sector files from service-data bucket...');
     
-    const bucketInfo = await getStorageBucketInfo(bucketName);
-    if (!bucketInfo.exists) {
-      console.log(`Bucket ${bucketName} does not exist`);
-      return [];
-    }
-
-    const sectorFiles: SectorFiles[] = [];
-
-    // Process each folder (sector) 
-    for (const folder of bucketInfo.folders) {
-      console.log(`Processing sector folder: ${folder.name}`);
-      
-      const excelFiles = await getFolderFiles(bucketName, folder.name);
-      
-      if (excelFiles.length > 0) {
-        sectorFiles.push({
-          sectorName: folder.name,
-          excelFiles,
-          totalFiles: excelFiles.length
-        });
-        
-        console.log(`Added sector: ${folder.name} with ${excelFiles.length} files`);
-      }
-    }
-
-    console.log(`Found ${sectorFiles.length} sectors with Excel files`);
-    return sectorFiles;
-  } catch (error) {
-    console.error('Error getting all sector files:', error);
-    return [];
-  }
-}
-
-export async function ensureStorageBucket(bucketName: string = 'service-data'): Promise<boolean> {
-  try {
-    const { data: buckets } = await supabase.storage.listBuckets();
-    const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
+    // First, check if the bucket exists
+    const { buckets, serviceBucket } = await getStorageBucketInfo();
     
-    if (!bucketExists) {
-      console.log(`Creating bucket: ${bucketName}`);
-      const { error } = await supabase.storage.createBucket(bucketName, {
-        public: true, // Make it public so we can access files
+    if (!serviceBucket) {
+      console.log('service-data bucket not found, creating it...');
+      const { error: createError } = await supabase.storage.createBucket('service-data', {
+        public: true,
         allowedMimeTypes: [
           'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           'application/vnd.ms-excel'
         ]
       });
       
-      if (error) {
-        console.error('Error creating bucket:', error);
-        return false;
+      if (createError) {
+        console.error('Error creating bucket:', createError);
+        throw new Error(`Failed to create service-data bucket: ${createError.message}`);
       }
       
-      console.log(`Successfully created bucket: ${bucketName}`);
+      console.log('Created service-data bucket');
+      return [];
     }
     
-    return true;
+    // List all folders (sectors) in the bucket
+    const { data: rootFiles, error: rootError } = await supabase.storage
+      .from('service-data')
+      .list('', { limit: 1000, sortBy: { column: 'name', order: 'asc' } });
+    
+    if (rootError) {
+      console.error('Error listing root folder:', rootError);
+      throw new Error(`Failed to list files in service-data bucket: ${rootError.message}`);
+    }
+    
+    if (!rootFiles || rootFiles.length === 0) {
+      console.log('No files or folders found in service-data bucket');
+      return [];
+    }
+    
+    // Filter for folders (sectors) - folders don't have metadata
+    const sectorFolders = rootFiles.filter(item => !item.metadata);
+    console.log('Found sector folders:', sectorFolders.map(f => f.name));
+    
+    const sectorFiles: SectorFiles[] = [];
+    
+    // For each sector folder, get the Excel files
+    for (const folder of sectorFolders) {
+      try {
+        console.log(`Processing sector folder: ${folder.name}`);
+        
+        const excelFiles = await getFolderFiles(folder.name);
+        
+        if (excelFiles.length > 0) {
+          sectorFiles.push({
+            sectorName: folder.name,
+            excelFiles,
+            totalFiles: excelFiles.length
+          });
+          
+          console.log(`Added sector: ${folder.name} with ${excelFiles.length} Excel files`);
+        }
+      } catch (error) {
+        console.error(`Error processing folder ${folder.name}:`, error);
+        continue;
+      }
+    }
+    
+    console.log(`Retrieved ${sectorFiles.length} sectors with Excel files`);
+    return sectorFiles;
   } catch (error) {
-    console.error('Error ensuring bucket exists:', error);
-    return false;
+    console.error('Error getting all sector files:', error);
+    throw error;
   }
 }
 
-// Helper function to get the full storage URL for a file
-export function getStorageFileUrl(bucketName: string, filePath: string): string {
-  return `${supabase.supabaseUrl}/storage/v1/object/public/${bucketName}/${filePath}`;
-}
-
-// Helper function to parse storage URL and extract bucket name and file path
-export function parseStorageUrl(url: string): { bucketName: string; filePath: string } | null {
+export async function getPublicUrl(filePath: string): Promise<string> {
   try {
-    const urlParts = url.split('/storage/v1/object/public/');
-    if (urlParts.length !== 2) return null;
+    const { data } = supabase.storage
+      .from('service-data')
+      .getPublicUrl(filePath);
     
-    const pathParts = urlParts[1].split('/');
-    if (pathParts.length < 2) return null;
-    
-    const bucketName = pathParts[0];
-    const filePath = pathParts.slice(1).join('/');
-    
-    return { bucketName, filePath };
+    return data.publicUrl;
   } catch (error) {
-    console.error('Error parsing storage URL:', error);
-    return null;
+    console.error('Error getting public URL:', error);
+    throw error;
   }
 }

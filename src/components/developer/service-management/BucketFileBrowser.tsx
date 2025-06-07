@@ -2,11 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Folder, FileText, Download, AlertCircle, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, Folder, FileText, Download } from 'lucide-react';
 import { bucketViewerService } from '@/lib/services/bucketViewerService';
-import type { StorageFile, SectorFiles } from '@/types/service';
+import type { SectorFiles, StorageFile } from '@/types/service';
 
 interface BucketFileBrowserProps {
   onImportSelected: (selectedData: { sectorName: string; files: StorageFile[] }[]) => void;
@@ -15,9 +15,9 @@ interface BucketFileBrowserProps {
 
 export function BucketFileBrowser({ onImportSelected, isImporting }: BucketFileBrowserProps) {
   const [sectorFiles, setSectorFiles] = useState<SectorFiles[]>([]);
-  const [selectedFiles, setSelectedFiles] = useState<Record<string, Set<string>>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
 
   const loadSectorFiles = async () => {
     try {
@@ -29,13 +29,10 @@ export function BucketFileBrowser({ onImportSelected, isImporting }: BucketFileB
       console.log('Loaded sector files:', files);
       
       setSectorFiles(files);
-      
-      if (files.length === 0) {
-        setError('No files found in the service-data bucket. Please upload Excel files organized in sector folders.');
-      }
     } catch (err) {
       console.error('Error loading sector files:', err);
-      setError('Failed to load files from storage bucket. Please check your bucket configuration.');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load bucket files';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -45,63 +42,65 @@ export function BucketFileBrowser({ onImportSelected, isImporting }: BucketFileB
     loadSectorFiles();
   }, []);
 
-  const toggleSectorSelection = (sectorName: string) => {
-    setSelectedFiles(prev => {
-      const newSelection = { ...prev };
-      if (newSelection[sectorName]) {
-        delete newSelection[sectorName];
-      } else {
-        const sector = sectorFiles.find(s => s.sectorName === sectorName);
-        if (sector) {
-          newSelection[sectorName] = new Set(sector.excelFiles.map(f => f.name));
-        }
-      }
-      return newSelection;
-    });
+  const toggleFileSelection = (sectorName: string, fileName: string) => {
+    const fileKey = `${sectorName}/${fileName}`;
+    const newSelection = new Set(selectedFiles);
+    
+    if (newSelection.has(fileKey)) {
+      newSelection.delete(fileKey);
+    } else {
+      newSelection.add(fileKey);
+    }
+    
+    setSelectedFiles(newSelection);
   };
 
-  const toggleFileSelection = (sectorName: string, fileName: string) => {
-    setSelectedFiles(prev => {
-      const newSelection = { ...prev };
-      if (!newSelection[sectorName]) {
-        newSelection[sectorName] = new Set();
-      }
-      
-      if (newSelection[sectorName].has(fileName)) {
-        newSelection[sectorName].delete(fileName);
-        if (newSelection[sectorName].size === 0) {
-          delete newSelection[sectorName];
-        }
-      } else {
-        newSelection[sectorName].add(fileName);
-      }
-      
-      return newSelection;
-    });
+  const toggleSectorSelection = (sectorName: string, files: StorageFile[]) => {
+    const newSelection = new Set(selectedFiles);
+    const sectorFileKeys = files.map(file => `${sectorName}/${file.name}`);
+    
+    const allSelected = sectorFileKeys.every(key => newSelection.has(key));
+    
+    if (allSelected) {
+      // Deselect all files in this sector
+      sectorFileKeys.forEach(key => newSelection.delete(key));
+    } else {
+      // Select all files in this sector
+      sectorFileKeys.forEach(key => newSelection.add(key));
+    }
+    
+    setSelectedFiles(newSelection);
   };
 
   const handleImport = () => {
-    const selectedData = Object.entries(selectedFiles).map(([sectorName, fileNames]) => {
-      const sector = sectorFiles.find(s => s.sectorName === sectorName);
-      const files = sector?.excelFiles.filter(f => fileNames.has(f.name)) || [];
-      return { sectorName, files };
-    }).filter(item => item.files.length > 0);
-
-    onImportSelected(selectedData);
+    const selectedData: { sectorName: string; files: StorageFile[] }[] = [];
+    
+    sectorFiles.forEach(sector => {
+      const selectedSectorFiles = sector.excelFiles.filter(file => 
+        selectedFiles.has(`${sector.sectorName}/${file.name}`)
+      );
+      
+      if (selectedSectorFiles.length > 0) {
+        selectedData.push({
+          sectorName: sector.sectorName,
+          files: selectedSectorFiles
+        });
+      }
+    });
+    
+    if (selectedData.length > 0) {
+      onImportSelected(selectedData);
+    }
   };
 
-  const getTotalSelectedFiles = () => {
-    return Object.values(selectedFiles).reduce((total, fileSet) => total + fileSet.size, 0);
-  };
+  const getSelectedCount = () => selectedFiles.size;
 
   if (loading) {
     return (
       <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center space-x-2">
-            <Loader2 className="h-5 w-5 animate-spin" />
-            <span>Loading files from storage bucket...</span>
-          </div>
+        <CardContent className="flex items-center justify-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin mr-2" />
+          Loading bucket files...
         </CardContent>
       </Card>
     );
@@ -110,119 +109,121 @@ export function BucketFileBrowser({ onImportSelected, isImporting }: BucketFileB
   if (error) {
     return (
       <Card>
-        <CardContent className="p-6">
+        <CardContent className="py-6">
           <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
             <AlertDescription>
               {error}
-              <div className="mt-2">
-                <Button onClick={loadSectorFiles} variant="outline" size="sm">
-                  Retry Loading
-                </Button>
-              </div>
             </AlertDescription>
           </Alert>
+          <Button 
+            onClick={loadSectorFiles}
+            className="mt-4"
+            variant="outline"
+          >
+            Retry
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (sectorFiles.length === 0) {
+    return (
+      <Card>
+        <CardContent className="py-6">
+          <Alert>
+            <AlertDescription>
+              No files found in the service-data bucket. Upload Excel files organized by sector folders to get started.
+            </AlertDescription>
+          </Alert>
+          <Button 
+            onClick={loadSectorFiles}
+            className="mt-4"
+            variant="outline"
+          >
+            Refresh
+          </Button>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <span className="flex items-center gap-2">
             <Folder className="h-5 w-5" />
-            Storage Bucket Browser
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {sectorFiles.length === 0 ? (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                No sectors found in the storage bucket. Please upload Excel files organized in sector folders.
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
+            Storage Files ({sectorFiles.length} sectors)
+          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">
+              {getSelectedCount()} files selected
+            </span>
+            <Button 
+              onClick={handleImport}
+              disabled={getSelectedCount() === 0 || isImporting}
+              size="sm"
+            >
+              {isImporting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Importing...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4 mr-2" />
+                  Import Selected
+                </>
+              )}
+            </Button>
+          </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4 max-h-96 overflow-y-auto">
+        {sectorFiles.map((sector) => (
+          <div key={sector.sectorName} className="border rounded-lg p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={sector.excelFiles.every(file => 
+                    selectedFiles.has(`${sector.sectorName}/${file.name}`)
+                  )}
+                  onCheckedChange={() => toggleSectorSelection(sector.sectorName, sector.excelFiles)}
+                />
+                <Folder className="h-4 w-4 text-blue-500" />
+                <span className="font-medium">{sector.sectorName}</span>
                 <span className="text-sm text-muted-foreground">
-                  Found {sectorFiles.length} sector(s) with {sectorFiles.reduce((total, s) => total + s.totalFiles, 0)} Excel file(s)
+                  ({sector.totalFiles} files)
                 </span>
-                <Button onClick={loadSectorFiles} variant="outline" size="sm">
-                  Refresh
-                </Button>
-              </div>
-              
-              <div className="space-y-3">
-                {sectorFiles.map((sector) => {
-                  const isSelected = selectedFiles[sector.sectorName];
-                  const allFilesSelected = isSelected && isSelected.size === sector.excelFiles.length;
-                  
-                  return (
-                    <div key={sector.sectorName} className="border rounded-lg p-4">
-                      <div className="flex items-center space-x-2 mb-3">
-                        <Checkbox
-                          checked={allFilesSelected}
-                          onCheckedChange={() => toggleSectorSelection(sector.sectorName)}
-                        />
-                        <Folder className="h-4 w-4 text-blue-500" />
-                        <span className="font-medium">{sector.sectorName}</span>
-                        <span className="text-sm text-muted-foreground">
-                          ({sector.totalFiles} files)
-                        </span>
-                      </div>
-                      
-                      <div className="pl-6 space-y-2">
-                        {sector.excelFiles.map((file) => (
-                          <div key={file.name} className="flex items-center space-x-2">
-                            <Checkbox
-                              checked={selectedFiles[sector.sectorName]?.has(file.name) || false}
-                              onCheckedChange={() => toggleFileSelection(sector.sectorName, file.name)}
-                            />
-                            <FileText className="h-4 w-4 text-green-500" />
-                            <span className="text-sm">{file.name}</span>
-                            {file.size && (
-                              <span className="text-xs text-muted-foreground">
-                                ({Math.round(file.size / 1024)} KB)
-                              </span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
               </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {getTotalSelectedFiles() > 0 && (
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm">
-                Selected {getTotalSelectedFiles()} file(s) from {Object.keys(selectedFiles).length} sector(s)
-              </span>
-              <Button 
-                onClick={handleImport}
-                disabled={isImporting || getTotalSelectedFiles() === 0}
-                className="flex items-center gap-2"
-              >
-                {isImporting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Download className="h-4 w-4" />
-                )}
-                {isImporting ? 'Importing...' : 'Import Selected Files'}
-              </Button>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 ml-6">
+              {sector.excelFiles.map((file) => (
+                <div 
+                  key={file.name}
+                  className="flex items-center gap-2 p-2 rounded border bg-slate-50 hover:bg-slate-100"
+                >
+                  <Checkbox
+                    checked={selectedFiles.has(`${sector.sectorName}/${file.name}`)}
+                    onCheckedChange={() => toggleFileSelection(sector.sectorName, file.name)}
+                  />
+                  <FileText className="h-3 w-3 text-green-600" />
+                  <span className="text-sm truncate flex-1" title={file.name}>
+                    {file.name}
+                  </span>
+                  {file.size && (
+                    <span className="text-xs text-muted-foreground">
+                      {Math.round(file.size / 1024)}KB
+                    </span>
+                  )}
+                </div>
+              ))}
             </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
   );
 }
