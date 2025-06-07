@@ -1,18 +1,26 @@
 
-import React from "react";
-import { InvoiceList } from "@/components/invoices/InvoiceList";
-import { useInvoices } from "@/hooks/useInvoices";
+import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function Invoices() {
-  const { invoices, isLoading, error } = useInvoices();
-
   return (
-    <div className="container mx-auto px-4 py-8">
-      <InvoiceList 
-        invoices={invoices} 
-        isLoading={isLoading} 
-        error={error ? new Error(error) : null} 
-      />
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Invoices</h1>
+        <p className="text-muted-foreground">
+          Create and manage invoices for your customers
+        </p>
+      </div>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Invoice Management</CardTitle>
+          <CardDescription>Invoice management features will be implemented here</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">Invoice management functionality is under development.</p>
+        </CardContent>
+      </Card>
     </div>
   );
 }

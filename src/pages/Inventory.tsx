@@ -1,73 +1,26 @@
 
-import React from "react";
-import { useInventoryFilters } from "@/hooks/inventory/useInventoryFilters";
-import { useInventoryCrud } from "@/hooks/inventory/useInventoryCrud";
-import { InventoryPageHeader } from "@/components/inventory/InventoryPageHeader";
-import { InventoryFilterSection } from "@/components/inventory/InventoryFilterSection";
-import { InventoryContent } from "@/components/inventory/InventoryContent";
-import { InventoryLoadingState } from "@/components/inventory/InventoryLoadingState";
-import { InventoryErrorState } from "@/components/inventory/InventoryErrorState";
+import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-const Inventory = () => {
-  const {
-    filteredItems,
-    filters,
-    updateFilter,
-    resetFilters,
-    loading,
-    searchQuery,
-    setSearchQuery,
-    categoryFilter,
-    setCategoryFilter,
-    statusFilter,
-    setStatusFilter,
-    supplierFilter,
-    setSupplierFilter,
-    locationFilter,
-    setLocationFilter,
-    error,
-    categories,
-    statuses,
-    suppliers,
-    locations
-  } = useInventoryFilters();
-
-  const inventoryCrud = useInventoryCrud();
-
-  if (loading) {
-    return <InventoryLoadingState />;
-  }
-
-  if (error) {
-    return <InventoryErrorState error={error} />;
-  }
-
+export default function Inventory() {
   return (
-    <div className="container mx-auto p-4">
-      <InventoryPageHeader />
-
-      <InventoryFilterSection
-        categories={categories}
-        statuses={statuses}
-        suppliers={suppliers}
-        locations={locations}
-        categoryFilter={categoryFilter}
-        statusFilter={statusFilter}
-        supplierFilter={supplierFilter}
-        locationFilter={locationFilter}
-        setCategoryFilter={setCategoryFilter}
-        setStatusFilter={setStatusFilter}
-        setSupplierFilter={setSupplierFilter}
-        setLocationFilter={setLocationFilter}
-        onReset={resetFilters}
-      />
-
-      <InventoryContent
-        items={filteredItems}
-        onUpdateItem={inventoryCrud.updateItem}
-      />
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Inventory</h1>
+        <p className="text-muted-foreground">
+          Track and manage your shop's inventory
+        </p>
+      </div>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Inventory Management</CardTitle>
+          <CardDescription>Inventory tracking features will be implemented here</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">Inventory management functionality is under development.</p>
+        </CardContent>
+      </Card>
     </div>
   );
-};
-
-export default Inventory;
+}

@@ -1,151 +1,26 @@
 
-import { useState, useEffect } from "react";
-import { CalendarHeader } from "@/components/calendar/CalendarHeader";
-import { CalendarView } from "@/components/calendar/CalendarView";
-import { CalendarFilters } from "@/components/calendar/CalendarFilters";
-import { CreateShiftChatButton } from "@/components/calendar/CreateShiftChatButton";
-import { useCalendarEvents } from "@/hooks/useCalendarEvents";
-import { useNavigate } from "react-router-dom";
-import { format } from "date-fns";
-import { toast } from "@/components/ui/use-toast";
-import { CalendarEvent } from "@/types/calendar";
-import { BookingDialog } from "@/components/calendar/BookingDialog";
-import { Button } from "@/components/ui/button";
-import { supabase } from "@/lib/supabase";
+import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function Calendar() {
-  const navigate = useNavigate();
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState<"month" | "week" | "day">("month");
-  const [technicianFilter, setTechnicianFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<string[]>([]);
-  const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [customerId, setCustomerId] = useState<string | undefined>(undefined);
-  const [isCustomerView, setIsCustomerView] = useState(false);
-  
-  // Use the custom hook to fetch and manage calendar data
-  const { events, shiftChats, isLoading, error } = useCalendarEvents(currentDate, view);
-  
-  // Filter events based on technician and status
-  const filteredEvents = events.filter(event => {
-    const matchesTechnician = 
-      technicianFilter === "all" || event.technician_id === technicianFilter;
-    
-    const matchesStatus = 
-      statusFilter.length === 0 || (event.status && statusFilter.includes(event.status));
-    
-    return matchesTechnician && matchesStatus;
-  });
-
-  // Handle creating a new shift chat from calendar
-  const handleCreateShiftChat = () => {
-    // Navigate to chat page with pre-filled shift chat date from calendar
-    navigate("/chat", { 
-      state: { 
-        createShiftChat: true, 
-        shiftDate: format(currentDate, 'yyyy-MM-dd')
-      } 
-    });
-  };
-
-  // Check if current user is a customer and get customer ID
-  useEffect(() => {
-    const checkUserRole = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          // Check if user is associated with a customer record
-          const { data: customerData } = await supabase
-            .from('customers')
-            .select('id')
-            .eq('auth_user_id', session.user.id)
-            .single();
-            
-          if (customerData?.id) {
-            setCustomerId(customerData.id);
-            setIsCustomerView(true);
-          } else {
-            setIsCustomerView(false);
-          }
-        }
-      } catch (err) {
-        console.error('Error checking user role:', err);
-      }
-    };
-    
-    checkUserRole();
-  }, []);
-
-  // Handle day click to open booking dialog
-  const handleDayClick = (date: Date) => {
-    if (isCustomerView) {
-      setSelectedDate(date);
-      setIsBookingDialogOpen(true);
-    }
-  };
-
-  // Show toast when there's an error
-  if (error) {
-    toast({
-      title: "Error loading calendar",
-      description: error,
-      variant: "destructive"
-    });
-  }
-
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <CalendarHeader 
-          currentDate={currentDate}
-          setCurrentDate={setCurrentDate}
-          view={view}
-          setView={setView}
-        />
-        
-        {isCustomerView ? (
-          <Button variant="default" onClick={() => setIsBookingDialogOpen(true)}>
-            Book Appointment
-          </Button>
-        ) : (
-          <CreateShiftChatButton onClick={handleCreateShiftChat} />
-        )}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Calendar</h1>
+        <p className="text-muted-foreground">
+          Schedule appointments and manage your shop's calendar
+        </p>
       </div>
       
-      {!isCustomerView && (
-        <CalendarFilters 
-          technicianFilter={technicianFilter}
-          setTechnicianFilter={setTechnicianFilter}
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilter}
-        />
-      )}
-      
-      <div className="border rounded-lg bg-white shadow">
-        <CalendarView 
-          events={filteredEvents}
-          currentDate={currentDate}
-          view={view}
-          loading={isLoading}
-          shiftChats={shiftChats}
-          onDateClick={handleDayClick}
-          isCustomerView={isCustomerView}
-        />
-      </div>
-
-      {/* Booking dialog */}
-      {selectedDate && (
-        <BookingDialog 
-          date={selectedDate}
-          isOpen={isBookingDialogOpen}
-          onClose={() => {
-            setIsBookingDialogOpen(false);
-            setSelectedDate(null);
-          }}
-          customerId={customerId}
-        />
-      )}
+      <Card>
+        <CardHeader>
+          <CardTitle>Schedule Management</CardTitle>
+          <CardDescription>Calendar features will be implemented here</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">Calendar functionality is under development.</p>
+        </CardContent>
+      </Card>
     </div>
   );
 }

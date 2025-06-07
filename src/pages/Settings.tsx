@@ -1,9 +1,7 @@
 
-import React from "react";
-import { SettingsLayout } from "@/components/settings/SettingsLayout";
+import React from 'react';
+import { SettingsLayout } from '@/components/settings/SettingsLayout';
 
-export const Settings = () => {
+export default function Settings() {
   return <SettingsLayout />;
-};
-
-export default Settings;
+}
