@@ -5,7 +5,7 @@ import type { SectorFiles, StorageFile } from '@/types/service';
 export const bucketViewerService = {
   async getAllSectorFiles(): Promise<SectorFiles[]> {
     try {
-      console.log('BucketViewerService: Getting all sector files...');
+      console.log('BucketViewerService: Getting all sector files from service-data bucket...');
       
       // First, check if the bucket exists
       const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
@@ -18,7 +18,7 @@ export const bucketViewerService = {
       if (!serviceBucket) {
         console.log('service-data bucket not found, creating it...');
         const { error: createError } = await supabase.storage.createBucket('service-data', {
-          public: false,
+          public: true, // Make it public for easy access
           allowedMimeTypes: [
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'application/vnd.ms-excel'
@@ -49,7 +49,7 @@ export const bucketViewerService = {
         return [];
       }
       
-      // Filter for folders (sectors)
+      // Filter for folders (sectors) - folders don't have metadata
       const sectorFolders = rootFiles.filter(item => !item.metadata);
       console.log('Found sector folders:', sectorFolders.map(f => f.name));
       
@@ -58,6 +58,8 @@ export const bucketViewerService = {
       // For each sector folder, get the Excel files
       for (const folder of sectorFolders) {
         try {
+          console.log(`Processing sector folder: ${folder.name}`);
+          
           const { data: folderFiles, error: folderError } = await supabase.storage
             .from('service-data')
             .list(folder.name, { limit: 1000, sortBy: { column: 'name', order: 'asc' } });
@@ -67,7 +69,7 @@ export const bucketViewerService = {
             continue;
           }
           
-          // Filter for Excel files only
+          // Filter for Excel files only (files with metadata and xlsx/xls extensions)
           const excelFiles: StorageFile[] = (folderFiles || [])
             .filter(file => {
               const fileName = file.name.toLowerCase();
@@ -95,6 +97,8 @@ export const bucketViewerService = {
               excelFiles,
               totalFiles: excelFiles.length
             });
+            
+            console.log(`Added sector: ${folder.name} with ${excelFiles.length} Excel files`);
           }
         } catch (error) {
           console.error(`Error processing folder ${folder.name}:`, error);
@@ -102,7 +106,7 @@ export const bucketViewerService = {
         }
       }
       
-      console.log('BucketViewerService: Retrieved sector files:', sectorFiles.length);
+      console.log(`BucketViewerService: Retrieved ${sectorFiles.length} sectors with Excel files`);
       return sectorFiles;
     } catch (error) {
       console.error('BucketViewerService: Error getting sector files:', error);
