@@ -5,21 +5,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProductsByCategoryChart } from './ProductsByCategoryChart';
 import { ProductInteractionsChart } from './ProductInteractionsChart';
 import { TopProductsTable } from './TopProductsTable';
-import { useProductAnalyticsData } from '@/hooks/useProductAnalyticsData';
+import { useShoppingAnalytics } from '@/hooks/useShoppingAnalytics';
 import { Button } from '@/components/ui/button';
 import { Download, RefreshCw } from 'lucide-react';
 
 export const AnalyticsDashboard: React.FC = () => {
-  const { 
-    analyticsData, 
-    topProducts, 
-    mostSavedProducts, 
-    isLoading, 
-    error, 
-    refetch 
-  } = useProductAnalyticsData();
+  const { analytics, loading, error, refetch } = useShoppingAnalytics();
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -66,7 +59,7 @@ export const AnalyticsDashboard: React.FC = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-slate-500">Total Views</CardTitle>
             <CardDescription className="text-2xl font-bold">
-              {analyticsData?.totalViews.toLocaleString()}
+              {analytics.totalViews.toLocaleString()}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -74,15 +67,15 @@ export const AnalyticsDashboard: React.FC = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-slate-500">Total Clicks</CardTitle>
             <CardDescription className="text-2xl font-bold">
-              {analyticsData?.totalClicks.toLocaleString()}
+              {analytics.totalClicks.toLocaleString()}
             </CardDescription>
           </CardHeader>
         </Card>
         <Card className="border-t-4 border-purple-500 shadow-md bg-white rounded-xl">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Products Saved</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-500">Products</CardTitle>
             <CardDescription className="text-2xl font-bold">
-              {analyticsData?.totalSaved.toLocaleString()}
+              {analytics.totalProducts.toLocaleString()}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -90,7 +83,7 @@ export const AnalyticsDashboard: React.FC = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-slate-500">Conversion Rate</CardTitle>
             <CardDescription className="text-2xl font-bold">
-              {analyticsData?.conversionRate.toFixed(2)}%
+              {analytics.conversionRate.toFixed(2)}%
             </CardDescription>
           </CardHeader>
         </Card>
@@ -106,8 +99,8 @@ export const AnalyticsDashboard: React.FC = () => {
         
         <TabsContent value="overview" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <ProductsByCategoryChart data={analyticsData?.categoryData || []} />
-            <ProductInteractionsChart data={analyticsData?.interactionData || []} />
+            <ProductsByCategoryChart data={[]} />
+            <ProductInteractionsChart data={[]} />
           </div>
         </TabsContent>
         
@@ -121,7 +114,7 @@ export const AnalyticsDashboard: React.FC = () => {
             </CardHeader>
             <CardContent className="pt-2">
               <div className="h-[400px]">
-                <ProductInteractionsChart data={analyticsData?.interactionData || []} showLegend={true} />
+                <ProductInteractionsChart data={[]} showLegend={true} />
               </div>
             </CardContent>
           </Card>
@@ -131,20 +124,13 @@ export const AnalyticsDashboard: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <TopProductsTable 
               title="Most Viewed Products" 
-              products={topProducts.views || []} 
+              products={analytics.topProducts || []} 
               metric="views"
             />
             <TopProductsTable 
               title="Most Clicked Products" 
-              products={topProducts.clicks || []} 
+              products={analytics.topProducts || []} 
               metric="clicks"
-            />
-          </div>
-          <div className="mt-4">
-            <TopProductsTable 
-              title="Most Saved Products" 
-              products={mostSavedProducts || []} 
-              metric="saves"
             />
           </div>
         </TabsContent>

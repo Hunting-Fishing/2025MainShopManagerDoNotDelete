@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useShoppingAnalytics } from '@/hooks/useShoppingAnalytics';
-import StatsCards from './analytics/StatsCards';
+import { StatsCards } from './analytics/StatsCards';
 import { ProductsByCategoryChart } from './analytics/ProductsByCategoryChart';
 import { SubmissionStatusChart } from './analytics/SubmissionStatusChart';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
