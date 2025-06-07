@@ -41,7 +41,7 @@ export interface ServiceHierarchyState {
   error: string | null;
 }
 
-// Excel import types
+// Excel import types - Updated to match actual structure
 export interface ExcelRowData {
   category: string;
   subcategory: string;
@@ -129,4 +129,27 @@ export interface SectorFiles {
 export interface ImportOptions {
   mode: 'skip' | 'update';
   clearExisting?: boolean;
+}
+
+// Excel-specific types for the new structure
+export interface ExcelServiceData {
+  name: string;
+  description: string;
+  estimatedTime: number;
+  price: number;
+}
+
+export interface ExcelSubcategoryData {
+  name: string;
+  services: ExcelServiceData[];
+}
+
+export interface ExcelCategoryData {
+  name: string; // File name becomes category name
+  subcategories: ExcelSubcategoryData[];
+}
+
+export interface ExcelSectorData {
+  sectorName: string; // Folder name becomes sector name
+  categories: ExcelCategoryData[];
 }
