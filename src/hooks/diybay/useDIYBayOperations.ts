@@ -1,8 +1,6 @@
-
-import { useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { Bay } from "@/services/diybay/diybayService";
-import { useToast } from "@/hooks/use-toast";
+import { useState } from 'react';
+import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export function useDIYBayOperations(
   bays: Bay[],

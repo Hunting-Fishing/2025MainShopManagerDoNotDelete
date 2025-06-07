@@ -1,85 +1,124 @@
-
-import { PaymentMethod } from '@/types/payment';
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Skeleton } from '@/components/ui/skeleton';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
+import { usePaymentHistory } from '@/hooks/usePaymentHistory';
+import { PaymentForm } from '@/components/payments/PaymentForm';
+import { Button } from '@/components/ui/button';
+import { useInvoice } from '@/hooks/useInvoice';
+import { useToast } from '@/hooks/use-toast';
+import { useInvoices } from '@/hooks/useInvoices';
+import { formatCurrency } from '@/lib/utils';
 
 interface InvoiceDetailsPaymentInfoProps {
-  paymentMethod: string;
-  status: string;
-  statusLabel: string;
-  createdBy: string;
-  customerId?: string;
+  invoiceId: string;
+  customerId: string;
 }
 
-export function InvoiceDetailsPaymentInfo({
-  paymentMethod,
-  status,
-  statusLabel,
-  createdBy,
-  customerId,
-}: InvoiceDetailsPaymentInfoProps) {
-  const [defaultPaymentMethod, setDefaultPaymentMethod] = useState<PaymentMethod | null>(null);
-  const [loading, setLoading] = useState<boolean>(!!customerId);
+export function InvoiceDetailsPaymentInfo({ invoiceId, customerId }: InvoiceDetailsPaymentInfoProps) {
+  const { invoice, setInvoice } = useInvoice();
+  const { invoices, refetch: refetchInvoices } = useInvoices();
+  const { payments, isLoading, error, totalPayments, addPayment, refetch } = usePaymentHistory(customerId, invoiceId);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const { toast } = useToast();
 
-  // Fetch the customer's default payment method if customerId exists
   useEffect(() => {
-    const fetchDefaultPaymentMethod = async () => {
-      if (!customerId) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('payment_methods')
-          .select('*')
-          .eq('customer_id', customerId)
-          .eq('is_default', true)
-          .maybeSingle();
-          
-        if (error) {
-          console.error('Error fetching default payment method:', error);
-        } else if (data) {
-          setDefaultPaymentMethod(data as PaymentMethod);
-        }
-      } catch (err) {
-        console.error('Error in fetchDefaultPaymentMethod:', err);
-      } finally {
-        setLoading(false);
+    if (invoices && invoiceId) {
+      const currentInvoice = invoices.find((inv) => inv.id === invoiceId);
+      if (currentInvoice) {
+        setInvoice(currentInvoice);
       }
-    };
-    
-    if (customerId) {
-      fetchDefaultPaymentMethod();
     }
-  }, [customerId]);
+  }, [invoices, invoiceId, setInvoice]);
 
-  // Format payment method display
-  const formatPaymentMethod = () => {
-    if (loading) {
-      return <Skeleton className="h-4 w-24" />;
-    }
-    
-    if (defaultPaymentMethod) {
-      if (defaultPaymentMethod.method_type === 'credit_card' && defaultPaymentMethod.card_brand) {
-        return `${defaultPaymentMethod.card_brand} •••• ${defaultPaymentMethod.card_last_four}`;
-      }
-      return defaultPaymentMethod.method_type.replace('_', ' ');
-    }
-    
-    return paymentMethod || "Not specified";
+  const remainingBalance = invoice ? invoice.total - totalPayments : 0;
+
+  const handlePaymentSuccess = async () => {
+    setShowPaymentForm(false);
+    await refetch();
+    await refetchInvoices();
   };
 
   return (
-    <div className="mt-8">
-      <h3 className="text-sm font-medium text-slate-500 uppercase mb-2">Payment Information:</h3>
-      <div className="flex flex-col md:flex-row justify-between gap-4">
+    <Card className="col-span-2">
+      <CardHeader>
+        <CardTitle>Payment Information</CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-sm font-medium">Total Payments:</p>
+            <p>{formatCurrency(totalPayments)}</p>
+          </div>
+          <div>
+            <p className="text-sm font-medium">Remaining Balance:</p>
+            <p>{formatCurrency(remainingBalance)}</p>
+          </div>
+        </div>
         <div>
-          <p className="text-sm text-slate-500">Payment Method: {formatPaymentMethod()}</p>
-          <p className="text-sm text-slate-500">Payment Status: {statusLabel}</p>
+          <Button onClick={() => setShowPaymentForm(true)}>Record Payment</Button>
         </div>
-        <div className="text-sm text-slate-500">
-          <p>Created By: {createdBy || "System"}</p>
+
+        {showPaymentForm && (
+          <PaymentForm
+            invoiceId={invoiceId}
+            customerId={customerId}
+            onPaymentSuccess={handlePaymentSuccess}
+            onClose={() => setShowPaymentForm(false)}
+            remainingBalance={remainingBalance}
+          />
+        )}
+
+        <div>
+          <h3 className="text-md font-semibold">Payment History</h3>
+          {isLoading ? (
+            <p>Loading payment history...</p>
+          ) : error ? (
+            <p className="text-red-500">Error: {error}</p>
+          ) : payments.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead>
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Type
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Amount
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {payments.map((payment) => (
+                    <tr key={payment.id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(payment.transaction_date).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {payment.payment_type}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {formatCurrency(payment.amount)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {payment.status}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p>No payment history found.</p>
+          )}
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
+

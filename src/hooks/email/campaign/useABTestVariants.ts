@@ -1,13 +1,9 @@
-
-import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { EmailCampaign } from '@/types/email';
-import { abTestingService } from '@/services/email';
-import { useToast } from '@/hooks/use-toast';
+import { useState, useEffect } from 'react';
+import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useABTestVariants = () => {
   const [abTestLoading, setAbTestLoading] = useState(false);
-  const { toast } = useToast();
 
   const updateABTestVariantMetrics = async (campaignId: string, currentCampaign: EmailCampaign | null = null) => {
     if (!currentCampaign?.abTest?.enabled) return null;

@@ -1,158 +1,128 @@
-
-import { useState, useEffect } from 'react';
-import { TeamMember } from "@/types/team";
+import { useState, useEffect, useCallback } from 'react';
+import { toast } from '@/hooks/use-toast';
+import { Profile } from '@/types/team';
+import { Team } from '@/types/team';
 import { useFetchProfiles } from './team/useFetchProfiles';
 import { useFetchUserRoles } from './team/useFetchUserRoles';
-import { useTeamDataTransformer } from './team/useTeamDataTransformer';
-import { supabase } from '@/lib/supabase';
-import { getAllWorkOrders } from '@/services/workOrder';
+import { supabase } from '@/integrations/supabase/client';
 
-/**
- * Interface for the status change details from team_member_history
- */
-interface StatusChangeDetails {
-  new_status: string;
-  previous_status?: string;
-  reason?: string;
+export interface UseTeamMembersReturn {
+  teamMembers: Team[];
+  loading: boolean;
+  error: string | null;
+  refreshTeamMembers: () => Promise<void>;
+  addTeamMember: (profile: Profile) => Promise<void>;
+  removeTeamMember: (profileId: string) => Promise<void>;
 }
 
-/**
- * Hook for fetching and combining team member data
- */
-export function useTeamMembers() {
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export const useTeamMembers = (): UseTeamMembersReturn => {
+  const [teamMembers, setTeamMembers] = useState<Team[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // Import the specialized hooks
-  const { fetchProfiles } = useFetchProfiles();
-  const { fetchUserRoles } = useFetchUserRoles();
-  const { transformData } = useTeamDataTransformer();
+  const { profiles, loading: loadingProfiles, error: errorProfiles, fetchProfiles } = useFetchProfiles();
+  const { userRoles, loading: loadingRoles, error: errorRoles, fetchUserRoles } = useFetchUserRoles();
 
-  // Fetch work orders directly
-  const fetchWorkOrders = async () => {
+  const loadTeamMembers = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
     try {
-      return await getAllWorkOrders();
-    } catch (error) {
-      console.error('Error fetching work orders:', error);
-      return [];
+      await Promise.all([fetchProfiles(), fetchUserRoles()]);
+
+      if (profiles && userRoles) {
+        const members: Team[] = profiles.map((profile) => {
+          const role = userRoles.find((userRole) => userRole.userId === profile.id);
+          return {
+            ...profile,
+            role: role ? role.role : 'member', // Default to 'member' if no role is found
+          };
+        });
+        setTeamMembers(members);
+      }
+    } catch (err: any) {
+      console.error('Error loading team members:', err);
+      setError(err.message || 'Failed to load team members');
+      toast({
+        title: "Error",
+        description: "Failed to load team members",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchProfiles, fetchUserRoles, profiles, userRoles, toast]);
+
+  useEffect(() => {
+    loadTeamMembers();
+  }, [loadTeamMembers]);
+
+  const refreshTeamMembers = useCallback(async () => {
+    await loadTeamMembers();
+  }, [loadTeamMembers]);
+
+  const addTeamMember = async (profile: Profile) => {
+    try {
+      // Optimistically update the local state
+      setTeamMembers((prevTeamMembers) => [...prevTeamMembers, { ...profile, role: 'member' }]);
+
+      // Add a default role to the new team member in the database
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert([{ userId: profile.id, role: 'member' }]);
+
+      if (roleError) {
+        throw roleError;
+      }
+
+      toast({
+        title: "Team member added",
+        description: "Team member has been added successfully."
+      });
+    } catch (error: any) {
+      console.error("Error adding team member:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add team member",
+        variant: "destructive"
+      });
     }
   };
 
-  useEffect(() => {
-    async function fetchTeamMembers() {
-      setIsLoading(true);
-      setError(null);
-      
-      try {
-        // Fetch all required data in parallel for better performance
-        const [profiles, userRoles, workOrderData] = await Promise.all([
-          fetchProfiles(),
-          fetchUserRoles(),
-          fetchWorkOrders()
-        ]);
+  const removeTeamMember = async (profileId: string) => {
+    try {
+      // Optimistically update the local state
+      setTeamMembers((prevTeamMembers) => prevTeamMembers.filter((member) => member.id !== profileId));
 
-        if (profiles.length === 0) {
-          setTeamMembers([]);
-          return;
-        }
+      // Remove the team member's role from the database
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('userId', profileId);
 
-        // Transform the raw data into TeamMember objects
-        const mappedMembers = transformData(profiles, userRoles, workOrderData);
-        
-        // Fetch additional status information from team_member_history
-        const membersWithStatus = await Promise.all(
-          mappedMembers.map(async (member) => {
-            try {
-              // Get latest status change record for this member
-              const { data: statusData } = await supabase
-                .from('team_member_history')
-                .select('*')
-                .eq('profile_id', member.id)
-                .eq('action_type', 'status_change')
-                .order('timestamp', { ascending: false })
-                .limit(1);
-                
-              if (statusData && statusData.length > 0) {
-                const latestStatusChange = statusData[0];
-                
-                // Safely cast the details JSON to our interface using a two-step process
-                // First cast to unknown, then to our interface type
-                const rawDetails = latestStatusChange.details;
-                let details: StatusChangeDetails;
-                
-                // Handle different possible formats of the details field
-                if (typeof rawDetails === 'object' && rawDetails !== null) {
-                  details = rawDetails as unknown as StatusChangeDetails;
-                } else {
-                  // Fallback if details is not in the expected format
-                  details = { new_status: 'Active' };
-                }
-                
-                // Validate that the status is one of the allowed TeamMember status values
-                const statusValue = details.new_status || 'Active';
-                const validStatus = validateStatus(statusValue);
-                
-                // Transform to proper TeamMember format
-                return {
-                  id: member.id,
-                  name: `${member.first_name} ${member.last_name}`,
-                  email: member.email,
-                  phone: member.phone,
-                  role: member.job_title || 'Team Member',
-                  jobTitle: member.job_title || '',
-                  department: member.department || '',
-                  status: validStatus,
-                  workOrders: {
-                    assigned: member.activeWorkOrders || 0,
-                    completed: 0 // We'll need to calculate this if needed
-                  },
-                  statusChangeDate: latestStatusChange.timestamp,
-                  statusChangeReason: details.reason || ''
-                } as TeamMember;
-              }
-            } catch (err) {
-              console.error('Error fetching status for member:', member.id, err);
-            }
-            
-            // Default transformation for members without status history
-            return {
-              id: member.id,
-              name: `${member.first_name} ${member.last_name}`,
-              email: member.email,
-              phone: member.phone,
-              role: member.job_title || 'Team Member',
-              jobTitle: member.job_title || '',
-              department: member.department || '',
-              status: 'Active' as const,
-              workOrders: {
-                assigned: member.activeWorkOrders || 0,
-                completed: 0 // We'll need to calculate this if needed
-              }
-            } as TeamMember;
-          })
-        );
-        
-        setTeamMembers(membersWithStatus);
-      } catch (err: any) {
-        console.error('Error fetching team members:', err);
-        setError(err?.message || 'Failed to load team members. Please try again later.');
-        setTeamMembers([]);
-      } finally {
-        setIsLoading(false);
+      if (roleError) {
+        throw roleError;
       }
+
+      toast({
+        title: "Team member removed",
+        description: "Team member has been removed successfully."
+      });
+    } catch (error: any) {
+      console.error("Error removing team member:", error);
+      toast({
+        title: "Error",
+        description: "Failed to remove team member",
+        variant: "destructive"
+      });
     }
+  };
 
-    fetchTeamMembers();
-  }, []);
-
-  // Helper function to validate that status is one of the allowed values in TeamMember type
-  function validateStatus(status: string): TeamMember['status'] {
-    const validStatuses: TeamMember['status'][] = ['Active', 'Inactive', 'On Leave', 'Terminated'];
-    return validStatuses.includes(status as TeamMember['status']) 
-      ? (status as TeamMember['status']) 
-      : 'Active';
-  }
-
-  return { teamMembers, isLoading, error };
-}
+  return {
+    teamMembers,
+    loading,
+    error,
+    refreshTeamMembers,
+    addTeamMember,
+    removeTeamMember,
+  };
+};

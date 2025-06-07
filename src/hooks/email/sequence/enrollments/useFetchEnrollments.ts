@@ -1,5 +1,4 @@
-
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { EmailSequenceEnrollment } from '@/types/email';
 import { parseJsonField } from '@/services/email/utils';
 

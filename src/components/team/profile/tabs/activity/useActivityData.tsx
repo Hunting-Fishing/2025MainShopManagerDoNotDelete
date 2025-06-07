@@ -1,7 +1,6 @@
-
-import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
-import { toast } from "sonner";
+import { useState, useEffect } from 'react';
+import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export function useActivityData(memberId: string) {
   const [activities, setActivities] = useState([]);

@@ -1,6 +1,5 @@
-
-import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useShopId } from "@/hooks/useShopId";
 import { useToast } from "@/hooks/use-toast";
 import { Bay, RateSettings } from "@/services/diybay/diybayService";
