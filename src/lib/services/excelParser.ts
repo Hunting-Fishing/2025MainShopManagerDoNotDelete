@@ -1,6 +1,5 @@
-
 import * as XLSX from 'xlsx';
-import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
+import { ServiceMainCategory, ServiceSubcategory, ServiceJob, ExcelRowData } from '@/types/service';
 
 // Export the main parsing function with the correct name
 export function parseExcelFile(file: File): Promise<ServiceMainCategory[]> {

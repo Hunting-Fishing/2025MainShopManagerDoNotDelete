@@ -1,11 +1,14 @@
-
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trash2, Edit, Plus } from 'lucide-react';
-import { ServiceMainCategory } from '@/types/serviceHierarchy';
-import { deleteServiceCategory, deleteServiceSubcategory, deleteServiceJob } from '@/lib/services/serviceApi';
-import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ServiceMainCategory } from '@/types/service';
+import { ServiceCategoriesManager } from './ServiceCategoriesManager';
+import { ServiceEditor } from './ServiceEditor';
+import { ServiceDebugInfo } from './ServiceDebugInfo';
+import { ServiceAnalytics } from './ServiceAnalytics';
+import { ServiceDuplicatesManager } from './ServiceDuplicatesManager';
+import { fetchServiceCategories } from '@/lib/services/serviceApi';
 
 interface ServiceHierarchyManagerProps {
   categories: ServiceMainCategory[];

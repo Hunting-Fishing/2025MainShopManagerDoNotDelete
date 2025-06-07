@@ -1,6 +1,5 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import type { StorageFile, SectorFiles } from './types';
+import { StorageFile, SectorFiles } from '@/types/service';
 
 export async function getStorageBucketInfo(bucketName: string = 'service-data') {
   try {

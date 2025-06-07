@@ -1,5 +1,4 @@
-
-import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
+import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/service';
 
 export interface DuplicateOccurrence {
   itemId: string;

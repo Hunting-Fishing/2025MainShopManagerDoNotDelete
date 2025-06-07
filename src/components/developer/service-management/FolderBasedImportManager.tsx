@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ServiceBulkImport } from './ServiceBulkImport';
+import { FreshServiceImport } from './FreshServiceImport';
 import { ServiceImportProgress } from './ServiceImportProgress';
 import { LiveBucketViewer } from './LiveBucketViewer';
 import { Database, FolderOpen, RefreshCw } from 'lucide-react';
@@ -36,7 +36,7 @@ export function FolderBasedImportManager() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <ServiceBulkImport 
+            <FreshServiceImport 
               onImport={handleServiceImport} 
               disabled={isImporting} 
             />

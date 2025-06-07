@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { ServiceSelectorAdapter } from '../fields/services/ServiceSelectorAdapter';
-import { ServiceJob } from '@/types/serviceHierarchy';
+import { ServiceJob } from '@/types/service';
 import { SelectedService } from '@/types/selectedService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

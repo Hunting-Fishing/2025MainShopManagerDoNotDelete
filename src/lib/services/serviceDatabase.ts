@@ -1,6 +1,5 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
+import { ServiceMainCategory, ServiceSubcategory, ServiceJob, ServiceSector } from '@/types/service';
 
 export interface ServiceDatabaseOperations {
   fetchAllCategories: () => Promise<ServiceMainCategory[]>;

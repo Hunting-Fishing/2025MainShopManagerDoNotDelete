@@ -4,7 +4,7 @@ import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { IntegratedServiceSelector } from "@/components/work-orders/fields/services/IntegratedServiceSelector";
-import { ServiceSector, ServiceJob } from "@/types/serviceHierarchy";
+import { ServiceSector, ServiceJob } from "@/types/service";
 import { SelectedService } from "@/types/selectedService";
 import { useServiceSectors } from "@/hooks/useServiceCategories";
 import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";

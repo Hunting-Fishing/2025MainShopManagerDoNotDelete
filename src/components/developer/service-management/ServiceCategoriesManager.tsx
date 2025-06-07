@@ -1,22 +1,9 @@
-
 import React, { useState } from 'react';
-import { ServiceMainCategory } from '@/types/serviceHierarchy';
+import { ServiceMainCategory } from '@/types/service';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  Plus, 
-  Search, 
-  Edit, 
-  Trash2, 
-  MoreVertical, 
-  Eye, 
-  EyeOff,
-  RefreshCw,
-  AlertCircle
-} from 'lucide-react';
+import { Plus, Edit, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,

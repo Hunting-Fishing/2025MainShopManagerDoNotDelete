@@ -1,192 +1,162 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import type { ImportProgress, ImportResult, ImportStats, ImportOptions } from './types';
-import { getAllSectorFiles as getAllSectorFilesFromStorage, ensureStorageBucket as ensureBucket } from './storageUtils';
-
-// Re-export functions needed by other modules
-export { getAllSectorFiles, ensureStorageBucket } from './storageUtils';
+import { processExcelFileFromStorage } from './excelProcessor';
+import { SectorFiles, ImportProgress, ImportResult, ImportStats } from '@/types/service';
+import { getAllSectorFiles } from './storageUtils';
+import { clearAllServiceData } from './databaseOperations';
 
 export async function importServicesFromStorage(
-  onProgress?: (progress: ImportProgress) => void,
-  options: ImportOptions = { mode: 'skip' }
+  setProgress: (progress: ImportProgress) => void
 ): Promise<ImportResult> {
   try {
-    onProgress?.({
-      stage: 'starting',
+    setProgress({
+      stage: 'initial',
       message: 'Starting service import from storage...',
       progress: 0,
       completed: false,
       error: null
     });
 
-    // Clear existing data if requested
-    if (options.clearExisting) {
-      onProgress?.({
-        stage: 'clearing',
-        message: 'Clearing existing service data...',
-        progress: 10,
-        completed: false,
-        error: null
-      });
-      
-      await clearAllServiceData();
-    }
-
-    // Check if storage bucket exists and is ready
-    const bucketReady = await ensureBucket();
-    if (!bucketReady) {
-      throw new Error('Storage bucket is not available or could not be created');
-    }
-
-    onProgress?.({
-      stage: 'scanning',
-      message: 'Scanning storage for service files...',
-      progress: 20,
+    // 1. Clear existing service data
+    setProgress({
+      stage: 'clearing',
+      message: 'Clearing existing service data...',
+      progress: 5,
       completed: false,
       error: null
     });
+    await clearAllServiceData();
 
-    // Get all sector files from storage
-    const sectorFiles = await getAllSectorFilesFromStorage();
-    
-    if (sectorFiles.length === 0) {
+    // 2. Fetch all sector files
+    setProgress({
+      stage: 'fetching',
+      message: 'Fetching sector files from storage...',
+      progress: 10,
+      completed: false,
+      error: null
+    });
+    const sectorFiles: SectorFiles[] = await getAllSectorFiles();
+    const totalFiles = sectorFiles.reduce((acc, sector) => acc + sector.totalFiles, 0);
+    let filesProcessed = 0;
+
+    if (!sectorFiles || sectorFiles.length === 0) {
       return {
-        success: true,
-        message: 'No service files found in storage. Please upload Excel files organized by sector.',
-        stats: {
-          totalSectors: 0,
-          totalCategories: 0,
-          totalSubcategories: 0,
-          totalServices: 0,
-          filesProcessed: 0
-        }
+        success: false,
+        message: 'No sector files found in storage. Ensure files are properly organized.',
       };
     }
 
-    let totalFilesProcessed = 0;
-    let totalSectors = 0;
-    let totalCategories = 0;
-    let totalSubcategories = 0;
-    let totalServices = 0;
+    let totalSectors = sectorFiles.length;
+    let sectorsProcessed = 0;
+    let categoriesProcessed = 0;
+    let subcategoriesProcessed = 0;
+    let jobsProcessed = 0;
 
-    // Process each sector
-    for (let i = 0; i < sectorFiles.length; i++) {
-      const sector = sectorFiles[i];
-      const progressPercent = 20 + Math.floor(((i + 1) / sectorFiles.length) * 70);
-      
-      onProgress?.({
-        stage: 'processing',
-        message: `Processing sector: ${sector.sectorName} (${sector.totalFiles} files)`,
-        progress: progressPercent,
-        completed: false,
-        error: null,
-        details: {
-          sectorsProcessed: i + 1,
-          categoriesProcessed: totalCategories,
-          subcategoriesProcessed: totalSubcategories,
-          jobsProcessed: totalServices,
-          totalSectors: sectorFiles.length,
-          totalCategories: 0,
-          totalSubcategories: 0,
-          totalJobs: 0
-        }
-      });
-
-      // For now, just count the sectors and files
-      // In a real implementation, you would process the Excel files here
-      totalSectors++;
-      totalFilesProcessed += sector.totalFiles;
-    }
-
-    onProgress?.({
-      stage: 'complete',
-      message: `Successfully processed ${totalFilesProcessed} files from ${totalSectors} sectors`,
-      progress: 100,
-      completed: true,
-      error: null,
-      details: {
-        sectorsProcessed: totalSectors,
-        categoriesProcessed: totalCategories,
-        subcategoriesProcessed: totalSubcategories,
-        jobsProcessed: totalServices,
-        totalSectors: totalSectors,
-        totalCategories: totalCategories,
-        totalSubcategories: totalSubcategories,
-        totalJobs: totalServices
-      }
-    });
-
-    return {
-      success: true,
-      message: `Storage import completed successfully! Processed ${totalFilesProcessed} files from ${totalSectors} sectors.`,
-      stats: {
-        totalSectors,
-        totalCategories,
-        totalSubcategories,
-        totalServices,
-        filesProcessed: totalFilesProcessed
-      }
-    };
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Storage import failed';
-    onProgress?.({
-      stage: 'error',
-      message: errorMessage,
-      progress: 0,
-      completed: false,
-      error: errorMessage
-    });
-
-    throw error;
-  }
-}
-
-export async function processExcelFileFromStorage(
-  filePath: string,
-  onProgress?: (progress: ImportProgress) => void,
-  options: ImportOptions = { mode: 'skip' }
-): Promise<ImportResult> {
-  // Placeholder for storage-based Excel processing
-  return importServicesFromStorage(onProgress, options);
-}
-
-export async function clearAllServiceData(): Promise<void> {
-  try {
-    // Clear in reverse order due to foreign key constraints
-    await supabase.from('service_jobs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    await supabase.from('service_subcategories').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    await supabase.from('service_categories').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    await supabase.from('service_sectors').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-  } catch (error) {
-    console.error('Error clearing service data:', error);
-    throw new Error('Failed to clear service data');
-  }
-}
-
-export async function getServiceCounts(): Promise<ImportStats> {
-  try {
-    const [sectorsResult, categoriesResult, subcategoriesResult, jobsResult] = await Promise.all([
-      supabase.from('service_sectors').select('id', { count: 'exact', head: true }),
-      supabase.from('service_categories').select('id', { count: 'exact', head: true }),
-      supabase.from('service_subcategories').select('id', { count: 'exact', head: true }),
-      supabase.from('service_jobs').select('id', { count: 'exact', head: true })
-    ]);
-
-    return {
-      totalSectors: sectorsResult.count || 0,
-      totalCategories: categoriesResult.count || 0,
-      totalSubcategories: subcategoriesResult.count || 0,
-      totalServices: jobsResult.count || 0,
-      filesProcessed: 0
-    };
-  } catch (error) {
-    console.error('Error getting service counts:', error);
-    return {
+    let stats: ImportStats = {
       totalSectors: 0,
       totalCategories: 0,
       totalSubcategories: 0,
       totalServices: 0,
       filesProcessed: 0
+    };
+
+    // Initialize stats
+    stats.totalSectors = sectorFiles.length;
+    stats.totalCategories = sectorFiles.reduce((acc, sector) => acc + sector.categories.length, 0);
+    stats.totalSubcategories = sectorFiles.reduce((acc, sector) =>
+      acc + sector.categories.reduce((catAcc, category) =>
+        catAcc + category.subcategories.length, 0), 0);
+    stats.totalServices = sectorFiles.reduce((acc, sector) =>
+      acc + sector.categories.reduce((catAcc, category) =>
+        catAcc + category.subcategories.reduce((subAcc, subcategory) =>
+          subAcc + subcategory.jobs.length, 0), 0), 0);
+
+    // 3. Process each sector file
+    for (const sectorFile of sectorFiles) {
+      sectorsProcessed++;
+      console.log(`Processing sector: ${sectorFile.sectorName}`);
+
+      for (const file of sectorFile.excelFiles) {
+        filesProcessed++;
+        try {
+          setProgress({
+            stage: 'processing',
+            message: `Processing file: ${file.name} in sector ${sectorFile.sectorName}...`,
+            progress: 10 + (filesProcessed / totalFiles) * 80,
+            completed: false,
+            error: null,
+            details: {
+              sectorsProcessed,
+              categoriesProcessed,
+              subcategoriesProcessed,
+              jobsProcessed,
+              totalSectors,
+              totalCategories: stats.totalCategories,
+              totalSubcategories: stats.totalSubcategories,
+              totalJobs: stats.totalServices
+            }
+          });
+
+          const processedData = await processExcelFileFromStorage(file.name, sectorFile.sectorName);
+
+          categoriesProcessed += processedData.categories.length;
+          subcategoriesProcessed += processedData.categories.reduce((acc: number, category: any) => acc + category.subcategories.length, 0);
+          jobsProcessed += processedData.categories.reduce((acc: number, category: any) =>
+            acc + category.subcategories.reduce((subAcc: number, subcategory: any) => subAcc + subcategory.services.length, 0), 0);
+
+        } catch (error: any) {
+          console.error(`Error processing file ${file.name}:`, error);
+          return {
+            success: false,
+            message: `Error processing file ${file.name}: ${error.message || error}`,
+          };
+        }
+      }
+    }
+
+    // 4. Update progress to complete
+    setProgress({
+      stage: 'complete',
+      message: 'Service import completed successfully!',
+      progress: 100,
+      completed: true,
+      error: null,
+      details: {
+        sectorsProcessed,
+        categoriesProcessed,
+        subcategoriesProcessed,
+        jobsProcessed,
+        totalSectors,
+        totalCategories: stats.totalCategories,
+        totalSubcategories: stats.totalSubcategories,
+        totalJobs: stats.totalServices
+      }
+    });
+
+    stats.filesProcessed = filesProcessed;
+    return {
+      success: true,
+      message: `Successfully imported services from ${sectorFiles.length} sectors, processing ${filesProcessed} files.`,
+      stats: {
+        totalSectors,
+        totalCategories: stats.totalCategories,
+        totalSubcategories: stats.totalSubcategories,
+        totalServices: stats.totalServices,
+        filesProcessed: filesProcessed
+      }
+    };
+
+  } catch (error: any) {
+    console.error('Service import failed:', error);
+    setProgress({
+      stage: 'error',
+      message: `Service import failed: ${error.message || error}`,
+      progress: 0,
+      completed: false,
+      error: error.message || 'Service import failed'
+    });
+    return {
+      success: false,
+      message: `Service import failed: ${error.message || error}`,
     };
   }
 }

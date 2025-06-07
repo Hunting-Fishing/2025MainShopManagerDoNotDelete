@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronRight, Clock, DollarSign, Plus } from "lucide-react";
-import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from "@/types/serviceHierarchy";
+import { ChevronDown, ChevronRight, Plus } from "lucide-react";
+import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from "@/types/service";
 import { fetchServiceCategories } from "@/lib/services/serviceApi";
 
 interface ServiceCategoriesViewProps {

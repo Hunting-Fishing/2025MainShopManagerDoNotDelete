@@ -1,113 +1,209 @@
-
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { ServiceJob } from '@/types/serviceHierarchy';
-import { toast } from 'sonner';
+import { ServiceJob } from '@/types/service';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface ServiceJobEditorProps {
-  job: ServiceJob;
-  onSave: () => void;
-  onCancel: () => void;
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  job?: ServiceJob;
+  subcategoryId: string;
+  onSave?: () => void;
 }
 
-const ServiceJobEditor: React.FC<ServiceJobEditorProps> = ({
-  job,
-  onSave,
-  onCancel
-}) => {
-  const [name, setName] = useState(job.name);
-  const [description, setDescription] = useState(job.description || '');
-  const [price, setPrice] = useState(job.price?.toString() || '');
-  const [estimatedTime, setEstimatedTime] = useState(job.estimatedTime?.toString() || '');
-  const [isLoading, setIsLoading] = useState(false);
+export function ServiceJobEditor({ open, setOpen, job, subcategoryId, onSave }: ServiceJobEditorProps) {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [estimatedTime, setEstimatedTime] = useState<number | undefined>(undefined);
+  const [price, setPrice] = useState<number | undefined>(undefined);
+  const [isSaving, setIsSaving] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (job) {
+      setName(job.name);
+      setDescription(job.description || '');
+      setEstimatedTime(job.estimatedTime);
+      setPrice(job.price);
+    } else {
+      setName('');
+      setDescription('');
+      setEstimatedTime(undefined);
+      setPrice(undefined);
+    }
+  }, [job]);
 
   const handleSave = async () => {
-    if (!name.trim()) {
-      toast.error('Service name is required');
-      return;
-    }
-
-    setIsLoading(true);
+    setIsSaving(true);
     try {
-      // Note: This would need to update the parent category's structure
-      // For now, we'll just show success and let the parent handle it
-      toast.success('Service updated successfully');
-      onSave();
+      if (job) {
+        // Update existing job
+        const { data, error } = await supabase
+          .from('service_jobs')
+          .update({ name, description, estimatedTime, price })
+          .eq('id', job.id);
+
+        if (error) {
+          console.error('Error updating service job:', error);
+          toast({
+            title: "Error updating service",
+            description: "Failed to update the service job.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Service Updated",
+            description: "Service job updated successfully.",
+          });
+          onSave?.();
+        }
+      } else {
+        // Create new job
+        const { data, error } = await supabase
+          .from('service_jobs')
+          .insert([{ name, description, estimatedTime, price, subcategory_id: subcategoryId }]);
+
+        if (error) {
+          console.error('Error creating service job:', error);
+          toast({
+            title: "Error creating service",
+            description: "Failed to create the service job.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Service Created",
+            description: "Service job created successfully.",
+          });
+          onSave?.();
+        }
+      }
+      setOpen(false);
     } catch (error) {
-      console.error('Error updating service:', error);
-      toast.error('Failed to update service');
+      console.error('Error saving service job:', error);
+      toast({
+        title: "Unexpected Error",
+        description: "An unexpected error occurred while saving.",
+        variant: "destructive",
+      });
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!job) return;
+
+    const confirmDelete = window.confirm("Are you sure you want to delete this service job?");
+    if (!confirmDelete) return;
+
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('service_jobs')
+        .delete()
+        .eq('id', job.id);
+
+      if (error) {
+        console.error('Error deleting service job:', error);
+        toast({
+          title: "Error deleting service",
+          description: "Failed to delete the service job.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Service Deleted",
+          description: "Service job deleted successfully.",
+        });
+        onSave?.();
+        setOpen(false);
+      }
+    } catch (error) {
+      console.error('Error deleting service job:', error);
+      toast({
+        title: "Unexpected Error",
+        description: "An unexpected error occurred while deleting.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
   return (
-    <Dialog open onOpenChange={() => onCancel()}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
-          <DialogTitle>Edit Service</DialogTitle>
+          <DialogTitle>{job ? "Edit Service Job" : "Create New Service Job"}</DialogTitle>
+          <DialogDescription>
+            {job ? "Update the details of the service job." : "Create a new service job."}
+          </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="name">Name</Label>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="name" className="text-right">
+              Name
+            </Label>
             <Input
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Service name"
+              className="col-span-3"
             />
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="description">Description</Label>
+          <div className="grid grid-cols-4 items-start gap-4">
+            <Label htmlFor="description" className="text-right mt-2">
+              Description
+            </Label>
             <Textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Service description (optional)"
-              rows={3}
+              className="col-span-3"
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="price">Price ($)</Label>
-              <Input
-                id="price"
-                type="number"
-                step="0.01"
-                min="0"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                placeholder="0.00"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="estimatedTime">Time (minutes)</Label>
-              <Input
-                id="estimatedTime"
-                type="number"
-                min="0"
-                value={estimatedTime}
-                onChange={(e) => setEstimatedTime(e.target.value)}
-                placeholder="30"
-              />
-            </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="estimatedTime" className="text-right">
+              Estimated Time (minutes)
+            </Label>
+            <Input
+              type="number"
+              id="estimatedTime"
+              value={estimatedTime === undefined ? '' : String(estimatedTime)}
+              onChange={(e) => setEstimatedTime(e.target.value === '' ? undefined : Number(e.target.value))}
+              className="col-span-3"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="price" className="text-right">
+              Price
+            </Label>
+            <Input
+              type="number"
+              id="price"
+              value={price === undefined ? '' : String(price)}
+              onChange={(e) => setPrice(e.target.value === '' ? undefined : Number(e.target.value))}
+              className="col-span-3"
+            />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel} disabled={isLoading}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={isLoading}>
-            {isLoading ? 'Saving...' : 'Save Changes'}
+          {job && (
+            <Button type="button" variant="destructive" onClick={handleDelete} disabled={isSaving} className="mr-auto">
+              Delete
+            </Button>
+          )}
+          <Button type="button" onClick={handleSave} disabled={isSaving}>
+            {isSaving ? "Saving..." : "Save changes"}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-};
-
-export default ServiceJobEditor;
+}

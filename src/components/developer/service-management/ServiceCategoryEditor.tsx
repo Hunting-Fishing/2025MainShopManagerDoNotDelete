@@ -1,56 +1,113 @@
-
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { ServiceMainCategory } from '@/types/serviceHierarchy';
-import { updateServiceCategory } from '@/lib/services/serviceApi';
-import { toast } from 'sonner';
+import { ServiceMainCategory } from '@/types/service';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { Edit, Plus, Trash2 } from 'lucide-react';
 
 interface ServiceCategoryEditorProps {
-  category: ServiceMainCategory;
-  onSave: () => void;
-  onCancel: () => void;
+  open: boolean;
+  category?: ServiceMainCategory;
+  onClose: () => void;
+  onSave: (category: Omit<ServiceMainCategory, 'id'>) => void;
+  onUpdate: (category: ServiceMainCategory) => void;
+  onDelete: (categoryId: string) => void;
 }
 
-const ServiceCategoryEditor: React.FC<ServiceCategoryEditorProps> = ({
+export function ServiceCategoryEditor({
+  open,
   category,
+  onClose,
   onSave,
-  onCancel
-}) => {
-  const [name, setName] = useState(category.name);
-  const [description, setDescription] = useState(category.description || '');
+  onUpdate,
+  onDelete
+}: ServiceCategoryEditorProps) {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [isEditMode, setIsEditMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (category) {
+      setIsEditMode(true);
+      setName(category.name);
+      setDescription(category.description || '');
+    } else {
+      setIsEditMode(false);
+      setName('');
+      setDescription('');
+    }
+  }, [category]);
 
   const handleSave = async () => {
-    if (!name.trim()) {
-      toast.error('Category name is required');
-      return;
-    }
-
     setIsLoading(true);
     try {
-      await updateServiceCategory(category.id, {
-        name: name.trim(),
-        description: description.trim() || undefined
+      if (isEditMode && category) {
+        // Update existing category
+        const updatedCategory = { ...category, name, description };
+        onUpdate(updatedCategory);
+        toast({
+          title: "Category Updated",
+          description: "Service category has been updated successfully.",
+        });
+      } else {
+        // Create new category
+        const newCategory = { name, description, subcategories: [] };
+        onSave(newCategory);
+        toast({
+          title: "Category Created",
+          description: "New service category has been created successfully.",
+        });
+      }
+      onClose();
+    } catch (error: any) {
+      console.error("Error saving category:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save service category.",
+        variant: "destructive",
       });
-      toast.success('Category updated successfully');
-      onSave();
-    } catch (error) {
-      console.error('Error updating category:', error);
-      toast.error('Failed to update category');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleDelete = async () => {
+    if (category) {
+      setIsLoading(true);
+      try {
+        onDelete(category.id);
+        toast({
+          title: "Category Deleted",
+          description: "Service category has been deleted successfully.",
+        });
+        onClose();
+      } catch (error: any) {
+        console.error("Error deleting category:", error);
+        toast({
+          title: "Error",
+          description: error.message || "Failed to delete service category.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
   return (
-    <Dialog open onOpenChange={() => onCancel()}>
+    <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Edit Category</DialogTitle>
+          <DialogTitle>{isEditMode ? "Edit Category" : "Create Category"}</DialogTitle>
+          <DialogDescription>
+            {isEditMode ? "Update an existing service category." : "Create a new service category."}
+          </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
@@ -59,31 +116,38 @@ const ServiceCategoryEditor: React.FC<ServiceCategoryEditorProps> = ({
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Category name"
             />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
+              placeholder="Category description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Category description (optional)"
-              rows={3}
             />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel} disabled={isLoading}>
+          <Button type="button" variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={isLoading}>
-            {isLoading ? 'Saving...' : 'Save Changes'}
+          {isEditMode && category && (
+            <Button type="button" variant="destructive" onClick={handleDelete} disabled={isLoading}>
+              Delete
+            </Button>
+          )}
+          <Button type="button" onClick={handleSave} disabled={isLoading}>
+            {isLoading ? (
+              "Saving..."
+            ) : (
+              <>
+                {isEditMode ? "Update" : "Save"}
+              </>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-};
-
-export default ServiceCategoryEditor;
+}

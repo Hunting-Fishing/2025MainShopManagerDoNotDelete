@@ -1,20 +1,23 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   CheckCircle, 
   AlertTriangle, 
   XCircle, 
-  TrendingUp, 
-  FileText,
-  DollarSign,
-  Clock
+  Info, 
+  ChevronDown,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Eye,
+  EyeOff
 } from 'lucide-react';
-import { ServiceMainCategory, ServiceJob } from '@/types/serviceHierarchy';
+import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/service';
 
 interface ServiceQualityAnalysisProps {
   categories: ServiceMainCategory[];

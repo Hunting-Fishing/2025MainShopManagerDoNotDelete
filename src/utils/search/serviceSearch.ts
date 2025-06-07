@@ -1,5 +1,4 @@
-
-import { ServiceMainCategory } from "@/types/serviceHierarchy";
+import { ServiceMainCategory } from '@/types/service';
 import { searchServiceCategories } from "./searchService";
 import { SearchResult } from "./types";
 

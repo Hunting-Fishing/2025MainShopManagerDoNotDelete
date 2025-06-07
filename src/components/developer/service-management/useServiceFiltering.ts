@@ -1,6 +1,5 @@
-
 import { useState, useMemo } from 'react';
-import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
+import { ServiceMainCategory, ServiceJob } from '@/types/service';
 
 export interface ServiceFilters {
   searchTerm: string;

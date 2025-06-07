@@ -1,12 +1,12 @@
-
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { ServiceSubcategory } from '@/types/serviceHierarchy';
-import { toast } from 'sonner';
+import { ServiceSubcategory } from '@/types/service';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface ServiceSubcategoryEditorProps {
   subcategory: ServiceSubcategory;
@@ -22,6 +22,12 @@ const ServiceSubcategoryEditor: React.FC<ServiceSubcategoryEditorProps> = ({
   const [name, setName] = useState(subcategory.name);
   const [description, setDescription] = useState(subcategory.description || '');
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    setName(subcategory.name);
+    setDescription(subcategory.description || '');
+  }, [subcategory]);
 
   const handleSave = async () => {
     if (!name.trim()) {
@@ -49,6 +55,9 @@ const ServiceSubcategoryEditor: React.FC<ServiceSubcategoryEditorProps> = ({
         <DialogHeader>
           <DialogTitle>Edit Subcategory</DialogTitle>
         </DialogHeader>
+        <DialogDescription>
+          <p>Update the details of the subcategory.</p>
+        </DialogDescription>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label htmlFor="name">Name</Label>

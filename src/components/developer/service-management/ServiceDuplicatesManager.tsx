@@ -1,13 +1,13 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Copy, Trash2, Merge, AlertTriangle, CheckCircle } from 'lucide-react';
-import { ServiceMainCategory, ServiceJob } from '@/types/serviceHierarchy';
+import { Progress } from '@/components/ui/progress';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ServiceMainCategory, ServiceJob } from '@/types/service';
 import { toast } from 'sonner';
+import { Copy, AlertTriangle, ChevronDown, Merge, Eye } from 'lucide-react';
 
 interface ServiceDuplicatesManagerProps {
   categories: ServiceMainCategory[];
