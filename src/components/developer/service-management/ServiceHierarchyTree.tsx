@@ -1,17 +1,14 @@
+
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   ChevronDown, 
   ChevronRight, 
   Search, 
-  Filter, 
-  Eye, 
-  EyeOff, 
   Database,
   FolderOpen,
   FileText,
@@ -25,8 +22,8 @@ interface ServiceHierarchyTreeProps {
 
 export function ServiceHierarchyTree({ categories }: ServiceHierarchyTreeProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [showHidden, setShowHidden] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+  const [expandedSubcategories, setExpandedSubcategories] = useState<string[]>([]);
 
   const filteredCategories = useMemo(() => {
     if (!searchQuery) {
@@ -44,24 +41,35 @@ export function ServiceHierarchyTree({ categories }: ServiceHierarchyTreeProps) 
   }, [categories, searchQuery]);
 
   const toggleCategory = (categoryId: string) => {
-    if (expandedCategories.includes(categoryId)) {
-      setExpandedCategories(expandedCategories.filter(id => id !== categoryId));
-    } else {
-      setExpandedCategories([...expandedCategories, categoryId]);
-    }
+    setExpandedCategories(prev => 
+      prev.includes(categoryId) 
+        ? prev.filter(id => id !== categoryId)
+        : [...prev, categoryId]
+    );
+  };
+
+  const toggleSubcategory = (subcategoryId: string) => {
+    setExpandedSubcategories(prev => 
+      prev.includes(subcategoryId) 
+        ? prev.filter(id => id !== subcategoryId)
+        : [...prev, subcategoryId]
+    );
   };
 
   const isCategoryExpanded = (categoryId: string) => {
     return expandedCategories.includes(categoryId);
   };
 
-  const hasVisibleSubcategories = (category: ServiceMainCategory) => {
-    return showHidden ? true : category.subcategories.length > 0;
+  const isSubcategoryExpanded = (subcategoryId: string) => {
+    return expandedSubcategories.includes(subcategoryId);
   };
 
-  const hasVisibleJobs = (subcategory: ServiceSubcategory) => {
-    return showHidden ? true : subcategory.jobs.length > 0;
-  };
+  const totalJobs = categories.reduce((total, category) => 
+    total + category.subcategories.reduce((subTotal, subcategory) => 
+      subTotal + subcategory.jobs.length, 0), 0);
+
+  const totalSubcategories = categories.reduce((total, category) => 
+    total + category.subcategories.length, 0);
 
   return (
     <Card>
@@ -71,9 +79,17 @@ export function ServiceHierarchyTree({ categories }: ServiceHierarchyTreeProps) 
             <Database className="h-4 w-4 text-blue-500" />
             Service Hierarchy
           </div>
-          <Badge variant="secondary">
-            {categories.length} Categories
-          </Badge>
+          <div className="flex gap-2">
+            <Badge variant="secondary">
+              {categories.length} Categories
+            </Badge>
+            <Badge variant="outline">
+              {totalSubcategories} Subcategories
+            </Badge>
+            <Badge variant="outline">
+              {totalJobs} Services
+            </Badge>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -81,7 +97,7 @@ export function ServiceHierarchyTree({ categories }: ServiceHierarchyTreeProps) 
           <Search className="h-4 w-4 text-gray-500" />
           <Input
             type="search"
-            placeholder="Search categories..."
+            placeholder="Search categories, subcategories, or services..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="flex-1"
@@ -89,54 +105,104 @@ export function ServiceHierarchyTree({ categories }: ServiceHierarchyTreeProps) 
         </div>
 
         {filteredCategories.length === 0 && searchQuery && (
-          <Alert variant="info">
+          <Alert>
             <AlertDescription>
-              No categories found matching "<strong>{searchQuery}</strong>".
+              No items found matching "<strong>{searchQuery}</strong>".
             </AlertDescription>
           </Alert>
         )}
 
         {filteredCategories.length === 0 && !searchQuery && (
-          <Alert variant="warning">
+          <Alert variant="destructive">
             <AlertDescription>
-              No service categories available. Please import service data.
+              No service categories available. Please import service data using the import functionality.
             </AlertDescription>
           </Alert>
         )}
 
         {filteredCategories.length > 0 && (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {filteredCategories.map(category => (
-              <Collapsible key={category.id} className="w-full">
-                <div className="border rounded-md">
-                  <CollapsibleTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="w-full py-2 justify-between font-normal hover:bg-gray-100 data-[state=open]:bg-gray-100"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <ChevronRight
-                          className="h-4 w-4 shrink-0 transition-transform duration-200 peer-data-[state=open]:rotate-90"
-                        />
-                        <span>{category.name}</span>
-                      </div>
-                      <Badge variant="secondary">{category.subcategories.length} Subcategories</Badge>
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pl-4">
+              <div key={category.id} className="border rounded-lg">
+                <Button
+                  variant="ghost"
+                  className="w-full p-3 justify-between font-normal hover:bg-gray-50"
+                  onClick={() => toggleCategory(category.id)}
+                >
+                  <div className="flex items-center space-x-2">
+                    {isCategoryExpanded(category.id) ? (
+                      <ChevronDown className="h-4 w-4 shrink-0" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4 shrink-0" />
+                    )}
+                    <FolderOpen className="h-4 w-4 text-blue-500" />
+                    <span className="font-medium">{category.name}</span>
+                  </div>
+                  <Badge variant="secondary">
+                    {category.subcategories.length} subcategories
+                  </Badge>
+                </Button>
+                
+                {isCategoryExpanded(category.id) && (
+                  <div className="border-t bg-gray-50/50">
                     {category.subcategories.map(subcategory => (
-                      <div key={subcategory.id} className="py-2">
-                        <div className="font-medium">{subcategory.name}</div>
-                        <ul className="list-disc pl-5 text-sm text-gray-600">
-                          {subcategory.jobs.map(job => (
-                            <li key={job.id}>{job.name}</li>
-                          ))}
-                        </ul>
+                      <div key={subcategory.id} className="ml-4">
+                        <Button
+                          variant="ghost"
+                          className="w-full p-2 justify-between font-normal text-sm hover:bg-gray-100"
+                          onClick={() => toggleSubcategory(subcategory.id)}
+                        >
+                          <div className="flex items-center space-x-2">
+                            {isSubcategoryExpanded(subcategory.id) ? (
+                              <ChevronDown className="h-3 w-3 shrink-0" />
+                            ) : (
+                              <ChevronRight className="h-3 w-3 shrink-0" />
+                            )}
+                            <FileText className="h-3 w-3 text-green-600" />
+                            <span>{subcategory.name}</span>
+                          </div>
+                          <Badge variant="outline" className="text-xs">
+                            {subcategory.jobs.length} services
+                          </Badge>
+                        </Button>
+                        
+                        {isSubcategoryExpanded(subcategory.id) && (
+                          <div className="ml-6 border-l-2 border-gray-200 pl-3 pb-2">
+                            {subcategory.jobs.length === 0 ? (
+                              <div className="text-sm text-gray-500 py-2">
+                                No services in this subcategory
+                              </div>
+                            ) : (
+                              subcategory.jobs.map(job => (
+                                <div key={job.id} className="py-1 flex items-center justify-between">
+                                  <div className="flex items-center space-x-2">
+                                    <Wrench className="h-3 w-3 text-gray-400" />
+                                    <span className="text-sm">{job.name}</span>
+                                  </div>
+                                  <div className="flex items-center space-x-2 text-xs text-gray-500">
+                                    {job.estimatedTime && (
+                                      <span>{job.estimatedTime}min</span>
+                                    )}
+                                    {job.price && (
+                                      <span>${job.price}</span>
+                                    )}
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        )}
                       </div>
                     ))}
-                  </CollapsibleContent>
-                </div>
-              </Collapsible>
+                    
+                    {category.subcategories.length === 0 && (
+                      <div className="p-3 text-sm text-gray-500">
+                        No subcategories in this category
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         )}

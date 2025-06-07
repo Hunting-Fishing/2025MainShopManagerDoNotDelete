@@ -1,13 +1,21 @@
 
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { useServiceSectors } from '@/hooks/useServiceCategories';
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  clearAllServiceData
-} from '@/lib/services';
-import { StorageFile, ImportProgress } from '@/types/service';
 import * as XLSX from 'xlsx';
+
+interface ImportProgress {
+  stage: string;
+  message: string;
+  progress: number;
+  completed: boolean;
+  error: string | null;
+}
+
+interface ExcelFileData {
+  fileName: string;
+  data: any[];
+}
 
 export function useFileBasedServiceImport() {
   const [isImporting, setIsImporting] = useState(false);
@@ -19,239 +27,258 @@ export function useFileBasedServiceImport() {
     error: null
   });
   
-  const { refetch } = useServiceSectors();
   const { toast } = useToast();
 
-  const downloadAndParseExcelFile = async (filePath: string) => {
-    try {
-      // Download file from Supabase storage
-      const { data, error } = await supabase.storage
-        .from('service-data')
-        .download(filePath);
+  const processExcelFile = (file: File): Promise<any[]> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
       
-      if (error) throw error;
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          
+          // Get the first sheet
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          
+          // Convert to JSON with proper headers
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+            header: 1,
+            defval: '' 
+          });
+          
+          console.log(`Processing ${file.name}:`, jsonData);
+          resolve(jsonData);
+        } catch (error) {
+          console.error(`Error processing ${file.name}:`, error);
+          reject(error);
+        }
+      };
       
-      // Parse Excel file
-      const arrayBuffer = await data.arrayBuffer();
-      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-      
-      // Get first worksheet
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      
-      // Convert to JSON
-      const jsonData = XLSX.utils.sheet_to_json(worksheet);
-      
-      return jsonData;
-    } catch (error) {
-      console.error('Error parsing Excel file:', error);
-      throw error;
-    }
+      reader.onerror = () => reject(new Error(`Failed to read ${file.name}`));
+      reader.readAsArrayBuffer(file);
+    });
   };
 
-  const importSelectedFiles = async (selectedFiles: StorageFile[]) => {
-    setIsImporting(true);
-    setImportProgress({
-      stage: 'starting',
-      message: 'Starting file-based import...',
-      progress: 0,
-      completed: false,
-      error: null
+  const parseExcelData = (fileName: string, rawData: any[]): { 
+    sectorName: string; 
+    categories: Array<{
+      name: string;
+      subcategories: Array<{
+        name: string;
+        services: Array<{
+          name: string;
+          description?: string;
+          estimatedTime?: number;
+          price?: number;
+        }>;
+      }>;
+    }>;
+  } => {
+    console.log(`Parsing data for ${fileName}:`, rawData);
+    
+    // Remove file extension to get sector name
+    const sectorName = fileName.replace(/\.(xlsx?|csv)$/i, '').trim();
+    
+    if (!rawData || rawData.length < 2) {
+      return { sectorName, categories: [] };
+    }
+    
+    // Skip header row and process data
+    const dataRows = rawData.slice(1).filter(row => 
+      row && Array.isArray(row) && row.some(cell => cell && cell.toString().trim())
+    );
+    
+    console.log(`Found ${dataRows.length} data rows for ${sectorName}`);
+    
+    // Group services by category and subcategory
+    const categoryMap = new Map<string, Map<string, any[]>>();
+    
+    dataRows.forEach((row, index) => {
+      if (!row || row.length < 2) return;
+      
+      // Assume structure: [Category, Subcategory, Service, Description, Time, Price, ...]
+      const category = (row[0] || '').toString().trim();
+      const subcategory = (row[1] || '').toString().trim();
+      const serviceName = (row[2] || '').toString().trim();
+      const description = (row[3] || '').toString().trim();
+      const estimatedTime = row[4] ? parseInt(row[4].toString()) : undefined;
+      const price = row[5] ? parseFloat(row[5].toString()) : undefined;
+      
+      if (!category || !subcategory || !serviceName) {
+        console.log(`Skipping incomplete row ${index + 2}:`, row);
+        return;
+      }
+      
+      if (!categoryMap.has(category)) {
+        categoryMap.set(category, new Map());
+      }
+      
+      const subcategoryMap = categoryMap.get(category)!;
+      if (!subcategoryMap.has(subcategory)) {
+        subcategoryMap.set(subcategory, []);
+      }
+      
+      subcategoryMap.get(subcategory)!.push({
+        name: serviceName,
+        description: description || undefined,
+        estimatedTime: estimatedTime || undefined,
+        price: price || undefined
+      });
     });
     
+    // Convert to proper structure
+    const categories = Array.from(categoryMap.entries()).map(([categoryName, subcategoryMap]) => ({
+      name: categoryName,
+      subcategories: Array.from(subcategoryMap.entries()).map(([subcategoryName, services]) => ({
+        name: subcategoryName,
+        services
+      }))
+    }));
+    
+    console.log(`Processed ${sectorName}: ${categories.length} categories, ${categories.reduce((total, cat) => total + cat.subcategories.length, 0)} subcategories, ${categories.reduce((total, cat) => total + cat.subcategories.reduce((subTotal, sub) => subTotal + sub.services.length, 0), 0)} services`);
+    
+    return { sectorName, categories };
+  };
+
+  const importServices = async (selectedFiles: ExcelFileData[]) => {
     try {
-      // Clear existing data first
+      setIsImporting(true);
       setImportProgress({
-        stage: 'clearing',
-        message: 'Clearing existing service data...',
-        progress: 5,
+        stage: 'preparing',
+        message: 'Preparing import...',
+        progress: 0,
         completed: false,
         error: null
       });
-      
-      await clearAllServiceData();
-      
-      let totalSectors = 0;
-      let totalCategories = 0;
-      let totalSubcategories = 0;
-      let totalServices = 0;
-      
-      // Process each selected file
-      for (let i = 0; i < selectedFiles.length; i++) {
-        const file = selectedFiles[i];
-        const progress = 10 + (i / selectedFiles.length) * 80;
-        
+
+      // Clear existing data
+      setImportProgress({
+        stage: 'clearing',
+        message: 'Clearing existing service data...',
+        progress: 10,
+        completed: false,
+        error: null
+      });
+
+      await supabase.from('service_jobs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('service_subcategories').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('service_categories').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('service_sectors').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
+      let totalFilesProcessed = 0;
+      let totalSectorsCreated = 0;
+      let totalCategoriesCreated = 0;
+      let totalSubcategoriesCreated = 0;
+      let totalServicesCreated = 0;
+
+      for (const fileData of selectedFiles) {
         setImportProgress({
           stage: 'processing',
-          message: `Processing ${file.name}...`,
-          progress,
+          message: `Processing ${fileData.fileName}...`,
+          progress: 20 + (totalFilesProcessed / selectedFiles.length) * 60,
           completed: false,
           error: null
         });
+
+        const parsedData = parseExcelData(fileData.fileName, fileData.data);
         
-        try {
-          // Parse Excel file
-          const excelData = await downloadAndParseExcelFile(file.path || file.name);
-          
-          if (!excelData || excelData.length === 0) {
-            console.warn(`No data found in file: ${file.name}`);
-            continue;
-          }
-          
-          // Extract sector name from file path or name
-          const sectorName = file.path?.split('/')[0] || 'automotive';
-          const categoryName = file.name.replace(/\.xlsx?$/i, '');
-          
-          // Create or get sector
-          const { data: existingSector } = await supabase
-            .from('service_sectors')
-            .select('id')
-            .eq('name', sectorName)
-            .single();
-          
-          let sectorId;
-          if (existingSector) {
-            sectorId = existingSector.id;
-          } else {
-            const { data: newSector, error: sectorError } = await supabase
-              .from('service_sectors')
-              .insert({ 
-                name: sectorName, 
-                description: `${sectorName} services`,
-                position: totalSectors + 1 
-              })
-              .select('id')
-              .single();
-            
-            if (sectorError) throw sectorError;
-            sectorId = newSector.id;
-            totalSectors++;
-          }
-          
-          // Create category
+        if (parsedData.categories.length === 0) {
+          console.log(`No valid data found in ${fileData.fileName}`);
+          continue;
+        }
+
+        // Create sector
+        const { data: sector, error: sectorError } = await supabase
+          .from('service_sectors')
+          .insert({
+            name: parsedData.sectorName,
+            description: `Service sector from ${fileData.fileName}`
+          })
+          .select()
+          .single();
+
+        if (sectorError) {
+          throw new Error(`Failed to create sector: ${sectorError.message}`);
+        }
+
+        totalSectorsCreated++;
+
+        // Create categories and subcategories
+        for (const categoryData of parsedData.categories) {
           const { data: category, error: categoryError } = await supabase
             .from('service_categories')
-            .insert({ 
-              name: categoryName,
-              description: `Services for ${categoryName}`,
-              sector_id: sectorId,
-              position: totalCategories + 1
+            .insert({
+              name: categoryData.name,
+              sector_id: sector.id
             })
-            .select('id')
+            .select()
             .single();
-          
-          if (categoryError) throw categoryError;
-          totalCategories++;
-          
-          // Group services by subcategory
-          const subcategoryGroups = new Map();
-          
-          excelData.forEach((row: any) => {
-            // Try different column name variations
-            const subcategoryName = row['Subcategory'] || 
-                                  row['subcategory'] || 
-                                  row['Sub Category'] || 
-                                  row['Category'] ||
-                                  Object.values(row)[0] as string || 
-                                  'General Services';
-            
-            const serviceName = row['Service'] || 
-                              row['service'] || 
-                              row['Service Name'] || 
-                              row['name'] ||
-                              Object.values(row)[1] as string ||
-                              'Service';
-            
-            const description = row['Description'] || 
-                              row['description'] || 
-                              Object.values(row)[2] as string || 
-                              '';
-            
-            const estimatedTime = parseInt(row['Estimated Time'] || row['Time'] || row['Minutes'] || '60');
-            const price = parseFloat(row['Price'] || row['Cost'] || '0');
-            
-            if (!subcategoryGroups.has(subcategoryName)) {
-              subcategoryGroups.set(subcategoryName, []);
-            }
-            
-            subcategoryGroups.get(subcategoryName).push({
-              name: serviceName,
-              description,
-              estimatedTime: isNaN(estimatedTime) ? 60 : estimatedTime,
-              price: isNaN(price) ? 0 : price
-            });
-          });
-          
-          // Create subcategories and services
-          for (const [subcategoryName, services] of subcategoryGroups) {
+
+          if (categoryError) {
+            throw new Error(`Failed to create category: ${categoryError.message}`);
+          }
+
+          totalCategoriesCreated++;
+
+          // Create subcategories
+          for (const subcategoryData of categoryData.subcategories) {
             const { data: subcategory, error: subcategoryError } = await supabase
               .from('service_subcategories')
-              .insert({ 
-                name: subcategoryName,
-                description: `${subcategoryName} services`,
+              .insert({
+                name: subcategoryData.name,
                 category_id: category.id
               })
-              .select('id')
+              .select()
               .single();
-            
-            if (subcategoryError) throw subcategoryError;
-            totalSubcategories++;
-            
-            // Create services
-            for (const service of services) {
-              const { error: serviceError } = await supabase
+
+            if (subcategoryError) {
+              throw new Error(`Failed to create subcategory: ${subcategoryError.message}`);
+            }
+
+            totalSubcategoriesCreated++;
+
+            // Create services/jobs
+            for (const serviceData of subcategoryData.services) {
+              const { error: jobError } = await supabase
                 .from('service_jobs')
                 .insert({
-                  name: service.name,
-                  description: service.description,
-                  estimated_time: service.estimatedTime,
-                  price: service.price,
+                  name: serviceData.name,
+                  description: serviceData.description,
+                  estimated_time: serviceData.estimatedTime,
+                  price: serviceData.price,
                   subcategory_id: subcategory.id
                 });
-              
-              if (serviceError) throw serviceError;
-              totalServices++;
+
+              if (jobError) {
+                console.error(`Failed to create service: ${jobError.message}`);
+                // Continue with other services rather than failing completely
+              } else {
+                totalServicesCreated++;
+              }
             }
           }
-          
-        } catch (fileError) {
-          console.error(`Error processing file ${file.name}:`, fileError);
-          // Continue with other files
         }
+
+        totalFilesProcessed++;
       }
-      
+
       setImportProgress({
         stage: 'complete',
-        message: `Import completed! Created ${totalSectors} sectors, ${totalCategories} categories, ${totalSubcategories} subcategories, and ${totalServices} services.`,
+        message: `Import completed! Created ${totalSectorsCreated} sectors, ${totalCategoriesCreated} categories, ${totalSubcategoriesCreated} subcategories, and ${totalServicesCreated} services.`,
         progress: 100,
         completed: true,
-        error: null,
-        details: {
-          sectorsProcessed: totalSectors,
-          categoriesProcessed: totalCategories,
-          subcategoriesProcessed: totalSubcategories,
-          jobsProcessed: totalServices,
-          totalSectors,
-          totalCategories,
-          totalSubcategories,
-          totalJobs: totalServices
-        }
+        error: null
       });
-      
-      // Refresh the data
-      setTimeout(async () => {
-        await refetch();
-      }, 1000);
-      
+
       toast({
-        title: "Import Completed Successfully",
-        description: `Imported ${totalServices} services across ${totalCategories} categories from ${selectedFiles.length} files.`,
-        variant: "default",
+        title: "Import Completed",
+        description: `Successfully imported ${totalServicesCreated} services from ${totalFilesProcessed} files.`,
       });
-      
+
     } catch (error) {
-      console.error('File-based import failed:', error);
-      
+      console.error('Import failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Import failed';
       
       setImportProgress({
@@ -261,7 +288,7 @@ export function useFileBasedServiceImport() {
         completed: false,
         error: errorMessage
       });
-      
+
       toast({
         title: "Import Failed",
         description: errorMessage,
@@ -272,27 +299,48 @@ export function useFileBasedServiceImport() {
     }
   };
 
-  const handleCancel = () => {
-    setIsImporting(false);
-    setImportProgress({
-      stage: 'cancelled',
-      message: 'Import cancelled by user',
-      progress: 0,
-      completed: false,
-      error: null
-    });
-    
-    toast({
-      title: "Import Cancelled",
-      description: "Service import was cancelled",
-      variant: "destructive",
-    });
+  const handleFileImport = async (files: File[]) => {
+    try {
+      setImportProgress({
+        stage: 'reading',
+        message: 'Reading Excel files...',
+        progress: 5,
+        completed: false,
+        error: null
+      });
+
+      // Process all files
+      const fileDataPromises = files.map(async (file) => {
+        const data = await processExcelFile(file);
+        return { fileName: file.name, data };
+      });
+
+      const selectedFiles = await Promise.all(fileDataPromises);
+      await importServices(selectedFiles);
+    } catch (error) {
+      console.error('File processing failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'File processing failed';
+      
+      setImportProgress({
+        stage: 'error',
+        message: errorMessage,
+        progress: 0,
+        completed: false,
+        error: errorMessage
+      });
+
+      toast({
+        title: "File Processing Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      setIsImporting(false);
+    }
   };
 
   return {
     isImporting,
     importProgress,
-    importSelectedFiles,
-    handleCancel
+    handleFileImport
   };
 }
