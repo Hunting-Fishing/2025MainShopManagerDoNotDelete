@@ -1,14 +1,12 @@
 
-// Service API functions
+// Updated index with cleaner exports
 export * from './serviceApi';
 export * from './serviceUtils';
 
 // Folder-based import functions
 export { 
   processExcelFileFromStorage,
-  importServicesFromStorage,
-  clearAllServiceData,
-  getServiceCounts
+  importServicesFromStorage
 } from './folderBasedImportService';
 
 // Service data processor functions
@@ -19,11 +17,18 @@ export {
   optimizeDatabasePerformance
 } from './serviceDataProcessor';
 
-// Data cleanup functions
+// Database operations
 export { 
-  cleanupMisplacedServiceData,
-  removeTestData
-} from './dataCleanupService';
+  clearAllServiceData,
+  getServiceCounts
+} from './databaseOperations';
+
+// Excel processing utilities
+export { 
+  mapExcelToServiceHierarchy,
+  processMultipleExcelFiles,
+  validateExcelData
+} from './excelProcessor';
 
 // Storage utility functions
 export { 
@@ -35,12 +40,5 @@ export {
 // Bucket viewer service
 export { bucketViewerService } from './bucketViewerService';
 
-// Export all types from the unified types file
-export type {
-  ImportProgress,
-  ImportResult,
-  ImportStats,
-  ProcessedServiceData,
-  StorageFile,
-  SectorFiles
-} from './types';
+// Export all types from the consolidated types file
+export type * from '@/types/service';

@@ -1,28 +1,6 @@
 
-export interface ExcelRowData {
-  category: string;
-  subcategory: string;
-  serviceName: string;
-  description: string;
-  estimatedTime: number;
-  price: number;
-}
-
-export interface MappedServiceData {
-  sectorName: string; // From filename
-  categories: {
-    name: string;
-    subcategories: {
-      name: string;
-      services: {
-        name: string;
-        description: string;
-        estimatedTime: number;
-        price: number;
-      }[];
-    }[];
-  }[];
-}
+// Extracted Excel processing utilities for better organization
+import { ExcelRowData, MappedServiceData } from '@/types/service';
 
 /**
  * Maps Excel data to correct service hierarchy
@@ -56,7 +34,7 @@ export function mapExcelToServiceHierarchy(fileName: string, rows: any[]): Mappe
     }
   });
   
-  // Convert to proper hierarchy
+  // Convert to proper hierarchy - UNLIMITED SERVICES PER SUBCATEGORY
   const subcategories = Array.from(subcategoryGroups.entries()).map(([subcategoryName, services]) => ({
     name: subcategoryName,
     services: services
@@ -83,4 +61,25 @@ export function mapExcelToServiceHierarchy(fileName: string, rows: any[]): Mappe
  */
 export function processMultipleExcelFiles(files: { fileName: string; data: any[] }[]): MappedServiceData[] {
   return files.map(file => mapExcelToServiceHierarchy(file.fileName, file.data));
+}
+
+/**
+ * Validates Excel data structure
+ */
+export function validateExcelData(data: any[]): { isValid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  
+  if (!Array.isArray(data) || data.length === 0) {
+    errors.push('Excel data is empty or invalid');
+    return { isValid: false, errors };
+  }
+  
+  // Check for required columns
+  const firstRow = data[0];
+  if (!firstRow || typeof firstRow !== 'object') {
+    errors.push('Excel data format is invalid');
+    return { isValid: false, errors };
+  }
+  
+  return { isValid: errors.length === 0, errors };
 }
