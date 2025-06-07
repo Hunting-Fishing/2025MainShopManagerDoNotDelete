@@ -46,6 +46,7 @@ export function FolderBasedImportManager() {
               onCancel={handleCancel}
               error={importProgress.error}
               completed={importProgress.completed}
+              operation="import"
             />
           </div>
         </CardContent>
