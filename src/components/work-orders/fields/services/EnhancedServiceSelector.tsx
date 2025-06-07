@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { ServiceSector, ServiceJob } from '@/types/serviceHierarchy';
+import { ServiceSector, ServiceJob } from '@/types/service';
 import { SelectedService, ServiceSelectionSummary } from '@/types/selectedService';
 import { HierarchicalServiceSelector } from './HierarchicalServiceSelector';
 import { SelectedServiceCard } from './SelectedServiceCard';

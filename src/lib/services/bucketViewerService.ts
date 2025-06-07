@@ -1,6 +1,6 @@
 
 import { getAllSectorFiles, ensureStorageBucket } from './storageUtils';
-import type { SectorFiles } from './types';
+import type { SectorFiles } from '@/types/service';
 
 export const bucketViewerService = {
   async getAllSectorFiles(): Promise<SectorFiles[]> {

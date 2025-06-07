@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { IntegratedServiceSelector } from "@/components/work-orders/fields/services/IntegratedServiceSelector";
-import { ServiceSector, ServiceJob } from "@/types/serviceHierarchy";
+import { ServiceSector, ServiceJob } from "@/types/service";
 import { SelectedService } from "@/types/selectedService";
 import { fetchServiceSectors } from "@/lib/services/serviceApi";
 import { Settings } from "lucide-react";

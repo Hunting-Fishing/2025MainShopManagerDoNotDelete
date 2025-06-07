@@ -1,7 +1,7 @@
 
 import { useState, useMemo } from 'react';
 import { useDebounce } from './useDebounce';
-import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
+import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/service';
 import { enhancedSearch, sortByRelevance, SearchMatch } from '@/utils/search/enhancedSearch';
 
 interface EnhancedServiceJob extends ServiceJob {

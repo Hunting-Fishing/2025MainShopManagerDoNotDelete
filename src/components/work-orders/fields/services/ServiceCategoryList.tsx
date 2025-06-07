@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ServiceMainCategory, ServiceJob } from '@/types/serviceHierarchy';
+import { ServiceMainCategory, ServiceJob } from '@/types/service';
 import { SelectedService } from '@/types/selectedService';
 import { Button } from '@/components/ui/button';
 import { Plus, ChevronDown, ChevronRight } from 'lucide-react';

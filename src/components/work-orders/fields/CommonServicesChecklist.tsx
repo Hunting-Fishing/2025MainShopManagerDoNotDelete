@@ -9,7 +9,7 @@ import {
   ServiceMainCategory, 
   ServiceSubcategory, 
   ServiceJob
-} from '@/types/serviceHierarchy';
+} from '@/types/service';
 import { fetchServiceCategories } from '@/lib/services/serviceApi';
 
 interface CommonServicesChecklistProps {

@@ -1,6 +1,5 @@
-
 import { useState, useEffect, useCallback } from 'react';
-import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
+import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/service';
 
 interface NavigationState {
   selectedCategoryIndex: number;
