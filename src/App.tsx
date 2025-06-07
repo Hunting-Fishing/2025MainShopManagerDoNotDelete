@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ErrorBoundary } from '@/components/error/ErrorBoundary';
@@ -11,8 +12,8 @@ import Signup from '@/pages/Signup';
 import Authentication from '@/pages/Authentication';
 import CustomerPortalLogin from '@/pages/CustomerPortalLogin';
 
-// Main app pages
-import Customers from '@/pages/Customers';
+// Main app pages - updated to use CustomersPage instead of Customers
+import CustomersPage from '@/pages/CustomersPage';
 import WorkOrders from '@/pages/WorkOrders';
 import Invoices from '@/pages/Invoices';
 import Inventory from '@/pages/Inventory';
@@ -24,6 +25,9 @@ import Reports from '@/pages/Reports';
 import Team from '@/pages/Team';
 import Notifications from '@/pages/Notifications';
 import Settings from '@/pages/Settings';
+
+// Customer-specific pages
+import CreateCustomer from '@/pages/CreateCustomer';
 
 // Developer pages
 import Developer from '@/pages/Developer';
@@ -63,8 +67,9 @@ function App() {
             {/* Main dashboard */}
             <Route index element={<Dashboard />} />
             
-            {/* Core business pages */}
-            <Route path="customers/*" element={<Customers />} />
+            {/* Core business pages - updated customers route */}
+            <Route path="customers" element={<CustomersPage />} />
+            <Route path="customers/create" element={<CreateCustomer />} />
             <Route path="work-orders/*" element={<WorkOrders />} />
             <Route path="invoices/*" element={<Invoices />} />
             <Route path="inventory/*" element={<Inventory />} />
