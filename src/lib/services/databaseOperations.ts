@@ -1,95 +1,89 @@
 
-// Extracted database operations for better separation of concerns
 import { supabase } from '@/integrations/supabase/client';
-import { ServiceSector, ImportStats } from '@/types/service';
 
-/**
- * Clears ALL service data from the database - IMPROVED VERSION
- */
-export const clearAllServiceData = async (): Promise<void> => {
+export async function clearAllServiceData(): Promise<void> {
   try {
-    console.log('Starting comprehensive service data cleanup...');
+    console.log('Clearing all service data from database...');
     
-    // Delete in proper order to respect foreign key constraints
-    // 1. Delete all service jobs first
+    // Delete in reverse order of dependencies
+    console.log('Deleting service jobs...');
     const { error: jobsError } = await supabase
       .from('service_jobs')
       .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+      .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all rows
     
     if (jobsError) {
       console.error('Error deleting service jobs:', jobsError);
-      throw jobsError;
+      throw new Error(`Failed to delete service jobs: ${jobsError.message}`);
     }
     
-    // 2. Delete all subcategories
+    console.log('Deleting service subcategories...');
     const { error: subcategoriesError } = await supabase
       .from('service_subcategories')
       .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+      .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all rows
     
     if (subcategoriesError) {
-      console.error('Error deleting subcategories:', subcategoriesError);
-      throw subcategoriesError;
+      console.error('Error deleting service subcategories:', subcategoriesError);
+      throw new Error(`Failed to delete service subcategories: ${subcategoriesError.message}`);
     }
     
-    // 3. Delete all categories
+    console.log('Deleting service main categories...');
     const { error: categoriesError } = await supabase
-      .from('service_categories')
+      .from('service_main_categories')
       .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+      .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all rows
     
     if (categoriesError) {
-      console.error('Error deleting categories:', categoriesError);
-      throw categoriesError;
+      console.error('Error deleting service main categories:', categoriesError);
+      throw new Error(`Failed to delete service main categories: ${categoriesError.message}`);
     }
     
-    // 4. Delete all sectors
+    console.log('Deleting service sectors...');
     const { error: sectorsError } = await supabase
       .from('service_sectors')
       .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+      .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all rows
     
     if (sectorsError) {
-      console.error('Error deleting sectors:', sectorsError);
-      throw sectorsError;
+      console.error('Error deleting service sectors:', sectorsError);
+      throw new Error(`Failed to delete service sectors: ${sectorsError.message}`);
     }
     
-    console.log('Successfully cleared ALL service data from database');
-    
+    console.log('Successfully cleared all service data from database');
   } catch (error) {
-    console.error('Error during comprehensive cleanup:', error);
+    console.error('Error clearing service data:', error);
     throw error;
   }
-};
+}
 
-/**
- * Gets current service data counts from database
- */
-export const getServiceCounts = async (): Promise<ImportStats> => {
+export async function getServiceCounts(): Promise<{
+  sectors: number;
+  categories: number;
+  subcategories: number;
+  jobs: number;
+}> {
   try {
+    console.log('Getting service counts...');
+    
     const [sectorsResult, categoriesResult, subcategoriesResult, jobsResult] = await Promise.all([
-      supabase.from('service_sectors').select('id', { count: 'exact' }),
-      supabase.from('service_categories').select('id', { count: 'exact' }),
-      supabase.from('service_subcategories').select('id', { count: 'exact' }),
-      supabase.from('service_jobs').select('id', { count: 'exact' })
+      supabase.from('service_sectors').select('id', { count: 'exact', head: true }),
+      supabase.from('service_main_categories').select('id', { count: 'exact', head: true }),
+      supabase.from('service_subcategories').select('id', { count: 'exact', head: true }),
+      supabase.from('service_jobs').select('id', { count: 'exact', head: true })
     ]);
     
-    return {
-      totalSectors: sectorsResult.count || 0,
-      totalCategories: categoriesResult.count || 0,
-      totalSubcategories: subcategoriesResult.count || 0,
-      totalServices: jobsResult.count || 0,
-      filesProcessed: 0
+    const counts = {
+      sectors: sectorsResult.count || 0,
+      categories: categoriesResult.count || 0,
+      subcategories: subcategoriesResult.count || 0,
+      jobs: jobsResult.count || 0
     };
+    
+    console.log('Service counts:', counts);
+    return counts;
   } catch (error) {
     console.error('Error getting service counts:', error);
-    return {
-      totalSectors: 0,
-      totalCategories: 0,
-      totalSubcategories: 0,
-      totalServices: 0,
-      filesProcessed: 0
-    };
+    throw error;
   }
-};
+}

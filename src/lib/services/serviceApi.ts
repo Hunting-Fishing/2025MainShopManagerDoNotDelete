@@ -1,67 +1,12 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import type { ServiceSector, ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/service';
 
-export async function insertServiceSector(sectorData: Omit<ServiceSector, 'id' | 'categories'>) {
-  const { data, error } = await supabase
-    .from('service_sectors')
-    .insert(sectorData)
-    .select()
-    .single();
-  
-  if (error) throw error;
-  return data;
-}
-
-export async function insertServiceCategory(categoryData: Omit<ServiceMainCategory, 'id' | 'subcategories'>) {
-  const { data, error } = await supabase
-    .from('service_categories')
-    .insert(categoryData)
-    .select()
-    .single();
-  
-  if (error) throw error;
-  return data;
-}
-
-export async function insertServiceSubcategory(subcategoryData: Omit<ServiceSubcategory, 'id' | 'jobs'>) {
-  const { data, error } = await supabase
-    .from('service_subcategories')
-    .insert(subcategoryData)
-    .select()
-    .single();
-  
-  if (error) throw error;
-  return data;
-}
-
-export async function insertServiceJob(jobData: Omit<ServiceJob, 'id'>) {
-  const { data, error } = await supabase
-    .from('service_jobs')
-    .insert(jobData)
-    .select()
-    .single();
-  
-  if (error) throw error;
-  return data;
-}
-
 export async function fetchServiceSectors(): Promise<ServiceSector[]> {
   try {
-    console.log('Fetching service sectors...');
-
-    // First check if tables exist
-    const { error: tableCheckError } = await supabase
-      .from('service_sectors')
-      .select('id')
-      .limit(1);
-
-    if (tableCheckError) {
-      console.error('Service tables do not exist:', tableCheckError);
-      return [];
-    }
-
-    // Fetch sectors with their full hierarchy
-    const { data: sectorsData, error: sectorsError } = await supabase
+    console.log('Fetching service sectors from database...');
+    
+    const { data: sectors, error: sectorsError } = await supabase
       .from('service_sectors')
       .select(`
         id,
@@ -69,7 +14,7 @@ export async function fetchServiceSectors(): Promise<ServiceSector[]> {
         description,
         position,
         is_active,
-        service_categories (
+        service_main_categories (
           id,
           name,
           description,
@@ -88,40 +33,38 @@ export async function fetchServiceSectors(): Promise<ServiceSector[]> {
           )
         )
       `)
-      .order('position', { ascending: true })
-      .order('name', { ascending: true });
-
+      .eq('is_active', true)
+      .order('position', { ascending: true });
+    
     if (sectorsError) {
-      console.error('Error fetching sectors:', sectorsError);
-      return [];
+      console.error('Error fetching service sectors:', sectorsError);
+      throw new Error(`Failed to fetch service sectors: ${sectorsError.message}`);
     }
-
-    console.log('Raw sectors data:', sectorsData);
-
-    if (!sectorsData || sectorsData.length === 0) {
+    
+    if (!sectors) {
       console.log('No sectors found');
       return [];
     }
-
-    // Transform the data to match our TypeScript types
-    const sectors: ServiceSector[] = sectorsData.map(sector => ({
+    
+    // Transform the data to match our type structure
+    const transformedSectors: ServiceSector[] = sectors.map(sector => ({
       id: sector.id,
       name: sector.name,
       description: sector.description || undefined,
       position: sector.position || undefined,
-      is_active: sector.is_active ?? true,
-      categories: (sector.service_categories || []).map((category: any) => ({
+      is_active: sector.is_active,
+      categories: (sector.service_main_categories || []).map(category => ({
         id: category.id,
         name: category.name,
         description: category.description || undefined,
         position: category.position || undefined,
         sector_id: sector.id,
-        subcategories: (category.service_subcategories || []).map((subcategory: any) => ({
+        subcategories: (category.service_subcategories || []).map(subcategory => ({
           id: subcategory.id,
           name: subcategory.name,
           description: subcategory.description || undefined,
           category_id: category.id,
-          jobs: (subcategory.service_jobs || []).map((job: any) => ({
+          jobs: (subcategory.service_jobs || []).map(job => ({
             id: job.id,
             name: job.name,
             description: job.description || undefined,
@@ -132,22 +75,21 @@ export async function fetchServiceSectors(): Promise<ServiceSector[]> {
         }))
       }))
     }));
-
-    console.log('Transformed sectors:', sectors.length);
-    return sectors;
-
+    
+    console.log(`Fetched ${transformedSectors.length} service sectors`);
+    return transformedSectors;
   } catch (error) {
     console.error('Error in fetchServiceSectors:', error);
-    return [];
+    throw error;
   }
 }
 
 export async function fetchServiceCategories(): Promise<ServiceMainCategory[]> {
   try {
-    console.log('Fetching service categories...');
-
-    const { data: categoriesData, error } = await supabase
-      .from('service_categories')
+    console.log('Fetching service categories from database...');
+    
+    const { data: categories, error: categoriesError } = await supabase
+      .from('service_main_categories')
       .select(`
         id,
         name,
@@ -167,30 +109,31 @@ export async function fetchServiceCategories(): Promise<ServiceMainCategory[]> {
           )
         )
       `)
-      .order('position', { ascending: true })
-      .order('name', { ascending: true });
-
-    if (error) {
-      console.error('Error fetching categories:', error);
+      .order('position', { ascending: true });
+    
+    if (categoriesError) {
+      console.error('Error fetching service categories:', categoriesError);
+      throw new Error(`Failed to fetch service categories: ${categoriesError.message}`);
+    }
+    
+    if (!categories) {
+      console.log('No categories found');
       return [];
     }
-
-    if (!categoriesData) {
-      return [];
-    }
-
-    const categories: ServiceMainCategory[] = categoriesData.map((category: any) => ({
+    
+    // Transform the data to match our type structure
+    const transformedCategories: ServiceMainCategory[] = categories.map(category => ({
       id: category.id,
       name: category.name,
       description: category.description || undefined,
       position: category.position || undefined,
-      sector_id: category.sector_id,
-      subcategories: (category.service_subcategories || []).map((subcategory: any) => ({
+      sector_id: category.sector_id || undefined,
+      subcategories: (category.service_subcategories || []).map(subcategory => ({
         id: subcategory.id,
         name: subcategory.name,
         description: subcategory.description || undefined,
         category_id: category.id,
-        jobs: (subcategory.service_jobs || []).map((job: any) => ({
+        jobs: (subcategory.service_jobs || []).map(job => ({
           id: job.id,
           name: job.name,
           description: job.description || undefined,
@@ -200,117 +143,11 @@ export async function fetchServiceCategories(): Promise<ServiceMainCategory[]> {
         }))
       }))
     }));
-
-    console.log('Service categories loaded:', categories.length);
-    return categories;
+    
+    console.log(`Fetched ${transformedCategories.length} service categories`);
+    return transformedCategories;
   } catch (error) {
     console.error('Error in fetchServiceCategories:', error);
-    return [];
-  }
-}
-
-export async function updateServiceCategory(categoryId: string, updates: Partial<ServiceMainCategory>) {
-  try {
-    console.log('Updating service category:', categoryId, updates);
-    
-    const { data, error } = await supabase
-      .from('service_categories')
-      .update(updates)
-      .eq('id', categoryId)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error updating category:', error);
-      throw error;
-    }
-
-    console.log('Category updated successfully:', data);
-    return data;
-  } catch (error) {
-    console.error('Error in updateServiceCategory:', error);
     throw error;
   }
-}
-
-export async function deleteServiceCategory(categoryId: string) {
-  try {
-    console.log('Deleting service category:', categoryId);
-    
-    const { error } = await supabase
-      .from('service_categories')
-      .delete()
-      .eq('id', categoryId);
-
-    if (error) {
-      console.error('Error deleting category:', error);
-      throw error;
-    }
-
-    console.log('Category deleted successfully');
-  } catch (error) {
-    console.error('Error in deleteServiceCategory:', error);
-    throw error;
-  }
-}
-
-export async function deleteServiceSubcategory(subcategoryId: string) {
-  try {
-    console.log('Deleting service subcategory:', subcategoryId);
-    
-    const { error } = await supabase
-      .from('service_subcategories')
-      .delete()
-      .eq('id', subcategoryId);
-
-    if (error) {
-      console.error('Error deleting subcategory:', error);
-      throw error;
-    }
-
-    console.log('Subcategory deleted successfully');
-  } catch (error) {
-    console.error('Error in deleteServiceSubcategory:', error);
-    throw error;
-  }
-}
-
-export async function deleteServiceJob(jobId: string) {
-  try {
-    console.log('Deleting service job:', jobId);
-    
-    const { error } = await supabase
-      .from('service_jobs')
-      .delete()
-      .eq('id', jobId);
-
-    if (error) {
-      console.error('Error deleting job:', error);
-      throw error;
-    }
-
-    console.log('Job deleted successfully');
-  } catch (error) {
-    console.error('Error in deleteServiceJob:', error);
-    throw error;
-  }
-}
-
-export async function getServiceSectors() {
-  const { data, error } = await supabase
-    .from('service_sectors')
-    .select(`
-      *,
-      categories:service_categories(
-        *,
-        subcategories:service_subcategories(
-          *,
-          jobs:service_jobs(*)
-        )
-      )
-    `)
-    .order('position');
-  
-  if (error) throw error;
-  return data || [];
 }
