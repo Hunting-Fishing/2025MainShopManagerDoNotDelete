@@ -1,25 +1,20 @@
 
-// Unified types for service import functionality
-export interface StorageFile {
-  name: string;
-  path: string;
-  size?: number;
-  type?: string;
-  lastModified?: Date;
-}
-
-export interface SectorFiles {
-  sectorName: string;
-  excelFiles: StorageFile[];
-  totalFiles: number;
-}
-
 export interface ImportProgress {
   stage: string;
   message: string;
   progress: number;
   completed: boolean;
   error: string | null;
+  details?: {
+    sectorsProcessed: number;
+    categoriesProcessed: number;
+    subcategoriesProcessed: number;
+    jobsProcessed: number;
+    totalSectors: number;
+    totalCategories: number;
+    totalSubcategories: number;
+    totalJobs: number;
+  };
 }
 
 export interface ImportStats {
@@ -39,4 +34,17 @@ export interface ImportResult {
 export interface ProcessedServiceData {
   sectors: any[];
   stats: ImportStats;
+}
+
+export interface StorageFile {
+  name: string;
+  id: string;
+  updated_at: string;
+  created_at: string;
+  last_accessed_at: string;
+  metadata: any;
+}
+
+export interface SectorFiles {
+  [sectorName: string]: StorageFile[];
 }

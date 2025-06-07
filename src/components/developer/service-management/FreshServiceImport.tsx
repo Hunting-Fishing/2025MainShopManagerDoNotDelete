@@ -1,13 +1,14 @@
 
 import React, { useState, useCallback } from 'react';
-import { useDropzone } from 'react-dropzone';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
-import { Upload, FileSpreadsheet, CheckCircle, XCircle, Info } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useDropzone } from 'react-dropzone';
+import { Upload, FileSpreadsheet, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import * as XLSX from 'xlsx';
+import { useToast } from '@/hooks/use-toast';
 
 interface ImportProgress {
   stage: string;
@@ -15,273 +16,460 @@ interface ImportProgress {
   progress: number;
   completed: boolean;
   error: string | null;
+  details?: {
+    sectorsProcessed: number;
+    categoriesProcessed: number;
+    subcategoriesProcessed: number;
+    jobsProcessed: number;
+    totalSectors: number;
+    totalCategories: number;
+    totalSubcategories: number;
+    totalJobs: number;
+  };
 }
 
-interface ImportStats {
-  totalCategories: number;
-  totalSubcategories: number;
-  totalJobs: number;
-  filesProcessed: number;
+interface ImportMode {
+  value: 'skip' | 'update';
+  label: string;
+  description: string;
 }
+
+const importModes: ImportMode[] = [
+  {
+    value: 'skip',
+    label: 'Skip Duplicates',
+    description: 'Skip items that already exist in the database'
+  },
+  {
+    value: 'update',
+    label: 'Update Existing',
+    description: 'Update existing items with new data from Excel'
+  }
+];
 
 export function FreshServiceImport() {
   const [isImporting, setIsImporting] = useState(false);
+  const [importMode, setImportMode] = useState<'skip' | 'update'>('skip');
   const [progress, setProgress] = useState<ImportProgress>({
-    stage: 'Ready',
-    message: 'Ready to import Excel files',
+    stage: '',
+    message: '',
     progress: 0,
     completed: false,
     error: null
   });
-  const [importStats, setImportStats] = useState<ImportStats | null>(null);
+  const { toast } = useToast();
 
   const updateProgress = useCallback((update: Partial<ImportProgress>) => {
     setProgress(prev => ({ ...prev, ...update }));
   }, []);
 
-  const processExcelFile = useCallback(async (file: File): Promise<any[]> => {
-    return new Promise((resolve, reject) => {
+  const processExcelFile = useCallback(async (file: File) => {
+    return new Promise<any>((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
-          const data = e.target?.result;
-          const workbook = XLSX.read(data, { type: 'binary' });
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
           
-          // Get the filename without extension as category name
-          const categoryName = file.name.replace(/\.[^/.]+$/, "");
-          console.log('Processing category:', categoryName);
+          console.log('Available sheets:', workbook.SheetNames);
           
-          const allData: any[] = [];
+          const processedData: any = {};
           
-          // Process each sheet in the workbook
           workbook.SheetNames.forEach(sheetName => {
             const worksheet = workbook.Sheets[sheetName];
-            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
             
-            if (jsonData.length < 2) {
-              console.log(`Sheet ${sheetName} has insufficient data, skipping`);
-              return;
+            if (jsonData.length > 0) {
+              processedData[sheetName] = jsonData;
             }
-            
-            // Row 1 contains subcategory headers
-            const subcategoryHeaders = jsonData[0] as string[];
-            console.log('Subcategory headers:', subcategoryHeaders);
-            
-            // Process each column (subcategory)
-            subcategoryHeaders.forEach((subcategoryName, colIndex) => {
-              if (!subcategoryName || subcategoryName.trim() === '') return;
-              
-              const trimmedSubcategoryName = subcategoryName.trim();
-              
-              // Extract jobs from this column (starting from row 2)
-              const jobs: string[] = [];
-              for (let rowIndex = 1; rowIndex < jsonData.length; rowIndex++) {
-                const row = jsonData[rowIndex] as string[];
-                const jobName = row[colIndex];
-                
-                if (jobName && jobName.trim() !== '') {
-                  jobs.push(jobName.trim());
-                }
-              }
-              
-              if (jobs.length > 0) {
-                allData.push({
-                  categoryName: categoryName.trim(),
-                  subcategoryName: trimmedSubcategoryName,
-                  jobs: jobs
-                });
-                console.log(`Added ${jobs.length} jobs for ${trimmedSubcategoryName}`);
-              }
-            });
           });
           
-          resolve(allData);
+          resolve(processedData);
         } catch (error) {
           console.error('Error processing Excel file:', error);
           reject(error);
         }
       };
       reader.onerror = () => reject(new Error('Failed to read file'));
-      reader.readAsBinaryString(file);
+      reader.readAsArrayBuffer(file);
     });
   }, []);
 
-  const insertDataToDatabase = useCallback(async (processedData: any[]): Promise<ImportStats> => {
-    const stats: ImportStats = {
-      totalCategories: 0,
-      totalSubcategories: 0,
-      totalJobs: 0,
-      filesProcessed: 1
-    };
+  const importSectorWithMode = async (sectorName: string, sectorData: any) => {
+    if (importMode === 'skip') {
+      // Check if sector exists first
+      const { data: existingSector } = await supabase
+        .from('service_sectors')
+        .select('id')
+        .eq('name', sectorName)
+        .single();
 
-    // Group data by category
-    const categoriesMap = new Map<string, Map<string, string[]>>();
-    
-    processedData.forEach(item => {
-      if (!categoriesMap.has(item.categoryName)) {
-        categoriesMap.set(item.categoryName, new Map());
+      if (existingSector) {
+        console.log(`Skipping existing sector: ${sectorName}`);
+        return existingSector;
       }
-      categoriesMap.get(item.categoryName)!.set(item.subcategoryName, item.jobs);
+    }
+
+    // Use UPSERT with the new unique constraint
+    const { data: sector, error } = await supabase
+      .from('service_sectors')
+      .upsert({
+        name: sectorName,
+        description: `${sectorName} services`,
+        position: 0
+      }, {
+        onConflict: 'name',
+        ignoreDuplicates: importMode === 'skip'
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to import sector ${sectorName}: ${error.message}`);
+    }
+
+    return sector;
+  };
+
+  const importCategoryWithMode = async (categoryName: string, sectorId: string) => {
+    if (importMode === 'skip') {
+      const { data: existingCategory } = await supabase
+        .from('service_categories')
+        .select('id')
+        .eq('name', categoryName)
+        .eq('sector_id', sectorId)
+        .single();
+
+      if (existingCategory) {
+        console.log(`Skipping existing category: ${categoryName}`);
+        return existingCategory;
+      }
+    }
+
+    const { data: category, error } = await supabase
+      .from('service_categories')
+      .upsert({
+        name: categoryName,
+        sector_id: sectorId,
+        description: `${categoryName} category`,
+        position: 0
+      }, {
+        onConflict: 'name,sector_id',
+        ignoreDuplicates: importMode === 'skip'
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to import category ${categoryName}: ${error.message}`);
+    }
+
+    return category;
+  };
+
+  const importSubcategoryWithMode = async (subcategoryName: string, categoryId: string) => {
+    if (importMode === 'skip') {
+      const { data: existingSubcategory } = await supabase
+        .from('service_subcategories')
+        .select('id')
+        .eq('name', subcategoryName)
+        .eq('category_id', categoryId)
+        .single();
+
+      if (existingSubcategory) {
+        console.log(`Skipping existing subcategory: ${subcategoryName}`);
+        return existingSubcategory;
+      }
+    }
+
+    const { data: subcategory, error } = await supabase
+      .from('service_subcategories')
+      .upsert({
+        name: subcategoryName,
+        category_id: categoryId,
+        description: `${subcategoryName} services`
+      }, {
+        onConflict: 'name,category_id',
+        ignoreDuplicates: importMode === 'skip'
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to import subcategory ${subcategoryName}: ${error.message}`);
+    }
+
+    return subcategory;
+  };
+
+  const importJobWithMode = async (jobData: any, subcategoryId: string) => {
+    if (importMode === 'skip') {
+      const { data: existingJob } = await supabase
+        .from('service_jobs')
+        .select('id')
+        .eq('name', jobData.name)
+        .eq('subcategory_id', subcategoryId)
+        .single();
+
+      if (existingJob) {
+        console.log(`Skipping existing job: ${jobData.name}`);
+        return existingJob;
+      }
+    }
+
+    const { data: job, error } = await supabase
+      .from('service_jobs')
+      .upsert({
+        name: jobData.name,
+        subcategory_id: subcategoryId,
+        description: jobData.description || '',
+        estimated_time: jobData.estimatedTime || null,
+        price: jobData.price || null
+      }, {
+        onConflict: 'name,subcategory_id',
+        ignoreDuplicates: importMode === 'skip'
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to import job ${jobData.name}: ${error.message}`);
+    }
+
+    return job;
+  };
+
+  const processImport = useCallback(async (processedData: any) => {
+    let totalSectors = 0;
+    let totalCategories = 0;
+    let totalSubcategories = 0;
+    let totalJobs = 0;
+    let sectorsProcessed = 0;
+    let categoriesProcessed = 0;
+    let subcategoriesProcessed = 0;
+    let jobsProcessed = 0;
+
+    // Count totals first
+    Object.keys(processedData).forEach(sheetName => {
+      totalSectors++;
+      const sheetData = processedData[sheetName];
+      if (sheetData.length > 0) {
+        const headers = sheetData[0];
+        const dataRows = sheetData.slice(1);
+        
+        const categorySet = new Set();
+        const subcategorySet = new Set();
+        
+        dataRows.forEach((row: any[]) => {
+          if (row.length >= 3 && row[1] && row[2]) {
+            categorySet.add(row[1]);
+            subcategorySet.add(`${row[1]}-${row[2]}`);
+            totalJobs++;
+          }
+        });
+        
+        totalCategories += categorySet.size;
+        totalSubcategories += subcategorySet.size;
+      }
     });
 
     updateProgress({
-      stage: 'Database Import',
-      message: `Importing ${categoriesMap.size} categories to database...`,
-      progress: 20
+      stage: 'starting',
+      message: `Starting import of ${totalSectors} sectors, ${totalCategories} categories, ${totalSubcategories} subcategories, and ${totalJobs} jobs`,
+      progress: 0,
+      details: {
+        sectorsProcessed: 0,
+        categoriesProcessed: 0,
+        subcategoriesProcessed: 0,
+        jobsProcessed: 0,
+        totalSectors,
+        totalCategories,
+        totalSubcategories,
+        totalJobs
+      }
     });
 
-    for (const [categoryName, subcategories] of categoriesMap) {
+    for (const sheetName of Object.keys(processedData)) {
       try {
-        // Create sector (we'll use "Automotive" as default sector)
-        const { data: sector, error: sectorError } = await supabase
-          .from('service_sectors')
-          .upsert({
-            name: 'Automotive',
-            description: 'Automotive services',
-            position: 1
-          }, {
-            onConflict: 'name'
-          })
-          .select()
-          .single();
+        updateProgress({
+          stage: 'processing_sector',
+          message: `Processing sector: ${sheetName}`,
+          progress: (sectorsProcessed / totalSectors) * 100
+        });
 
-        if (sectorError) throw sectorError;
+        const sector = await importSectorWithMode(sheetName, processedData[sheetName]);
+        sectorsProcessed++;
 
-        // Create category
-        const { data: category, error: categoryError } = await supabase
-          .from('service_categories')
-          .upsert({
-            sector_id: sector.id,
-            name: categoryName,
-            description: `${categoryName} services`
-          }, {
-            onConflict: 'name,sector_id'
-          })
-          .select()
-          .single();
+        const sheetData = processedData[sheetName];
+        if (sheetData.length === 0) continue;
 
-        if (categoryError) throw categoryError;
-        stats.totalCategories++;
+        const headers = sheetData[0];
+        const dataRows = sheetData.slice(1);
 
-        // Create subcategories and jobs
-        for (const [subcategoryName, jobs] of subcategories) {
-          const { data: subcategory, error: subcategoryError } = await supabase
-            .from('service_subcategories')
-            .upsert({
-              category_id: category.id,
-              name: subcategoryName,
-              description: `${subcategoryName} services`
-            }, {
-              onConflict: 'name,category_id'
-            })
-            .select()
-            .single();
+        const categoryMap = new Map();
+        const subcategoryMap = new Map();
 
-          if (subcategoryError) throw subcategoryError;
-          stats.totalSubcategories++;
+        // Process categories and subcategories
+        for (const row of dataRows) {
+          if (row.length >= 3 && row[1] && row[2]) {
+            const categoryName = row[1].toString().trim();
+            const subcategoryName = row[2].toString().trim();
 
-          // Insert jobs
-          for (const jobName of jobs) {
-            const { error: jobError } = await supabase
-              .from('service_jobs')
-              .upsert({
-                subcategory_id: subcategory.id,
-                name: jobName,
-                description: `${jobName} service`
-              }, {
-                onConflict: 'name,subcategory_id'
+            // Import category if not already processed
+            if (!categoryMap.has(categoryName)) {
+              updateProgress({
+                stage: 'processing_category',
+                message: `Processing category: ${categoryName}`,
+                progress: (categoriesProcessed / totalCategories) * 100
               });
 
-            if (jobError) throw jobError;
-            stats.totalJobs++;
+              const category = await importCategoryWithMode(categoryName, sector.id);
+              categoryMap.set(categoryName, category);
+              categoriesProcessed++;
+            }
+
+            // Import subcategory if not already processed
+            const subcategoryKey = `${categoryName}-${subcategoryName}`;
+            if (!subcategoryMap.has(subcategoryKey)) {
+              updateProgress({
+                stage: 'processing_subcategory',
+                message: `Processing subcategory: ${subcategoryName}`,
+                progress: (subcategoriesProcessed / totalSubcategories) * 100
+              });
+
+              const category = categoryMap.get(categoryName);
+              const subcategory = await importSubcategoryWithMode(subcategoryName, category.id);
+              subcategoryMap.set(subcategoryKey, subcategory);
+              subcategoriesProcessed++;
+            }
           }
         }
 
-        updateProgress({
-          progress: 20 + (stats.totalCategories / categoriesMap.size) * 60,
-          message: `Processed category: ${categoryName}`
-        });
+        // Process jobs
+        for (const row of dataRows) {
+          if (row.length >= 3 && row[0] && row[1] && row[2]) {
+            updateProgress({
+              stage: 'processing_job',
+              message: `Processing job: ${row[0]}`,
+              progress: (jobsProcessed / totalJobs) * 100
+            });
 
+            const categoryName = row[1].toString().trim();
+            const subcategoryName = row[2].toString().trim();
+            const subcategoryKey = `${categoryName}-${subcategoryName}`;
+            const subcategory = subcategoryMap.get(subcategoryKey);
+
+            if (subcategory) {
+              const jobData = {
+                name: row[0].toString().trim(),
+                description: row[3] ? row[3].toString().trim() : '',
+                estimatedTime: row[4] ? parseFloat(row[4]) : null,
+                price: row[5] ? parseFloat(row[5]) : null
+              };
+
+              await importJobWithMode(jobData, subcategory.id);
+              jobsProcessed++;
+            }
+          }
+        }
       } catch (error) {
-        console.error(`Error importing category ${categoryName}:`, error);
+        console.error(`Error importing sector ${sheetName}:`, error);
         throw error;
       }
     }
 
-    return stats;
-  }, [updateProgress]);
+    updateProgress({
+      stage: 'complete',
+      message: `Import completed successfully! Imported ${sectorsProcessed} sectors, ${categoriesProcessed} categories, ${subcategoriesProcessed} subcategories, and ${jobsProcessed} jobs.`,
+      progress: 100,
+      completed: true,
+      details: {
+        sectorsProcessed,
+        categoriesProcessed,
+        subcategoriesProcessed,
+        jobsProcessed,
+        totalSectors,
+        totalCategories,
+        totalSubcategories,
+        totalJobs
+      }
+    });
+  }, [importMode, updateProgress]);
 
-  const handleFileUpload = useCallback(async (acceptedFiles: File[]) => {
+  const handleFilesDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
 
+    const file = acceptedFiles[0];
     setIsImporting(true);
-    setImportStats(null);
     
     try {
-      const file = acceptedFiles[0];
-      
       updateProgress({
-        stage: 'Processing',
-        message: `Processing Excel file: ${file.name}`,
+        stage: 'reading',
+        message: 'Reading Excel file...',
         progress: 10,
         completed: false,
         error: null
       });
 
-      // Process the Excel file
       const processedData = await processExcelFile(file);
       
-      if (processedData.length === 0) {
-        throw new Error('No valid data found in Excel file');
-      }
-
-      // Import to database
-      const stats = await insertDataToDatabase(processedData);
-      
       updateProgress({
-        stage: 'Complete',
-        message: `Successfully imported ${stats.totalJobs} jobs across ${stats.totalSubcategories} subcategories in ${stats.totalCategories} categories`,
-        progress: 100,
-        completed: true,
+        stage: 'validating',
+        message: 'Validating data structure...',
+        progress: 20,
+        completed: false,
         error: null
       });
 
-      setImportStats(stats);
+      await processImport(processedData);
 
-    } catch (error) {
+      toast({
+        title: "Import Successful",
+        description: `Services imported successfully in ${importMode} mode`,
+        variant: "default",
+      });
+
+    } catch (error: any) {
       console.error('Import failed:', error);
       updateProgress({
-        stage: 'Error',
-        message: 'Import failed',
+        stage: 'error',
+        message: error.message || 'Import failed',
         progress: 0,
         completed: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error.message || 'Unknown error occurred'
+      });
+
+      toast({
+        title: "Import Failed",
+        description: error.message || 'Failed to import services',
+        variant: "destructive",
       });
     } finally {
       setIsImporting(false);
     }
-  }, [processExcelFile, insertDataToDatabase, updateProgress]);
+  }, [processExcelFile, processImport, importMode, updateProgress, toast]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop: handleFileUpload,
+    onDrop: handleFilesDrop,
     accept: {
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
       'application/vnd.ms-excel': ['.xls']
     },
-    maxFiles: 1,
+    multiple: false,
     disabled: isImporting
   });
 
-  const resetImport = useCallback(() => {
-    setProgress({
-      stage: 'Ready',
-      message: 'Ready to import Excel files',
-      progress: 0,
-      completed: false,
-      error: null
-    });
-    setImportStats(null);
-  }, []);
+  const getProgressIcon = () => {
+    if (progress.error) return <XCircle className="h-4 w-4 text-red-500" />;
+    if (progress.completed) return <CheckCircle className="h-4 w-4 text-green-500" />;
+    return <AlertCircle className="h-4 w-4 text-blue-500" />;
+  };
+
+  const getProgressVariant = () => {
+    if (progress.error) return 'destructive' as const;
+    if (progress.completed) return 'default' as const;
+    return 'default' as const;
+  };
 
   return (
     <div className="space-y-6">
@@ -291,98 +479,96 @@ export function FreshServiceImport() {
             <FileSpreadsheet className="h-5 w-5" />
             Fresh Service Import
           </CardTitle>
+          <CardDescription>
+            Import service hierarchy from Excel files with improved conflict handling
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Instructions */}
-          <Alert>
-            <Info className="h-4 w-4" />
-            <AlertDescription>
-              <strong>Expected Excel Format:</strong>
-              <ul className="list-disc list-inside mt-2 space-y-1">
-                <li><strong>File/Sheet Name:</strong> Category name (e.g., "Engine Services")</li>
-                <li><strong>Row 1:</strong> Subcategory names as column headers</li>
-                <li><strong>Row 2+:</strong> Job names listed vertically under each subcategory</li>
-                <li>Empty cells will be skipped automatically</li>
-              </ul>
-            </AlertDescription>
-          </Alert>
+        <CardContent>
+          <div className="space-y-4">
+            {/* Import Mode Selection */}
+            <div className="space-y-3">
+              <label className="text-sm font-medium">Import Mode</label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {importModes.map((mode) => (
+                  <div key={mode.value} className="relative">
+                    <input
+                      type="radio"
+                      id={mode.value}
+                      name="importMode"
+                      value={mode.value}
+                      checked={importMode === mode.value}
+                      onChange={(e) => setImportMode(e.target.value as 'skip' | 'update')}
+                      className="sr-only"
+                      disabled={isImporting}
+                    />
+                    <label
+                      htmlFor={mode.value}
+                      className={`block p-3 border rounded-lg cursor-pointer transition-colors ${
+                        importMode === mode.value
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-300 hover:border-gray-400'
+                      } ${isImporting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <div className="font-medium">{mode.label}</div>
+                      <div className="text-sm text-gray-600">{mode.description}</div>
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-          {/* Upload Area */}
-          <div
-            {...getRootProps()}
-            className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-              isDragActive
-                ? 'border-blue-400 bg-blue-50'
-                : isImporting
-                ? 'border-gray-300 bg-gray-50 cursor-not-allowed'
-                : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
-            }`}
-          >
-            <input {...getInputProps()} />
-            <Upload className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-            {isDragActive ? (
-              <p className="text-blue-600">Drop the Excel file here...</p>
-            ) : (
-              <>
-                <p className="text-gray-600 mb-2">
-                  Drag & drop an Excel file here, or click to select
-                </p>
-                <p className="text-sm text-gray-500">
-                  Supports .xlsx and .xls files
-                </p>
-              </>
+            {/* File Drop Zone */}
+            <div
+              {...getRootProps()}
+              className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+                isDragActive
+                  ? 'border-blue-400 bg-blue-50'
+                  : isImporting
+                  ? 'border-gray-300 bg-gray-50 cursor-not-allowed'
+                  : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+              }`}
+            >
+              <input {...getInputProps()} disabled={isImporting} />
+              <Upload className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+              <p className="text-lg font-medium mb-2">
+                {isDragActive ? 'Drop the Excel file here' : 'Drop Excel file or click to browse'}
+              </p>
+              <p className="text-sm text-gray-500">
+                Supports .xlsx and .xls files with service hierarchy data
+              </p>
+            </div>
+
+            {/* Progress Section */}
+            {(isImporting || progress.completed || progress.error) && (
+              <Alert variant={getProgressVariant()}>
+                <div className="flex items-center gap-2">
+                  {getProgressIcon()}
+                  <AlertDescription className="flex-1">
+                    <div className="font-medium">
+                      {progress.stage.charAt(0).toUpperCase() + progress.stage.slice(1).replace('_', ' ')} - {progress.message}
+                    </div>
+                    {progress.details && (
+                      <div className="text-xs mt-1 text-gray-600">
+                        Sectors: {progress.details.sectorsProcessed}/{progress.details.totalSectors} | 
+                        Categories: {progress.details.categoriesProcessed}/{progress.details.totalCategories} | 
+                        Subcategories: {progress.details.subcategoriesProcessed}/{progress.details.totalSubcategories} | 
+                        Jobs: {progress.details.jobsProcessed}/{progress.details.totalJobs}
+                      </div>
+                    )}
+                  </AlertDescription>
+                </div>
+              </Alert>
+            )}
+
+            {(isImporting || progress.completed) && (
+              <div className="space-y-2">
+                <Progress value={progress.progress} className="w-full" />
+                <div className="text-xs text-gray-500 text-right">
+                  {progress.progress.toFixed(1)}% complete
+                </div>
+              </div>
             )}
           </div>
-
-          {/* Progress Display */}
-          {(isImporting || progress.completed || progress.error) && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                {progress.error ? (
-                  <XCircle className="h-4 w-4 text-red-500" />
-                ) : progress.completed ? (
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                ) : (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                )}
-                <span className="font-medium">
-                  {progress.stage}
-                </span>
-              </div>
-              
-              <p className="text-sm text-gray-600">{progress.message}</p>
-              
-              {(isImporting || progress.completed) && (
-                <Progress value={progress.progress} className="w-full" />
-              )}
-
-              {progress.error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{progress.error}</AlertDescription>
-                </Alert>
-              )}
-
-              {importStats && (
-                <Alert>
-                  <CheckCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    <strong>Import Summary:</strong>
-                    <ul className="list-disc list-inside mt-1">
-                      <li>{importStats.totalCategories} categories</li>
-                      <li>{importStats.totalSubcategories} subcategories</li>
-                      <li>{importStats.totalJobs} jobs</li>
-                    </ul>
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {(progress.completed || progress.error) && (
-                <Button onClick={resetImport} variant="outline">
-                  Import Another File
-                </Button>
-              )}
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>
