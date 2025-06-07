@@ -1,184 +1,134 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { Toaster } from '@/components/ui/toaster';
+import { ImpersonationProvider } from '@/contexts/ImpersonationContext';
+import AuthGate from '@/components/AuthGate';
+import Layout from '@/components/layout/Layout';
 
-// Layout Components
-import Layout from './components/layout/Layout';
-import { AuthGate } from './components/AuthGate';
-import { ProtectedRoute } from './components/auth/ProtectedRoute';
+// Public pages (no authentication required)
+import Login from '@/pages/Login';
+import Signup from '@/pages/Signup';
+import Authentication from '@/pages/Authentication';
+import CustomerPortalLogin from '@/pages/CustomerPortalLogin';
+import CustomerPortal from '@/pages/CustomerPortal';
+import ClientBooking from '@/pages/ClientBooking';
+import FeedbackForm from '@/pages/FeedbackForm';
+import Unauthorized from '@/pages/Unauthorized';
+import NotFound from '@/pages/NotFound';
 
-// Authentication Pages (Public Routes)
-import Authentication from './pages/Authentication';
-import CustomerPortalLogin from './pages/CustomerPortalLogin';
-import Unauthorized from './pages/Unauthorized';
+// Protected pages (authentication required)
+import Dashboard from '@/pages/Dashboard';
+import CustomersPage from '@/pages/CustomersPage';
+import CreateCustomer from '@/pages/CreateCustomer';
+import CustomerDetails from '@/pages/CustomerDetails';
+import CustomerEdit from '@/pages/CustomerEdit';
+import CustomerVehicleDetails from '@/pages/CustomerVehicleDetails';
+import CustomerServiceHistory from '@/pages/CustomerServiceHistory';
+import WorkOrders from '@/pages/WorkOrders';
+import WorkOrderDetails from '@/pages/WorkOrderDetails';
+import WorkOrderEdit from '@/pages/WorkOrderEdit';
+import Invoices from '@/pages/Invoices';
+import InvoiceCreate from '@/pages/InvoiceCreate';
+import InvoiceDetails from '@/pages/InvoiceDetails';
+import InvoiceEdit from '@/pages/InvoiceEdit';
+import Inventory from '@/pages/Inventory';
+import InventoryAdd from '@/pages/InventoryAdd';
+import InventoryCategories from '@/pages/InventoryCategories';
+import InventoryLocations from '@/pages/InventoryLocations';
+import InventoryManager from '@/pages/InventoryManager';
+import InventoryOrders from '@/pages/InventoryOrders';
+import InventorySuppliers from '@/pages/InventorySuppliers';
+import Team from '@/pages/Team';
+import TeamManagement from '@/pages/TeamManagement';
+import TeamMemberCreate from '@/pages/TeamMemberCreate';
+import TeamMemberProfile from '@/pages/TeamMemberProfile';
+import TeamRoles from '@/pages/TeamRoles';
+import Equipment from '@/pages/Equipment';
+import EquipmentDetails from '@/pages/EquipmentDetails';
+import MaintenanceDashboard from '@/pages/MaintenanceDashboard';
+import RepairPlans from '@/pages/RepairPlans';
+import CreateRepairPlan from '@/pages/CreateRepairPlan';
+import Forms from '@/pages/Forms';
+import FormPreview from '@/pages/FormPreview';
+import Documents from '@/pages/Documents';
+import VehicleInspectionForm from '@/pages/VehicleInspectionForm';
+import EmailTemplates from '@/pages/EmailTemplates';
+import EmailSequenceDetails from '@/pages/EmailSequenceDetails';
+import Feedback from '@/pages/Feedback';
+import FeedbackAnalytics from '@/pages/FeedbackAnalytics';
+import Analytics from '@/pages/Analytics';
+import Calendar from '@/pages/Calendar';
+import Chat from '@/pages/Chat';
+import Payments from '@/pages/Payments';
+import Notifications from '@/pages/Notifications';
+import Reminders from '@/pages/Reminders';
+import SmsTemplates from '@/pages/SmsTemplates';
+import Settings from '@/pages/Settings';
+import ShoppingPortal from '@/pages/ShoppingPortal';
+import AffiliateTool from '@/pages/AffiliateTool';
+import ManufacturerPage from '@/pages/ManufacturerPage';
 
-// Main Application Pages
-import Dashboard from './pages/Dashboard';
-import CustomersPage from './pages/CustomersPage';
-import CreateCustomer from './pages/CreateCustomer';
-import CustomerDetails from './pages/CustomerDetails';
-import CustomerEdit from './pages/CustomerEdit';
-import CustomerVehicleDetails from './pages/CustomerVehicleDetails';
-import CustomerServiceHistory from './pages/CustomerServiceHistory';
+// Settings sub-pages
+import AccountSettings from '@/pages/settings/AccountSettings';
+import AppearanceSettings from '@/pages/settings/AppearanceSettings';
+import BrandingSettings from '@/pages/settings/BrandingSettings';
+import CompanySettings from '@/pages/settings/CompanySettings';
+import DataExportSettings from '@/pages/settings/DataExportSettings';
+import EmailSchedulingSettings from '@/pages/settings/EmailSchedulingSettings';
+import EmailSettings from '@/pages/settings/EmailSettings';
+import IntegrationSettings from '@/pages/settings/IntegrationSettings';
+import IntegrationsSettings from '@/pages/settings/IntegrationsSettings';
+import InventorySettings from '@/pages/settings/InventorySettings';
+import LabourSettings from '@/pages/settings/LabourSettings';
+import LanguageSettings from '@/pages/settings/LanguageSettings';
+import LoyaltySettings from '@/pages/settings/LoyaltySettings';
+import MarkupSettings from '@/pages/settings/MarkupSettings';
+import NotificationSettings from '@/pages/settings/NotificationSettings';
+import SecurityAdvancedSettings from '@/pages/settings/SecurityAdvancedSettings';
+import SecuritySettings from '@/pages/settings/SecuritySettings';
+import TeamHistorySettings from '@/pages/settings/TeamHistorySettings';
 
-// Work Orders
-import WorkOrders from './pages/WorkOrders';
-import WorkOrderDetails from './pages/WorkOrderDetails';
-import WorkOrderEdit from './pages/WorkOrderEdit';
+// Developer pages (admin role required)
+import Developer from '@/pages/Developer';
+import DeveloperPortal from '@/pages/DeveloperPortal';
+import ServiceManagement from '@/pages/developer/ServiceManagement';
+import OrganizationManagement from '@/pages/developer/OrganizationManagement';
+import ShoppingControls from '@/pages/developer/ShoppingControls';
 
-// Invoices
-import Invoices from './pages/Invoices';
-import InvoiceCreate from './pages/InvoiceCreate';
-import InvoiceDetails from './pages/InvoiceDetails';
-import InvoiceEdit from './pages/InvoiceEdit';
+// Feedback sub-pages
+import FeedbackFormsPage from '@/pages/feedback/FeedbackFormsPage';
+import FeedbackFormEditorPage from '@/pages/feedback/FeedbackFormEditorPage';
+import FeedbackAnalyticsPage from '@/pages/feedback/FeedbackAnalyticsPage';
 
-// Inventory
-import Inventory from './pages/Inventory';
-import InventoryAdd from './pages/InventoryAdd';
-import InventoryCategories from './pages/InventoryCategories';
-import InventoryLocations from './pages/InventoryLocations';
-import InventoryManager from './pages/InventoryManager';
-import InventoryOrders from './pages/InventoryOrders';
-import InventorySuppliers from './pages/InventorySuppliers';
-
-// Team Management
-import Team from './pages/Team';
-import TeamManagement from './pages/TeamManagement';
-import TeamMemberCreate from './pages/TeamMemberCreate';
-import TeamMemberProfile from './pages/TeamMemberProfile';
-import TeamRoles from './pages/TeamRoles';
-
-// Equipment
-import Equipment from './pages/Equipment';
-import EquipmentDetails from './pages/EquipmentDetails';
-import MaintenanceDashboard from './pages/MaintenanceDashboard';
-
-// Repair Plans
-import RepairPlans from './pages/RepairPlans';
-import CreateRepairPlan from './pages/CreateRepairPlan';
-
-// Settings
-import Settings from './pages/Settings';
-
-// Forms and Documents
-import Forms from './pages/Forms';
-import FormPreview from './pages/FormPreview';
-import Documents from './pages/Documents';
-import VehicleInspectionForm from './pages/VehicleInspectionForm';
-
-// Email and Communication
-import EmailTemplates from './pages/EmailTemplates';
-import EmailSequenceDetails from './pages/EmailSequenceDetails';
-import SmsTemplates from './pages/SmsTemplates';
-
-// Feedback
-import Feedback from './pages/Feedback';
-import FeedbackForm from './pages/FeedbackForm';
-import FeedbackAnalytics from './pages/FeedbackAnalytics';
-
-// Analytics and Reports
-import Analytics from './pages/Analytics';
-
-// Calendar and Scheduling
-import Calendar from './pages/Calendar';
-import Reminders from './pages/Reminders';
-
-// Customer Portal
-import CustomerPortal from './pages/CustomerPortal';
-import ClientBooking from './pages/ClientBooking';
-
-// Chat
-import Chat from './pages/Chat';
-
-// Payments
-import Payments from './pages/Payments';
-
-// Notifications
-import Notifications from './pages/Notifications';
-
-// Developer Tools
-import Developer from './pages/Developer';
-import DeveloperPortal from './pages/DeveloperPortal';
-
-// Shopping and Affiliate
-import ShoppingPortal from './pages/ShoppingPortal';
-import AffiliateTool from './pages/AffiliateTool';
-import ManufacturerPage from './pages/ManufacturerPage';
-
-// Settings Pages
-import AccountSettings from './pages/settings/AccountSettings';
-import AppearanceSettings from './pages/settings/AppearanceSettings';
-import BrandingSettings from './pages/settings/BrandingSettings';
-import CompanySettings from './pages/settings/CompanySettings';
-import DataExportSettings from './pages/settings/DataExportSettings';
-import EmailSchedulingSettings from './pages/settings/EmailSchedulingSettings';
-import EmailSettings from './pages/settings/EmailSettings';
-import IntegrationSettings from './pages/settings/IntegrationSettings';
-import IntegrationsSettings from './pages/settings/IntegrationsSettings';
-import InventorySettings from './pages/settings/InventorySettings';
-import LabourSettings from './pages/settings/LabourSettings';
-import LanguageSettings from './pages/settings/LanguageSettings';
-import LoyaltySettings from './pages/settings/LoyaltySettings';
-import MarkupSettings from './pages/settings/MarkupSettings';
-import NotificationSettings from './pages/settings/NotificationSettings';
-import SecurityAdvancedSettings from './pages/settings/SecurityAdvancedSettings';
-import SecuritySettings from './pages/settings/SecuritySettings';
-import TeamHistorySettings from './pages/settings/TeamHistorySettings';
-
-// Feedback Pages
-import FeedbackAnalyticsPage from './pages/feedback/FeedbackAnalyticsPage';
-import FeedbackFormEditorPage from './pages/feedback/FeedbackFormEditorPage';
-import FeedbackFormsPage from './pages/feedback/FeedbackFormsPage';
-
-// Developer Pages
-import OrganizationManagement from './pages/developer/OrganizationManagement';
-import ServiceManagement from './pages/developer/ServiceManagement';
-import ShoppingControls from './pages/developer/ShoppingControls';
-
-// Error and Not Found Pages
-import NotFound from './pages/NotFound';
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      retry: false,
-    },
-  },
-});
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
+    <ImpersonationProvider>
       <Router>
         <Routes>
-          {/* Public Authentication Routes */}
-          <Route path="/login" element={<Authentication />} />
-          <Route path="/auth" element={<Authentication />} />
+          {/* Public routes - no authentication required */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/auth" element={<Login />} />
           <Route path="/authentication" element={<Authentication />} />
-          <Route path="/staff-login" element={<Authentication />} />
           <Route path="/customer-portal-login" element={<CustomerPortalLogin />} />
-          <Route path="/unauthorized" element={<Unauthorized />} />
-          
-          {/* Public Customer Portal Routes */}
           <Route path="/customer-portal" element={<CustomerPortal />} />
           <Route path="/client-booking" element={<ClientBooking />} />
           <Route path="/feedback-form/:id" element={<FeedbackForm />} />
-          
-          {/* Protected Routes - wrapped in AuthGate and Layout */}
+          <Route path="/unauthorized" element={<Unauthorized />} />
+
+          {/* Protected routes - authentication required */}
           <Route
             path="/*"
             element={
               <AuthGate>
                 <Layout>
                   <Routes>
-                    {/* Dashboard */}
+                    {/* Main dashboard */}
                     <Route path="/" element={<Dashboard />} />
-                    <Route path="/dashboard" element={<Dashboard />} />
-
-                    {/* Customers */}
+                    
+                    {/* Customer routes */}
                     <Route path="/customers" element={<CustomersPage />} />
                     <Route path="/customers/create" element={<CreateCustomer />} />
                     <Route path="/customers/:id" element={<CustomerDetails />} />
@@ -186,18 +136,18 @@ function App() {
                     <Route path="/customers/:customerId/vehicles/:vehicleId" element={<CustomerVehicleDetails />} />
                     <Route path="/customers/:id/service-history" element={<CustomerServiceHistory />} />
 
-                    {/* Work Orders */}
+                    {/* Work order routes */}
                     <Route path="/work-orders" element={<WorkOrders />} />
                     <Route path="/work-orders/:id" element={<WorkOrderDetails />} />
                     <Route path="/work-orders/:id/edit" element={<WorkOrderEdit />} />
 
-                    {/* Invoices */}
+                    {/* Invoice routes */}
                     <Route path="/invoices" element={<Invoices />} />
                     <Route path="/invoices/create" element={<InvoiceCreate />} />
                     <Route path="/invoices/:id" element={<InvoiceDetails />} />
                     <Route path="/invoices/:id/edit" element={<InvoiceEdit />} />
 
-                    {/* Inventory */}
+                    {/* Inventory routes */}
                     <Route path="/inventory" element={<Inventory />} />
                     <Route path="/inventory/add" element={<InventoryAdd />} />
                     <Route path="/inventory/categories" element={<InventoryCategories />} />
@@ -206,62 +156,49 @@ function App() {
                     <Route path="/inventory/orders" element={<InventoryOrders />} />
                     <Route path="/inventory/suppliers" element={<InventorySuppliers />} />
 
-                    {/* Team Management */}
+                    {/* Team routes */}
                     <Route path="/team" element={<Team />} />
                     <Route path="/team-management" element={<TeamManagement />} />
                     <Route path="/team/create" element={<TeamMemberCreate />} />
                     <Route path="/team/:id" element={<TeamMemberProfile />} />
                     <Route path="/team/roles" element={<TeamRoles />} />
 
-                    {/* Equipment */}
+                    {/* Equipment routes */}
                     <Route path="/equipment" element={<Equipment />} />
                     <Route path="/equipment/:id" element={<EquipmentDetails />} />
                     <Route path="/maintenance" element={<MaintenanceDashboard />} />
 
-                    {/* Repair Plans */}
+                    {/* Repair plan routes */}
                     <Route path="/repair-plans" element={<RepairPlans />} />
                     <Route path="/repair-plans/create" element={<CreateRepairPlan />} />
 
-                    {/* Forms and Documents */}
+                    {/* Form routes */}
                     <Route path="/forms" element={<Forms />} />
                     <Route path="/forms/:id/preview" element={<FormPreview />} />
                     <Route path="/documents" element={<Documents />} />
                     <Route path="/vehicle-inspection" element={<VehicleInspectionForm />} />
 
-                    {/* Email and Communication */}
+                    {/* Email routes */}
                     <Route path="/email-templates" element={<EmailTemplates />} />
                     <Route path="/email-sequences/:id" element={<EmailSequenceDetails />} />
+
+                    {/* Feedback routes */}
+                    <Route path="/feedback" element={<Feedback />} />
+                    <Route path="/feedback/forms" element={<FeedbackFormsPage />} />
+                    <Route path="/feedback/forms/:id/edit" element={<FeedbackFormEditorPage />} />
+                    <Route path="/feedback/analytics" element={<FeedbackAnalytics />} />
+                    <Route path="/feedback/analytics/:id" element={<FeedbackAnalyticsPage />} />
+
+                    {/* Other main routes */}
+                    <Route path="/analytics" element={<Analytics />} />
+                    <Route path="/calendar" element={<Calendar />} />
+                    <Route path="/chat" element={<Chat />} />
+                    <Route path="/payments" element={<Payments />} />
+                    <Route path="/notifications" element={<Notifications />} />
+                    <Route path="/reminders" element={<Reminders />} />
                     <Route path="/sms-templates" element={<SmsTemplates />} />
 
-                    {/* Feedback */}
-                    <Route path="/feedback" element={<Feedback />} />
-                    <Route path="/feedback/analytics/:id" element={<FeedbackAnalytics />} />
-                    <Route path="/feedback/forms" element={<FeedbackFormsPage />} />
-                    <Route path="/feedback/analytics" element={<FeedbackAnalyticsPage />} />
-                    <Route path="/feedback/editor/:id" element={<FeedbackFormEditorPage />} />
-
-                    {/* Analytics */}
-                    <Route path="/analytics" element={<Analytics />} />
-
-                    {/* Calendar and Scheduling */}
-                    <Route path="/calendar" element={<Calendar />} />
-                    <Route path="/reminders" element={<Reminders />} />
-
-                    {/* Chat */}
-                    <Route path="/chat" element={<Chat />} />
-
-                    {/* Payments */}
-                    <Route path="/payments" element={<Payments />} />
-
-                    {/* Notifications */}
-                    <Route path="/notifications" element={<Notifications />} />
-
-                    {/* Shopping and Affiliate */}
-                    <Route path="/shopping" element={<ShoppingPortal />} />
-                    <Route path="/affiliate-tools" element={<AffiliateTool />} />
-                    <Route path="/manufacturers/:category" element={<ManufacturerPage />} />
-
-                    {/* Settings Routes */}
+                    {/* Settings routes */}
                     <Route path="/settings" element={<Settings />} />
                     <Route path="/settings/account" element={<AccountSettings />} />
                     <Route path="/settings/appearance" element={<AppearanceSettings />} />
@@ -282,7 +219,12 @@ function App() {
                     <Route path="/settings/security" element={<SecuritySettings />} />
                     <Route path="/settings/team-history" element={<TeamHistorySettings />} />
 
-                    {/* Developer Routes - Protected with admin role */}
+                    {/* Shopping and affiliate routes */}
+                    <Route path="/shopping" element={<ShoppingPortal />} />
+                    <Route path="/affiliate-tools" element={<AffiliateTool />} />
+                    <Route path="/manufacturers/:category" element={<ManufacturerPage />} />
+
+                    {/* Developer routes (admin only) */}
                     <Route 
                       path="/developer" 
                       element={
@@ -300,14 +242,6 @@ function App() {
                       } 
                     />
                     <Route 
-                      path="/developer/organization-management" 
-                      element={
-                        <ProtectedRoute requiredRole="admin">
-                          <OrganizationManagement />
-                        </ProtectedRoute>
-                      } 
-                    />
-                    <Route 
                       path="/developer/service-management" 
                       element={
                         <ProtectedRoute requiredRole="admin">
@@ -316,7 +250,15 @@ function App() {
                       } 
                     />
                     <Route 
-                      path="/developer/shopping-controls" 
+                      path="/developer/organization" 
+                      element={
+                        <ProtectedRoute requiredRole="admin">
+                          <OrganizationManagement />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/developer/shopping" 
                       element={
                         <ProtectedRoute requiredRole="admin">
                           <ShoppingControls />
@@ -324,7 +266,7 @@ function App() {
                       } 
                     />
 
-                    {/* 404 Route */}
+                    {/* 404 route */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </Layout>
@@ -332,9 +274,9 @@ function App() {
             }
           />
         </Routes>
+        <Toaster />
       </Router>
-      <ReactQueryDevtools initialIsOpen={false} />
-    </QueryClientProvider>
+    </ImpersonationProvider>
   );
 }
 

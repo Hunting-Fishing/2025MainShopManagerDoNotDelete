@@ -1,18 +1,14 @@
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function Authentication() {
-  return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Authentication</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">Authentication form will be implemented here.</p>
-        </CardContent>
-      </Card>
-    </div>
-  );
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Redirect to login page
+    navigate('/login', { replace: true });
+  }, [navigate]);
+
+  return null;
 }
