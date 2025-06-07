@@ -1,279 +1,461 @@
+
 import React, { useState, useCallback } from 'react';
-import * as XLSX from 'xlsx';
-import { useDropzone } from 'react-dropzone';
-import { Progress } from '@/components/ui/progress';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle, XCircle, AlertCircle, UploadCloud } from 'lucide-react';
+import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { clearServiceCache } from '@/lib/services/serviceApi';
+import * as XLSX from 'xlsx';
 
-export function FreshServiceImport() {
-  const [files, setFiles] = useState<File[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [progress, setProgress] = useState({
+interface FreshServiceImportProps {
+  onImportComplete?: () => Promise<void>;
+}
+
+interface ImportProgress {
+  stage: string;
+  message: string;
+  progress: number;
+  completed: boolean;
+  error: string | null;
+}
+
+export function FreshServiceImport({ onImportComplete }: FreshServiceImportProps) {
+  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [progress, setProgress] = useState<ImportProgress>({
     stage: '',
     message: '',
     progress: 0,
     completed: false,
     error: null
   });
+
   const { toast } = useToast();
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    setFiles(acceptedFiles);
-    setProgress({ stage: 'ready', message: 'Files ready for processing', progress: 0, completed: false, error: null });
+  const updateProgress = useCallback((update: Partial<ImportProgress>) => {
+    setProgress(prev => ({ ...prev, ...update }));
   }, []);
 
-  const {getRootProps, getInputProps, isDragActive} = useDropzone({
-    onDrop,
-    accept: {
-      'application/vnd.ms-excel': ['.xls'],
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']
-    },
-    multiple: false
-  });
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    setSelectedFiles(files);
+    setProgress({
+      stage: '',
+      message: '',
+      progress: 0,
+      completed: false,
+      error: null
+    });
+  };
 
   const processExcelFile = async (file: File) => {
-    try {
-      setIsProcessing(true);
-      setProgress({ stage: 'reading', message: 'Reading Excel file...', progress: 10, completed: false, error: null });
-      
-      console.log('Processing Excel file:', file.name);
-      
-      const arrayBuffer = await file.arrayBuffer();
-      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-      
-      // Use filename (without extension) as category name
-      const categoryName = file.name.replace(/\.[^/.]+$/, "");
-      console.log('Category name from filename:', categoryName);
-      
-      setProgress({ stage: 'parsing', message: 'Parsing Excel data...', progress: 30, completed: false, error: null });
-      
-      // Get the first worksheet
-      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      if (!worksheet) {
-        throw new Error('No worksheet found in Excel file');
-      }
-      
-      // Convert to JSON array with header row included
-      const rawData = XLSX.utils.sheet_to_json(worksheet, { 
-        header: 1,
-        defval: '',
-        blankrows: false 
-      }) as string[][];
-      
-      if (rawData.length < 2) {
-        throw new Error('Excel file must have at least 2 rows (headers and data)');
-      }
-      
-      console.log('Raw Excel data rows:', rawData.length);
-      
-      // Row 1 contains subcategory names (column headers)
-      const subcategoryHeaders = rawData[0] as string[];
-      console.log('Subcategory headers:', subcategoryHeaders);
-      
-      // Filter out empty headers
-      const validSubcategories = subcategoryHeaders
-        .map((header, index) => ({ name: header?.trim(), index }))
-        .filter(sub => sub.name && sub.name.length > 0);
-      
-      if (validSubcategories.length === 0) {
-        throw new Error('No valid subcategory headers found in row 1');
-      }
-      
-      console.log('Valid subcategories:', validSubcategories);
-      
-      // Process job data from row 2 onwards
-      const jobRows = rawData.slice(1);
-      
-      // Group jobs by subcategory column
-      const subcategoriesWithJobs = validSubcategories.map(subcategory => {
-        const jobs = jobRows
-          .map(row => row[subcategory.index]?.toString().trim())
-          .filter(job => job && job.length > 0)
-          .map(jobName => ({
-            name: jobName,
-            description: null,
-            estimated_time: null,
-            price: null
-          }));
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
           
-        console.log(`Subcategory "${subcategory.name}" has ${jobs.length} jobs`);
-        
-        return {
-          name: subcategory.name,
-          jobs
-        };
-      }).filter(subcategory => subcategory.jobs.length > 0);
+          // Use filename (without extension) as category name
+          const categoryName = file.name.replace(/\.[^/.]+$/, '');
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          
+          if (!worksheet) {
+            reject(new Error(`No worksheet found in ${file.name}`));
+            return;
+          }
+
+          const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1:A1');
+          const subcategories: string[] = [];
+          const subcategoryJobs: { [key: string]: string[] } = {};
+          
+          // Read subcategory names from Row 1 (starting from column B)
+          for (let col = range.s.c + 1; col <= range.e.c; col++) {
+            const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+            const cell = worksheet[cellAddress];
+            
+            if (cell && cell.v) {
+              const subcategoryName = String(cell.v).trim();
+              if (subcategoryName) {
+                subcategories.push(subcategoryName);
+                subcategoryJobs[subcategoryName] = [];
+              }
+            }
+          }
+
+          // Read jobs from Row 2 onwards for each subcategory column
+          for (let row = 1; row <= range.e.r; row++) {
+            for (let col = range.s.c + 1; col <= range.e.c; col++) {
+              const subcategoryIndex = col - range.s.c - 1;
+              if (subcategoryIndex < subcategories.length) {
+                const subcategoryName = subcategories[subcategoryIndex];
+                const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+                const cell = worksheet[cellAddress];
+                
+                if (cell && cell.v) {
+                  const jobName = String(cell.v).trim();
+                  if (jobName && !subcategoryJobs[subcategoryName].includes(jobName)) {
+                    subcategoryJobs[subcategoryName].push(jobName);
+                  }
+                }
+              }
+            }
+          }
+
+          resolve({
+            categoryName,
+            subcategories: subcategories.map(name => ({
+              name,
+              jobs: subcategoryJobs[name] || []
+            }))
+          });
+        } catch (error) {
+          reject(new Error(`Failed to process ${file.name}: ${error}`));
+        }
+      };
       
-      if (subcategoriesWithJobs.length === 0) {
-        throw new Error('No valid jobs found in any subcategory columns');
+      reader.onerror = () => reject(new Error(`Failed to read ${file.name}`));
+      reader.readAsArrayBuffer(file);
+    });
+  };
+
+  const importToDatabase = async (processedData: any[]) => {
+    updateProgress({
+      stage: 'database',
+      message: 'Importing to database...',
+      progress: 80
+    });
+
+    try {
+      // First, create or get the sector (we'll use a default sector for now)
+      const { data: existingSector, error: sectorError } = await supabase
+        .from('service_sectors')
+        .select('id')
+        .eq('name', 'General Services')
+        .single();
+
+      let sectorId;
+      if (existingSector) {
+        sectorId = existingSector.id;
+      } else {
+        const { data: newSector, error: createSectorError } = await supabase
+          .from('service_sectors')
+          .insert({
+            name: 'General Services',
+            description: 'General service categories',
+            position: 1,
+            is_active: true
+          })
+          .select('id')
+          .single();
+
+        if (createSectorError) {
+          throw new Error(`Failed to create sector: ${createSectorError.message}`);
+        }
+        sectorId = newSector.id;
       }
-      
-      setProgress({ stage: 'importing', message: 'Importing to database...', progress: 60, completed: false, error: null });
-      
-      // Import to database
-      const { data, error } = await supabase.functions.invoke('import-services', {
-        body: {
-          sector: {
-            name: 'Imported Services',
-            categories: [{
-              name: categoryName,
-              subcategories: subcategoriesWithJobs
-            }]
+
+      // Process each file's data
+      for (const fileData of processedData) {
+        // Create or update category
+        const { data: existingCategory, error: categorySelectError } = await supabase
+          .from('service_categories')
+          .select('id')
+          .eq('name', fileData.categoryName)
+          .eq('sector_id', sectorId)
+          .single();
+
+        let categoryId;
+        if (existingCategory) {
+          categoryId = existingCategory.id;
+        } else {
+          const { data: newCategory, error: createCategoryError } = await supabase
+            .from('service_categories')
+            .insert({
+              name: fileData.categoryName,
+              description: `${fileData.categoryName} services`,
+              sector_id: sectorId,
+              position: 1
+            })
+            .select('id')
+            .single();
+
+          if (createCategoryError) {
+            throw new Error(`Failed to create category: ${createCategoryError.message}`);
+          }
+          categoryId = newCategory.id;
+        }
+
+        // Process subcategories and jobs
+        for (const subcategoryData of fileData.subcategories) {
+          // Create or update subcategory
+          const { data: existingSubcategory, error: subcategorySelectError } = await supabase
+            .from('service_subcategories')
+            .select('id')
+            .eq('name', subcategoryData.name)
+            .eq('category_id', categoryId)
+            .single();
+
+          let subcategoryId;
+          if (existingSubcategory) {
+            subcategoryId = existingSubcategory.id;
+          } else {
+            const { data: newSubcategory, error: createSubcategoryError } = await supabase
+              .from('service_subcategories')
+              .insert({
+                name: subcategoryData.name,
+                description: `${subcategoryData.name} services`,
+                category_id: categoryId
+              })
+              .select('id')
+              .single();
+
+            if (createSubcategoryError) {
+              throw new Error(`Failed to create subcategory: ${createSubcategoryError.message}`);
+            }
+            subcategoryId = newSubcategory.id;
+          }
+
+          // Create jobs
+          for (const jobName of subcategoryData.jobs) {
+            // Check if job already exists
+            const { data: existingJob } = await supabase
+              .from('service_jobs')
+              .select('id')
+              .eq('name', jobName)
+              .eq('subcategory_id', subcategoryId)
+              .single();
+
+            if (!existingJob) {
+              const { error: createJobError } = await supabase
+                .from('service_jobs')
+                .insert({
+                  name: jobName,
+                  description: `${jobName} service`,
+                  subcategory_id: subcategoryId,
+                  estimated_time: 60, // Default 1 hour
+                  price: 100 // Default price
+                });
+
+              if (createJobError) {
+                console.warn(`Failed to create job ${jobName}:`, createJobError.message);
+              }
+            }
           }
         }
-      });
-      
-      if (error) {
-        console.error('Import function error:', error);
-        throw new Error(`Import failed: ${error.message}`);
       }
-      
-      console.log('Import successful:', data);
-      
-      // Clear the service cache to force refresh
-      clearServiceCache();
-      
-      setProgress({ 
-        stage: 'complete', 
-        message: `Successfully imported ${categoryName} with ${subcategoriesWithJobs.length} subcategories and ${subcategoriesWithJobs.reduce((total, sub) => total + sub.jobs.length, 0)} jobs`, 
-        progress: 100, 
-        completed: true, 
-        error: null 
+
+      updateProgress({
+        stage: 'complete',
+        message: 'Import completed successfully!',
+        progress: 100,
+        completed: true
       });
-      
-      // Notify parent components to refresh
-      if (onImportComplete) {
-        onImportComplete();
-      }
-      
-      setFiles([]);
-      
+
       toast({
         title: "Import Successful",
-        description: `Imported category "${categoryName}" with ${subcategoriesWithJobs.length} subcategories`,
-        variant: "default",
+        description: `Successfully imported ${processedData.length} categories`,
       });
-      
+
+      // Trigger refresh if callback provided
+      if (onImportComplete) {
+        await onImportComplete();
+      }
+
     } catch (error) {
-      console.error('Excel processing error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
-      setProgress({ 
-        stage: 'error', 
-        message: errorMessage, 
-        progress: 0, 
-        completed: false, 
-        error: errorMessage 
+      console.error('Database import error:', error);
+      updateProgress({
+        stage: 'error',
+        message: `Database error: ${error}`,
+        progress: 0,
+        error: String(error),
+        completed: false
       });
-      
+
       toast({
-        title: "Import Failed", 
-        description: errorMessage,
+        title: "Import Failed",
+        description: `Database error: ${error}`,
         variant: "destructive",
       });
-    } finally {
-      setIsProcessing(false);
     }
   };
 
-  const handleUpload = async () => {
-    if (files.length === 0) {
+  const handleImport = async () => {
+    if (!selectedFiles || selectedFiles.length === 0) {
       toast({
-        title: "No File Selected",
-        description: "Please select an Excel file to import.",
+        title: "No Files Selected",
+        description: "Please select Excel files to import",
         variant: "destructive",
       });
       return;
     }
 
-    await processExcelFile(files[0]);
+    setImporting(true);
+    
+    try {
+      updateProgress({
+        stage: 'processing',
+        message: 'Processing Excel files...',
+        progress: 10
+      });
+
+      const processedData = [];
+      
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i];
+        updateProgress({
+          stage: 'processing',
+          message: `Processing ${file.name}...`,
+          progress: 20 + (i * 40 / selectedFiles.length)
+        });
+
+        const data = await processExcelFile(file);
+        processedData.push(data);
+      }
+
+      await importToDatabase(processedData);
+
+    } catch (error) {
+      console.error('Import error:', error);
+      updateProgress({
+        stage: 'error',
+        message: `Import failed: ${error}`,
+        progress: 0,
+        error: String(error),
+        completed: false
+      });
+
+      toast({
+        title: "Import Failed",
+        description: String(error),
+        variant: "destructive",
+      });
+    } finally {
+      setImporting(false);
+    }
   };
 
-  const getIcon = () => {
-    if (progress.error) return <XCircle className="h-4 w-4 text-red-500" />;
-    if (progress.completed) return <CheckCircle className="h-4 w-4 text-green-500" />;
-    return <AlertCircle className="h-4 w-4 text-blue-500" />;
+  const resetImport = () => {
+    setSelectedFiles(null);
+    setProgress({
+      stage: '',
+      message: '',
+      progress: 0,
+      completed: false,
+      error: null
+    });
+    // Reset file input
+    const fileInput = document.getElementById('file-input') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
   };
 
-  const getVariant = () => {
-    if (progress.error) return 'destructive' as const;
-    if (progress.completed) return 'default' as const;
-    return 'default' as const;
-  };
-
-  const onImportComplete = () => {
-    // Implementation for handling import completion
-    console.log('Import completed!');
-  };
-  
   return (
-    <div className="space-y-6">
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h3 className="text-lg font-semibold text-blue-900 mb-2">Fresh Service Import</h3>
-        <p className="text-sm text-blue-700 mb-4">
-          Upload Excel files to import services. Each file will create a new category.
-        </p>
-        
-        <div className="bg-white border border-blue-200 rounded p-3 mb-4">
-          <h4 className="font-medium text-blue-800 mb-2">Expected Excel Format:</h4>
-          <ul className="text-sm text-blue-700 space-y-1">
-            <li>• <strong>File name</strong> = Category name (e.g., "Automotive Services.xlsx")</li>
-            <li>• <strong>Row 1</strong> = Subcategory names across columns (e.g., "Engine", "Brakes", "AC")</li>
-            <li>• <strong>Row 2+</strong> = Job names listed vertically under each subcategory</li>
-            <li>• Empty cells are automatically skipped</li>
-          </ul>
-        </div>
-      </div>
-
-      <div {...getRootProps()} className={`dropzone ${isDragActive ? 'dropzone--isActive' : ''} bg-gray-50 border-2 border-dashed border-gray-300 rounded-md p-6 text-center cursor-pointer`}>
-        <input {...getInputProps()} />
-        <UploadCloud className="h-6 w-6 mx-auto text-gray-400 mb-2" />
-        <p className="text-sm text-gray-500">
-          {isDragActive ? "Drop the file here..." : "Click or drag an Excel file here to import"}
-        </p>
-      </div>
-
-      {files.length > 0 && (
-        <div className="flex items-center justify-between bg-white border border-gray-200 rounded-md p-3">
-          <p className="text-sm text-gray-700">
-            Selected file: {files[0].name}
-          </p>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => setFiles([])}
-          >
-            Remove
-          </Button>
-        </div>
-      )}
-
-      {progress.stage && (
-        <Alert variant={getVariant()}>
-          <div className="flex items-center gap-2">
-            {getIcon()}
-            <AlertDescription className="flex-1">
-              <div className="font-medium">Service Import - {progress.stage}</div>
-              <div className="text-sm mt-1">{progress.message}</div>
-            </AlertDescription>
-          </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Upload className="h-5 w-5" />
+          Fresh Service Import
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <Alert>
+          <FileSpreadsheet className="h-4 w-4" />
+          <AlertDescription>
+            <strong>Excel Format Requirements:</strong>
+            <ul className="mt-2 list-disc list-inside space-y-1 text-sm">
+              <li>File name = Category name (e.g., "Automotive.xlsx")</li>
+              <li>Row 1 = Subcategory names across columns</li>
+              <li>Row 2+ = Jobs listed vertically under each subcategory</li>
+              <li>Empty cells will be skipped automatically</li>
+            </ul>
+          </AlertDescription>
         </Alert>
-      )}
 
-      {isProcessing && (
-        <Progress value={progress.progress} className="w-full" />
-      )}
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="file-input">Select Excel Files</Label>
+            <Input
+              id="file-input"
+              type="file"
+              accept=".xlsx,.xls"
+              multiple
+              onChange={handleFileSelect}
+              disabled={importing}
+              className="mt-1"
+            />
+          </div>
 
-      <Button 
-        onClick={handleUpload} 
-        disabled={isProcessing || files.length === 0}
-      >
-        {isProcessing ? 'Processing...' : 'Start Import'}
-      </Button>
-    </div>
+          {selectedFiles && selectedFiles.length > 0 && (
+            <div className="space-y-2">
+              <Label>Selected Files ({selectedFiles.length}):</Label>
+              <div className="max-h-32 overflow-y-auto space-y-1">
+                {Array.from(selectedFiles).map((file, index) => (
+                  <div key={index} className="flex items-center gap-2 text-sm p-2 bg-gray-50 rounded">
+                    <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                    <span>{file.name}</span>
+                    <span className="text-gray-500">({(file.size / 1024).toFixed(1)} KB)</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {progress.stage && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                {progress.completed ? (
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                ) : progress.error ? (
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 animate-spin text-blue-600" />
+                )}
+                <span className="text-sm font-medium">{progress.message}</span>
+              </div>
+              <Progress value={progress.progress} className="w-full" />
+              {progress.error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{progress.error}</AlertDescription>
+                </Alert>
+              )}
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <Button
+              onClick={handleImport}
+              disabled={!selectedFiles || selectedFiles.length === 0 || importing}
+              className="flex-1"
+            >
+              {importing ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Importing...
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Import Files
+                </>
+              )}
+            </Button>
+            
+            {(selectedFiles || progress.stage) && (
+              <Button variant="outline" onClick={resetImport} disabled={importing}>
+                Reset
+              </Button>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

@@ -125,6 +125,83 @@ export async function fetchServiceCategories(): Promise<ServiceMainCategory[]> {
   }
 }
 
+// CRUD operations for service management
+export async function updateServiceCategory(id: string, updates: Partial<ServiceMainCategory>): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('service_categories')
+      .update(updates)
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(`Failed to update category: ${error.message}`);
+    }
+
+    // Clear cache after update
+    clearServiceCache();
+  } catch (error) {
+    console.error('Error updating service category:', error);
+    throw error;
+  }
+}
+
+export async function deleteServiceCategory(id: string): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('service_categories')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(`Failed to delete category: ${error.message}`);
+    }
+
+    // Clear cache after deletion
+    clearServiceCache();
+  } catch (error) {
+    console.error('Error deleting service category:', error);
+    throw error;
+  }
+}
+
+export async function deleteServiceSubcategory(id: string): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('service_subcategories')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(`Failed to delete subcategory: ${error.message}`);
+    }
+
+    // Clear cache after deletion
+    clearServiceCache();
+  } catch (error) {
+    console.error('Error deleting service subcategory:', error);
+    throw error;
+  }
+}
+
+export async function deleteServiceJob(id: string): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('service_jobs')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(`Failed to delete job: ${error.message}`);
+    }
+
+    // Clear cache after deletion
+    clearServiceCache();
+  } catch (error) {
+    console.error('Error deleting service job:', error);
+    throw error;
+  }
+}
+
 // Clear cache function for after imports
 export function clearServiceCache() {
   cachedSectors = [];
