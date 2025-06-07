@@ -39,6 +39,21 @@ export const AnalyticsDashboard: React.FC = () => {
     );
   }
 
+  // Transform analytics data to match TopProductAnalytics interface
+  const transformToTopProducts = (products: any[], metric: 'views' | 'clicks') => {
+    if (!products || products.length === 0) return [];
+    
+    const totalCount = products.reduce((sum, product) => sum + (product[metric] || 0), 0);
+    
+    return products.map((product, index) => ({
+      id: product.id || `product-${index}`,
+      name: product.name || 'Unknown Product',
+      category: product.category || 'Uncategorized',
+      count: product[metric] || 0,
+      percentage: totalCount > 0 ? ((product[metric] || 0) / totalCount) * 100 : 0
+    }));
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -124,12 +139,12 @@ export const AnalyticsDashboard: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <TopProductsTable 
               title="Most Viewed Products" 
-              products={analytics.topProducts || []} 
+              products={transformToTopProducts(analytics.topProducts || [], 'views')} 
               metric="views"
             />
             <TopProductsTable 
               title="Most Clicked Products" 
-              products={analytics.topProducts || []} 
+              products={transformToTopProducts(analytics.topProducts || [], 'clicks')} 
               metric="clicks"
             />
           </div>
