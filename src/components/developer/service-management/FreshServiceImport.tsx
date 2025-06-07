@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Upload, RefreshCw, FolderOpen, Database, FileText } from 'lucide-react';
 import { ServiceImportProgress } from './ServiceImportProgress';
 import { FileBasedImportSelector } from './FileBasedImportSelector';
+import { LiveBucketViewer } from './LiveBucketViewer';
 import { useServiceManagement } from '@/hooks/useServiceManagement';
 import { useFileBasedServiceImport } from '@/hooks/useFileBasedServiceImport';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -34,6 +35,9 @@ export function FreshServiceImport() {
 
   return (
     <div className="space-y-6">
+      {/* Live Bucket Viewer - Show files from storage bucket */}
+      <LiveBucketViewer />
+
       <Card>
         <CardHeader>
           <CardTitle>Import Services from Storage</CardTitle>
