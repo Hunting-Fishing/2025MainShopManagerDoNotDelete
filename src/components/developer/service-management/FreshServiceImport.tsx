@@ -85,11 +85,7 @@ export function FreshServiceImport({ onImportComplete }: { onImportComplete?: ()
                   Import services from organized folders in Supabase Storage. This method processes all sectors automatically.
                 </AlertDescription>
               </Alert>
-              <FolderBasedImportManager 
-                onImport={handleServiceImport} 
-                isImporting={isImporting}
-                onImportComplete={handleImportComplete}
-              />
+              <FolderBasedImportManager />
             </TabsContent>
 
             <TabsContent value="files" className="space-y-4">
