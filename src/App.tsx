@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ErrorBoundary } from '@/components/error/ErrorBoundary';
@@ -82,13 +81,17 @@ function App() {
             
             {/* Developer portal */}
             <Route path="developer" element={<Developer />} />
-            <Route path="developer/service-management/*" element={<ServiceManagementLayout />}>
+            
+            {/* Service Management - nested routes only */}
+            <Route path="developer/service-management" element={<ServiceManagementLayout />}>
               <Route index element={<Navigate to="overview" replace />} />
               <Route path="overview" element={<ServiceOverviewPage />} />
               <Route path="tree" element={<ServiceTreeViewPage />} />
               <Route path="excel" element={<ServiceExcelViewPage />} />
               <Route path="import" element={<ServiceImportPage />} />
             </Route>
+            
+            {/* Other developer pages */}
             <Route path="developer/organization" element={<OrganizationManagement />} />
             <Route path="developer/shopping" element={<ShoppingControls />} />
             <Route path="developer/analytics" element={<AnalyticsDashboard />} />
