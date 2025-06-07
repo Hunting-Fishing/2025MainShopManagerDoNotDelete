@@ -6,14 +6,15 @@ import { useFileBasedServiceImport } from '@/hooks/useFileBasedServiceImport';
 import { 
   importServicesFromStorage, 
   clearAllServiceData,
-  type ImportProgress 
+  getServiceCounts
 } from '@/lib/services';
+import { ImportProgress } from '@/types/service';
 
-export function useServiceManagement() {
+export const useServiceManagement = () => {
   const [isImporting, setIsImporting] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
   const [importProgress, setImportProgress] = useState<ImportProgress>({
-    stage: '',
+    stage: 'initial',
     message: '',
     progress: 0,
     completed: false,
@@ -22,45 +23,47 @@ export function useServiceManagement() {
   
   const { sectors, refetch } = useServiceSectors();
   const { toast } = useToast();
-  const { importFromFiles } = useFileBasedServiceImport();
+  const { importSelectedFiles } = useFileBasedServiceImport();
 
   const handleServiceImport = async () => {
     setIsImporting(true);
     setImportProgress({
       stage: 'starting',
-      message: 'Starting import process...',
+      message: 'Starting service import from storage...',
       progress: 0,
       completed: false,
       error: null
     });
-    
+
     try {
       const result = await importServicesFromStorage(setImportProgress);
       
-      setImportProgress({
-        stage: 'complete',
-        message: result.message || 'Service import completed successfully!',
-        progress: 100,
-        completed: true,
-        error: null
-      });
-      
-      setTimeout(async () => {
-        await refetch();
-      }, 1000);
-      
-      toast({
-        title: "Import Completed Successfully",
-        description: result.stats ? 
-          `Imported ${result.stats.totalServices} services across ${result.stats.totalSectors} sectors from ${result.stats.filesProcessed} files.` : 
-          result.message,
-        variant: "default",
-      });
-      
+      if (result.success) {
+        setImportProgress({
+          stage: 'complete',
+          message: result.message,
+          progress: 100,
+          completed: true,
+          error: null
+        });
+
+        // Wait a bit then refresh
+        setTimeout(async () => {
+          await refetch();
+        }, 1000);
+
+        toast({
+          title: "Import Completed Successfully",
+          description: result.message,
+          variant: "default",
+        });
+      } else {
+        throw new Error(result.message);
+      }
     } catch (error) {
       console.error('Service import failed:', error);
       
-      const errorMessage = error instanceof Error ? error.message : 'Import failed';
+      const errorMessage = error instanceof Error ? error.message : 'Service import failed';
       
       setImportProgress({
         stage: 'error',
@@ -93,7 +96,7 @@ export function useServiceManagement() {
     });
 
     try {
-      await importFromFiles(files, setImportProgress);
+      await importSelectedFiles(files);
       
       setImportProgress({
         stage: 'complete',
@@ -140,43 +143,23 @@ export function useServiceManagement() {
     setIsClearing(true);
     
     try {
-      setImportProgress({
-        stage: 'clearing',
-        progress: 20,
-        message: 'Clearing service database...',
-        completed: false,
-        error: null
-      });
-
+      console.log('Starting database clear operation...');
       await clearAllServiceData();
-
-      setImportProgress({
-        stage: 'complete',
-        progress: 100,
-        message: 'Service database cleared successfully!',
-        completed: true,
-        error: null
-      });
-
+      
+      // Refresh the data after clearing
+      await refetch();
+      
       toast({
         title: "Database Cleared",
-        description: "All service data has been removed from the database.",
+        description: "All service data has been successfully removed.",
+        variant: "default",
       });
-
-      await refetch();
-
-    } catch (error: any) {
-      console.error('Clear database failed:', error);
-      setImportProgress({
-        stage: 'error',
-        progress: 0,
-        message: error instanceof Error ? error.message : "Failed to clear database",
-        error: error instanceof Error ? error.message : "Failed to clear database",
-        completed: false
-      });
+      
+    } catch (error) {
+      console.error('Error clearing database:', error);
       toast({
         title: "Clear Failed",
-        description: error instanceof Error ? error.message : "Failed to clear service database",
+        description: "Failed to clear database. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -186,33 +169,36 @@ export function useServiceManagement() {
 
   const handleCancel = () => {
     setIsImporting(false);
+    setIsClearing(false);
     setImportProgress({
-      stage: 'cancelled',
-      message: 'Import cancelled by user',
+      stage: 'initial',
+      message: '',
       progress: 0,
       completed: false,
       error: null
-    });
-    
-    toast({
-      title: "Import Cancelled",
-      description: "Service import was cancelled",
-      variant: "destructive",
     });
   };
 
   const handleRefreshData = async () => {
     try {
+      console.log('Refreshing service data...');
       await refetch();
+      
+      // Get current counts for verification
+      const counts = await getServiceCounts();
+      console.log('Current service counts:', counts);
+      
       toast({
         title: "Data Refreshed",
-        description: "Service hierarchy has been refreshed",
+        description: "Service hierarchy data has been refreshed successfully.",
         variant: "default",
       });
+      
     } catch (error) {
+      console.error('Error refreshing data:', error);
       toast({
         title: "Refresh Failed",
-        description: "Failed to refresh service data",
+        description: "Failed to refresh data. Please try again.",
         variant: "destructive",
       });
     }
@@ -229,4 +215,4 @@ export function useServiceManagement() {
     handleCancel,
     handleRefreshData
   };
-}
+};
