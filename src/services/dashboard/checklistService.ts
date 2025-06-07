@@ -1,5 +1,5 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { ChecklistStat } from "@/types/dashboard";
 
 export const getChecklistStats = async (): Promise<ChecklistStat[]> => {

@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 // Define follow up type based on the application needs
 export interface FollowUp {

@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 
 export interface Department {
   id: string;

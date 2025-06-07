@@ -1,5 +1,5 @@
-import { Profile } from '@/types/team';
-import { supabase } from '@/integrations/supabase/client';
+
+import { supabase } from '@/lib/supabase';
 
 export interface ProfileMetadata {
   is_active?: boolean;

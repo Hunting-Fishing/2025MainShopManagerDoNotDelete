@@ -1,130 +1,183 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Trash2, AlertTriangle } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Trash2, Edit, Plus } from 'lucide-react';
+import { ServiceMainCategory } from '@/types/serviceHierarchy';
 import { deleteServiceCategory, deleteServiceSubcategory, deleteServiceJob } from '@/lib/services/serviceApi';
+import { toast } from 'sonner';
 
 interface ServiceHierarchyManagerProps {
-  onDataChange?: () => Promise<void>;
+  categories: ServiceMainCategory[];
+  onRefresh: () => void;
 }
 
-export function ServiceHierarchyManager({ onDataChange }: ServiceHierarchyManagerProps) {
-  const [isDeleting, setIsDeleting] = useState(false);
-  const { toast } = useToast();
+const ServiceHierarchyManager: React.FC<ServiceHierarchyManagerProps> = ({
+  categories,
+  onRefresh
+}) => {
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
-  const handleDeleteCategory = async (categoryId: string, categoryName: string) => {
-    if (!confirm(`Are you sure you want to delete the category "${categoryName}"? This will also delete all subcategories and jobs within it.`)) {
+  const handleDeleteCategory = async (categoryId: string) => {
+    if (!confirm('Are you sure you want to delete this category? This will also delete all subcategories and jobs.')) {
       return;
     }
 
-    setIsDeleting(true);
+    setIsDeleting(categoryId);
     try {
       await deleteServiceCategory(categoryId);
-      toast({
-        title: "Category Deleted",
-        description: `Successfully deleted category "${categoryName}"`,
-      });
-      
-      if (onDataChange) {
-        await onDataChange();
-      }
+      toast.success('Category deleted successfully');
+      onRefresh();
     } catch (error) {
       console.error('Error deleting category:', error);
-      toast({
-        title: "Delete Failed",
-        description: `Failed to delete category: ${error}`,
-        variant: "destructive",
-      });
+      toast.error('Failed to delete category');
     } finally {
-      setIsDeleting(false);
+      setIsDeleting(null);
     }
   };
 
-  const handleDeleteSubcategory = async (subcategoryId: string, subcategoryName: string) => {
-    if (!confirm(`Are you sure you want to delete the subcategory "${subcategoryName}"? This will also delete all jobs within it.`)) {
+  const handleDeleteSubcategory = async (subcategoryId: string) => {
+    if (!confirm('Are you sure you want to delete this subcategory? This will also delete all jobs.')) {
       return;
     }
 
-    setIsDeleting(true);
+    setIsDeleting(subcategoryId);
     try {
       await deleteServiceSubcategory(subcategoryId);
-      toast({
-        title: "Subcategory Deleted",
-        description: `Successfully deleted subcategory "${subcategoryName}"`,
-      });
-      
-      if (onDataChange) {
-        await onDataChange();
-      }
+      toast.success('Subcategory deleted successfully');
+      onRefresh();
     } catch (error) {
       console.error('Error deleting subcategory:', error);
-      toast({
-        title: "Delete Failed",
-        description: `Failed to delete subcategory: ${error}`,
-        variant: "destructive",
-      });
+      toast.error('Failed to delete subcategory');
     } finally {
-      setIsDeleting(false);
+      setIsDeleting(null);
     }
   };
 
-  const handleDeleteJob = async (jobId: string, jobName: string) => {
-    if (!confirm(`Are you sure you want to delete the job "${jobName}"?`)) {
+  const handleDeleteJob = async (jobId: string) => {
+    if (!confirm('Are you sure you want to delete this job?')) {
       return;
     }
 
-    setIsDeleting(true);
+    setIsDeleting(jobId);
     try {
       await deleteServiceJob(jobId);
-      toast({
-        title: "Job Deleted",
-        description: `Successfully deleted job "${jobName}"`,
-      });
-      
-      if (onDataChange) {
-        await onDataChange();
-      }
+      toast.success('Job deleted successfully');
+      onRefresh();
     } catch (error) {
       console.error('Error deleting job:', error);
-      toast({
-        title: "Delete Failed",
-        description: `Failed to delete job: ${error}`,
-        variant: "destructive",
-      });
+      toast.error('Failed to delete job');
     } finally {
-      setIsDeleting(false);
+      setIsDeleting(null);
     }
   };
 
+  if (categories.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-center">
+          <p className="text-gray-500 mb-4">No service categories found</p>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Category
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Trash2 className="h-5 w-5" />
-          Service Hierarchy Manager
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Alert>
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            This component provides management functions for the service hierarchy.
-            Use the tree view or Excel view to access delete functions for specific items.
-          </AlertDescription>
-        </Alert>
-        
-        <div className="mt-4 text-sm text-gray-600">
-          <p>Management functions include:</p>
-          <ul className="mt-2 list-disc list-inside space-y-1">
-            <li>Delete categories (removes all subcategories and jobs)</li>
-            <li>Delete subcategories (removes all jobs within)</li>
-            <li>Delete individual jobs</li>
-          </ul>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      {categories.map((category) => (
+        <Card key={category.id}>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg">{category.name}</CardTitle>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm">
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  onClick={() => handleDeleteCategory(category.id)}
+                  disabled={isDeleting === category.id}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            {category.description && (
+              <p className="text-sm text-gray-600">{category.description}</p>
+            )}
+          </CardHeader>
+          <CardContent>
+            {category.subcategories.length === 0 ? (
+              <p className="text-gray-500 text-sm">No subcategories</p>
+            ) : (
+              <div className="space-y-3">
+                {category.subcategories.map((subcategory) => (
+                  <div key={subcategory.id} className="border rounded-lg p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium">{subcategory.name}</h4>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          onClick={() => handleDeleteSubcategory(subcategory.id)}
+                          disabled={isDeleting === subcategory.id}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    {subcategory.description && (
+                      <p className="text-sm text-gray-600 mb-2">{subcategory.description}</p>
+                    )}
+                    {subcategory.jobs.length === 0 ? (
+                      <p className="text-gray-500 text-xs">No jobs</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {subcategory.jobs.map((job) => (
+                          <div key={job.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                            <div>
+                              <span className="text-sm font-medium">{job.name}</span>
+                              {job.price && (
+                                <span className="text-sm text-gray-600 ml-2">${job.price}</span>
+                              )}
+                              {job.estimatedTime && (
+                                <span className="text-sm text-gray-600 ml-2">({job.estimatedTime}min)</span>
+                              )}
+                            </div>
+                            <div className="flex gap-1">
+                              <Button variant="outline" size="sm">
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                              <Button 
+                                variant="destructive" 
+                                size="sm"
+                                onClick={() => handleDeleteJob(job.id)}
+                                disabled={isDeleting === job.id}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ))}
+    </div>
   );
-}
+};
+
+export default ServiceHierarchyManager;

@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from 'react';
-import { EmailTemplate } from '@/types/email';
-import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { EmailTemplate, EmailCategory, EmailTemplateVariable } from '@/types/email';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
 
 // Helper to parse template variables
 function parseTemplateVariables(variablesData: any): EmailTemplateVariable[] {

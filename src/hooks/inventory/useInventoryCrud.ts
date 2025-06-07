@@ -1,7 +1,7 @@
+
 import { useState } from 'react';
-import { toast } from 'sonner';
 import { InventoryItemExtended } from '@/types/inventory';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 export function useInventoryCrud() {
   const [isLoading, setIsLoading] = useState(false);

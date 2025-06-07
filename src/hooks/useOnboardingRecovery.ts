@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { ErrorHandler } from '@/utils/errorHandler';
 import { OnboardingError, ErrorType, ErrorSeverity } from '@/utils/errorTypes';
 

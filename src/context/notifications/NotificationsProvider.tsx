@@ -1,20 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { Bell, X, CheckCircle, AlertTriangle, Info, AlertCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { cn } from '@/lib/utils';
-import { toast } from '@/hooks/use-toast';
-import { useAuthUser } from '@/hooks/useAuthUser';
-import { supabase } from '@/integrations/supabase/client';
+
+import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { Notification, NotificationPreferences } from '@/types/notification';
 import { notificationService } from '@/services/notificationService';
 import { NotificationsContextProps } from './types';
@@ -31,6 +16,7 @@ import {
   createUpdatePreferencesHandler,
   createUpdateSubscriptionHandler,
 } from './preferenceHandlers';
+import { supabase } from '@/lib/supabase';
 import { preloadNotificationSounds } from '@/utils/notificationSounds';
 import { safeDOMOperation } from '@/utils/domSafetyUtils';
 

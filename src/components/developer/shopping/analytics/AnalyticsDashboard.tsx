@@ -5,14 +5,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProductsByCategoryChart } from './ProductsByCategoryChart';
 import { ProductInteractionsChart } from './ProductInteractionsChart';
 import { TopProductsTable } from './TopProductsTable';
-import { useShoppingAnalytics } from '@/hooks/useShoppingAnalytics';
+import { useProductAnalyticsData } from '@/hooks/useProductAnalyticsData';
 import { Button } from '@/components/ui/button';
 import { Download, RefreshCw } from 'lucide-react';
 
 export const AnalyticsDashboard: React.FC = () => {
-  const { analytics, loading, error, refetch } = useShoppingAnalytics();
+  const { 
+    analyticsData, 
+    topProducts, 
+    mostSavedProducts, 
+    isLoading, 
+    error, 
+    refetch 
+  } = useProductAnalyticsData();
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -39,21 +46,6 @@ export const AnalyticsDashboard: React.FC = () => {
     );
   }
 
-  // Transform analytics data to match TopProductAnalytics interface
-  const transformToTopProducts = (products: any[], metric: 'views' | 'clicks') => {
-    if (!products || products.length === 0) return [];
-    
-    const totalCount = products.reduce((sum, product) => sum + (product[metric] || 0), 0);
-    
-    return products.map((product, index) => ({
-      id: product.id || `product-${index}`,
-      name: product.name || 'Unknown Product',
-      category: product.category || 'Uncategorized',
-      count: product[metric] || 0,
-      percentage: totalCount > 0 ? ((product[metric] || 0) / totalCount) * 100 : 0
-    }));
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -74,7 +66,7 @@ export const AnalyticsDashboard: React.FC = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-slate-500">Total Views</CardTitle>
             <CardDescription className="text-2xl font-bold">
-              {analytics.totalViews.toLocaleString()}
+              {analyticsData?.totalViews.toLocaleString()}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -82,15 +74,15 @@ export const AnalyticsDashboard: React.FC = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-slate-500">Total Clicks</CardTitle>
             <CardDescription className="text-2xl font-bold">
-              {analytics.totalClicks.toLocaleString()}
+              {analyticsData?.totalClicks.toLocaleString()}
             </CardDescription>
           </CardHeader>
         </Card>
         <Card className="border-t-4 border-purple-500 shadow-md bg-white rounded-xl">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Products</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-500">Products Saved</CardTitle>
             <CardDescription className="text-2xl font-bold">
-              {analytics.totalProducts.toLocaleString()}
+              {analyticsData?.totalSaved.toLocaleString()}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -98,7 +90,7 @@ export const AnalyticsDashboard: React.FC = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-slate-500">Conversion Rate</CardTitle>
             <CardDescription className="text-2xl font-bold">
-              {analytics.conversionRate.toFixed(2)}%
+              {analyticsData?.conversionRate.toFixed(2)}%
             </CardDescription>
           </CardHeader>
         </Card>
@@ -114,8 +106,8 @@ export const AnalyticsDashboard: React.FC = () => {
         
         <TabsContent value="overview" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <ProductsByCategoryChart data={[]} />
-            <ProductInteractionsChart data={[]} />
+            <ProductsByCategoryChart data={analyticsData?.categoryData || []} />
+            <ProductInteractionsChart data={analyticsData?.interactionData || []} />
           </div>
         </TabsContent>
         
@@ -129,7 +121,7 @@ export const AnalyticsDashboard: React.FC = () => {
             </CardHeader>
             <CardContent className="pt-2">
               <div className="h-[400px]">
-                <ProductInteractionsChart data={[]} showLegend={true} />
+                <ProductInteractionsChart data={analyticsData?.interactionData || []} showLegend={true} />
               </div>
             </CardContent>
           </Card>
@@ -139,13 +131,20 @@ export const AnalyticsDashboard: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <TopProductsTable 
               title="Most Viewed Products" 
-              products={transformToTopProducts(analytics.topProducts || [], 'views')} 
+              products={topProducts.views || []} 
               metric="views"
             />
             <TopProductsTable 
               title="Most Clicked Products" 
-              products={transformToTopProducts(analytics.topProducts || [], 'clicks')} 
+              products={topProducts.clicks || []} 
               metric="clicks"
+            />
+          </div>
+          <div className="mt-4">
+            <TopProductsTable 
+              title="Most Saved Products" 
+              products={mostSavedProducts || []} 
+              metric="saves"
             />
           </div>
         </TabsContent>

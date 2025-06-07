@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+
+import { useState } from 'react';
 import { EmailCampaign } from '@/types/email';
+import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { validateCampaignStatus, parseJsonField, parseABTest } from './utils/emailCampaignUtils';
 import { fetchCampaignAnalyticsData } from './utils/campaignAnalyticsUtils';
 import { useABTestVariants } from './useABTestVariants';

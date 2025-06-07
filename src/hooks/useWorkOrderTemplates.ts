@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
-import { WorkOrderTemplate } from '@/types/workOrder';
-import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+
+import { useState, useCallback, useEffect } from "react";
+import { WorkOrderTemplate } from "@/types/workOrder";
+import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 
 export const useWorkOrderTemplates = () => {
   const [templates, setTemplates] = useState<WorkOrderTemplate[]>([]);
