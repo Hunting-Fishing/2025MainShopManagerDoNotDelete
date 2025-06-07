@@ -2,180 +2,203 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { FolderOpen, FileText, CheckSquare, Square, Upload } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { CheckSquare, Square, Upload, RefreshCw, FolderOpen } from 'lucide-react';
 import { StorageFile } from '@/types/service';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface FileBasedImportSelectorProps {
-  onImportFiles: (selectedFiles: StorageFile[], folderName: string) => Promise<void>;
+  onImportFiles: (selectedFiles: StorageFile[], folderName: string) => void;
   isImporting: boolean;
 }
 
-export function FileBasedImportSelector({ onImportFiles, isImporting }: FileBasedImportSelectorProps) {
+export const FileBasedImportSelector: React.FC<FileBasedImportSelectorProps> = ({
+  onImportFiles,
+  isImporting
+}) => {
   const [files, setFiles] = useState<StorageFile[]>([]);
-  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
+  const [selectedFiles, setSelectedFiles] = useState<StorageFile[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
-  const folderPath = 'automotive'; // Default to automotive folder
-
-  useEffect(() => {
-    fetchFiles();
-  }, []);
+  const [folderName] = useState('automotive'); // Fixed folder for now
+  const { toast } = useToast();
 
   const fetchFiles = async () => {
     setLoading(true);
-    setError(null);
-    
     try {
-      const { data, error: storageError } = await supabase.storage
+      const { data, error } = await supabase.storage
         .from('service-data')
-        .list(folderPath, {
+        .list(folderName, {
           limit: 100,
-          offset: 0,
+          sortBy: { column: 'name', order: 'asc' }
         });
 
-      if (storageError) {
-        throw storageError;
+      if (error) throw error;
+
+      if (data) {
+        const excelFiles = data
+          .filter(file => file.name.toLowerCase().endsWith('.xlsx'))
+          .map(file => ({
+            id: file.id || file.name,
+            name: file.name,
+            path: `${folderName}/${file.name}`,
+            size: file.metadata?.size || 0,
+            type: file.metadata?.mimetype || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            lastModified: new Date(file.updated_at || file.created_at),
+            updated_at: file.updated_at,
+            created_at: file.created_at,
+            last_accessed_at: file.last_accessed_at,
+            metadata: file.metadata
+          }));
+        
+        setFiles(excelFiles);
       }
-
-      const excelFiles = (data || [])
-        .filter(file => file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls'))
-        .map(file => ({
-          name: file.name,
-          size: file.metadata?.size || 0,
-          lastModified: file.updated_at || file.created_at || '',
-          fullPath: `${folderPath}/${file.name}`
-        }));
-
-      setFiles(excelFiles);
-    } catch (err) {
-      console.error('Error fetching files:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch files');
+    } catch (error) {
+      console.error('Error fetching files:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load files from storage",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFileSelect = (fileName: string, checked: boolean) => {
-    const newSelected = new Set(selectedFiles);
-    if (checked) {
-      newSelected.add(fileName);
+  useEffect(() => {
+    fetchFiles();
+  }, []);
+
+  const toggleFileSelection = (file: StorageFile) => {
+    setSelectedFiles(prev => {
+      const isSelected = prev.some(f => f.name === file.name);
+      if (isSelected) {
+        return prev.filter(f => f.name !== file.name);
+      } else {
+        return [...prev, file];
+      }
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedFiles.length === files.length) {
+      setSelectedFiles([]);
     } else {
-      newSelected.delete(fileName);
-    }
-    setSelectedFiles(newSelected);
-  };
-
-  const handleSelectAll = () => {
-    if (selectedFiles.size === files.length) {
-      setSelectedFiles(new Set());
-    } else {
-      setSelectedFiles(new Set(files.map(f => f.name)));
+      setSelectedFiles([...files]);
     }
   };
 
-  const handleImport = async () => {
-    if (selectedFiles.size === 0) return;
-    
-    const filesToImport = files.filter(f => selectedFiles.has(f.name));
-    await onImportFiles(filesToImport, folderPath);
+  const handleImport = () => {
+    if (selectedFiles.length === 0) {
+      toast({
+        title: "No Files Selected",
+        description: "Please select at least one file to import",
+        variant: "destructive",
+      });
+      return;
+    }
+    onImportFiles(selectedFiles, folderName);
   };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
-  const allSelected = files.length > 0 && selectedFiles.size === files.length;
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FolderOpen className="h-5 w-5" />
-          Select Files from {folderPath}/ folder
+          Select Files from {folderName} Folder
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {loading && (
-          <div className="text-center py-4">
-            <div className="text-sm text-muted-foreground">Loading files...</div>
-          </div>
-        )}
+        <div className="flex items-center justify-between">
+          <Button
+            variant="outline"
+            onClick={fetchFiles}
+            disabled={loading}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh Files
+          </Button>
+          
+          {files.length > 0 && (
+            <Button
+              variant="outline"
+              onClick={toggleSelectAll}
+              className="flex items-center gap-2"
+            >
+              {selectedFiles.length === files.length ? (
+                <CheckSquare className="h-4 w-4" />
+              ) : (
+                <Square className="h-4 w-4" />
+              )}
+              {selectedFiles.length === files.length ? 'Deselect All' : 'Select All'}
+            </Button>
+          )}
+        </div>
 
-        {error && (
-          <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
+        {loading && (
+          <Alert>
+            <AlertDescription>Loading files...</AlertDescription>
           </Alert>
         )}
 
-        {!loading && !error && files.length === 0 && (
+        {!loading && files.length === 0 && (
           <Alert>
-            <FolderOpen className="h-4 w-4" />
             <AlertDescription>
-              No Excel files found in the {folderPath}/ folder. Please upload Excel files to the service-data/{folderPath}/ storage bucket.
+              No Excel files found in the {folderName} folder. Please upload .xlsx files to service-data/{folderName}/
             </AlertDescription>
           </Alert>
         )}
 
         {files.length > 0 && (
-          <>
-            <div className="flex items-center justify-between">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSelectAll}
-                className="flex items-center gap-2"
-              >
-                {allSelected ? <CheckSquare className="h-4 w-4" /> : <Square className="h-4 w-4" />}
-                {allSelected ? 'Deselect All' : 'Select All'}
-              </Button>
-              
-              <div className="text-sm text-muted-foreground">
-                {selectedFiles.size} of {files.length} files selected
-              </div>
+          <div className="space-y-2">
+            <div className="text-sm text-gray-600">
+              Found {files.length} Excel file{files.length !== 1 ? 's' : ''} • {selectedFiles.length} selected
             </div>
-
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {files.map((file) => (
-                <div
-                  key={file.name}
-                  className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50"
-                >
-                  <Checkbox
-                    checked={selectedFiles.has(file.name)}
-                    onCheckedChange={(checked) => handleFileSelect(file.name, !!checked)}
-                  />
-                  <FileText className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate">{file.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {formatFileSize(file.size)} • {new Date(file.lastModified).toLocaleDateString()}
+            
+            <div className="max-h-60 overflow-y-auto border rounded-md">
+              {files.map((file) => {
+                const isSelected = selectedFiles.some(f => f.name === file.name);
+                return (
+                  <div
+                    key={file.name}
+                    className={`p-3 border-b last:border-b-0 cursor-pointer hover:bg-gray-50 ${
+                      isSelected ? 'bg-blue-50 border-blue-200' : ''
+                    }`}
+                    onClick={() => toggleFileSelection(file)}
+                  >
+                    <div className="flex items-center gap-3">
+                      {isSelected ? (
+                        <CheckSquare className="h-4 w-4 text-blue-600" />
+                      ) : (
+                        <Square className="h-4 w-4" />
+                      )}
+                      <div className="flex-1">
+                        <div className="font-medium">{file.name}</div>
+                        <div className="text-xs text-gray-500">
+                          {file.size ? `${Math.round(file.size / 1024)} KB` : 'Size unknown'} • 
+                          {file.lastModified ? ` Updated ${file.lastModified.toLocaleDateString()}` : ' Date unknown'}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
+          </div>
+        )}
 
-            <div className="flex justify-end">
-              <Button
-                onClick={handleImport}
-                disabled={selectedFiles.size === 0 || isImporting}
-                className="flex items-center gap-2"
-              >
-                <Upload className="h-4 w-4" />
-                {isImporting ? 'Importing...' : `Import ${selectedFiles.size} File${selectedFiles.size !== 1 ? 's' : ''}`}
-              </Button>
-            </div>
-          </>
+        {selectedFiles.length > 0 && (
+          <Button
+            onClick={handleImport}
+            disabled={isImporting}
+            className="w-full flex items-center gap-2"
+          >
+            <Upload className="h-4 w-4" />
+            {isImporting ? 'Importing...' : `Import ${selectedFiles.length} Selected File${selectedFiles.length !== 1 ? 's' : ''}`}
+          </Button>
         )}
       </CardContent>
     </Card>
   );
-}
+};
