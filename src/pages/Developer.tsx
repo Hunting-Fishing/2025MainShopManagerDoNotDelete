@@ -11,10 +11,22 @@ import {
   Shield, 
   Settings, 
   Hammer,
-  ArrowRight
+  ArrowRight,
+  Wrench,
+  Database,
+  FileText,
+  Search
 } from 'lucide-react';
 
 const developerModules = [
+  {
+    title: 'Service Management',
+    description: 'Manage service hierarchy, categories, subcategories, and import service jobs',
+    icon: Wrench,
+    path: '/developer/service-management',
+    color: 'text-purple-600',
+    bgColor: 'bg-purple-50',
+  },
   {
     title: 'Organization Management',
     description: 'Manage organization details, shops, and access controls',
@@ -118,7 +130,7 @@ export default function Developer() {
         <CardContent>
           <div className="grid gap-4 md:grid-cols-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">7</div>
+              <div className="text-2xl font-bold text-blue-600">8</div>
               <div className="text-sm text-muted-foreground">Active Modules</div>
             </div>
             <div className="text-center">

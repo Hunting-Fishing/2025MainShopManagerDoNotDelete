@@ -28,6 +28,7 @@ import Settings from '@/pages/Settings';
 
 // Developer pages
 import Developer from '@/pages/Developer';
+import ServiceManagement from '@/pages/developer/ServiceManagement';
 import OrganizationManagement from '@/pages/developer/OrganizationManagement';
 import ShoppingControls from '@/pages/developer/ShoppingControls';
 import AnalyticsDashboard from '@/pages/developer/AnalyticsDashboard';
@@ -77,6 +78,7 @@ function App() {
             
             {/* Developer portal */}
             <Route path="developer" element={<Developer />} />
+            <Route path="developer/service-management" element={<ServiceManagement />} />
             <Route path="developer/organization" element={<OrganizationManagement />} />
             <Route path="developer/shopping" element={<ShoppingControls />} />
             <Route path="developer/analytics" element={<AnalyticsDashboard />} />
