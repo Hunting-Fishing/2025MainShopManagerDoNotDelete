@@ -3,228 +3,140 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { RefreshCw, FolderOpen, FileText, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { bucketViewerService } from '@/lib/services/bucketViewerService';
-import { getStorageBucketInfo } from '@/lib/services/storageUtils';
+import { Database, RefreshCw, FileText, Folder, Info } from 'lucide-react';
+import type { SectorFiles } from '@/types/service';
 
 export function LiveBucketViewer() {
-  const [bucketInfo, setBucketInfo] = useState<any>(null);
-  const [sectorFiles, setSectorFiles] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [connectionStatus, setConnectionStatus] = useState<'testing' | 'success' | 'error' | null>(null);
+  const [sectorFiles, setSectorFiles] = useState<SectorFiles[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
-  const testBucketConnection = async () => {
+  const loadBucketData = async () => {
     setIsLoading(true);
-    setError(null);
-    setConnectionStatus('testing');
-    
     try {
-      console.log('Testing bucket connection...');
-      
-      // Test bucket existence and structure
-      const info = await getStorageBucketInfo('service-data');
-      setBucketInfo(info);
-      
-      console.log('Bucket info:', info);
-      
-      if (!info.exists) {
-        setConnectionStatus('error');
-        setError('Bucket "service-data" does not exist');
-        return;
-      }
-      
-      // Test sector files
-      const sectors = await bucketViewerService.getAllSectorFiles();
-      setSectorFiles(sectors);
-      
-      console.log('Sector files found:', sectors);
-      
-      if (sectors.length === 0) {
-        setConnectionStatus('error');
-        setError('No sector folders found. Files need to be organized in folders by sector name.');
-      } else {
-        setConnectionStatus('success');
-      }
-      
-    } catch (err: any) {
-      console.error('Bucket connection test failed:', err);
-      setConnectionStatus('error');
-      setError(err.message || 'Failed to connect to storage bucket');
+      const data = await bucketViewerService.getAllSectorFiles();
+      setSectorFiles(data);
+      setLastRefresh(new Date());
+      console.log('LiveBucketViewer: Loaded sector files', data);
+    } catch (error) {
+      console.error('LiveBucketViewer: Error loading bucket data:', error);
+      setSectorFiles([]);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    testBucketConnection();
+    loadBucketData();
   }, []);
 
-  const getStatusIcon = () => {
-    switch (connectionStatus) {
-      case 'testing':
-        return <RefreshCw className="h-5 w-5 animate-spin text-blue-500" />;
-      case 'success':
-        return <CheckCircle className="h-5 w-5 text-green-500" />;
-      case 'error':
-        return <XCircle className="h-5 w-5 text-red-500" />;
-      default:
-        return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
-    }
-  };
-
-  const getStatusMessage = () => {
-    switch (connectionStatus) {
-      case 'testing':
-        return 'Testing bucket connection...';
-      case 'success':
-        return `Connected successfully! Found ${sectorFiles.length} sector(s)`;
-      case 'error':
-        return error || 'Connection failed';
-      default:
-        return 'Ready to test connection';
-    }
-  };
+  const totalFiles = sectorFiles.reduce((acc, sector) => acc + sector.totalFiles, 0);
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <FolderOpen className="h-5 w-5" />
-          Live Storage Bucket Viewer
+          <Database className="h-5 w-5" />
+          Live Storage Bucket Status
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Connection Status */}
-        <Alert variant={connectionStatus === 'error' ? 'destructive' : 'default'}>
-          <div className="flex items-center gap-2">
-            {getStatusIcon()}
-            <AlertDescription className="flex-1">
-              <div className="font-medium">Connection Status</div>
-              <div className="text-sm mt-1">{getStatusMessage()}</div>
-            </AlertDescription>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Badge variant="outline">
+              {sectorFiles.length} Sectors
+            </Badge>
+            <Badge variant="outline">
+              {totalFiles} Total Files
+            </Badge>
+            <Badge variant="secondary">
+              Last updated: {lastRefresh.toLocaleTimeString()}
+            </Badge>
           </div>
-        </Alert>
-
-        {/* Bucket Information */}
-        {bucketInfo && (
-          <div className="space-y-3">
-            <h3 className="font-semibold">Bucket Information</h3>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="font-medium">Bucket Name:</span> service-data
-              </div>
-              <div>
-                <span className="font-medium">Exists:</span> {bucketInfo.exists ? 'Yes' : 'No'}
-              </div>
-              <div>
-                <span className="font-medium">Total Files:</span> {bucketInfo.files?.length || 0}
-              </div>
-              <div>
-                <span className="font-medium">Total Folders:</span> {bucketInfo.folders?.length || 0}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Current File Structure */}
-        {bucketInfo && bucketInfo.exists && (
-          <div className="space-y-3">
-            <h3 className="font-semibold">Current Storage Structure</h3>
-            <div className="bg-gray-50 rounded-lg p-4 max-h-64 overflow-y-auto">
-              <div className="space-y-1 text-sm font-mono">
-                <div className="flex items-center gap-2">
-                  <FolderOpen className="h-4 w-4" />
-                  <span className="font-semibold">service-data/</span>
-                </div>
-                
-                {/* Show folders */}
-                {bucketInfo.folders?.map((folder: any, index: number) => (
-                  <div key={index} className="ml-6 flex items-center gap-2">
-                    <FolderOpen className="h-4 w-4 text-blue-500" />
-                    <span>{folder.name}/</span>
-                  </div>
-                ))}
-                
-                {/* Show files in root */}
-                {bucketInfo.files?.map((file: any, index: number) => (
-                  <div key={index} className="ml-6 flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-green-500" />
-                    <span>{file.name}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Expected vs Actual Structure */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <h4 className="font-medium text-green-700 mb-2">Expected Structure</h4>
-            <div className="bg-green-50 rounded p-3 text-sm font-mono">
-              <div>📁 service-data/</div>
-              <div className="ml-4">📁 automotive/</div>
-              <div className="ml-8">📄 brake-services.xlsx</div>
-              <div className="ml-8">📄 engine-services.xlsx</div>
-              <div className="ml-4">📁 electronics/</div>
-              <div className="ml-8">📄 lighting.xlsx</div>
-            </div>
-          </div>
-          
-          <div>
-            <h4 className="font-medium text-red-700 mb-2">Current Structure (Issue)</h4>
-            <div className="bg-red-50 rounded p-3 text-sm font-mono">
-              <div>📁 service-data/</div>
-              <div className="ml-4">📄 Basic Maintenance.xlsx</div>
-              <div className="ml-4">📄 Brakes&Wheels.xlsx</div>
-              <div className="ml-4">📄 Engine&Valve Train.xlsx</div>
-              <div className="ml-4 text-red-600">❌ Files in root (should be in folders)</div>
-            </div>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={loadBucketData}
+            disabled={isLoading}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
         </div>
 
-        {/* Sector Files Found */}
-        {sectorFiles.length > 0 && (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">Loading bucket data...</p>
+            </div>
+          </div>
+        ) : sectorFiles.length === 0 ? (
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              <div className="space-y-2">
+                <div><strong>Storage Status:</strong> No Excel files found in service-data bucket</div>
+                <div><strong>Expected Structure:</strong></div>
+                <div className="ml-4 space-y-1 text-sm font-mono">
+                  <div>📁 service-data/</div>
+                  <div className="ml-4">📁 automotive/</div>
+                  <div className="ml-8">📄 brake-services.xlsx</div>
+                  <div className="ml-8">📄 engine-services.xlsx</div>
+                  <div className="ml-8">📄 ...</div>
+                </div>
+              </div>
+            </AlertDescription>
+          </Alert>
+        ) : (
           <div className="space-y-3">
-            <h3 className="font-semibold">Sector Files Detected</h3>
-            {sectorFiles.map((sector, index) => (
-              <div key={index} className="border rounded-lg p-3">
-                <div className="font-medium">{sector.sectorName}</div>
-                <div className="text-sm text-gray-600">
-                  {sector.totalFiles} file(s): {sector.excelFiles.map((f: any) => f.name).join(', ')}
+            {sectorFiles.map((sector) => (
+              <div key={sector.sectorName} className="border rounded-lg p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Folder className="h-4 w-4 text-blue-600" />
+                    <span className="font-medium">{sector.sectorName}</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {sector.totalFiles} files
+                    </Badge>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {sector.excelFiles.slice(0, 6).map((file) => (
+                    <div key={file.name} className="flex items-center gap-2 text-sm">
+                      <FileText className="h-3 w-3 text-green-600" />
+                      <span className="truncate">{file.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        ({(file.size || 0 / 1024).toFixed(1)} KB)
+                      </span>
+                    </div>
+                  ))}
+                  {sector.excelFiles.length > 6 && (
+                    <div className="text-xs text-muted-foreground">
+                      +{sector.excelFiles.length - 6} more files...
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         )}
 
-        {/* Recommendations */}
         <Alert>
-          <AlertTriangle className="h-4 w-4" />
+          <FileText className="h-4 w-4" />
           <AlertDescription>
-            <div className="font-medium">Recommendation</div>
-            <div className="text-sm mt-1">
-              {bucketInfo?.files?.length > 0 && bucketInfo?.folders?.length === 0 ? (
-                <>
-                  Your files are in the root directory. To fix this:
-                  <ol className="list-decimal list-inside mt-2 space-y-1">
-                    <li>Create folders for each sector (e.g., "automotive", "electronics")</li>
-                    <li>Move Excel files into appropriate sector folders</li>
-                    <li>Refresh the connection to test again</li>
-                  </ol>
-                </>
-              ) : (
-                'The storage structure looks correct for processing.'
-              )}
+            <div className="space-y-1">
+              <div><strong>Bucket:</strong> service-data</div>
+              <div><strong>File Processing:</strong> Rows 2-1000 in each column contain services</div>
+              <div className="text-xs text-muted-foreground">
+                Live view updates automatically when files are added to storage
+              </div>
             </div>
           </AlertDescription>
         </Alert>
-
-        <Button onClick={testBucketConnection} disabled={isLoading} variant="outline">
-          <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-          Test Connection Again
-        </Button>
       </CardContent>
     </Card>
   );
