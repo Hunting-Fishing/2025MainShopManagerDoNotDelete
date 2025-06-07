@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -13,9 +14,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useUserRole } from '@/hooks/useUserRole';
 
 export function HeaderActions() {
   const { isAuthenticated, userName, isLoading } = useAuthUser();
+  const { userRole, isLoading: roleLoading } = useUserRole();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -45,17 +48,56 @@ export function HeaderActions() {
     );
   }
 
+  const getRoleBadgeVariant = (role: string) => {
+    switch (role.toLowerCase()) {
+      case 'owner':
+        return 'default';
+      case 'admin':
+      case 'administrator':
+        return 'destructive';
+      case 'manager':
+        return 'secondary';
+      case 'technician':
+        return 'outline';
+      case 'customer':
+        return 'secondary';
+      default:
+        return 'outline';
+    }
+  };
+
+  const displayRole = userRole?.displayName || userRole?.name || 'User';
+
   return (
     <div className="flex items-center space-x-4">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="flex items-center space-x-2">
+          <Button variant="ghost" className="flex items-center space-x-2 h-auto py-2">
             <User className="h-4 w-4" />
-            <span>{userName || 'User'}</span>
+            <div className="flex flex-col items-start">
+              <span className="text-sm font-medium">{userName || 'User'}</span>
+              {!roleLoading && (
+                <Badge 
+                  variant={getRoleBadgeVariant(displayRole)} 
+                  className="text-xs h-4 px-1"
+                >
+                  {displayRole}
+                </Badge>
+              )}
+            </div>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuLabel>My Account</DropdownMenuLabel>
+          <DropdownMenuLabel>
+            <div className="flex flex-col">
+              <span>My Account</span>
+              {!roleLoading && (
+                <span className="text-xs text-muted-foreground font-normal">
+                  Role: {displayRole}
+                </span>
+              )}
+            </div>
+          </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => navigate('/settings')}>
             Settings

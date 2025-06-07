@@ -1,6 +1,9 @@
+
 import React from 'react';
 import { Bell, ChevronDown, Search, Settings, User, LogOut } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { useAuthUser } from '@/hooks/useAuthUser';
+import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -14,6 +17,7 @@ import { toast } from '@/hooks/use-toast';
 
 const Navbar: React.FC = () => {
   const { user } = useAuthUser();
+  const { userRole, isLoading: roleLoading } = useUserRole();
   const navigate = useNavigate();
   
   const handleLogout = async () => {
@@ -50,6 +54,26 @@ const Navbar: React.FC = () => {
   const goToSettings = () => {
     navigate('/customer-portal?tab=profile');
   };
+
+  const getRoleBadgeVariant = (role: string) => {
+    switch (role.toLowerCase()) {
+      case 'owner':
+        return 'default';
+      case 'admin':
+      case 'administrator':
+        return 'destructive';
+      case 'manager':
+        return 'secondary';
+      case 'technician':
+        return 'outline';
+      case 'customer':
+        return 'secondary';
+      default:
+        return 'outline';
+    }
+  };
+
+  const displayRole = userRole?.displayName || userRole?.name || 'User';
   
   return (
     <header className="bg-white shadow-sm h-16 flex items-center px-6">
@@ -71,14 +95,33 @@ const Navbar: React.FC = () => {
         </button>
         
         <DropdownMenu>
-          <DropdownMenuTrigger className="flex items-center space-x-2 cursor-pointer">
+          <DropdownMenuTrigger className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 rounded-lg p-2">
             <div className="h-8 w-8 rounded-full bg-indigo-600 flex items-center justify-center text-white">
               <User className="h-4 w-4" />
             </div>
-            <span className="font-medium">{user?.email}</span>
+            <div className="flex flex-col items-start">
+              <span className="font-medium text-sm">{user?.email}</span>
+              {!roleLoading && (
+                <Badge 
+                  variant={getRoleBadgeVariant(displayRole)} 
+                  className="text-xs h-4 px-1 mt-1"
+                >
+                  {displayRole}
+                </Badge>
+              )}
+            </div>
             <ChevronDown className="h-4 w-4 text-gray-500" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
+            <div className="px-2 py-1.5 text-sm">
+              <div className="font-medium">{user?.email}</div>
+              {!roleLoading && (
+                <div className="text-xs text-muted-foreground mt-1">
+                  Role: {displayRole}
+                </div>
+              )}
+            </div>
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={goToSettings} className="cursor-pointer">
               <Settings className="mr-2 h-4 w-4" />
               <span>Account Settings</span>
