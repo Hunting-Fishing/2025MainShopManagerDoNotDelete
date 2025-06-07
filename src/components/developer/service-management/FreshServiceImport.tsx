@@ -8,6 +8,7 @@ import { RefreshCw, Database, Upload, Trash2 } from 'lucide-react';
 import { FileBasedImportSelector } from './FileBasedImportSelector';
 import { FolderBasedImportManager } from './FolderBasedImportManager';
 import { ServiceImportProgress } from './ServiceImportProgress';
+import { LiveBucketViewer } from './LiveBucketViewer';
 import { useServiceManagement } from '@/hooks/useServiceManagement';
 
 export function FreshServiceImport({ onImportComplete }: { onImportComplete?: () => void }) {
@@ -36,11 +37,14 @@ export function FreshServiceImport({ onImportComplete }: { onImportComplete?: ()
 
   return (
     <div className="space-y-6">
+      {/* Live Bucket Status */}
+      <LiveBucketViewer />
+      
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Database className="h-5 w-5" />
-            Service Data Import
+            Live Service Data Import
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -52,7 +56,7 @@ export function FreshServiceImport({ onImportComplete }: { onImportComplete?: ()
               className="flex items-center gap-2"
             >
               <RefreshCw className="h-4 w-4" />
-              Refresh Data
+              Refresh Live Data
             </Button>
             <Button
               onClick={handleClearDatabase}
@@ -62,7 +66,7 @@ export function FreshServiceImport({ onImportComplete }: { onImportComplete?: ()
               className="flex items-center gap-2"
             >
               <Trash2 className="h-4 w-4" />
-              {isClearing ? 'Clearing...' : 'Clear Database'}
+              {isClearing ? 'Clearing Database...' : 'Clear Live Database'}
             </Button>
           </div>
 
@@ -70,7 +74,7 @@ export function FreshServiceImport({ onImportComplete }: { onImportComplete?: ()
             <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="folder" className="flex items-center gap-2">
                 <Database className="h-4 w-4" />
-                Storage Import
+                Live Storage Import
               </TabsTrigger>
               <TabsTrigger value="files" className="flex items-center gap-2">
                 <Upload className="h-4 w-4" />
@@ -82,7 +86,7 @@ export function FreshServiceImport({ onImportComplete }: { onImportComplete?: ()
               <Alert>
                 <Database className="h-4 w-4" />
                 <AlertDescription>
-                  Import services from organized folders in Supabase Storage. This method processes all sectors automatically.
+                  Import services from live organized folders in Supabase Storage. This method processes all sectors automatically from real data.
                 </AlertDescription>
               </Alert>
               <FolderBasedImportManager />
@@ -92,7 +96,7 @@ export function FreshServiceImport({ onImportComplete }: { onImportComplete?: ()
               <Alert>
                 <Upload className="h-4 w-4" />
                 <AlertDescription>
-                  Upload Excel files directly from your computer. Each file will be processed as a service category.
+                  Upload Excel files directly from your computer to live database. Each file will be processed as a service category.
                 </AlertDescription>
               </Alert>
               <FileBasedImportSelector 
@@ -109,7 +113,7 @@ export function FreshServiceImport({ onImportComplete }: { onImportComplete?: ()
             message={importProgress.message}
             error={importProgress.error}
             completed={importProgress.completed}
-            operation={isClearing ? 'Database Clear' : 'Service Import'}
+            operation={isClearing ? 'Live Database Clear' : 'Live Service Import'}
             onCancel={handleCancel}
           />
         </CardContent>

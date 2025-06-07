@@ -29,7 +29,7 @@ export const useServiceManagement = () => {
     setIsImporting(true);
     setImportProgress({
       stage: 'starting',
-      message: 'Starting service import from storage...',
+      message: 'Starting live service import from storage...',
       progress: 0,
       completed: false,
       error: null
@@ -47,13 +47,13 @@ export const useServiceManagement = () => {
           error: null
         });
 
-        // Wait a bit then refresh
+        // Wait a bit then refresh live data
         setTimeout(async () => {
           await refetch();
         }, 1000);
 
         toast({
-          title: "Import Completed Successfully",
+          title: "Live Import Completed Successfully",
           description: result.message,
           variant: "default",
         });
@@ -61,9 +61,9 @@ export const useServiceManagement = () => {
         throw new Error(result.message);
       }
     } catch (error) {
-      console.error('Service import failed:', error);
+      console.error('Live service import failed:', error);
       
-      const errorMessage = error instanceof Error ? error.message : 'Service import failed';
+      const errorMessage = error instanceof Error ? error.message : 'Live service import failed';
       
       setImportProgress({
         stage: 'error',
@@ -74,7 +74,7 @@ export const useServiceManagement = () => {
       });
       
       toast({
-        title: "Import Failed",
+        title: "Live Import Failed",
         description: errorMessage,
         variant: "destructive",
       });
@@ -89,7 +89,7 @@ export const useServiceManagement = () => {
     setIsImporting(true);
     setImportProgress({
       stage: 'starting',
-      message: 'Processing uploaded files...',
+      message: 'Processing uploaded files to live database...',
       progress: 0,
       completed: false,
       error: null
@@ -100,7 +100,7 @@ export const useServiceManagement = () => {
       
       setImportProgress({
         stage: 'complete',
-        message: 'File import completed successfully!',
+        message: 'Live file import completed successfully!',
         progress: 100,
         completed: true,
         error: null
@@ -111,15 +111,15 @@ export const useServiceManagement = () => {
       }, 1000);
 
       toast({
-        title: "Import Completed Successfully",
-        description: `Processed ${files.length} file(s) and saved to database.`,
+        title: "Live Import Completed Successfully",
+        description: `Processed ${files.length} file(s) and saved to live database.`,
         variant: "default",
       });
 
     } catch (error) {
-      console.error('File import failed:', error);
+      console.error('Live file import failed:', error);
       
-      const errorMessage = error instanceof Error ? error.message : 'File import failed';
+      const errorMessage = error instanceof Error ? error.message : 'Live file import failed';
       
       setImportProgress({
         stage: 'error',
@@ -130,7 +130,7 @@ export const useServiceManagement = () => {
       });
       
       toast({
-        title: "Import Failed",
+        title: "Live Import Failed",
         description: errorMessage,
         variant: "destructive",
       });
@@ -143,23 +143,23 @@ export const useServiceManagement = () => {
     setIsClearing(true);
     
     try {
-      console.log('Starting database clear operation...');
+      console.log('Starting live database clear operation...');
       await clearAllServiceData();
       
-      // Refresh the data after clearing
+      // Refresh the live data after clearing
       await refetch();
       
       toast({
-        title: "Database Cleared",
-        description: "All service data has been successfully removed.",
+        title: "Live Database Cleared",
+        description: "All service data has been successfully removed from live database.",
         variant: "default",
       });
       
     } catch (error) {
-      console.error('Error clearing database:', error);
+      console.error('Error clearing live database:', error);
       toast({
         title: "Clear Failed",
-        description: "Failed to clear database. Please try again.",
+        description: "Failed to clear live database. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -181,24 +181,24 @@ export const useServiceManagement = () => {
 
   const handleRefreshData = async () => {
     try {
-      console.log('Refreshing service data...');
+      console.log('Refreshing live service data...');
       await refetch();
       
-      // Get current counts for verification
+      // Get current counts for verification from live database
       const counts = await getServiceCounts();
-      console.log('Current service counts:', counts);
+      console.log('Current live service counts:', counts);
       
       toast({
-        title: "Data Refreshed",
-        description: "Service hierarchy data has been refreshed successfully.",
+        title: "Live Data Refreshed",
+        description: "Service hierarchy data has been refreshed successfully from live database.",
         variant: "default",
       });
       
     } catch (error) {
-      console.error('Error refreshing data:', error);
+      console.error('Error refreshing live data:', error);
       toast({
         title: "Refresh Failed",
-        description: "Failed to refresh data. Please try again.",
+        description: "Failed to refresh live data. Please try again.",
         variant: "destructive",
       });
     }
