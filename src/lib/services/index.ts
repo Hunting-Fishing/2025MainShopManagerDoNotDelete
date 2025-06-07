@@ -22,7 +22,7 @@ export {
   getServiceCounts
 } from './databaseOperations';
 
-// Excel processing utilities - consolidated
+// Excel processing utilities - consolidated with proper exports
 export { 
   mapExcelToServiceHierarchy,
   processExcelFile,
