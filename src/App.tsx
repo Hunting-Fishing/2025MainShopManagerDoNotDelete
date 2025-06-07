@@ -82,7 +82,7 @@ function App() {
             
             {/* Developer portal */}
             <Route path="developer" element={<Developer />} />
-            <Route path="developer/service-management" element={<ServiceManagementLayout />}>
+            <Route path="developer/service-management/*" element={<ServiceManagementLayout />}>
               <Route index element={<Navigate to="overview" replace />} />
               <Route path="overview" element={<ServiceOverviewPage />} />
               <Route path="tree" element={<ServiceTreeViewPage />} />
