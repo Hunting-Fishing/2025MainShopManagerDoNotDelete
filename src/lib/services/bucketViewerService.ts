@@ -1,5 +1,5 @@
 
-import { getAllSectorFiles, ensureStorageBucket } from './folderBasedImportService';
+import { getAllSectorFiles, ensureStorageBucket } from './storageUtils';
 import type { SectorFiles } from './types';
 
 export const bucketViewerService = {

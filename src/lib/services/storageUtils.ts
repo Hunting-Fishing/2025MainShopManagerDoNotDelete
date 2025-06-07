@@ -29,7 +29,12 @@ export async function getStorageBucketInfo(bucketName: string = 'service-data') 
           path: item.name,
           size: item.metadata.size,
           type: item.metadata.mimetype,
-          lastModified: new Date(item.updated_at)
+          lastModified: new Date(item.updated_at),
+          id: item.id,
+          updated_at: item.updated_at,
+          created_at: item.created_at,
+          last_accessed_at: item.last_accessed_at,
+          metadata: item.metadata
         });
       } else {
         folders.push({
@@ -65,7 +70,12 @@ export async function getFolderFiles(bucketName: string, folderPath: string, ext
       path: `${folderPath}/${item.name}`,
       size: item.metadata?.size,
       type: item.metadata?.mimetype,
-      lastModified: new Date(item.updated_at)
+      lastModified: new Date(item.updated_at),
+      id: item.id,
+      updated_at: item.updated_at,
+      created_at: item.created_at,
+      last_accessed_at: item.last_accessed_at,
+      metadata: item.metadata
     })) || [];
   } catch (error) {
     console.error(`Error getting files in folder ${folderPath}:`, error);
@@ -95,5 +105,29 @@ export async function getAllSectorFiles(bucketName: string = 'service-data'): Pr
   } catch (error) {
     console.error('Error getting all sector files:', error);
     return [];
+  }
+}
+
+export async function ensureStorageBucket(bucketName: string = 'service-data'): Promise<boolean> {
+  try {
+    const { data: buckets } = await supabase.storage.listBuckets();
+    const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
+    
+    if (!bucketExists) {
+      const { error } = await supabase.storage.createBucket(bucketName, {
+        public: false,
+        allowedMimeTypes: ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
+      });
+      
+      if (error) {
+        console.error('Error creating bucket:', error);
+        return false;
+      }
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error ensuring bucket exists:', error);
+    return false;
   }
 }

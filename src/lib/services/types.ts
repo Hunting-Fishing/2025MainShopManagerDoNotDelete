@@ -38,13 +38,24 @@ export interface ProcessedServiceData {
 
 export interface StorageFile {
   name: string;
-  id: string;
-  updated_at: string;
-  created_at: string;
-  last_accessed_at: string;
-  metadata: any;
+  id?: string;
+  path?: string;
+  size?: number;
+  type?: string;
+  updated_at?: string;
+  created_at?: string;
+  last_accessed_at?: string;
+  lastModified?: Date;
+  metadata?: any;
 }
 
 export interface SectorFiles {
-  [sectorName: string]: StorageFile[];
+  sectorName: string;
+  excelFiles: StorageFile[];
+  totalFiles: number;
+}
+
+export interface ImportOptions {
+  mode: 'skip' | 'update';
+  clearExisting?: boolean;
 }
