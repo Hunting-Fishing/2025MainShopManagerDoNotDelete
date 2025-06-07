@@ -7,7 +7,7 @@ import SearchBar from '@/components/affiliate/SearchBar';
 import FeaturedTools from '@/components/affiliate/FeaturedTools';
 import BestSellingTools from '@/components/affiliate/BestSellingTools';
 import ManufacturersGrid from '@/components/affiliate/ManufacturersGrid';
-import { useQuery } from '@tanstack/react-query';
+import { useProductsManager } from '@/hooks/affiliate/useProductsManager';
 import { categories } from '@/data/toolCategories';
 import { manufacturers } from '@/data/manufacturers';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -24,51 +24,34 @@ const categoryList = Object.keys(categories).map((name, id) => ({
 
 export default function Shopping() {
   const [searchQuery, setSearchQuery] = useState("");
-
-  // Fetch featured tools data
-  const { data: featuredTools, isLoading: isFeaturedLoading } = useQuery({
-    queryKey: ['featuredTools'],
-    queryFn: async () => {
-      try {
-        // In a real app, this would be an API call to fetch featured tools
-        // For now, we're simulating a delay
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        // Return an empty array for now
-        // In a real implementation, this would be data from the API
-        return [];
-      } catch (error) {
-        console.error("Error fetching featured tools:", error);
-        throw error;
-      }
-    },
-  });
-
-  // Fetch best selling tools data
-  const { data: bestSellingTools, isLoading: isBestSellingLoading } = useQuery({
-    queryKey: ['bestSellingTools'],
-    queryFn: async () => {
-      try {
-        // In a real app, this would be an API call to fetch best selling tools
-        // For now, we're simulating a delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Return an empty array for now
-        // In a real implementation, this would be data from the API
-        return [];
-      } catch (error) {
-        console.error("Error fetching best selling tools:", error);
-        throw error;
-      }
-    },
-  });
+  
+  // Use the real products manager hook instead of mock queries
+  const { products, loading, error } = useProductsManager();
+  
+  // Filter products for featured and best selling sections
+  const featuredTools = products.filter(product => product.featured);
+  const bestSellingTools = products.filter(product => product.bestSeller);
+  
+  // Show error state if there's an issue loading products
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <Alert variant="destructive">
+          <Database className="h-4 w-4" />
+          <AlertDescription>
+            Error loading products from database: {error}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">
       <Alert>
         <Database className="h-4 w-4" />
         <AlertDescription>
-          All shopping data is live from your database. No mock or sample data is displayed.
+          All shopping data is live from your Supabase database. Showing {products.length} real products.
         </AlertDescription>
       </Alert>
 
@@ -80,13 +63,13 @@ export default function Shopping() {
         <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
         {/* Featured Products Section */}
-        <FeaturedTools tools={featuredTools} isLoading={isFeaturedLoading} />
+        <FeaturedTools tools={featuredTools} isLoading={loading} />
         
         {/* Categories Grid */}
         <CategoryGrid categories={categoryList} />
         
         {/* Best Selling Tools */}
-        <BestSellingTools tools={bestSellingTools} isLoading={isBestSellingLoading} />
+        <BestSellingTools tools={bestSellingTools} isLoading={loading} />
         
         {/* Manufacturers Section */}
         <ManufacturersGrid manufacturers={manufacturers} />
