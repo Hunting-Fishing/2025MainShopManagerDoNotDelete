@@ -81,17 +81,34 @@ export function useServiceManagementState() {
         return sectors;
       })
       .catch((error) => {
-        const errorMessage = error instanceof Error ? error.message : 'Failed to fetch service data';
+        console.error('Service fetch error:', error);
+        
+        let errorMessage = 'Failed to fetch service data';
+        
+        // Handle specific error types
+        if (error?.message?.includes('406')) {
+          errorMessage = 'Database access denied. Please check permissions.';
+        } else if (error?.message?.includes('401')) {
+          errorMessage = 'Authentication required. Please log in.';
+        } else if (error?.message?.includes('403')) {
+          errorMessage = 'Insufficient permissions to access service data.';
+        } else if (error?.message) {
+          errorMessage = error.message;
+        }
+        
         updateGlobalState({
           loading: false,
           error: errorMessage
         });
         
-        toast({
-          title: "Service Fetch Error",
-          description: errorMessage,
-          variant: "destructive",
-        });
+        // Only show toast for critical errors, not for expected empty states
+        if (!error?.message?.includes('No sectors found')) {
+          toast({
+            title: "Service Data Error",
+            description: errorMessage,
+            variant: "destructive",
+          });
+        }
         
         fetchPromise = null;
         throw error;
@@ -106,8 +123,10 @@ export function useServiceManagementState() {
 
   // Auto-fetch on mount if no data
   useEffect(() => {
-    if (globalState.sectors.length === 0 && !globalState.loading) {
-      fetchData();
+    if (globalState.sectors.length === 0 && !globalState.loading && !globalState.error) {
+      fetchData().catch(error => {
+        console.log('Initial fetch failed, but this is expected for empty databases:', error);
+      });
     }
   }, [fetchData]);
 
