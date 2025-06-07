@@ -2,6 +2,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthUser } from '@/hooks/useAuthUser';
+import { Loader2 } from 'lucide-react';
 
 export default function Authentication() {
   const navigate = useNavigate();
@@ -21,8 +22,11 @@ export default function Authentication() {
 
   // Show loading while determining auth state
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+    <div className="min-h-screen bg-gradient-to-br from-esm-blue-50 to-esm-blue-100 flex items-center justify-center">
+      <div className="text-center space-y-4">
+        <Loader2 className="h-8 w-8 animate-spin mx-auto text-esm-blue-600" />
+        <p className="text-esm-blue-600">Checking authentication...</p>
+      </div>
     </div>
   );
 }
