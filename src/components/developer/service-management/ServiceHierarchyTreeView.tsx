@@ -2,8 +2,8 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronRight, Building, Database, FileText, Briefcase } from 'lucide-react';
-import type { ServiceSector } from '@/types/serviceHierarchy';
+import { ChevronDown, ChevronRight, Plus, Edit, Trash2 } from 'lucide-react';
+import { ServiceSector } from '@/types/serviceHierarchy';
 
 interface ServiceHierarchyTreeViewProps {
   sectors: ServiceSector[];
@@ -11,174 +11,220 @@ interface ServiceHierarchyTreeViewProps {
 }
 
 export function ServiceHierarchyTreeView({ sectors, onSave }: ServiceHierarchyTreeViewProps) {
-  const [expandedSectors, setExpandedSectors] = useState<Set<string>>(new Set());
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
-  const [expandedSubcategories, setExpandedSubcategories] = useState<Set<string>>(new Set());
+  const [expandedSectors, setExpandedSectors] = useState<string[]>([]);
+  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+  const [expandedSubcategories, setExpandedSubcategories] = useState<string[]>([]);
 
   const toggleSector = (sectorId: string) => {
-    const newExpanded = new Set(expandedSectors);
-    if (newExpanded.has(sectorId)) {
-      newExpanded.delete(sectorId);
-    } else {
-      newExpanded.add(sectorId);
-    }
-    setExpandedSectors(newExpanded);
+    setExpandedSectors(prev => 
+      prev.includes(sectorId) 
+        ? prev.filter(id => id !== sectorId)
+        : [...prev, sectorId]
+    );
   };
 
   const toggleCategory = (categoryId: string) => {
-    const newExpanded = new Set(expandedCategories);
-    if (newExpanded.has(categoryId)) {
-      newExpanded.delete(categoryId);
-    } else {
-      newExpanded.add(categoryId);
-    }
-    setExpandedCategories(newExpanded);
+    setExpandedCategories(prev => 
+      prev.includes(categoryId) 
+        ? prev.filter(id => id !== categoryId)
+        : [...prev, categoryId]
+    );
   };
 
   const toggleSubcategory = (subcategoryId: string) => {
-    const newExpanded = new Set(expandedSubcategories);
-    if (newExpanded.has(subcategoryId)) {
-      newExpanded.delete(subcategoryId);
-    } else {
-      newExpanded.add(subcategoryId);
-    }
-    setExpandedSubcategories(newExpanded);
+    setExpandedSubcategories(prev => 
+      prev.includes(subcategoryId) 
+        ? prev.filter(id => id !== subcategoryId)
+        : [...prev, subcategoryId]
+    );
   };
 
-  const expandAll = () => {
-    setExpandedSectors(new Set(sectors.map(s => s.id)));
-    setExpandedCategories(new Set(sectors.flatMap(s => s.categories.map(c => c.id))));
-    setExpandedSubcategories(new Set(sectors.flatMap(s => s.categories.flatMap(c => c.subcategories.map(sc => sc.id)))));
-  };
-
-  const collapseAll = () => {
-    setExpandedSectors(new Set());
-    setExpandedCategories(new Set());
-    setExpandedSubcategories(new Set());
-  };
-
-  if (sectors.length === 0) {
+  if (!sectors || sectors.length === 0) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Database className="h-5 w-5" />
-            Service Hierarchy Tree View
-          </CardTitle>
+          <CardTitle>Service Hierarchy Tree View</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-gray-500">
-            <Database className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <div className="text-sm">No service data found</div>
-            <div className="text-xs">Import service data to view the hierarchy</div>
+          <div className="text-center py-8">
+            <p className="text-gray-500 mb-4">No service data available</p>
+            <p className="text-sm text-gray-400">Import services using the Import tab to view the hierarchy</p>
           </div>
         </CardContent>
       </Card>
     );
   }
 
+  const totalCategories = sectors.reduce((acc, sector) => acc + sector.categories.length, 0);
+  const totalServices = sectors.reduce((acc, sector) => 
+    acc + sector.categories.reduce((catAcc, category) => 
+      catAcc + category.subcategories.reduce((subAcc, subcategory) => 
+        subAcc + subcategory.jobs.length, 0), 0), 0);
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Database className="h-5 w-5" />
+        <CardTitle className="flex items-center justify-between">
           Service Hierarchy Tree View
+          <div className="text-sm font-normal text-gray-500">
+            {sectors.length} sectors • {totalCategories} categories • {totalServices} services
+          </div>
         </CardTitle>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={expandAll}>
-            Expand All
-          </Button>
-          <Button variant="outline" size="sm" onClick={collapseAll}>
-            Collapse All
-          </Button>
-        </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-2 max-h-96 overflow-y-auto">
+        <div className="space-y-2">
           {sectors.map((sector) => (
             <div key={sector.id} className="border rounded-lg">
-              <div
-                className="flex items-center gap-2 p-3 cursor-pointer hover:bg-gray-50"
+              <div 
+                className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50"
                 onClick={() => toggleSector(sector.id)}
               >
-                {expandedSectors.has(sector.id) ? (
-                  <ChevronDown className="h-4 w-4" />
-                ) : (
-                  <ChevronRight className="h-4 w-4" />
-                )}
-                <Building className="h-4 w-4 text-blue-600" />
-                <span className="font-medium">{sector.name}</span>
-                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                  {sector.categories.length} categories
-                </span>
+                <div className="flex items-center space-x-2">
+                  {expandedSectors.includes(sector.id) ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
+                  <h3 className="font-semibold text-blue-600">{sector.name}</h3>
+                  <span className="text-sm text-gray-500">
+                    ({sector.categories.length} categories)
+                  </span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <Button variant="ghost" size="sm">
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                  <Button variant="ghost" size="sm">
+                    <Edit className="h-3 w-3" />
+                  </Button>
+                  <Button variant="ghost" size="sm">
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
               </div>
-              
-              {expandedSectors.has(sector.id) && (
-                <div className="pl-6 pb-2 space-y-1">
-                  {sector.categories.map((category) => (
-                    <div key={category.id} className="border-l-2 border-gray-200">
-                      <div
-                        className="flex items-center gap-2 p-2 cursor-pointer hover:bg-gray-50 ml-2"
-                        onClick={() => toggleCategory(category.id)}
-                      >
-                        {expandedCategories.has(category.id) ? (
-                          <ChevronDown className="h-3 w-3" />
-                        ) : (
-                          <ChevronRight className="h-3 w-3" />
-                        )}
-                        <Database className="h-3 w-3 text-green-600" />
-                        <span className="text-sm font-medium">{category.name}</span>
-                        <span className="text-xs bg-green-100 text-green-800 px-1.5 py-0.5 rounded">
-                          {category.subcategories.length} subcategories
-                        </span>
-                      </div>
-                      
-                      {expandedCategories.has(category.id) && (
-                        <div className="pl-4 space-y-1">
-                          {category.subcategories.map((subcategory) => (
-                            <div key={subcategory.id} className="border-l-2 border-gray-100">
-                              <div
-                                className="flex items-center gap-2 p-2 cursor-pointer hover:bg-gray-50 ml-2"
-                                onClick={() => toggleSubcategory(subcategory.id)}
-                              >
-                                {expandedSubcategories.has(subcategory.id) ? (
-                                  <ChevronDown className="h-3 w-3" />
-                                ) : (
-                                  <ChevronRight className="h-3 w-3" />
-                                )}
-                                <FileText className="h-3 w-3 text-purple-600" />
-                                <span className="text-sm">{subcategory.name}</span>
-                                <span className="text-xs bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded">
-                                  {subcategory.jobs.length} services
-                                </span>
-                              </div>
-                              
-                              {expandedSubcategories.has(subcategory.id) && (
-                                <div className="pl-4 space-y-1">
-                                  {subcategory.jobs.map((job) => (
-                                    <div key={job.id} className="flex items-center gap-2 p-1.5 ml-2 text-sm">
-                                      <Briefcase className="h-3 w-3 text-orange-600" />
-                                      <span>{job.name}</span>
-                                      {job.estimatedTime && (
-                                        <span className="text-xs bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded">
-                                          {job.estimatedTime}min
-                                        </span>
-                                      )}
-                                      {job.price && (
-                                        <span className="text-xs bg-green-100 text-green-800 px-1.5 py-0.5 rounded">
-                                          ${job.price}
-                                        </span>
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          ))}
+
+              {expandedSectors.includes(sector.id) && (
+                <div className="border-t bg-gray-50/50 p-3">
+                  {sector.description && (
+                    <p className="text-sm text-gray-600 mb-3">{sector.description}</p>
+                  )}
+                  
+                  <div className="space-y-2">
+                    {sector.categories.map((category) => (
+                      <div key={category.id} className="border rounded bg-white">
+                        <div 
+                          className="flex items-center justify-between p-2 cursor-pointer hover:bg-gray-50"
+                          onClick={() => toggleCategory(category.id)}
+                        >
+                          <div className="flex items-center space-x-2">
+                            {expandedCategories.includes(category.id) ? (
+                              <ChevronDown className="h-3 w-3" />
+                            ) : (
+                              <ChevronRight className="h-3 w-3" />
+                            )}
+                            <h4 className="font-medium text-green-600">{category.name}</h4>
+                            <span className="text-xs text-gray-500">
+                              ({category.subcategories.length} subcategories)
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <Button variant="ghost" size="sm">
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                            <Button variant="ghost" size="sm">
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button variant="ghost" size="sm">
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  ))}
+
+                        {expandedCategories.includes(category.id) && (
+                          <div className="border-t bg-gray-50/50 p-2">
+                            {category.description && (
+                              <p className="text-xs text-gray-600 mb-2">{category.description}</p>
+                            )}
+                            
+                            <div className="space-y-1">
+                              {category.subcategories.map((subcategory) => (
+                                <div key={subcategory.id} className="border rounded bg-white">
+                                  <div 
+                                    className="flex items-center justify-between p-2 cursor-pointer hover:bg-gray-50"
+                                    onClick={() => toggleSubcategory(subcategory.id)}
+                                  >
+                                    <div className="flex items-center space-x-2">
+                                      {expandedSubcategories.includes(subcategory.id) ? (
+                                        <ChevronDown className="h-3 w-3" />
+                                      ) : (
+                                        <ChevronRight className="h-3 w-3" />
+                                      )}
+                                      <h5 className="font-medium text-purple-600">{subcategory.name}</h5>
+                                      <span className="text-xs text-gray-500">
+                                        ({subcategory.jobs.length} services)
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center space-x-1">
+                                      <Button variant="ghost" size="sm">
+                                        <Plus className="h-3 w-3" />
+                                      </Button>
+                                      <Button variant="ghost" size="sm">
+                                        <Edit className="h-3 w-3" />
+                                      </Button>
+                                      <Button variant="ghost" size="sm">
+                                        <Trash2 className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  </div>
+
+                                  {expandedSubcategories.includes(subcategory.id) && (
+                                    <div className="border-t bg-gray-50/50 p-2">
+                                      {subcategory.description && (
+                                        <p className="text-xs text-gray-600 mb-2">{subcategory.description}</p>
+                                      )}
+                                      
+                                      <div className="space-y-1">
+                                        {subcategory.jobs.map((job) => (
+                                          <div key={job.id} className="flex items-center justify-between p-2 bg-white border rounded">
+                                            <div className="flex-1">
+                                              <div className="font-medium text-sm">{job.name}</div>
+                                              {job.description && (
+                                                <div className="text-xs text-gray-500 mt-1">{job.description}</div>
+                                              )}
+                                              <div className="flex items-center gap-4 mt-1">
+                                                {job.estimatedTime && (
+                                                  <span className="text-xs text-blue-600">
+                                                    ⏱ {job.estimatedTime} min
+                                                  </span>
+                                                )}
+                                                {job.price && (
+                                                  <span className="text-xs font-medium text-green-600">
+                                                    💰 ${job.price}
+                                                  </span>
+                                                )}
+                                              </div>
+                                            </div>
+                                            <div className="flex items-center space-x-1">
+                                              <Button variant="ghost" size="sm">
+                                                <Edit className="h-3 w-3" />
+                                              </Button>
+                                              <Button variant="ghost" size="sm">
+                                                <Trash2 className="h-3 w-3" />
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
