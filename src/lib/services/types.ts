@@ -34,6 +34,8 @@ export interface ImportResult {
 export interface ProcessedServiceData {
   sectors: any[];
   stats: ImportStats;
+  sectorName?: string;
+  categories?: any[];
 }
 
 export interface StorageFile {
