@@ -1,9 +1,10 @@
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useCallback, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload, FileText, Folder } from 'lucide-react';
+import { Upload, FileText, X } from 'lucide-react';
+import { useDropzone } from 'react-dropzone';
 
 interface FileBasedImportSelectorProps {
   onImportFiles: (files: File[]) => Promise<void>;
@@ -12,140 +13,131 @@ interface FileBasedImportSelectorProps {
 
 export function FileBasedImportSelector({ onImportFiles, isImporting }: FileBasedImportSelectorProps) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [dragActive, setDragActive] = useState(false);
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []);
-    const excelFiles = files.filter(file => 
-      file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls')
-    );
-    setSelectedFiles(excelFiles);
-  };
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    setSelectedFiles(prev => [...prev, ...acceptedFiles]);
+  }, []);
 
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    
-    const files = Array.from(e.dataTransfer.files);
-    const excelFiles = files.filter(file => 
-      file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls')
-    );
-    setSelectedFiles(excelFiles);
-  };
-
-  const handleImport = async () => {
-    if (selectedFiles.length > 0) {
-      await onImportFiles(selectedFiles);
-      setSelectedFiles([]);
-    }
-  };
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+      'application/vnd.ms-excel': ['.xls']
+    },
+    multiple: true
+  });
 
   const removeFile = (index: number) => {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
+  const handleImport = async () => {
+    if (selectedFiles.length > 0) {
+      await onImportFiles(selectedFiles);
+      setSelectedFiles([]); // Clear files after successful import
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+  };
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* File Drop Zone */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Select Excel Files
+            <Upload className="h-5 w-5" />
+            Upload Excel Files
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent>
           <div
-            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-              dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+            {...getRootProps()}
+            className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+              isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
             }`}
-            onDragEnter={handleDrag}
-            onDragLeave={handleDrag}
-            onDragOver={handleDrag}
-            onDrop={handleDrop}
           >
-            <input
-              type="file"
-              multiple
-              accept=".xlsx,.xls"
-              onChange={handleFileSelect}
-              className="hidden"
-              id="file-upload"
-              disabled={isImporting}
-            />
-            <label htmlFor="file-upload" className="cursor-pointer">
-              <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-lg font-medium text-gray-900 mb-2">
-                Drop Excel files here or click to browse
-              </p>
-              <p className="text-sm text-gray-500">
-                Supports .xlsx and .xls files - Services are in rows 2-1000
-              </p>
-            </label>
-          </div>
-
-          {selectedFiles.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="font-medium">Selected Files ({selectedFiles.length})</h4>
-              <div className="space-y-2 max-h-40 overflow-y-auto">
-                {selectedFiles.map((file, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-green-600" />
-                      <span className="text-sm font-medium">{file.name}</span>
-                      <span className="text-xs text-gray-500">
-                        ({(file.size / 1024).toFixed(1)} KB)
-                      </span>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeFile(index)}
-                      disabled={isImporting}
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                ))}
+            <input {...getInputProps()} />
+            <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+            {isDragActive ? (
+              <p className="text-blue-600">Drop the Excel files here...</p>
+            ) : (
+              <div>
+                <p className="text-gray-600 mb-2">
+                  Drag & drop Excel files here, or click to select files
+                </p>
+                <p className="text-sm text-gray-500">
+                  Supports .xlsx and .xls files
+                </p>
               </div>
-            </div>
-          )}
-
-          <div className="flex gap-3">
-            <Button
-              onClick={handleImport}
-              disabled={selectedFiles.length === 0 || isImporting}
-              className="flex items-center gap-2"
-            >
-              <Upload className="h-4 w-4" />
-              {isImporting ? 'Importing...' : `Import ${selectedFiles.length} File${selectedFiles.length !== 1 ? 's' : ''}`}
-            </Button>
+            )}
           </div>
-
-          <Alert>
-            <Folder className="h-4 w-4" />
-            <AlertDescription>
-              <div className="space-y-1">
-                <div><strong>File Processing:</strong> Each Excel file becomes a service category</div>
-                <div><strong>Data Structure:</strong> Column A = subcategory name, rows 2-1000 = services</div>
-                <div className="text-xs text-muted-foreground">
-                  Services are extracted from rows 2 through 1000 in each column
-                </div>
-              </div>
-            </AlertDescription>
-          </Alert>
         </CardContent>
       </Card>
+
+      {/* Selected Files */}
+      {selectedFiles.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Selected Files ({selectedFiles.length})</span>
+              <Button
+                onClick={handleImport}
+                disabled={isImporting}
+                className="flex items-center gap-2"
+              >
+                <Upload className="h-4 w-4" />
+                {isImporting ? 'Importing...' : 'Import Files'}
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {selectedFiles.map((file, index) => (
+                <div key={index} className="flex items-center justify-between p-3 border rounded">
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-5 w-5 text-green-600" />
+                    <div>
+                      <div className="font-medium">{file.name}</div>
+                      <div className="text-sm text-gray-500">
+                        {formatFileSize(file.size)} • {file.type || 'Excel file'}
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeFile(index)}
+                    disabled={isImporting}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Import Instructions */}
+      <Alert>
+        <FileText className="h-4 w-4" />
+        <AlertDescription>
+          <div className="space-y-2">
+            <div><strong>File Structure Expected:</strong></div>
+            <ul className="list-disc list-inside text-sm space-y-1">
+              <li>Each Excel file will become a service category</li>
+              <li>Column A should contain subcategory names</li>
+              <li>Rows 2-1000 will be processed as individual services</li>
+              <li>Additional columns can contain service descriptions, prices, etc.</li>
+            </ul>
+          </div>
+        </AlertDescription>
+      </Alert>
     </div>
   );
 }
