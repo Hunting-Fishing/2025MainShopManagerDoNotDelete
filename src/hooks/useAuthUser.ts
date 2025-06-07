@@ -12,6 +12,7 @@ export function useAuthUser() {
   const [userName, setUserName] = useState<string>('');
   const [isAdmin, setIsAdmin] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
+  const [roleCheckComplete, setRoleCheckComplete] = useState(false);
   
   const { isImpersonating, impersonatedCustomer } = useImpersonation();
 
@@ -23,27 +24,25 @@ export function useAuthUser() {
       setUserName(impersonatedCustomer.name || impersonatedCustomer.email);
       setIsAdmin(false);
       setIsOwner(false);
+      setRoleCheckComplete(true);
       setIsLoading(false);
       return;
     }
     
     async function checkAuthStatus() {
       try {
+        console.log('Checking auth status...');
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error("Auth error:", error);
-          setIsAuthenticated(false);
-          setUserId(null);
-          setUser(null);
-          setUserName('');
-          setIsAdmin(false);
-          setIsOwner(false);
-          setIsLoading(false);
+          resetAuthState();
           return;
         }
         
         const isAuth = !!data.session?.user;
+        console.log('Auth status check:', { isAuth, userId: data.session?.user?.id });
+        
         setSession(data.session);
         setIsAuthenticated(isAuth);
         setUserId(data.session?.user?.id || null);
@@ -60,19 +59,14 @@ export function useAuthUser() {
             ''
           );
           
-          // Check user roles from the database instead of metadata
-          if (data.session.user.id) {
-            await checkUserRoles(data.session.user.id);
-          }
+          // Check user roles from the database
+          await checkUserRoles(data.session.user.id);
+        } else {
+          setRoleCheckComplete(true);
         }
       } catch (err) {
         console.error("Unexpected error checking auth:", err);
-        setIsAuthenticated(false);
-        setUserId(null);
-        setUser(null);
-        setUserName('');
-        setIsAdmin(false);
-        setIsOwner(false);
+        resetAuthState();
       } finally {
         setIsLoading(false);
       }
@@ -80,6 +74,8 @@ export function useAuthUser() {
 
     async function checkUserRoles(userId: string) {
       try {
+        console.log('Checking user roles for:', userId);
+        
         // Check if user has admin or owner role
         const { data: userRoles, error } = await supabase
           .from('user_roles')
@@ -94,6 +90,7 @@ export function useAuthUser() {
 
         if (error) {
           console.error('Error fetching user roles:', error);
+          setRoleCheckComplete(true);
           return;
         }
 
@@ -105,8 +102,13 @@ export function useAuthUser() {
 
           console.log('User roles from database:', roles);
           
-          setIsAdmin(roles.includes('admin'));
-          setIsOwner(roles.includes('owner'));
+          const hasAdmin = roles.includes('admin');
+          const hasOwner = roles.includes('owner');
+          
+          setIsAdmin(hasAdmin);
+          setIsOwner(hasOwner);
+          
+          console.log('Role check complete:', { hasAdmin, hasOwner });
         } else {
           console.log('No roles found for user');
           setIsAdmin(false);
@@ -116,17 +118,33 @@ export function useAuthUser() {
         console.error('Error checking user roles:', err);
         setIsAdmin(false);
         setIsOwner(false);
+      } finally {
+        setRoleCheckComplete(true);
       }
+    }
+
+    function resetAuthState() {
+      setIsAuthenticated(false);
+      setUserId(null);
+      setUser(null);
+      setUserName('');
+      setIsAdmin(false);
+      setIsOwner(false);
+      setRoleCheckComplete(true);
+      setIsLoading(false);
     }
     
     checkAuthStatus();
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
+        console.log('Auth state change:', event, session?.user?.id);
+        
         setIsAuthenticated(!!session?.user);
         setUserId(session?.user?.id || null);
         setUser(session?.user || null);
         setSession(session);
+        setRoleCheckComplete(false);
         
         // Update user name and roles on auth state change
         if (session?.user) {
@@ -139,12 +157,15 @@ export function useAuthUser() {
             ''
           );
           
-          // Check user roles from database
-          await checkUserRoles(session.user.id);
+          // Defer role checking to prevent potential auth deadlocks
+          setTimeout(() => {
+            checkUserRoles(session.user.id);
+          }, 100);
         } else {
           setUserName('');
           setIsAdmin(false);
           setIsOwner(false);
+          setRoleCheckComplete(true);
         }
       }
     );
@@ -154,8 +175,11 @@ export function useAuthUser() {
     };
   }, [isImpersonating, impersonatedCustomer]);
 
+  // Return loading state until both auth and roles are checked
+  const finalLoading = isLoading || (isAuthenticated && !roleCheckComplete);
+
   return {
-    isLoading,
+    isLoading: finalLoading,
     isAuthenticated,
     userId,
     user,

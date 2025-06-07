@@ -38,19 +38,19 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (!isAuthenticated) {
-    console.log('User not authenticated, redirecting to login');
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    console.log('User not authenticated, redirecting to auth');
+    return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
   // Check role-based access
   if (requiredRole === 'admin' && !isAdmin && !isOwner) {
     console.log('Access denied: User needs admin role but has isAdmin:', isAdmin, 'isOwner:', isOwner);
-    return <Navigate to="/unauthorized" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   if (requiredRole === 'owner' && !isOwner) {
     console.log('Access denied: User needs owner role but has isOwner:', isOwner);
-    return <Navigate to="/unauthorized" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   console.log('Access granted');
