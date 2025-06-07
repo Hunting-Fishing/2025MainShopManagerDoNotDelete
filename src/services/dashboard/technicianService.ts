@@ -53,7 +53,7 @@ export const getTechnicianEfficiency = async (): Promise<TechnicianEfficiencyDat
 
 export const getTechnicianPerformance = async (): Promise<TechnicianPerformanceData> => {
   try {
-    // Get technician profiles
+    // Get technician profiles with time entries
     const { data: profiles } = await supabase
       .from('profiles')
       .select('id, first_name, last_name')
@@ -66,21 +66,50 @@ export const getTechnicianPerformance = async (): Promise<TechnicianPerformanceD
 
     const technicians = profiles.map(p => `${p.first_name} ${p.last_name}`);
     
-    // Generate mock monthly performance data for the chart
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    // Get work order time entries for the last 6 months
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
     
-    const chartData = months.map(month => {
-      const monthData: any = { month };
-      
-      profiles.forEach((profile) => {
-        const techName = `${profile.first_name} ${profile.last_name}`;
-        const techKey = techName.toLowerCase().replace(/\s+/g, '_');
-        // Generate random hours for demo (30-80 hours per month)
-        monthData[techKey] = Math.floor(Math.random() * 50) + 30;
+    const { data: timeEntries } = await supabase
+      .from('work_order_time_entries')
+      .select('employee_id, duration, created_at')
+      .gte('created_at', sixMonthsAgo.toISOString())
+      .in('employee_id', profiles.map(p => p.id));
+
+    // Group time entries by month
+    const monthlyData: { [key: string]: { [key: string]: number } } = {};
+    
+    // Initialize months
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    const currentMonth = new Date().getMonth();
+    const actualMonths = [];
+    
+    for (let i = 5; i >= 0; i--) {
+      const monthIndex = (currentMonth - i + 12) % 12;
+      actualMonths.push(months[monthIndex]);
+      monthlyData[months[monthIndex]] = {};
+      profiles.forEach(profile => {
+        const techKey = `${profile.first_name} ${profile.last_name}`.toLowerCase().replace(/\s+/g, '_');
+        monthlyData[months[monthIndex]][techKey] = 0;
       });
+    }
+
+    // Process time entries
+    timeEntries?.forEach(entry => {
+      const entryDate = new Date(entry.created_at);
+      const monthName = months[entryDate.getMonth()];
+      const profile = profiles.find(p => p.id === entry.employee_id);
       
-      return monthData;
+      if (profile && monthlyData[monthName]) {
+        const techKey = `${profile.first_name} ${profile.last_name}`.toLowerCase().replace(/\s+/g, '_');
+        monthlyData[monthName][techKey] += entry.duration / 60; // Convert minutes to hours
+      }
     });
+
+    const chartData = actualMonths.map(month => ({
+      month,
+      ...monthlyData[month]
+    }));
 
     return {
       chartData,
