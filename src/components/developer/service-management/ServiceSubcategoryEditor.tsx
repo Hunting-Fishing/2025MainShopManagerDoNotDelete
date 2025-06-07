@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { ServiceSubcategory } from '@/types/service';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast';
 
 interface ServiceSubcategoryEditorProps {
   subcategory: ServiceSubcategory;
@@ -22,7 +23,6 @@ const ServiceSubcategoryEditor: React.FC<ServiceSubcategoryEditorProps> = ({
   const [name, setName] = useState(subcategory.name);
   const [description, setDescription] = useState(subcategory.description || '');
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
   useEffect(() => {
     setName(subcategory.name);
@@ -31,7 +31,11 @@ const ServiceSubcategoryEditor: React.FC<ServiceSubcategoryEditorProps> = ({
 
   const handleSave = async () => {
     if (!name.trim()) {
-      toast.error('Subcategory name is required');
+      toast({
+        title: "Error",
+        description: "Subcategory name is required",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -39,11 +43,18 @@ const ServiceSubcategoryEditor: React.FC<ServiceSubcategoryEditorProps> = ({
     try {
       // Note: This would need to update the parent category's subcategories
       // For now, we'll just show success and let the parent handle it
-      toast.success('Subcategory updated successfully');
+      toast({
+        title: "Success",
+        description: "Subcategory updated successfully",
+      });
       onSave();
     } catch (error) {
       console.error('Error updating subcategory:', error);
-      toast.error('Failed to update subcategory');
+      toast({
+        title: "Error",
+        description: "Failed to update subcategory",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }

@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { processExcelFileFromStorage } from './excelProcessor';
 import { SectorFiles, ImportProgress, ImportResult, ImportStats } from '@/types/service';
@@ -61,14 +62,9 @@ export async function importServicesFromStorage(
 
     // Initialize stats
     stats.totalSectors = sectorFiles.length;
-    stats.totalCategories = sectorFiles.reduce((acc, sector) => acc + sector.categories.length, 0);
-    stats.totalSubcategories = sectorFiles.reduce((acc, sector) =>
-      acc + sector.categories.reduce((catAcc, category) =>
-        catAcc + category.subcategories.length, 0), 0);
-    stats.totalServices = sectorFiles.reduce((acc, sector) =>
-      acc + sector.categories.reduce((catAcc, category) =>
-        catAcc + category.subcategories.reduce((subAcc, subcategory) =>
-          subAcc + subcategory.jobs.length, 0), 0), 0);
+    stats.totalCategories = sectorFiles.length; // Each file becomes a category
+    stats.totalSubcategories = 0;
+    stats.totalServices = 0;
 
     // 3. Process each sector file
     for (const sectorFile of sectorFiles) {

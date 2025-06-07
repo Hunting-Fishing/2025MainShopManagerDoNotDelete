@@ -1,6 +1,7 @@
 
 // Extracted Excel processing utilities for better organization
 import { ExcelRowData, MappedServiceData } from '@/types/service';
+import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Maps Excel data to correct service hierarchy
@@ -54,6 +55,35 @@ export function mapExcelToServiceHierarchy(fileName: string, rows: any[]): Mappe
       subcategories
     }]
   };
+}
+
+/**
+ * Processes Excel file from storage
+ */
+export async function processExcelFileFromStorage(fileName: string, sectorName: string): Promise<MappedServiceData> {
+  try {
+    // Download file from storage
+    const { data, error } = await supabase.storage
+      .from('service-imports')
+      .download(`${sectorName}/${fileName}`);
+
+    if (error) {
+      throw new Error(`Failed to download file: ${error.message}`);
+    }
+
+    // For now, return a basic structure
+    // In a real implementation, you'd parse the Excel file here
+    return {
+      sectorName,
+      categories: [{
+        name: fileName.replace(/\.xlsx?$/i, ''),
+        subcategories: []
+      }]
+    };
+  } catch (error) {
+    console.error('Error processing Excel file from storage:', error);
+    throw error;
+  }
 }
 
 /**

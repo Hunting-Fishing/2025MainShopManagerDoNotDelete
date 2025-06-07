@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ServiceMainCategory } from '@/types/service';
@@ -7,7 +8,7 @@ import { FileSpreadsheet, Download, Eye, EyeOff } from 'lucide-react';
 
 interface ServiceHierarchyExcelViewProps {
   categories: ServiceMainCategory[];
-  onDownload: () => void;
+  onDownload?: () => void;
 }
 
 export function ServiceHierarchyExcelView({ categories, onDownload }: ServiceHierarchyExcelViewProps) {
@@ -17,6 +18,14 @@ export function ServiceHierarchyExcelView({ categories, onDownload }: ServiceHie
     total + category.subcategories.reduce((subTotal, subcategory) =>
       subTotal + subcategory.jobs.length, 0), 0);
 
+  const handleDownload = () => {
+    if (onDownload) {
+      onDownload();
+    } else {
+      console.log('Download functionality not implemented');
+    }
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -24,7 +33,7 @@ export function ServiceHierarchyExcelView({ categories, onDownload }: ServiceHie
           <FileSpreadsheet className="h-4 w-4" />
           Service Hierarchy (Excel View)
         </CardTitle>
-        <Button variant="outline" size="sm" onClick={onDownload}>
+        <Button variant="outline" size="sm" onClick={handleDownload}>
           <Download className="h-4 w-4 mr-2" />
           Download Excel
         </Button>

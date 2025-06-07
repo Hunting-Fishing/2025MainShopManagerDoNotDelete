@@ -22,6 +22,13 @@ export function ServiceHierarchyBrowser() {
     refetch();
   };
 
+  const handleDownload = () => {
+    console.log('Download functionality not implemented yet');
+  };
+
+  // Convert sectors to categories for components that expect categories
+  const allCategories = sectors.flatMap(sector => sector.categories);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -75,15 +82,14 @@ export function ServiceHierarchyBrowser() {
 
         <TabsContent value="tree" className="mt-6">
           <ServiceHierarchyTreeView 
-            sectors={sectors}
-            onSave={handleSave}
+            categories={allCategories}
           />
         </TabsContent>
 
         <TabsContent value="excel" className="mt-6">
           <ServiceHierarchyExcelView 
-            sectors={sectors}
-            onSave={handleSave}
+            categories={allCategories}
+            onDownload={handleDownload}
           />
         </TabsContent>
 
