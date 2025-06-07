@@ -95,12 +95,19 @@ export async function importServicesFromStorage(
             }
           });
 
-          const processedData = await processExcelFileFromStorage(file.name, sectorFile.sectorName);
+          const processedResult = await processExcelFileFromStorage(file.name, sectorFile.sectorName);
 
-          categoriesProcessed += processedData.categories.length;
-          subcategoriesProcessed += processedData.categories.reduce((acc: number, category: any) => acc + category.subcategories.length, 0);
-          jobsProcessed += processedData.categories.reduce((acc: number, category: any) =>
-            acc + category.subcategories.reduce((subAcc: number, subcategory: any) => subAcc + subcategory.services.length, 0), 0);
+          if (processedResult.success) {
+            // Update counters based on successful processing
+            categoriesProcessed += 1; // Each file is one category
+            // We'll estimate subcategories and services based on the stats if available
+            if (processedResult.stats) {
+              subcategoriesProcessed += processedResult.stats.totalSubcategories;
+              jobsProcessed += processedResult.stats.totalServices;
+            }
+          } else {
+            console.error(`Failed to process file ${file.name}:`, processedResult.message);
+          }
 
         } catch (error: any) {
           console.error(`Error processing file ${file.name}:`, error);
@@ -137,9 +144,9 @@ export async function importServicesFromStorage(
       message: `Successfully imported services from ${sectorFiles.length} sectors, processing ${filesProcessed} files.`,
       stats: {
         totalSectors,
-        totalCategories: stats.totalCategories,
-        totalSubcategories: stats.totalSubcategories,
-        totalServices: stats.totalServices,
+        totalCategories: categoriesProcessed,
+        totalSubcategories: subcategoriesProcessed,
+        totalServices: jobsProcessed,
         filesProcessed: filesProcessed
       }
     };
