@@ -5,11 +5,11 @@ import { ServiceHierarchyTreeView } from './ServiceHierarchyTreeView';
 import { ServiceHierarchyExcelView } from './ServiceHierarchyExcelView';
 import { ServiceSectorsList } from './ServiceSectorsList';
 import { FreshServiceImport } from './FreshServiceImport';
-import { useServiceSectors } from '@/hooks/useServiceCategories';
+import { useServiceManagementState } from '@/hooks/useServiceManagementState';
 import { TreePine, Table, Upload, BarChart3 } from 'lucide-react';
 
 export function ServiceHierarchyBrowser() {
-  const { sectors, loading, error, refetch } = useServiceSectors();
+  const { sectors, loading, error, refetch } = useServiceManagementState();
   const [activeTab, setActiveTab] = useState('overview');
 
   const handleSave = (data: any) => {
@@ -17,9 +17,13 @@ export function ServiceHierarchyBrowser() {
     // Implementation for saving changes would go here
   };
 
-  const handleImportComplete = () => {
-    // Refresh data after successful import
-    refetch();
+  const handleImportComplete = async () => {
+    console.log('Import completed, refreshing service data...');
+    try {
+      await refetch();
+    } catch (error) {
+      console.error('Failed to refresh after import:', error);
+    }
   };
 
   if (loading) {
@@ -88,7 +92,7 @@ export function ServiceHierarchyBrowser() {
         </TabsContent>
 
         <TabsContent value="import" className="mt-6">
-          <FreshServiceImport />
+          <FreshServiceImport onImportComplete={handleImportComplete} />
         </TabsContent>
       </Tabs>
     </div>

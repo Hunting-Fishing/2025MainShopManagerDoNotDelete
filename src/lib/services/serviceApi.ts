@@ -1,23 +1,25 @@
+
 import { supabase } from '@/integrations/supabase/client';
-import type { ServiceSector, ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
+import { ServiceSector, ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
+
+// Cache for preventing duplicate requests
+let lastFetchTime = 0;
+let cachedSectors: ServiceSector[] = [];
+const CACHE_DURATION = 30000; // 30 seconds
 
 export async function fetchServiceSectors(): Promise<ServiceSector[]> {
+  const now = Date.now();
+  
+  // Return cached data if recent
+  if (cachedSectors.length > 0 && (now - lastFetchTime) < CACHE_DURATION) {
+    console.log('Returning cached service sectors');
+    return cachedSectors;
+  }
+
   try {
-    console.log('Fetching service sectors...');
-
-    // First check if tables exist
-    const { error: tableCheckError } = await supabase
-      .from('service_sectors')
-      .select('id')
-      .limit(1);
-
-    if (tableCheckError) {
-      console.error('Service tables do not exist:', tableCheckError);
-      return [];
-    }
-
-    // Fetch sectors with their full hierarchy
-    const { data: sectorsData, error: sectorsError } = await supabase
+    console.log('Fetching service sectors from database...');
+    
+    const { data: sectors, error: sectorsError } = await supabase
       .from('service_sectors')
       .select(`
         id,
@@ -25,229 +27,154 @@ export async function fetchServiceSectors(): Promise<ServiceSector[]> {
         description,
         position,
         is_active,
-        service_categories (
+        service_categories!inner (
           id,
           name,
           description,
           position,
-          service_subcategories (
+          sector_id,
+          service_subcategories!inner (
             id,
             name,
             description,
+            category_id,
             service_jobs (
               id,
               name,
               description,
               estimated_time,
-              price
+              price,
+              subcategory_id
             )
           )
         )
       `)
-      .order('position', { ascending: true })
-      .order('name', { ascending: true });
+      .eq('is_active', true)
+      .order('position', { ascending: true });
 
     if (sectorsError) {
       console.error('Error fetching sectors:', sectorsError);
+      throw new Error(`Database error: ${sectorsError.message}`);
+    }
+
+    if (!sectors || sectors.length === 0) {
+      console.log('No sectors found in database');
+      cachedSectors = [];
+      lastFetchTime = now;
       return [];
     }
 
-    console.log('Raw sectors data:', sectorsData);
-
-    if (!sectorsData || sectorsData.length === 0) {
-      console.log('No sectors found');
-      return [];
-    }
-
-    // Transform the data to match our TypeScript types
-    const sectors: ServiceSector[] = sectorsData.map(sector => ({
+    // Transform the data into the expected structure
+    const transformedSectors: ServiceSector[] = sectors.map(sector => ({
       id: sector.id,
       name: sector.name,
-      description: sector.description || undefined,
-      position: sector.position || undefined,
-      is_active: sector.is_active ?? true,
+      description: sector.description,
+      position: sector.position,
+      is_active: sector.is_active,
       categories: (sector.service_categories || []).map((category: any) => ({
         id: category.id,
         name: category.name,
-        description: category.description || undefined,
-        position: category.position || undefined,
-        sector_id: sector.id,
+        description: category.description,
+        position: category.position,
+        sector_id: category.sector_id,
         subcategories: (category.service_subcategories || []).map((subcategory: any) => ({
           id: subcategory.id,
           name: subcategory.name,
-          description: subcategory.description || undefined,
-          category_id: category.id,
+          description: subcategory.description,
+          category_id: subcategory.category_id,
           jobs: (subcategory.service_jobs || []).map((job: any) => ({
             id: job.id,
             name: job.name,
-            description: job.description || undefined,
-            estimatedTime: job.estimated_time || undefined,
-            price: job.price || undefined,
-            subcategory_id: subcategory.id
+            description: job.description,
+            estimatedTime: job.estimated_time,
+            price: job.price,
+            subcategory_id: job.subcategory_id
           }))
         }))
       }))
     }));
 
-    console.log('Transformed sectors:', sectors.length);
-    return sectors;
-
+    console.log(`Successfully fetched ${transformedSectors.length} sectors`);
+    
+    // Update cache
+    cachedSectors = transformedSectors;
+    lastFetchTime = now;
+    
+    return transformedSectors;
+    
   } catch (error) {
     console.error('Error in fetchServiceSectors:', error);
-    return [];
+    
+    // Return cached data as fallback if available
+    if (cachedSectors.length > 0) {
+      console.log('Returning cached data due to error');
+      return cachedSectors;
+    }
+    
+    throw error;
   }
 }
 
 export async function fetchServiceCategories(): Promise<ServiceMainCategory[]> {
   try {
-    console.log('Fetching service categories...');
-
-    const { data: categoriesData, error } = await supabase
-      .from('service_categories')
-      .select(`
-        id,
-        name,
-        description,
-        position,
-        sector_id,
-        service_subcategories (
-          id,
-          name,
-          description,
-          service_jobs (
-            id,
-            name,
-            description,
-            estimated_time,
-            price
-          )
-        )
-      `)
-      .order('position', { ascending: true })
-      .order('name', { ascending: true });
-
-    if (error) {
-      console.error('Error fetching categories:', error);
-      return [];
-    }
-
-    if (!categoriesData) {
-      return [];
-    }
-
-    const categories: ServiceMainCategory[] = categoriesData.map((category: any) => ({
-      id: category.id,
-      name: category.name,
-      description: category.description || undefined,
-      position: category.position || undefined,
-      sector_id: category.sector_id,
-      subcategories: (category.service_subcategories || []).map((subcategory: any) => ({
-        id: subcategory.id,
-        name: subcategory.name,
-        description: subcategory.description || undefined,
-        category_id: category.id,
-        jobs: (subcategory.service_jobs || []).map((job: any) => ({
-          id: job.id,
-          name: job.name,
-          description: job.description || undefined,
-          estimatedTime: job.estimated_time || undefined,
-          price: job.price || undefined,
-          subcategory_id: subcategory.id
-        }))
-      }))
-    }));
-
-    console.log('Service categories loaded:', categories.length);
-    return categories;
+    const sectors = await fetchServiceSectors();
+    return sectors.flatMap(sector => sector.categories);
   } catch (error) {
-    console.error('Error in fetchServiceCategories:', error);
-    return [];
-  }
-}
-
-export async function updateServiceCategory(categoryId: string, updates: Partial<ServiceMainCategory>) {
-  try {
-    console.log('Updating service category:', categoryId, updates);
-    
-    const { data, error } = await supabase
-      .from('service_categories')
-      .update(updates)
-      .eq('id', categoryId)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error updating category:', error);
-      throw error;
-    }
-
-    console.log('Category updated successfully:', data);
-    return data;
-  } catch (error) {
-    console.error('Error in updateServiceCategory:', error);
+    console.error('Error fetching service categories:', error);
     throw error;
   }
 }
 
-export async function deleteServiceCategory(categoryId: string) {
-  try {
-    console.log('Deleting service category:', categoryId);
-    
-    const { error } = await supabase
-      .from('service_categories')
-      .delete()
-      .eq('id', categoryId);
-
-    if (error) {
-      console.error('Error deleting category:', error);
-      throw error;
-    }
-
-    console.log('Category deleted successfully');
-  } catch (error) {
-    console.error('Error in deleteServiceCategory:', error);
-    throw error;
-  }
+// Clear cache function for after imports
+export function clearServiceCache() {
+  cachedSectors = [];
+  lastFetchTime = 0;
+  console.log('Service cache cleared');
 }
 
-export async function deleteServiceSubcategory(subcategoryId: string) {
-  try {
-    console.log('Deleting service subcategory:', subcategoryId);
-    
-    const { error } = await supabase
-      .from('service_subcategories')
-      .delete()
-      .eq('id', subcategoryId);
-
-    if (error) {
-      console.error('Error deleting subcategory:', error);
-      throw error;
-    }
-
-    console.log('Subcategory deleted successfully');
-  } catch (error) {
-    console.error('Error in deleteServiceSubcategory:', error);
-    throw error;
+// Validate service data structure
+export function validateServiceData(sectors: ServiceSector[]): { isValid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  
+  if (!Array.isArray(sectors)) {
+    errors.push('Sectors must be an array');
+    return { isValid: false, errors };
   }
-}
-
-export async function deleteServiceJob(jobId: string) {
-  try {
-    console.log('Deleting service job:', jobId);
-    
-    const { error } = await supabase
-      .from('service_jobs')
-      .delete()
-      .eq('id', jobId);
-
-    if (error) {
-      console.error('Error deleting job:', error);
-      throw error;
+  
+  sectors.forEach((sector, sectorIndex) => {
+    if (!sector.id || !sector.name) {
+      errors.push(`Sector ${sectorIndex + 1}: Missing id or name`);
     }
-
-    console.log('Job deleted successfully');
-  } catch (error) {
-    console.error('Error in deleteServiceJob:', error);
-    throw error;
-  }
+    
+    if (!Array.isArray(sector.categories)) {
+      errors.push(`Sector ${sector.name}: Categories must be an array`);
+      return;
+    }
+    
+    sector.categories.forEach((category, categoryIndex) => {
+      if (!category.id || !category.name) {
+        errors.push(`Sector ${sector.name}, Category ${categoryIndex + 1}: Missing id or name`);
+      }
+      
+      if (!Array.isArray(category.subcategories)) {
+        errors.push(`Category ${category.name}: Subcategories must be an array`);
+        return;
+      }
+      
+      category.subcategories.forEach((subcategory, subcategoryIndex) => {
+        if (!subcategory.id || !subcategory.name) {
+          errors.push(`Category ${category.name}, Subcategory ${subcategoryIndex + 1}: Missing id or name`);
+        }
+        
+        if (!Array.isArray(subcategory.jobs)) {
+          errors.push(`Subcategory ${subcategory.name}: Jobs must be an array`);
+        }
+      });
+    });
+  });
+  
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
 }
