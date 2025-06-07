@@ -89,7 +89,7 @@ export function FileBasedImportSelector({ onImportFiles, isImporting }: FileBase
                 Drop Excel files here or click to browse
               </p>
               <p className="text-sm text-gray-500">
-                Supports .xlsx and .xls files from storage folders
+                Supports .xlsx and .xls files - Services are in rows 2-1000
               </p>
             </label>
           </div>
@@ -137,9 +137,9 @@ export function FileBasedImportSelector({ onImportFiles, isImporting }: FileBase
             <AlertDescription>
               <div className="space-y-1">
                 <div><strong>File Processing:</strong> Each Excel file becomes a service category</div>
-                <div><strong>Data Structure:</strong> First column = subcategory, remaining columns = service details</div>
+                <div><strong>Data Structure:</strong> Column A = subcategory name, rows 2-1000 = services</div>
                 <div className="text-xs text-muted-foreground">
-                  Ensure your Excel files follow the expected structure for proper import
+                  Services are extracted from rows 2 through 1000 in each column
                 </div>
               </div>
             </AlertDescription>
