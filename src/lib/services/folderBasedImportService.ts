@@ -5,6 +5,9 @@ import { SectorFiles, ImportProgress, ImportResult, ImportStats } from '@/types/
 import { getAllSectorFiles } from './storageUtils';
 import { clearAllServiceData } from './databaseOperations';
 
+// Export the function that was missing
+export { processExcelFileFromStorage };
+
 export async function importServicesFromStorage(
   setProgress: (progress: ImportProgress) => void
 ): Promise<ImportResult> {

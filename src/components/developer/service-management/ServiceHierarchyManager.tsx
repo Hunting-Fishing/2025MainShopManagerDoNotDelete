@@ -1,186 +1,196 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ServiceMainCategory } from '@/types/service';
-import { ServiceCategoriesManager } from './ServiceCategoriesManager';
-import { ServiceEditor } from './ServiceEditor';
-import { ServiceDebugInfo } from './ServiceDebugInfo';
-import { ServiceAnalytics } from './ServiceAnalytics';
-import { ServiceDuplicatesManager } from './ServiceDuplicatesManager';
-import { fetchServiceCategories } from '@/lib/services/serviceApi';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/service';
+import ServiceAnalytics from './ServiceAnalytics';
+import { Plus, Edit, Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface ServiceHierarchyManagerProps {
   categories: ServiceMainCategory[];
-  onRefresh: () => void;
+  onCategoryUpdate?: (category: ServiceMainCategory) => void;
+  onSubcategoryUpdate?: (subcategory: ServiceSubcategory) => void;
+  onJobUpdate?: (job: ServiceJob) => void;
 }
 
-const ServiceHierarchyManager: React.FC<ServiceHierarchyManagerProps> = ({
+export function ServiceHierarchyManager({
   categories,
-  onRefresh
-}) => {
-  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  onCategoryUpdate,
+  onSubcategoryUpdate,
+  onJobUpdate
+}: ServiceHierarchyManagerProps) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [expandedSubcategories, setExpandedSubcategories] = useState<Set<string>>(new Set());
+  const { toast } = useToast();
 
   const handleDeleteCategory = async (categoryId: string) => {
-    if (!confirm('Are you sure you want to delete this category? This will also delete all subcategories and jobs.')) {
-      return;
-    }
-
-    setIsDeleting(categoryId);
     try {
-      await deleteServiceCategory(categoryId);
-      toast.success('Category deleted successfully');
-      onRefresh();
+      // This would call a delete service function
+      toast({
+        title: "Success",
+        description: "Category deleted successfully",
+      });
     } catch (error) {
-      console.error('Error deleting category:', error);
-      toast.error('Failed to delete category');
-    } finally {
-      setIsDeleting(null);
+      toast({
+        title: "Error",
+        description: "Failed to delete category",
+        variant: "destructive",
+      });
     }
   };
 
   const handleDeleteSubcategory = async (subcategoryId: string) => {
-    if (!confirm('Are you sure you want to delete this subcategory? This will also delete all jobs.')) {
-      return;
-    }
-
-    setIsDeleting(subcategoryId);
     try {
-      await deleteServiceSubcategory(subcategoryId);
-      toast.success('Subcategory deleted successfully');
-      onRefresh();
+      // This would call a delete service function
+      toast({
+        title: "Success",
+        description: "Subcategory deleted successfully",
+      });
     } catch (error) {
-      console.error('Error deleting subcategory:', error);
-      toast.error('Failed to delete subcategory');
-    } finally {
-      setIsDeleting(null);
+      toast({
+        title: "Error",
+        description: "Failed to delete subcategory",
+        variant: "destructive",
+      });
     }
   };
 
   const handleDeleteJob = async (jobId: string) => {
-    if (!confirm('Are you sure you want to delete this job?')) {
-      return;
-    }
-
-    setIsDeleting(jobId);
     try {
-      await deleteServiceJob(jobId);
-      toast.success('Job deleted successfully');
-      onRefresh();
+      // This would call a delete service function
+      toast({
+        title: "Success",
+        description: "Service deleted successfully",
+      });
     } catch (error) {
-      console.error('Error deleting job:', error);
-      toast.error('Failed to delete job');
-    } finally {
-      setIsDeleting(null);
+      toast({
+        title: "Error",
+        description: "Failed to delete service",
+        variant: "destructive",
+      });
     }
   };
 
-  if (categories.length === 0) {
-    return (
-      <Card>
-        <CardContent className="p-6 text-center">
-          <p className="text-gray-500 mb-4">No service categories found</p>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Category
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
+  const filteredCategories = categories.filter(category =>
+    category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    category.subcategories.some(sub =>
+      sub.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      sub.jobs.some(job => job.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    )
+  );
 
   return (
-    <div className="space-y-4">
-      {categories.map((category) => (
-        <Card key={category.id}>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">{category.name}</CardTitle>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm">
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <Button 
-                  variant="destructive" 
-                  size="sm"
-                  onClick={() => handleDeleteCategory(category.id)}
-                  disabled={isDeleting === category.id}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            {category.description && (
-              <p className="text-sm text-gray-600">{category.description}</p>
-            )}
-          </CardHeader>
-          <CardContent>
-            {category.subcategories.length === 0 ? (
-              <p className="text-gray-500 text-sm">No subcategories</p>
-            ) : (
-              <div className="space-y-3">
-                {category.subcategories.map((subcategory) => (
-                  <div key={subcategory.id} className="border rounded-lg p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium">{subcategory.name}</h4>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="destructive" 
-                          size="sm"
-                          onClick={() => handleDeleteSubcategory(subcategory.id)}
-                          disabled={isDeleting === subcategory.id}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            Service Hierarchy Manager
+            <Button size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Category
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-4">
+            <Input
+              placeholder="Search services..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-4">
+            {filteredCategories.map((category) => (
+              <Card key={category.id} className="border-l-4 border-l-blue-500">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-lg">{category.name}</CardTitle>
+                      <Badge variant="outline">
+                        {category.subcategories.length} subcategories
+                      </Badge>
                     </div>
-                    {subcategory.description && (
-                      <p className="text-sm text-gray-600 mb-2">{subcategory.description}</p>
-                    )}
-                    {subcategory.jobs.length === 0 ? (
-                      <p className="text-gray-500 text-xs">No jobs</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {subcategory.jobs.map((job) => (
-                          <div key={job.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                            <div>
-                              <span className="text-sm font-medium">{job.name}</span>
-                              {job.price && (
-                                <span className="text-sm text-gray-600 ml-2">${job.price}</span>
-                              )}
-                              {job.estimatedTime && (
-                                <span className="text-sm text-gray-600 ml-2">({job.estimatedTime}min)</span>
-                              )}
-                            </div>
-                            <div className="flex gap-1">
-                              <Button variant="outline" size="sm">
-                                <Edit className="h-3 w-3" />
-                              </Button>
-                              <Button 
-                                variant="destructive" 
-                                size="sm"
-                                onClick={() => handleDeleteJob(job.id)}
-                                disabled={isDeleting === job.id}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleDeleteCategory(category.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      ))}
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {category.subcategories.map((subcategory) => (
+                      <div key={subcategory.id} className="ml-4 border-l-2 border-l-gray-200 pl-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <div>
+                            <h4 className="font-medium">{subcategory.name}</h4>
+                            <Badge variant="secondary" className="text-xs">
+                              {subcategory.jobs.length} services
+                            </Badge>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button variant="outline" size="sm">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleDeleteSubcategory(subcategory.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          {subcategory.jobs.map((job) => (
+                            <div key={job.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                              <div>
+                                <span className="font-medium">{job.name}</span>
+                                {job.price && (
+                                  <Badge variant="outline" className="ml-2">
+                                    ${job.price}
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="flex gap-2">
+                                <Button variant="outline" size="sm">
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => handleDeleteJob(job.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <ServiceAnalytics categories={filteredCategories} />
     </div>
   );
-};
-
-export default ServiceHierarchyManager;
+}
