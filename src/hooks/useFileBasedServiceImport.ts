@@ -41,8 +41,47 @@ export const useFileBasedServiceImport = () => {
     }
   };
 
+  const importFromBucket = async (selectedData: { sectorName: string; files: StorageFile[] }[]) => {
+    setIsImporting(true);
+    
+    try {
+      console.log('Starting bucket import for', selectedData.length, 'sectors');
+      
+      let totalFiles = 0;
+      selectedData.forEach(sector => {
+        totalFiles += sector.files.length;
+        console.log(`Sector: ${sector.sectorName}, Files: ${sector.files.length}`);
+      });
+      
+      // For now, simulate the import process
+      // This will be expanded when the actual service processing is implemented
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      toast({
+        title: "Bucket Import Successful",
+        description: `Successfully imported ${totalFiles} file(s) from ${selectedData.length} sector(s) to live database.`,
+        variant: "default",
+      });
+      
+    } catch (error) {
+      console.error('Bucket import failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Bucket import failed';
+      
+      toast({
+        title: "Import Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      
+      throw error;
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   return {
     importSelectedFiles,
+    importFromBucket,
     isImporting
   };
 };

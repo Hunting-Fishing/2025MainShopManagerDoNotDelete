@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -15,21 +14,13 @@ interface StorageImportManagerProps {
 }
 
 export function StorageImportManager({ onImportComplete, isImporting }: StorageImportManagerProps) {
-  const { importSelectedFiles } = useFileBasedServiceImport();
+  const { importSelectedFiles, importFromBucket } = useFileBasedServiceImport();
 
   const handleBucketImport = async (selectedData: { sectorName: string; files: StorageFile[] }[]) => {
     try {
       console.log('Importing selected bucket data:', selectedData);
       
-      // Process each sector's files
-      for (const sectorData of selectedData) {
-        console.log(`Processing sector: ${sectorData.sectorName} with ${sectorData.files.length} files`);
-        
-        // Here you would implement the actual import logic
-        // This might involve calling your existing import services
-        // with the selected files from storage
-      }
-      
+      await importFromBucket(selectedData);
       onImportComplete?.();
     } catch (error) {
       console.error('Error importing from bucket:', error);
