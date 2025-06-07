@@ -5,14 +5,14 @@ import { ChatPageLayout } from '@/components/chat/ChatPageLayout';
 import { useChat } from '@/hooks/useChat';
 import { useChatRoomActions } from '@/hooks/useChatRoomActions';
 import { useChatNotifications } from '@/hooks/useChatNotifications';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Database, Loader2 } from 'lucide-react';
 
 export default function Chat() {
   const { roomId } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user } = useAuthUser();
   const [isSpeaking, setIsSpeaking] = useState(false);
 
   // Initialize chat functionality
