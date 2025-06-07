@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ServiceHierarchyBrowser } from '@/components/developer/service-management/ServiceHierarchyBrowser';
 import { ServiceManagementSettings } from '@/components/developer/service-management/ServiceManagementSettings';
-import { Settings, Database, FileText, Search, Building, RefreshCw } from 'lucide-react';
+import { Settings, Database, FileText, Search, Building, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useServiceSectors } from '@/hooks/useServiceCategories';
 
 const ServiceManagement: React.FC = () => {
@@ -29,6 +29,15 @@ const ServiceManagement: React.FC = () => {
           <p className="text-muted-foreground">
             Manage service sectors, categories, subcategories, and individual services
           </p>
+          <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-start space-x-2">
+              <AlertTriangle className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-blue-800">
+                <strong>Hierarchy Update:</strong> Fixed Excel mapping - File names now become main categories, 
+                first column becomes subcategories, ensuring correct service organization.
+              </div>
+            </div>
+          </div>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={handleRefresh} disabled={loading}>
@@ -54,7 +63,7 @@ const ServiceManagement: React.FC = () => {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{loading ? '...' : totalSectors}</p>
-            <p className="text-sm text-muted-foreground">Service sectors</p>
+            <p className="text-sm text-muted-foreground">Service sectors (from file names)</p>
           </CardContent>
         </Card>
         
@@ -67,7 +76,7 @@ const ServiceManagement: React.FC = () => {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{loading ? '...' : totalCategories}</p>
-            <p className="text-sm text-muted-foreground">Main categories</p>
+            <p className="text-sm text-muted-foreground">Main categories (Excel sheets)</p>
           </CardContent>
         </Card>
         
@@ -80,7 +89,7 @@ const ServiceManagement: React.FC = () => {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{loading ? '...' : totalServices}</p>
-            <p className="text-sm text-muted-foreground">Total services</p>
+            <p className="text-sm text-muted-foreground">Total services (corrected mapping)</p>
           </CardContent>
         </Card>
         
@@ -92,8 +101,8 @@ const ServiceManagement: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">Fresh</p>
-            <p className="text-sm text-muted-foreground">Clean import system</p>
+            <p className="text-2xl font-bold">Fixed</p>
+            <p className="text-sm text-muted-foreground">Hierarchy mapping corrected</p>
           </CardContent>
         </Card>
       </div>
