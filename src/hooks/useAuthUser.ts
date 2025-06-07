@@ -60,11 +60,10 @@ export function useAuthUser() {
             ''
           );
           
-          // Check user roles if available
-          // This is an example - actual role determination might come from a different source
-          const role = metadata?.role || '';
-          setIsAdmin(role === 'admin');
-          setIsOwner(role === 'owner');
+          // Check user roles from the database instead of metadata
+          if (data.session.user.id) {
+            await checkUserRoles(data.session.user.id);
+          }
         }
       } catch (err) {
         console.error("Unexpected error checking auth:", err);
@@ -78,11 +77,52 @@ export function useAuthUser() {
         setIsLoading(false);
       }
     }
+
+    async function checkUserRoles(userId: string) {
+      try {
+        // Check if user has admin or owner role
+        const { data: userRoles, error } = await supabase
+          .from('user_roles')
+          .select(`
+            role_id,
+            roles:role_id(
+              id,
+              name
+            )
+          `)
+          .eq('user_id', userId);
+
+        if (error) {
+          console.error('Error fetching user roles:', error);
+          return;
+        }
+
+        if (userRoles && userRoles.length > 0) {
+          const roles = userRoles.map(ur => {
+            const role = ur.roles as any;
+            return role?.name;
+          }).filter(Boolean);
+
+          console.log('User roles from database:', roles);
+          
+          setIsAdmin(roles.includes('admin'));
+          setIsOwner(roles.includes('owner'));
+        } else {
+          console.log('No roles found for user');
+          setIsAdmin(false);
+          setIsOwner(false);
+        }
+      } catch (err) {
+        console.error('Error checking user roles:', err);
+        setIsAdmin(false);
+        setIsOwner(false);
+      }
+    }
     
     checkAuthStatus();
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      async (_event, session) => {
         setIsAuthenticated(!!session?.user);
         setUserId(session?.user?.id || null);
         setUser(session?.user || null);
@@ -99,10 +139,8 @@ export function useAuthUser() {
             ''
           );
           
-          // Check user roles
-          const role = metadata?.role || '';
-          setIsAdmin(role === 'admin');
-          setIsOwner(role === 'owner');
+          // Check user roles from database
+          await checkUserRoles(session.user.id);
         } else {
           setUserName('');
           setIsAdmin(false);

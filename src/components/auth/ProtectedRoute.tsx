@@ -13,8 +13,19 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children, 
   requiredRole 
 }) => {
-  const { isAuthenticated, isLoading, isAdmin, isOwner } = useAuthUser();
+  const { isAuthenticated, isLoading, isAdmin, isOwner, userId } = useAuthUser();
   const location = useLocation();
+
+  // Debug logging
+  console.log('ProtectedRoute - Auth state:', {
+    isAuthenticated,
+    isLoading,
+    isAdmin,
+    isOwner,
+    userId,
+    requiredRole,
+    currentPath: location.pathname
+  });
 
   if (isLoading) {
     return (
@@ -27,17 +38,21 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (!isAuthenticated) {
+    console.log('User not authenticated, redirecting to login');
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // Check role-based access
   if (requiredRole === 'admin' && !isAdmin && !isOwner) {
+    console.log('Access denied: User needs admin role but has isAdmin:', isAdmin, 'isOwner:', isOwner);
     return <Navigate to="/unauthorized" replace />;
   }
 
   if (requiredRole === 'owner' && !isOwner) {
+    console.log('Access denied: User needs owner role but has isOwner:', isOwner);
     return <Navigate to="/unauthorized" replace />;
   }
 
+  console.log('Access granted');
   return <>{children}</>;
 };
