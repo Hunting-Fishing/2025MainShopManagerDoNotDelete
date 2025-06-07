@@ -16,23 +16,11 @@ export const bucketViewerService = {
       
       const serviceBucket = buckets?.find(bucket => bucket.name === 'service-data');
       if (!serviceBucket) {
-        console.log('service-data bucket not found, creating it...');
-        const { error: createError } = await supabase.storage.createBucket('service-data', {
-          public: true, // Make it public for easy access
-          allowedMimeTypes: [
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'application/vnd.ms-excel'
-          ]
-        });
-        
-        if (createError) {
-          console.error('Error creating bucket:', createError);
-          throw new Error(`Failed to create service-data bucket: ${createError.message}`);
-        }
-        
-        console.log('Created service-data bucket');
-        return []; // Return empty array since we just created the bucket
+        console.log('service-data bucket not found. It should exist from the migration.');
+        return [];
       }
+      
+      console.log('service-data bucket found:', serviceBucket);
       
       // List all folders (sectors) in the bucket
       const { data: rootFiles, error: rootError } = await supabase.storage

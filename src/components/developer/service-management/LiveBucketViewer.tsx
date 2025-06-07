@@ -2,185 +2,119 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Database, Folder, FileText, RefreshCw, Eye, Calendar, HardDrive } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Folder, FileSpreadsheet, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
 import { bucketViewerService } from '@/lib/services/bucketViewerService';
-import type { SectorFiles, StorageFile } from '@/types/service';
+import type { SectorFiles } from '@/types/service';
 
 export function LiveBucketViewer() {
-  const [isLoading, setIsLoading] = useState(true);
   const [sectorFiles, setSectorFiles] = useState<SectorFiles[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [expandedSectors, setExpandedSectors] = useState<Set<string>>(new Set());
-  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+
+  const loadBucketData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('Loading live bucket data...');
+      
+      const sectors = await bucketViewerService.getAllSectorFiles();
+      setSectorFiles(sectors);
+      
+      console.log('Live bucket data loaded:', sectors.length, 'sectors');
+    } catch (err) {
+      console.error('Error loading live bucket data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load live bucket data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    loadBucketStatus();
-    
-    // Auto-refresh every 30 seconds
-    const interval = setInterval(loadBucketStatus, 30000);
-    
-    return () => clearInterval(interval);
+    loadBucketData();
   }, []);
 
-  const loadBucketStatus = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      const data = await bucketViewerService.getAllSectorFiles();
-      setSectorFiles(data);
-      setLastRefresh(new Date());
-    } catch (err) {
-      console.error('Error loading bucket status:', err);
-      setError('Failed to load live bucket status');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const toggleSectorExpansion = (sectorName: string) => {
-    const newExpanded = new Set(expandedSectors);
-    if (newExpanded.has(sectorName)) {
-      newExpanded.delete(sectorName);
-    } else {
-      newExpanded.add(sectorName);
-    }
-    setExpandedSectors(newExpanded);
-  };
-
-  const formatFileSize = (bytes: number | undefined) => {
-    if (!bytes) return 'Unknown size';
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
-  };
-
-  const formatDate = (date: Date | undefined) => {
-    if (!date) return 'Unknown date';
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-  };
-
   const totalFiles = sectorFiles.reduce((acc, sector) => acc + sector.totalFiles, 0);
-  const totalSize = sectorFiles.reduce((acc, sector) => 
-    acc + sector.excelFiles.reduce((fileAcc, file) => fileAcc + (file.size || 0), 0), 0);
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Database className="h-5 w-5" />
-          Live Storage Bucket Status
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Folder className="h-5 w-5" />
+            Live Storage Bucket Status
+          </CardTitle>
           <Button
-            onClick={loadBucketStatus}
+            onClick={loadBucketData}
+            disabled={loading}
             variant="outline"
             size="sm"
-            disabled={isLoading}
           >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
           </Button>
-        </CardTitle>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Calendar className="h-4 w-4" />
-          Last updated: {formatDate(lastRefresh)}
         </div>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
-          <div className="flex items-center gap-2">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span>Checking live bucket...</span>
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+              <p className="text-gray-500">Loading live bucket data...</p>
+            </div>
           </div>
         ) : error ? (
           <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              <div className="space-y-2">
+                <div><strong>Failed to load live bucket status:</strong></div>
+                <div className="text-sm">{error}</div>
+              </div>
+            </AlertDescription>
           </Alert>
         ) : (
-          <div className="space-y-6">
-            {/* Summary Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
-                <Folder className="h-5 w-5 text-blue-600" />
-                <div>
-                  <div className="font-semibold">{sectorFiles.length}</div>
-                  <div className="text-sm text-gray-600">Sectors</div>
+          <div className="space-y-4">
+            <Alert>
+              <CheckCircle className="h-4 w-4" />
+              <AlertDescription>
+                <div className="space-y-1">
+                  <div><strong>Live Bucket Connected:</strong> service-data bucket is accessible</div>
+                  <div><strong>Sectors loaded:</strong> {sectorFiles.length}</div>
+                  <div><strong>Total Excel files:</strong> {totalFiles}</div>
                 </div>
-              </div>
-              <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg">
-                <FileText className="h-5 w-5 text-green-600" />
-                <div>
-                  <div className="font-semibold">{totalFiles}</div>
-                  <div className="text-sm text-gray-600">Total Files</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 p-3 bg-purple-50 rounded-lg">
-                <HardDrive className="h-5 w-5 text-purple-600" />
-                <div>
-                  <div className="font-semibold">{formatFileSize(totalSize)}</div>
-                  <div className="text-sm text-gray-600">Total Size</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 p-3 bg-orange-50 rounded-lg">
-                <Eye className="h-5 w-5 text-orange-600" />
-                <div>
-                  <div className="font-semibold">Live</div>
-                  <div className="text-sm text-gray-600">Real-time Data</div>
-                </div>
-              </div>
-            </div>
+              </AlertDescription>
+            </Alert>
 
-            {sectorFiles.length > 0 ? (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Sector Details</h3>
-                {sectorFiles.map((sector) => (
-                  <div key={sector.sectorName} className="border rounded-lg overflow-hidden">
-                    <div 
-                      className="p-4 bg-gray-50 cursor-pointer flex items-center justify-between hover:bg-gray-100"
-                      onClick={() => toggleSectorExpansion(sector.sectorName)}
+            {sectorFiles.length > 0 && (
+              <div className="space-y-3">
+                <h4 className="font-medium">Available Sectors:</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {sectorFiles.map((sector) => (
+                    <div
+                      key={sector.sectorName}
+                      className="flex items-center justify-between p-3 border rounded-lg"
                     >
-                      <div className="flex items-center gap-3">
-                        <Folder className="h-5 w-5 text-blue-600" />
-                        <div>
-                          <div className="font-medium">{sector.sectorName}</div>
-                          <div className="text-sm text-gray-600">
-                            {sector.totalFiles} file{sector.totalFiles !== 1 ? 's' : ''}
-                          </div>
-                        </div>
+                      <div className="flex items-center gap-2">
+                        <Folder className="h-4 w-4 text-blue-600" />
+                        <span className="font-medium">{sector.sectorName}</span>
                       </div>
-                      <Badge variant="secondary">{sector.totalFiles}</Badge>
+                      <Badge variant="secondary" className="flex items-center gap-1">
+                        <FileSpreadsheet className="h-3 w-3" />
+                        {sector.totalFiles}
+                      </Badge>
                     </div>
-                    
-                    {expandedSectors.has(sector.sectorName) && (
-                      <div className="p-4 border-t">
-                        <div className="space-y-2">
-                          {sector.excelFiles.map((file: StorageFile, index: number) => (
-                            <div key={index} className="flex items-center justify-between p-3 bg-white border rounded">
-                              <div className="flex items-center gap-3">
-                                <FileText className="h-4 w-4 text-green-600" />
-                                <div>
-                                  <div className="font-medium text-sm">{file.name}</div>
-                                  <div className="text-xs text-gray-500">
-                                    Size: {formatFileSize(file.size)} • 
-                                    Modified: {formatDate(file.lastModified)}
-                                  </div>
-                                </div>
-                              </div>
-                              <Badge variant="outline" className="text-xs">
-                                Excel
-                              </Badge>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            ) : (
+            )}
+
+            {sectorFiles.length === 0 && (
               <Alert>
+                <Folder className="h-4 w-4" />
                 <AlertDescription>
-                  No files found in storage bucket. Upload Excel files to start importing.
+                  No sectors or Excel files found in the service-data bucket. Upload some Excel files organized in folders to see them here.
                 </AlertDescription>
               </Alert>
             )}

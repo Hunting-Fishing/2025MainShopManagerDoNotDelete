@@ -72,25 +72,11 @@ export async function getAllSectorFiles(): Promise<SectorFiles[]> {
   try {
     console.log('Getting all sector files from service-data bucket...');
     
-    // First, check if the bucket exists
+    // Check if the bucket exists
     const { buckets, serviceBucket } = await getStorageBucketInfo();
     
     if (!serviceBucket) {
-      console.log('service-data bucket not found, creating it...');
-      const { error: createError } = await supabase.storage.createBucket('service-data', {
-        public: true,
-        allowedMimeTypes: [
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          'application/vnd.ms-excel'
-        ]
-      });
-      
-      if (createError) {
-        console.error('Error creating bucket:', createError);
-        throw new Error(`Failed to create service-data bucket: ${createError.message}`);
-      }
-      
-      console.log('Created service-data bucket');
+      console.log('service-data bucket not found. It should exist from the migration.');
       return [];
     }
     
