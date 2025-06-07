@@ -1,5 +1,49 @@
 import { supabase } from '@/integrations/supabase/client';
-import { ServiceMainCategory, ServiceSubcategory, ServiceJob, ServiceSector } from '@/types/service';
+import type { ServiceSector, ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/service';
+
+export async function insertServiceSector(sectorData: Omit<ServiceSector, 'id' | 'categories'>) {
+  const { data, error } = await supabase
+    .from('service_sectors')
+    .insert(sectorData)
+    .select()
+    .single();
+  
+  if (error) throw error;
+  return data;
+}
+
+export async function insertServiceCategory(categoryData: Omit<ServiceMainCategory, 'id' | 'subcategories'>) {
+  const { data, error } = await supabase
+    .from('service_categories')
+    .insert(categoryData)
+    .select()
+    .single();
+  
+  if (error) throw error;
+  return data;
+}
+
+export async function insertServiceSubcategory(subcategoryData: Omit<ServiceSubcategory, 'id' | 'jobs'>) {
+  const { data, error } = await supabase
+    .from('service_subcategories')
+    .insert(subcategoryData)
+    .select()
+    .single();
+  
+  if (error) throw error;
+  return data;
+}
+
+export async function insertServiceJob(jobData: Omit<ServiceJob, 'id'>) {
+  const { data, error } = await supabase
+    .from('service_jobs')
+    .insert(jobData)
+    .select()
+    .single();
+  
+  if (error) throw error;
+  return data;
+}
 
 export async function fetchServiceSectors(): Promise<ServiceSector[]> {
   try {
@@ -250,4 +294,23 @@ export async function deleteServiceJob(jobId: string) {
     console.error('Error in deleteServiceJob:', error);
     throw error;
   }
+}
+
+export async function getServiceSectors() {
+  const { data, error } = await supabase
+    .from('service_sectors')
+    .select(`
+      *,
+      categories:service_categories(
+        *,
+        subcategories:service_subcategories(
+          *,
+          jobs:service_jobs(*)
+        )
+      )
+    `)
+    .order('position');
+  
+  if (error) throw error;
+  return data || [];
 }
