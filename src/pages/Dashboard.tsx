@@ -6,14 +6,16 @@ import { RevenueChart } from '@/components/dashboard/RevenueChart';
 import { TechnicianPerformanceChart } from '@/components/dashboard/TechnicianPerformanceChart';
 import { RecentWorkOrders } from '@/components/dashboard/RecentWorkOrders';
 import { WorkOrderPhaseProgress } from '@/components/dashboard/WorkOrderPhaseProgress';
-import { getDashboardStats } from '@/services/dashboard';
-import { DashboardStats } from '@/types/dashboard';
+import { getDashboardStats, getPhaseProgress } from '@/services/dashboard';
+import { DashboardStats, PhaseProgressItem } from '@/types/dashboard';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Database } from 'lucide-react';
 
 export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [phaseProgressData, setPhaseProgressData] = useState<PhaseProgressItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [phaseProgressLoading, setPhaseProgressLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -31,7 +33,20 @@ export default function Dashboard() {
       }
     };
 
+    const fetchPhaseProgress = async () => {
+      try {
+        setPhaseProgressLoading(true);
+        const phaseData = await getPhaseProgress();
+        setPhaseProgressData(phaseData);
+      } catch (err) {
+        console.error("Error fetching phase progress:", err);
+      } finally {
+        setPhaseProgressLoading(false);
+      }
+    };
+
     fetchDashboardStats();
+    fetchPhaseProgress();
   }, []);
 
   return (
@@ -68,7 +83,10 @@ export default function Dashboard() {
 
       <div className="grid gap-6 md:grid-cols-2">
         <RecentWorkOrders />
-        <WorkOrderPhaseProgress />
+        <WorkOrderPhaseProgress 
+          data={phaseProgressData}
+          isLoading={phaseProgressLoading}
+        />
       </div>
 
       {error && (
