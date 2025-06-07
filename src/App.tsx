@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ErrorBoundary } from '@/components/error/ErrorBoundary';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import Layout from '@/components/layout/Layout';
@@ -28,7 +28,11 @@ import Settings from '@/pages/Settings';
 
 // Developer pages
 import Developer from '@/pages/Developer';
-import ServiceManagement from '@/pages/developer/ServiceManagement';
+import { ServiceManagementLayout } from '@/pages/developer/service-management/ServiceManagementLayout';
+import { ServiceOverviewPage } from '@/pages/developer/service-management/ServiceOverviewPage';
+import { ServiceTreeViewPage } from '@/pages/developer/service-management/ServiceTreeViewPage';
+import { ServiceExcelViewPage } from '@/pages/developer/service-management/ServiceExcelViewPage';
+import { ServiceImportPage } from '@/pages/developer/service-management/ServiceImportPage';
 import OrganizationManagement from '@/pages/developer/OrganizationManagement';
 import ShoppingControls from '@/pages/developer/ShoppingControls';
 import AnalyticsDashboard from '@/pages/developer/AnalyticsDashboard';
@@ -78,7 +82,13 @@ function App() {
             
             {/* Developer portal */}
             <Route path="developer" element={<Developer />} />
-            <Route path="developer/service-management" element={<ServiceManagement />} />
+            <Route path="developer/service-management" element={<ServiceManagementLayout />}>
+              <Route index element={<Navigate to="overview" replace />} />
+              <Route path="overview" element={<ServiceOverviewPage />} />
+              <Route path="tree" element={<ServiceTreeViewPage />} />
+              <Route path="excel" element={<ServiceExcelViewPage />} />
+              <Route path="import" element={<ServiceImportPage />} />
+            </Route>
             <Route path="developer/organization" element={<OrganizationManagement />} />
             <Route path="developer/shopping" element={<ShoppingControls />} />
             <Route path="developer/analytics" element={<AnalyticsDashboard />} />
