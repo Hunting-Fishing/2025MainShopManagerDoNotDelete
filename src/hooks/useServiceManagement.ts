@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useServiceSectors } from '@/hooks/useServiceCategories';
+import { useFileBasedServiceImport } from '@/hooks/useFileBasedServiceImport';
 import { 
   importServicesFromStorage, 
   clearAllServiceData,
@@ -21,6 +22,7 @@ export function useServiceManagement() {
   
   const { sectors, refetch } = useServiceSectors();
   const { toast } = useToast();
+  const { importFromFiles } = useFileBasedServiceImport();
 
   const handleServiceImport = async () => {
     setIsImporting(true);
@@ -59,6 +61,62 @@ export function useServiceManagement() {
       console.error('Service import failed:', error);
       
       const errorMessage = error instanceof Error ? error.message : 'Import failed';
+      
+      setImportProgress({
+        stage: 'error',
+        message: errorMessage,
+        progress: 0,
+        completed: false,
+        error: errorMessage
+      });
+      
+      toast({
+        title: "Import Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const importFromStorage = async (files: File[]) => {
+    if (files.length === 0) return;
+
+    setIsImporting(true);
+    setImportProgress({
+      stage: 'starting',
+      message: 'Processing uploaded files...',
+      progress: 0,
+      completed: false,
+      error: null
+    });
+
+    try {
+      await importFromFiles(files, setImportProgress);
+      
+      setImportProgress({
+        stage: 'complete',
+        message: 'File import completed successfully!',
+        progress: 100,
+        completed: true,
+        error: null
+      });
+
+      setTimeout(async () => {
+        await refetch();
+      }, 1000);
+
+      toast({
+        title: "Import Completed Successfully",
+        description: `Processed ${files.length} file(s) and saved to database.`,
+        variant: "default",
+      });
+
+    } catch (error) {
+      console.error('File import failed:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'File import failed';
       
       setImportProgress({
         stage: 'error',
@@ -166,6 +224,7 @@ export function useServiceManagement() {
     isClearing,
     importProgress,
     handleServiceImport,
+    importFromStorage,
     handleClearDatabase,
     handleCancel,
     handleRefreshData
