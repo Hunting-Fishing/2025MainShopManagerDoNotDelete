@@ -36,10 +36,7 @@ export function FolderBasedImportManager() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <FreshServiceImport 
-              onImport={handleServiceImport} 
-              disabled={isImporting} 
-            />
+            <FreshServiceImport />
             
             <ServiceImportProgress 
               isImporting={isImporting}

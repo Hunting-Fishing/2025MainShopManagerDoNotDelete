@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,8 +13,8 @@ import { Filter, X, RotateCcw } from 'lucide-react';
 
 interface ServiceAdvancedFiltersProps {
   categories: ServiceMainCategory[];
-  onApplyFilters: (filters: any) => void;
-  onClearFilters: () => void;
+  onApplyFilters?: (filters: any) => void;
+  onClearFilters?: () => void;
 }
 
 export function ServiceAdvancedFilters({
@@ -35,7 +36,7 @@ export function ServiceAdvancedFilters({
       hasEstimatedTime,
       hasPrice
     };
-    onApplyFilters(filters);
+    onApplyFilters?.(filters);
   };
 
   return (

@@ -1,337 +1,236 @@
-import React, { useState, useMemo } from 'react';
+
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ServiceMainCategory, ServiceJob } from '@/types/service';
-import { toast } from 'sonner';
-import { Copy, AlertTriangle, ChevronDown, Merge, Eye } from 'lucide-react';
+import { Copy, AlertTriangle, ChevronDown, Merge, Eye, CheckCircle, Trash2 } from 'lucide-react';
 
 interface ServiceDuplicatesManagerProps {
   categories: ServiceMainCategory[];
-  onRefresh: () => void;
+  onResolveDuplicates?: (duplicates: ServiceJob[], action: 'merge' | 'delete' | 'rename') => void;
 }
 
 interface DuplicateGroup {
-  id: string;
   name: string;
-  jobs: ServiceJob[];
-  confidence: number;
-  type: 'exact' | 'similar' | 'potential';
+  services: ServiceJob[];
+  categories: string[];
 }
 
-export const ServiceDuplicatesManager: React.FC<ServiceDuplicatesManagerProps> = ({
+export function ServiceDuplicatesManager({
   categories,
-  onRefresh
-}) => {
-  const [duplicates, setDuplicates] = useState<DuplicateGroup[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedDuplicates, setSelectedDuplicates] = useState<Set<string>>(new Set());
+  onResolveDuplicates
+}: ServiceDuplicatesManagerProps) {
+  const [activeTab, setActiveTab] = useState('overview');
+  const [selectedDuplicates, setSelectedDuplicates] = useState<string[]>([]);
+  const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
 
   useEffect(() => {
-    findDuplicates();
+    // Auto-expand first few groups on load
+    if (duplicateGroups.length > 0) {
+      setExpandedGroups(duplicateGroups.slice(0, 3).map(group => group.name));
+    }
   }, [categories]);
 
-  const findDuplicates = () => {
-    setLoading(true);
-    
-    // Get all jobs with their full context
-    const allJobs: (ServiceJob & { categoryName: string; subcategoryName: string })[] = [];
-    
+  // Find duplicate services by name
+  const duplicateGroups = useMemo<DuplicateGroup[]>(() => {
+    const serviceMap = new Map<string, { services: ServiceJob[], categories: string[] }>();
+
     categories.forEach(category => {
       category.subcategories.forEach(subcategory => {
-        subcategory.jobs.forEach(job => {
-          allJobs.push({
-            ...job,
-            categoryName: category.name,
-            subcategoryName: subcategory.name
-          });
+        subcategory.jobs.forEach(service => {
+          const key = service.name.toLowerCase().trim();
+          if (!serviceMap.has(key)) {
+            serviceMap.set(key, { services: [], categories: [] });
+          }
+          serviceMap.get(key)!.services.push(service);
+          if (!serviceMap.get(key)!.categories.includes(category.name)) {
+            serviceMap.get(key)!.categories.push(category.name);
+          }
         });
       });
     });
 
-    const duplicateGroups: DuplicateGroup[] = [];
-    const processed = new Set<string>();
+    return Array.from(serviceMap.entries())
+      .filter(([_, group]) => group.services.length > 1)
+      .map(([name, group]) => ({
+        name,
+        services: group.services,
+        categories: group.categories
+      }))
+      .sort((a, b) => b.services.length - a.services.length);
+  }, [categories]);
 
-    // Find exact name matches
-    allJobs.forEach(job => {
-      if (processed.has(job.id)) return;
+  const totalDuplicates = duplicateGroups.reduce((total, group) => total + group.services.length - 1, 0);
+  const duplicatePercentage = categories.length > 0 ? 
+    (totalDuplicates / categories.reduce((total, cat) => 
+      total + cat.subcategories.reduce((subTotal, sub) => 
+        subTotal + sub.jobs.length, 0), 0)) * 100 : 0;
 
-      const exactMatches = allJobs.filter(other => 
-        other.id !== job.id && 
-        !processed.has(other.id) &&
-        other.name.toLowerCase().trim() === job.name.toLowerCase().trim()
-      );
-
-      if (exactMatches.length > 0) {
-        const group: DuplicateGroup = {
-          id: `exact-${job.id}`,
-          name: job.name,
-          jobs: [job, ...exactMatches],
-          confidence: 100,
-          type: 'exact'
-        };
-        
-        duplicateGroups.push(group);
-        processed.add(job.id);
-        exactMatches.forEach(match => processed.add(match.id));
-      }
-    });
-
-    // Find similar name matches (using simple similarity)
-    allJobs.forEach(job => {
-      if (processed.has(job.id)) return;
-
-      const similarMatches = allJobs.filter(other => {
-        if (other.id === job.id || processed.has(other.id)) return false;
-        
-        const similarity = calculateSimilarity(job.name, other.name);
-        return similarity > 0.8; // 80% similarity threshold
-      });
-
-      if (similarMatches.length > 0) {
-        const group: DuplicateGroup = {
-          id: `similar-${job.id}`,
-          name: job.name,
-          jobs: [job, ...similarMatches],
-          confidence: 85,
-          type: 'similar'
-        };
-        
-        duplicateGroups.push(group);
-        processed.add(job.id);
-        similarMatches.forEach(match => processed.add(match.id));
-      }
-    });
-
-    setDuplicates(duplicateGroups);
-    setLoading(false);
-  };
-
-  const calculateSimilarity = (str1: string, str2: string): number => {
-    const s1 = str1.toLowerCase().trim();
-    const s2 = str2.toLowerCase().trim();
-    
-    if (s1 === s2) return 1;
-    
-    // Simple word-based similarity
-    const words1 = s1.split(/\s+/);
-    const words2 = s2.split(/\s+/);
-    
-    const commonWords = words1.filter(word => words2.includes(word));
-    const totalWords = new Set([...words1, ...words2]).size;
-    
-    return commonWords.length / totalWords;
-  };
-
-  const handleSelectDuplicate = (groupId: string) => {
-    const newSelected = new Set(selectedDuplicates);
-    if (newSelected.has(groupId)) {
-      newSelected.delete(groupId);
+  const toggleGroup = (groupName: string) => {
+    if (expandedGroups.includes(groupName)) {
+      setExpandedGroups(expandedGroups.filter(name => name !== groupName));
     } else {
-      newSelected.add(groupId);
-    }
-    setSelectedDuplicates(newSelected);
-  };
-
-  const handleMergeSelected = async () => {
-    if (selectedDuplicates.size === 0) {
-      toast.error('Please select duplicate groups to merge');
-      return;
-    }
-
-    try {
-      // This would implement the actual merge logic
-      toast.success(`Merged ${selectedDuplicates.size} duplicate groups`);
-      setSelectedDuplicates(new Set());
-      onRefresh();
-    } catch (error) {
-      toast.error('Failed to merge duplicates');
+      setExpandedGroups([...expandedGroups, groupName]);
     }
   };
 
-  const handleDeleteSelected = async () => {
-    if (selectedDuplicates.size === 0) {
-      toast.error('Please select duplicate groups to delete');
-      return;
-    }
-
-    try {
-      // This would implement the actual delete logic
-      toast.success(`Deleted ${selectedDuplicates.size} duplicate groups`);
-      setSelectedDuplicates(new Set());
-      onRefresh();
-    } catch (error) {
-      toast.error('Failed to delete duplicates');
+  const handleSelectDuplicate = (serviceId: string) => {
+    if (selectedDuplicates.includes(serviceId)) {
+      setSelectedDuplicates(selectedDuplicates.filter(id => id !== serviceId));
+    } else {
+      setSelectedDuplicates([...selectedDuplicates, serviceId]);
     }
   };
 
-  const exactDuplicates = duplicates.filter(d => d.type === 'exact');
-  const similarDuplicates = duplicates.filter(d => d.type === 'similar');
-  const totalDuplicateJobs = duplicates.reduce((sum, group) => sum + group.jobs.length - 1, 0);
-
-  if (loading) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center">
-            <div className="animate-spin h-8 w-8 border-b-2 border-blue-600 rounded-full mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Analyzing service duplicates...</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const handleResolveSelected = (action: 'merge' | 'delete' | 'rename') => {
+    const selectedServices = duplicateGroups
+      .flatMap(group => group.services)
+      .filter(service => selectedDuplicates.includes(service.id));
+    
+    onResolveDuplicates?.(selectedServices, action);
+    setSelectedDuplicates([]);
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Summary */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">Duplicate Groups</p>
-                <p className="text-2xl font-bold">{duplicates.length}</p>
-              </div>
-              <Copy className="h-8 w-8 text-orange-500" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">Exact Matches</p>
-                <p className="text-2xl font-bold">{exactDuplicates.length}</p>
-              </div>
-              <AlertTriangle className="h-8 w-8 text-red-500" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">Potential Savings</p>
-                <p className="text-2xl font-bold">{totalDuplicateJobs}</p>
-              </div>
-              <CheckCircle className="h-8 w-8 text-green-500" />
-            </div>
-          </CardContent>
-        </Card>
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-medium flex items-center gap-2">
+            <Copy className="h-5 w-5" />
+            Duplicate Services Manager
+          </h3>
+          <p className="text-sm text-gray-500">Identify and resolve duplicate services</p>
+        </div>
+        <Badge variant={duplicateGroups.length > 0 ? "destructive" : "secondary"}>
+          {duplicateGroups.length} duplicate groups
+        </Badge>
       </div>
 
-      {/* Action Buttons */}
-      {selectedDuplicates.size > 0 && (
-        <div className="flex gap-2">
-          <Button onClick={handleMergeSelected} className="flex items-center gap-2">
-            <Merge className="h-4 w-4" />
-            Merge Selected ({selectedDuplicates.size})
-          </Button>
-          <Button onClick={handleDeleteSelected} variant="destructive" className="flex items-center gap-2">
-            <Trash2 className="h-4 w-4" />
-            Delete Selected
-          </Button>
-        </div>
+      {/* Summary */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Duplicate Summary</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-red-600">{duplicateGroups.length}</div>
+              <div className="text-sm text-gray-500">Duplicate Groups</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-orange-600">{totalDuplicates}</div>
+              <div className="text-sm text-gray-500">Extra Services</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-yellow-600">{duplicatePercentage.toFixed(1)}%</div>
+              <div className="text-sm text-gray-500">Duplication Rate</div>
+            </div>
+          </div>
+
+          {duplicateGroups.length > 0 && (
+            <div className="mt-4">
+              <Progress value={duplicatePercentage} className="h-2" />
+              <p className="text-xs text-gray-500 mt-1">
+                Duplicate services identified across your service catalog
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Actions */}
+      {selectedDuplicates.length > 0 && (
+        <Card className="border-orange-200">
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium">{selectedDuplicates.length} services selected</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="outline" onClick={() => handleResolveSelected('merge')}>
+                  <Merge className="h-4 w-4 mr-1" />
+                  Merge
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => handleResolveSelected('delete')}>
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Delete
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
-      {duplicates.length === 0 ? (
+      {/* Main Content */}
+      {duplicateGroups.length === 0 ? (
         <Alert>
           <CheckCircle className="h-4 w-4" />
           <AlertDescription>
-            No duplicates found! Your service hierarchy is clean.
+            No duplicate services found. Your service catalog is clean!
           </AlertDescription>
         </Alert>
       ) : (
-        <Tabs defaultValue="exact" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
-            <TabsTrigger value="exact">Exact Duplicates ({exactDuplicates.length})</TabsTrigger>
-            <TabsTrigger value="similar">Similar Names ({similarDuplicates.length})</TabsTrigger>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="detailed">Detailed View</TabsTrigger>
           </TabsList>
-          
-          <TabsContent value="exact" className="space-y-4">
-            {exactDuplicates.map(group => (
-              <Card key={group.id} className={selectedDuplicates.has(group.id) ? 'ring-2 ring-blue-500' : ''}>
-                <CardHeader className="pb-3">
+          <TabsContent value="overview" className="space-y-3">
+            {duplicateGroups.slice(0, 5).map((group) => (
+              <Card key={group.name}>
+                <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={selectedDuplicates.has(group.id)}
-                        onChange={() => handleSelectDuplicate(group.id)}
-                        className="rounded"
-                      />
-                      {group.name}
-                    </CardTitle>
-                    <Badge variant="destructive">
-                      {group.confidence}% Match
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleGroup(group.name)}
+                        className="h-6 w-6 p-0"
+                      >
+                        <ChevronDown className={`h-4 w-4 transition-transform ${
+                          expandedGroups.includes(group.name) ? 'rotate-180' : ''
+                        }`} />
+                      </Button>
+                      <CardTitle className="text-sm">{group.name}</CardTitle>
+                    </div>
+                    <Badge variant="destructive">{group.services.length} duplicates</Badge>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {group.jobs.map(job => (
-                      <div key={job.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                        <div>
-                          <p className="font-medium">{job.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {(job as any).categoryName} → {(job as any).subcategoryName}
-                          </p>
+                
+                {expandedGroups.includes(group.name) && (
+                  <CardContent className="pt-0">
+                    <div className="space-y-2">
+                      {group.services.map((service) => (
+                        <div key={service.id} className="flex items-center justify-between p-2 border rounded">
+                          <div className="flex-1">
+                            <span className="text-sm font-medium">{service.name}</span>
+                            {service.description && (
+                              <p className="text-xs text-gray-500">{service.description}</p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {service.price && (
+                              <Badge variant="outline" className="text-xs">${service.price}</Badge>
+                            )}
+                            <input
+                              type="checkbox"
+                              checked={selectedDuplicates.includes(service.id)}
+                              onChange={() => handleSelectDuplicate(service.id)}
+                              className="rounded border-gray-300"
+                            />
+                          </div>
                         </div>
-                        <div className="text-sm">
-                          {job.price && <span className="text-green-600">${job.price}</span>}
-                          {job.estimatedTime && <span className="ml-2 text-blue-600">{job.estimatedTime}m</span>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </TabsContent>
-          
-          <TabsContent value="similar" className="space-y-4">
-            {similarDuplicates.map(group => (
-              <Card key={group.id} className={selectedDuplicates.has(group.id) ? 'ring-2 ring-blue-500' : ''}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={selectedDuplicates.has(group.id)}
-                        onChange={() => handleSelectDuplicate(group.id)}
-                        className="rounded"
-                      />
-                      Similar to: {group.name}
-                    </CardTitle>
-                    <Badge variant="secondary">
-                      {group.confidence}% Similar
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {group.jobs.map(job => (
-                      <div key={job.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                        <div>
-                          <p className="font-medium">{job.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {(job as any).categoryName} → {(job as any).subcategoryName}
-                          </p>
-                        </div>
-                        <div className="text-sm">
-                          {job.price && <span className="text-green-600">${job.price}</span>}
-                          {job.estimatedTime && <span className="ml-2 text-blue-600">{job.estimatedTime}m</span>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
+                      ))}
+                    </div>
+                  </CardContent>
+                )}
               </Card>
             ))}
           </TabsContent>
@@ -339,4 +238,4 @@ export const ServiceDuplicatesManager: React.FC<ServiceDuplicatesManagerProps> =
       )}
     </div>
   );
-};
+}

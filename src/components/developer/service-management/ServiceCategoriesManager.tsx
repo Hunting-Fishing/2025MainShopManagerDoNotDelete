@@ -1,289 +1,177 @@
+
 import React, { useState } from 'react';
 import { ServiceMainCategory } from '@/types/service';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { useServiceFiltering } from '@/hooks/useServiceFiltering';
-import { ServiceAdvancedFilters } from './ServiceAdvancedFilters';
-import { toast } from 'sonner';
+import { Input } from '@/components/ui/input';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Plus, Edit, Trash2, ChevronDown, ChevronRight, RefreshCw, AlertCircle, Eye, EyeOff, Search, MoreVertical } from 'lucide-react';
 
 interface ServiceCategoriesManagerProps {
   categories: ServiceMainCategory[];
-  isLoading: boolean;
-  onRefresh: () => void;
+  onCategoryCreate?: (category: Omit<ServiceMainCategory, 'id'>) => void;
+  onCategoryUpdate?: (category: ServiceMainCategory) => void;
+  onCategoryDelete?: (categoryId: string) => void;
+  onRefresh?: () => void;
 }
 
-const ServiceCategoriesManager: React.FC<ServiceCategoriesManagerProps> = ({
+export function ServiceCategoriesManager({
   categories,
-  isLoading,
+  onCategoryCreate,
+  onCategoryUpdate,
+  onCategoryDelete,
   onRefresh
-}) => {
+}: ServiceCategoriesManagerProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [showFilters, setShowFilters] = useState(false);
-  
-  const {
-    filters,
-    filteredJobs,
-    filterStats,
-    updateFilters,
-    resetFilters
-  } = useServiceFiltering(categories);
+  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+  const [showDetails, setShowDetails] = useState(false);
 
-  // Filter categories based on search
   const filteredCategories = categories.filter(category =>
-    category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    category.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    category.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleCategoryAction = (action: string, categoryId: string) => {
-    switch (action) {
-      case 'edit':
-        toast.info(`Edit category ${categoryId} - Feature coming soon`);
-        break;
-      case 'delete':
-        toast.info(`Delete category ${categoryId} - Feature coming soon`);
-        break;
-      case 'duplicate':
-        toast.info(`Duplicate category ${categoryId} - Feature coming soon`);
-        break;
-      default:
-        break;
+  const toggleCategory = (categoryId: string) => {
+    if (expandedCategories.includes(categoryId)) {
+      setExpandedCategories(expandedCategories.filter(id => id !== categoryId));
+    } else {
+      setExpandedCategories([...expandedCategories, categoryId]);
     }
   };
 
-  const handleAddCategory = () => {
-    toast.info('Add new category - Feature coming soon');
-  };
-
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-center py-12">
-          <RefreshCw className="h-6 w-6 animate-spin" />
-          <span className="ml-2">Loading service categories...</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (categories.length === 0) {
-    return (
-      <div className="space-y-6">
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            No service categories found. Start by adding your first category.
-          </AlertDescription>
-        </Alert>
-        <Button onClick={handleAddCategory} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Add First Category
-        </Button>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      {/* Header and Controls */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-medium">Service Categories</h3>
-          <p className="text-sm text-gray-600">
-            Manage your service hierarchy and organization
-          </p>
+          <p className="text-sm text-gray-500">Manage your service category hierarchy</p>
         </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => setShowFilters(!showFilters)}
-            className="gap-2"
-          >
-            {showFilters ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            {showFilters ? 'Hide' : 'Show'} Filters
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={onRefresh}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
           </Button>
-          <Button onClick={handleAddCategory} className="gap-2">
-            <Plus className="h-4 w-4" />
+          <Button size="sm" onClick={() => onCategoryCreate?.({ name: 'New Category', description: '', subcategories: [] })}>
+            <Plus className="h-4 w-4 mr-2" />
             Add Category
           </Button>
         </div>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-        <Input
-          placeholder="Search categories..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
-        />
+      {/* Alerts */}
+      {categories.length === 0 && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            No service categories found. Import service data or create categories manually.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Controls */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Search className="h-4 w-4 text-gray-500" />
+            <Input
+              placeholder="Search categories..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-64"
+            />
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowDetails(!showDetails)}
+          >
+            {showDetails ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
+            {showDetails ? 'Hide Details' : 'Show Details'}
+          </Button>
+        </div>
+        <Badge variant="secondary">{filteredCategories.length} categories</Badge>
       </div>
 
-      {/* Advanced Filters */}
-      {showFilters && (
-        <ServiceAdvancedFilters
-          filters={filters}
-          onFiltersChange={updateFilters}
-          categories={categories}
-          onReset={resetFilters}
-        />
-      )}
-
-      {/* Filter Stats */}
-      {showFilters && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold">{filterStats.filteredJobs}</div>
-              <div className="text-sm text-gray-600">Filtered Jobs</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold">{filterStats.totalJobs}</div>
-              <div className="text-sm text-gray-600">Total Jobs</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold">{filterStats.jobsWithPrice}</div>
-              <div className="text-sm text-gray-600">With Prices</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold">{filterStats.categoriesWithJobs}</div>
-              <div className="text-sm text-gray-600">Active Categories</div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
       {/* Categories List */}
-      <div className="grid gap-4">
+      <div className="space-y-2">
         {filteredCategories.map((category) => (
-          <Card key={category.id} className="hover:shadow-md transition-shadow">
-            <CardHeader>
+          <Card key={category.id}>
+            <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-lg">{category.name}</CardTitle>
-                  {category.description && (
-                    <p className="text-sm text-gray-600 mt-1">{category.description}</p>
-                  )}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => toggleCategory(category.id)}
+                    className="h-6 w-6 p-0"
+                  >
+                    {expandedCategories.includes(category.id) ? (
+                      <ChevronDown className="h-4 w-4" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <div>
+                    <CardTitle className="text-base">{category.name}</CardTitle>
+                    {showDetails && category.description && (
+                      <p className="text-sm text-gray-500">{category.description}</p>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline">
-                    {category.subcategories.length} subcategories
-                  </Badge>
-                  <Badge variant="secondary">
-                    {category.subcategories.reduce((total, sub) => total + sub.jobs.length, 0)} jobs
-                  </Badge>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => handleCategoryAction('edit', category.id)}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleCategoryAction('duplicate', category.id)}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Duplicate
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem 
-                        onClick={() => handleCategoryAction('delete', category.id)}
-                        className="text-red-600"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <Badge variant="outline">{category.subcategories.length} subcategories</Badge>
+                  <Button variant="ghost" size="sm">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {category.subcategories.map((subcategory) => (
-                  <div key={subcategory.id} className="border rounded-lg p-3 bg-gray-50">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium">{subcategory.name}</h4>
-                      <Badge variant="outline" className="text-xs">
-                        {subcategory.jobs.length} jobs
-                      </Badge>
-                    </div>
-                    {subcategory.description && (
-                      <p className="text-sm text-gray-600 mb-2">{subcategory.description}</p>
-                    )}
-                    {subcategory.jobs.length > 0 && (
-                      <div className="space-y-1">
-                        {subcategory.jobs.slice(0, 3).map((job) => (
-                          <div key={job.id} className="flex items-center justify-between text-sm">
-                            <span>{job.name}</span>
-                            <div className="flex items-center gap-2">
-                              {job.price && (
-                                <Badge variant="secondary" className="text-xs">
-                                  ${job.price}
-                                </Badge>
-                              )}
-                              {job.estimatedTime && (
-                                <Badge variant="outline" className="text-xs">
-                                  {job.estimatedTime}min
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                        {subcategory.jobs.length > 3 && (
-                          <div className="text-xs text-gray-500">
-                            +{subcategory.jobs.length - 3} more jobs
-                          </div>
-                        )}
+
+            {expandedCategories.includes(category.id) && (
+              <CardContent className="pt-0">
+                <div className="space-y-2">
+                  {category.subcategories.length === 0 ? (
+                    <p className="text-sm text-gray-500 italic">No subcategories</p>
+                  ) : (
+                    category.subcategories.map((subcategory) => (
+                      <div key={subcategory.id} className="flex items-center justify-between p-2 border rounded">
+                        <div>
+                          <span className="font-medium text-sm">{subcategory.name}</span>
+                          {showDetails && subcategory.description && (
+                            <p className="text-xs text-gray-500">{subcategory.description}</p>
+                          )}
+                        </div>
+                        <Badge variant="secondary" className="text-xs">
+                          {subcategory.jobs.length} services
+                        </Badge>
                       </div>
-                    )}
-                  </div>
-                ))}
-                {category.subcategories.length === 0 && (
-                  <Alert>
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>
-                      This category has no subcategories. Add some to organize your services.
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </div>
-            </CardContent>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            )}
           </Card>
         ))}
       </div>
 
+      {/* Empty State */}
       {filteredCategories.length === 0 && searchQuery && (
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            No categories found matching "{searchQuery}". Try adjusting your search terms.
+            No categories found matching "{searchQuery}". Try adjusting your search.
           </AlertDescription>
         </Alert>
       )}
+
+      {/* Summary */}
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Total: {categories.length} categories with {categories.reduce((total, cat) => total + cat.subcategories.length, 0)} subcategories
+        </AlertDescription>
+      </Alert>
     </div>
   );
-};
-
-export default ServiceCategoriesManager;
+}
