@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { processExcelFile } from '@/lib/services/excelProcessor';
+import { supabase } from '@/integrations/supabase/client';
 import { ImportProgress } from '@/types/service';
 
 export function useFileBasedServiceImport() {
@@ -15,6 +16,116 @@ export function useFileBasedServiceImport() {
   });
   
   const { toast } = useToast();
+
+  const saveProcessedDataToDatabase = async (processedData: any, fileName: string) => {
+    console.log('Saving processed data to database for file:', fileName);
+    
+    // Create or get the sector (use filename without extension as sector name)
+    const sectorName = fileName.replace(/\.[^/.]+$/, "").replace(/[-_]/g, ' ');
+    
+    const { data: sector, error: sectorError } = await supabase
+      .from('service_sectors')
+      .upsert({ 
+        name: sectorName,
+        description: `Services from ${fileName}`,
+        position: 1 
+      }, { 
+        onConflict: 'name',
+        ignoreDuplicates: false 
+      })
+      .select()
+      .single();
+
+    if (sectorError) {
+      console.error('Error creating/updating sector:', sectorError);
+      throw new Error(`Failed to save sector: ${sectorError.message}`);
+    }
+
+    let totalServicesCount = 0;
+    let categoriesCount = 0;
+    let subcategoriesCount = 0;
+
+    // Process each category from the Excel file
+    for (const category of processedData.categories) {
+      categoriesCount++;
+      
+      // Create or get the category
+      const { data: categoryData, error: categoryError } = await supabase
+        .from('service_categories')
+        .upsert({ 
+          name: category.name,
+          description: `Category from ${fileName}`,
+          sector_id: sector.id,
+          position: categoriesCount 
+        }, { 
+          onConflict: 'name,sector_id',
+          ignoreDuplicates: false 
+        })
+        .select()
+        .single();
+
+      if (categoryError) {
+        console.error('Error creating/updating category:', categoryError);
+        throw new Error(`Failed to save category ${category.name}: ${categoryError.message}`);
+      }
+
+      // Process subcategories
+      for (const subcategory of category.subcategories) {
+        subcategoriesCount++;
+        
+        // Create or get the subcategory
+        const { data: subcategoryData, error: subcategoryError } = await supabase
+          .from('service_subcategories')
+          .upsert({ 
+            name: subcategory.name,
+            description: `Subcategory from ${fileName}`,
+            category_id: categoryData.id 
+          }, { 
+            onConflict: 'name,category_id',
+            ignoreDuplicates: false 
+          })
+          .select()
+          .single();
+
+        if (subcategoryError) {
+          console.error('Error creating/updating subcategory:', subcategoryError);
+          throw new Error(`Failed to save subcategory ${subcategory.name}: ${subcategoryError.message}`);
+        }
+
+        // Process services in this subcategory
+        for (const service of subcategory.services) {
+          if (service.name && service.name.trim()) {
+            totalServicesCount++;
+            
+            const { error: serviceError } = await supabase
+              .from('service_jobs')
+              .upsert({ 
+                name: service.name,
+                description: service.description || `Service from ${fileName}`,
+                subcategory_id: subcategoryData.id,
+                estimated_time: service.estimatedTime || null,
+                price: service.price || null 
+              }, { 
+                onConflict: 'name,subcategory_id',
+                ignoreDuplicates: false 
+              });
+
+            if (serviceError) {
+              console.error('Error creating/updating service:', serviceError);
+              throw new Error(`Failed to save service ${service.name}: ${serviceError.message}`);
+            }
+          }
+        }
+      }
+    }
+
+    return {
+      sectorsProcessed: 1,
+      categoriesProcessed: categoriesCount,
+      subcategoriesProcessed: subcategoriesCount,
+      jobsProcessed: totalServicesCount
+    };
+  };
 
   const importSelectedFiles = async (files: File[]) => {
     if (!files || files.length === 0) {
@@ -46,26 +157,32 @@ export function useFileBasedServiceImport() {
         setImportProgress({
           stage: 'processing',
           message: `Processing ${file.name}...`,
-          progress: (processedFiles / totalFiles) * 90,
+          progress: (processedFiles / totalFiles) * 70, // 70% for processing
           completed: false,
           error: null
         });
 
         try {
+          // Process the Excel file
           const processedData = await processExcelFile(file);
           
-          // Count processed data
-          totalCategories += processedData.categories.length;
-          totalSubcategories += processedData.categories.reduce((acc, cat) => acc + cat.subcategories.length, 0);
-          totalServices += processedData.categories.reduce((acc, cat) => 
-            acc + cat.subcategories.reduce((subAcc, sub) => subAcc + sub.services.length, 0), 0);
-
-          console.log(`Processed ${file.name}:`, {
-            categories: processedData.categories.length,
-            subcategories: processedData.categories.reduce((acc, cat) => acc + cat.subcategories.length, 0),
-            services: processedData.categories.reduce((acc, cat) => 
-              acc + cat.subcategories.reduce((subAcc, sub) => subAcc + sub.services.length, 0), 0)
+          setImportProgress({
+            stage: 'saving',
+            message: `Saving ${file.name} to database...`,
+            progress: (processedFiles / totalFiles) * 70 + 15, // 15% for saving
+            completed: false,
+            error: null
           });
+
+          // Save processed data to database
+          const saveResults = await saveProcessedDataToDatabase(processedData, file.name);
+          
+          // Count processed data
+          totalCategories += saveResults.categoriesProcessed;
+          totalSubcategories += saveResults.subcategoriesProcessed;
+          totalServices += saveResults.jobsProcessed;
+
+          console.log(`Successfully saved ${file.name}:`, saveResults);
 
           processedFiles++;
         } catch (fileError) {
@@ -80,16 +197,16 @@ export function useFileBasedServiceImport() {
 
       setImportProgress({
         stage: 'complete',
-        message: `Successfully processed ${processedFiles} files with ${totalServices} services across ${totalCategories} categories!`,
+        message: `Successfully imported ${processedFiles} files with ${totalServices} services across ${totalCategories} categories!`,
         progress: 100,
         completed: true,
         error: null,
         details: {
-          sectorsProcessed: 1,
+          sectorsProcessed: processedFiles,
           categoriesProcessed: totalCategories,
           subcategoriesProcessed: totalSubcategories,
           jobsProcessed: totalServices,
-          totalSectors: 1,
+          totalSectors: processedFiles,
           totalCategories,
           totalSubcategories,
           totalJobs: totalServices
@@ -98,7 +215,7 @@ export function useFileBasedServiceImport() {
 
       toast({
         title: "Import Completed",
-        description: `Successfully processed ${processedFiles} files with ${totalServices} services`,
+        description: `Successfully imported ${processedFiles} files with ${totalServices} services`,
         variant: "default",
       });
 

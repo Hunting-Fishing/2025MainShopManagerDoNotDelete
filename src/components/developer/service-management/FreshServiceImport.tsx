@@ -1,37 +1,56 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Upload, RefreshCw, FolderOpen, Database, FileText } from 'lucide-react';
 import { ServiceImportProgress } from './ServiceImportProgress';
 import { FileBasedImportSelector } from './FileBasedImportSelector';
 import { LiveBucketViewer } from './LiveBucketViewer';
 import { useServiceManagement } from '@/hooks/useServiceManagement';
 import { useFileBasedServiceImport } from '@/hooks/useFileBasedServiceImport';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 
-export function FreshServiceImport() {
-  const [activeTab, setActiveTab] = useState('file-based');
-  
-  // Original folder-based import
-  const {
-    isImporting: isFolderImporting,
-    importProgress: folderProgress,
-    handleServiceImport,
-    handleRefreshData
+interface FreshServiceImportProps {
+  onImportComplete?: () => void;
+}
+
+export function FreshServiceImport({ onImportComplete }: FreshServiceImportProps) {
+  const [activeTab, setActiveTab] = useState('file-upload');
+  const { 
+    importFromStorage, 
+    isImporting: storageImporting, 
+    importProgress: storageProgress 
   } = useServiceManagement();
-
-  // New file-based import
+  
   const {
-    isImporting: isFileImporting,
+    isImporting: fileImporting,
     importProgress: fileProgress,
     importSelectedFiles,
     handleCancel: handleFileCancel
   } = useFileBasedServiceImport();
 
-  const isImporting = isFolderImporting || isFileImporting;
-  const currentProgress = activeTab === 'file-based' ? fileProgress : folderProgress;
+  const handleStorageImport = async () => {
+    try {
+      await importFromStorage();
+      if (onImportComplete) {
+        onImportComplete();
+      }
+    } catch (error) {
+      console.error('Storage import failed:', error);
+    }
+  };
+
+  const handleFileImport = async (files: File[]) => {
+    try {
+      await importSelectedFiles(files);
+      if (onImportComplete) {
+        onImportComplete();
+      }
+    } catch (error) {
+      console.error('File import failed:', error);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -41,99 +60,96 @@ export function FreshServiceImport() {
       <Card>
         <CardHeader>
           <CardTitle>Import Services from Storage</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Choose your import method below. Both methods will save services directly to the database.
+          </p>
         </CardHeader>
         <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="file-based" className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                File Selection
+              <TabsTrigger value="file-upload" className="flex items-center space-x-2">
+                <Upload className="h-4 w-4" />
+                <span>Upload Files</span>
               </TabsTrigger>
-              <TabsTrigger value="folder-based" className="flex items-center gap-2">
+              <TabsTrigger value="bucket-import" className="flex items-center space-x-2">
                 <FolderOpen className="h-4 w-4" />
-                Folder Structure
+                <span>Import from Bucket</span>
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="file-based" className="space-y-4">
+            <TabsContent value="file-upload" className="space-y-4">
               <Alert>
                 <FileText className="h-4 w-4" />
                 <AlertDescription>
                   <div className="space-y-2">
-                    <div><strong>Recommended Approach:</strong> Select individual Excel files from a single folder</div>
-                    <div><strong>Storage Path:</strong> <code>service-data/automotive/</code></div>
-                    <div className="text-xs text-muted-foreground">
-                      Each Excel file becomes a service category with unlimited subcategories and services
-                    </div>
+                    <div><strong>Direct Upload:</strong> Select Excel files from your computer</div>
+                    <div><strong>Processing:</strong> Files are processed and saved directly to the database</div>
+                    <div><strong>Structure:</strong> Each file becomes a sector, with columns as subcategories</div>
                   </div>
                 </AlertDescription>
               </Alert>
 
               <FileBasedImportSelector
-                onImportFiles={importSelectedFiles}
-                isImporting={isFileImporting}
+                onImportFiles={handleFileImport}
+                isImporting={fileImporting}
+              />
+
+              <ServiceImportProgress
+                isImporting={fileImporting}
+                progress={fileProgress.progress}
+                stage={fileProgress.stage}
+                message={fileProgress.message}
+                error={fileProgress.error}
+                completed={fileProgress.completed}
+                operation="File Import"
+                onCancel={handleFileCancel}
               />
             </TabsContent>
 
-            <TabsContent value="folder-based" className="space-y-4">
-              {/* Storage Route Information */}
+            <TabsContent value="bucket-import" className="space-y-4">
               <Alert>
                 <Database className="h-4 w-4" />
                 <AlertDescription>
                   <div className="space-y-2">
-                    <div><strong>Storage Bucket:</strong> <code>service-data</code></div>
-                    <div><strong>Expected Folder Structure:</strong></div>
-                    <div className="ml-4 space-y-1 text-sm font-mono">
-                      <div>📁 service-data/</div>
-                      <div className="ml-4">📁 {`{sector-name}/`}</div>
-                      <div className="ml-8">📄 {`{category}.xlsx`}</div>
-                      <div className="ml-8">📄 {`{category}.xlsx`}</div>
-                      <div className="ml-8">📄 ...</div>
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-2">
-                      Example: service-data/automotive/brake-services.xlsx
-                    </div>
+                    <div><strong>Bucket Import:</strong> Import all Excel files from the storage bucket</div>
+                    <div><strong>Structure:</strong> service-data/ → sectors → Excel files → categories → services</div>
+                    <div><strong>Processing:</strong> All files are processed and saved to the database</div>
                   </div>
                 </AlertDescription>
               </Alert>
 
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="space-y-4">
                 <Button
-                  onClick={handleServiceImport}
-                  disabled={isImporting}
-                  className="flex items-center gap-2"
+                  onClick={handleStorageImport}
+                  disabled={storageImporting}
+                  className="w-full"
+                  size="lg"
                 >
-                  <Upload className="h-4 w-4" />
-                  {isFolderImporting ? 'Importing...' : 'Import All Sector Folders'}
+                  {storageImporting ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Importing from Storage...
+                    </>
+                  ) : (
+                    <>
+                      <Database className="h-4 w-4 mr-2" />
+                      Import All Files from Bucket
+                    </>
+                  )}
                 </Button>
-                
-                <Button
-                  variant="outline"
-                  onClick={handleRefreshData}
-                  disabled={isImporting}
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Refresh Data
-                </Button>
-              </div>
-              
-              <div className="text-sm text-gray-600 flex items-center">
-                <FolderOpen className="h-4 w-4 mr-2" />
-                Automatically processes all Excel files in sector folders with unlimited services per subcategory
+
+                <ServiceImportProgress
+                  isImporting={storageImporting}
+                  progress={storageProgress.progress}
+                  stage={storageProgress.stage}
+                  message={storageProgress.message}
+                  error={storageProgress.error}
+                  completed={storageProgress.completed}
+                  operation="Storage Import"
+                />
               </div>
             </TabsContent>
           </Tabs>
-
-          <ServiceImportProgress
-            isImporting={isImporting}
-            progress={currentProgress.progress}
-            stage={currentProgress.stage}
-            message={currentProgress.message}
-            error={currentProgress.error}
-            completed={currentProgress.completed}
-            operation="import"
-            onCancel={activeTab === 'file-based' ? handleFileCancel : undefined}
-          />
         </CardContent>
       </Card>
     </div>

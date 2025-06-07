@@ -18,6 +18,7 @@ export function ServiceHierarchyBrowser() {
   };
 
   const handleImportComplete = () => {
+    console.log('Import completed, refreshing data...');
     // Refresh data after successful import
     refetch();
   };
@@ -94,7 +95,7 @@ export function ServiceHierarchyBrowser() {
         </TabsContent>
 
         <TabsContent value="import" className="mt-6">
-          <FreshServiceImport />
+          <FreshServiceImport onImportComplete={handleImportComplete} />
         </TabsContent>
       </Tabs>
     </div>
