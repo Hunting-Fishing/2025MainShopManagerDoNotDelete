@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useUserRole } from '@/hooks/useUserRole';
+import { cleanupAuthState } from '@/utils/authCleanup';
 
 export function HeaderActions() {
   const { isAuthenticated, userName, isLoading } = useAuthUser();
@@ -23,10 +24,24 @@ export function HeaderActions() {
 
   const handleSignOut = async () => {
     try {
-      await supabase.auth.signOut();
-      navigate('/login');
+      console.log('Initiating sign out...');
+      
+      // Clean up auth state first
+      cleanupAuthState();
+      
+      // Attempt global sign out
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        console.log('Global signout error (ignoring):', err);
+      }
+      
+      // Force page reload for clean state
+      window.location.href = '/login';
     } catch (error) {
       console.error('Error signing out:', error);
+      // Even if there's an error, redirect to login
+      window.location.href = '/login';
     }
   };
 

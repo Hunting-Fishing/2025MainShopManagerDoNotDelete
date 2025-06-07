@@ -3,6 +3,9 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { performAuthRecovery } from '@/utils/authCleanup';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -38,8 +41,30 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (!isAuthenticated) {
-    console.log('User not authenticated, redirecting to auth');
-    return <Navigate to="/auth" state={{ from: location }} replace />;
+    console.log('User not authenticated, redirecting to login');
+    
+    // Provide auth recovery option for persistent issues
+    if (location.pathname === '/auth' || location.pathname === '/login') {
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+          <Card className="w-full max-w-md">
+            <CardContent className="py-6">
+              <div className="text-center space-y-4">
+                <h2 className="text-lg font-semibold">Authentication Issue</h2>
+                <p className="text-sm text-gray-600">
+                  If you're experiencing login issues, try clearing the authentication state.
+                </p>
+                <Button onClick={performAuthRecovery} variant="outline" className="w-full">
+                  Reset Authentication
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+    
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // Check role-based access
