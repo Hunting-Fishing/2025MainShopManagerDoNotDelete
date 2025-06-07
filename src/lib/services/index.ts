@@ -5,7 +5,6 @@ export * from './serviceUtils';
 
 // Folder-based import functions
 export { 
-  processExcelFileFromStorage,
   importServicesFromStorage
 } from './folderBasedImportService';
 
