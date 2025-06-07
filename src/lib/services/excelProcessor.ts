@@ -1,7 +1,8 @@
 
-// Extracted Excel processing utilities for better organization
+// Consolidated Excel processing utilities for better organization
 import { ExcelRowData, MappedServiceData } from '@/types/service';
 import { supabase } from '@/integrations/supabase/client';
+import * as XLSX from 'xlsx';
 
 /**
  * Maps Excel data to correct service hierarchy
@@ -75,21 +76,115 @@ export function mapExcelToServiceHierarchy(fileName: string, rows: any[]): Mappe
 }
 
 /**
+ * Processes Excel file from File object (for direct uploads)
+ */
+export async function processExcelFile(file: File): Promise<MappedServiceData> {
+  try {
+    console.log(`Processing uploaded file: ${file.name}`);
+    
+    // Read file as array buffer
+    const arrayBuffer = await file.arrayBuffer();
+    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+    
+    // Get first sheet
+    const firstSheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[firstSheetName];
+    
+    // Convert to JSON
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+    
+    console.log(`Converted ${file.name} to JSON with ${jsonData.length} rows`);
+    
+    // Convert array format to object format for processing
+    if (jsonData.length > 0) {
+      const headers = jsonData[0] as any[];
+      const rows = jsonData.slice(1).map((row: any[]) => {
+        const obj: any = {};
+        headers.forEach((header, index) => {
+          if (header) {
+            obj[index] = row[index];
+          }
+        });
+        return obj;
+      });
+      
+      // Add headers as first row for mapExcelToServiceHierarchy
+      const processedRows = [
+        headers.reduce((acc: any, header, index) => {
+          acc[index] = header;
+          return acc;
+        }, {}),
+        ...rows
+      ];
+      
+      return mapExcelToServiceHierarchy(file.name, processedRows);
+    }
+    
+    return {
+      sectorName: file.name.replace(/\.xlsx?$/i, ''),
+      categories: []
+    };
+    
+  } catch (error) {
+    console.error(`Error processing Excel file ${file.name}:`, error);
+    throw new Error(`Failed to process Excel file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
  * Processes Excel file from storage
  */
 export async function processExcelFileFromStorage(fileName: string, sectorName: string): Promise<MappedServiceData> {
   try {
+    console.log(`Processing storage file: ${fileName} from sector: ${sectorName}`);
+    
     // Download file from storage
     const { data, error } = await supabase.storage
-      .from('service-imports')
+      .from('service-data')
       .download(`${sectorName}/${fileName}`);
 
     if (error) {
       throw new Error(`Failed to download file: ${error.message}`);
     }
 
-    // For now, return a basic structure
-    // In a real implementation, you'd parse the Excel file here
+    // Convert blob to array buffer
+    const arrayBuffer = await data.arrayBuffer();
+    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+    
+    // Get first sheet
+    const firstSheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[firstSheetName];
+    
+    // Convert to JSON
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+    
+    console.log(`Converted storage file ${fileName} to JSON with ${jsonData.length} rows`);
+    
+    // Convert array format to object format for processing
+    if (jsonData.length > 0) {
+      const headers = jsonData[0] as any[];
+      const rows = jsonData.slice(1).map((row: any[]) => {
+        const obj: any = {};
+        headers.forEach((header, index) => {
+          if (header) {
+            obj[index] = row[index];
+          }
+        });
+        return obj;
+      });
+      
+      // Add headers as first row for mapExcelToServiceHierarchy
+      const processedRows = [
+        headers.reduce((acc: any, header, index) => {
+          acc[index] = header;
+          return acc;
+        }, {}),
+        ...rows
+      ];
+      
+      return mapExcelToServiceHierarchy(fileName, processedRows);
+    }
+    
     return {
       sectorName,
       categories: [{
@@ -97,6 +192,7 @@ export async function processExcelFileFromStorage(fileName: string, sectorName: 
         subcategories: []
       }]
     };
+    
   } catch (error) {
     console.error('Error processing Excel file from storage:', error);
     throw error;
