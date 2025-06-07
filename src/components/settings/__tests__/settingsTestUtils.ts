@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { SettingsTabConfig } from '@/types/settingsConfig';
 import { Building2 } from 'lucide-react';
 
@@ -6,7 +7,7 @@ export const createMockSettingsTab = (overrides?: Partial<SettingsTabConfig>): S
   id: 'test-tab',
   label: 'Test Tab',
   icon: Building2,
-  component: () => <div>Test Component</div>,
+  component: () => React.createElement('div', null, 'Test Component'),
   description: 'Test description',
   ...overrides
 });
