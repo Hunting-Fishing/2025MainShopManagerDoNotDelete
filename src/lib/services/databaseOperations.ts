@@ -5,7 +5,7 @@ export async function clearAllServiceData(): Promise<void> {
   try {
     console.log('Clearing all service data from database...');
     
-    // Delete in reverse order of dependencies
+    // Delete in reverse order of dependencies to avoid foreign key constraints
     console.log('Deleting service jobs...');
     const { error: jobsError } = await supabase
       .from('service_jobs')
@@ -85,5 +85,28 @@ export async function getServiceCounts(): Promise<{
   } catch (error) {
     console.error('Error getting service counts:', error);
     throw error;
+  }
+}
+
+export async function testDatabaseConnection(): Promise<boolean> {
+  try {
+    console.log('Testing database connection...');
+    
+    // Simple test query
+    const { data, error } = await supabase
+      .from('service_sectors')
+      .select('id')
+      .limit(1);
+    
+    if (error) {
+      console.error('Database connection test failed:', error);
+      return false;
+    }
+    
+    console.log('Database connection test successful');
+    return true;
+  } catch (error) {
+    console.error('Database connection test error:', error);
+    return false;
   }
 }

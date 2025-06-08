@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { processExcelFileFromStorage } from '@/lib/services/excelProcessor';
-import { clearAllServiceData } from '@/lib/services/databaseOperations';
+import { clearAllServiceData, testDatabaseConnection } from '@/lib/services/databaseOperations';
 import type { StorageFile } from '@/types/service';
 
 export const useFileBasedServiceImport = () => {
@@ -14,6 +14,12 @@ export const useFileBasedServiceImport = () => {
     
     try {
       console.log('Starting file-based import for', files.length, 'files');
+      
+      // Test database connection first
+      const connectionOk = await testDatabaseConnection();
+      if (!connectionOk) {
+        throw new Error('Database connection failed. Please check your connection and try again.');
+      }
       
       // For now, we'll implement a basic import process
       // This will be expanded when the actual service processing is implemented
@@ -49,8 +55,15 @@ export const useFileBasedServiceImport = () => {
     try {
       console.log('Starting bucket import for', selectedData.length, 'sectors');
       
+      // Test database connection first
+      const connectionOk = await testDatabaseConnection();
+      if (!connectionOk) {
+        throw new Error('Database connection failed. Please check your connection and try again.');
+      }
+      
       let totalFiles = 0;
       let processedFiles = 0;
+      let successfulFiles = 0;
       
       // Calculate total files
       selectedData.forEach(sector => {
@@ -66,48 +79,60 @@ export const useFileBasedServiceImport = () => {
       console.log('Clearing existing service data...');
       await clearAllServiceData();
       
+      // Show progress for clearing
+      toast({
+        title: "Preparing Import",
+        description: "Cleared existing data, starting file processing...",
+        variant: "default",
+      });
+      
       // Process each sector and file
       for (const sectorData of selectedData) {
         console.log(`Processing sector: ${sectorData.sectorName}`);
         
         for (const file of sectorData.files) {
+          processedFiles++;
+          
           try {
             console.log(`Processing file: ${file.name} in sector ${sectorData.sectorName}`);
             
             // Process the Excel file from storage
-            const result = await processExcelFileFromStorage(file.path, sectorData.sectorName);
-            console.log(`Successfully processed ${file.name}:`, result);
+            const result = await processExcelFileFromStorage(file.path || file.name, sectorData.sectorName);
             
-            processedFiles++;
+            if (result.success) {
+              successfulFiles++;
+              console.log(`Successfully processed ${file.name}:`, result);
+            } else {
+              console.error(`Failed to process ${file.name}:`, result.message);
+            }
             
-            // Show progress
-            toast({
-              title: "Processing Files",
-              description: `Processed ${processedFiles}/${totalFiles} files...`,
-              variant: "default",
-            });
+            // Show progress every few files
+            if (processedFiles % 3 === 0 || processedFiles === totalFiles) {
+              toast({
+                title: "Processing Files",
+                description: `Processed ${processedFiles}/${totalFiles} files (${successfulFiles} successful)...`,
+                variant: "default",
+              });
+            }
             
           } catch (fileError) {
             console.error(`Error processing file ${file.name}:`, fileError);
             const errorMessage = fileError instanceof Error ? fileError.message : 'Unknown error';
             
-            toast({
-              title: "File Processing Error",
-              description: `Failed to process ${file.name}: ${errorMessage}`,
-              variant: "destructive",
-            });
+            // Don't show toast for individual file errors, just log them
+            console.error(`File processing error for ${file.name}: ${errorMessage}`);
           }
         }
       }
       
-      if (processedFiles > 0) {
+      if (successfulFiles > 0) {
         toast({
-          title: "Bucket Import Successful",
-          description: `Successfully imported ${processedFiles}/${totalFiles} file(s) from ${selectedData.length} sector(s) to live database.`,
+          title: "Bucket Import Completed",
+          description: `Successfully imported ${successfulFiles}/${totalFiles} file(s) from ${selectedData.length} sector(s) to live database.`,
           variant: "default",
         });
       } else {
-        throw new Error('No files were successfully processed');
+        throw new Error('No files were successfully processed. Check console for detailed error messages.');
       }
       
     } catch (error) {
