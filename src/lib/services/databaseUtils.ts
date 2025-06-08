@@ -5,28 +5,82 @@ export async function validateDatabaseStructure() {
   try {
     console.log('Validating database structure for service tables...');
     
-    // Check if all required tables exist and are accessible
-    const tables = ['service_sectors', 'service_categories', 'service_subcategories', 'service_jobs'];
     const results = [];
     
-    for (const table of tables) {
-      try {
-        const { data, error } = await supabase
-          .from(table)
-          .select('*')
-          .limit(1);
-        
-        if (error) {
-          console.error(`Error accessing table ${table}:`, error);
-          results.push({ table, accessible: false, error: error.message });
-        } else {
-          console.log(`Table ${table} is accessible`);
-          results.push({ table, accessible: true, error: null });
-        }
-      } catch (err) {
-        console.error(`Exception accessing table ${table}:`, err);
-        results.push({ table, accessible: false, error: err instanceof Error ? err.message : 'Unknown error' });
+    // Check service_sectors table
+    try {
+      const { data, error } = await supabase
+        .from('service_sectors')
+        .select('*')
+        .limit(1);
+      
+      if (error) {
+        console.error('Error accessing table service_sectors:', error);
+        results.push({ table: 'service_sectors', accessible: false, error: error.message });
+      } else {
+        console.log('Table service_sectors is accessible');
+        results.push({ table: 'service_sectors', accessible: true, error: null });
       }
+    } catch (err) {
+      console.error('Exception accessing table service_sectors:', err);
+      results.push({ table: 'service_sectors', accessible: false, error: err instanceof Error ? err.message : 'Unknown error' });
+    }
+
+    // Check service_categories table
+    try {
+      const { data, error } = await supabase
+        .from('service_categories')
+        .select('*')
+        .limit(1);
+      
+      if (error) {
+        console.error('Error accessing table service_categories:', error);
+        results.push({ table: 'service_categories', accessible: false, error: error.message });
+      } else {
+        console.log('Table service_categories is accessible');
+        results.push({ table: 'service_categories', accessible: true, error: null });
+      }
+    } catch (err) {
+      console.error('Exception accessing table service_categories:', err);
+      results.push({ table: 'service_categories', accessible: false, error: err instanceof Error ? err.message : 'Unknown error' });
+    }
+
+    // Check service_subcategories table
+    try {
+      const { data, error } = await supabase
+        .from('service_subcategories')
+        .select('*')
+        .limit(1);
+      
+      if (error) {
+        console.error('Error accessing table service_subcategories:', error);
+        results.push({ table: 'service_subcategories', accessible: false, error: error.message });
+      } else {
+        console.log('Table service_subcategories is accessible');
+        results.push({ table: 'service_subcategories', accessible: true, error: null });
+      }
+    } catch (err) {
+      console.error('Exception accessing table service_subcategories:', err);
+      results.push({ table: 'service_subcategories', accessible: false, error: err instanceof Error ? err.message : 'Unknown error' });
+    }
+
+    // Check service_jobs table
+    try {
+      const { data, error } = await supabase
+        .from('service_jobs')
+        .select('*')
+        .limit(1);
+      
+      if (error) {
+        console.error('Error accessing table service_jobs:', error);
+        results.push({ table: 'service_jobs', accessible: false, error: error.message });
+      } else {
+        console.log('Table service_jobs is accessible');
+        results.push({ table: 'service_jobs', accessible: true, error: null });
+      }
+    } catch (err) {
+      console.error('Exception accessing table service_jobs:', err);
+      results.push({ table: 'service_jobs', accessible: false, error: err instanceof Error ? err.message : 'Unknown error' });
     }
     
     return results;
