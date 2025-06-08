@@ -7,19 +7,50 @@ import { ArrowLeft, Save, AlertCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { WorkOrder } from '@/types/workOrder';
 import { getWorkOrderById, updateWorkOrder } from '@/services/workOrder';
-import { WorkOrderEditForm } from '@/components/work-orders/WorkOrderEditForm';
+import { useWorkOrderEditForm } from '@/hooks/useWorkOrderEditForm';
+import { WorkOrderEditFormContent } from '@/components/work-orders/edit/WorkOrderEditFormContent';
+import { useForm } from 'react-hook-form';
+import { supabase } from '@/integrations/supabase/client';
+
+interface Technician {
+  id: string;
+  name: string;
+  jobTitle?: string;
+}
 
 const WorkOrderEdit = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
+  const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const form = useForm({
+    defaultValues: {
+      customer: '',
+      description: '',
+      status: 'pending' as const,
+      priority: 'medium' as const,
+      technician: '',
+      location: '',
+      dueDate: '',
+      notes: '',
+      vehicleMake: '',
+      vehicleModel: '',
+      vehicleYear: '',
+      odometer: '',
+      licensePlate: '',
+      vin: '',
+      inventoryItems: []
+    }
+  });
+
   useEffect(() => {
     if (id) {
       fetchWorkOrder(id);
+      fetchTechnicians();
     }
   }, [id]);
 
@@ -30,6 +61,24 @@ const WorkOrderEdit = () => {
       const data = await getWorkOrderById(workOrderId);
       if (data) {
         setWorkOrder(data);
+        // Populate form with work order data
+        form.reset({
+          customer: data.customer || '',
+          description: data.description || '',
+          status: data.status as any || 'pending',
+          priority: data.priority as any || 'medium',
+          technician: data.technician || '',
+          location: data.location || '',
+          dueDate: data.dueDate || data.due_date || '',
+          notes: data.notes || '',
+          vehicleMake: data.vehicle_make || '',
+          vehicleModel: data.vehicle_model || '',
+          vehicleYear: data.vehicle_year || '',
+          odometer: data.vehicle_odometer || '',
+          licensePlate: data.vehicle_license_plate || '',
+          vin: data.vehicle_vin || '',
+          inventoryItems: data.inventoryItems || []
+        });
       } else {
         setError('Work order not found');
       }
@@ -41,12 +90,54 @@ const WorkOrderEdit = () => {
     }
   };
 
-  const handleSave = async (updatedWorkOrder: Partial<WorkOrder>) => {
+  const fetchTechnicians = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('team_members')
+        .select('id, first_name, last_name, job_title')
+        .eq('active', true);
+      
+      if (error) throw error;
+      
+      const formattedTechnicians = data?.map(member => ({
+        id: member.id,
+        name: `${member.first_name} ${member.last_name}`,
+        jobTitle: member.job_title
+      })) || [];
+      
+      setTechnicians(formattedTechnicians);
+    } catch (err) {
+      console.error('Error fetching technicians:', err);
+    }
+  };
+
+  const handleSubmit = async (formData: any) => {
     if (!id) return;
 
     try {
       setSaving(true);
-      const result = await updateWorkOrder({ ...updatedWorkOrder, id });
+      const updatedWorkOrder = {
+        ...workOrder,
+        id,
+        customer: formData.customer,
+        description: formData.description,
+        status: formData.status,
+        priority: formData.priority,
+        technician: formData.technician,
+        location: formData.location,
+        dueDate: formData.dueDate,
+        due_date: formData.dueDate,
+        notes: formData.notes,
+        vehicle_make: formData.vehicleMake,
+        vehicle_model: formData.vehicleModel,
+        vehicle_year: formData.vehicleYear,
+        vehicle_odometer: formData.odometer,
+        vehicle_license_plate: formData.licensePlate,
+        vehicle_vin: formData.vin,
+        inventoryItems: formData.inventoryItems
+      };
+
+      const result = await updateWorkOrder(updatedWorkOrder);
       if (result) {
         setWorkOrder(result);
         toast({
@@ -66,15 +157,6 @@ const WorkOrderEdit = () => {
       });
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleTimeEntriesUpdate = (updatedEntries: any[]) => {
-    if (workOrder) {
-      setWorkOrder({
-        ...workOrder,
-        timeEntries: updatedEntries
-      });
     }
   };
 
@@ -114,30 +196,25 @@ const WorkOrderEdit = () => {
         <div className="flex items-center space-x-4">
           <Button
             variant="outline"
-            onClick={() => navigate('/work-orders')}
+            onClick={() => navigate(`/work-orders/${id}`)}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
+            Back to Details
           </Button>
           <div>
             <h1 className="text-2xl font-bold">Edit Work Order</h1>
-            <p className="text-gray-600">Work Order ID: {workOrder.id}</p>
+            <p className="text-gray-600">Work Order ID: {workOrder.id?.slice(0, 8)}</p>
           </div>
         </div>
-        <Button
-          onClick={() => handleSave(workOrder)}
-          disabled={saving}
-          className="flex items-center space-x-2"
-        >
-          <Save className="h-4 w-4" />
-          <span>{saving ? 'Saving...' : 'Save Changes'}</span>
-        </Button>
       </div>
 
-      <WorkOrderEditForm
-        workOrderId={workOrder.id}
-        timeEntries={workOrder.timeEntries || []}
-        onUpdateTimeEntries={handleTimeEntriesUpdate}
+      <WorkOrderEditFormContent
+        workOrderId={id!}
+        technicians={technicians}
+        form={form}
+        onSubmit={handleSubmit}
+        isSubmitting={saving}
+        error={error}
       />
     </div>
   );
