@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ErrorBoundary } from '@/components/error/ErrorBoundary';
@@ -13,6 +14,7 @@ import CustomerPortalLogin from '@/pages/CustomerPortalLogin';
 
 // Main app pages - updated to use CustomersPage instead of Customers
 import CustomersPage from '@/pages/CustomersPage';
+import CustomerDetails from '@/pages/CustomerDetails';
 import WorkOrders from '@/pages/WorkOrders';
 import WorkOrderEdit from '@/pages/WorkOrderEdit';
 import Invoices from '@/pages/Invoices';
@@ -69,6 +71,7 @@ function App() {
             
             {/* Core business pages - updated customers route */}
             <Route path="customers" element={<CustomersPage />} />
+            <Route path="customers/:id" element={<CustomerDetails />} />
             <Route path="customers/create" element={<CreateCustomer />} />
             <Route path="work-orders" element={<WorkOrders />} />
             <Route path="work-orders/:id/edit" element={<WorkOrderEdit />} />
