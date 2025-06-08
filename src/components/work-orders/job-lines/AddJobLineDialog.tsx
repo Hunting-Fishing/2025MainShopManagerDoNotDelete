@@ -8,7 +8,7 @@ import { ServiceBasedJobLineForm } from './ServiceBasedJobLineForm';
 
 interface AddJobLineDialogProps {
   workOrderId: string;
-  onJobLineAdd: (jobLine: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  onJobLineAdd: (jobLines: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>[]) => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
@@ -20,8 +20,8 @@ export function AddJobLineDialog({ workOrderId, onJobLineAdd, open, onOpenChange
   const isOpen = open !== undefined ? open : internalOpen;
   const setIsOpen = onOpenChange || setInternalOpen;
 
-  const handleJobLineAdd = (jobLineData: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>) => {
-    onJobLineAdd(jobLineData);
+  const handleJobLineAdd = (jobLines: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>[]) => {
+    onJobLineAdd(jobLines);
     setIsOpen(false);
   };
 

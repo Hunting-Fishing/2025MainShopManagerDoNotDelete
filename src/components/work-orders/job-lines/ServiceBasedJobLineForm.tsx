@@ -10,11 +10,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useServiceCategories } from '@/hooks/useServiceCategories';
-import { generateTempJobLineId } from '@/services/jobLineParserEnhanced';
 
 interface ServiceBasedJobLineFormProps {
   workOrderId: string;
-  onSubmit: (jobLineData: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  onSubmit: (jobLines: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>[]) => void;
   onCancel: () => void;
 }
 
@@ -25,14 +24,14 @@ export function ServiceBasedJobLineForm({ workOrderId, onSubmit, onCancel }: Ser
 
   const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
     const selectedService: SelectedService = {
-      id: service.id,
+      id: `selected-${Date.now()}-${Math.random()}`, // Ensure unique ID
       name: service.name,
       description: service.description,
       categoryName,
       subcategoryName,
       estimatedTime: service.estimatedTime,
       price: service.price,
-      serviceId: service.id // Added missing serviceId property
+      serviceId: service.id
     };
 
     setSelectedServices(prev => [...prev, selectedService]);
@@ -49,22 +48,21 @@ export function ServiceBasedJobLineForm({ workOrderId, onSubmit, onCancel }: Ser
   const handleSubmit = () => {
     if (selectedServices.length === 0) return;
 
-    // Create job lines from selected services
-    selectedServices.forEach(service => {
-      const jobLineData: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'> = {
-        workOrderId,
-        name: service.name,
-        category: service.categoryName,
-        subcategory: service.subcategoryName,
-        description: service.description || '',
-        estimatedHours: service.estimatedTime ? service.estimatedTime / 60 : undefined,
-        totalAmount: service.price || 0,
-        status: 'pending',
-        notes
-      };
+    // Create job lines from selected services - submit all at once
+    const jobLines: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>[] = selectedServices.map(service => ({
+      workOrderId,
+      name: service.name,
+      category: service.categoryName,
+      subcategory: service.subcategoryName,
+      description: service.description || '',
+      estimatedHours: service.estimatedTime ? service.estimatedTime / 60 : undefined,
+      totalAmount: service.price || 0,
+      status: 'pending',
+      notes
+    }));
 
-      onSubmit(jobLineData);
-    });
+    // Submit all job lines at once
+    onSubmit(jobLines);
   };
 
   if (loading) {

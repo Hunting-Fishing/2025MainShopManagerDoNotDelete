@@ -36,27 +36,10 @@ export function EnhancedServiceSelector({
       total + (service.price || 0), 0)
   };
 
-  // Handle service selection with enhanced functionality
+  // Handle service selection - only call parent callback, don't manage state here
   const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
-    const newSelectedService: SelectedService = {
-      id: `selected-${Date.now()}-${service.id}`,
-      serviceId: service.id,
-      name: service.name,
-      description: service.description,
-      categoryName,
-      subcategoryName,
-      estimatedTime: service.estimatedTime,
-      price: service.price
-    };
-
-    const updatedServices = [...selectedServices, newSelectedService];
-    onUpdateServices(updatedServices);
-    
-    // Call the original handler for backward compatibility
+    // Just call the parent callback - let the parent manage the state
     onServiceSelect(service, categoryName, subcategoryName);
-
-    // Set as last added for animation
-    setLastAddedServiceId(newSelectedService.id);
 
     // Scroll to selected services after a brief delay
     setTimeout(() => {
@@ -68,12 +51,10 @@ export function EnhancedServiceSelector({
   };
 
   const handleRemoveService = (serviceId: string) => {
-    const updatedServices = selectedServices.filter(service => service.id !== serviceId);
-    onUpdateServices(updatedServices);
     onRemoveService(serviceId);
 
     // If no services left, expand the selector
-    if (updatedServices.length === 0) {
+    if (selectedServices.length <= 1) {
       setIsExpanded(true);
     }
   };
@@ -91,6 +72,14 @@ export function EnhancedServiceSelector({
       return () => clearTimeout(timer);
     }
   }, [lastAddedServiceId]);
+
+  // Track when services are added to show animation
+  useEffect(() => {
+    if (selectedServices.length > 0) {
+      const latestService = selectedServices[selectedServices.length - 1];
+      setLastAddedServiceId(latestService.id);
+    }
+  }, [selectedServices.length]);
 
   return (
     <div className="space-y-4">
