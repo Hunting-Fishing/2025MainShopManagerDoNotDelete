@@ -1,18 +1,21 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { WorkOrder } from '@/types/workOrder';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Eye, Edit, Clock, User, Calendar } from 'lucide-react';
 import { formatDate } from '@/utils/dateUtils';
+import { toast } from 'sonner';
 
 interface WorkOrderTableProps {
   workOrders: WorkOrder[];
 }
 
 export function WorkOrderTable({ workOrders }: WorkOrderTableProps) {
+  const navigate = useNavigate();
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending':
@@ -42,6 +45,26 @@ export function WorkOrderTable({ workOrders }: WorkOrderTableProps) {
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const handleViewWorkOrder = (workOrderId: string) => {
+    try {
+      console.log('Navigating to work order details:', workOrderId);
+      navigate(`/work-orders/${workOrderId}`);
+    } catch (error) {
+      console.error('Error navigating to work order details:', error);
+      toast.error('Failed to open work order details');
+    }
+  };
+
+  const handleEditWorkOrder = (workOrderId: string) => {
+    try {
+      console.log('Navigating to work order edit:', workOrderId);
+      navigate(`/work-orders/${workOrderId}/edit`);
+    } catch (error) {
+      console.error('Error navigating to work order edit:', error);
+      toast.error('Failed to open work order editor');
     }
   };
 
@@ -97,17 +120,23 @@ export function WorkOrderTable({ workOrders }: WorkOrderTableProps) {
                 )}
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" asChild>
-                  <Link to={`/work-orders/${workOrder.id}`}>
-                    <Eye className="h-4 w-4 mr-1" />
-                    View
-                  </Link>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleViewWorkOrder(workOrder.id)}
+                  className="flex items-center gap-1"
+                >
+                  <Eye className="h-4 w-4" />
+                  View
                 </Button>
-                <Button variant="outline" size="sm" asChild>
-                  <Link to={`/work-orders/${workOrder.id}/edit`}>
-                    <Edit className="h-4 w-4 mr-1" />
-                    Edit
-                  </Link>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleEditWorkOrder(workOrder.id)}
+                  className="flex items-center gap-1"
+                >
+                  <Edit className="h-4 w-4" />
+                  Edit
                 </Button>
               </div>
             </div>
