@@ -32,15 +32,15 @@ export function JobLinesSection({
     setLocalJobLines(jobLines);
   }, [jobLines]);
 
-  const handleAddJobLine = (newJobLineData: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newJobLine: WorkOrderJobLine = {
-      ...newJobLineData,
-      id: generateTempJobLineId(), // Use proper UUID generation
+  const handleAddJobLines = (newJobLinesData: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>[]) => {
+    const newJobLines: WorkOrderJobLine[] = newJobLinesData.map(jobLineData => ({
+      ...jobLineData,
+      id: generateTempJobLineId(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-    };
+    }));
 
-    const updatedJobLines = [...localJobLines, newJobLine];
+    const updatedJobLines = [...localJobLines, ...newJobLines];
     setLocalJobLines(updatedJobLines);
     onJobLinesChange(updatedJobLines);
   };
@@ -82,7 +82,7 @@ export function JobLinesSection({
           {isEditMode && (
             <AddJobLineDialog 
               workOrderId={workOrderId}
-              onJobLineAdd={handleAddJobLine}
+              onJobLineAdd={handleAddJobLines}
             />
           )}
         </div>

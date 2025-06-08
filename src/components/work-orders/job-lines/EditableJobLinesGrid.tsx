@@ -1,200 +1,85 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { EditableJobLineCard } from './EditableJobLineCard';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ResponsiveGrid } from '@/components/ui/responsive-grid';
-import { Clock, DollarSign, Plus, Wrench, Package } from 'lucide-react';
 import { AddJobLineDialog } from './AddJobLineDialog';
-import { AddInventoryDialog } from '../inventory/AddInventoryDialog';
-import { toast } from 'sonner';
+import { JobLineCard } from './JobLineCard';
+import { generateTempJobLineId } from '@/services/jobLineParserEnhanced';
 
 interface EditableJobLinesGridProps {
-  jobLines: WorkOrderJobLine[];
-  onUpdateJobLine: (updatedJobLine: WorkOrderJobLine) => void;
-  onDeleteJobLine: (jobLineId: string) => void;
-  onAddJobLine: (newJobLine: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  showSummary?: boolean;
   workOrderId: string;
-  shopId?: string;
+  jobLines: WorkOrderJobLine[];
+  onJobLinesChange: (jobLines: WorkOrderJobLine[]) => void;
 }
 
-export function EditableJobLinesGrid({ 
-  jobLines, 
-  onUpdateJobLine, 
-  onDeleteJobLine, 
-  onAddJobLine,
-  showSummary = true,
+export function EditableJobLinesGrid({
   workOrderId,
-  shopId 
+  jobLines,
+  onJobLinesChange
 }: EditableJobLinesGridProps) {
-  const [showAddJobLineDialog, setShowAddJobLineDialog] = useState(false);
-  const [showAddInventoryDialog, setShowAddInventoryDialog] = useState(false);
+  const [localJobLines, setLocalJobLines] = useState<WorkOrderJobLine[]>(jobLines);
 
-  const totalHours = jobLines.reduce((sum, line) => sum + (line.estimatedHours || 0), 0);
-  const totalAmount = jobLines.reduce((sum, line) => sum + (line.totalAmount || 0), 0);
+  useEffect(() => {
+    setLocalJobLines(jobLines);
+  }, [jobLines]);
 
-  const handleAddJobLine = () => {
-    setShowAddJobLineDialog(true);
+  const handleAddJobLines = (newJobLinesData: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>[]) => {
+    const newJobLines: WorkOrderJobLine[] = newJobLinesData.map(jobLineData => ({
+      ...jobLineData,
+      id: generateTempJobLineId(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }));
+
+    const updatedJobLines = [...localJobLines, ...newJobLines];
+    setLocalJobLines(updatedJobLines);
+    onJobLinesChange(updatedJobLines);
   };
 
-  const handleAddInventoryItem = () => {
-    setShowAddInventoryDialog(true);
-  };
-
-  const handleJobLineAdded = (newJobLine: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>) => {
-    onAddJobLine(newJobLine);
-    setShowAddJobLineDialog(false);
-    toast.success('Job line added successfully');
-  };
-
-  const handleInventoryItemAdded = (inventoryItem: any) => {
-    // Create a parts-specific job line for the inventory item
-    const partsJobLine: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'> = {
-      workOrderId,
-      name: inventoryItem.name,
-      category: 'Parts',
-      description: `${inventoryItem.name} - ${inventoryItem.sku || ''}`,
-      estimatedHours: 0,
-      laborRate: inventoryItem.unit_price || 0,
-      totalAmount: inventoryItem.unit_price || 0,
-      status: 'pending',
-      notes: `Inventory Item: ${inventoryItem.sku || 'N/A'}`
-    };
-    
-    onAddJobLine(partsJobLine);
-    setShowAddInventoryDialog(false);
-    toast.success('Inventory item added as job line');
-  };
-
-  if (jobLines.length === 0) {
-    return (
-      <>
-        <Card className="border-dashed border-2">
-          <CardContent className="flex flex-col items-center justify-center py-8">
-            <Wrench className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold text-muted-foreground mb-2">No Job Lines Found</h3>
-            <p className="text-sm text-muted-foreground text-center mb-4">
-              Job lines will be automatically parsed from the work order description, or you can add them manually.
-            </p>
-            <div className="flex items-center gap-2">
-              <Button onClick={handleAddJobLine} className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Add Job Line
-              </Button>
-              <Button onClick={handleAddInventoryItem} variant="outline" className="flex items-center gap-2">
-                <Package className="h-4 w-4" />
-                Add Parts/Inventory
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <AddJobLineDialog
-          workOrderId={workOrderId}
-          onJobLineAdd={handleJobLineAdded}
-          open={showAddJobLineDialog}
-          onOpenChange={setShowAddJobLineDialog}
-        />
-
-        <AddInventoryDialog
-          workOrderId={workOrderId}
-          onInventoryAdd={handleInventoryItemAdded}
-          open={showAddInventoryDialog}
-          onOpenChange={setShowAddInventoryDialog}
-        />
-      </>
+  const handleUpdateJobLine = (updatedJobLine: WorkOrderJobLine) => {
+    const updatedJobLines = localJobLines.map(jobLine =>
+      jobLine.id === updatedJobLine.id ? {
+        ...updatedJobLine,
+        updatedAt: new Date().toISOString()
+      } : jobLine
     );
-  }
+    setLocalJobLines(updatedJobLines);
+    onJobLinesChange(updatedJobLines);
+  };
+
+  const handleDeleteJobLine = (jobLineId: string) => {
+    const updatedJobLines = localJobLines.filter(jobLine => jobLine.id !== jobLineId);
+    setLocalJobLines(updatedJobLines);
+    onJobLinesChange(updatedJobLines);
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Service Details</h3>
-        <div className="flex items-center gap-3">
-          <div className="text-sm text-muted-foreground">
-            {jobLines.length} service{jobLines.length !== 1 ? 's' : ''}
-          </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              onClick={handleAddJobLine}
-              size="sm"
-              className="flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Add Job Line
-            </Button>
-            <Button 
-              onClick={handleAddInventoryItem}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2"
-            >
-              <Package className="h-4 w-4" />
-              Add Parts/Inventory
-            </Button>
-          </div>
-        </div>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Job Lines</h3>
+        <AddJobLineDialog 
+          workOrderId={workOrderId}
+          onJobLineAdd={handleAddJobLines}
+        />
       </div>
 
-      <ResponsiveGrid
-        cols={{ default: 1, md: 2, lg: 3 }}
-        gap="md"
-      >
-        {jobLines.map((jobLine) => (
-          <EditableJobLineCard 
-            key={jobLine.id} 
-            jobLine={jobLine} 
-            onUpdate={onUpdateJobLine}
-            onDelete={onDeleteJobLine}
-            shopId={shopId}
+      <div className="grid gap-4">
+        {localJobLines.map((jobLine) => (
+          <JobLineCard
+            key={jobLine.id}
+            jobLine={jobLine}
+            onUpdate={handleUpdateJobLine}
+            onDelete={handleDeleteJobLine}
+            isEditMode={true}
           />
         ))}
-      </ResponsiveGrid>
+      </div>
 
-      {showSummary && (totalHours > 0 || totalAmount > 0) && (
-        <Card className="bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Wrench className="h-5 w-5" />
-              Labor Summary
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-blue-600" />
-                <div>
-                  <div className="text-sm text-muted-foreground">Total Labor Time</div>
-                  <div className="font-semibold">{totalHours.toFixed(1)} hours</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-green-600" />
-                <div>
-                  <div className="text-sm text-muted-foreground">Total Labor Cost</div>
-                  <div className="font-semibold">${totalAmount.toFixed(2)}</div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {localJobLines.length === 0 && (
+        <div className="text-center py-8 border-2 border-dashed border-slate-200 rounded-lg">
+          <p className="text-slate-500">No job lines added yet</p>
+          <p className="text-sm text-slate-400">Click "Add Job Line" to get started</p>
+        </div>
       )}
-
-      <AddJobLineDialog
-        workOrderId={workOrderId}
-        onJobLineAdd={handleJobLineAdded}
-        open={showAddJobLineDialog}
-        onOpenChange={setShowAddJobLineDialog}
-      />
-
-      <AddInventoryDialog
-        workOrderId={workOrderId}
-        onInventoryAdd={handleInventoryItemAdded}
-        open={showAddInventoryDialog}
-        onOpenChange={setShowAddInventoryDialog}
-      />
     </div>
   );
 }
