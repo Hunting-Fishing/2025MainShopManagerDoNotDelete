@@ -7,6 +7,7 @@ import { RefreshCw, Database, Trash2 } from 'lucide-react';
 import { StorageImportManager } from './StorageImportManager';
 import { ServiceImportProgress } from './ServiceImportProgress';
 import { LiveBucketViewer } from './LiveBucketViewer';
+import { DatabaseDiagnostics } from './DatabaseDiagnostics';
 import { useServiceManagement } from '@/hooks/useServiceManagement';
 
 export function FreshServiceImport({ onImportComplete }: { onImportComplete?: () => void }) {
@@ -25,6 +26,9 @@ export function FreshServiceImport({ onImportComplete }: { onImportComplete?: ()
 
   return (
     <div className="space-y-6">
+      {/* Database Diagnostics */}
+      <DatabaseDiagnostics />
+      
       {/* Live Bucket Status */}
       <LiveBucketViewer />
       
