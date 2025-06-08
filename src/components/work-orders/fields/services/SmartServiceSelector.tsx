@@ -83,26 +83,28 @@ export const SmartServiceSelector: React.FC<SmartServiceSelectorProps> = ({
   }, [categories, searchTerm]);
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="bg-card border shadow-sm">
+      <CardHeader className="bg-card border-b">
         <CardTitle>Select Services</CardTitle>
         <Tabs defaultValue="search" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="search">Smart Search</TabsTrigger>
-            <TabsTrigger value="browse">Browse Categories</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 bg-muted">
+            <TabsTrigger value="search" className="bg-background data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Smart Search</TabsTrigger>
+            <TabsTrigger value="browse" className="bg-background data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Browse Categories</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="search" className="space-y-4">
-            <EnhancedServiceSearch
-              value={searchTerm}
-              onChange={handleSearchChange}
-              categories={categories}
-              onServiceSelect={handleServiceSelect}
-              placeholder="Type to search services (e.g., 'brake line', 'oil change')..."
-            />
+          <TabsContent value="search" className="space-y-4 bg-card">
+            <div className="bg-card p-4 rounded-md border">
+              <EnhancedServiceSearch
+                value={searchTerm}
+                onChange={handleSearchChange}
+                categories={categories}
+                onServiceSelect={handleServiceSelect}
+                placeholder="Type to search services (e.g., 'brake line', 'oil change')..."
+              />
+            </div>
             
             {searchTerm.trim() && filteredCategories.length > 0 && (
-              <div className="mt-4">
+              <div className="mt-4 bg-card p-4 rounded-md border">
                 <h4 className="text-sm font-medium mb-2">
                   Search Results in Categories:
                 </h4>
@@ -120,7 +122,7 @@ export const SmartServiceSelector: React.FC<SmartServiceSelectorProps> = ({
             )}
           </TabsContent>
           
-          <TabsContent value="browse">
+          <TabsContent value="browse" className="bg-card p-4 rounded-md border">
             <ServiceCategoryList
               categories={categories}
               selectedServices={selectedServices}

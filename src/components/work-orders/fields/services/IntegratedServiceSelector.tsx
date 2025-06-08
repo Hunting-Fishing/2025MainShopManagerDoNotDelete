@@ -65,7 +65,7 @@ export const IntegratedServiceSelector: React.FC<IntegratedServiceSelectorProps>
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 bg-background">
       <SmartServiceSelector
         categories={categories}
         onServiceSelect={handleServiceSelect}
@@ -76,25 +76,25 @@ export const IntegratedServiceSelector: React.FC<IntegratedServiceSelectorProps>
 
       {/* Selected Services Summary */}
       {selectedServices.length > 0 && (
-        <Card>
-          <CardHeader>
+        <Card className="bg-card border shadow-sm">
+          <CardHeader className="bg-card border-b">
             <CardTitle className="text-sm">Selected Services ({selectedServices.length})</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="bg-card">
             <div className="space-y-2">
               {selectedServices.map((service) => (
                 <div
                   key={service.id}
-                  className="flex items-center justify-between p-2 border rounded-md bg-gray-50"
+                  className="flex items-center justify-between p-2 border rounded-md bg-muted/50"
                 >
                   <div className="flex-1">
                     <div className="font-medium text-sm">{service.name}</div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-muted-foreground">
                       {service.categoryName} › {service.subcategoryName}
                     </div>
                     <div className="flex items-center gap-4 mt-1">
                       {service.estimatedTime && (
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-muted-foreground">
                           {service.estimatedTime} min
                         </span>
                       )}
@@ -107,7 +107,7 @@ export const IntegratedServiceSelector: React.FC<IntegratedServiceSelectorProps>
                   </div>
                   <button
                     onClick={() => handleRemoveService(service.id)}
-                    className="text-red-500 hover:text-red-700 text-sm px-2 py-1"
+                    className="text-destructive hover:text-destructive/80 text-sm px-2 py-1"
                   >
                     Remove
                   </button>

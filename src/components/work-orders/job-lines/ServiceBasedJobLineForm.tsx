@@ -67,27 +67,27 @@ export function ServiceBasedJobLineForm({ workOrderId, onSubmit, onCancel }: Ser
 
   if (loading) {
     return (
-      <div className="p-6 text-center">
-        <p className="text-gray-500">Loading services...</p>
+      <div className="p-6 text-center bg-background">
+        <p className="text-muted-foreground">Loading services...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-6 text-center">
-        <p className="text-red-500">{error}</p>
+      <div className="p-6 text-center bg-background">
+        <p className="text-destructive">{error}</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
+    <div className="space-y-6 bg-background">
+      <Card className="bg-card border shadow-sm">
+        <CardHeader className="bg-card border-b">
           <CardTitle>Select Services</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="bg-card p-6">
           <ServiceSelectorAdapter
             categories={categories}
             onServiceSelect={handleServiceSelect}
@@ -99,11 +99,11 @@ export function ServiceBasedJobLineForm({ workOrderId, onSubmit, onCancel }: Ser
       </Card>
 
       {selectedServices.length > 0 && (
-        <Card>
-          <CardHeader>
+        <Card className="bg-card border shadow-sm">
+          <CardHeader className="bg-card border-b">
             <CardTitle>Additional Notes</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="bg-card p-6">
             <div className="space-y-4">
               <div>
                 <Label htmlFor="notes">Notes (Optional)</Label>
@@ -113,6 +113,7 @@ export function ServiceBasedJobLineForm({ workOrderId, onSubmit, onCancel }: Ser
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Add any additional notes for these job lines..."
                   rows={3}
+                  className="bg-background border"
                 />
               </div>
             </div>
@@ -120,13 +121,14 @@ export function ServiceBasedJobLineForm({ workOrderId, onSubmit, onCancel }: Ser
         </Card>
       )}
 
-      <div className="flex justify-end gap-2">
+      <div className="flex justify-end gap-2 bg-background p-4 border-t">
         <Button variant="outline" onClick={onCancel}>
           Cancel
         </Button>
         <Button 
           onClick={handleSubmit}
           disabled={selectedServices.length === 0}
+          className="bg-primary text-primary-foreground hover:bg-primary/90"
         >
           Add Job Lines ({selectedServices.length})
         </Button>
