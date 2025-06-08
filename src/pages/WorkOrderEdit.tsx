@@ -1,16 +1,17 @@
 
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, Save, AlertCircle } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
-import { WorkOrder } from '@/types/workOrder';
-import { getWorkOrderById, updateWorkOrder } from '@/services/workOrder';
-import { useWorkOrderEditForm } from '@/hooks/useWorkOrderEditForm';
-import { WorkOrderEditFormContent } from '@/components/work-orders/edit/WorkOrderEditFormContent';
-import { useForm } from 'react-hook-form';
-import { supabase } from '@/integrations/supabase/client';
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
+import { Loader2, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { supabase } from "@/integrations/supabase/client";
+import { WorkOrder } from "@/types/workOrder";
+import { workOrderFormSchema, WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
+import { WorkOrderEditFormContent } from "@/components/work-orders/edit/WorkOrderEditFormContent";
+import { getWorkOrderById, updateWorkOrder } from "@/services/workOrder";
 
 interface Technician {
   id: string;
@@ -22,139 +23,141 @@ const WorkOrderEdit = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
-  const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [technicians, setTechnicians] = useState<Technician[]>([]);
 
-  const form = useForm({
+  const form = useForm<WorkOrderFormSchemaValues>({
+    resolver: zodResolver(workOrderFormSchema),
     defaultValues: {
-      customer: '',
-      description: '',
-      status: 'pending' as const,
-      priority: 'medium' as const,
-      technician: '',
-      location: '',
-      dueDate: '',
-      notes: '',
-      vehicleMake: '',
-      vehicleModel: '',
-      vehicleYear: '',
-      odometer: '',
-      licensePlate: '',
-      vin: '',
+      customer: "",
+      description: "",
+      status: "pending",
+      priority: "medium",
+      technician: "",
+      location: "",
+      dueDate: "",
+      notes: "",
+      vehicleMake: "",
+      vehicleModel: "",
+      vehicleYear: "",
+      odometer: "",
+      licensePlate: "",
+      vin: "",
       inventoryItems: []
     }
   });
 
+  // Fetch work order data
   useEffect(() => {
-    if (id) {
-      fetchWorkOrder(id);
-      fetchTechnicians();
-    }
-  }, [id]);
-
-  const fetchWorkOrder = async (workOrderId: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await getWorkOrderById(workOrderId);
-      if (data) {
-        setWorkOrder(data);
-        // Populate form with work order data
-        form.reset({
-          customer: data.customer || '',
-          description: data.description || '',
-          status: data.status as any || 'pending',
-          priority: data.priority as any || 'medium',
-          technician: data.technician || '',
-          location: data.location || '',
-          dueDate: data.dueDate || data.due_date || '',
-          notes: data.notes || '',
-          vehicleMake: data.vehicle_make || '',
-          vehicleModel: data.vehicle_model || '',
-          vehicleYear: data.vehicle_year || '',
-          odometer: data.vehicle_odometer || '',
-          licensePlate: data.vehicle_license_plate || '',
-          vin: data.vehicle_vin || '',
-          inventoryItems: data.inventoryItems || []
-        });
-      } else {
-        setError('Work order not found');
-      }
-    } catch (err) {
-      console.error('Error fetching work order:', err);
-      setError('Failed to load work order');
-    } finally {
+    if (!id) {
+      setError("Work order ID is required");
       setLoading(false);
+      return;
     }
-  };
 
-  const fetchTechnicians = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('team_members')
-        .select('id, first_name, last_name, job_title')
-        .eq('active', true);
-      
-      if (error) throw error;
-      
-      const formattedTechnicians = data?.map(member => ({
-        id: member.id,
-        name: `${member.first_name} ${member.last_name}`,
-        jobTitle: member.job_title
-      })) || [];
-      
-      setTechnicians(formattedTechnicians);
-    } catch (err) {
-      console.error('Error fetching technicians:', err);
-    }
-  };
+    const fetchWorkOrder = async () => {
+      try {
+        setLoading(true);
+        const data = await getWorkOrderById(id);
+        
+        if (data) {
+          setWorkOrder(data);
+          
+          // Populate form with work order data
+          form.reset({
+            customer: data.customer || "",
+            description: data.description || "",
+            status: data.status as any || "pending",
+            priority: data.priority as any || "medium",
+            technician: data.technician_id || data.technician || "",
+            location: data.location || "",
+            dueDate: data.due_date || data.dueDate || "",
+            notes: data.notes || "",
+            vehicleMake: data.vehicle_make || "",
+            vehicleModel: data.vehicle_model || "",
+            vehicleYear: data.vehicle_year?.toString() || "",
+            odometer: data.vehicle_odometer || "",
+            licensePlate: data.vehicle_license_plate || "",
+            vin: data.vehicle_vin || "",
+            inventoryItems: data.inventoryItems || []
+          });
+        } else {
+          setError("Work order not found");
+        }
+      } catch (err) {
+        console.error("Error fetching work order:", err);
+        setError("Failed to load work order");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleSubmit = async (formData: any) => {
-    if (!id) return;
+    fetchWorkOrder();
+  }, [id, form]);
+
+  // Fetch technicians
+  useEffect(() => {
+    const fetchTechnicians = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('team_members')
+          .select('id, name, job_title')
+          .eq('status', 'active')
+          .order('name');
+
+        if (error) throw error;
+
+        const technicianList: Technician[] = (data || []).map(member => ({
+          id: member.id,
+          name: member.name,
+          jobTitle: member.job_title
+        }));
+
+        setTechnicians(technicianList);
+      } catch (err) {
+        console.error("Error fetching technicians:", err);
+      }
+    };
+
+    fetchTechnicians();
+  }, []);
+
+  const handleSubmit = async (values: WorkOrderFormSchemaValues) => {
+    if (!id || !workOrder) return;
 
     try {
       setSaving(true);
-      const updatedWorkOrder = {
-        ...workOrder,
+      setError(null);
+
+      const updatedWorkOrder: Partial<WorkOrder> = {
         id,
-        customer: formData.customer,
-        description: formData.description,
-        status: formData.status,
-        priority: formData.priority,
-        technician: formData.technician,
-        location: formData.location,
-        dueDate: formData.dueDate,
-        due_date: formData.dueDate,
-        notes: formData.notes,
-        vehicle_make: formData.vehicleMake,
-        vehicle_model: formData.vehicleModel,
-        vehicle_year: formData.vehicleYear,
-        vehicle_odometer: formData.odometer,
-        vehicle_license_plate: formData.licensePlate,
-        vehicle_vin: formData.vin,
-        inventoryItems: formData.inventoryItems
+        customer: values.customer,
+        description: values.description,
+        status: values.status,
+        priority: values.priority,
+        technician_id: values.technician,
+        location: values.location,
+        due_date: values.dueDate,
+        notes: values.notes,
+        vehicle_make: values.vehicleMake,
+        vehicle_model: values.vehicleModel,
+        vehicle_year: values.vehicleYear ? parseInt(values.vehicleYear) : undefined,
+        vehicle_odometer: values.odometer,
+        vehicle_license_plate: values.licensePlate,
+        vehicle_vin: values.vin,
+        inventory_items: values.inventoryItems
       };
 
-      const result = await updateWorkOrder(updatedWorkOrder);
-      if (result) {
-        setWorkOrder(result);
-        toast({
-          title: "Success",
-          description: "Work order updated successfully"
-        });
-        navigate(`/work-orders/${id}`);
-      } else {
-        throw new Error('Failed to update work order');
-      }
+      await updateWorkOrder(updatedWorkOrder as WorkOrder);
+      toast.success("Work order updated successfully");
+      navigate(`/work-orders/${id}`);
     } catch (err) {
-      console.error('Error updating work order:', err);
-      toast({
-        title: "Error",
-        description: "Failed to update work order",
-        variant: "destructive"
-      });
+      console.error("Error updating work order:", err);
+      const errorMessage = err instanceof Error ? err.message : "Failed to update work order";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -164,7 +167,10 @@ const WorkOrderEdit = () => {
     return (
       <div className="container mx-auto p-6">
         <div className="flex items-center justify-center h-64">
-          <div className="text-lg">Loading work order...</div>
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p className="text-lg">Loading work order...</p>
+          </div>
         </div>
       </div>
     );
@@ -173,38 +179,29 @@ const WorkOrderEdit = () => {
   if (error || !workOrder) {
     return (
       <div className="container mx-auto p-6">
-        <Card>
-          <CardContent className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Error Loading Work Order</h3>
-              <p className="text-gray-600 mb-4">{error}</p>
-              <Button onClick={() => navigate('/work-orders')}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Work Orders
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <Alert variant="destructive">
+          <AlertDescription>{error || "Work order not found"}</AlertDescription>
+        </Alert>
       </div>
     );
   }
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button
-            variant="outline"
-            onClick={() => navigate(`/work-orders/${id}`)}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Details
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold">Edit Work Order</h1>
-            <p className="text-gray-600">Work Order ID: {workOrder.id?.slice(0, 8)}</p>
-          </div>
+      <div className="flex items-center gap-4">
+        <Button
+          variant="ghost"
+          onClick={() => navigate(`/work-orders/${id}`)}
+          className="flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Details
+        </Button>
+        <div>
+          <h1 className="text-2xl font-bold">Edit Work Order</h1>
+          <p className="text-muted-foreground">
+            Work Order #{workOrder.work_order_number || workOrder.id}
+          </p>
         </div>
       </div>
 
