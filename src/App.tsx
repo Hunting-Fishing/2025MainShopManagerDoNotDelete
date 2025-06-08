@@ -16,6 +16,7 @@ import CustomerPortalLogin from '@/pages/CustomerPortalLogin';
 import CustomersPage from '@/pages/CustomersPage';
 import CustomerDetails from '@/pages/CustomerDetails';
 import WorkOrders from '@/pages/WorkOrders';
+import WorkOrderDetails from '@/pages/WorkOrderDetails';
 import WorkOrderEdit from '@/pages/WorkOrderEdit';
 import Invoices from '@/pages/Invoices';
 import Inventory from '@/pages/Inventory';
@@ -74,6 +75,7 @@ function App() {
             <Route path="customers/:id" element={<CustomerDetails />} />
             <Route path="customers/create" element={<CreateCustomer />} />
             <Route path="work-orders" element={<WorkOrders />} />
+            <Route path="work-orders/:id" element={<WorkOrderDetails />} />
             <Route path="work-orders/:id/edit" element={<WorkOrderEdit />} />
             <Route path="invoices/*" element={<Invoices />} />
             <Route path="inventory/*" element={<Inventory />} />
