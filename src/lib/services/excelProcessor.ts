@@ -1,301 +1,378 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import * as XLSX from 'xlsx';
-import { processServiceDataFromSheets } from './serviceDataProcessor';
-import type { ProcessedServiceData, ImportResult, ImportStats } from '@/types/service';
+import type { ImportResult, ImportStats } from '@/types/service';
 
-export async function processExcelFile(file: File): Promise<ProcessedServiceData> {
+export async function processExcelFileFromStorage(
+  filePath: string, 
+  sectorName: string
+): Promise<ImportResult> {
   try {
-    console.log('Processing Excel file:', file.name);
+    console.log(`Processing Excel file: ${filePath} for sector: ${sectorName}`);
     
-    const arrayBuffer = await file.arrayBuffer();
-    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-    
-    const firstSheetName = workbook.SheetNames[0];
-    if (!firstSheetName) {
-      throw new Error('Excel file has no sheets');
-    }
-    
-    const worksheet = workbook.Sheets[firstSheetName];
-    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-    
-    // Convert to array of arrays format expected by processServiceDataFromSheets
-    const excelData = jsonData as any[][];
-    
-    // Use the file name (without extension) as the sector name
-    const sectorName = file.name.replace(/\.[^/.]+$/, '');
-    
-    const result = await processServiceDataFromSheets(excelData, sectorName);
-    
-    console.log('Excel file processed successfully');
-    return result;
-  } catch (error) {
-    console.error('Error processing Excel file:', error);
-    throw error;
-  }
-}
-
-export async function processExcelFileFromStorage(filePath: string, sectorName: string): Promise<ImportResult> {
-  try {
-    console.log(`Processing Excel file from storage: ${filePath}`);
-    
-    // Download the file from storage
+    // Download file from Supabase storage
     const { data: fileData, error: downloadError } = await supabase.storage
       .from('service-data')
       .download(filePath);
-      
+    
     if (downloadError) {
-      console.error('Error downloading file from storage:', downloadError);
+      console.error('Error downloading file:', downloadError);
       throw new Error(`Failed to download file: ${downloadError.message}`);
     }
     
-    if (!fileData) {
-      throw new Error('No file data received from storage');
-    }
-    
-    // Convert Blob to ArrayBuffer
+    // Convert blob to array buffer
     const arrayBuffer = await fileData.arrayBuffer();
-    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
     
-    const firstSheetName = workbook.SheetNames[0];
-    if (!firstSheetName) {
-      throw new Error('Excel file has no sheets');
+    // Parse Excel file
+    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    
+    // Convert to JSON array
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+      header: 1,
+      defval: '',
+      raw: false
+    }) as string[][];
+    
+    if (!jsonData || jsonData.length < 2) {
+      throw new Error('Excel file must have at least 2 rows (header + data)');
     }
     
-    const worksheet = workbook.Sheets[firstSheetName];
-    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-    
-    // Convert to array of arrays format
-    const excelData = jsonData as any[][];
-    
-    // Process the data and save to database
-    const processedData = await processServiceDataFromSheets(excelData, sectorName);
-    
-    // Save to database using the new service hierarchy tables
-    await saveProcessedDataToDatabase(processedData, sectorName);
-    
-    const stats: ImportStats = {
-      totalSectors: 1,
-      totalCategories: processedData.categories?.length || 0,
-      totalSubcategories: processedData.categories?.reduce((acc, cat) => acc + cat.subcategories.length, 0) || 0,
-      totalServices: processedData.categories?.reduce((acc, cat) => 
-        acc + cat.subcategories.reduce((subAcc, sub) => subAcc + sub.services.length, 0), 0) || 0,
-      filesProcessed: 1
-    };
-    
-    console.log(`Successfully processed ${filePath}:`, stats);
+    // Process the data
+    const result = await processExcelData(jsonData, sectorName, filePath);
     
     return {
       success: true,
       message: `Successfully processed ${filePath}`,
-      stats
+      stats: result.stats
     };
   } catch (error) {
-    console.error(`Error processing Excel file ${filePath}:`, error);
+    console.error('Error processing Excel file from storage:', error);
     return {
       success: false,
-      message: error instanceof Error ? error.message : 'Unknown error occurred'
+      message: `Error processing ${filePath}: ${error instanceof Error ? error.message : 'Unknown error'}`
     };
   }
 }
 
-async function saveProcessedDataToDatabase(processedData: ProcessedServiceData, sectorName: string): Promise<void> {
+async function processExcelData(
+  jsonData: string[][],
+  sectorName: string,
+  fileName: string
+): Promise<{ stats: ImportStats }> {
   try {
-    console.log(`Saving processed data to database for sector: ${sectorName}`);
+    console.log(`Processing data for sector: ${sectorName}, file: ${fileName}`);
     
-    if (!processedData.categories || processedData.categories.length === 0) {
-      console.log('No categories to save');
-      return;
+    // Ensure sector exists
+    let sectorId = await ensureSectorExists(sectorName);
+    
+    // Create category from file name (remove .xlsx/.xls extension)
+    const categoryName = fileName.replace(/\.(xlsx|xls)$/i, '').replace(/^.*\//, '');
+    let categoryId = await ensureCategoryExists(categoryName, sectorId);
+    
+    // Extract subcategories from header row (row 0)
+    const subcategoryHeaders = jsonData[0].filter(header => header && header.trim() !== '');
+    
+    if (subcategoryHeaders.length === 0) {
+      throw new Error('No subcategory headers found in row 1');
     }
     
-    // First, create or get the sector
-    const { data: existingSector, error: sectorSelectError } = await supabase
+    let totalServices = 0;
+    let totalSubcategories = subcategoryHeaders.length;
+    
+    // Process each subcategory column
+    for (let colIndex = 0; colIndex < subcategoryHeaders.length; colIndex++) {
+      const subcategoryName = subcategoryHeaders[colIndex].trim();
+      
+      // Ensure subcategory exists
+      const subcategoryId = await ensureSubcategoryExists(subcategoryName, categoryId);
+      
+      // Extract services from rows 1-1000 for this column
+      const services = [];
+      for (let rowIndex = 1; rowIndex < Math.min(jsonData.length, 1001); rowIndex++) {
+        const row = jsonData[rowIndex];
+        const serviceName = row[colIndex];
+        
+        if (serviceName && serviceName.trim() !== '') {
+          services.push({
+            name: serviceName.trim(),
+            description: `${sectorName} service`,
+            estimated_time: 60, // Default 1 hour
+            price: 100 // Default price
+          });
+        }
+      }
+      
+      // Insert services for this subcategory
+      for (const service of services) {
+        await insertService(service, subcategoryId);
+        totalServices++;
+      }
+      
+      console.log(`Processed subcategory "${subcategoryName}" with ${services.length} services`);
+    }
+    
+    const stats: ImportStats = {
+      totalSectors: 1,
+      totalCategories: 1,
+      totalSubcategories,
+      totalServices,
+      filesProcessed: 1
+    };
+    
+    console.log(`Completed processing for ${fileName}:`, stats);
+    return { stats };
+  } catch (error) {
+    console.error('Error processing Excel data:', error);
+    throw error;
+  }
+}
+
+async function ensureSectorExists(sectorName: string): Promise<string> {
+  try {
+    // Check if sector exists
+    const { data: existingSector, error: selectError } = await supabase
       .from('service_sectors')
       .select('id')
       .eq('name', sectorName)
       .single();
     
-    let sectorId: string;
+    if (selectError && selectError.code !== 'PGRST116') {
+      throw new Error(`Error checking sector: ${selectError.message}`);
+    }
     
     if (existingSector) {
-      sectorId = existingSector.id;
-      console.log(`Using existing sector: ${sectorName} (${sectorId})`);
-    } else {
-      const { data: newSector, error: sectorInsertError } = await supabase
-        .from('service_sectors')
-        .insert({
-          name: sectorName,
-          description: `${sectorName} services`,
-          is_active: true
-        })
-        .select('id')
-        .single();
-        
-      if (sectorInsertError || !newSector) {
-        throw new Error(`Failed to create sector: ${sectorInsertError?.message}`);
-      }
-      
-      sectorId = newSector.id;
-      console.log(`Created new sector: ${sectorName} (${sectorId})`);
+      return existingSector.id;
     }
     
-    // Process each category
-    for (const category of processedData.categories) {
-      console.log(`Processing category: ${category.name}`);
-      
-      // Create or get the main category
-      const { data: existingCategory, error: categorySelectError } = await supabase
-        .from('service_main_categories')
-        .select('id')
-        .eq('sector_id', sectorId)
-        .eq('name', category.name)
-        .single();
-      
-      let categoryId: string;
-      
-      if (existingCategory) {
-        categoryId = existingCategory.id;
-        console.log(`Using existing category: ${category.name} (${categoryId})`);
-      } else {
-        const { data: newCategory, error: categoryInsertError } = await supabase
-          .from('service_main_categories')
-          .insert({
-            sector_id: sectorId,
-            name: category.name,
-            description: `Category for ${category.name} services`
-          })
-          .select('id')
-          .single();
-          
-        if (categoryInsertError || !newCategory) {
-          throw new Error(`Failed to create category: ${categoryInsertError?.message}`);
-        }
-        
-        categoryId = newCategory.id;
-        console.log(`Created new category: ${category.name} (${categoryId})`);
-      }
-      
-      // Process each subcategory
-      for (const subcategory of category.subcategories) {
-        console.log(`Processing subcategory: ${subcategory.name}`);
-        
-        // Create or get the subcategory
-        const { data: existingSubcategory, error: subcategorySelectError } = await supabase
-          .from('service_subcategories')
-          .select('id')
-          .eq('category_id', categoryId)
-          .eq('name', subcategory.name)
-          .single();
-        
-        let subcategoryId: string;
-        
-        if (existingSubcategory) {
-          subcategoryId = existingSubcategory.id;
-          console.log(`Using existing subcategory: ${subcategory.name} (${subcategoryId})`);
-        } else {
-          const { data: newSubcategory, error: subcategoryInsertError } = await supabase
-            .from('service_subcategories')
-            .insert({
-              category_id: categoryId,
-              name: subcategory.name,
-              description: `Subcategory for ${subcategory.name} services`
-            })
-            .select('id')
-            .single();
-            
-          if (subcategoryInsertError || !newSubcategory) {
-            throw new Error(`Failed to create subcategory: ${subcategoryInsertError?.message}`);
-          }
-          
-          subcategoryId = newSubcategory.id;
-          console.log(`Created new subcategory: ${subcategory.name} (${subcategoryId})`);
-        }
-        
-        // Process each service/job
-        const jobsToInsert = subcategory.services.map(service => ({
-          subcategory_id: subcategoryId,
-          name: service.name,
-          description: service.description || `${service.name} service`,
-          estimated_time: service.estimatedTime || 60,
-          price: service.price || 100
-        }));
-        
-        if (jobsToInsert.length > 0) {
-          // First, clear existing jobs for this subcategory to avoid duplicates
-          await supabase
-            .from('service_jobs')
-            .delete()
-            .eq('subcategory_id', subcategoryId);
-          
-          // Insert new jobs
-          const { error: jobsInsertError } = await supabase
-            .from('service_jobs')
-            .insert(jobsToInsert);
-            
-          if (jobsInsertError) {
-            throw new Error(`Failed to create jobs: ${jobsInsertError.message}`);
-          }
-          
-          console.log(`Created ${jobsToInsert.length} jobs for subcategory: ${subcategory.name}`);
-        }
-      }
+    // Create new sector
+    const { data: newSector, error: insertError } = await supabase
+      .from('service_sectors')
+      .insert({
+        name: sectorName,
+        description: `Auto-imported sector: ${sectorName}`,
+        position: 1,
+        is_active: true
+      })
+      .select('id')
+      .single();
+    
+    if (insertError) {
+      throw new Error(`Failed to create sector: ${insertError.message}`);
     }
     
-    console.log(`Successfully saved all data for sector: ${sectorName}`);
+    return newSector.id;
   } catch (error) {
-    console.error('Error saving processed data to database:', error);
+    console.error('Error ensuring sector exists:', error);
     throw error;
   }
 }
 
-export async function processMultipleExcelFiles(files: File[]): Promise<ProcessedServiceData[]> {
-  const results: ProcessedServiceData[] = [];
-  
-  for (const file of files) {
-    try {
-      const result = await processExcelFile(file);
-      results.push(result);
-    } catch (error) {
-      console.error(`Error processing file ${file.name}:`, error);
-      // Continue with other files even if one fails
+async function ensureCategoryExists(categoryName: string, sectorId: string): Promise<string> {
+  try {
+    // Check if category exists
+    const { data: existingCategory, error: selectError } = await supabase
+      .from('service_categories')
+      .select('id')
+      .eq('name', categoryName)
+      .eq('sector_id', sectorId)
+      .single();
+    
+    if (selectError && selectError.code !== 'PGRST116') {
+      throw new Error(`Error checking category: ${selectError.message}`);
     }
+    
+    if (existingCategory) {
+      return existingCategory.id;
+    }
+    
+    // Create new category
+    const { data: newCategory, error: insertError } = await supabase
+      .from('service_categories')
+      .insert({
+        name: categoryName,
+        description: `Auto-imported category: ${categoryName}`,
+        sector_id: sectorId,
+        position: 1
+      })
+      .select('id')
+      .single();
+    
+    if (insertError) {
+      throw new Error(`Failed to create category: ${insertError.message}`);
+    }
+    
+    return newCategory.id;
+  } catch (error) {
+    console.error('Error ensuring category exists:', error);
+    throw error;
   }
-  
-  return results;
 }
 
-export function validateExcelData(data: any[][]): { isValid: boolean; errors: string[] } {
+async function ensureSubcategoryExists(subcategoryName: string, categoryId: string): Promise<string> {
+  try {
+    // Check if subcategory exists
+    const { data: existingSubcategory, error: selectError } = await supabase
+      .from('service_subcategories')
+      .select('id')
+      .eq('name', subcategoryName)
+      .eq('category_id', categoryId)
+      .single();
+    
+    if (selectError && selectError.code !== 'PGRST116') {
+      throw new Error(`Error checking subcategory: ${selectError.message}`);
+    }
+    
+    if (existingSubcategory) {
+      return existingSubcategory.id;
+    }
+    
+    // Create new subcategory
+    const { data: newSubcategory, error: insertError } = await supabase
+      .from('service_subcategories')
+      .insert({
+        name: subcategoryName,
+        description: `Auto-imported subcategory: ${subcategoryName}`,
+        category_id: categoryId
+      })
+      .select('id')
+      .single();
+    
+    if (insertError) {
+      throw new Error(`Failed to create subcategory: ${insertError.message}`);
+    }
+    
+    return newSubcategory.id;
+  } catch (error) {
+    console.error('Error ensuring subcategory exists:', error);
+    throw error;
+  }
+}
+
+async function insertService(
+  service: { name: string; description: string; estimated_time: number; price: number },
+  subcategoryId: string
+): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('service_jobs')
+      .insert({
+        name: service.name,
+        description: service.description,
+        estimated_time: service.estimated_time,
+        price: service.price,
+        subcategory_id: subcategoryId
+      });
+    
+    if (error) {
+      throw new Error(`Failed to insert service: ${error.message}`);
+    }
+  } catch (error) {
+    console.error('Error inserting service:', error);
+    throw error;
+  }
+}
+
+export async function processExcelFile(file: File): Promise<ImportResult> {
+  try {
+    // For direct file uploads, we'll treat the file name as both sector and category
+    const fileName = file.name.replace(/\.(xlsx|xls)$/i, '');
+    
+    // Read file as array buffer
+    const arrayBuffer = await file.arrayBuffer();
+    
+    // Parse Excel file
+    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    
+    // Convert to JSON array
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+      header: 1,
+      defval: '',
+      raw: false
+    }) as string[][];
+    
+    if (!jsonData || jsonData.length < 2) {
+      throw new Error('Excel file must have at least 2 rows (header + data)');
+    }
+    
+    // Process the data using fileName as both sector and category
+    const result = await processExcelData(jsonData, fileName, fileName);
+    
+    return {
+      success: true,
+      message: `Successfully processed ${file.name}`,
+      stats: result.stats
+    };
+  } catch (error) {
+    console.error('Error processing Excel file:', error);
+    return {
+      success: false,
+      message: `Error processing ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
+}
+
+export async function processMultipleExcelFiles(files: File[]): Promise<ImportResult> {
+  try {
+    const results = await Promise.all(files.map(file => processExcelFile(file)));
+    const failedFiles = results.filter(r => !r.success);
+    
+    if (failedFiles.length > 0) {
+      throw new Error(`Failed to process ${failedFiles.length} files`);
+    }
+    
+    // Aggregate stats
+    const totalStats = results.reduce((acc, result) => {
+      if (result.stats) {
+        acc.totalSectors += result.stats.totalSectors;
+        acc.totalCategories += result.stats.totalCategories;
+        acc.totalSubcategories += result.stats.totalSubcategories;
+        acc.totalServices += result.stats.totalServices;
+        acc.filesProcessed += result.stats.filesProcessed;
+      }
+      return acc;
+    }, {
+      totalSectors: 0,
+      totalCategories: 0,
+      totalSubcategories: 0,
+      totalServices: 0,
+      filesProcessed: 0
+    });
+    
+    return {
+      success: true,
+      message: `Successfully processed ${files.length} files`,
+      stats: totalStats
+    };
+  } catch (error) {
+    console.error('Error processing multiple Excel files:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+export function mapExcelToServiceHierarchy(excelData: any[]): any {
+  // This function can be used for custom mapping if needed
+  console.log('Mapping Excel data to service hierarchy:', excelData);
+  return excelData;
+}
+
+export function validateExcelData(data: any[]): { isValid: boolean; errors: string[] } {
   const errors: string[] = [];
   
-  if (!Array.isArray(data) || data.length < 2) {
-    errors.push('Excel file must have at least 2 rows (header + data)');
+  if (!data || !Array.isArray(data)) {
+    errors.push('Data must be an array');
     return { isValid: false, errors };
   }
   
-  const headers = data[0];
-  if (!Array.isArray(headers) || headers.length === 0) {
-    errors.push('Excel file must have headers in the first row');
-    return { isValid: false, errors };
-  }
-  
-  // Check if there's any data beyond headers
-  const hasData = data.slice(1).some(row => 
-    Array.isArray(row) && row.some(cell => cell !== null && cell !== undefined && cell !== '')
-  );
-  
-  if (!hasData) {
-    errors.push('Excel file must contain data rows beyond headers');
-    return { isValid: false, errors };
+  if (data.length < 2) {
+    errors.push('Data must have at least 2 rows (header + data)');
   }
   
   return { isValid: errors.length === 0, errors };
-}
-
-export async function mapExcelToServiceHierarchy(excelData: any[][], sectorName: string): Promise<ProcessedServiceData> {
-  try {
-    return await processServiceDataFromSheets(excelData, sectorName);
-  } catch (error) {
-    console.error('Error mapping Excel to service hierarchy:', error);
-    throw error;
-  }
 }

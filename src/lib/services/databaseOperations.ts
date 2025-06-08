@@ -28,15 +28,15 @@ export async function clearAllServiceData(): Promise<void> {
       throw new Error(`Failed to delete service subcategories: ${subcategoriesError.message}`);
     }
     
-    console.log('Deleting service main categories...');
+    console.log('Deleting service categories...');
     const { error: categoriesError } = await supabase
-      .from('service_main_categories')
+      .from('service_categories')
       .delete()
       .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all rows
     
     if (categoriesError) {
-      console.error('Error deleting service main categories:', categoriesError);
-      throw new Error(`Failed to delete service main categories: ${categoriesError.message}`);
+      console.error('Error deleting service categories:', categoriesError);
+      throw new Error(`Failed to delete service categories: ${categoriesError.message}`);
     }
     
     console.log('Deleting service sectors...');
@@ -68,7 +68,7 @@ export async function getServiceCounts(): Promise<{
     
     const [sectorsResult, categoriesResult, subcategoriesResult, jobsResult] = await Promise.all([
       supabase.from('service_sectors').select('id', { count: 'exact', head: true }),
-      supabase.from('service_main_categories').select('id', { count: 'exact', head: true }),
+      supabase.from('service_categories').select('id', { count: 'exact', head: true }),
       supabase.from('service_subcategories').select('id', { count: 'exact', head: true }),
       supabase.from('service_jobs').select('id', { count: 'exact', head: true })
     ]);

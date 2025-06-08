@@ -14,7 +14,7 @@ export async function fetchServiceSectors(): Promise<ServiceSector[]> {
         description,
         position,
         is_active,
-        service_main_categories (
+        service_categories (
           id,
           name,
           description,
@@ -53,7 +53,7 @@ export async function fetchServiceSectors(): Promise<ServiceSector[]> {
       description: sector.description || undefined,
       position: sector.position || undefined,
       is_active: sector.is_active,
-      categories: (sector.service_main_categories || []).map(category => ({
+      categories: (sector.service_categories || []).map(category => ({
         id: category.id,
         name: category.name,
         description: category.description || undefined,
@@ -89,7 +89,7 @@ export async function fetchServiceCategories(): Promise<ServiceMainCategory[]> {
     console.log('Fetching service categories from database...');
     
     const { data: categories, error: categoriesError } = await supabase
-      .from('service_main_categories')
+      .from('service_categories')
       .select(`
         id,
         name,
