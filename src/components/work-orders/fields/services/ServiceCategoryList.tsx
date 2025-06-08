@@ -12,6 +12,9 @@ interface ServiceCategoryListProps {
   onServiceSelect: (service: ServiceJob, categoryName: string, subcategoryName: string) => void;
   onRemoveService: (serviceId: string) => void;
   onUpdateServices: (services: SelectedService[]) => void;
+  expandedCategories?: string[];
+  expandedSubcategories?: string[];
+  searchHighlight?: string;
 }
 
 export function ServiceCategoryList({
@@ -19,13 +22,22 @@ export function ServiceCategoryList({
   selectedServices,
   onServiceSelect,
   onRemoveService,
-  onUpdateServices
+  onUpdateServices,
+  expandedCategories: initialExpandedCategories,
+  expandedSubcategories: initialExpandedSubcategories,
+  searchHighlight
 }: ServiceCategoryListProps) {
-  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
-  const [expandedSubcategories, setExpandedSubcategories] = useState<string[]>([]);
+  const [localExpandedCategories, setLocalExpandedCategories] = useState<string[]>([]);
+  const [localExpandedSubcategories, setLocalExpandedSubcategories] = useState<string[]>([]);
+
+  // Use props if provided, otherwise use local state
+  const expandedCategories = initialExpandedCategories || localExpandedCategories;
+  const expandedSubcategories = initialExpandedSubcategories || localExpandedSubcategories;
 
   const toggleCategory = (categoryId: string) => {
-    setExpandedCategories(prev => 
+    if (initialExpandedCategories) return; // Don't allow manual toggle if controlled
+    
+    setLocalExpandedCategories(prev => 
       prev.includes(categoryId) 
         ? prev.filter(id => id !== categoryId)
         : [...prev, categoryId]
@@ -33,7 +45,9 @@ export function ServiceCategoryList({
   };
 
   const toggleSubcategory = (subcategoryId: string) => {
-    setExpandedSubcategories(prev => 
+    if (initialExpandedSubcategories) return; // Don't allow manual toggle if controlled
+    
+    setLocalExpandedSubcategories(prev => 
       prev.includes(subcategoryId) 
         ? prev.filter(id => id !== subcategoryId)
         : [...prev, subcategoryId]
@@ -43,6 +57,23 @@ export function ServiceCategoryList({
   const isSelected = (jobId: string) => 
     selectedServices.some(service => service.serviceId === jobId);
 
+  const highlightText = (text: string, highlight?: string) => {
+    if (!highlight) return text;
+    
+    const index = text.toLowerCase().indexOf(highlight.toLowerCase());
+    if (index === -1) return text;
+    
+    return (
+      <>
+        {text.substring(0, index)}
+        <mark className="bg-yellow-200 px-1 rounded">
+          {text.substring(index, index + highlight.length)}
+        </mark>
+        {text.substring(index + highlight.length)}
+      </>
+    );
+  };
+
   return (
     <div className="space-y-2">
       {categories.map((category) => (
@@ -51,7 +82,9 @@ export function ServiceCategoryList({
             onClick={() => toggleCategory(category.id)}
             className="w-full flex items-center justify-between p-3 text-left hover:bg-gray-50"
           >
-            <h3 className="font-medium">{category.name}</h3>
+            <h3 className="font-medium">
+              {highlightText(category.name, searchHighlight)}
+            </h3>
             {expandedCategories.includes(category.id) ? (
               <ChevronDown className="h-4 w-4" />
             ) : (
@@ -67,7 +100,9 @@ export function ServiceCategoryList({
                     onClick={() => toggleSubcategory(subcategory.id)}
                     className="w-full flex items-center justify-between p-3 text-left hover:bg-gray-100"
                   >
-                    <h4 className="font-medium text-sm">{subcategory.name}</h4>
+                    <h4 className="font-medium text-sm">
+                      {highlightText(subcategory.name, searchHighlight)}
+                    </h4>
                     {expandedSubcategories.includes(subcategory.id) ? (
                       <ChevronDown className="h-4 w-4" />
                     ) : (
@@ -84,10 +119,12 @@ export function ServiceCategoryList({
                             className="flex items-center justify-between p-2 border rounded hover:bg-gray-50"
                           >
                             <div className="flex-1">
-                              <div className="font-medium text-sm">{job.name}</div>
+                              <div className="font-medium text-sm">
+                                {highlightText(job.name, searchHighlight)}
+                              </div>
                               {job.description && (
                                 <div className="text-xs text-gray-500 mt-1">
-                                  {job.description}
+                                  {highlightText(job.description, searchHighlight)}
                                 </div>
                               )}
                               <div className="flex items-center gap-4 mt-1">
