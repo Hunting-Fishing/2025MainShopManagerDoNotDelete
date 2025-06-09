@@ -32,7 +32,7 @@ export function WorkOrderDetailsTabs({
 }: WorkOrderDetailsTabsProps) {
   return <Tabs defaultValue="services" className="w-full">
       <TabsList className="grid w-full grid-cols-4 bg-teal-500 rounded">
-        <TabsTrigger value="services" className="flex items-center gap-2">
+        <TabsTrigger value="services" className="flex items-center gap-2 text-lg">
           <Wrench className="h-4 w-4" />
           Labor & Services
         </TabsTrigger>
