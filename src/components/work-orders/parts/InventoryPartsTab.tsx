@@ -1,22 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Search, Package } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { WorkOrderPartFormValues } from '@/types/workOrderPart';
-
-interface InventoryItem {
-  id: string;
-  name: string;
-  sku: string;
-  price: number;
-  category?: string;
-  quantity?: number;
-}
+import { InventoryItemExtended } from '@/types/inventory';
+import { getInventoryItems } from '@/services/inventory/crudService';
+import { SupplierSelector } from './SupplierSelector';
 
 interface InventoryPartsTabProps {
   workOrderId: string;
@@ -24,154 +17,199 @@ interface InventoryPartsTabProps {
   onAddPart: (part: WorkOrderPartFormValues) => void;
 }
 
-export function InventoryPartsTab({ workOrderId, jobLineId, onAddPart }: InventoryPartsTabProps) {
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
-  const [filteredItems, setFilteredItems] = useState<InventoryItem[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+export function InventoryPartsTab({
+  workOrderId,
+  jobLineId,
+  onAddPart
+}: InventoryPartsTabProps) {
+  const [inventoryItems, setInventoryItems] = useState<InventoryItemExtended[]>([]);
+  const [filteredItems, setFilteredItems] = useState<InventoryItemExtended[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedSupplier, setSelectedSupplier] = useState('');
   const [loading, setLoading] = useState(true);
-  const [quantities, setQuantities] = useState<Record<string, number>>({});
 
+  // Load inventory items
   useEffect(() => {
-    fetchInventoryItems();
+    const loadInventoryItems = async () => {
+      try {
+        const items = await getInventoryItems();
+        setInventoryItems(items);
+        setFilteredItems(items);
+      } catch (error) {
+        console.error('Failed to load inventory items:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadInventoryItems();
   }, []);
 
+  // Filter items based on search query, category, and supplier
   useEffect(() => {
-    if (searchTerm.trim()) {
-      const filtered = inventoryItems.filter(item =>
-        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.category?.toLowerCase().includes(searchTerm.toLowerCase())
+    let filtered = inventoryItems;
+
+    if (searchQuery) {
+      filtered = filtered.filter(item =>
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()))
       );
-      setFilteredItems(filtered);
-    } else {
-      setFilteredItems(inventoryItems);
     }
-  }, [searchTerm, inventoryItems]);
 
-  const fetchInventoryItems = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('inventory_items')
-        .select('id, name, sku, unit_price, category, quantity')
-        .order('name');
-
-      if (error) throw error;
-
-      const items: InventoryItem[] = (data || []).map(item => ({
-        id: item.id,
-        name: item.name,
-        sku: item.sku,
-        price: item.unit_price || 0,
-        category: item.category,
-        quantity: item.quantity
-      }));
-
-      setInventoryItems(items);
-      setFilteredItems(items);
-    } catch (error) {
-      console.error('Error fetching inventory items:', error);
-    } finally {
-      setLoading(false);
+    if (selectedCategory) {
+      filtered = filtered.filter(item => item.category === selectedCategory);
     }
-  };
 
-  const handleAddItem = (item: InventoryItem) => {
-    const quantity = quantities[item.id] || 1;
-    const markupPercentage = 25; // Default markup
-    const customerPrice = item.price * (1 + markupPercentage / 100);
+    if (selectedSupplier) {
+      filtered = filtered.filter(item => item.supplier === selectedSupplier);
+    }
 
+    setFilteredItems(filtered);
+  }, [inventoryItems, searchQuery, selectedCategory, selectedSupplier]);
+
+  const handleAddItem = (item: InventoryItemExtended, quantity: number = 1) => {
     const part: WorkOrderPartFormValues = {
+      inventoryItemId: item.id,
       partName: item.name,
       partNumber: item.sku,
-      supplierCost: item.price,
-      markupPercentage,
-      retailPrice: item.price,
-      customerPrice: customerPrice,
-      quantity,
+      supplierName: item.supplier || '',
+      supplierCost: item.cost || item.unit_price || 0,
+      markupPercentage: item.marginMarkup || 50,
+      retailPrice: item.unit_price,
+      customerPrice: item.unit_price,
+      quantity: quantity,
       partType: 'inventory',
-      inventoryItemId: item.id
+      notes: ''
     };
 
     onAddPart(part);
-    
-    // Reset quantity for this item
-    setQuantities(prev => ({ ...prev, [item.id]: 1 }));
   };
 
-  const updateQuantity = (itemId: string, quantity: number) => {
-    setQuantities(prev => ({ ...prev, [itemId]: Math.max(1, quantity) }));
+  const getStockStatus = (item: InventoryItemExtended) => {
+    if (item.quantity <= 0) return { label: 'Out of Stock', color: 'destructive' };
+    if (item.quantity <= item.reorder_point) return { label: 'Low Stock', color: 'secondary' };
+    return { label: 'In Stock', color: 'default' };
   };
+
+  // Get unique categories and suppliers from inventory
+  const categories = [...new Set(inventoryItems.map(item => item.category).filter(Boolean))];
+  const suppliers = [...new Set(inventoryItems.map(item => item.supplier).filter(Boolean))];
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="flex items-center justify-center p-8">
+        <div className="text-muted-foreground">Loading inventory items...</div>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search inventory items..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
-      </div>
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5" />
+            Search Inventory
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <Label>Search</Label>
+              <div className="relative">
+                <Input
+                  placeholder="Search parts..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pr-8"
+                />
+                <Search className="h-4 w-4 absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+              </div>
+            </div>
+            
+            <div>
+              <Label>Category</Label>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="w-full px-3 py-2 border border-input rounded-md"
+              >
+                <option value="">All Categories</option>
+                {categories.map(category => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </select>
+            </div>
 
-      <div className="grid gap-3 max-h-96 overflow-y-auto">
-        {filteredItems.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <Package className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p>No inventory items found</p>
+            <div>
+              <SupplierSelector
+                value={selectedSupplier}
+                onValueChange={setSelectedSupplier}
+                placeholder="All Suppliers"
+              />
+            </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Results */}
+      <div className="space-y-2">
+        {filteredItems.length === 0 ? (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <div className="text-muted-foreground">No inventory items found</div>
+            </CardContent>
+          </Card>
         ) : (
-          filteredItems.map((item) => (
-            <Card key={item.id} className="p-4">
-              <CardContent className="p-0">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-medium">{item.name}</h4>
-                      {item.category && (
-                        <Badge variant="outline" className="text-xs">
-                          {item.category}
+          filteredItems.map((item) => {
+            const stockStatus = getStockStatus(item);
+            return (
+              <Card key={item.id}>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h4 className="font-medium">{item.name}</h4>
+                        <Badge variant={stockStatus.color as any}>
+                          {stockStatus.label}
                         </Badge>
-                      )}
+                      </div>
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        <div>SKU: {item.sku}</div>
+                        <div>Category: {item.category}</div>
+                        {item.supplier && <div>Supplier: {item.supplier}</div>}
+                        <div>Price: ${item.unit_price.toFixed(2)} | Qty Available: {item.quantity}</div>
+                        {item.description && <div>Description: {item.description}</div>}
+                      </div>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      SKU: {item.sku} • Price: ${item.price.toFixed(2)}
-                      {item.quantity !== undefined && (
-                        <span className="ml-2">• Stock: {item.quantity}</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1">
-                      <Label htmlFor={`qty-${item.id}`} className="text-xs">Qty:</Label>
+                    <div className="flex items-center gap-2">
                       <Input
-                        id={`qty-${item.id}`}
                         type="number"
                         min="1"
-                        value={quantities[item.id] || 1}
-                        onChange={(e) => updateQuantity(item.id, parseInt(e.target.value) || 1)}
-                        className="w-16 h-8"
+                        max={item.quantity}
+                        defaultValue="1"
+                        className="w-20"
+                        id={`qty-${item.id}`}
                       />
+                      <Button 
+                        onClick={() => {
+                          const qtyInput = document.getElementById(`qty-${item.id}`) as HTMLInputElement;
+                          const quantity = parseInt(qtyInput.value) || 1;
+                          handleAddItem(item, quantity);
+                        }}
+                        disabled={item.quantity <= 0}
+                      >
+                        Add
+                      </Button>
                     </div>
-                    <Button
-                      size="sm"
-                      onClick={() => handleAddItem(item)}
-                    >
-                      Add
-                    </Button>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
+                </CardContent>
+              </Card>
+            );
+          })
         )}
       </div>
     </div>
