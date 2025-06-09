@@ -1,10 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { JobLineCard } from './JobLineCard';
+import { JobLinesTable } from './JobLinesTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ResponsiveGrid } from '@/components/ui/responsive-grid';
-import { Clock, DollarSign, Wrench } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Clock, DollarSign, Wrench, LayoutList, LayoutGrid } from 'lucide-react';
 
 interface JobLinesGridProps {
   jobLines: WorkOrderJobLine[];
@@ -21,6 +23,8 @@ export function JobLinesGrid({
   onUpdate = () => {},
   onDelete = () => {}
 }: JobLinesGridProps) {
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+  
   const totalHours = jobLines.reduce((sum, line) => sum + (line.estimatedHours || 0), 0);
   const totalAmount = jobLines.reduce((sum, line) => sum + (line.totalAmount || 0), 0);
 
@@ -42,25 +46,59 @@ export function JobLinesGrid({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Service Details</h3>
-        <div className="text-sm text-muted-foreground">
-          {jobLines.length} service{jobLines.length !== 1 ? 's' : ''}
+        <div className="flex items-center gap-4">
+          <div className="text-sm text-muted-foreground">
+            {jobLines.length} service{jobLines.length !== 1 ? 's' : ''}
+          </div>
+          
+          {/* View Mode Toggle */}
+          <div className="flex items-center gap-1 border rounded-lg p-1 bg-muted/50">
+            <Button
+              variant={viewMode === 'table' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('table')}
+              className="h-8 px-3"
+            >
+              <LayoutList className="h-4 w-4 mr-2" />
+              Row View
+            </Button>
+            <Button
+              variant={viewMode === 'cards' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('cards')}
+              className="h-8 px-3"
+            >
+              <LayoutGrid className="h-4 w-4 mr-2" />
+              Card View
+            </Button>
+          </div>
         </div>
       </div>
 
-      <ResponsiveGrid
-        cols={{ default: 1, md: 2, lg: 3 }}
-        gap="md"
-      >
-        {jobLines.map((jobLine) => (
-          <JobLineCard 
-            key={jobLine.id} 
-            jobLine={jobLine}
-            onUpdate={onUpdate}
-            onDelete={onDelete}
-            isEditMode={isEditMode}
-          />
-        ))}
-      </ResponsiveGrid>
+      {/* Content based on view mode */}
+      {viewMode === 'table' ? (
+        <JobLinesTable
+          jobLines={jobLines}
+          isEditMode={isEditMode}
+          onUpdate={onUpdate}
+          onDelete={onDelete}
+        />
+      ) : (
+        <ResponsiveGrid
+          cols={{ default: 1, md: 2, lg: 3 }}
+          gap="md"
+        >
+          {jobLines.map((jobLine) => (
+            <JobLineCard 
+              key={jobLine.id} 
+              jobLine={jobLine}
+              onUpdate={onUpdate}
+              onDelete={onDelete}
+              isEditMode={isEditMode}
+            />
+          ))}
+        </ResponsiveGrid>
+      )}
 
       {showSummary && (totalHours > 0 || totalAmount > 0) && (
         <Card className="bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800">
