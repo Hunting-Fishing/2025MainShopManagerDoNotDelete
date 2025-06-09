@@ -1,378 +1,313 @@
-import React, { useState, useCallback } from 'react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
-import { Plus, Trash2, Calculator } from "lucide-react";
-import { WorkOrderPartFormValues } from "@/types/workOrderPart";
-import { useToast } from "@/hooks/use-toast";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { WorkOrderPartFormValues } from '@/types/workOrderPart';
+import { useToast } from '@/hooks/use-toast';
 
 interface NonInventoryPartsTabProps {
-  parts: WorkOrderPartFormValues[];
-  onPartsChange: (parts: WorkOrderPartFormValues[]) => void;
+  workOrderId: string;
+  jobLineId?: string;
+  onAddPart: (part: WorkOrderPartFormValues) => void;
 }
 
-export const NonInventoryPartsTab: React.FC<NonInventoryPartsTabProps> = ({
-  parts,
-  onPartsChange
-}) => {
-  const { toast } = useToast();
-  const [markupScaleEnabled, setMarkupScaleEnabled] = useState<{ [key: number]: boolean }>({});
-
-  const createNewPart = (): WorkOrderPartFormValues => ({
+export function NonInventoryPartsTab({ workOrderId, jobLineId, onAddPart }: NonInventoryPartsTabProps) {
+  const [partData, setPartData] = useState({
     partName: '',
     partNumber: '',
     supplierName: '',
     supplierCost: 0,
-    markupPercentage: 0, // Initialize to 0
+    markupPercentage: 0,
     retailPrice: 0,
     customerPrice: 0,
     quantity: 1,
-    partType: 'non-inventory',
     invoiceNumber: '',
     poLine: '',
     notes: ''
   });
 
-  const addPart = () => {
-    const newParts = [...parts, createNewPart()];
-    onPartsChange(newParts);
-  };
+  const [useMarkupScale, setUseMarkupScale] = useState(false);
+  const { toast } = useToast();
 
-  const removePart = (index: number) => {
-    const newParts = parts.filter((_, i) => i !== index);
-    onPartsChange(newParts);
-    
-    // Clean up markup scale state
-    const newMarkupScaleEnabled = { ...markupScaleEnabled };
-    delete newMarkupScaleEnabled[index];
-    
-    // Reindex the remaining items
-    const reindexed: { [key: number]: boolean } = {};
-    Object.keys(newMarkupScaleEnabled).forEach(key => {
-      const oldIndex = parseInt(key);
-      if (oldIndex > index) {
-        reindexed[oldIndex - 1] = newMarkupScaleEnabled[oldIndex];
-      } else if (oldIndex < index) {
-        reindexed[oldIndex] = newMarkupScaleEnabled[oldIndex];
-      }
-    });
-    
-    setMarkupScaleEnabled(reindexed);
-  };
-
-  const updatePart = (index: number, field: keyof WorkOrderPartFormValues, value: any) => {
-    const newParts = [...parts];
-    newParts[index] = { ...newParts[index], [field]: value };
-    onPartsChange(newParts);
-  };
-
-  // Calculate markup percentage only when both supplier cost and retail price are present
-  const calculateDisplayMarkup = (supplierCost: number, retailPrice: number): number => {
-    if (supplierCost > 0 && retailPrice > 0) {
-      return ((retailPrice - supplierCost) / supplierCost) * 100;
+  // Calculate markup percentage based on supplier cost and retail price
+  const calculateDisplayMarkup = () => {
+    if (partData.supplierCost > 0 && partData.retailPrice > 0) {
+      return ((partData.retailPrice - partData.supplierCost) / partData.supplierCost) * 100;
     }
     return 0;
   };
 
-  const handleSupplierCostChange = (index: number, value: string) => {
-    const supplierCost = parseFloat(value) || 0;
-    const currentPart = parts[index];
+  // Calculate customer price based on retail price and markup percentage
+  const calculateCustomerPrice = () => {
+    if (useMarkupScale && partData.retailPrice > 0) {
+      return partData.retailPrice * (1 + partData.markupPercentage / 100);
+    }
+    return partData.retailPrice;
+  };
+
+  const handleInputChange = (field: string, value: string | number) => {
+    const numericFields = ['supplierCost', 'retailPrice', 'quantity', 'markupPercentage'];
+    const processedValue = numericFields.includes(field) ? Number(value) || 0 : value;
     
-    updatePart(index, 'supplierCost', supplierCost);
-    
-    // Calculate and update markup percentage if retail price exists
-    if (currentPart.retailPrice > 0) {
-      const calculatedMarkup = calculateDisplayMarkup(supplierCost, currentPart.retailPrice);
-      updatePart(index, 'markupPercentage', calculatedMarkup);
+    setPartData(prev => {
+      const updated = { ...prev, [field]: processedValue };
       
-      // Update customer price if markup scale is enabled
-      if (markupScaleEnabled[index]) {
-        const customerPrice = currentPart.retailPrice * (1 + calculatedMarkup / 100);
-        updatePart(index, 'customerPrice', customerPrice);
+      // Auto-calculate markup percentage when both cost and retail are available
+      if ((field === 'supplierCost' || field === 'retailPrice') && 
+          updated.supplierCost > 0 && updated.retailPrice > 0) {
+        updated.markupPercentage = ((updated.retailPrice - updated.supplierCost) / updated.supplierCost) * 100;
       }
-    }
-  };
-
-  const handleRetailPriceChange = (index: number, value: string) => {
-    const retailPrice = parseFloat(value) || 0;
-    const currentPart = parts[index];
-    
-    updatePart(index, 'retailPrice', retailPrice);
-    
-    // Calculate and update markup percentage if supplier cost exists
-    if (currentPart.supplierCost > 0) {
-      const calculatedMarkup = calculateDisplayMarkup(currentPart.supplierCost, retailPrice);
-      updatePart(index, 'markupPercentage', calculatedMarkup);
       
-      // Update customer price if markup scale is enabled
-      if (markupScaleEnabled[index]) {
-        const customerPrice = retailPrice * (1 + calculatedMarkup / 100);
-        updatePart(index, 'customerPrice', customerPrice);
+      // Recalculate customer price
+      if (useMarkupScale && updated.retailPrice > 0) {
+        updated.customerPrice = updated.retailPrice * (1 + updated.markupPercentage / 100);
+      } else {
+        updated.customerPrice = updated.retailPrice;
       }
-    } else {
-      // If no supplier cost, just update customer price to match retail price when markup scale is enabled
-      if (markupScaleEnabled[index]) {
-        updatePart(index, 'customerPrice', retailPrice);
-      }
-    }
+      
+      return updated;
+    });
   };
 
-  const handleMarkupChange = (index: number, markup: number) => {
-    const currentPart = parts[index];
-    
-    updatePart(index, 'markupPercentage', markup);
-    
-    // Only update customer price if markup scale is enabled
-    if (markupScaleEnabled[index] && currentPart.retailPrice > 0) {
-      const customerPrice = currentPart.retailPrice * (1 + markup / 100);
-      updatePart(index, 'customerPrice', customerPrice);
-    }
+  const handleMarkupScaleToggle = () => {
+    setUseMarkupScale(prev => {
+      const newValue = !prev;
+      
+      setPartData(prevData => ({
+        ...prevData,
+        customerPrice: newValue && prevData.retailPrice > 0 
+          ? prevData.retailPrice * (1 + prevData.markupPercentage / 100)
+          : prevData.retailPrice
+      }));
+      
+      return newValue;
+    });
   };
 
-  const handleCustomerPriceChange = (index: number, value: string) => {
-    const customerPrice = parseFloat(value) || 0;
-    updatePart(index, 'customerPrice', customerPrice);
-  };
-
-  const toggleMarkupScale = (index: number, enabled: boolean) => {
-    setMarkupScaleEnabled(prev => ({ ...prev, [index]: enabled }));
-    
-    const currentPart = parts[index];
-    if (enabled && currentPart.retailPrice > 0) {
-      // When enabling markup scale, calculate customer price based on current retail price and markup
-      const customerPrice = currentPart.retailPrice * (1 + currentPart.markupPercentage / 100);
-      updatePart(index, 'customerPrice', customerPrice);
+  const handleAddPart = () => {
+    if (!partData.partName.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Part name is required"
+      });
+      return;
     }
+
+    if (partData.quantity <= 0) {
+      toast({
+        variant: "destructive",
+        title: "Error", 
+        description: "Quantity must be greater than 0"
+      });
+      return;
+    }
+
+    if (partData.customerPrice <= 0) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Customer price must be greater than 0"
+      });
+      return;
+    }
+
+    const newPart: WorkOrderPartFormValues = {
+      partName: partData.partName.trim(),
+      partNumber: partData.partNumber.trim() || undefined,
+      supplierName: partData.supplierName.trim() || undefined,
+      supplierCost: partData.supplierCost,
+      markupPercentage: partData.markupPercentage,
+      retailPrice: partData.retailPrice,
+      customerPrice: partData.customerPrice,
+      quantity: partData.quantity,
+      partType: 'non-inventory',
+      invoiceNumber: partData.invoiceNumber.trim() || undefined,
+      poLine: partData.poLine.trim() || undefined,
+      notes: partData.notes.trim() || undefined
+    };
+
+    onAddPart(newPart);
+
+    // Reset form
+    setPartData({
+      partName: '',
+      partNumber: '',
+      supplierName: '',
+      supplierCost: 0,
+      markupPercentage: 0,
+      retailPrice: 0,
+      customerPrice: 0,
+      quantity: 1,
+      invoiceNumber: '',
+      poLine: '',
+      notes: ''
+    });
+
+    toast({
+      title: "Success",
+      description: "Non-inventory part added successfully"
+    });
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Non-Inventory Parts</h3>
-        <Button onClick={addPart} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Add Part
-        </Button>
-      </div>
-
-      {parts.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground">
-          <p>No parts added yet. Click "Add Part" to get started.</p>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {parts.map((part, index) => (
-            <div key={index} className="border rounded-lg p-6 space-y-4">
-              <div className="flex justify-between items-start">
-                <h4 className="font-medium">Part #{index + 1}</h4>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => removePart(index)}
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor={`partName-${index}`}>Part Name *</Label>
-                  <Input
-                    id={`partName-${index}`}
-                    value={part.partName}
-                    onChange={(e) => updatePart(index, 'partName', e.target.value)}
-                    placeholder="Enter part name"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor={`partNumber-${index}`}>Part Number</Label>
-                  <Input
-                    id={`partNumber-${index}`}
-                    value={part.partNumber || ''}
-                    onChange={(e) => updatePart(index, 'partNumber', e.target.value)}
-                    placeholder="Enter part number"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor={`supplierName-${index}`}>Supplier</Label>
-                  <Input
-                    id={`supplierName-${index}`}
-                    value={part.supplierName || ''}
-                    onChange={(e) => updatePart(index, 'supplierName', e.target.value)}
-                    placeholder="Enter supplier name"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor={`supplierCost-${index}`}>Supplier Cost *</Label>
-                  <Input
-                    id={`supplierCost-${index}`}
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={part.supplierCost}
-                    onChange={(e) => handleSupplierCostChange(index, e.target.value)}
-                    placeholder="0.00"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor={`retailPrice-${index}`}>Retail/List Price *</Label>
-                  <Input
-                    id={`retailPrice-${index}`}
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={part.retailPrice}
-                    onChange={(e) => handleRetailPriceChange(index, e.target.value)}
-                    placeholder="0.00"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor={`quantity-${index}`}>Quantity *</Label>
-                  <Input
-                    id={`quantity-${index}`}
-                    type="number"
-                    min="1"
-                    value={part.quantity}
-                    onChange={(e) => updatePart(index, 'quantity', parseInt(e.target.value) || 1)}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label>Markup Calculation</Label>
-                    <div className="flex items-center space-x-2">
-                      <Label htmlFor={`markupScale-${index}`} className="text-sm">
-                        Auto-adjust customer price
-                      </Label>
-                      <Switch
-                        id={`markupScale-${index}`}
-                        checked={markupScaleEnabled[index] || false}
-                        onCheckedChange={(checked) => toggleMarkupScale(index, checked)}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label>Markup %</Label>
-                      <span className="text-sm font-medium">
-                        {part.markupPercentage.toFixed(1)}%
-                      </span>
-                    </div>
-                    <Slider
-                      value={[part.markupPercentage]}
-                      onValueChange={(value) => handleMarkupChange(index, value[0])}
-                      max={200}
-                      min={0}
-                      step={0.1}
-                      className="w-full"
-                    />
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>0%</span>
-                      <span>200%</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor={`customerPrice-${index}`}>Customer Price *</Label>
-                    <Input
-                      id={`customerPrice-${index}`}
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={part.customerPrice}
-                      onChange={(e) => handleCustomerPriceChange(index, e.target.value)}
-                      placeholder="0.00"
-                      disabled={markupScaleEnabled[index]}
-                    />
-                    {markupScaleEnabled[index] && (
-                      <p className="text-xs text-muted-foreground">
-                        Customer price is automatically calculated based on retail price and markup
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor={`invoiceNumber-${index}`}>Invoice Number</Label>
-                    <Input
-                      id={`invoiceNumber-${index}`}
-                      value={part.invoiceNumber || ''}
-                      onChange={(e) => updatePart(index, 'invoiceNumber', e.target.value)}
-                      placeholder="Enter invoice number"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor={`poLine-${index}`}>PO Line</Label>
-                    <Input
-                      id={`poLine-${index}`}
-                      value={part.poLine || ''}
-                      onChange={(e) => updatePart(index, 'poLine', e.target.value)}
-                      placeholder="Enter PO line"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor={`notes-${index}`}>Notes</Label>
-                    <Textarea
-                      id={`notes-${index}`}
-                      value={part.notes || ''}
-                      onChange={(e) => updatePart(index, 'notes', e.target.value)}
-                      placeholder="Additional notes about this part..."
-                      rows={3}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t pt-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">Supplier Cost:</span>
-                    <p className="font-medium">${part.supplierCost.toFixed(2)}</p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Retail Price:</span>
-                    <p className="font-medium">${part.retailPrice.toFixed(2)}</p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Customer Price:</span>
-                    <p className="font-medium">${part.customerPrice.toFixed(2)}</p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Total:</span>
-                    <p className="font-semibold">${(part.customerPrice * part.quantity).toFixed(2)}</p>
-                  </div>
-                </div>
-              </div>
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Add Non-Inventory Part</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="partName">Part Name *</Label>
+              <Input
+                id="partName"
+                value={partData.partName}
+                onChange={(e) => handleInputChange('partName', e.target.value)}
+                placeholder="Enter part name"
+              />
             </div>
-          ))}
 
-          <div className="border-t pt-4">
-            <div className="flex justify-end">
-              <div className="text-right">
-                <p className="text-lg font-semibold">
-                  Total Parts Cost: ${parts.reduce((sum, part) => sum + (part.customerPrice * part.quantity), 0).toFixed(2)}
-                </p>
+            <div>
+              <Label htmlFor="partNumber">Part Number</Label>
+              <Input
+                id="partNumber"
+                value={partData.partNumber}
+                onChange={(e) => handleInputChange('partNumber', e.target.value)}
+                placeholder="Enter part number"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="supplierName">Supplier Name</Label>
+              <Input
+                id="supplierName"
+                value={partData.supplierName}
+                onChange={(e) => handleInputChange('supplierName', e.target.value)}
+                placeholder="Enter supplier name"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="quantity">Quantity *</Label>
+              <Input
+                id="quantity"
+                type="number"
+                min="1"
+                value={partData.quantity}
+                onChange={(e) => handleInputChange('quantity', e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="supplierCost">Supplier Cost ($)</Label>
+              <Input
+                id="supplierCost"
+                type="number"
+                step="0.01"
+                min="0"
+                value={partData.supplierCost}
+                onChange={(e) => handleInputChange('supplierCost', e.target.value)}
+                placeholder="0.00"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="retailPrice">Retail/List Price ($) *</Label>
+              <Input
+                id="retailPrice"
+                type="number"
+                step="0.01"
+                min="0"
+                value={partData.retailPrice}
+                onChange={(e) => handleInputChange('retailPrice', e.target.value)}
+                placeholder="0.00"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="useMarkupScale"
+                checked={useMarkupScale}
+                onChange={handleMarkupScaleToggle}
+                className="rounded"
+              />
+              <Label htmlFor="useMarkupScale">Apply markup to customer price</Label>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="markupPercentage">
+                  Markup % {partData.supplierCost > 0 && partData.retailPrice > 0 ? '(Calculated)' : ''}
+                </Label>
+                <Input
+                  id="markupPercentage"
+                  type="number"
+                  step="0.01"
+                  value={partData.markupPercentage.toFixed(2)}
+                  onChange={(e) => handleInputChange('markupPercentage', e.target.value)}
+                  disabled={!useMarkupScale}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="customerPrice">Customer Price ($)</Label>
+                <Input
+                  id="customerPrice"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={partData.customerPrice.toFixed(2)}
+                  onChange={(e) => handleInputChange('customerPrice', e.target.value)}
+                  disabled={useMarkupScale}
+                />
               </div>
             </div>
           </div>
-        </div>
-      )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="invoiceNumber">Invoice Number</Label>
+              <Input
+                id="invoiceNumber"
+                value={partData.invoiceNumber}
+                onChange={(e) => handleInputChange('invoiceNumber', e.target.value)}
+                placeholder="Enter invoice number"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="poLine">PO Line</Label>
+              <Input
+                id="poLine"
+                value={partData.poLine}
+                onChange={(e) => handleInputChange('poLine', e.target.value)}
+                placeholder="Enter PO line"
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              value={partData.notes}
+              onChange={(e) => handleInputChange('notes', e.target.value)}
+              placeholder="Enter any additional notes"
+              rows={3}
+            />
+          </div>
+
+          <Button onClick={handleAddPart} className="w-full">
+            Add Part
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
-};
+}
