@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { WorkOrder } from '@/types/workOrder';
@@ -10,7 +9,7 @@ import { WorkOrderInvoiceView } from './details/WorkOrderInvoiceView';
 import { WorkOrderViewToggle } from './details/WorkOrderViewToggle';
 import { Button } from '@/components/ui/button';
 import { Edit, Save, X } from 'lucide-react';
-import { loadJobLinesFromDatabase, saveJobLinesToDatabase } from '@/services/jobLineParserEnhanced';
+import { loadJobLinesFromDatabase, saveJobLinesToDatabase } from '@/services/jobLineDatabase';
 import { toast } from 'sonner';
 
 interface WorkOrderDetailsViewProps {
@@ -25,20 +24,21 @@ export function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsViewProps) {
   const [isEditMode, setIsEditMode] = useState(false);
 
   // Load job lines from database
-  useEffect(() => {
-    const loadJobLines = async () => {
-      try {
-        setJobLinesLoading(true);
-        const lines = await loadJobLinesFromDatabase(workOrder.id);
-        setJobLines(lines);
-      } catch (error) {
-        console.error('Error loading job lines:', error);
-        toast.error('Failed to load job lines');
-      } finally {
-        setJobLinesLoading(false);
-      }
-    };
+  const loadJobLines = async () => {
+    try {
+      setJobLinesLoading(true);
+      const lines = await loadJobLinesFromDatabase(workOrder.id);
+      console.log('Loaded job lines with parts:', lines);
+      setJobLines(lines);
+    } catch (error) {
+      console.error('Error loading job lines:', error);
+      toast.error('Failed to load job lines');
+    } finally {
+      setJobLinesLoading(false);
+    }
+  };
 
+  useEffect(() => {
     if (workOrder.id) {
       loadJobLines();
     }
@@ -53,6 +53,12 @@ export function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsViewProps) {
       console.error('Error saving job lines:', error);
       toast.error('Failed to save job lines');
     }
+  };
+
+  // Function to refresh job lines - this will be called when parts are added
+  const handlePartsUpdated = () => {
+    console.log('Parts updated, refreshing job lines...');
+    loadJobLines();
   };
 
   const handleEditToggle = () => {
@@ -162,6 +168,7 @@ export function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsViewProps) {
             onJobLinesChange={handleJobLinesChange}
             jobLinesLoading={jobLinesLoading}
             isEditMode={isEditMode}
+            onPartsUpdated={handlePartsUpdated}
           />
         </div>
       )}

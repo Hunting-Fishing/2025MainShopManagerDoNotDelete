@@ -17,6 +17,7 @@ interface JobLineCardProps {
   onAddParts?: (jobLineId: string, parts: any[]) => void;
   onRemovePart?: (partId: string) => void;
   isEditMode?: boolean;
+  onPartsUpdated?: () => void;
 }
 
 export function JobLineCard({ 
@@ -25,7 +26,8 @@ export function JobLineCard({
   onDelete,
   onAddParts,
   onRemovePart,
-  isEditMode = false 
+  isEditMode = false,
+  onPartsUpdated
 }: JobLineCardProps) {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const statusInfo = jobLineStatusMap[jobLine.status] || jobLineStatusMap.pending;
@@ -39,8 +41,11 @@ export function JobLineCard({
   };
 
   const handlePartsAdded = () => {
-    // Simple callback to refresh parts display
+    // Trigger refresh to get updated parts data
     console.log('Parts added to job line:', jobLine.id);
+    if (onPartsUpdated) {
+      onPartsUpdated();
+    }
   };
 
   // Calculate total including parts
