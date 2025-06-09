@@ -1,13 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Plus, Wrench, Loader2 } from 'lucide-react';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { WorkOrderPartFormValues } from '@/types/workOrderPart';
+import { WorkOrderPart } from '@/types/workOrderPart';
 import { AddJobLineDialog } from '../job-lines/AddJobLineDialog';
-import { JobLineCard } from '../job-lines/JobLineCard';
-import { Wrench } from 'lucide-react';
-import { generateTempJobLineId } from '@/services/jobLineParserEnhanced';
+import { JobLinesGrid } from '../job-lines/JobLinesGrid';
+import { parseWorkOrderDescription } from '@/services/workOrder/jobLineParser';
 
 interface JobLinesSectionProps {
   workOrderId: string;
@@ -26,167 +27,187 @@ export function JobLinesSection({
   shopId,
   isEditMode = false
 }: JobLinesSectionProps) {
-  const [localJobLines, setLocalJobLines] = useState<WorkOrderJobLine[]>(jobLines);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [isParsing, setIsParsing] = useState(false);
+  const [hasAutoCreated, setHasAutoCreated] = useState(false);
 
-  // Sync with parent state
+  // Auto-create job lines from description when description changes
   useEffect(() => {
-    setLocalJobLines(jobLines);
-  }, [jobLines]);
+    if (description && description.trim() && jobLines.length === 0 && !hasAutoCreated) {
+      handleAutoCreateJobLines();
+    }
+  }, [description, jobLines.length, hasAutoCreated]);
 
-  const handleAddJobLines = (newJobLinesData: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>[]) => {
-    const newJobLines: WorkOrderJobLine[] = newJobLinesData.map(jobLineData => ({
-      ...jobLineData,
-      id: generateTempJobLineId(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      parts: [] // Initialize empty parts array
-    }));
+  const handleAutoCreateJobLines = async () => {
+    if (!description?.trim()) return;
+    
+    setIsParsing(true);
+    try {
+      const parsedJobLines = await parseWorkOrderDescription(description, workOrderId, shopId);
+      
+      // Ensure all parts have the enhanced fields with proper defaults
+      const enhancedJobLines = parsedJobLines.map(jobLine => ({
+        ...jobLine,
+        parts: (jobLine.parts || []).map(part => createEnhancedPart(part))
+      }));
+      
+      onJobLinesChange(enhancedJobLines);
+      setHasAutoCreated(true);
+    } catch (error) {
+      console.error('Error parsing job lines:', error);
+    } finally {
+      setIsParsing(false);
+    }
+  };
 
-    const updatedJobLines = [...localJobLines, ...newJobLines];
-    setLocalJobLines(updatedJobLines);
-    onJobLinesChange(updatedJobLines);
+  const createEnhancedPart = (part: Partial<WorkOrderPart>): WorkOrderPart => {
+    return {
+      id: part.id || `temp-${Date.now()}-${Math.random()}`,
+      workOrderId: part.workOrderId || workOrderId,
+      jobLineId: part.jobLineId || '',
+      inventoryItemId: part.inventoryItemId,
+      partName: part.partName || '',
+      partNumber: part.partNumber,
+      supplierName: part.supplierName || '',
+      supplierCost: part.supplierCost || 0,
+      markupPercentage: part.markupPercentage || 0,
+      retailPrice: part.retailPrice || 0,
+      customerPrice: part.customerPrice || 0,
+      quantity: part.quantity || 1,
+      partType: part.partType || 'non-inventory',
+      invoiceNumber: part.invoiceNumber,
+      poLine: part.poLine,
+      notes: part.notes,
+      createdAt: part.createdAt || new Date().toISOString(),
+      updatedAt: part.updatedAt || new Date().toISOString(),
+      // Enhanced fields with defaults
+      category: part.category,
+      isTaxable: part.isTaxable ?? true,
+      coreChargeAmount: part.coreChargeAmount || 0,
+      coreChargeApplied: part.coreChargeApplied || false,
+      warrantyDuration: part.warrantyDuration,
+      warrantyExpiryDate: part.warrantyExpiryDate,
+      installDate: part.installDate,
+      installedBy: part.installedBy,
+      status: part.status || 'ordered',
+      isStockItem: part.isStockItem ?? true,
+      dateAdded: part.dateAdded || new Date().toISOString(),
+      attachments: part.attachments || [],
+      notesInternal: part.notesInternal
+    };
+  };
+
+  const handleAddJobLine = (newJobLine: WorkOrderJobLine) => {
+    const enhancedJobLine = {
+      ...newJobLine,
+      parts: (newJobLine.parts || []).map(part => createEnhancedPart(part))
+    };
+    onJobLinesChange([...jobLines, enhancedJobLine]);
+    setShowAddDialog(false);
   };
 
   const handleUpdateJobLine = (updatedJobLine: WorkOrderJobLine) => {
-    const updatedJobLines = localJobLines.map(jobLine =>
-      jobLine.id === updatedJobLine.id ? {
-        ...updatedJobLine,
-        updatedAt: new Date().toISOString()
-      } : jobLine
-    );
-    setLocalJobLines(updatedJobLines);
-    onJobLinesChange(updatedJobLines);
+    const enhancedJobLine = {
+      ...updatedJobLine,
+      parts: (updatedJobLine.parts || []).map(part => createEnhancedPart(part))
+    };
+    onJobLinesChange(jobLines.map(line => 
+      line.id === updatedJobLine.id ? enhancedJobLine : line
+    ));
   };
 
   const handleDeleteJobLine = (jobLineId: string) => {
-    const updatedJobLines = localJobLines.filter(jobLine => jobLine.id !== jobLineId);
-    setLocalJobLines(updatedJobLines);
-    onJobLinesChange(updatedJobLines);
+    onJobLinesChange(jobLines.filter(line => line.id !== jobLineId));
   };
 
-  const handleAddParts = (jobLineId: string, parts: WorkOrderPartFormValues[]) => {
-    const updatedJobLines = localJobLines.map(jobLine => {
-      if (jobLine.id === jobLineId) {
-        const newParts = parts.map(part => ({
-          id: crypto.randomUUID(),
-          workOrderId,
-          jobLineId,
-          partName: part.partName,
-          partNumber: part.partNumber,
-          supplierName: part.supplierName,
-          supplierCost: part.supplierCost,
-          markupPercentage: part.markupPercentage,
-          retailPrice: part.retailPrice,
-          customerPrice: part.customerPrice,
-          quantity: part.quantity,
-          partType: part.partType,
-          notes: part.notes,
-          inventoryItemId: part.inventoryItemId,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }));
-
-        return {
-          ...jobLine,
-          parts: [...(jobLine.parts || []), ...newParts],
-          updatedAt: new Date().toISOString()
-        };
-      }
-      return jobLine;
-    });
-
-    setLocalJobLines(updatedJobLines);
-    onJobLinesChange(updatedJobLines);
+  const handleRefreshJobLines = () => {
+    setHasAutoCreated(false);
+    handleAutoCreateJobLines();
   };
 
-  const handleRemovePart = (partId: string) => {
-    const updatedJobLines = localJobLines.map(jobLine => ({
-      ...jobLine,
-      parts: jobLine.parts?.filter(part => part.id !== partId) || [],
-      updatedAt: new Date().toISOString()
-    }));
-
-    setLocalJobLines(updatedJobLines);
-    onJobLinesChange(updatedJobLines);
-  };
-
-  const totalEstimatedHours = localJobLines.reduce((total, jobLine) => 
-    total + (jobLine.estimatedHours || 0), 0
-  );
-
-  const totalLaborAmount = localJobLines.reduce((total, jobLine) => 
-    total + (jobLine.totalAmount || 0), 0
-  );
-
-  const totalPartsAmount = localJobLines.reduce((total, jobLine) => 
-    total + (jobLine.parts?.reduce((partTotal, part) => 
-      partTotal + (part.customerPrice * part.quantity), 0) || 0), 0
-  );
-
-  const grandTotal = totalLaborAmount + totalPartsAmount;
+  const totalEstimatedHours = jobLines.reduce((sum, line) => sum + (line.estimatedHours || 0), 0);
+  const totalLaborCost = jobLines.reduce((sum, line) => sum + (line.totalAmount || 0), 0);
 
   return (
-    <Card className="border-slate-200 dark:border-slate-700">
-      <CardHeader className="pb-4">
+    <Card>
+      <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Wrench className="h-5 w-5 text-blue-600" />
-            <CardTitle className="text-lg">Job Lines</CardTitle>
-            <Badge variant="secondary">{localJobLines.length}</Badge>
+            <CardTitle className="flex items-center gap-2">
+              <Wrench className="h-5 w-5" />
+              Labor & Services
+            </CardTitle>
+            {jobLines.length > 0 && (
+              <Badge variant="secondary">
+                {jobLines.length} service{jobLines.length !== 1 ? 's' : ''}
+              </Badge>
+            )}
           </div>
-          {isEditMode && (
-            <AddJobLineDialog 
-              workOrderId={workOrderId}
-              onJobLineAdd={handleAddJobLines}
-            />
-          )}
+          
+          <div className="flex items-center gap-2">
+            {description && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefreshJobLines}
+                disabled={isParsing}
+              >
+                {isParsing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Parsing...
+                  </>
+                ) : (
+                  'Refresh from Description'
+                )}
+              </Button>
+            )}
+            
+            {isEditMode && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAddDialog(true)}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Service
+              </Button>
+            )}
+          </div>
         </div>
         
-        {localJobLines.length > 0 && (
-          <div className="grid grid-cols-2 gap-4 text-sm text-slate-600">
-            <div className="space-y-1">
-              <div>Total Hours: {totalEstimatedHours.toFixed(1)}</div>
-              <div>Labor: ${totalLaborAmount.toFixed(2)}</div>
-            </div>
-            <div className="space-y-1">
-              <div>Parts: ${totalPartsAmount.toFixed(2)}</div>
-              <div className="font-medium">Total: ${grandTotal.toFixed(2)}</div>
-            </div>
+        {totalEstimatedHours > 0 && (
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <span>Total Hours: {totalEstimatedHours.toFixed(1)}</span>
+            <span>Total Labor: ${totalLaborCost.toFixed(2)}</span>
           </div>
         )}
       </CardHeader>
-
-      <CardContent className="pt-0">
-        {localJobLines.length === 0 ? (
-          <div className="text-center py-8 border-2 border-dashed border-slate-200 rounded-lg">
-            <Wrench className="h-8 w-8 mx-auto text-slate-400 mb-2" />
-            <p className="text-slate-500 mb-4">No job lines added yet</p>
-            {isEditMode ? (
-              <p className="text-sm text-slate-400">
-                Add job lines to break down the work into specific tasks
-              </p>
-            ) : (
-              <p className="text-sm text-slate-400">
-                Job lines will appear here when added in edit mode
-              </p>
-            )}
+      
+      <CardContent>
+        {isParsing ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin mr-2" />
+            <span>Analyzing work order description...</span>
           </div>
         ) : (
-          <div className="space-y-3">
-            {localJobLines.map((jobLine) => (
-              <JobLineCard
-                key={jobLine.id}
-                jobLine={jobLine}
-                onUpdate={handleUpdateJobLine}
-                onDelete={handleDeleteJobLine}
-                onAddParts={handleAddParts}
-                onRemovePart={handleRemovePart}
-                isEditMode={isEditMode}
-              />
-            ))}
-          </div>
+          <JobLinesGrid
+            jobLines={jobLines}
+            onUpdate={handleUpdateJobLine}
+            onDelete={handleDeleteJobLine}
+            isEditMode={isEditMode}
+          />
         )}
       </CardContent>
+      
+      {showAddDialog && (
+        <AddJobLineDialog
+          workOrderId={workOrderId}
+          open={showAddDialog}
+          onOpenChange={setShowAddDialog}
+          onSave={handleAddJobLine}
+        />
+      )}
     </Card>
   );
 }
