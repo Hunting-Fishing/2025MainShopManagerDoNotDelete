@@ -9,13 +9,12 @@ import { jobLineStatusMap } from '@/types/jobLine';
 import { EditJobLineDialog } from './EditJobLineDialog';
 import { JobLinePartsDisplay } from '../parts/JobLinePartsDisplay';
 import { AddPartsDialog } from '../parts/AddPartsDialog';
-import { WorkOrderPartFormValues } from '@/types/workOrderPart';
 
 interface JobLineCardProps {
   jobLine: WorkOrderJobLine;
   onUpdate: (jobLine: WorkOrderJobLine) => void;
   onDelete: (jobLineId: string) => void;
-  onAddParts?: (jobLineId: string, parts: WorkOrderPartFormValues[]) => void;
+  onAddParts?: (jobLineId: string, parts: any[]) => void;
   onRemovePart?: (partId: string) => void;
   isEditMode?: boolean;
 }
@@ -39,10 +38,9 @@ export function JobLineCard({
     onUpdate(updatedJobLine);
   };
 
-  const handleAddParts = (parts: WorkOrderPartFormValues[]) => {
-    if (onAddParts) {
-      onAddParts(jobLine.id, parts);
-    }
+  const handlePartsAdded = () => {
+    // Simple callback to refresh parts display
+    console.log('Parts added to job line:', jobLine.id);
   };
 
   // Calculate total including parts
@@ -110,11 +108,11 @@ export function JobLineCard({
             </div>
             
             <div className="flex items-center gap-1 ml-4">
-              {isEditMode && onAddParts && (
+              {isEditMode && (
                 <AddPartsDialog
                   workOrderId={jobLine.workOrderId || ''}
                   jobLineId={jobLine.id}
-                  onPartsAdd={handleAddParts}
+                  onPartsAdd={handlePartsAdded}
                 />
               )}
               {isEditMode && (

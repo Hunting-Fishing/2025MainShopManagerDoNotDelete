@@ -15,7 +15,30 @@ export const getWorkOrderParts = async (workOrderId: string): Promise<WorkOrderP
   }
 
   console.log('Work order parts fetched:', data);
-  return data || [];
+  
+  // Map database response to TypeScript interface
+  const mappedData = (data || []).map((part: any): WorkOrderPart => ({
+    id: part.id,
+    workOrderId: part.work_order_id,
+    jobLineId: part.job_line_id,
+    inventoryItemId: part.inventory_item_id,
+    partName: part.part_name,
+    partNumber: part.part_number,
+    supplierName: part.supplier_name,
+    supplierCost: part.supplier_cost,
+    markupPercentage: part.markup_percentage,
+    retailPrice: part.retail_price,
+    customerPrice: part.customer_price,
+    quantity: part.quantity,
+    partType: part.part_type as 'inventory' | 'non-inventory',
+    invoiceNumber: part.invoice_number,
+    poLine: part.po_line,
+    notes: part.notes,
+    createdAt: part.created_at,
+    updatedAt: part.updated_at
+  }));
+
+  return mappedData;
 };
 
 export const saveWorkOrderPart = async (
