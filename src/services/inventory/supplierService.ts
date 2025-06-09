@@ -11,7 +11,6 @@ export async function getInventorySuppliers(): Promise<string[]> {
     const { data, error } = await supabase
       .from("inventory_suppliers")
       .select("name")
-      .eq("is_active", true)
       .order("name");
 
     if (error) {
@@ -19,8 +18,8 @@ export async function getInventorySuppliers(): Promise<string[]> {
       throw error;
     }
 
-    // Extract supplier names
-    const supplierNames = data?.map(item => item.name).filter(Boolean) || [];
+    // Extract supplier names with explicit type annotation
+    const supplierNames: string[] = data?.map((item: { name: string }) => item.name).filter((name): name is string => Boolean(name)) || [];
     
     console.log(`Retrieved ${supplierNames.length} suppliers from database`);
     return supplierNames;
@@ -60,8 +59,7 @@ export async function addInventorySupplier(name: string): Promise<void> {
     const { error } = await supabase
       .from("inventory_suppliers")
       .insert({
-        name: name.trim(),
-        is_active: true
+        name: name.trim()
       });
 
     if (error) {
