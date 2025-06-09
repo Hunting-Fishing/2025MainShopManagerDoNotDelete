@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/sonner';
@@ -12,6 +11,7 @@ import { OnboardingGate } from '@/components/onboarding/OnboardingGate';
 import { ShopOnboardingWizard } from '@/components/onboarding/ShopOnboardingWizard';
 
 // Page Components
+import Index from '@/pages/Index';
 import Dashboard from '@/pages/Dashboard';
 import CustomersPage from '@/pages/CustomersPage';
 import CreateCustomer from '@/pages/CreateCustomer';
@@ -36,8 +36,11 @@ import EquipmentDetails from '@/pages/EquipmentDetails';
 import Notifications from '@/pages/Notifications';
 import Authentication from '@/pages/Authentication';
 import Login from '@/pages/Login';
+import CustomerPortalLogin from '@/pages/CustomerPortalLogin';
+import CustomerPortal from '@/pages/CustomerPortal';
 import Reports from '@/pages/Reports';
 import NotFound from '@/pages/NotFound';
+import StaffLogin from '@/pages/StaffLogin';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -56,7 +59,11 @@ function App() {
         <div className="min-h-screen bg-background font-sans antialiased">
           <Routes>
             {/* Public routes */}
+            <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/staff-login" element={<StaffLogin />} />
+            <Route path="/customer-portal-login" element={<CustomerPortalLogin />} />
+            <Route path="/customer-portal/:customerId?" element={<CustomerPortal />} />
             <Route path="/auth" element={<Authentication />} />
             
             {/* Protected routes */}
@@ -67,7 +74,6 @@ function App() {
                   <OnboardingGate>
                     <Layout>
                       <Routes>
-                        <Route path="/" element={<Navigate to="/dashboard" replace />} />
                         <Route path="/dashboard" element={<Dashboard />} />
                         <Route path="/customers" element={<CustomersPage />} />
                         <Route path="/customers/create" element={<CreateCustomer />} />
