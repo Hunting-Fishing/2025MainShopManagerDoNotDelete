@@ -8233,6 +8233,78 @@ export type Database = {
           },
         ]
       }
+      work_order_parts: {
+        Row: {
+          created_at: string | null
+          customer_price: number
+          id: string
+          inventory_item_id: string | null
+          job_line_id: string | null
+          markup_percentage: number | null
+          notes: string | null
+          part_name: string
+          part_number: string | null
+          part_type: string
+          quantity: number
+          retail_price: number | null
+          supplier_cost: number | null
+          supplier_name: string | null
+          updated_at: string | null
+          work_order_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          customer_price: number
+          id?: string
+          inventory_item_id?: string | null
+          job_line_id?: string | null
+          markup_percentage?: number | null
+          notes?: string | null
+          part_name: string
+          part_number?: string | null
+          part_type: string
+          quantity?: number
+          retail_price?: number | null
+          supplier_cost?: number | null
+          supplier_name?: string | null
+          updated_at?: string | null
+          work_order_id: string
+        }
+        Update: {
+          created_at?: string | null
+          customer_price?: number
+          id?: string
+          inventory_item_id?: string | null
+          job_line_id?: string | null
+          markup_percentage?: number | null
+          notes?: string | null
+          part_name?: string
+          part_number?: string | null
+          part_type?: string
+          quantity?: number
+          retail_price?: number | null
+          supplier_cost?: number | null
+          supplier_name?: string | null
+          updated_at?: string | null
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_parts_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_order_parts_job_line_id_fkey"
+            columns: ["job_line_id"]
+            isOneToOne: false
+            referencedRelation: "work_order_job_lines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_order_signatures: {
         Row: {
           created_at: string | null
@@ -8708,6 +8780,10 @@ export type Database = {
         Args: { campaign_id: string; criteria?: string }
         Returns: string
       }
+      calculate_job_line_total_with_parts: {
+        Args: { job_line_id_param: string }
+        Returns: number
+      }
       check_inventory_availability: {
         Args: { item_id: string; requested_quantity: number }
         Returns: boolean
@@ -8773,6 +8849,27 @@ export type Database = {
       get_inventory_categories: {
         Args: Record<PropertyKey, never>
         Returns: string[]
+      }
+      get_job_line_parts: {
+        Args: { job_line_id_param: string }
+        Returns: {
+          created_at: string | null
+          customer_price: number
+          id: string
+          inventory_item_id: string | null
+          job_line_id: string | null
+          markup_percentage: number | null
+          notes: string | null
+          part_name: string
+          part_number: string | null
+          part_type: string
+          quantity: number
+          retail_price: number | null
+          supplier_cost: number | null
+          supplier_name: string | null
+          updated_at: string | null
+          work_order_id: string
+        }[]
       }
       get_product_interactions_by_category: {
         Args: Record<PropertyKey, never>

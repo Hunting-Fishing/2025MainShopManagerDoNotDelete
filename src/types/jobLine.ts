@@ -1,3 +1,4 @@
+import { WorkOrderPart } from './workOrderPart';
 
 // Job Line Types for Work Orders
 export interface WorkOrderJobLine {
@@ -14,6 +15,8 @@ export interface WorkOrderJobLine {
   notes?: string;
   createdAt: string;
   updatedAt: string;
+  // NEW: Parts attached to this job line
+  parts?: WorkOrderPart[];
 }
 
 export interface JobLineFormValues {
