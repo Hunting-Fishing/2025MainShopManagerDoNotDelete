@@ -2,41 +2,75 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Plus, Package, Search, Filter, RotateCcw } from 'lucide-react';
-import { WorkOrderPart, PART_CATEGORIES, PART_STATUSES, partStatusMap } from '@/types/workOrderPart';
-import { getWorkOrderParts, deleteWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
+import { Package, Plus, Loader2 } from 'lucide-react';
+import { WorkOrderPart } from '@/types/workOrderPart';
+import { supabase } from '@/integrations/supabase/client';
 import { AddPartsDialog } from './AddPartsDialog';
-import { EnhancedPartCard } from './EnhancedPartCard';
+import { ViewPartDetailsDialog } from './ViewPartDetailsDialog';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 
 interface WorkOrderPartsSectionProps {
   workOrderId: string;
   isEditMode?: boolean;
+  onPartsUpdated?: () => void;
 }
 
-export function WorkOrderPartsSection({
-  workOrderId,
-  isEditMode = false
+export function WorkOrderPartsSection({ 
+  workOrderId, 
+  isEditMode = false,
+  onPartsUpdated
 }: WorkOrderPartsSectionProps) {
   const [parts, setParts] = useState<WorkOrderPart[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
-
-  useEffect(() => {
-    loadParts();
-  }, [workOrderId]);
+  const [selectedPart, setSelectedPart] = useState<WorkOrderPart | null>(null);
 
   const loadParts = async () => {
     try {
       setLoading(true);
-      const partsData = await getWorkOrderParts(workOrderId);
-      setParts(partsData);
+      const { data, error } = await supabase.rpc('get_work_order_parts', {
+        work_order_id_param: workOrderId
+      });
+
+      if (error) throw error;
+
+      // Map the data to our WorkOrderPart type
+      const mappedParts: WorkOrderPart[] = (data || []).map((part: any) => ({
+        id: part.id,
+        workOrderId: part.work_order_id,
+        jobLineId: part.job_line_id,
+        inventoryItemId: part.inventory_item_id,
+        partName: part.part_name,
+        partNumber: part.part_number,
+        supplierName: part.supplier_name,
+        supplierCost: part.supplier_cost,
+        supplierSuggestedRetailPrice: part.supplier_suggested_retail_price,
+        markupPercentage: part.markup_percentage,
+        retailPrice: part.retail_price,
+        customerPrice: part.customer_price,
+        quantity: part.quantity,
+        partType: part.part_type as 'inventory' | 'non-inventory',
+        invoiceNumber: part.invoice_number,
+        poLine: part.po_line,
+        notes: part.notes,
+        category: part.category,
+        isTaxable: part.is_taxable,
+        coreChargeAmount: part.core_charge_amount,
+        coreChargeApplied: part.core_charge_applied,
+        warrantyDuration: part.warranty_duration,
+        warrantyExpiryDate: part.warranty_expiry_date,
+        installDate: part.install_date,
+        installedBy: part.installed_by,
+        status: part.status,
+        isStockItem: part.is_stock_item,
+        dateAdded: part.created_at,
+        attachments: part.attachments || [],
+        notesInternal: part.notes_internal,
+        createdAt: part.created_at,
+        updatedAt: part.updated_at
+      }));
+
+      setParts(mappedParts);
     } catch (error) {
       console.error('Error loading parts:', error);
       toast.error('Failed to load parts');
@@ -45,62 +79,39 @@ export function WorkOrderPartsSection({
     }
   };
 
-  const handleDeletePart = async (partId: string) => {
-    if (!confirm('Are you sure you want to delete this part?')) {
-      return;
+  useEffect(() => {
+    if (workOrderId) {
+      loadParts();
     }
-
-    try {
-      await deleteWorkOrderPart(partId);
-      setParts(prev => prev.filter(p => p.id !== partId));
-      toast.success('Part deleted successfully');
-    } catch (error) {
-      console.error('Error deleting part:', error);
-      toast.error('Failed to delete part');
-    }
-  };
+  }, [workOrderId]);
 
   const handlePartsAdded = () => {
     loadParts();
-    setAddDialogOpen(false);
+    if (onPartsUpdated) {
+      onPartsUpdated();
+    }
   };
 
-  const resetFilters = () => {
-    setSearchTerm('');
-    setCategoryFilter('all');
-    setStatusFilter('all');
+  const handleRemovePart = async (partId: string) => {
+    try {
+      const { error } = await supabase.rpc('delete_work_order_part', {
+        part_id_param: partId
+      });
+
+      if (error) throw error;
+
+      toast.success('Part removed successfully');
+      loadParts();
+      if (onPartsUpdated) {
+        onPartsUpdated();
+      }
+    } catch (error) {
+      console.error('Error removing part:', error);
+      toast.error('Failed to remove part');
+    }
   };
 
-  // Filter parts based on search and filters
-  const filteredParts = parts.filter(part => {
-    const matchesSearch = !searchTerm || 
-      part.partName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      part.partNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      part.supplierName?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesCategory = categoryFilter === 'all' || part.category === categoryFilter;
-    const matchesStatus = statusFilter === 'all' || part.status === statusFilter;
-    
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
-
-  // Calculate totals
-  const totalParts = filteredParts.length;
-  const totalValue = filteredParts.reduce((sum, part) => {
-    const partTotal = part.customerPrice * part.quantity;
-    const coreChargeTotal = part.coreChargeApplied ? part.coreChargeAmount * part.quantity : 0;
-    return sum + partTotal + coreChargeTotal;
-  }, 0);
-
-  const taxableValue = filteredParts.reduce((sum, part) => {
-    if (!part.isTaxable) return sum;
-    const partTotal = part.customerPrice * part.quantity;
-    return sum + partTotal;
-  }, 0);
-
-  const coreChargeTotal = filteredParts.reduce((sum, part) => {
-    return sum + (part.coreChargeApplied ? part.coreChargeAmount * part.quantity : 0);
-  }, 0);
+  const totalPartsValue = parts.reduce((total, part) => total + (part.customerPrice * part.quantity), 0);
 
   if (loading) {
     return (
@@ -112,11 +123,8 @@ export function WorkOrderPartsSection({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-32">
-            <div className="text-center">
-              <Package className="h-8 w-8 animate-pulse mx-auto mb-2 text-muted-foreground" />
-              <p className="text-muted-foreground">Loading parts...</p>
-            </div>
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin" />
           </div>
         </CardContent>
       </Card>
@@ -124,159 +132,98 @@ export function WorkOrderPartsSection({
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header with Add Button */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-medium flex items-center gap-2">
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
             <Package className="h-5 w-5" />
-            Parts ({totalParts})
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            Total Value: ${totalValue.toFixed(2)}
-            {coreChargeTotal > 0 && (
-              <span className="ml-2">(includes ${coreChargeTotal.toFixed(2)} core charges)</span>
-            )}
-          </p>
-        </div>
-        
-        {isEditMode && (
-          <AddPartsDialog
-            workOrderId={workOrderId}
-            onPartsAdd={handlePartsAdded}
-            open={addDialogOpen}
-            onOpenChange={setAddDialogOpen}
-          />
-        )}
-      </div>
-
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-wrap gap-4 items-end">
-            <div className="flex-1 min-w-64">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search parts..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            
-            <div className="min-w-32">
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {PART_CATEGORIES.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="min-w-32">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  {PART_STATUSES.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      <Badge className={partStatusMap[status].classes}>
-                        {partStatusMap[status].label}
-                      </Badge>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {(searchTerm || categoryFilter !== 'all' || statusFilter !== 'all') && (
-              <Button variant="outline" size="sm" onClick={resetFilters}>
-                <RotateCcw className="h-4 w-4 mr-2" />
-                Reset
-              </Button>
+            Parts ({parts.length})
+            {totalPartsValue > 0 && (
+              <Badge variant="secondary" className="text-green-600 bg-green-100">
+                ${totalPartsValue.toFixed(2)}
+              </Badge>
             )}
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Summary Cards */}
-      {totalParts > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-sm font-medium text-muted-foreground">Total Parts</div>
-              <div className="text-2xl font-bold">{totalParts}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-sm font-medium text-muted-foreground">Total Value</div>
-              <div className="text-2xl font-bold text-green-600">${totalValue.toFixed(2)}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-sm font-medium text-muted-foreground">Taxable Value</div>
-              <div className="text-2xl font-bold">${taxableValue.toFixed(2)}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-sm font-medium text-muted-foreground">Core Charges</div>
-              <div className="text-2xl font-bold text-orange-600">${coreChargeTotal.toFixed(2)}</div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Parts List */}
-      <div className="space-y-4">
-        {filteredParts.length === 0 ? (
-          <Card>
-            <CardContent className="py-12">
-              <div className="text-center">
-                <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                <h3 className="text-lg font-medium mb-2">No Parts Found</h3>
-                <p className="text-muted-foreground mb-4">
-                  {parts.length === 0 
-                    ? "No parts have been added to this work order yet."
-                    : "No parts match your current filters."
-                  }
-                </p>
-                {isEditMode && parts.length === 0 && (
-                  <Button onClick={() => setAddDialogOpen(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add First Part
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          filteredParts.map((part) => (
-            <EnhancedPartCard
-              key={part.id}
-              part={part}
-              onDelete={handleDeletePart}
-              isEditMode={isEditMode}
+          {isEditMode && (
+            <AddPartsDialog
+              workOrderId={workOrderId}
+              onPartsAdd={handlePartsAdded}
             />
-          ))
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {parts.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <h3 className="text-lg font-medium mb-2">No Parts Added</h3>
+            <p>Parts added to this work order will be displayed here</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {parts.map((part) => (
+              <div key={part.id} className="border rounded-lg p-4 bg-card">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h4 className="font-medium">{part.partName}</h4>
+                      <Badge variant="outline" className="text-xs">
+                        {part.partType}
+                      </Badge>
+                      {part.supplierName && (
+                        <Badge variant="secondary" className="text-xs">
+                          {part.supplierName}
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    <div className="text-sm text-muted-foreground space-y-1">
+                      {part.partNumber && (
+                        <div><strong>Part #:</strong> {part.partNumber}</div>
+                      )}
+                      <div className="flex gap-4">
+                        <span><strong>Qty:</strong> {part.quantity}</span>
+                        <span><strong>Price:</strong> ${part.customerPrice.toFixed(2)}</span>
+                        <span className="text-green-600 font-medium">
+                          <strong>Total:</strong> ${(part.quantity * part.customerPrice).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedPart(part)}
+                    >
+                      View Details
+                    </Button>
+                    {isEditMode && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemovePart(part.id)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
-      </div>
-    </div>
+      </CardContent>
+
+      {selectedPart && (
+        <ViewPartDetailsDialog
+          part={selectedPart}
+          open={!!selectedPart}
+          onOpenChange={() => setSelectedPart(null)}
+        />
+      )}
+    </Card>
   );
 }

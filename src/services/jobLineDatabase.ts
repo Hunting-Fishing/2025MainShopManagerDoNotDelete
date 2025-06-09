@@ -1,69 +1,87 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
 
 export async function loadJobLinesFromDatabase(workOrderId: string): Promise<WorkOrderJobLine[]> {
   try {
-    const { data, error } = await supabase.rpc('get_work_order_job_lines_with_parts', {
-      work_order_id_param: workOrderId
+    // First, get the job lines
+    const { data: jobLinesData, error: jobLinesError } = await supabase
+      .rpc('get_work_order_job_lines', {
+        work_order_id_param: workOrderId
+      });
+
+    if (jobLinesError) throw jobLinesError;
+
+    // Then get all parts for this work order
+    const { data: partsData, error: partsError } = await supabase
+      .rpc('get_work_order_parts', {
+        work_order_id_param: workOrderId
+      });
+
+    if (partsError) throw partsError;
+
+    // Map parts by job line ID
+    const partsByJobLine: { [key: string]: WorkOrderPart[] } = {};
+    (partsData || []).forEach((part: any) => {
+      if (part.job_line_id) {
+        if (!partsByJobLine[part.job_line_id]) {
+          partsByJobLine[part.job_line_id] = [];
+        }
+        partsByJobLine[part.job_line_id].push({
+          id: part.id,
+          workOrderId: part.work_order_id,
+          jobLineId: part.job_line_id,
+          inventoryItemId: part.inventory_item_id,
+          partName: part.part_name,
+          partNumber: part.part_number,
+          supplierName: part.supplier_name,
+          supplierCost: part.supplier_cost,
+          supplierSuggestedRetailPrice: part.supplier_suggested_retail_price,
+          markupPercentage: part.markup_percentage,
+          retailPrice: part.retail_price,
+          customerPrice: part.customer_price,
+          quantity: part.quantity,
+          partType: part.part_type as 'inventory' | 'non-inventory',
+          invoiceNumber: part.invoice_number,
+          poLine: part.po_line,
+          notes: part.notes,
+          category: part.category,
+          isTaxable: part.is_taxable,
+          coreChargeAmount: part.core_charge_amount,
+          coreChargeApplied: part.core_charge_applied,
+          warrantyDuration: part.warranty_duration,
+          warrantyExpiryDate: part.warranty_expiry_date,
+          installDate: part.install_date,
+          installedBy: part.installed_by,
+          status: part.status,
+          isStockItem: part.is_stock_item,
+          dateAdded: part.created_at,
+          attachments: part.attachments || [],
+          notesInternal: part.notes_internal,
+          createdAt: part.created_at,
+          updatedAt: part.updated_at
+        });
+      }
     });
 
-    if (error) throw error;
-
-    return (data || []).map((item: any): WorkOrderJobLine => {
-      // Parse parts from jsonb
-      const parts: WorkOrderPart[] = Array.isArray(item.parts) ? item.parts.map((part: any) => ({
-        id: part.id,
-        workOrderId: part.workOrderId,
-        jobLineId: part.jobLineId,
-        inventoryItemId: part.inventoryItemId,
-        partName: part.partName,
-        partNumber: part.partNumber,
-        supplierName: part.supplierName,
-        supplierCost: part.supplierCost,
-        supplierSuggestedRetailPrice: part.supplierSuggestedRetailPrice,
-        markupPercentage: part.markupPercentage,
-        retailPrice: part.retailPrice,
-        customerPrice: part.customerPrice,
-        quantity: part.quantity,
-        partType: part.partType as 'inventory' | 'non-inventory',
-        invoiceNumber: part.invoiceNumber,
-        poLine: part.poLine,
-        notes: part.notes,
-        category: part.category,
-        isTaxable: part.isTaxable,
-        coreChargeAmount: part.coreChargeAmount,
-        coreChargeApplied: part.coreChargeApplied,
-        warrantyDuration: part.warrantyDuration,
-        warrantyExpiryDate: part.warrantyExpiryDate,
-        installDate: part.installDate,
-        installedBy: part.installedBy,
-        status: part.status,
-        isStockItem: part.isStockItem,
-        dateAdded: part.dateAdded,
-        attachments: part.attachments || [],
-        notesInternal: part.notesInternal,
-        createdAt: part.createdAt,
-        updatedAt: part.updatedAt
-      })) : [];
-
-      return {
-        id: item.id,
-        workOrderId: item.work_order_id,
-        name: item.name,
-        category: item.category,
-        subcategory: item.subcategory,
-        description: item.description,
-        estimatedHours: item.estimated_hours,
-        laborRate: item.labor_rate,
-        totalAmount: item.total_amount,
-        status: item.status as WorkOrderJobLine['status'],
-        notes: item.notes,
-        createdAt: item.created_at,
-        updatedAt: item.updated_at,
-        parts: parts
-      };
-    });
+    // Map job lines and attach their parts
+    return (jobLinesData || []).map((item: any): WorkOrderJobLine => ({
+      id: item.id,
+      workOrderId: item.work_order_id,
+      name: item.name,
+      category: item.category,
+      subcategory: item.subcategory,
+      description: item.description,
+      estimatedHours: item.estimated_hours,
+      laborRate: item.labor_rate,
+      totalAmount: item.total_amount,
+      status: item.status as WorkOrderJobLine['status'],
+      notes: item.notes,
+      createdAt: item.created_at,
+      updatedAt: item.updated_at,
+      parts: partsByJobLine[item.id] || []
+    }));
   } catch (error) {
     console.error('Error loading job lines with parts from database:', error);
     throw new Error('Failed to load job lines with parts from database');
