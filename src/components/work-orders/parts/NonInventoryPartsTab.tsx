@@ -1,12 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Slider } from '@/components/ui/slider';
+import { Card, CardContent } from '@/components/ui/card';
 import { WorkOrderPartFormValues } from '@/types/workOrderPart';
 import { SupplierSelector } from './SupplierSelector';
-import { toast } from 'sonner';
 
 interface NonInventoryPartsTabProps {
   workOrderId: string;
@@ -15,201 +16,262 @@ interface NonInventoryPartsTabProps {
 }
 
 export function NonInventoryPartsTab({ workOrderId, jobLineId, onAddPart }: NonInventoryPartsTabProps) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<WorkOrderPartFormValues>({
     partName: '',
     partNumber: '',
     supplierName: '',
-    supplierCost: '',
-    markupPercentage: '',
-    retailPrice: '',
-    customerPrice: '',
-    quantity: '',
+    supplierCost: 0,
+    markupPercentage: 50,
+    retailPrice: 0,
+    customerPrice: 0,
+    quantity: 1,
+    partType: 'non-inventory',
     notes: ''
   });
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => {
-      const updated = { ...prev, [field]: value };
+  // Auto-calculate prices and markup based on input changes
+  useEffect(() => {
+    const { supplierCost, markupPercentage, retailPrice } = formData;
+    
+    if (supplierCost > 0) {
+      // Calculate retail price from supplier cost + markup
+      const calculatedRetailPrice = supplierCost * (1 + markupPercentage / 100);
       
-      // Auto-calculate prices when supplier cost or markup changes
-      if (field === 'supplierCost' || field === 'markupPercentage') {
-        const supplierCost = parseFloat(field === 'supplierCost' ? value : updated.supplierCost) || 0;
-        const markupPercentage = parseFloat(field === 'markupPercentage' ? value : updated.markupPercentage) || 0;
-        
-        if (supplierCost > 0 && markupPercentage >= 0) {
-          const retailPrice = supplierCost * (1 + markupPercentage / 100);
-          updated.retailPrice = retailPrice.toFixed(2);
-          updated.customerPrice = retailPrice.toFixed(2);
-        }
+      // If retail price was manually entered and differs significantly from calculated,
+      // auto-calculate markup percentage instead
+      if (retailPrice > 0 && Math.abs(retailPrice - calculatedRetailPrice) > 0.01) {
+        const calculatedMarkup = ((retailPrice - supplierCost) / supplierCost) * 100;
+        setFormData(prev => ({
+          ...prev,
+          markupPercentage: Math.max(0, Math.round(calculatedMarkup * 100) / 100),
+          customerPrice: retailPrice // Customer price follows retail/list price
+        }));
+      } else {
+        // Normal calculation: supplier cost + markup → retail & customer price
+        setFormData(prev => ({
+          ...prev,
+          retailPrice: Math.round(calculatedRetailPrice * 100) / 100,
+          customerPrice: Math.round(calculatedRetailPrice * 100) / 100
+        }));
       }
-      
-      return updated;
-    });
+    }
+  }, [formData.supplierCost, formData.markupPercentage, formData.retailPrice]);
+
+  const handleInputChange = (field: keyof WorkOrderPartFormValues, value: string | number) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
-  const handleSubmit = () => {
-    // Validate required fields
+  const handleSliderChange = (value: number[]) => {
+    const newMarkup = value[0];
+    setFormData(prev => ({
+      ...prev,
+      markupPercentage: newMarkup
+    }));
+  };
+
+  const handleAddPart = () => {
     if (!formData.partName.trim()) {
-      toast.error('Part name is required');
       return;
     }
 
-    if (!formData.quantity || parseFloat(formData.quantity) <= 0) {
-      toast.error('Quantity must be greater than 0');
-      return;
-    }
-
-    if (!formData.customerPrice || parseFloat(formData.customerPrice) <= 0) {
-      toast.error('Customer price must be greater than 0');
-      return;
-    }
-
-    // Create part object
-    const partData: WorkOrderPartFormValues = {
+    onAddPart({
+      ...formData,
       partName: formData.partName.trim(),
-      partNumber: formData.partNumber.trim() || undefined,
-      supplierName: formData.supplierName.trim() || undefined,
-      supplierCost: parseFloat(formData.supplierCost) || 0,
-      markupPercentage: parseFloat(formData.markupPercentage) || 0,
-      retailPrice: parseFloat(formData.retailPrice) || parseFloat(formData.customerPrice) || 0,
-      customerPrice: parseFloat(formData.customerPrice) || 0,
-      quantity: parseFloat(formData.quantity) || 1,
-      partType: 'non-inventory',
-      notes: formData.notes.trim() || undefined
-    };
+      partNumber: formData.partNumber?.trim() || '',
+      supplierName: formData.supplierName?.trim() || '',
+      notes: formData.notes?.trim() || ''
+    });
 
-    onAddPart(partData);
-    
     // Reset form
     setFormData({
       partName: '',
       partNumber: '',
       supplierName: '',
-      supplierCost: '',
-      markupPercentage: '',
-      retailPrice: '',
-      customerPrice: '',
-      quantity: '',
+      supplierCost: 0,
+      markupPercentage: 50,
+      retailPrice: 0,
+      customerPrice: 0,
+      quantity: 1,
+      partType: 'non-inventory',
       notes: ''
     });
-
-    toast.success('Part added successfully');
   };
 
+  const totalPrice = formData.quantity * formData.customerPrice;
+
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="partName">Part Name *</Label>
-          <Input
-            id="partName"
-            value={formData.partName}
-            onChange={(e) => handleInputChange('partName', e.target.value)}
-            placeholder="Enter part name"
-          />
+    <Card>
+      <CardContent className="p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Part Information */}
+          <div className="space-y-2">
+            <Label htmlFor="partName">Part Name *</Label>
+            <Input
+              id="partName"
+              value={formData.partName}
+              onChange={(e) => handleInputChange('partName', e.target.value)}
+              placeholder="Enter part name"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="partNumber">Part Number</Label>
+            <Input
+              id="partNumber"
+              value={formData.partNumber || ''}
+              onChange={(e) => handleInputChange('partNumber', e.target.value)}
+              placeholder="Enter part number"
+            />
+          </div>
+
+          {/* Supplier Information */}
+          <div className="space-y-2">
+            <Label>Supplier</Label>
+            <SupplierSelector
+              value={formData.supplierName || ''}
+              onChange={(value) => handleInputChange('supplierName', value)}
+              placeholder="Select or add supplier"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="quantity">Quantity</Label>
+            <Input
+              id="quantity"
+              type="number"
+              min="1"
+              value={formData.quantity}
+              onChange={(e) => handleInputChange('quantity', parseInt(e.target.value) || 1)}
+            />
+          </div>
+
+          {/* Pricing Section */}
+          <div className="space-y-2">
+            <Label htmlFor="supplierCost">Supplier Cost ($)</Label>
+            <Input
+              id="supplierCost"
+              type="number"
+              step="0.01"
+              min="0"
+              value={formData.supplierCost || ''}
+              onChange={(e) => handleInputChange('supplierCost', parseFloat(e.target.value) || 0)}
+              placeholder="0.00"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="retailPrice">Retail/List Price ($)</Label>
+            <Input
+              id="retailPrice"
+              type="number"
+              step="0.01"
+              min="0"
+              value={formData.retailPrice || ''}
+              onChange={(e) => handleInputChange('retailPrice', parseFloat(e.target.value) || 0)}
+              placeholder="0.00"
+            />
+          </div>
+
+          {/* Markup Percentage Input */}
+          <div className="space-y-2">
+            <Label htmlFor="markupPercentage">Markup % (Auto-calculated)</Label>
+            <Input
+              id="markupPercentage"
+              type="number"
+              step="0.01"
+              min="0"
+              max="10000"
+              value={formData.markupPercentage || ''}
+              onChange={(e) => handleInputChange('markupPercentage', parseFloat(e.target.value) || 0)}
+              placeholder="0.00"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="customerPrice">Customer Price ($)</Label>
+            <Input
+              id="customerPrice"
+              type="number"
+              step="0.01"
+              min="0"
+              value={formData.customerPrice || ''}
+              onChange={(e) => handleInputChange('customerPrice', parseFloat(e.target.value) || 0)}
+              placeholder="0.00"
+            />
+          </div>
+
+          {/* Markup Slider - Full Width */}
+          <div className="md:col-span-2 space-y-4">
+            <div className="space-y-2">
+              <Label>Markup Adjustment Slider: {formData.markupPercentage.toFixed(2)}%</Label>
+              <div className="px-2">
+                <Slider
+                  value={[formData.markupPercentage]}
+                  onValueChange={handleSliderChange}
+                  min={0}
+                  max={1000}
+                  step={0.1}
+                  className="w-full"
+                />
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>0%</span>
+                <span>500%</span>
+                <span>1000%</span>
+              </div>
+              <div className="text-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setFormData(prev => ({ ...prev, markupPercentage: 10000 }))}
+                  className="text-xs"
+                >
+                  Set Max (10,000%)
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div className="md:col-span-2 space-y-2">
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              value={formData.notes || ''}
+              onChange={(e) => handleInputChange('notes', e.target.value)}
+              placeholder="Additional notes about this part"
+              rows={3}
+            />
+          </div>
+
+          {/* Price Summary */}
+          <div className="md:col-span-2">
+            <div className="bg-muted/50 p-4 rounded-lg">
+              <div className="flex justify-between items-center">
+                <span className="font-medium">Total Price:</span>
+                <span className="text-lg font-bold">${totalPrice.toFixed(2)}</span>
+              </div>
+              <div className="text-sm text-muted-foreground mt-1">
+                {formData.quantity} × ${formData.customerPrice.toFixed(2)}
+              </div>
+            </div>
+          </div>
+
+          {/* Add Button */}
+          <div className="md:col-span-2">
+            <Button
+              onClick={handleAddPart}
+              disabled={!formData.partName.trim()}
+              className="w-full"
+            >
+              Add Non-Inventory Part
+            </Button>
+          </div>
         </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="partNumber">Part Number</Label>
-          <Input
-            id="partNumber"
-            value={formData.partNumber}
-            onChange={(e) => handleInputChange('partNumber', e.target.value)}
-            placeholder="Enter part number"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="supplier">Supplier</Label>
-          <SupplierSelector
-            value={formData.supplierName}
-            onChange={(value) => handleInputChange('supplierName', value)}
-            placeholder="Select or add supplier"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="quantity">Quantity *</Label>
-          <Input
-            id="quantity"
-            type="number"
-            min="1"
-            step="1"
-            value={formData.quantity}
-            onChange={(e) => handleInputChange('quantity', e.target.value)}
-            placeholder="Enter quantity"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="supplierCost">Supplier Cost</Label>
-          <Input
-            id="supplierCost"
-            type="number"
-            min="0"
-            step="0.01"
-            value={formData.supplierCost}
-            onChange={(e) => handleInputChange('supplierCost', e.target.value)}
-            placeholder="0.00"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="markupPercentage">Markup %</Label>
-          <Input
-            id="markupPercentage"
-            type="number"
-            min="0"
-            step="1"
-            value={formData.markupPercentage}
-            onChange={(e) => handleInputChange('markupPercentage', e.target.value)}
-            placeholder="0"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="retailPrice">Retail Price</Label>
-          <Input
-            id="retailPrice"
-            type="number"
-            min="0"
-            step="0.01"
-            value={formData.retailPrice}
-            onChange={(e) => handleInputChange('retailPrice', e.target.value)}
-            placeholder="0.00"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="customerPrice">Customer Price *</Label>
-          <Input
-            id="customerPrice"
-            type="number"
-            min="0"
-            step="0.01"
-            value={formData.customerPrice}
-            onChange={(e) => handleInputChange('customerPrice', e.target.value)}
-            placeholder="0.00"
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="notes">Notes</Label>
-        <Textarea
-          id="notes"
-          value={formData.notes}
-          onChange={(e) => handleInputChange('notes', e.target.value)}
-          placeholder="Additional notes about this part"
-          rows={3}
-        />
-      </div>
-
-      <div className="flex justify-end">
-        <Button onClick={handleSubmit} className="w-full md:w-auto">
-          Add Non-Inventory Part
-        </Button>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
