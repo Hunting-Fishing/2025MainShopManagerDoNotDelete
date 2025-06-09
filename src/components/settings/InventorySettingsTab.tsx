@@ -7,7 +7,7 @@ import { CategoriesManager } from "./inventory/CategoriesManager";
 import { SuppliersManager } from "./inventory/SuppliersManager";
 import { ClearInventoryButton } from "@/components/inventory/ClearInventoryButton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Info } from "lucide-react";
+import { Info, Building2 } from "lucide-react";
 
 export const InventorySettingsTab = () => {
   const handleDataCleared = () => {
@@ -16,13 +16,30 @@ export const InventorySettingsTab = () => {
   };
 
   return (
-    <Tabs defaultValue="columns" className="w-full">
+    <Tabs defaultValue="suppliers" className="w-full">
       <TabsList className="mb-4">
-        <TabsTrigger value="columns">Table Columns</TabsTrigger>
-        <TabsTrigger value="categories">Categories</TabsTrigger>
         <TabsTrigger value="suppliers">Suppliers</TabsTrigger>
+        <TabsTrigger value="categories">Categories</TabsTrigger>
+        <TabsTrigger value="columns">Table Columns</TabsTrigger>
         <TabsTrigger value="data">Data Management</TabsTrigger>
       </TabsList>
+      
+      <TabsContent value="suppliers" className="space-y-4">
+        <div className="mb-4">
+          <Alert variant="default" className="border-blue-200 bg-blue-50">
+            <Building2 className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Suppliers Management:</strong> Add standard automotive suppliers like NAPA, WorldPac, Bumper to Bumper, and more. 
+              This helps track which supplier each part came from, invoice information, and manage vendor relationships.
+            </AlertDescription>
+          </Alert>
+        </div>
+        <SuppliersManager />
+      </TabsContent>
+      
+      <TabsContent value="categories" className="space-y-4">
+        <CategoriesManager />
+      </TabsContent>
       
       <TabsContent value="columns" className="space-y-4">
         <Card>
@@ -33,7 +50,7 @@ export const InventorySettingsTab = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Alert variant="info" className="mb-4">
+            <Alert variant="default" className="mb-4 border-blue-200 bg-blue-50">
               <Info className="h-4 w-4" />
               <AlertDescription>
                 Changes made here will immediately affect the column visibility in your inventory table.
@@ -43,14 +60,6 @@ export const InventorySettingsTab = () => {
             <InventoryTableColumnsManager />
           </CardContent>
         </Card>
-      </TabsContent>
-      
-      <TabsContent value="categories" className="space-y-4">
-        <CategoriesManager />
-      </TabsContent>
-      
-      <TabsContent value="suppliers" className="space-y-4">
-        <SuppliersManager />
       </TabsContent>
 
       <TabsContent value="data" className="space-y-4">
