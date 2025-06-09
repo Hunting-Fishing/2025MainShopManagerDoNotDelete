@@ -5,11 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { WorkOrderPartFormValues } from '@/types/workOrderPart';
+import { Plus } from 'lucide-react';
 
 interface NonInventoryPartsTabProps {
   workOrderId: string;
@@ -22,11 +23,11 @@ export function NonInventoryPartsTab({ workOrderId, jobLineId, onAddPart }: NonI
     partName: '',
     partNumber: '',
     supplierName: '',
-    supplierCost: 0,
-    markupPercentage: 0,
-    retailPrice: 0,
-    customerPrice: 0,
-    quantity: 1,
+    supplierCost: '',
+    markupPercentage: '',
+    retailPrice: '',
+    customerPrice: '',
+    quantity: '',
     partType: 'non-inventory',
     invoiceNumber: '',
     poLine: '',
@@ -35,75 +36,99 @@ export function NonInventoryPartsTab({ workOrderId, jobLineId, onAddPart }: NonI
 
   const [useMarkupScale, setUseMarkupScale] = useState(false);
 
-  // Calculate original markup percentage (Supplier Cost vs Retail Price)
-  const originalMarkupPercentage = formData.supplierCost > 0 && formData.retailPrice > 0 
-    ? ((formData.retailPrice - formData.supplierCost) / formData.supplierCost) * 100 
-    : 0;
+  // Calculate values
+  const supplierCost = parseFloat(formData.supplierCost) || 0;
+  const retailPrice = parseFloat(formData.retailPrice) || 0;
+  const customerPrice = parseFloat(formData.customerPrice) || 0;
+  const markupPercentage = parseFloat(formData.markupPercentage) || 0;
+  const quantity = parseFloat(formData.quantity) || 0;
 
-  // Calculate current/effective markup percentage (Retail Price vs Customer Price)
-  const currentMarkupPercentage = formData.retailPrice > 0 && formData.customerPrice > 0
-    ? ((formData.customerPrice - formData.retailPrice) / formData.retailPrice) * 100
-    : 0;
+  // Original markup (Supplier Cost vs Retail Price)
+  const originalMarkupPercentage = supplierCost > 0 ? ((retailPrice - supplierCost) / supplierCost) * 100 : 0;
 
-  const handleInputChange = (field: keyof WorkOrderPartFormValues, value: string | number) => {
-    const numericValue = typeof value === 'string' ? parseFloat(value) || 0 : value;
-    
+  // Current markup (Retail Price vs Customer Price) 
+  const currentMarkupPercentage = retailPrice > 0 ? ((customerPrice - retailPrice) / retailPrice) * 100 : 0;
+
+  const totalValue = customerPrice * quantity;
+
+  const handleInputChange = (field: keyof WorkOrderPartFormValues, value: string) => {
     setFormData(prev => {
-      const updated = { ...prev, [field]: numericValue };
+      const updated = { ...prev, [field]: value };
       
-      // Auto-calculate retail price when supplier cost or markup changes (and retail price is 0)
-      if ((field === 'supplierCost' || field === 'markupPercentage') && prev.retailPrice === 0) {
-        if (updated.supplierCost > 0 && updated.markupPercentage >= 0) {
-          updated.retailPrice = updated.supplierCost * (1 + updated.markupPercentage / 100);
+      // Auto-populate customer price with retail price when retail price is entered and customer price is empty
+      if (field === 'retailPrice' && value && (!prev.customerPrice || prev.customerPrice === '0' || prev.customerPrice === '')) {
+        updated.customerPrice = value;
+      }
+      
+      // If using markup scale and supplier cost or markup percentage changes, recalculate retail and customer price
+      if (useMarkupScale && (field === 'supplierCost' || field === 'markupPercentage')) {
+        const newSupplierCost = parseFloat(field === 'supplierCost' ? value : updated.supplierCost) || 0;
+        const newMarkupPercentage = parseFloat(field === 'markupPercentage' ? value : updated.markupPercentage) || 0;
+        
+        if (newSupplierCost > 0 && newMarkupPercentage >= 0) {
+          const calculatedRetailPrice = newSupplierCost * (1 + newMarkupPercentage / 100);
+          updated.retailPrice = calculatedRetailPrice.toFixed(2);
+          updated.customerPrice = calculatedRetailPrice.toFixed(2);
         }
       }
-      
-      // When using markup scale, calculate customer price from retail price and markup
-      if (useMarkupScale && field === 'markupPercentage' && updated.retailPrice > 0) {
-        updated.customerPrice = updated.retailPrice * (1 + updated.markupPercentage / 100);
-      }
-      
-      // When customer price changes manually, don't auto-calculate from markup
-      // This allows independent customer price adjustment
       
       return updated;
     });
   };
 
-  const handleMarkupSliderChange = (value: number[]) => {
-    const markupValue = value[0];
-    setFormData(prev => ({
-      ...prev,
-      markupPercentage: markupValue,
-      customerPrice: prev.retailPrice > 0 ? prev.retailPrice * (1 + markupValue / 100) : 0
-    }));
+  const handleSliderChange = (value: number[]) => {
+    const newMarkup = value[0];
+    setFormData(prev => {
+      const newSupplierCost = parseFloat(prev.supplierCost) || 0;
+      
+      if (newSupplierCost > 0) {
+        const calculatedRetailPrice = newSupplierCost * (1 + newMarkup / 100);
+        return {
+          ...prev,
+          markupPercentage: newMarkup.toString(),
+          retailPrice: calculatedRetailPrice.toFixed(2),
+          customerPrice: calculatedRetailPrice.toFixed(2)
+        };
+      }
+      
+      return {
+        ...prev,
+        markupPercentage: newMarkup.toString()
+      };
+    });
   };
 
   const handleCustomerPriceChange = (value: string) => {
-    const numericValue = parseFloat(value) || 0;
-    setFormData(prev => ({
-      ...prev,
-      customerPrice: numericValue
-    }));
+    setFormData(prev => ({ ...prev, customerPrice: value }));
   };
 
   const handleSubmit = () => {
-    if (!formData.partName || formData.supplierCost <= 0 || formData.quantity <= 0) {
+    if (!formData.partName.trim()) {
+      alert('Part name is required');
       return;
     }
 
-    onAddPart(formData);
+    const partData: WorkOrderPartFormValues = {
+      ...formData,
+      supplierCost: parseFloat(formData.supplierCost) || 0,
+      markupPercentage: parseFloat(formData.markupPercentage) || 0,
+      retailPrice: parseFloat(formData.retailPrice) || 0,
+      customerPrice: parseFloat(formData.customerPrice) || 0,
+      quantity: parseFloat(formData.quantity) || 1
+    };
+
+    onAddPart(partData);
     
     // Reset form
     setFormData({
       partName: '',
       partNumber: '',
       supplierName: '',
-      supplierCost: 0,
-      markupPercentage: 0,
-      retailPrice: 0,
-      customerPrice: 0,
-      quantity: 1,
+      supplierCost: '',
+      markupPercentage: '',
+      retailPrice: '',
+      customerPrice: '',
+      quantity: '',
       partType: 'non-inventory',
       invoiceNumber: '',
       poLine: '',
@@ -117,8 +142,9 @@ export function NonInventoryPartsTab({ workOrderId, jobLineId, onAddPart }: NonI
         <CardTitle>Add Non-Inventory Part</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Basic Part Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="partName">Part Name *</Label>
             <Input
               id="partName"
@@ -128,7 +154,7 @@ export function NonInventoryPartsTab({ workOrderId, jobLineId, onAddPart }: NonI
             />
           </div>
           
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="partNumber">Part Number</Label>
             <Input
               id="partNumber"
@@ -139,46 +165,37 @@ export function NonInventoryPartsTab({ workOrderId, jobLineId, onAddPart }: NonI
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="supplierName">Supplier Name</Label>
-            <Input
-              id="supplierName"
-              value={formData.supplierName}
-              onChange={(e) => handleInputChange('supplierName', e.target.value)}
-              placeholder="Enter supplier name"
-            />
-          </div>
-          
-          <div>
-            <Label htmlFor="quantity">Quantity *</Label>
-            <Input
-              id="quantity"
-              type="number"
-              min="1"
-              value={formData.quantity}
-              onChange={(e) => handleInputChange('quantity', e.target.value)}
-            />
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="supplierName">Supplier Name</Label>
+          <Input
+            id="supplierName"
+            value={formData.supplierName}
+            onChange={(e) => handleInputChange('supplierName', e.target.value)}
+            placeholder="Enter supplier name"
+          />
         </div>
 
+        <Separator />
+
         {/* Pricing Section */}
-        <div className="space-y-4 border-t pt-4">
+        <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h4 className="font-medium">Pricing Information</h4>
+            <h4 className="text-sm font-medium">Pricing Information</h4>
             <div className="flex items-center space-x-2">
-              <Label htmlFor="useMarkupScale" className="text-sm">Use Markup Scale</Label>
-              <Switch
+              <Label htmlFor="useMarkupScale" className="text-xs">Use Markup Scale</Label>
+              <input
                 id="useMarkupScale"
+                type="checkbox"
                 checked={useMarkupScale}
-                onCheckedChange={setUseMarkupScale}
+                onChange={(e) => setUseMarkupScale(e.target.checked)}
+                className="rounded border-gray-300"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="supplierCost">Supplier Cost *</Label>
+            <div className="space-y-2">
+              <Label htmlFor="supplierCost">Supplier Cost ($)</Label>
               <Input
                 id="supplierCost"
                 type="number"
@@ -189,9 +206,9 @@ export function NonInventoryPartsTab({ workOrderId, jobLineId, onAddPart }: NonI
                 placeholder="0.00"
               />
             </div>
-            
-            <div>
-              <Label htmlFor="retailPrice">Retail/List Price</Label>
+
+            <div className="space-y-2">
+              <Label htmlFor="retailPrice">Retail/List Price ($)</Label>
               <Input
                 id="retailPrice"
                 type="number"
@@ -199,12 +216,13 @@ export function NonInventoryPartsTab({ workOrderId, jobLineId, onAddPart }: NonI
                 min="0"
                 value={formData.retailPrice}
                 onChange={(e) => handleInputChange('retailPrice', e.target.value)}
+                disabled={useMarkupScale}
                 placeholder="0.00"
               />
             </div>
-            
-            <div>
-              <Label htmlFor="customerPrice">Customer Price</Label>
+
+            <div className="space-y-2">
+              <Label htmlFor="customerPrice">Customer Price ($)</Label>
               <Input
                 id="customerPrice"
                 type="number"
@@ -217,60 +235,31 @@ export function NonInventoryPartsTab({ workOrderId, jobLineId, onAddPart }: NonI
             </div>
           </div>
 
-          {/* Markup Information Display */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-3 rounded-lg">
-            <div>
-              <Label className="text-sm font-medium">Original Markup %</Label>
-              <div className="flex items-center space-x-2">
-                <Badge variant="outline" className="bg-blue-100 text-blue-800">
-                  {originalMarkupPercentage.toFixed(1)}%
-                </Badge>
-                <span className="text-xs text-gray-500">
-                  (Supplier Cost → Retail Price)
-                </span>
-              </div>
-            </div>
-            
-            <div>
-              <Label className="text-sm font-medium">Current Markup %</Label>
-              <div className="flex items-center space-x-2">
-                <Badge variant="outline" className="bg-green-100 text-green-800">
-                  {currentMarkupPercentage.toFixed(1)}%
-                </Badge>
-                <span className="text-xs text-gray-500">
-                  (Retail Price → Customer Price)
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Enhanced Markup Scale */}
+          {/* Markup Section */}
           {useMarkupScale && (
-            <div className="space-y-3 bg-blue-50 p-4 rounded-lg">
+            <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
               <div className="flex items-center justify-between">
-                <Label htmlFor="markupSlider">Markup Percentage</Label>
+                <Label>Markup Percentage</Label>
                 <div className="flex items-center space-x-2">
                   <Input
                     type="number"
-                    step="0.1"
                     min="0"
-                    max="10000"
+                    step="0.1"
                     value={formData.markupPercentage}
                     onChange={(e) => handleInputChange('markupPercentage', e.target.value)}
-                    className="w-20 h-8 text-sm"
+                    className="w-20 text-xs"
+                    placeholder="0"
                   />
-                  <span className="text-sm font-medium">%</span>
+                  <span className="text-xs">%</span>
                 </div>
               </div>
               
               <div className="space-y-2">
                 <Slider
-                  id="markupSlider"
-                  min={0}
+                  value={[markupPercentage]}
+                  onValueChange={handleSliderChange}
                   max={1000}
                   step={1}
-                  value={[Math.min(formData.markupPercentage, 1000)]}
-                  onValueChange={handleMarkupSliderChange}
                   className="w-full"
                 />
                 <div className="flex justify-between text-xs text-gray-500">
@@ -279,17 +268,46 @@ export function NonInventoryPartsTab({ workOrderId, jobLineId, onAddPart }: NonI
                   <span>1000%+</span>
                 </div>
               </div>
-              
-              <div className="text-xs text-gray-600">
-                Note: You can enter values above 1000% in the input field above
-              </div>
             </div>
           )}
+
+          {/* Markup Display */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-3 bg-blue-50 rounded-lg">
+            <div className="text-center">
+              <div className="text-xs text-gray-600">Original Markup %</div>
+              <div className="text-sm font-medium text-blue-600">
+                {originalMarkupPercentage.toFixed(1)}%
+              </div>
+              <div className="text-xs text-gray-500">(Cost vs Retail)</div>
+            </div>
+            <div className="text-center">
+              <div className="text-xs text-gray-600">Current Markup %</div>
+              <div className="text-sm font-medium text-green-600">
+                {currentMarkupPercentage.toFixed(1)}%
+              </div>
+              <div className="text-xs text-gray-500">(Retail vs Customer)</div>
+            </div>
+          </div>
         </div>
 
-        {/* Additional Information */}
+        <Separator />
+
+        {/* Quantity and Additional Info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
+          <div className="space-y-2">
+            <Label htmlFor="quantity">Quantity</Label>
+            <Input
+              id="quantity"
+              type="number"
+              min="1"
+              step="1"
+              value={formData.quantity}
+              onChange={(e) => handleInputChange('quantity', e.target.value)}
+              placeholder="1"
+            />
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="invoiceNumber">Invoice Number</Label>
             <Input
               id="invoiceNumber"
@@ -298,34 +316,43 @@ export function NonInventoryPartsTab({ workOrderId, jobLineId, onAddPart }: NonI
               placeholder="Enter invoice number"
             />
           </div>
-          
-          <div>
-            <Label htmlFor="poLine">PO Line</Label>
-            <Input
-              id="poLine"
-              value={formData.poLine}
-              onChange={(e) => handleInputChange('poLine', e.target.value)}
-              placeholder="Enter PO line"
-            />
-          </div>
         </div>
 
-        <div>
+        <div className="space-y-2">
+          <Label htmlFor="poLine">PO Line</Label>
+          <Input
+            id="poLine"
+            value={formData.poLine}
+            onChange={(e) => handleInputChange('poLine', e.target.value)}
+            placeholder="Enter PO line"
+          />
+        </div>
+
+        <div className="space-y-2">
           <Label htmlFor="notes">Notes</Label>
           <Textarea
             id="notes"
             value={formData.notes}
             onChange={(e) => handleInputChange('notes', e.target.value)}
             placeholder="Enter any additional notes"
-            className="h-20"
+            rows={3}
           />
         </div>
 
-        <Button 
-          onClick={handleSubmit}
-          className="w-full"
-          disabled={!formData.partName || formData.supplierCost <= 0 || formData.quantity <= 0}
-        >
+        {/* Summary */}
+        {quantity > 0 && customerPrice > 0 && (
+          <div className="p-3 bg-green-50 rounded-lg">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium">Total Value:</span>
+              <Badge variant="secondary" className="text-lg">
+                ${totalValue.toFixed(2)}
+              </Badge>
+            </div>
+          </div>
+        )}
+
+        <Button onClick={handleSubmit} className="w-full">
+          <Plus className="h-4 w-4 mr-2" />
           Add Part
         </Button>
       </CardContent>
