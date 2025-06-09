@@ -14,6 +14,8 @@ interface JobLinesGridProps {
   isEditMode?: boolean;
   onUpdate?: (jobLine: WorkOrderJobLine) => void;
   onDelete?: (jobLineId: string) => void;
+  onAddParts?: (jobLineId: string, parts: any[]) => void;
+  onRemovePart?: (partId: string) => void;
 }
 
 export function JobLinesGrid({ 
@@ -21,7 +23,9 @@ export function JobLinesGrid({
   showSummary = true,
   isEditMode = false,
   onUpdate = () => {},
-  onDelete = () => {}
+  onDelete = () => {},
+  onAddParts,
+  onRemovePart
 }: JobLinesGridProps) {
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   
@@ -82,6 +86,8 @@ export function JobLinesGrid({
           isEditMode={isEditMode}
           onUpdate={onUpdate}
           onDelete={onDelete}
+          onAddParts={onAddParts}
+          onRemovePart={onRemovePart}
         />
       ) : (
         <ResponsiveGrid
@@ -94,6 +100,8 @@ export function JobLinesGrid({
               jobLine={jobLine}
               onUpdate={onUpdate}
               onDelete={onDelete}
+              onAddParts={onAddParts}
+              onRemovePart={onRemovePart}
               isEditMode={isEditMode}
             />
           ))}
