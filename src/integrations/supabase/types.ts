@@ -8839,6 +8839,10 @@ export type Database = {
         Args: { work_order_id_param: string }
         Returns: undefined
       }
+      delete_work_order_part: {
+        Args: { part_id_param: string }
+        Returns: undefined
+      }
       delete_work_order_time_entries: {
         Args: { work_order_id: string }
         Returns: undefined
@@ -8936,6 +8940,27 @@ export type Database = {
           sent_at: string | null
           status: string | null
           title: string
+          updated_at: string | null
+          work_order_id: string
+        }[]
+      }
+      get_work_order_parts: {
+        Args: { work_order_id_param: string }
+        Returns: {
+          created_at: string | null
+          customer_price: number
+          id: string
+          inventory_item_id: string | null
+          job_line_id: string | null
+          markup_percentage: number | null
+          notes: string | null
+          part_name: string
+          part_number: string | null
+          part_type: string
+          quantity: number
+          retail_price: number | null
+          supplier_cost: number | null
+          supplier_name: string | null
           updated_at: string | null
           work_order_id: string
         }[]
@@ -9048,6 +9073,26 @@ export type Database = {
         }
         Returns: string
       }
+      insert_work_order_part: {
+        Args: {
+          p_work_order_id: string
+          p_job_line_id: string
+          p_inventory_item_id: string
+          p_part_name: string
+          p_part_number: string
+          p_supplier_name: string
+          p_supplier_cost: number
+          p_markup_percentage: number
+          p_retail_price: number
+          p_customer_price: number
+          p_quantity: number
+          p_part_type: string
+          p_invoice_number: string
+          p_po_line: string
+          p_notes: string
+        }
+        Returns: string
+      }
       insert_work_order_time_entry: {
         Args: {
           p_work_order_id: string
@@ -9109,6 +9154,24 @@ export type Database = {
       update_email_processing_schedule: {
         Args: { new_settings: Json }
         Returns: Json
+      }
+      update_work_order_part: {
+        Args: {
+          p_id: string
+          p_part_name: string
+          p_part_number: string
+          p_supplier_name: string
+          p_supplier_cost: number
+          p_markup_percentage: number
+          p_retail_price: number
+          p_customer_price: number
+          p_quantity: number
+          p_part_type: string
+          p_invoice_number: string
+          p_po_line: string
+          p_notes: string
+        }
+        Returns: string
       }
       upsert_work_order_job_line: {
         Args: {
