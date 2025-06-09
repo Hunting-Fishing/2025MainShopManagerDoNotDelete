@@ -3620,19 +3620,28 @@ export type Database = {
       inventory_categories: {
         Row: {
           created_at: string
+          description: string | null
+          display_order: number | null
           id: string
+          is_active: boolean | null
           name: string
           updated_at: string
         }
         Insert: {
           created_at?: string
+          description?: string | null
+          display_order?: number | null
           id?: string
+          is_active?: boolean | null
           name: string
           updated_at?: string
         }
         Update: {
           created_at?: string
+          description?: string | null
+          display_order?: number | null
           id?: string
+          is_active?: boolean | null
           name?: string
           updated_at?: string
         }

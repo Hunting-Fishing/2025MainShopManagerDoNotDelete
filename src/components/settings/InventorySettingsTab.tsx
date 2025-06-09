@@ -7,7 +7,7 @@ import { CategoriesManager } from "./inventory/CategoriesManager";
 import { SuppliersManager } from "./inventory/SuppliersManager";
 import { ClearInventoryButton } from "@/components/inventory/ClearInventoryButton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Info, Building2 } from "lucide-react";
+import { Info, Building2, Car, Wrench } from "lucide-react";
 
 export const InventorySettingsTab = () => {
   const handleDataCleared = () => {
@@ -16,45 +16,59 @@ export const InventorySettingsTab = () => {
   };
 
   return (
-    <Tabs defaultValue="suppliers" className="w-full">
+    <Tabs defaultValue="categories" className="w-full">
       <TabsList className="mb-4">
-        <TabsTrigger value="suppliers">Suppliers</TabsTrigger>
         <TabsTrigger value="categories">Categories</TabsTrigger>
+        <TabsTrigger value="suppliers">Suppliers</TabsTrigger>
         <TabsTrigger value="columns">Table Columns</TabsTrigger>
         <TabsTrigger value="data">Data Management</TabsTrigger>
       </TabsList>
+      
+      <TabsContent value="categories" className="space-y-4">
+        <div className="mb-4">
+          <Alert variant="default" className="border-blue-200 bg-blue-50">
+            <Car className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Automotive Categories:</strong> Comprehensive automotive inventory categories organized by system 
+              (Engine & Powertrain, Chassis & Safety, Electrical & Comfort, etc.). These categories help organize 
+              your parts inventory by automotive systems for easier management and faster lookup.
+            </AlertDescription>
+          </Alert>
+        </div>
+        <CategoriesManager />
+      </TabsContent>
       
       <TabsContent value="suppliers" className="space-y-4">
         <div className="mb-4">
           <Alert variant="default" className="border-blue-200 bg-blue-50">
             <Building2 className="h-4 w-4" />
             <AlertDescription>
-              <strong>Suppliers Management:</strong> Add standard automotive suppliers like NAPA, WorldPac, Bumper to Bumper, and more. 
-              This helps track which supplier each part came from, invoice information, and manage vendor relationships.
+              <strong>Suppliers Management:</strong> Add standard automotive suppliers like NAPA, WorldPac, Bumper to Bumper, 
+              AutoZone, O'Reilly, and more. This helps track which supplier each part came from, manage vendor relationships, 
+              and maintain supplier-specific pricing and inventory levels.
             </AlertDescription>
           </Alert>
         </div>
         <SuppliersManager />
       </TabsContent>
       
-      <TabsContent value="categories" className="space-y-4">
-        <CategoriesManager />
-      </TabsContent>
-      
       <TabsContent value="columns" className="space-y-4">
         <Card>
           <CardHeader>
-            <CardTitle>Inventory Table Columns</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Wrench className="h-5 w-5" />
+              Inventory Table Columns
+            </CardTitle>
             <CardDescription>
-              Configure which columns appear in your inventory table
+              Configure which columns appear in your inventory table for optimal workflow
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Alert variant="default" className="mb-4 border-blue-200 bg-blue-50">
               <Info className="h-4 w-4" />
               <AlertDescription>
-                Changes made here will immediately affect the column visibility in your inventory table.
-                Your settings are saved automatically when you click "Save Settings".
+                <strong>Column Configuration:</strong> Customize your inventory table view to show the most relevant 
+                information for your shop. Changes are applied immediately and saved to your preferences.
               </AlertDescription>
             </Alert>
             <InventoryTableColumnsManager />
@@ -84,7 +98,7 @@ export const InventorySettingsTab = () => {
                 <h3 className="text-lg font-medium mb-2">Clear All Inventory Data</h3>
                 <p className="text-sm text-muted-foreground mb-4">
                   This will permanently delete all inventory items from your database. 
-                  This action cannot be undone.
+                  Categories and suppliers will remain intact. This action cannot be undone.
                 </p>
                 <ClearInventoryButton onCleared={handleDataCleared} />
               </div>
