@@ -1,53 +1,46 @@
 
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from '@/components/ui/sonner';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-
-// Layout and Auth Components
+import { Toaster } from '@/components/ui/sonner';
 import { Layout } from '@/components/layout/Layout';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { OnboardingGate } from '@/components/onboarding/OnboardingGate';
-import { ShopOnboardingWizard } from '@/components/onboarding/ShopOnboardingWizard';
 
-// Page Components
-import Index from '@/pages/Index';
+// Import pages
 import Dashboard from '@/pages/Dashboard';
-import CustomersPage from '@/pages/CustomersPage';
-import CreateCustomer from '@/pages/CreateCustomer';
+import Customers from '@/pages/Customers';
 import CustomerDetails from '@/pages/CustomerDetails';
-import CustomerEdit from '@/pages/CustomerEdit';
 import WorkOrders from '@/pages/WorkOrders';
 import WorkOrderDetails from '@/pages/WorkOrderDetails';
-import Inventory from '@/pages/Inventory';
-import InventoryAdd from '@/pages/InventoryAdd';
-import Team from '@/pages/Team';
-import TeamMemberCreate from '@/pages/TeamMemberCreate';
-import TeamMemberProfile from '@/pages/TeamMemberProfile';
-import TeamRoles from '@/pages/TeamRoles';
-import Settings from '@/pages/Settings';
 import Invoices from '@/pages/Invoices';
 import InvoiceDetails from '@/pages/InvoiceDetails';
-import InvoiceCreate from '@/pages/InvoiceCreate';
-import InvoiceEdit from '@/pages/InvoiceEdit';
-import Reminders from '@/pages/Reminders';
+import Inventory from '@/pages/Inventory';
 import Equipment from '@/pages/Equipment';
-import EquipmentDetails from '@/pages/EquipmentDetails';
-import Notifications from '@/pages/Notifications';
-import Authentication from '@/pages/Authentication';
-import Login from '@/pages/Login';
-import CustomerPortalLogin from '@/pages/CustomerPortalLogin';
-import CustomerPortal from '@/pages/CustomerPortal';
+import Calendar from '@/pages/Calendar';
+import Chat from '@/pages/Chat';
+import Shopping from '@/pages/Shopping';
 import Reports from '@/pages/Reports';
-import NotFound from '@/pages/NotFound';
-import StaffLogin from '@/pages/StaffLogin';
+import Team from '@/pages/Team';
+import Notifications from '@/pages/Notifications';
+import Developer from '@/pages/Developer';
+import Settings from '@/pages/Settings';
 
-// Create a client
+// Developer sub-pages
+import { ServiceManagementPage } from '@/pages/developer/ServiceManagementPage';
+import OrganizationManagement from '@/pages/developer/OrganizationManagement';
+import ShoppingControls from '@/pages/developer/ShoppingControls';
+import AnalyticsDashboard from '@/pages/developer/AnalyticsDashboard';
+import UserManagement from '@/pages/developer/UserManagement';
+import SecuritySettings from '@/pages/developer/SecuritySettings';
+import SystemSettings from '@/pages/developer/SystemSettings';
+import ToolsManagement from '@/pages/developer/ToolsManagement';
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: 1000 * 60 * 5, // 5 minutes
       retry: 1,
     },
   },
@@ -57,318 +50,49 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
-        <div className="min-h-screen bg-background font-sans antialiased">
-          <Routes>
-            {/* Public routes */}
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/staff-login" element={<StaffLogin />} />
-            <Route path="/customer-portal-login" element={<CustomerPortalLogin />} />
-            <Route path="/customer-portal/:customerId?" element={<CustomerPortal />} />
-            <Route path="/auth" element={<Authentication />} />
-            
-            {/* Protected routes with Layout and Sidebar */}
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <OnboardingGate>
-                    <Layout>
-                      <Dashboard />
-                    </Layout>
-                  </OnboardingGate>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/customers"
-              element={
-                <ProtectedRoute>
-                  <OnboardingGate>
-                    <Layout>
-                      <CustomersPage />
-                    </Layout>
-                  </OnboardingGate>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/customers/create"
-              element={
-                <ProtectedRoute>
-                  <OnboardingGate>
-                    <Layout>
-                      <CreateCustomer />
-                    </Layout>
-                  </OnboardingGate>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/customers/:id"
-              element={
-                <ProtectedRoute>
-                  <OnboardingGate>
-                    <Layout>
-                      <CustomerDetails />
-                    </Layout>
-                  </OnboardingGate>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/customers/:id/edit"
-              element={
-                <ProtectedRoute>
-                  <OnboardingGate>
-                    <Layout>
-                      <CustomerEdit />
-                    </Layout>
-                  </OnboardingGate>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/work-orders"
-              element={
-                <ProtectedRoute>
-                  <OnboardingGate>
-                    <Layout>
-                      <WorkOrders />
-                    </Layout>
-                  </OnboardingGate>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/work-orders/:id"
-              element={
-                <ProtectedRoute>
-                  <OnboardingGate>
-                    <Layout>
-                      <WorkOrderDetails />
-                    </Layout>
-                  </OnboardingGate>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/inventory"
-              element={
-                <ProtectedRoute>
-                  <OnboardingGate>
-                    <Layout>
-                      <Inventory />
-                    </Layout>
-                  </OnboardingGate>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/inventory/add"
-              element={
-                <ProtectedRoute>
-                  <OnboardingGate>
-                    <Layout>
-                      <InventoryAdd />
-                    </Layout>
-                  </OnboardingGate>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/team"
-              element={
-                <ProtectedRoute>
-                  <OnboardingGate>
-                    <Layout>
-                      <Team />
-                    </Layout>
-                  </OnboardingGate>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/team/create"
-              element={
-                <ProtectedRoute>
-                  <OnboardingGate>
-                    <Layout>
-                      <TeamMemberCreate />
-                    </Layout>
-                  </OnboardingGate>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/team/:id"
-              element={
-                <ProtectedRoute>
-                  <OnboardingGate>
-                    <Layout>
-                      <TeamMemberProfile />
-                    </Layout>
-                  </OnboardingGate>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/team/roles"
-              element={
-                <ProtectedRoute>
-                  <OnboardingGate>
-                    <Layout>
-                      <TeamRoles />
-                    </Layout>
-                  </OnboardingGate>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/settings"
-              element={
-                <ProtectedRoute>
-                  <OnboardingGate>
-                    <Layout>
-                      <Settings />
-                    </Layout>
-                  </OnboardingGate>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/settings/*"
-              element={
-                <ProtectedRoute>
-                  <OnboardingGate>
-                    <Layout>
-                      <Settings />
-                    </Layout>
-                  </OnboardingGate>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/invoices"
-              element={
-                <ProtectedRoute>
-                  <OnboardingGate>
-                    <Layout>
-                      <Invoices />
-                    </Layout>
-                  </OnboardingGate>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/invoices/create"
-              element={
-                <ProtectedRoute>
-                  <OnboardingGate>
-                    <Layout>
-                      <InvoiceCreate />
-                    </Layout>
-                  </OnboardingGate>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/invoices/:id"
-              element={
-                <ProtectedRoute>
-                  <OnboardingGate>
-                    <Layout>
-                      <InvoiceDetails />
-                    </Layout>
-                  </OnboardingGate>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/invoices/:id/edit"
-              element={
-                <ProtectedRoute>
-                  <OnboardingGate>
-                    <Layout>
-                      <InvoiceEdit />
-                    </Layout>
-                  </OnboardingGate>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/reminders"
-              element={
-                <ProtectedRoute>
-                  <OnboardingGate>
-                    <Layout>
-                      <Reminders />
-                    </Layout>
-                  </OnboardingGate>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/equipment"
-              element={
-                <ProtectedRoute>
-                  <OnboardingGate>
-                    <Layout>
-                      <Equipment />
-                    </Layout>
-                  </OnboardingGate>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/equipment/:id"
-              element={
-                <ProtectedRoute>
-                  <OnboardingGate>
-                    <Layout>
-                      <EquipmentDetails />
-                    </Layout>
-                  </OnboardingGate>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/notifications"
-              element={
-                <ProtectedRoute>
-                  <OnboardingGate>
-                    <Layout>
-                      <Notifications />
-                    </Layout>
-                  </OnboardingGate>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/reports"
-              element={
-                <ProtectedRoute>
-                  <OnboardingGate>
-                    <Layout>
-                      <Reports />
-                    </Layout>
-                  </OnboardingGate>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/onboarding"
-              element={
-                <ProtectedRoute>
-                  <ShopOnboardingWizard />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </div>
-        <Toaster />
+        <Routes>
+          {/* Protected Routes */}
+          <Route
+            path="/*"
+            element={
+              <ProtectedRoute>
+                <OnboardingGate>
+                  <Layout>
+                    <Routes>
+                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/customers" element={<Customers />} />
+                      <Route path="/customers/:id" element={<CustomerDetails />} />
+                      <Route path="/work-orders" element={<WorkOrders />} />
+                      <Route path="/work-orders/:id" element={<WorkOrderDetails />} />
+                      <Route path="/invoices" element={<Invoices />} />
+                      <Route path="/invoices/:id" element={<InvoiceDetails />} />
+                      <Route path="/inventory" element={<Inventory />} />
+                      <Route path="/equipment" element={<Equipment />} />
+                      <Route path="/calendar" element={<Calendar />} />
+                      <Route path="/chat" element={<Chat />} />
+                      <Route path="/shopping" element={<Shopping />} />
+                      <Route path="/reports" element={<Reports />} />
+                      <Route path="/team" element={<Team />} />
+                      <Route path="/notifications" element={<Notifications />} />
+                      <Route path="/developer" element={<Developer />} />
+                      <Route path="/developer/service-management/*" element={<ServiceManagementPage />} />
+                      <Route path="/developer/organization" element={<OrganizationManagement />} />
+                      <Route path="/developer/shopping" element={<ShoppingControls />} />
+                      <Route path="/developer/analytics" element={<AnalyticsDashboard />} />
+                      <Route path="/developer/users" element={<UserManagement />} />
+                      <Route path="/developer/security" element={<SecuritySettings />} />
+                      <Route path="/developer/system" element={<SystemSettings />} />
+                      <Route path="/developer/tools" element={<ToolsManagement />} />
+                      <Route path="/settings" element={<Settings />} />
+                    </Routes>
+                  </Layout>
+                </OnboardingGate>
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
       </Router>
+      <Toaster />
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );
