@@ -18,7 +18,7 @@ export function useAuthUser() {
     
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log('useAuthUser: Auth state change:', event, session?.user?.id);
         
         // Update session and user state immediately
@@ -28,15 +28,9 @@ export function useAuthUser() {
         setUserId(session?.user?.id ?? null);
         setUserName(session?.user?.email ?? null);
         
-        // Defer role checking to avoid potential deadlocks
-        if (session?.user) {
-          setTimeout(() => {
-            checkUserRoles(session.user.id);
-          }, 0);
-        } else {
-          setIsAdmin(false);
-          setIsOwner(false);
-        }
+        // For now, don't check roles to avoid potential issues
+        setIsAdmin(false);
+        setIsOwner(false);
         
         setIsLoading(false);
       }
@@ -55,10 +49,6 @@ export function useAuthUser() {
           setIsAuthenticated(!!session);
           setUserId(session?.user?.id ?? null);
           setUserName(session?.user?.email ?? null);
-          
-          if (session?.user) {
-            await checkUserRoles(session.user.id);
-          }
         }
       } catch (error) {
         console.error('useAuthUser: Error in initial auth check:', error);
@@ -74,34 +64,6 @@ export function useAuthUser() {
       subscription.unsubscribe();
     };
   }, []);
-
-  const checkUserRoles = async (userId: string) => {
-    try {
-      console.log('useAuthUser: Checking roles for user:', userId);
-      
-      // Check if user has admin or owner role
-      const { data: userRoles, error } = await supabase
-        .from('user_roles')
-        .select(`
-          role_id,
-          roles:role_id(name)
-        `)
-        .eq('user_id', userId);
-
-      if (error) {
-        console.error('useAuthUser: Error checking user roles:', error);
-        return;
-      }
-
-      const roleNames = userRoles?.map(ur => (ur.roles as any)?.name) || [];
-      console.log('useAuthUser: User roles:', roleNames);
-      
-      setIsAdmin(roleNames.includes('admin') || roleNames.includes('administrator'));
-      setIsOwner(roleNames.includes('owner'));
-    } catch (error) {
-      console.error('useAuthUser: Error in role check:', error);
-    }
-  };
 
   return {
     user,
