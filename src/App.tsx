@@ -10,7 +10,7 @@ import { OnboardingGate } from '@/components/onboarding/OnboardingGate';
 
 // Import pages
 import Dashboard from '@/pages/Dashboard';
-import Customers from '@/pages/Customers';
+import CustomersPage from '@/pages/CustomersPage';
 import CustomerDetails from '@/pages/CustomerDetails';
 import WorkOrders from '@/pages/WorkOrders';
 import WorkOrderDetails from '@/pages/WorkOrderDetails';
@@ -60,7 +60,7 @@ function App() {
                   <Layout>
                     <Routes>
                       <Route path="/" element={<Dashboard />} />
-                      <Route path="/customers" element={<Customers />} />
+                      <Route path="/customers" element={<CustomersPage />} />
                       <Route path="/customers/:id" element={<CustomerDetails />} />
                       <Route path="/work-orders" element={<WorkOrders />} />
                       <Route path="/work-orders/:id" element={<WorkOrderDetails />} />
