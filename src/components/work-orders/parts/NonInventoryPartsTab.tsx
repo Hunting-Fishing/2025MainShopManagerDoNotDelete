@@ -1,28 +1,27 @@
 import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { Card, CardContent } from '@/components/ui/card';
+import { Plus } from 'lucide-react';
 import { WorkOrderPartFormValues } from '@/types/workOrderPart';
-import { SupplierSelector } from './SupplierSelector';
+
 interface NonInventoryPartsTabProps {
   workOrderId: string;
   jobLineId?: string;
   onAddPart: (part: WorkOrderPartFormValues) => void;
 }
-export function NonInventoryPartsTab({
-  workOrderId,
-  jobLineId,
-  onAddPart
-}: NonInventoryPartsTabProps) {
+
+export function NonInventoryPartsTab({ workOrderId, jobLineId, onAddPart }: NonInventoryPartsTabProps) {
   const [formData, setFormData] = useState<WorkOrderPartFormValues>({
     partName: '',
     partNumber: '',
     supplierName: '',
     supplierCost: 0,
-    markupPercentage: 50,
+    markupPercentage: 67.69,
     retailPrice: 0,
     customerPrice: 0,
     quantity: 1,
@@ -30,172 +29,289 @@ export function NonInventoryPartsTab({
     notes: ''
   });
 
-  // Auto-calculate prices and markup based on input changes
-  useEffect(() => {
-    const {
-      supplierCost,
-      markupPercentage,
-      retailPrice
-    } = formData;
-    if (supplierCost > 0) {
-      // Calculate retail price from supplier cost + markup
-      const calculatedRetailPrice = supplierCost * (1 + markupPercentage / 100);
+  // Track markup components separately
+  const [baseMarkupPercentage, setBaseMarkupPercentage] = useState(67.69); // Supplier to Retail
+  const [userAdjustmentMarkup, setUserAdjustmentMarkup] = useState(0); // Additional markup from Retail to Customer
+  const [effectiveMarkupPercentage, setEffectiveMarkupPercentage] = useState(67.69); // Total markup shown
 
-      // If retail price was manually entered and differs significantly from calculated,
-      // auto-calculate markup percentage instead
-      if (retailPrice > 0 && Math.abs(retailPrice - calculatedRetailPrice) > 0.01) {
-        const calculatedMarkup = (retailPrice - supplierCost) / supplierCost * 100;
-        setFormData(prev => ({
-          ...prev,
-          markupPercentage: Math.max(0, Math.round(calculatedMarkup * 100) / 100),
-          customerPrice: retailPrice // Customer price follows retail/list price
-        }));
-      } else {
-        // Normal calculation: supplier cost + markup → retail & customer price
-        setFormData(prev => ({
-          ...prev,
-          retailPrice: Math.round(calculatedRetailPrice * 100) / 100,
-          customerPrice: Math.round(calculatedRetailPrice * 100) / 100
-        }));
-      }
-    }
-  }, [formData.supplierCost, formData.markupPercentage, formData.retailPrice]);
+  // Calculate retail price from supplier cost and base markup
+  const calculateRetailPrice = (supplierCost: number, baseMarkup: number): number => {
+    return supplierCost * (1 + baseMarkup / 100);
+  };
+
+  // Calculate customer price from retail price and user adjustment
+  const calculateCustomerPrice = (retailPrice: number, userMarkup: number): number => {
+    return retailPrice * (1 + userMarkup / 100);
+  };
+
+  // Calculate effective markup from supplier cost to customer price
+  const calculateEffectiveMarkup = (supplierCost: number, customerPrice: number): number => {
+    if (supplierCost === 0) return 0;
+    return ((customerPrice - supplierCost) / supplierCost) * 100;
+  };
+
+  // Calculate user adjustment markup from retail to customer price
+  const calculateUserAdjustmentMarkup = (retailPrice: number, customerPrice: number): number => {
+    if (retailPrice === 0) return 0;
+    return ((customerPrice - retailPrice) / retailPrice) * 100;
+  };
+
+  // Update all calculated fields when supplier cost or base markup changes
+  useEffect(() => {
+    const newRetailPrice = calculateRetailPrice(formData.supplierCost, baseMarkupPercentage);
+    const newCustomerPrice = calculateCustomerPrice(newRetailPrice, userAdjustmentMarkup);
+    const newEffectiveMarkup = calculateEffectiveMarkup(formData.supplierCost, newCustomerPrice);
+    
+    setFormData(prev => ({
+      ...prev,
+      retailPrice: newRetailPrice,
+      customerPrice: newCustomerPrice,
+      markupPercentage: newEffectiveMarkup
+    }));
+    
+    setEffectiveMarkupPercentage(newEffectiveMarkup);
+  }, [formData.supplierCost, baseMarkupPercentage, userAdjustmentMarkup]);
+
   const handleInputChange = (field: keyof WorkOrderPartFormValues, value: string | number) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    if (field === 'supplierCost') {
+      const supplierCost = typeof value === 'string' ? parseFloat(value) || 0 : value;
+      setFormData(prev => ({ ...prev, [field]: supplierCost }));
+    } else if (field === 'retailPrice') {
+      const retailPrice = typeof value === 'string' ? parseFloat(value) || 0 : value;
+      // When retail price is manually changed, recalculate base markup
+      if (formData.supplierCost > 0) {
+        const newBaseMarkup = ((retailPrice - formData.supplierCost) / formData.supplierCost) * 100;
+        setBaseMarkupPercentage(newBaseMarkup);
+      }
+      
+      // Keep customer price in sync with user adjustment
+      const newCustomerPrice = calculateCustomerPrice(retailPrice, userAdjustmentMarkup);
+      const newEffectiveMarkup = calculateEffectiveMarkup(formData.supplierCost, newCustomerPrice);
+      
+      setFormData(prev => ({
+        ...prev,
+        retailPrice,
+        customerPrice: newCustomerPrice,
+        markupPercentage: newEffectiveMarkup
+      }));
+      setEffectiveMarkupPercentage(newEffectiveMarkup);
+    } else if (field === 'customerPrice') {
+      const customerPrice = typeof value === 'string' ? parseFloat(value) || 0 : value;
+      
+      // When customer price is manually changed, recalculate user adjustment markup
+      const newUserAdjustment = calculateUserAdjustmentMarkup(formData.retailPrice, customerPrice);
+      const newEffectiveMarkup = calculateEffectiveMarkup(formData.supplierCost, customerPrice);
+      
+      setUserAdjustmentMarkup(newUserAdjustment);
+      setEffectiveMarkupPercentage(newEffectiveMarkup);
+      
+      setFormData(prev => ({
+        ...prev,
+        customerPrice,
+        markupPercentage: newEffectiveMarkup
+      }));
+    } else {
+      setFormData(prev => ({ ...prev, [field]: value }));
+    }
   };
-  const handleSliderChange = (value: number[]) => {
-    const newMarkup = value[0];
-    setFormData(prev => ({
-      ...prev,
-      markupPercentage: newMarkup
-    }));
+
+  const handleBaseMarkupChange = (value: number[]) => {
+    const newBaseMarkup = value[0];
+    setBaseMarkupPercentage(newBaseMarkup);
   };
-  const handleAddPart = () => {
-    if (!formData.partName.trim()) {
+
+  const handleUserAdjustmentChange = (value: number[]) => {
+    const newUserAdjustment = value[0];
+    setUserAdjustmentMarkup(newUserAdjustment);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.partName || formData.supplierCost <= 0 || formData.quantity <= 0) {
       return;
     }
-    onAddPart({
-      ...formData,
-      partName: formData.partName.trim(),
-      partNumber: formData.partNumber?.trim() || '',
-      supplierName: formData.supplierName?.trim() || '',
-      notes: formData.notes?.trim() || ''
-    });
-
+    
+    onAddPart(formData);
+    
     // Reset form
     setFormData({
       partName: '',
       partNumber: '',
       supplierName: '',
       supplierCost: 0,
-      markupPercentage: 50,
+      markupPercentage: 67.69,
       retailPrice: 0,
       customerPrice: 0,
       quantity: 1,
       partType: 'non-inventory',
       notes: ''
     });
+    setBaseMarkupPercentage(67.69);
+    setUserAdjustmentMarkup(0);
+    setEffectiveMarkupPercentage(67.69);
   };
-  const totalPrice = formData.quantity * formData.customerPrice;
-  return <Card>
-      <CardContent className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Part Information */}
-          <div className="space-y-2">
-            <Label htmlFor="partName">Part Name *</Label>
-            <Input id="partName" value={formData.partName} onChange={e => handleInputChange('partName', e.target.value)} placeholder="Enter part name" />
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="partNumber">Part Number</Label>
-            <Input id="partNumber" value={formData.partNumber || ''} onChange={e => handleInputChange('partNumber', e.target.value)} placeholder="Enter part number" />
-          </div>
-
-          {/* Supplier Information */}
-          <div className="space-y-2">
-            <Label>Supplier</Label>
-            <SupplierSelector value={formData.supplierName || ''} onChange={value => handleInputChange('supplierName', value)} placeholder="Select or add supplier" />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="quantity">Quantity</Label>
-            <Input id="quantity" type="number" min="1" value={formData.quantity} onChange={e => handleInputChange('quantity', parseInt(e.target.value) || 1)} />
-          </div>
-
-          {/* Pricing Section */}
-          <div className="space-y-2">
-            <Label htmlFor="supplierCost">Supplier Cost ($)</Label>
-            <Input id="supplierCost" type="number" step="0.01" min="0" value={formData.supplierCost || ''} onChange={e => handleInputChange('supplierCost', parseFloat(e.target.value) || 0)} placeholder="0.00" />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="retailPrice">Retail/List Price ($)</Label>
-            <Input id="retailPrice" type="number" step="0.01" min="0" value={formData.retailPrice || ''} onChange={e => handleInputChange('retailPrice', parseFloat(e.target.value) || 0)} placeholder="0.00" />
-          </div>
-
-          {/* Markup Percentage Input */}
-          <div className="space-y-2">
-            <Label htmlFor="markupPercentage">Markup % (Auto-calculated)</Label>
-            <Input id="markupPercentage" type="number" step="0.01" min="0" max="10000" value={formData.markupPercentage || ''} onChange={e => handleInputChange('markupPercentage', parseFloat(e.target.value) || 0)} placeholder="0.00" />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="customerPrice">Customer Price ($)</Label>
-            <Input id="customerPrice" type="number" step="0.01" min="0" value={formData.customerPrice || ''} onChange={e => handleInputChange('customerPrice', parseFloat(e.target.value) || 0)} placeholder="0.00" />
-          </div>
-
-          {/* Markup Slider - Full Width */}
-          <div className="md:col-span-2 space-y-4">
-            <div className="space-y-2 bg-green-400">
-              <Label>Markup Adjustment Slider: {formData.markupPercentage.toFixed(2)}%</Label>
-              <div className="px-2">
-                <Slider value={[formData.markupPercentage]} onValueChange={handleSliderChange} min={0} max={1000} step={0.1} className="w-full" />
-              </div>
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>0%</span>
-                <span>500%</span>
-                <span>1000%</span>
-              </div>
-              <div className="text-center">
-                <Button variant="outline" size="sm" onClick={() => setFormData(prev => ({
-                ...prev,
-                markupPercentage: 10000
-              }))} className="text-xs">
-                  Set Max (10,000%)
-                </Button>
-              </div>
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Add Non-Inventory Part</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="partName">Part Name *</Label>
+              <Input
+                id="partName"
+                value={formData.partName}
+                onChange={(e) => handleInputChange('partName', e.target.value)}
+                placeholder="Enter part name"
+                required
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="partNumber">Part Number</Label>
+              <Input
+                id="partNumber"
+                value={formData.partNumber}
+                onChange={(e) => handleInputChange('partNumber', e.target.value)}
+                placeholder="Enter part number"
+              />
             </div>
           </div>
 
-          {/* Notes */}
-          <div className="md:col-span-2 space-y-2">
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea id="notes" value={formData.notes || ''} onChange={e => handleInputChange('notes', e.target.value)} placeholder="Additional notes about this part" rows={3} />
+          <div>
+            <Label htmlFor="supplierName">Supplier Name</Label>
+            <Input
+              id="supplierName"
+              value={formData.supplierName}
+              onChange={(e) => handleInputChange('supplierName', e.target.value)}
+              placeholder="Enter supplier name"
+            />
           </div>
 
-          {/* Price Summary */}
-          <div className="md:col-span-2">
-            <div className="bg-muted/50 p-4 rounded-lg">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="supplierCost">Supplier Cost *</Label>
+              <Input
+                id="supplierCost"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.supplierCost}
+                onChange={(e) => handleInputChange('supplierCost', e.target.value)}
+                placeholder="0.00"
+                required
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="quantity">Quantity *</Label>
+              <Input
+                id="quantity"
+                type="number"
+                min="1"
+                value={formData.quantity}
+                onChange={(e) => handleInputChange('quantity', parseInt(e.target.value) || 1)}
+                required
+              />
+            </div>
+          </div>
+
+          {/* Enhanced Markup Section */}
+          <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+            <h4 className="font-medium">Pricing & Markup</h4>
+            
+            {/* Base Markup (Supplier to Retail) */}
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <Label>Base Markup % (Supplier → Retail)</Label>
+                <span className="text-sm font-medium">{baseMarkupPercentage.toFixed(2)}%</span>
+              </div>
+              <Slider
+                value={[baseMarkupPercentage]}
+                onValueChange={handleBaseMarkupChange}
+                max={200}
+                min={0}
+                step={0.1}
+                className="w-full"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="retailPrice">Retail/List Price</Label>
+                <Input
+                  id="retailPrice"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.retailPrice.toFixed(2)}
+                  onChange={(e) => handleInputChange('retailPrice', e.target.value)}
+                  placeholder="0.00"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="customerPrice">Customer Price</Label>
+                <Input
+                  id="customerPrice"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.customerPrice.toFixed(2)}
+                  onChange={(e) => handleInputChange('customerPrice', e.target.value)}
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+
+            {/* User Adjustment Markup (Retail to Customer) */}
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <Label>User Adjustment % (Retail → Customer)</Label>
+                <span className="text-sm font-medium">{userAdjustmentMarkup.toFixed(2)}%</span>
+              </div>
+              <Slider
+                value={[userAdjustmentMarkup]}
+                onValueChange={handleUserAdjustmentChange}
+                max={100}
+                min={-50}
+                step={0.1}
+                className="w-full"
+              />
+            </div>
+
+            {/* Effective Total Markup */}
+            <div className="pt-2 border-t">
               <div className="flex justify-between items-center">
-                <span className="font-medium">Total Price:</span>
-                <span className="text-lg font-bold">${totalPrice.toFixed(2)}</span>
+                <Label className="font-medium">Effective Total Markup %</Label>
+                <span className="text-lg font-bold text-green-600">{effectiveMarkupPercentage.toFixed(2)}%</span>
               </div>
-              <div className="text-sm text-muted-foreground mt-1">
-                {formData.quantity} × ${formData.customerPrice.toFixed(2)}
-              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Total markup from supplier cost to customer price
+              </p>
             </div>
           </div>
 
-          {/* Add Button */}
-          <div className="md:col-span-2">
-            <Button onClick={handleAddPart} disabled={!formData.partName.trim()} className="w-full">
-              Add Non-Inventory Part
-            </Button>
+          <div>
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              value={formData.notes}
+              onChange={(e) => handleInputChange('notes', e.target.value)}
+              placeholder="Enter any additional notes"
+              rows={3}
+            />
           </div>
-        </div>
+
+          <Button type="submit" className="w-full">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Part
+          </Button>
+        </form>
       </CardContent>
-    </Card>;
+    </Card>
+  );
 }
