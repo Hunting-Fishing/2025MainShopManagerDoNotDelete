@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,7 +23,36 @@ export function NonInventoryPartsTab({ workOrderId, jobLineId, onAddPart }: NonI
   const [notes, setNotes] = useState('');
 
   const retailPrice = supplierCost * (1 + (markupPercentage / 100));
-  const customerPrice = retailPrice;
+  const [customerPrice, setCustomerPrice] = useState(retailPrice);
+
+  // Calculate effective markup based on customer price vs supplier cost
+  const effectiveMarkup = supplierCost > 0 ? ((customerPrice - supplierCost) / supplierCost) * 100 : 0;
+
+  const handleSupplierCostChange = (newCost: number) => {
+    setSupplierCost(newCost);
+    const newRetailPrice = newCost * (1 + (markupPercentage / 100));
+    setCustomerPrice(newRetailPrice);
+  };
+
+  const handleMarkupChange = (newMarkup: number) => {
+    setMarkupPercentage(newMarkup);
+    const newRetailPrice = supplierCost * (1 + (newMarkup / 100));
+    setCustomerPrice(newRetailPrice);
+  };
+
+  const handleCustomerPriceChange = (newPrice: number) => {
+    setCustomerPrice(newPrice);
+    // Update markup percentage based on new customer price
+    if (supplierCost > 0) {
+      const newMarkup = ((newPrice - supplierCost) / supplierCost) * 100;
+      setMarkupPercentage(Math.max(0, newMarkup));
+    }
+  };
+
+  // Sync retail price with customer price for display
+  React.useEffect(() => {
+    setCustomerPrice(retailPrice);
+  }, [retailPrice]);
 
   const handleAddPart = () => {
     const newPart: WorkOrderPartFormValues = {
@@ -30,7 +60,7 @@ export function NonInventoryPartsTab({ workOrderId, jobLineId, onAddPart }: NonI
       partNumber,
       supplierName,
       supplierCost,
-      markupPercentage,
+      markupPercentage: effectiveMarkup, // Use effective markup
       retailPrice,
       customerPrice,
       quantity,
@@ -45,6 +75,7 @@ export function NonInventoryPartsTab({ workOrderId, jobLineId, onAddPart }: NonI
     setSupplierName('');
     setSupplierCost(0);
     setMarkupPercentage(50);
+    setCustomerPrice(0);
     setQuantity(1);
     setNotes('');
   };
@@ -84,18 +115,27 @@ export function NonInventoryPartsTab({ workOrderId, jobLineId, onAddPart }: NonI
           type="number"
           id="supplierCost"
           value={supplierCost}
-          onChange={(e) => setSupplierCost(parseFloat(e.target.value))}
+          onChange={(e) => handleSupplierCostChange(parseFloat(e.target.value) || 0)}
         />
       </div>
       <div>
-        <Label htmlFor="markupPercentage">Markup Percentage ({markupPercentage}%)</Label>
+        <Label htmlFor="markupPercentage">Markup Percentage ({effectiveMarkup.toFixed(2)}%)</Label>
         <Slider
           id="markupPercentage"
-          defaultValue={[markupPercentage]}
+          value={[markupPercentage]}
           min={0}
-          max={100}
+          max={200}
           step={1}
-          onValueChange={(value) => setMarkupPercentage(value[0])}
+          onValueChange={(value) => handleMarkupChange(value[0])}
+        />
+      </div>
+      <div>
+        <Label htmlFor="customerPrice">Customer Price</Label>
+        <Input
+          type="number"
+          id="customerPrice"
+          value={customerPrice}
+          onChange={(e) => handleCustomerPriceChange(parseFloat(e.target.value) || 0)}
         />
       </div>
       <div>
