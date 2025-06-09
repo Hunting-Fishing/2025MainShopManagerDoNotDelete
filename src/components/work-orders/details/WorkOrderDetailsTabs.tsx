@@ -36,7 +36,7 @@ export function WorkOrderDetailsTabs({
           <Wrench className="h-4 w-4" />
           Labor & Services
         </TabsTrigger>
-        <TabsTrigger value="time" className="flex items-center gap-2">
+        <TabsTrigger value="time" className="flex items-center gap-2 text-lg">
           <Clock className="h-4 w-4" />
           Time Tracking
         </TabsTrigger>
