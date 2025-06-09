@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
+import { Search, Package, Plus, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, Package, RefreshCw, AlertCircle } from 'lucide-react';
-import { useInventoryItems } from '@/hooks/inventory/useInventoryItems';
 import { WorkOrderPartFormValues } from '@/types/workOrderPart';
-import { toast } from 'sonner';
+import { InventoryItemExtended } from '@/types/inventory';
+import { useInventoryItems } from '@/hooks/inventory/useInventoryItems';
 
 interface InventoryPartsTabProps {
   workOrderId: string;
@@ -17,254 +17,367 @@ interface InventoryPartsTabProps {
 }
 
 export function InventoryPartsTab({ workOrderId, jobLineId, onAddPart }: InventoryPartsTabProps) {
-  const { items, isLoading, fetchItems } = useInventoryItems();
-  
+  const { items, isLoading } = useInventoryItems();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [customerPrices, setCustomerPrices] = useState<Record<string, number>>({});
-  const [manuallyAdjusted, setManuallyAdjusted] = useState<Record<string, boolean>>({});
-  const [invoiceNumbers, setInvoiceNumbers] = useState<Record<string, string>>({});
-  const [poLines, setPoLines] = useState<Record<string, string>>({});
+  const [selectedItems, setSelectedItems] = useState<{[key: string]: {
+    item: InventoryItemExtended;
+    quantity: number;
+    supplierCost: number;
+    markupPercentage: number;
+    retailPrice: number;
+    customerPrice: number;
+    invoiceNumber: string;
+    poLine: string;
+    notes: string;
+    isCustomerPriceEdited: boolean;
+  }}>({});
 
-  // Initialize customer prices to retail when items load
-  useEffect(() => {
-    if (items.length > 0) {
-      const initialPrices: Record<string, number> = {};
-      items.forEach(item => {
-        if (!customerPrices[item.id]) {
-          initialPrices[item.id] = item.retail_price || 0;
-        }
-      });
-      if (Object.keys(initialPrices).length > 0) {
-        setCustomerPrices(prev => ({ ...prev, ...initialPrices }));
+  const filteredItems = items.filter(item =>
+    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (item.category && item.category.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  const handleSelectItem = (item: InventoryItemExtended) => {
+    const retailPrice = item.unit_price || item.price || 0;
+    setSelectedItems(prev => ({
+      ...prev,
+      [item.id]: {
+        item,
+        quantity: 1,
+        supplierCost: retailPrice * 0.7, // Default supplier cost at 70% of retail
+        markupPercentage: 43, // Default 43% markup
+        retailPrice: retailPrice,
+        customerPrice: retailPrice, // Default customer price to retail price
+        invoiceNumber: '',
+        poLine: '',
+        notes: '',
+        isCustomerPriceEdited: false
       }
-    }
-  }, [items, customerPrices]);
+    }));
+  };
 
-  const filteredItems = items.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  const categories = Array.from(new Set(items.map(item => item.category).filter(Boolean)));
+  const handleRemoveItem = (itemId: string) => {
+    setSelectedItems(prev => {
+      const newItems = { ...prev };
+      delete newItems[itemId];
+      return newItems;
+    });
+  };
 
   const handleQuantityChange = (itemId: string, quantity: number) => {
-    setQuantities(prev => ({ ...prev, [itemId]: quantity }));
+    if (quantity <= 0) return;
+    setSelectedItems(prev => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        quantity
+      }
+    }));
   };
 
-  const handleCustomerPriceChange = (itemId: string, price: number) => {
-    setCustomerPrices(prev => ({ ...prev, [itemId]: price }));
-    setManuallyAdjusted(prev => ({ ...prev, [itemId]: true }));
+  const handleSupplierCostChange = (itemId: string, supplierCost: number) => {
+    setSelectedItems(prev => {
+      const item = prev[itemId];
+      if (!item) return prev;
+      
+      // Recalculate retail price based on markup
+      const newRetailPrice = supplierCost * (1 + item.markupPercentage / 100);
+      
+      return {
+        ...prev,
+        [itemId]: {
+          ...item,
+          supplierCost,
+          retailPrice: newRetailPrice,
+          // Only update customer price if it hasn't been manually edited
+          customerPrice: item.isCustomerPriceEdited ? item.customerPrice : newRetailPrice
+        }
+      };
+    });
   };
 
-  const handleResetToRetail = (itemId: string) => {
-    const item = items.find(i => i.id === itemId);
-    if (item) {
-      setCustomerPrices(prev => ({ ...prev, [itemId]: item.retail_price || 0 }));
-      setManuallyAdjusted(prev => ({ ...prev, [itemId]: false }));
-    }
-  };
-
-  const handleInvoiceNumberChange = (itemId: string, invoiceNumber: string) => {
-    setInvoiceNumbers(prev => ({ ...prev, [itemId]: invoiceNumber }));
-  };
-
-  const handlePoLineChange = (itemId: string, poLine: string) => {
-    setPoLines(prev => ({ ...prev, [itemId]: poLine }));
-  };
-
-  const handleAddPart = (item: any) => {
-    const quantity = quantities[item.id] || 1;
-    const customerPrice = customerPrices[item.id] || item.retail_price || 0;
-    
-    if (quantity <= 0) {
-      toast.error('Quantity must be greater than 0');
-      return;
-    }
-
-    if (quantity > (item.current_stock || 0)) {
-      toast.error(`Insufficient stock. Available: ${item.current_stock || 0}`);
-      return;
-    }
-
-    const part: WorkOrderPartFormValues = {
-      workOrderId,
-      jobLineId,
+  const handleAddSelectedParts = () => {
+    const partsToAdd: WorkOrderPartFormValues[] = Object.values(selectedItems).map(({ item, quantity, supplierCost, markupPercentage, retailPrice, customerPrice, invoiceNumber, poLine, notes }) => ({
       partName: item.name,
-      partNumber: item.sku || '',
-      quantity,
-      supplierCost: item.cost || 0,
+      partNumber: item.sku,
+      supplierName: item.supplier || '',
+      supplierCost,
+      markupPercentage,
+      retailPrice,
       customerPrice,
-      description: item.description || '',
-      invoiceNumber: invoiceNumbers[item.id] || '',
-      poLine: poLines[item.id] || '',
-      inventoryItemId: item.id
-    };
+      quantity,
+      partType: 'inventory' as const,
+      inventoryItemId: item.id,
+      invoiceNumber,
+      poLine,
+      notes
+    }));
 
-    onAddPart(part);
-    
-    // Reset form for this item
-    setQuantities(prev => ({ ...prev, [item.id]: 1 }));
-    setCustomerPrices(prev => ({ ...prev, [item.id]: item.retail_price || 0 }));
-    setManuallyAdjusted(prev => ({ ...prev, [item.id]: false }));
-    setInvoiceNumbers(prev => ({ ...prev, [item.id]: '' }));
-    setPoLines(prev => ({ ...prev, [item.id]: '' }));
-    
-    toast.success('Part added successfully');
+    partsToAdd.forEach(part => onAddPart(part));
+    setSelectedItems({});
+  };
+
+  const handleMarkupChange = (itemId: string, markupPercentage: number) => {
+    setSelectedItems(prev => {
+      const item = prev[itemId];
+      if (!item) return prev;
+      
+      // Recalculate retail price based on new markup
+      const newRetailPrice = item.supplierCost * (1 + markupPercentage / 100);
+      
+      return {
+        ...prev,
+        [itemId]: {
+          ...item,
+          markupPercentage,
+          retailPrice: newRetailPrice,
+          // Only update customer price if it hasn't been manually edited
+          customerPrice: item.isCustomerPriceEdited ? item.customerPrice : newRetailPrice
+        }
+      };
+    });
+  };
+
+  const handleCustomerPriceChange = (itemId: string, customerPrice: number) => {
+    setSelectedItems(prev => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        customerPrice,
+        isCustomerPriceEdited: true
+      }
+    }));
+  };
+
+  const handleResetCustomerPrice = (itemId: string) => {
+    setSelectedItems(prev => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        customerPrice: prev[itemId].retailPrice,
+        isCustomerPriceEdited: false
+      }
+    }));
+  };
+
+  const handleFieldChange = (itemId: string, field: string, value: string) => {
+    setSelectedItems(prev => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        [field]: value
+      }
+    }));
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <RefreshCw className="h-6 w-6 animate-spin mr-2" />
-        Loading inventory items...
+      <div className="flex items-center justify-center p-8">
+        <div className="text-muted-foreground">Loading inventory items...</div>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="Search inventory items..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-          <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder="All Categories" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            {categories.map(category => (
-              <SelectItem key={category} value={category}>{category}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Search inventory items..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
       </div>
 
-      <div className="space-y-3 max-h-96 overflow-y-auto">
-        {filteredItems.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No inventory items found</p>
-          </div>
-        ) : (
-          filteredItems.map(item => (
-            <Card key={item.id} className="p-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <div>
-                    <h4 className="font-medium">{item.name}</h4>
-                    <p className="text-sm text-muted-foreground">SKU: {item.sku || 'N/A'}</p>
-                    {item.description && (
-                      <p className="text-sm text-muted-foreground">{item.description}</p>
-                    )}
-                  </div>
+      {/* Available Items */}
+      <div className="grid gap-2 max-h-64 overflow-y-auto">
+        {filteredItems.map((item) => (
+          <Card 
+            key={item.id} 
+            className={`cursor-pointer transition-colors hover:bg-muted/50 ${
+              selectedItems[item.id] ? 'bg-blue-50 border-blue-200' : ''
+            }`}
+            onClick={() => !selectedItems[item.id] && handleSelectItem(item)}
+          >
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <Badge variant={item.current_stock && item.current_stock > 0 ? 'default' : 'destructive'}>
-                      Stock: {item.current_stock || 0}
-                    </Badge>
-                    <Badge variant="outline">
-                      Cost: ${(item.cost || 0).toFixed(2)}
-                    </Badge>
-                    <Badge variant="outline">
-                      Retail: ${(item.retail_price || 0).toFixed(2)}
-                    </Badge>
+                    <Package className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">{item.name}</span>
+                    <Badge variant="outline" className="text-xs">{item.sku}</Badge>
+                  </div>
+                  <div className="text-sm text-muted-foreground mt-1">
+                    Stock: {item.quantity || 0} • Price: ${(item.unit_price || item.price || 0).toFixed(2)}
+                  </div>
+                  {item.category && (
+                    <Badge variant="secondary" className="text-xs mt-1">{item.category}</Badge>
+                  )}
+                </div>
+                {selectedItems[item.id] ? (
+                  <Badge className="bg-blue-600">Selected</Badge>
+                ) : (
+                  <Button size="sm" variant="outline">
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Selected Items Configuration */}
+      {Object.keys(selectedItems).length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Configure Selected Parts</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {Object.entries(selectedItems).map(([itemId, config]) => (
+              <div key={itemId} className="border rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="font-medium">{config.item.name}</span>
+                    <Badge variant="outline" className="ml-2">{config.item.sku}</Badge>
+                    <div className="text-sm text-muted-foreground">
+                      Available: {config.item.quantity || 0} units
+                    </div>
+                  </div>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => handleRemoveItem(itemId)}
+                  >
+                    Remove
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div>
+                    <Label htmlFor={`quantity-${itemId}`}>Quantity</Label>
+                    <Input
+                      id={`quantity-${itemId}`}
+                      type="number"
+                      min="1"
+                      max={config.item.quantity || 999}
+                      value={config.quantity}
+                      onChange={(e) => handleQuantityChange(itemId, parseInt(e.target.value) || 1)}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor={`supplier-cost-${itemId}`}>Supplier Cost</Label>
+                    <Input
+                      id={`supplier-cost-${itemId}`}
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={config.supplierCost}
+                      onChange={(e) => handleSupplierCostChange(itemId, parseFloat(e.target.value) || 0)}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor={`markup-${itemId}`}>Markup %</Label>
+                    <Input
+                      id={`markup-${itemId}`}
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      value={config.markupPercentage}
+                      onChange={(e) => handleMarkupChange(itemId, parseFloat(e.target.value) || 0)}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor={`retail-price-${itemId}`}>Retail Price</Label>
+                    <Input
+                      id={`retail-price-${itemId}`}
+                      type="number"
+                      step="0.01"
+                      value={config.retailPrice.toFixed(2)}
+                      readOnly
+                      className="bg-muted"
+                    />
                   </div>
                 </div>
 
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
-                    <Label htmlFor={`quantity-${item.id}`}>Quantity</Label>
-                    <Input
-                      id={`quantity-${item.id}`}
-                      type="number"
-                      min="1"
-                      max={item.current_stock || 0}
-                      value={quantities[item.id] || 1}
-                      onChange={(e) => handleQuantityChange(item.id, parseInt(e.target.value) || 0)}
-                      className="w-full"
-                    />
-                  </div>
-
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <Label htmlFor={`customer-price-${item.id}`}>Customer Price</Label>
-                      {manuallyAdjusted[item.id] && (
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor={`customer-price-${itemId}`}>Customer Price</Label>
+                      {config.isCustomerPriceEdited && (
                         <Button
-                          variant="ghost"
                           size="sm"
-                          onClick={() => handleResetToRetail(item.id)}
+                          variant="ghost"
+                          onClick={() => handleResetCustomerPrice(itemId)}
                           className="h-6 px-2 text-xs"
                         >
-                          <RefreshCw className="h-3 w-3 mr-1" />
-                          Reset to Retail
+                          <RotateCcw className="h-3 w-3 mr-1" />
+                          Reset
                         </Button>
                       )}
                     </div>
-                    <div className="relative">
-                      <Input
-                        id={`customer-price-${item.id}`}
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={customerPrices[item.id] || 0}
-                        onChange={(e) => handleCustomerPriceChange(item.id, parseFloat(e.target.value) || 0)}
-                        className={manuallyAdjusted[item.id] ? "border-yellow-400" : ""}
-                      />
-                      {manuallyAdjusted[item.id] && (
-                        <AlertCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-yellow-500" />
-                      )}
-                    </div>
-                    {manuallyAdjusted[item.id] && (
-                      <p className="text-xs text-yellow-600 mt-1">Manually adjusted from retail price</p>
-                    )}
+                    <Input
+                      id={`customer-price-${itemId}`}
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={config.customerPrice}
+                      onChange={(e) => handleCustomerPriceChange(itemId, parseFloat(e.target.value) || 0)}
+                      className={config.isCustomerPriceEdited ? 'border-blue-300 bg-blue-50' : ''}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor={`invoice-${itemId}`}>Invoice #</Label>
+                    <Input
+                      id={`invoice-${itemId}`}
+                      value={config.invoiceNumber}
+                      onChange={(e) => handleFieldChange(itemId, 'invoiceNumber', e.target.value)}
+                      placeholder="Optional"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor={`po-line-${itemId}`}>PO Line</Label>
+                    <Input
+                      id={`po-line-${itemId}`}
+                      value={config.poLine}
+                      onChange={(e) => handleFieldChange(itemId, 'poLine', e.target.value)}
+                      placeholder="Optional"
+                    />
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <div>
-                    <Label htmlFor={`invoice-${item.id}`}>Invoice #</Label>
-                    <Input
-                      id={`invoice-${item.id}`}
-                      value={invoiceNumbers[item.id] || ''}
-                      onChange={(e) => handleInvoiceNumberChange(item.id, e.target.value)}
-                      placeholder="Invoice number"
-                    />
-                  </div>
+                <div>
+                  <Label htmlFor={`notes-${itemId}`}>Notes</Label>
+                  <Input
+                    id={`notes-${itemId}`}
+                    value={config.notes}
+                    onChange={(e) => handleFieldChange(itemId, 'notes', e.target.value)}
+                    placeholder="Optional notes..."
+                  />
+                </div>
 
-                  <div>
-                    <Label htmlFor={`po-line-${item.id}`}>PO Line</Label>
-                    <Input
-                      id={`po-line-${item.id}`}
-                      value={poLines[item.id] || ''}
-                      onChange={(e) => handlePoLineChange(item.id, e.target.value)}
-                      placeholder="PO line"
-                    />
-                  </div>
-
-                  <Button 
-                    onClick={() => handleAddPart(item)}
-                    disabled={!item.current_stock || item.current_stock <= 0}
-                    className="w-full"
-                  >
-                    Add Part
-                  </Button>
+                <div className="text-sm text-muted-foreground">
+                  Total: {config.quantity} × ${config.customerPrice.toFixed(2)} = ${(config.quantity * config.customerPrice).toFixed(2)}
                 </div>
               </div>
-            </Card>
-          ))
-        )}
-      </div>
+            ))}
+
+            <div className="flex justify-end pt-4 border-t">
+              <Button onClick={handleAddSelectedParts} className="bg-green-600 hover:bg-green-700">
+                Add {Object.keys(selectedItems).length} Part{Object.keys(selectedItems).length !== 1 ? 's' : ''}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
