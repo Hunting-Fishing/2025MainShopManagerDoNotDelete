@@ -1,85 +1,47 @@
 
 import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Search, Package, Plus, Save } from 'lucide-react';
+import { InventoryItem } from '@/types/inventory';
 import { WorkOrderPartFormValues } from '@/types/workOrderPart';
-import { supabase } from '@/integrations/supabase/client';
+import { getInventoryItems } from '@/services/inventoryService';
 import { saveWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
 import { toast } from 'sonner';
-
-interface InventoryItem {
-  id: string;
-  name: string;
-  sku: string;
-  category: string;
-  unit_price: number;
-  quantity_in_stock: number;
-  description?: string;
-}
 
 interface InventoryPartsTabProps {
   workOrderId: string;
   jobLineId?: string;
   onAddPart: (part: WorkOrderPartFormValues) => void;
-  onPartSaved?: () => void;
+  onPartSaved: () => void;
 }
 
-export function InventoryPartsTab({ 
-  workOrderId, 
-  jobLineId, 
+export function InventoryPartsTab({
+  workOrderId,
+  jobLineId,
   onAddPart,
-  onPartSaved 
+  onPartSaved
 }: InventoryPartsTabProps) {
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
-  const [filteredItems, setFilteredItems] = useState<InventoryItem[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [quantity, setQuantity] = useState(1);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [customerPrice, setCustomerPrice] = useState(0);
+  const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     loadInventoryItems();
   }, []);
 
-  useEffect(() => {
-    if (searchTerm) {
-      const filtered = inventoryItems.filter(item =>
-        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.category.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredItems(filtered);
-    } else {
-      setFilteredItems(inventoryItems);
-    }
-  }, [searchTerm, inventoryItems]);
-
   const loadInventoryItems = async () => {
     try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('inventory_items')
-        .select('*')
-        .order('name');
-
-      if (error) throw error;
-
-      const items: InventoryItem[] = (data || []).map(item => ({
-        id: item.id,
-        name: item.name,
-        sku: item.sku || '',
-        category: item.category || 'Uncategorized',
-        unit_price: item.unit_price || 0,
-        quantity_in_stock: item.quantity_in_stock || 0,
-        description: item.description
-      }));
-
+      const items = await getInventoryItems();
       setInventoryItems(items);
     } catch (error) {
       console.error('Error loading inventory items:', error);
@@ -89,218 +51,207 @@ export function InventoryPartsTab({
     }
   };
 
-  const handleSelectItem = (item: InventoryItem) => {
+  const filteredItems = inventoryItems.filter(item =>
+    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  const handleItemSelect = (item: InventoryItem) => {
     setSelectedItem(item);
+    setCustomerPrice(item.unit_price || item.price || 0);
     setQuantity(1);
+    setNotes('');
   };
 
-  const createPartFromInventoryItem = (item: InventoryItem, qty: number): WorkOrderPartFormValues => {
+  const createPartFormValues = (): WorkOrderPartFormValues => {
+    if (!selectedItem) throw new Error('No item selected');
+
     return {
-      inventoryItemId: item.id,
-      partName: item.name,
-      partNumber: item.sku,
-      supplierName: '',
-      supplierCost: item.unit_price,
-      supplierSuggestedRetailPrice: item.unit_price,
+      workOrderId,
+      jobLineId,
+      inventoryItemId: selectedItem.id,
+      partName: selectedItem.name,
+      partNumber: selectedItem.sku,
+      supplierName: selectedItem.supplier || '',
+      supplierCost: 0,
+      supplierSuggestedRetailPrice: 0,
       markupPercentage: 0,
-      retailPrice: item.unit_price,
-      customerPrice: item.unit_price,
-      quantity: qty,
+      retailPrice: selectedItem.unit_price || selectedItem.price || 0,
+      customerPrice,
+      quantity,
       partType: 'inventory',
-      invoiceNumber: '',
-      poLine: '',
-      notes: item.description || '',
-      category: item.category,
+      notes,
+      category: selectedItem.category || '',
       isTaxable: true,
       coreChargeAmount: 0,
       coreChargeApplied: false,
-      warrantyDuration: '',
-      installDate: '',
-      installedBy: '',
+      warrantyDuration: null,
+      installDate: null,
+      installedBy: null,
       status: 'ordered',
-      isStockItem: true,
-      notesInternal: ''
+      isStockItem: true
     };
   };
 
-  const handleAddAnotherPart = () => {
-    if (!selectedItem) {
-      toast.error('Please select an inventory item');
-      return;
-    }
-
-    const part = createPartFromInventoryItem(selectedItem, quantity);
-    onAddPart(part);
+  const handleAddAnother = () => {
+    if (!selectedItem) return;
+    
+    const partData = createPartFormValues();
+    onAddPart(partData);
+    
+    // Reset form for adding another part
     setSelectedItem(null);
     setQuantity(1);
+    setCustomerPrice(0);
+    setNotes('');
     toast.success('Part added to selection');
   };
 
-  const handleSavePartToWorkOrder = async () => {
-    if (!selectedItem) {
-      toast.error('Please select an inventory item');
-      return;
-    }
+  const handleSaveToWorkOrder = async () => {
+    if (!selectedItem) return;
 
-    setIsSubmitting(true);
+    setSaving(true);
     try {
-      const part = createPartFromInventoryItem(selectedItem, quantity);
-      await saveWorkOrderPart(workOrderId, jobLineId, part);
-      setSelectedItem(null);
-      setQuantity(1);
+      const partData = createPartFormValues();
+      await saveWorkOrderPart(partData);
+      onPartSaved();
       toast.success('Part saved to work order');
-      onPartSaved?.();
     } catch (error) {
       console.error('Error saving part:', error);
       toast.error('Failed to save part');
     } finally {
-      setIsSubmitting(false);
+      setSaving(false);
     }
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <div className="text-center">
-          <Package className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-          <p>Loading inventory items...</p>
-        </div>
-      </div>
-    );
+    return <div className="text-center py-4">Loading inventory items...</div>;
   }
 
   return (
-    <div className="space-y-6">
-      {/* Search */}
+    <div className="space-y-4">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+        <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search inventory items..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-10"
         />
       </div>
 
-      {/* Inventory Items List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
-        {filteredItems.map((item) => (
-          <Card 
-            key={item.id} 
-            className={`cursor-pointer transition-colors ${
-              selectedItem?.id === item.id ? 'ring-2 ring-primary' : 'hover:bg-muted/50'
-            }`}
-            onClick={() => handleSelectItem(item)}
-          >
-            <CardContent className="p-4">
-              <div className="space-y-2">
-                <div className="flex items-start justify-between">
-                  <h4 className="font-medium text-sm">{item.name}</h4>
-                  <Badge variant="outline" className="text-xs">
-                    {item.category}
-                  </Badge>
-                </div>
-                
-                <div className="text-xs text-muted-foreground space-y-1">
-                  <div>SKU: {item.sku}</div>
-                  <div>Price: ${item.unit_price.toFixed(2)}</div>
-                  <div className={`${item.quantity_in_stock > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    Stock: {item.quantity_in_stock}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2 max-h-96 overflow-y-auto">
+          {filteredItems.map((item) => (
+            <Card 
+              key={item.id} 
+              className={`cursor-pointer transition-colors ${
+                selectedItem?.id === item.id ? 'ring-2 ring-blue-500' : 'hover:bg-muted/50'
+              }`}
+              onClick={() => handleItemSelect(item)}
+            >
+              <CardContent className="p-3">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <h4 className="font-medium">{item.name}</h4>
+                    <p className="text-sm text-muted-foreground">SKU: {item.sku}</p>
+                    {item.description && (
+                      <p className="text-xs text-muted-foreground mt-1">{item.description}</p>
+                    )}
+                    <div className="flex gap-2 mt-2">
+                      <Badge variant="outline">${(item.unit_price || item.price || 0).toFixed(2)}</Badge>
+                      <Badge variant={item.quantity > 0 ? 'default' : 'destructive'}>
+                        Stock: {item.quantity}
+                      </Badge>
+                    </div>
                   </div>
                 </div>
-                
-                {item.description && (
-                  <p className="text-xs text-muted-foreground line-clamp-2">
-                    {item.description}
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {filteredItems.length === 0 && (
-        <div className="text-center py-8">
-          <Package className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-          <p className="text-muted-foreground">
-            {searchTerm ? 'No items found matching your search' : 'No inventory items available'}
-          </p>
+              </CardContent>
+            </Card>
+          ))}
         </div>
-      )}
 
-      {/* Selected Item Details */}
-      {selectedItem && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Selected Item</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Item Name</Label>
-                <p className="font-medium">{selectedItem.name}</p>
-              </div>
-              <div>
-                <Label>SKU</Label>
-                <p className="font-medium">{selectedItem.sku}</p>
-              </div>
-              <div>
-                <Label>Unit Price</Label>
-                <p className="font-medium">${selectedItem.unit_price.toFixed(2)}</p>
-              </div>
-              <div>
-                <Label>Available Stock</Label>
-                <p className="font-medium">{selectedItem.quantity_in_stock}</p>
-              </div>
-            </div>
+        <div className="space-y-4">
+          {selectedItem ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  Add Part Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label>Selected Item</Label>
+                  <p className="font-medium">{selectedItem.name}</p>
+                  <p className="text-sm text-muted-foreground">SKU: {selectedItem.sku}</p>
+                </div>
 
-            <div>
-              <Label htmlFor="quantity">Quantity</Label>
-              <Input
-                id="quantity"
-                type="number"
-                min="1"
-                max={selectedItem.quantity_in_stock}
-                value={quantity}
-                onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-                className="w-24"
-              />
-            </div>
+                <div>
+                  <Label htmlFor="quantity">Quantity</Label>
+                  <Input
+                    id="quantity"
+                    type="number"
+                    min="1"
+                    value={quantity}
+                    onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                  />
+                </div>
 
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>Total Price</Label>
-                <p className="text-lg font-bold">
-                  ${(selectedItem.unit_price * quantity).toFixed(2)}
-                </p>
-              </div>
-            </div>
+                <div>
+                  <Label htmlFor="customerPrice">Customer Price</Label>
+                  <Input
+                    id="customerPrice"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={customerPrice}
+                    onChange={(e) => setCustomerPrice(parseFloat(e.target.value) || 0)}
+                  />
+                </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-3 pt-4">
-              <Button
-                onClick={handleAddAnotherPart}
-                variant="outline"
-                className="flex items-center gap-2"
-                disabled={isSubmitting}
-              >
-                <Plus className="h-4 w-4" />
-                Add Another Part
-              </Button>
-              
-              <Button
-                onClick={handleSavePartToWorkOrder}
-                className="flex items-center gap-2"
-                disabled={isSubmitting}
-              >
-                <Save className="h-4 w-4" />
-                {isSubmitting ? 'Saving...' : 'Save Part to Work Order'}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                <div>
+                  <Label htmlFor="notes">Notes (Optional)</Label>
+                  <Textarea
+                    id="notes"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Additional notes about this part..."
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={handleAddAnother}
+                    variant="outline"
+                    className="flex-1"
+                    disabled={saving}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Another Part
+                  </Button>
+                  <Button 
+                    onClick={handleSaveToWorkOrder}
+                    className="flex-1"
+                    disabled={saving}
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    {saving ? 'Saving...' : 'Save Part to Work Order'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">Select an inventory item to add it to the work order</p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
