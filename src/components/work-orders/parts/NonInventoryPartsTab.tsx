@@ -1,393 +1,378 @@
-
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Slider } from '@/components/ui/slider';
-import { Card, CardContent } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Calculator, Percent } from 'lucide-react';
-import { WorkOrderPartFormValues } from '@/types/workOrderPart';
-import { SupplierSelector } from './SupplierSelector';
-import { toast } from 'sonner';
+import React, { useState, useCallback } from 'react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { Plus, Trash2, Calculator } from "lucide-react";
+import { WorkOrderPartFormValues } from "@/types/workOrderPart";
+import { useToast } from "@/hooks/use-toast";
 
 interface NonInventoryPartsTabProps {
-  workOrderId: string;
-  jobLineId: string;
-  onAddPart: (part: WorkOrderPartFormValues) => void;
+  parts: WorkOrderPartFormValues[];
+  onPartsChange: (parts: WorkOrderPartFormValues[]) => void;
 }
 
-export function NonInventoryPartsTab({ workOrderId, jobLineId, onAddPart }: NonInventoryPartsTabProps) {
-  const [formData, setFormData] = useState<Omit<WorkOrderPartFormValues, 'partType'>>({
+export const NonInventoryPartsTab: React.FC<NonInventoryPartsTabProps> = ({
+  parts,
+  onPartsChange
+}) => {
+  const { toast } = useToast();
+  const [markupScaleEnabled, setMarkupScaleEnabled] = useState<{ [key: number]: boolean }>({});
+
+  const createNewPart = (): WorkOrderPartFormValues => ({
     partName: '',
     partNumber: '',
     supplierName: '',
     supplierCost: 0,
-    markupPercentage: 50,
+    markupPercentage: 0, // Initialize to 0
     retailPrice: 0,
     customerPrice: 0,
     quantity: 1,
+    partType: 'non-inventory',
     invoiceNumber: '',
     poLine: '',
     notes: ''
   });
 
-  const [useMarkupScale, setUseMarkupScale] = useState(true);
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
-
-  // Calculate markup percentage when retail or supplier cost changes (for display only)
-  const calculateDisplayMarkup = (supplierCost: number, retailPrice: number): number => {
-    if (supplierCost === 0) return 0;
-    return ((retailPrice - supplierCost) / supplierCost) * 100;
+  const addPart = () => {
+    const newParts = [...parts, createNewPart()];
+    onPartsChange(newParts);
   };
 
-  // Calculate customer price based on retail price and markup
-  const calculateCustomerPrice = (retailPrice: number, markupPercentage: number): number => {
-    return retailPrice + (retailPrice * (markupPercentage / 100));
-  };
-
-  const handleSupplierCostChange = (value: string) => {
-    const cost = parseFloat(value) || 0;
-    setFormData(prev => {
-      const newData = { ...prev, supplierCost: cost };
-      
-      // Only update markup percentage for display purposes if retail price exists
-      if (prev.retailPrice > 0) {
-        newData.markupPercentage = calculateDisplayMarkup(cost, prev.retailPrice);
+  const removePart = (index: number) => {
+    const newParts = parts.filter((_, i) => i !== index);
+    onPartsChange(newParts);
+    
+    // Clean up markup scale state
+    const newMarkupScaleEnabled = { ...markupScaleEnabled };
+    delete newMarkupScaleEnabled[index];
+    
+    // Reindex the remaining items
+    const reindexed: { [key: number]: boolean } = {};
+    Object.keys(newMarkupScaleEnabled).forEach(key => {
+      const oldIndex = parseInt(key);
+      if (oldIndex > index) {
+        reindexed[oldIndex - 1] = newMarkupScaleEnabled[oldIndex];
+      } else if (oldIndex < index) {
+        reindexed[oldIndex] = newMarkupScaleEnabled[oldIndex];
       }
-      
-      return newData;
     });
+    
+    setMarkupScaleEnabled(reindexed);
   };
 
-  const handleRetailPriceChange = (value: string) => {
-    const price = parseFloat(value) || 0;
-    setFormData(prev => {
-      const newData = { ...prev, retailPrice: price };
-      
-      // Update markup percentage for display purposes
-      if (prev.supplierCost > 0) {
-        newData.markupPercentage = calculateDisplayMarkup(prev.supplierCost, price);
-      }
+  const updatePart = (index: number, field: keyof WorkOrderPartFormValues, value: any) => {
+    const newParts = [...parts];
+    newParts[index] = { ...newParts[index], [field]: value };
+    onPartsChange(newParts);
+  };
+
+  // Calculate markup percentage only when both supplier cost and retail price are present
+  const calculateDisplayMarkup = (supplierCost: number, retailPrice: number): number => {
+    if (supplierCost > 0 && retailPrice > 0) {
+      return ((retailPrice - supplierCost) / supplierCost) * 100;
+    }
+    return 0;
+  };
+
+  const handleSupplierCostChange = (index: number, value: string) => {
+    const supplierCost = parseFloat(value) || 0;
+    const currentPart = parts[index];
+    
+    updatePart(index, 'supplierCost', supplierCost);
+    
+    // Calculate and update markup percentage if retail price exists
+    if (currentPart.retailPrice > 0) {
+      const calculatedMarkup = calculateDisplayMarkup(supplierCost, currentPart.retailPrice);
+      updatePart(index, 'markupPercentage', calculatedMarkup);
       
       // Update customer price if markup scale is enabled
-      if (useMarkupScale) {
-        newData.customerPrice = calculateCustomerPrice(price, prev.markupPercentage);
+      if (markupScaleEnabled[index]) {
+        const customerPrice = currentPart.retailPrice * (1 + calculatedMarkup / 100);
+        updatePart(index, 'customerPrice', customerPrice);
       }
-      
-      return newData;
-    });
+    }
   };
 
-  const handleMarkupChange = (value: number[]) => {
-    const markup = value[0];
-    setFormData(prev => {
-      const newData = { ...prev, markupPercentage: markup };
+  const handleRetailPriceChange = (index: number, value: string) => {
+    const retailPrice = parseFloat(value) || 0;
+    const currentPart = parts[index];
+    
+    updatePart(index, 'retailPrice', retailPrice);
+    
+    // Calculate and update markup percentage if supplier cost exists
+    if (currentPart.supplierCost > 0) {
+      const calculatedMarkup = calculateDisplayMarkup(currentPart.supplierCost, retailPrice);
+      updatePart(index, 'markupPercentage', calculatedMarkup);
       
-      // Only update customer price, never retail price
-      if (useMarkupScale) {
-        newData.customerPrice = calculateCustomerPrice(prev.retailPrice, markup);
+      // Update customer price if markup scale is enabled
+      if (markupScaleEnabled[index]) {
+        const customerPrice = retailPrice * (1 + calculatedMarkup / 100);
+        updatePart(index, 'customerPrice', customerPrice);
       }
-      
-      return newData;
-    });
-  };
-
-  const handleMarkupInputChange = (value: string) => {
-    const markup = parseFloat(value) || 0;
-    setFormData(prev => {
-      const newData = { ...prev, markupPercentage: markup };
-      
-      // Only update customer price, never retail price
-      if (useMarkupScale) {
-        newData.customerPrice = calculateCustomerPrice(prev.retailPrice, markup);
+    } else {
+      // If no supplier cost, just update customer price to match retail price when markup scale is enabled
+      if (markupScaleEnabled[index]) {
+        updatePart(index, 'customerPrice', retailPrice);
       }
-      
-      return newData;
-    });
+    }
   };
 
-  const handleCustomerPriceChange = (value: string) => {
-    const price = parseFloat(value) || 0;
-    setFormData(prev => ({ ...prev, customerPrice: price }));
-  };
-
-  const handleMarkupScaleToggle = (enabled: boolean) => {
-    setUseMarkupScale(enabled);
+  const handleMarkupChange = (index: number, markup: number) => {
+    const currentPart = parts[index];
     
-    if (enabled) {
-      // Recalculate customer price based on current retail price and markup
-      setFormData(prev => ({
-        ...prev,
-        customerPrice: calculateCustomerPrice(prev.retailPrice, prev.markupPercentage)
-      }));
+    updatePart(index, 'markupPercentage', markup);
+    
+    // Only update customer price if markup scale is enabled
+    if (markupScaleEnabled[index] && currentPart.retailPrice > 0) {
+      const customerPrice = currentPart.retailPrice * (1 + markup / 100);
+      updatePart(index, 'customerPrice', customerPrice);
     }
   };
 
-  const validateForm = (): boolean => {
-    const newErrors: { [key: string]: string } = {};
-
-    if (!formData.partName.trim()) {
-      newErrors.partName = 'Part name is required';
-    }
-
-    if (formData.supplierCost < 0) {
-      newErrors.supplierCost = 'Supplier cost cannot be negative';
-    }
-
-    if (formData.retailPrice < 0) {
-      newErrors.retailPrice = 'Retail price cannot be negative';
-    }
-
-    if (formData.customerPrice < 0) {
-      newErrors.customerPrice = 'Customer price cannot be negative';
-    }
-
-    if (formData.quantity <= 0) {
-      newErrors.quantity = 'Quantity must be greater than 0';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const handleCustomerPriceChange = (index: number, value: string) => {
+    const customerPrice = parseFloat(value) || 0;
+    updatePart(index, 'customerPrice', customerPrice);
   };
 
-  const handleSubmit = () => {
-    if (!validateForm()) {
-      toast.error('Please fix the errors before submitting');
-      return;
+  const toggleMarkupScale = (index: number, enabled: boolean) => {
+    setMarkupScaleEnabled(prev => ({ ...prev, [index]: enabled }));
+    
+    const currentPart = parts[index];
+    if (enabled && currentPart.retailPrice > 0) {
+      // When enabling markup scale, calculate customer price based on current retail price and markup
+      const customerPrice = currentPart.retailPrice * (1 + currentPart.markupPercentage / 100);
+      updatePart(index, 'customerPrice', customerPrice);
     }
-
-    const partData: WorkOrderPartFormValues = {
-      ...formData,
-      partType: 'non-inventory'
-    };
-
-    onAddPart(partData);
-    
-    // Reset form
-    setFormData({
-      partName: '',
-      partNumber: '',
-      supplierName: '',
-      supplierCost: 0,
-      markupPercentage: 50,
-      retailPrice: 0,
-      customerPrice: 0,
-      quantity: 1,
-      invoiceNumber: '',
-      poLine: '',
-      notes: ''
-    });
-    
-    toast.success('Part added successfully');
   };
 
   return (
     <div className="space-y-6">
-      {/* Part Information */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="partName">Part Name *</Label>
-          <Input
-            id="partName"
-            value={formData.partName}
-            onChange={(e) => setFormData(prev => ({ ...prev, partName: e.target.value }))}
-            placeholder="Enter part name"
-            className={errors.partName ? 'border-red-500' : ''}
-          />
-          {errors.partName && <p className="text-sm text-red-500">{errors.partName}</p>}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="partNumber">Part Number</Label>
-          <Input
-            id="partNumber"
-            value={formData.partNumber}
-            onChange={(e) => setFormData(prev => ({ ...prev, partNumber: e.target.value }))}
-            placeholder="Enter part number"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="supplier">Supplier</Label>
-          <SupplierSelector
-            value={formData.supplierName}
-            onChange={(value) => setFormData(prev => ({ ...prev, supplierName: value }))}
-            placeholder="Select or add supplier"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="quantity">Quantity *</Label>
-          <Input
-            id="quantity"
-            type="number"
-            min="1"
-            value={formData.quantity}
-            onChange={(e) => setFormData(prev => ({ ...prev, quantity: parseInt(e.target.value) || 1 }))}
-            className={errors.quantity ? 'border-red-500' : ''}
-          />
-          {errors.quantity && <p className="text-sm text-red-500">{errors.quantity}</p>}
-        </div>
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Non-Inventory Parts</h3>
+        <Button onClick={addPart} className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          Add Part
+        </Button>
       </div>
 
-      <Separator />
+      {parts.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground">
+          <p>No parts added yet. Click "Add Part" to get started.</p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {parts.map((part, index) => (
+            <div key={index} className="border rounded-lg p-6 space-y-4">
+              <div className="flex justify-between items-start">
+                <h4 className="font-medium">Part #{index + 1}</h4>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => removePart(index)}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
 
-      {/* Pricing Section */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Calculator className="h-4 w-4" />
-            <h3 className="text-lg font-medium">Pricing</h3>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div className="space-y-2">
-              <Label htmlFor="supplierCost">Supplier Cost</Label>
-              <Input
-                id="supplierCost"
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.supplierCost}
-                onChange={(e) => handleSupplierCostChange(e.target.value)}
-                placeholder="0.00"
-                className={errors.supplierCost ? 'border-red-500' : ''}
-              />
-              {errors.supplierCost && <p className="text-sm text-red-500">{errors.supplierCost}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="retailPrice">Retail/List Price</Label>
-              <Input
-                id="retailPrice"
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.retailPrice}
-                onChange={(e) => handleRetailPriceChange(e.target.value)}
-                placeholder="0.00"
-                className={errors.retailPrice ? 'border-red-500' : ''}
-              />
-              {errors.retailPrice && <p className="text-sm text-red-500">{errors.retailPrice}</p>}
-            </div>
-          </div>
-
-          {/* Markup Scale Toggle */}
-          <div className="flex items-center justify-between mb-4 p-3 bg-slate-50 rounded-lg">
-            <div className="flex items-center gap-2">
-              <Percent className="h-4 w-4" />
-              <span className="text-sm font-medium">Use Markup Scale for Customer Price</span>
-            </div>
-            <Switch
-              checked={useMarkupScale}
-              onCheckedChange={handleMarkupScaleToggle}
-            />
-          </div>
-
-          {/* Markup Controls */}
-          {useMarkupScale && (
-            <div className="space-y-4 mb-4 p-3 bg-blue-50 rounded-lg">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="markupInput">Markup Percentage</Label>
+                  <Label htmlFor={`partName-${index}`}>Part Name *</Label>
                   <Input
-                    id="markupInput"
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    value={formData.markupPercentage.toFixed(1)}
-                    onChange={(e) => handleMarkupInputChange(e.target.value)}
-                    placeholder="50.0"
+                    id={`partName-${index}`}
+                    value={part.partName}
+                    onChange={(e) => updatePart(index, 'partName', e.target.value)}
+                    placeholder="Enter part name"
                   />
                 </div>
+
                 <div className="space-y-2">
-                  <Label>Markup Slider</Label>
-                  <Slider
-                    value={[formData.markupPercentage]}
-                    onValueChange={handleMarkupChange}
-                    max={200}
-                    min={0}
-                    step={5}
-                    className="w-full"
+                  <Label htmlFor={`partNumber-${index}`}>Part Number</Label>
+                  <Input
+                    id={`partNumber-${index}`}
+                    value={part.partNumber || ''}
+                    onChange={(e) => updatePart(index, 'partNumber', e.target.value)}
+                    placeholder="Enter part number"
                   />
-                  <div className="flex justify-between text-xs text-gray-500">
-                    <span>0%</span>
-                    <span>{formData.markupPercentage.toFixed(1)}%</span>
-                    <span>200%</span>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor={`supplierName-${index}`}>Supplier</Label>
+                  <Input
+                    id={`supplierName-${index}`}
+                    value={part.supplierName || ''}
+                    onChange={(e) => updatePart(index, 'supplierName', e.target.value)}
+                    placeholder="Enter supplier name"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor={`supplierCost-${index}`}>Supplier Cost *</Label>
+                  <Input
+                    id={`supplierCost-${index}`}
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={part.supplierCost}
+                    onChange={(e) => handleSupplierCostChange(index, e.target.value)}
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor={`retailPrice-${index}`}>Retail/List Price *</Label>
+                  <Input
+                    id={`retailPrice-${index}`}
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={part.retailPrice}
+                    onChange={(e) => handleRetailPriceChange(index, e.target.value)}
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor={`quantity-${index}`}>Quantity *</Label>
+                  <Input
+                    id={`quantity-${index}`}
+                    type="number"
+                    min="1"
+                    value={part.quantity}
+                    onChange={(e) => updatePart(index, 'quantity', parseInt(e.target.value) || 1)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label>Markup Calculation</Label>
+                    <div className="flex items-center space-x-2">
+                      <Label htmlFor={`markupScale-${index}`} className="text-sm">
+                        Auto-adjust customer price
+                      </Label>
+                      <Switch
+                        id={`markupScale-${index}`}
+                        checked={markupScaleEnabled[index] || false}
+                        onCheckedChange={(checked) => toggleMarkupScale(index, checked)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label>Markup %</Label>
+                      <span className="text-sm font-medium">
+                        {part.markupPercentage.toFixed(1)}%
+                      </span>
+                    </div>
+                    <Slider
+                      value={[part.markupPercentage]}
+                      onValueChange={(value) => handleMarkupChange(index, value[0])}
+                      max={200}
+                      min={0}
+                      step={0.1}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>0%</span>
+                      <span>200%</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor={`customerPrice-${index}`}>Customer Price *</Label>
+                    <Input
+                      id={`customerPrice-${index}`}
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={part.customerPrice}
+                      onChange={(e) => handleCustomerPriceChange(index, e.target.value)}
+                      placeholder="0.00"
+                      disabled={markupScaleEnabled[index]}
+                    />
+                    {markupScaleEnabled[index] && (
+                      <p className="text-xs text-muted-foreground">
+                        Customer price is automatically calculated based on retail price and markup
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor={`invoiceNumber-${index}`}>Invoice Number</Label>
+                    <Input
+                      id={`invoiceNumber-${index}`}
+                      value={part.invoiceNumber || ''}
+                      onChange={(e) => updatePart(index, 'invoiceNumber', e.target.value)}
+                      placeholder="Enter invoice number"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor={`poLine-${index}`}>PO Line</Label>
+                    <Input
+                      id={`poLine-${index}`}
+                      value={part.poLine || ''}
+                      onChange={(e) => updatePart(index, 'poLine', e.target.value)}
+                      placeholder="Enter PO line"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor={`notes-${index}`}>Notes</Label>
+                    <Textarea
+                      id={`notes-${index}`}
+                      value={part.notes || ''}
+                      onChange={(e) => updatePart(index, 'notes', e.target.value)}
+                      placeholder="Additional notes about this part..."
+                      rows={3}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Supplier Cost:</span>
+                    <p className="font-medium">${part.supplierCost.toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Retail Price:</span>
+                    <p className="font-medium">${part.retailPrice.toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Customer Price:</span>
+                    <p className="font-medium">${part.customerPrice.toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Total:</span>
+                    <p className="font-semibold">${(part.customerPrice * part.quantity).toFixed(2)}</p>
                   </div>
                 </div>
               </div>
             </div>
-          )}
+          ))}
 
-          {/* Customer Price */}
-          <div className="space-y-2">
-            <Label htmlFor="customerPrice">Customer Price</Label>
-            <Input
-              id="customerPrice"
-              type="number"
-              min="0"
-              step="0.01"
-              value={formData.customerPrice}
-              onChange={(e) => handleCustomerPriceChange(e.target.value)}
-              placeholder="0.00"
-              disabled={useMarkupScale}
-              className={`${errors.customerPrice ? 'border-red-500' : ''} ${useMarkupScale ? 'bg-gray-100' : ''}`}
-            />
-            {useMarkupScale && (
-              <p className="text-xs text-gray-600">Customer price is calculated automatically based on retail price and markup</p>
-            )}
-            {errors.customerPrice && <p className="text-sm text-red-500">{errors.customerPrice}</p>}
+          <div className="border-t pt-4">
+            <div className="flex justify-end">
+              <div className="text-right">
+                <p className="text-lg font-semibold">
+                  Total Parts Cost: ${parts.reduce((sum, part) => sum + (part.customerPrice * part.quantity), 0).toFixed(2)}
+                </p>
+              </div>
+            </div>
           </div>
-        </CardContent>
-      </Card>
-
-      <Separator />
-
-      {/* Additional Information */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="invoiceNumber">Invoice Number</Label>
-          <Input
-            id="invoiceNumber"
-            value={formData.invoiceNumber}
-            onChange={(e) => setFormData(prev => ({ ...prev, invoiceNumber: e.target.value }))}
-            placeholder="Enter invoice number"
-          />
         </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="poLine">PO Line</Label>
-          <Input
-            id="poLine"
-            value={formData.poLine}
-            onChange={(e) => setFormData(prev => ({ ...prev, poLine: e.target.value }))}
-            placeholder="Enter PO line"
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="notes">Notes</Label>
-        <Textarea
-          id="notes"
-          value={formData.notes}
-          onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-          placeholder="Additional notes about this part"
-          rows={3}
-        />
-      </div>
-
-      {/* Submit Button */}
-      <div className="flex justify-end">
-        <Button onClick={handleSubmit} className="px-6">
-          Add Part
-        </Button>
-      </div>
+      )}
     </div>
   );
-}
+};
