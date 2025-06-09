@@ -8,8 +8,6 @@ import {
 import { useSidebar } from '@/hooks/use-sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { SidebarContent } from './sidebar/SidebarContent';
-import { Link } from 'react-router-dom';
-import { cn } from '@/lib/utils';
 
 export function AppSidebar() {
   const { isOpen, onOpen, onClose } = useSidebar();
@@ -32,9 +30,7 @@ export function AppSidebar() {
           </SheetContent>
         </Sheet>
       ) : (
-        <div 
-          className="h-screen fixed left-0 top-0 z-30 flex w-[280px] flex-col border-r bg-gradient-to-b from-indigo-700 to-purple-800 text-white transition-all"
-        >
+        <div className="h-screen fixed left-0 top-0 z-30 flex w-[280px] flex-col border-r bg-gradient-to-b from-indigo-700 to-purple-800 text-white">
           <SidebarContent />
         </div>
       )}
