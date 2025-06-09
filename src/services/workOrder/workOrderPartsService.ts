@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { WorkOrderPart, WorkOrderPartFormValues } from '@/types/workOrderPart';
+import { WorkOrderPart, WorkOrderPartFormValues, PartCategoryOption, WarrantyTerm } from '@/types/workOrderPart';
 
 export const getWorkOrderParts = async (workOrderId: string): Promise<WorkOrderPart[]> => {
   console.log('Fetching parts for work order:', workOrderId);
@@ -35,7 +35,21 @@ export const getWorkOrderParts = async (workOrderId: string): Promise<WorkOrderP
     poLine: part.po_line,
     notes: part.notes,
     createdAt: part.created_at,
-    updatedAt: part.updated_at
+    updatedAt: part.updated_at,
+    // Enhanced fields
+    category: part.category,
+    isTaxable: part.is_taxable ?? true,
+    coreChargeAmount: part.core_charge_amount ?? 0,
+    coreChargeApplied: part.core_charge_applied ?? false,
+    warrantyDuration: part.warranty_duration,
+    warrantyExpiryDate: part.warranty_expiry_date,
+    installDate: part.install_date,
+    installedBy: part.installed_by,
+    status: part.status || 'ordered',
+    isStockItem: part.is_stock_item ?? true,
+    dateAdded: part.date_added || part.created_at,
+    attachments: part.attachments || [],
+    notesInternal: part.notes_internal
   }));
 
   return mappedData;
@@ -63,7 +77,17 @@ export const saveWorkOrderPart = async (
     p_part_type: partData.partType,
     p_invoice_number: partData.invoiceNumber || null,
     p_po_line: partData.poLine || null,
-    p_notes: partData.notes || null
+    p_notes: partData.notes || null,
+    // Enhanced fields
+    p_category: partData.category || null,
+    p_is_taxable: partData.isTaxable,
+    p_core_charge_amount: partData.coreChargeAmount,
+    p_core_charge_applied: partData.coreChargeApplied,
+    p_warranty_duration: partData.warrantyDuration || null,
+    p_install_date: partData.installDate || null,
+    p_installed_by: partData.installedBy || null,
+    p_status: partData.status,
+    p_is_stock_item: partData.isStockItem
   });
 
   if (error) {
@@ -94,7 +118,17 @@ export const updateWorkOrderPart = async (
     p_part_type: partData.partType,
     p_invoice_number: partData.invoiceNumber || null,
     p_po_line: partData.poLine || null,
-    p_notes: partData.notes || null
+    p_notes: partData.notes || null,
+    // Enhanced fields
+    p_category: partData.category || null,
+    p_is_taxable: partData.isTaxable,
+    p_core_charge_amount: partData.coreChargeAmount,
+    p_core_charge_applied: partData.coreChargeApplied,
+    p_warranty_duration: partData.warrantyDuration || null,
+    p_install_date: partData.installDate || null,
+    p_installed_by: partData.installedBy || null,
+    p_status: partData.status,
+    p_is_stock_item: partData.isStockItem
   });
 
   if (error) {
@@ -142,4 +176,47 @@ export const saveMultipleWorkOrderParts = async (
 
   console.log('Saved parts with IDs:', savedPartIds);
   return savedPartIds;
+};
+
+// Get part categories from database
+export const getPartCategories = async (): Promise<PartCategoryOption[]> => {
+  const { data, error } = await supabase
+    .from('parts_categories')
+    .select('*')
+    .eq('is_active', true)
+    .order('name');
+
+  if (error) {
+    console.error('Error fetching part categories:', error);
+    throw error;
+  }
+
+  return data.map(cat => ({
+    id: cat.id,
+    name: cat.name,
+    description: cat.description,
+    isActive: cat.is_active
+  }));
+};
+
+// Get warranty terms from database
+export const getWarrantyTerms = async (): Promise<WarrantyTerm[]> => {
+  const { data, error } = await supabase
+    .from('warranty_terms')
+    .select('*')
+    .eq('is_active', true)
+    .order('days');
+
+  if (error) {
+    console.error('Error fetching warranty terms:', error);
+    throw error;
+  }
+
+  return data.map(term => ({
+    id: term.id,
+    duration: term.duration,
+    days: term.days,
+    description: term.description,
+    isActive: term.is_active
+  }));
 };
