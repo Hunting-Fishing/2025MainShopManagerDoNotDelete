@@ -1,32 +1,16 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, Search, Plus, Save } from 'lucide-react';
-import { getInventoryItems } from '@/services/inventory';
-import { saveWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
+import { Search, Package, Plus, Save } from 'lucide-react';
+import { InventoryItemExtended } from '@/types/inventory';
 import { WorkOrderPartFormValues } from '@/types/workOrderPart';
+import { supabase } from '@/integrations/supabase/client';
+import { saveWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
 import { toast } from 'sonner';
-
-interface InventoryItem {
-  id: string;
-  name: string;
-  sku: string;
-  category: string;
-  quantity: number;
-  unit_price: number;
-  supplier: string;
-  description: string;
-  location: string;
-  shop_id: string;
-  status: string;
-  reorder_point: number;
-  created_at: string;
-  updated_at: string;
-}
 
 interface InventoryPartsTabProps {
   workOrderId: string;
@@ -41,30 +25,35 @@ export function InventoryPartsTab({
   onAddPart,
   onPartSaved
 }: InventoryPartsTabProps) {
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItemExtended[]>([]);
+  const [filteredItems, setFilteredItems] = useState<InventoryItemExtended[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
-  const [quantity, setQuantity] = useState<number>(1);
-  const [customerPrice, setCustomerPrice] = useState<number>(0);
-  const [markupPercentage, setMarkupPercentage] = useState<number>(50);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedItem, setSelectedItem] = useState<InventoryItemExtended | null>(null);
+  const [quantity, setQuantity] = useState(1);
+  const [customerPrice, setCustomerPrice] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     loadInventoryItems();
   }, []);
 
   useEffect(() => {
-    if (selectedItem) {
-      const calculatedPrice = selectedItem.unit_price * (1 + markupPercentage / 100);
-      setCustomerPrice(calculatedPrice);
-    }
-  }, [selectedItem, markupPercentage]);
+    filterItems();
+  }, [searchTerm, selectedCategory, inventoryItems]);
 
   const loadInventoryItems = async () => {
     try {
-      const items = await getInventoryItems();
-      setInventoryItems(items);
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('inventory_items')
+        .select('*')
+        .eq('status', 'active');
+
+      if (error) throw error;
+
+      setInventoryItems(data || []);
     } catch (error) {
       console.error('Error loading inventory items:', error);
       toast.error('Failed to load inventory items');
@@ -73,175 +62,217 @@ export function InventoryPartsTab({
     }
   };
 
-  const createPartFormValues = (): WorkOrderPartFormValues => {
-    if (!selectedItem) throw new Error('No item selected');
+  const filterItems = () => {
+    let filtered = inventoryItems;
+
+    if (searchTerm) {
+      filtered = filtered.filter(item =>
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(item => item.category === selectedCategory);
+    }
+
+    setFilteredItems(filtered);
+  };
+
+  const handleItemSelect = (item: InventoryItemExtended) => {
+    setSelectedItem(item);
+    setCustomerPrice(item.unit_price || 0);
+  };
+
+  const handleAddPart = () => {
+    if (!selectedItem) return;
+
+    const stockStatus = selectedItem.quantity >= quantity ? 'sufficient' : 'insufficient';
     
-    return {
+    if (stockStatus === 'insufficient') {
+      toast.warning(`Only ${selectedItem.quantity} units available in stock`);
+    }
+
+    const partData: WorkOrderPartFormValues = {
       partName: selectedItem.name,
       partNumber: selectedItem.sku,
-      supplierName: selectedItem.supplier,
-      supplierCost: selectedItem.unit_price,
-      supplierSuggestedRetailPrice: selectedItem.unit_price,
-      markupPercentage,
-      retailPrice: customerPrice,
-      customerPrice,
-      quantity,
-      partType: 'inventory' as const,
+      supplierName: selectedItem.supplier || '',
+      supplierCost: 0,
+      markupPercentage: 0,
+      retailPrice: selectedItem.unit_price || 0,
+      customerPrice: customerPrice,
+      quantity: quantity,
+      partType: 'inventory',
       inventoryItemId: selectedItem.id,
       category: selectedItem.category,
       isTaxable: true,
       coreChargeAmount: 0,
       coreChargeApplied: false,
-      status: 'ordered' as const,
-      isStockItem: true,
-      dateAdded: new Date().toISOString()
+      status: 'ordered',
+      isStockItem: true
     };
+
+    onAddPart(partData);
+    resetForm();
+    toast.success('Part added to selection');
   };
 
-  const handleAddToList = () => {
-    if (!selectedItem) {
-      toast.error('Please select an inventory item');
-      return;
+  const handleSavePart = async () => {
+    if (!selectedItem) return;
+
+    const stockStatus = selectedItem.quantity >= quantity ? 'sufficient' : 'insufficient';
+    
+    if (stockStatus === 'insufficient') {
+      toast.warning(`Only ${selectedItem.quantity} units available in stock`);
     }
 
-    if (quantity <= 0) {
-      toast.error('Quantity must be greater than 0');
-      return;
-    }
+    const partData: WorkOrderPartFormValues = {
+      partName: selectedItem.name,
+      partNumber: selectedItem.sku,
+      supplierName: selectedItem.supplier || '',
+      supplierCost: 0,
+      markupPercentage: 0,
+      retailPrice: selectedItem.unit_price || 0,
+      customerPrice: customerPrice,
+      quantity: quantity,
+      partType: 'inventory',
+      inventoryItemId: selectedItem.id,
+      category: selectedItem.category,
+      isTaxable: true,
+      coreChargeAmount: 0,
+      coreChargeApplied: false,
+      status: 'ordered',
+      isStockItem: true
+    };
 
-    if (quantity > selectedItem.quantity) {
-      toast.error(`Only ${selectedItem.quantity} units available in stock`);
-      return;
-    }
-
+    setIsSaving(true);
     try {
-      const partData = createPartFormValues();
-      onAddPart(partData);
-      
-      // Reset form
-      setSelectedItem(null);
-      setQuantity(1);
-      setCustomerPrice(0);
-      setMarkupPercentage(50);
-      setSearchTerm('');
-      
-      toast.success('Part added to selection list');
-    } catch (error) {
-      console.error('Error creating part data:', error);
-      toast.error('Failed to add part');
-    }
-  };
-
-  const handleSaveToWorkOrder = async () => {
-    if (!selectedItem) {
-      toast.error('Please select an inventory item');
-      return;
-    }
-
-    if (quantity <= 0) {
-      toast.error('Quantity must be greater than 0');
-      return;
-    }
-
-    if (quantity > selectedItem.quantity) {
-      toast.error(`Only ${selectedItem.quantity} units available in stock`);
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const partData = createPartFormValues();
       await saveWorkOrderPart(workOrderId, jobLineId, partData);
-      
-      // Reset form
-      setSelectedItem(null);
-      setQuantity(1);
-      setCustomerPrice(0);
-      setMarkupPercentage(50);
-      setSearchTerm('');
-      
+      resetForm();
+      onPartSaved();
       toast.success('Part saved to work order');
-      onPartSaved(); // This will close the dialog and refresh
     } catch (error) {
       console.error('Error saving part:', error);
       toast.error('Failed to save part');
     } finally {
-      setSaving(false);
+      setIsSaving(false);
     }
   };
 
-  const filteredItems = inventoryItems.filter(item =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const resetForm = () => {
+    setSelectedItem(null);
+    setQuantity(1);
+    setCustomerPrice(0);
+  };
+
+  const categories = ['all', ...new Set(inventoryItems.map(item => item.category).filter(Boolean))];
 
   if (loading) {
     return (
-      <div className="text-center py-4">
-        <div className="text-sm text-muted-foreground">Loading inventory items...</div>
+      <div className="flex items-center justify-center py-8">
+        <div className="text-center">
+          <Package className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+          <p className="text-muted-foreground">Loading inventory items...</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search inventory items..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
+      {/* Search and filter controls */}
+      <div className="flex gap-4">
+        <div className="flex-1">
+          <Label htmlFor="search">Search Items</Label>
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="search"
+              placeholder="Search by name, SKU, or description..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+        <div className="w-48">
+          <Label>Category</Label>
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map(category => (
+                <SelectItem key={category} value={category}>
+                  {category === 'all' ? 'All Categories' : category}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {/* Inventory Items List */}
-      <div className="max-h-64 overflow-y-auto space-y-2">
+      {/* Inventory items list */}
+      <div className="max-h-64 overflow-y-auto border rounded-lg">
         {filteredItems.length === 0 ? (
-          <div className="text-center py-4 text-muted-foreground">
+          <div className="text-center py-8 text-muted-foreground">
             No inventory items found
           </div>
         ) : (
-          filteredItems.map((item) => (
-            <Card
-              key={item.id}
-              className={`cursor-pointer transition-colors ${
-                selectedItem?.id === item.id ? 'ring-2 ring-primary' : 'hover:bg-muted/50'
-              }`}
-              onClick={() => setSelectedItem(item)}
-            >
-              <CardContent className="p-3">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <h4 className="font-medium">{item.name}</h4>
-                    <p className="text-sm text-muted-foreground">SKU: {item.sku}</p>
-                    <p className="text-sm text-muted-foreground">Category: {item.category}</p>
+          <div className="space-y-2 p-2">
+            {filteredItems.map(item => (
+              <Card 
+                key={item.id} 
+                className={`cursor-pointer transition-colors ${
+                  selectedItem?.id === item.id ? 'ring-2 ring-primary' : 'hover:bg-muted/50'
+                }`}
+                onClick={() => handleItemSelect(item)}
+              >
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <h4 className="font-medium">{item.name}</h4>
+                      <p className="text-sm text-muted-foreground">SKU: {item.sku}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Price: ${item.unit_price?.toFixed(2) || '0.00'}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <Badge variant={item.quantity > 0 ? 'default' : 'destructive'}>
+                        Stock: {item.quantity}
+                      </Badge>
+                      {item.category && (
+                        <p className="text-xs text-muted-foreground mt-1">{item.category}</p>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-medium">${item.unit_price.toFixed(2)}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Stock: {item.quantity}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         )}
       </div>
 
-      {/* Selected Item Configuration */}
+      {/* Selected item details and controls */}
       {selectedItem && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              Configure Part: {selectedItem.name}
-            </CardTitle>
+            <CardTitle className="text-lg">Add Selected Item</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Item</Label>
+                <p className="font-medium">{selectedItem.name}</p>
+                <p className="text-sm text-muted-foreground">SKU: {selectedItem.sku}</p>
+              </div>
+              <div>
+                <Label>Available Stock</Label>
+                <p className="font-medium">{selectedItem.quantity} units</p>
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="quantity">Quantity</Label>
@@ -253,26 +284,6 @@ export function InventoryPartsTab({
                   value={quantity}
                   onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Available: {selectedItem.quantity}
-                </p>
-              </div>
-              <div>
-                <Label htmlFor="markup">Markup %</Label>
-                <Input
-                  id="markup"
-                  type="number"
-                  min="0"
-                  value={markupPercentage}
-                  onChange={(e) => setMarkupPercentage(parseFloat(e.target.value) || 0)}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Cost Price</Label>
-                <Input value={`$${selectedItem.unit_price.toFixed(2)}`} disabled />
               </div>
               <div>
                 <Label htmlFor="customerPrice">Customer Price</Label>
@@ -287,9 +298,9 @@ export function InventoryPartsTab({
               </div>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 pt-4">
               <Button
-                onClick={handleAddToList}
+                onClick={handleAddPart}
                 variant="outline"
                 className="flex-1"
               >
@@ -297,12 +308,12 @@ export function InventoryPartsTab({
                 Add Another Part
               </Button>
               <Button
-                onClick={handleSaveToWorkOrder}
-                disabled={saving}
+                onClick={handleSavePart}
+                disabled={isSaving}
                 className="flex-1"
               >
                 <Save className="h-4 w-4 mr-2" />
-                {saving ? 'Saving...' : 'Save Part to Work Order'}
+                {isSaving ? 'Saving...' : 'Save Part to Work Order'}
               </Button>
             </div>
           </CardContent>
