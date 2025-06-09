@@ -2,65 +2,98 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from 'sonner';
 
-// Get inventory suppliers from the database
+// Get inventory suppliers from the dedicated suppliers table
 export async function getInventorySuppliers(): Promise<string[]> {
   try {
-    console.log('Fetching inventory suppliers from database...');
+    console.log('Fetching inventory suppliers from suppliers table...');
     
-    // Get unique suppliers from inventory_items table
+    // Get suppliers from the dedicated inventory_suppliers table
     const { data, error } = await supabase
-      .from("inventory_items")
-      .select("supplier")
-      .not("supplier", "is", null)
-      .not("supplier", "eq", "");
+      .from("inventory_suppliers")
+      .select("name")
+      .eq("is_active", true)
+      .order("name");
 
     if (error) {
       console.error('Error fetching suppliers:', error);
       throw error;
     }
 
-    // Extract unique supplier names
-    const uniqueSuppliers = [...new Set(
-      data?.map(item => item.supplier).filter(Boolean) || []
-    )].sort();
+    // Extract supplier names
+    const supplierNames = data?.map(item => item.name).filter(Boolean) || [];
     
-    console.log(`Retrieved ${uniqueSuppliers.length} unique suppliers from database`);
-    return uniqueSuppliers;
+    console.log(`Retrieved ${supplierNames.length} suppliers from database`);
+    return supplierNames;
   } catch (error) {
     console.error("Error fetching inventory suppliers:", error);
     return [];
   }
 }
 
-// This function will be used to update supplier info in items, not to create standalone suppliers
+// Add a new supplier to the dedicated suppliers table
 export async function addInventorySupplier(name: string): Promise<void> {
-  // Since we're getting suppliers from inventory_items, we just need to validate the name
-  if (!name.trim()) {
-    throw new Error('Supplier name cannot be empty');
-  }
-  
-  console.log('Supplier name validated:', name);
-  toast.success(`Supplier "${name}" is ready to be used in inventory items`);
-}
-
-// Delete supplier references from inventory items
-export async function deleteInventorySupplier(name: string): Promise<void> {
   try {
-    console.log('Removing supplier references:', name);
+    if (!name.trim()) {
+      throw new Error('Supplier name cannot be empty');
+    }
+
+    console.log('Adding supplier to database:', name);
     
-    // Update all inventory items to remove this supplier reference
+    // Check if supplier already exists
+    const { data: existing, error: checkError } = await supabase
+      .from("inventory_suppliers")
+      .select("id")
+      .eq("name", name.trim())
+      .single();
+
+    if (checkError && checkError.code !== 'PGRST116') {
+      throw checkError;
+    }
+
+    if (existing) {
+      console.log('Supplier already exists:', name);
+      toast.success(`Supplier "${name}" is already available`);
+      return;
+    }
+
+    // Add new supplier
     const { error } = await supabase
-      .from("inventory_items")
-      .update({ supplier: null })
-      .eq("supplier", name);
+      .from("inventory_suppliers")
+      .insert({
+        name: name.trim(),
+        is_active: true
+      });
 
     if (error) {
-      console.error('Error removing supplier references:', error);
+      console.error('Error adding supplier:', error);
       throw error;
     }
     
-    console.log('Supplier references removed successfully');
-    toast.success(`Removed supplier "${name}" from all inventory items`);
+    console.log('Supplier added successfully:', name);
+    toast.success(`Supplier "${name}" has been added successfully`);
+  } catch (error) {
+    console.error("Error adding supplier:", error);
+    throw error;
+  }
+}
+
+// Delete supplier from the suppliers table
+export async function deleteInventorySupplier(name: string): Promise<void> {
+  try {
+    console.log('Removing supplier from database:', name);
+    
+    const { error } = await supabase
+      .from("inventory_suppliers")
+      .delete()
+      .eq("name", name);
+
+    if (error) {
+      console.error('Error removing supplier:', error);
+      throw error;
+    }
+    
+    console.log('Supplier removed successfully');
+    toast.success(`Supplier "${name}" has been removed`);
   } catch (error) {
     console.error("Error deleting supplier:", error);
     throw error;

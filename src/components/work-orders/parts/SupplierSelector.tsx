@@ -21,6 +21,7 @@ export function SupplierSelector({ value, onValueChange, placeholder = "Select s
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [newSupplierName, setNewSupplierName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingSuppliers, setIsLoadingSuppliers] = useState(true);
 
   useEffect(() => {
     loadSuppliers();
@@ -28,11 +29,16 @@ export function SupplierSelector({ value, onValueChange, placeholder = "Select s
 
   const loadSuppliers = async () => {
     try {
+      setIsLoadingSuppliers(true);
+      console.log('Loading suppliers for dropdown...');
       const supplierList = await getInventorySuppliers();
+      console.log('Suppliers loaded:', supplierList);
       setSuppliers(supplierList);
     } catch (error) {
       console.error('Error loading suppliers:', error);
       toast.error('Failed to load suppliers');
+    } finally {
+      setIsLoadingSuppliers(false);
     }
   };
 
@@ -45,11 +51,10 @@ export function SupplierSelector({ value, onValueChange, placeholder = "Select s
     try {
       setIsLoading(true);
       await addInventorySupplier(newSupplierName.trim());
-      await loadSuppliers();
-      onValueChange(newSupplierName.trim());
+      await loadSuppliers(); // Refresh the supplier list
+      onValueChange(newSupplierName.trim()); // Set the newly added supplier as selected
       setNewSupplierName('');
       setShowAddDialog(false);
-      toast.success('Supplier added successfully');
     } catch (error) {
       console.error('Error adding supplier:', error);
       toast.error('Failed to add supplier');
@@ -60,7 +65,13 @@ export function SupplierSelector({ value, onValueChange, placeholder = "Select s
 
   const handleSearchChange = (searchTerm: string) => {
     setSearchValue(searchTerm);
-    onValueChange(searchTerm);
+    // Don't automatically set value when searching, let user choose from dropdown or type manually
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && searchValue.trim()) {
+      onValueChange(searchValue.trim());
+    }
   };
 
   const filteredSuppliers = suppliers.filter(supplier =>
@@ -74,10 +85,14 @@ export function SupplierSelector({ value, onValueChange, placeholder = "Select s
         <div className="flex-1">
           <Select value={value} onValueChange={onValueChange}>
             <SelectTrigger>
-              <SelectValue placeholder={placeholder} />
+              <SelectValue placeholder={isLoadingSuppliers ? "Loading suppliers..." : placeholder} />
             </SelectTrigger>
             <SelectContent>
-              {filteredSuppliers.length > 0 ? (
+              {isLoadingSuppliers ? (
+                <SelectItem value="loading" disabled>
+                  Loading suppliers...
+                </SelectItem>
+              ) : filteredSuppliers.length > 0 ? (
                 filteredSuppliers.map((supplier) => (
                   <SelectItem key={supplier} value={supplier}>
                     {supplier}
@@ -85,7 +100,7 @@ export function SupplierSelector({ value, onValueChange, placeholder = "Select s
                 ))
               ) : (
                 <SelectItem value="no-suppliers" disabled>
-                  No suppliers found
+                  {searchValue ? 'No matching suppliers found' : 'No suppliers found - add one below'}
                 </SelectItem>
               )}
             </SelectContent>
@@ -99,6 +114,7 @@ export function SupplierSelector({ value, onValueChange, placeholder = "Select s
               placeholder="Search or type supplier name..."
               value={searchValue}
               onChange={(e) => handleSearchChange(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
               className="pl-10"
             />
           </div>
@@ -106,7 +122,7 @@ export function SupplierSelector({ value, onValueChange, placeholder = "Select s
 
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
           <DialogTrigger asChild>
-            <Button variant="outline" size="icon">
+            <Button variant="outline" size="icon" title="Add New Supplier">
               <Plus className="h-4 w-4" />
             </Button>
           </DialogTrigger>
@@ -122,6 +138,11 @@ export function SupplierSelector({ value, onValueChange, placeholder = "Select s
                   value={newSupplierName}
                   onChange={(e) => setNewSupplierName(e.target.value)}
                   placeholder="Enter supplier name..."
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !isLoading) {
+                      handleAddSupplier();
+                    }
+                  }}
                 />
               </div>
               <div className="flex justify-end gap-2">
@@ -136,6 +157,12 @@ export function SupplierSelector({ value, onValueChange, placeholder = "Select s
           </DialogContent>
         </Dialog>
       </div>
+      
+      {searchValue && (
+        <div className="text-sm text-muted-foreground">
+          Press Enter or select from dropdown to choose "{searchValue}"
+        </div>
+      )}
     </div>
   );
 }
