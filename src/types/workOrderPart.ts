@@ -13,6 +13,8 @@ export interface WorkOrderPart {
   customerPrice: number;
   quantity: number;
   partType: 'inventory' | 'non-inventory';
+  invoiceNumber?: string;
+  poLine?: string;
   notes?: string;
   createdAt: string;
   updatedAt: string;
@@ -28,6 +30,8 @@ export interface WorkOrderPartFormValues {
   customerPrice: number;
   quantity: number;
   partType: 'inventory' | 'non-inventory';
+  invoiceNumber?: string;
+  poLine?: string;
   notes?: string;
   inventoryItemId?: string;
 }
