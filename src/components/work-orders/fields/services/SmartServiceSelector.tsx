@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+
+import React, { useState, useMemo } from 'react';
 import { ServiceMainCategory, ServiceJob } from '@/types/service';
 import { SelectedService } from '@/types/selectedService';
-import { EnhancedServiceSearch } from './EnhancedServiceSearch';
+import { ServiceSearch } from './ServiceSearch';
 import { ServiceCategoryList } from './ServiceCategoryList';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 interface SmartServiceSelectorProps {
   categories: ServiceMainCategory[];
   onServiceSelect: (service: ServiceJob, categoryName: string, subcategoryName: string) => void;
@@ -12,6 +13,7 @@ interface SmartServiceSelectorProps {
   onRemoveService?: (serviceId: string) => void;
   onUpdateServices?: (services: SelectedService[]) => void;
 }
+
 export const SmartServiceSelector: React.FC<SmartServiceSelectorProps> = ({
   categories,
   onServiceSelect,
@@ -20,74 +22,95 @@ export const SmartServiceSelector: React.FC<SmartServiceSelectorProps> = ({
   onUpdateServices
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
-  const [expandedSubcategories, setExpandedSubcategories] = useState<string[]>([]);
 
-  // Auto-expand categories and subcategories when search finds matches
-  const handleSearchChange = (value: string) => {
-    setSearchTerm(value);
-    if (value.trim()) {
-      const query = value.toLowerCase();
-      const categoriesToExpand: string[] = [];
-      const subcategoriesToExpand: string[] = [];
-      categories.forEach(category => {
-        let categoryHasMatches = false;
-        category.subcategories.forEach(subcategory => {
-          const hasMatchingJobs = subcategory.jobs.some(job => job.name.toLowerCase().includes(query) || job.description?.toLowerCase().includes(query));
-          if (hasMatchingJobs) {
-            categoryHasMatches = true;
-            subcategoriesToExpand.push(subcategory.id);
-          }
-        });
-        if (categoryHasMatches) {
-          categoriesToExpand.push(category.id);
-        }
+  // Filter and highlight categories based on search term
+  const filteredCategories = useMemo(() => {
+    if (!searchTerm.trim()) return categories;
+
+    const query = searchTerm.toLowerCase();
+    
+    return categories.map(category => {
+      const filteredSubcategories = category.subcategories.map(subcategory => {
+        const matchingJobs = subcategory.jobs.filter(job => 
+          job.name.toLowerCase().includes(query) || 
+          job.description?.toLowerCase().includes(query)
+        );
+        
+        // Include subcategory if it has matching jobs or its name matches
+        const subcategoryMatches = subcategory.name.toLowerCase().includes(query);
+        
+        return {
+          ...subcategory,
+          jobs: matchingJobs.length > 0 ? matchingJobs : (subcategoryMatches ? subcategory.jobs : [])
+        };
+      }).filter(sub => sub.jobs.length > 0);
+
+      // Include category if it has matching subcategories or its name matches
+      const categoryMatches = category.name.toLowerCase().includes(query);
+      
+      return {
+        ...category,
+        subcategories: filteredSubcategories.length > 0 ? filteredSubcategories : (categoryMatches ? category.subcategories : [])
+      };
+    }).filter(cat => cat.subcategories.length > 0);
+  }, [categories, searchTerm]);
+
+  // Auto-expand categories and subcategories that have matches
+  const expandedCategories = useMemo(() => {
+    if (!searchTerm.trim()) return [];
+    return filteredCategories.map(cat => cat.id);
+  }, [filteredCategories, searchTerm]);
+
+  const expandedSubcategories = useMemo(() => {
+    if (!searchTerm.trim()) return [];
+    const expanded: string[] = [];
+    filteredCategories.forEach(category => {
+      category.subcategories.forEach(subcategory => {
+        expanded.push(subcategory.id);
       });
-      setExpandedCategories(categoriesToExpand);
-      setExpandedSubcategories(subcategoriesToExpand);
-    }
-  };
+    });
+    return expanded;
+  }, [filteredCategories, searchTerm]);
+
   const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
     onServiceSelect(service, categoryName, subcategoryName);
-    setSearchTerm('');
+    // Don't clear search on selection to allow multiple selections
   };
-  const filteredCategories = React.useMemo(() => {
-    if (!searchTerm.trim()) return categories;
-    const query = searchTerm.toLowerCase();
-    return categories.map(category => ({
-      ...category,
-      subcategories: category.subcategories.map(subcategory => ({
-        ...subcategory,
-        jobs: subcategory.jobs.filter(job => job.name.toLowerCase().includes(query) || job.description?.toLowerCase().includes(query))
-      })).filter(subcategory => subcategory.jobs.length > 0)
-    })).filter(category => category.subcategories.length > 0);
-  }, [categories, searchTerm]);
-  return <Card className="bg-card border shadow-sm">
+
+  return (
+    <Card className="bg-card border shadow-sm">
       <CardHeader className="bg-card border-b">
         <CardTitle>Select Services</CardTitle>
-        <Tabs defaultValue="search" className="w-full bg-white rounded-md">
-          <TabsList className="grid w-full grid-cols-2 bg-muted">
-            <TabsTrigger value="search" className="bg-background data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Smart Search</TabsTrigger>
-            <TabsTrigger value="browse" className="bg-background data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Browse Categories</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="search" className="space-y-4 bg-card">
-            <div className="bg-card p-4 rounded-md border">
-              <EnhancedServiceSearch value={searchTerm} onChange={handleSearchChange} categories={categories} onServiceSelect={handleServiceSelect} placeholder="Type to search services (e.g., 'brake line', 'oil change')..." />
+        <div className="space-y-4">
+          <ServiceSearch
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Search services by name or category..."
+          />
+          {searchTerm && (
+            <div className="text-sm text-muted-foreground">
+              {filteredCategories.length > 0 
+                ? `Found ${filteredCategories.reduce((total, cat) => 
+                    total + cat.subcategories.reduce((subTotal, sub) => subTotal + sub.jobs.length, 0), 0
+                  )} services in ${filteredCategories.length} categories`
+                : 'No services found matching your search'
+              }
             </div>
-            
-            {searchTerm.trim() && filteredCategories.length > 0 && <div className="mt-4 bg-card p-4 rounded-md border">
-                <h4 className="text-sm font-medium mb-2">
-                  Search Results in Categories:
-                </h4>
-                <ServiceCategoryList categories={filteredCategories} selectedServices={selectedServices} onServiceSelect={onServiceSelect} onRemoveService={onRemoveService || (() => {})} onUpdateServices={onUpdateServices || (() => {})} expandedCategories={expandedCategories} expandedSubcategories={expandedSubcategories} searchHighlight={searchTerm} />
-              </div>}
-          </TabsContent>
-          
-          <TabsContent value="browse" className="bg-card p-4 rounded-md border">
-            <ServiceCategoryList categories={categories} selectedServices={selectedServices} onServiceSelect={onServiceSelect} onRemoveService={onRemoveService || (() => {})} onUpdateServices={onUpdateServices || (() => {})} />
-          </TabsContent>
-        </Tabs>
+          )}
+        </div>
       </CardHeader>
-    </Card>;
+      <CardContent className="bg-card p-6">
+        <ServiceCategoryList
+          categories={filteredCategories}
+          selectedServices={selectedServices}
+          onServiceSelect={onServiceSelect}
+          onRemoveService={onRemoveService || (() => {})}
+          onUpdateServices={onUpdateServices || (() => {})}
+          expandedCategories={expandedCategories}
+          expandedSubcategories={expandedSubcategories}
+          searchHighlight={searchTerm}
+        />
+      </CardContent>
+    </Card>
+  );
 };
