@@ -1,12 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Search, Package } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Package, Plus, Search } from 'lucide-react';
 import { InventoryItemExtended } from '@/types/inventory';
 import { WorkOrderPartFormValues } from '@/types/workOrderPart';
-import { supabase } from '@/integrations/supabase/client';
+import { getInventoryItems } from '@/services/inventory';
 import { saveWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
 import { toast } from 'sonner';
 
@@ -26,6 +27,7 @@ export function InventoryPartsTab({
   const [inventoryItems, setInventoryItems] = useState<InventoryItemExtended[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
 
   useEffect(() => {
     loadInventoryItems();
@@ -34,21 +36,12 @@ export function InventoryPartsTab({
   const loadInventoryItems = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('inventory_items')
-        .select('*')
-        .order('name');
-
-      if (error) throw error;
-
-      // Transform the data to match InventoryItemExtended type
-      const transformedItems: InventoryItemExtended[] = (data || []).map(item => ({
+      const items = await getInventoryItems();
+      // Transform the data to match InventoryItemExtended interface
+      const transformedItems = items.map(item => ({
         ...item,
-        price: item.unit_price, // Add the missing price property
-        supplier: item.supplier || '',
-        status: item.status || 'In Stock'
+        price: item.unit_price // Map unit_price to price for compatibility
       }));
-
       setInventoryItems(transformedItems);
     } catch (error) {
       console.error('Error loading inventory items:', error);
@@ -63,110 +56,153 @@ export function InventoryPartsTab({
     item.sku.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleAddToCart = (item: InventoryItemExtended) => {
-    const partData: WorkOrderPartFormValues = {
+  const handleQuickAdd = async (item: InventoryItemExtended) => {
+    const quantity = quantities[item.id] || 1;
+    const markupPercentage = 25; // Default markup
+    const retailPrice = item.price * (1 + markupPercentage / 100);
+
+    const part: WorkOrderPartFormValues = {
       inventoryItemId: item.id,
       partName: item.name,
       partNumber: item.sku,
       supplierName: item.supplier,
-      supplierCost: item.unit_price,
-      markupPercentage: 30,
-      retailPrice: item.unit_price * 1.3,
-      customerPrice: item.unit_price * 1.3,
-      quantity: 1,
-      partType: 'inventory',
+      supplierCost: item.price,
+      markupPercentage,
+      retailPrice,
+      customerPrice: retailPrice,
+      quantity,
+      partType: 'inventory' as const,
       category: item.category,
-      isStockItem: true
+      isStockItem: true,
+      isTaxable: true,
+      coreChargeAmount: 0,
+      coreChargeApplied: false,
+      status: 'ordered' as const
     };
 
-    onAddPart(partData);
-    toast.success(`${item.name} added to selected parts`);
+    onAddPart(part);
+    toast.success(`${item.name} added to parts list`);
   };
 
   const handleDirectSave = async (item: InventoryItemExtended) => {
-    try {
-      const partData: WorkOrderPartFormValues = {
-        inventoryItemId: item.id,
-        partName: item.name,
-        partNumber: item.sku,
-        supplierName: item.supplier,
-        supplierCost: item.unit_price,
-        markupPercentage: 30,
-        retailPrice: item.unit_price * 1.3,
-        customerPrice: item.unit_price * 1.3,
-        quantity: 1,
-        partType: 'inventory',
-        category: item.category,
-        isStockItem: true
-      };
+    const quantity = quantities[item.id] || 1;
+    const markupPercentage = 25; // Default markup
+    const retailPrice = item.price * (1 + markupPercentage / 100);
 
-      await saveWorkOrderPart(workOrderId, jobLineId, partData);
-      toast.success(`${item.name} added to work order`);
+    const part: WorkOrderPartFormValues = {
+      inventoryItemId: item.id,
+      partName: item.name,
+      partNumber: item.sku,
+      supplierName: item.supplier,
+      supplierCost: item.price,
+      markupPercentage,
+      retailPrice,
+      customerPrice: retailPrice,
+      quantity,
+      partType: 'inventory' as const,
+      category: item.category,
+      isStockItem: true,
+      isTaxable: true,
+      coreChargeAmount: 0,
+      coreChargeApplied: false,
+      status: 'ordered' as const
+    };
+
+    try {
+      await saveWorkOrderPart(workOrderId, jobLineId, part);
       onPartSaved();
+      toast.success(`${item.name} saved to work order`);
     } catch (error) {
       console.error('Error saving part:', error);
-      toast.error('Failed to add part to work order');
+      toast.error('Failed to save part');
     }
   };
 
+  const handleQuantityChange = (itemId: string, quantity: number) => {
+    setQuantities(prev => ({
+      ...prev,
+      [itemId]: Math.max(1, quantity)
+    }));
+  };
+
   if (loading) {
-    return <div className="text-center py-4">Loading inventory items...</div>;
+    return (
+      <div className="text-center py-4">
+        Loading inventory items...
+      </div>
+    );
   }
 
   return (
     <div className="space-y-4">
-      <div className="relative">
-        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+      <div className="flex items-center gap-2">
+        <Search className="h-4 w-4 text-gray-400" />
         <Input
           placeholder="Search inventory items..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-8"
+          className="flex-1"
         />
       </div>
 
-      {filteredItems.length === 0 ? (
-        <div className="text-center py-8 border-2 border-dashed border-slate-200 rounded-lg">
-          <Package className="h-8 w-8 mx-auto text-slate-400 mb-2" />
-          <p className="text-slate-500">No inventory items found</p>
-        </div>
-      ) : (
-        <div className="grid gap-2 max-h-96 overflow-y-auto">
-          {filteredItems.map((item) => (
-            <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50">
+      <div className="grid gap-3">
+        {filteredItems.map((item) => (
+          <Card key={item.id} className="p-4">
+            <div className="flex items-center justify-between">
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium">{item.name}</span>
-                  <Badge variant="secondary" className="text-xs">
-                    {item.sku}
-                  </Badge>
-                  <Badge 
-                    variant={item.quantity > item.reorder_point ? "outline" : "destructive"}
-                    className="text-xs"
-                  >
-                    Stock: {item.quantity}
-                  </Badge>
+                  <Package className="h-4 w-4 text-blue-600" />
+                  <h4 className="font-medium">{item.name}</h4>
                 </div>
-                <p className="text-sm text-muted-foreground">{item.description}</p>
-                <p className="text-sm font-medium">${item.unit_price.toFixed(2)}</p>
+                <div className="text-sm text-gray-600 mt-1">
+                  <span>SKU: {item.sku}</span>
+                  <span className="mx-2">•</span>
+                  <span>Stock: {item.quantity}</span>
+                  <span className="mx-2">•</span>
+                  <span>Price: ${item.price.toFixed(2)}</span>
+                </div>
+                {item.description && (
+                  <p className="text-sm text-gray-500 mt-1">{item.description}</p>
+                )}
               </div>
-              <div className="flex gap-2">
+              
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <Label htmlFor={`qty-${item.id}`} className="text-sm">Qty:</Label>
+                  <Input
+                    id={`qty-${item.id}`}
+                    type="number"
+                    min="1"
+                    value={quantities[item.id] || 1}
+                    onChange={(e) => handleQuantityChange(item.id, parseInt(e.target.value) || 1)}
+                    className="w-16 h-8"
+                  />
+                </div>
+                
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => handleAddToCart(item)}
+                  onClick={() => handleQuickAdd(item)}
                 >
-                  Add to Cart
+                  <Plus className="h-3 w-3 mr-1" />
+                  Add
                 </Button>
+                
                 <Button
                   size="sm"
                   onClick={() => handleDirectSave(item)}
                 >
-                  Add Now
+                  Save
                 </Button>
               </div>
             </div>
-          ))}
+          </Card>
+        ))}
+      </div>
+
+      {filteredItems.length === 0 && (
+        <div className="text-center py-8 text-gray-500">
+          {searchTerm ? 'No inventory items match your search.' : 'No inventory items available.'}
         </div>
       )}
     </div>
