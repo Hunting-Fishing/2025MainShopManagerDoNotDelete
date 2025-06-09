@@ -3,12 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Search, Package } from 'lucide-react';
-import { getInventoryItems } from '@/services/inventory';
-import { InventoryItemExtended } from '@/types/inventory';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { WorkOrderPartFormValues } from '@/types/workOrderPart';
+import { getInventoryItems } from '@/services/inventory/crudService';
+import { InventoryItemExtended } from '@/types/inventory';
+import { SupplierSelector } from './SupplierSelector';
 
 interface InventoryPartsTabProps {
   workOrderId: string;
@@ -16,158 +16,170 @@ interface InventoryPartsTabProps {
   onAddPart: (part: WorkOrderPartFormValues) => void;
 }
 
-export function InventoryPartsTab({ workOrderId, jobLineId, onAddPart }: InventoryPartsTabProps) {
+export function InventoryPartsTab({
+  workOrderId,
+  jobLineId,
+  onAddPart
+}: InventoryPartsTabProps) {
   const [inventoryItems, setInventoryItems] = useState<InventoryItemExtended[]>([]);
-  const [filteredItems, setFilteredItems] = useState<InventoryItemExtended[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedItems, setSelectedItems] = useState<{[key: string]: number}>({});
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedSupplier, setSelectedSupplier] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
 
   useEffect(() => {
-    loadInventoryItems();
-  }, []);
-
-  useEffect(() => {
-    if (searchTerm) {
-      const filtered = inventoryItems.filter(item =>
-        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (item.category && item.category.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
-      setFilteredItems(filtered);
-    } else {
-      setFilteredItems(inventoryItems);
-    }
-  }, [searchTerm, inventoryItems]);
-
-  const loadInventoryItems = async () => {
-    try {
-      setLoading(true);
-      const items = await getInventoryItems();
-      setInventoryItems(items);
-      setFilteredItems(items);
-    } catch (error) {
-      console.error('Error loading inventory items:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleQuantityChange = (itemId: string, quantity: number) => {
-    setSelectedItems(prev => ({
-      ...prev,
-      [itemId]: Math.max(0, quantity)
-    }));
-  };
-
-  const handleAddItem = (item: InventoryItemExtended) => {
-    const quantity = selectedItems[item.id] || 1;
-    
-    const partData: WorkOrderPartFormValues = {
-      partName: item.name,
-      partNumber: item.sku,
-      supplierName: item.supplier,
-      supplierCost: item.cost || item.unit_price,
-      markupPercentage: 20, // Default markup
-      retailPrice: item.unit_price,
-      customerPrice: item.unit_price,
-      quantity: quantity,
-      partType: 'inventory',
-      inventoryItemId: item.id
+    const fetchInventoryItems = async () => {
+      try {
+        setLoading(true);
+        const items = await getInventoryItems();
+        setInventoryItems(items);
+      } catch (error) {
+        console.error('Error fetching inventory items:', error);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    onAddPart(partData);
+    fetchInventoryItems();
+  }, []);
+
+  // Filter items based on search and filters
+  const filteredItems = inventoryItems.filter(item => {
+    const matchesSearch = !searchTerm || 
+      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.sku.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Reset quantity for this item
-    setSelectedItems(prev => ({
-      ...prev,
-      [item.id]: 0
-    }));
+    const matchesSupplier = !selectedSupplier || item.supplier === selectedSupplier;
+    const matchesCategory = !selectedCategory || item.category === selectedCategory;
+    
+    return matchesSearch && matchesSupplier && matchesCategory;
+  });
+
+  // Get unique categories and suppliers from inventory
+  const categories = [...new Set(inventoryItems.map(item => item.category).filter(Boolean))];
+
+  const handleAddInventoryItem = (item: InventoryItemExtended, quantity: number = 1) => {
+    const part: WorkOrderPartFormValues = {
+      partName: item.name,
+      partNumber: item.sku,
+      supplierName: item.supplier || '',
+      supplierCost: item.cost || item.unit_price || 0,
+      markupPercentage: item.marginMarkup || 25,
+      retailPrice: item.unit_price || 0,
+      customerPrice: item.unit_price || 0,
+      quantity: quantity,
+      partType: 'inventory',
+      inventoryItemId: item.id,
+      notes: ''
+    };
+
+    onAddPart(part);
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-center">
-          <Package className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p>Loading inventory items...</p>
-        </div>
-      </div>
-    );
+    return <div className="text-center py-4">Loading inventory items...</div>;
   }
 
   return (
     <div className="space-y-4">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search inventory items..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
+      {/* Search and Filters */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="search">Search Items</Label>
+          <Input
+            id="search"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search by name or SKU"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="supplier-filter">Filter by Supplier</Label>
+          <SupplierSelector
+            value={selectedSupplier}
+            onChange={setSelectedSupplier}
+            placeholder="All suppliers"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="category-filter">Filter by Category</Label>
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger>
+              <SelectValue placeholder="All categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All categories</SelectItem>
+              {categories.map((category) => (
+                <SelectItem key={category} value={category}>
+                  {category}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {filteredItems.length === 0 ? (
-        <Card>
-          <CardContent className="p-8 text-center">
-            <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-medium mb-2">No inventory items found</h3>
-            <p className="text-muted-foreground">
-              {searchTerm ? 'Try adjusting your search terms' : 'Add some inventory items to get started'}
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-3 max-h-96 overflow-y-auto">
-          {filteredItems.map((item) => (
-            <Card key={item.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-medium">{item.name}</h4>
-                      <Badge variant="outline">{item.sku}</Badge>
-                      {item.category && (
-                        <Badge variant="secondary">{item.category}</Badge>
-                      )}
-                    </div>
-                    <div className="text-sm text-muted-foreground space-y-1">
-                      <div>Price: ${item.unit_price.toFixed(2)}</div>
-                      <div>Stock: {item.quantity} available</div>
-                      {item.supplier && (
-                        <div>Supplier: {item.supplier}</div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1">
-                      <Label htmlFor={`qty-${item.id}`} className="text-sm">Qty:</Label>
-                      <Input
-                        id={`qty-${item.id}`}
-                        type="number"
-                        min="1"
-                        max={item.quantity}
-                        value={selectedItems[item.id] || 1}
-                        onChange={(e) => handleQuantityChange(item.id, parseInt(e.target.value) || 1)}
-                        className="w-20"
-                      />
-                    </div>
+      {/* Clear Filters */}
+      {(searchTerm || selectedSupplier || selectedCategory) && (
+        <Button
+          variant="outline"
+          onClick={() => {
+            setSearchTerm('');
+            setSelectedSupplier('');
+            setSelectedCategory('');
+          }}
+        >
+          Clear Filters
+        </Button>
+      )}
+
+      {/* Inventory Items Table */}
+      <div className="border rounded-md">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>SKU</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Supplier</TableHead>
+              <TableHead>Price</TableHead>
+              <TableHead>Stock</TableHead>
+              <TableHead>Action</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredItems.length > 0 ? (
+              filteredItems.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell className="font-medium">{item.name}</TableCell>
+                  <TableCell>{item.sku}</TableCell>
+                  <TableCell>{item.category || 'N/A'}</TableCell>
+                  <TableCell>{item.supplier || 'N/A'}</TableCell>
+                  <TableCell>${item.unit_price?.toFixed(2) || '0.00'}</TableCell>
+                  <TableCell>{item.quantity || 0}</TableCell>
+                  <TableCell>
                     <Button
                       size="sm"
-                      onClick={() => handleAddItem(item)}
-                      disabled={item.quantity === 0}
+                      onClick={() => handleAddInventoryItem(item)}
+                      className="bg-blue-600 hover:bg-blue-700"
                     >
                       Add
                     </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">
+                  No inventory items found
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

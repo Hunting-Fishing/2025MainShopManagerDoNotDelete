@@ -18,10 +18,12 @@ export async function getInventorySuppliers(): Promise<string[]> {
       throw error;
     }
 
-    // Extract supplier names with explicit type annotation
-    const supplierNames: string[] = data?.map((item: { name: string }) => item.name).filter((name): name is string => Boolean(name)) || [];
+    console.log('Raw supplier data from database:', data);
+
+    // Simplified data processing - just extract the names
+    const supplierNames = data?.map(item => item.name) || [];
     
-    console.log(`Retrieved ${supplierNames.length} suppliers from database`);
+    console.log(`Retrieved ${supplierNames.length} suppliers:`, supplierNames);
     return supplierNames;
   } catch (error) {
     console.error("Error fetching inventory suppliers:", error);

@@ -1,168 +1,143 @@
 
 import React, { useState, useEffect } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Search } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { getInventorySuppliers, addInventorySupplier } from '@/services/inventory/supplierService';
 import { toast } from 'sonner';
 
 interface SupplierSelectorProps {
-  value: string;
-  onValueChange: (value: string) => void;
+  value?: string;
+  onChange: (value: string) => void;
   placeholder?: string;
 }
 
-export function SupplierSelector({ value, onValueChange, placeholder = "Select supplier..." }: SupplierSelectorProps) {
+export function SupplierSelector({ value, onChange, placeholder = "Select supplier..." }: SupplierSelectorProps) {
   const [suppliers, setSuppliers] = useState<string[]>([]);
-  const [searchValue, setSearchValue] = useState('');
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [newSupplierName, setNewSupplierName] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingSuppliers, setIsLoadingSuppliers] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [showAddNew, setShowAddNew] = useState(false);
+  const [newSupplier, setNewSupplier] = useState('');
+  const [adding, setAdding] = useState(false);
 
-  useEffect(() => {
-    loadSuppliers();
-  }, []);
-
-  const loadSuppliers = async () => {
+  const fetchSuppliers = async () => {
     try {
-      setIsLoadingSuppliers(true);
-      console.log('Loading suppliers for dropdown...');
+      console.log('SupplierSelector: Fetching suppliers...');
+      setLoading(true);
       const supplierList = await getInventorySuppliers();
-      console.log('Suppliers loaded:', supplierList);
+      console.log('SupplierSelector: Received suppliers:', supplierList);
       setSuppliers(supplierList);
     } catch (error) {
-      console.error('Error loading suppliers:', error);
+      console.error('SupplierSelector: Error fetching suppliers:', error);
       toast.error('Failed to load suppliers');
     } finally {
-      setIsLoadingSuppliers(false);
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchSuppliers();
+  }, []);
+
   const handleAddSupplier = async () => {
-    if (!newSupplierName.trim()) {
+    if (!newSupplier.trim()) {
       toast.error('Please enter a supplier name');
       return;
     }
 
     try {
-      setIsLoading(true);
-      await addInventorySupplier(newSupplierName.trim());
-      await loadSuppliers(); // Refresh the supplier list
-      onValueChange(newSupplierName.trim()); // Set the newly added supplier as selected
-      setNewSupplierName('');
-      setShowAddDialog(false);
+      setAdding(true);
+      await addInventorySupplier(newSupplier.trim());
+      
+      // Refresh suppliers list
+      await fetchSuppliers();
+      
+      // Select the newly added supplier
+      onChange(newSupplier.trim());
+      
+      // Reset form
+      setNewSupplier('');
+      setShowAddNew(false);
     } catch (error) {
       console.error('Error adding supplier:', error);
       toast.error('Failed to add supplier');
     } finally {
-      setIsLoading(false);
+      setAdding(false);
     }
   };
 
-  const handleSearchChange = (searchTerm: string) => {
-    setSearchValue(searchTerm);
-    // Don't automatically set value when searching, let user choose from dropdown or type manually
-  };
+  if (loading) {
+    return (
+      <Select disabled>
+        <SelectTrigger>
+          <SelectValue placeholder="Loading suppliers..." />
+        </SelectTrigger>
+      </Select>
+    );
+  }
 
-  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && searchValue.trim()) {
-      onValueChange(searchValue.trim());
-    }
-  };
-
-  const filteredSuppliers = suppliers.filter(supplier =>
-    supplier.toLowerCase().includes(searchValue.toLowerCase())
-  );
+  if (showAddNew) {
+    return (
+      <div className="flex gap-2">
+        <Input
+          value={newSupplier}
+          onChange={(e) => setNewSupplier(e.target.value)}
+          placeholder="Enter supplier name"
+          onKeyPress={(e) => {
+            if (e.key === 'Enter') {
+              handleAddSupplier();
+            }
+          }}
+        />
+        <Button 
+          onClick={handleAddSupplier} 
+          disabled={adding || !newSupplier.trim()}
+          size="sm"
+        >
+          {adding ? 'Adding...' : 'Add'}
+        </Button>
+        <Button 
+          variant="outline" 
+          onClick={() => {
+            setShowAddNew(false);
+            setNewSupplier('');
+          }}
+          size="sm"
+        >
+          Cancel
+        </Button>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-2">
-      <Label>Supplier</Label>
-      <div className="flex gap-2">
-        <div className="flex-1">
-          <Select value={value} onValueChange={onValueChange}>
-            <SelectTrigger>
-              <SelectValue placeholder={isLoadingSuppliers ? "Loading suppliers..." : placeholder} />
-            </SelectTrigger>
-            <SelectContent>
-              {isLoadingSuppliers ? (
-                <SelectItem value="loading" disabled>
-                  Loading suppliers...
-                </SelectItem>
-              ) : filteredSuppliers.length > 0 ? (
-                filteredSuppliers.map((supplier) => (
-                  <SelectItem key={supplier} value={supplier}>
-                    {supplier}
-                  </SelectItem>
-                ))
-              ) : (
-                <SelectItem value="no-suppliers" disabled>
-                  {searchValue ? 'No matching suppliers found' : 'No suppliers found - add one below'}
-                </SelectItem>
-              )}
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="flex-1">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search or type supplier name..."
-              value={searchValue}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              onKeyDown={handleSearchKeyDown}
-              className="pl-10"
-            />
-          </div>
-        </div>
-
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="icon" title="Add New Supplier">
-              <Plus className="h-4 w-4" />
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Supplier</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="supplier-name">Supplier Name</Label>
-                <Input
-                  id="supplier-name"
-                  value={newSupplierName}
-                  onChange={(e) => setNewSupplierName(e.target.value)}
-                  placeholder="Enter supplier name..."
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !isLoading) {
-                      handleAddSupplier();
-                    }
-                  }}
-                />
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setShowAddDialog(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleAddSupplier} disabled={isLoading}>
-                  {isLoading ? 'Adding...' : 'Add Supplier'}
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-      
-      {searchValue && (
-        <div className="text-sm text-muted-foreground">
-          Press Enter or select from dropdown to choose "{searchValue}"
-        </div>
-      )}
+    <div className="flex gap-2">
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="flex-1">
+          <SelectValue placeholder={placeholder} />
+        </SelectTrigger>
+        <SelectContent>
+          {suppliers.length > 0 ? (
+            suppliers.map((supplier) => (
+              <SelectItem key={supplier} value={supplier}>
+                {supplier}
+              </SelectItem>
+            ))
+          ) : (
+            <SelectItem value="" disabled>
+              No suppliers found
+            </SelectItem>
+          )}
+        </SelectContent>
+      </Select>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setShowAddNew(true)}
+        className="shrink-0"
+      >
+        <Plus className="h-4 w-4" />
+      </Button>
     </div>
   );
 }
