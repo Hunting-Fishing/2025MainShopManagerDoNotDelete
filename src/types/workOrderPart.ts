@@ -1,4 +1,3 @@
-
 export interface WorkOrderPart {
   id: string;
   workOrderId: string;
