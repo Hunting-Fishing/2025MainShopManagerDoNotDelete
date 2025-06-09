@@ -5,340 +5,266 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { RotateCcw, Plus } from 'lucide-react';
+import { Search, Package, RefreshCw, AlertCircle } from 'lucide-react';
 import { useInventoryItems } from '@/hooks/inventory/useInventoryItems';
-import { WorkOrderPart, WorkOrderPartFormValues } from '@/types/workOrderPart';
-import { InventoryItemExtended } from '@/types/inventory';
+import { WorkOrderPartFormValues } from '@/types/workOrderPart';
+import { toast } from 'sonner';
 
 interface InventoryPartsTabProps {
   workOrderId: string;
+  jobLineId?: string;
   onAddPart: (part: WorkOrderPartFormValues) => void;
-  existingParts: WorkOrderPart[];
 }
 
-export const InventoryPartsTab: React.FC<InventoryPartsTabProps> = ({
-  workOrderId,
-  onAddPart,
-  existingParts
-}) => {
+export function InventoryPartsTab({ workOrderId, jobLineId, onAddPart }: InventoryPartsTabProps) {
   const { items, isLoading, fetchItems } = useInventoryItems();
+  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [customerPrices, setCustomerPrices] = useState<Record<string, number>>({});
+  const [manuallyAdjusted, setManuallyAdjusted] = useState<Record<string, boolean>>({});
+  const [invoiceNumbers, setInvoiceNumbers] = useState<Record<string, string>>({});
+  const [poLines, setPoLines] = useState<Record<string, string>>({});
 
-  const [formData, setFormData] = useState<WorkOrderPartFormValues>({
-    partName: '',
-    partNumber: '',
-    supplierName: '',
-    supplierCost: 0,
-    markupPercentage: 25,
-    retailPrice: 0,
-    customerPrice: 0,
-    quantity: 1,
-    partType: 'inventory',
-    invoiceNumber: '',
-    poLine: '',
-    notes: '',
-    inventoryItemId: ''
+  // Initialize customer prices to retail when items load
+  useEffect(() => {
+    if (items.length > 0) {
+      const initialPrices: Record<string, number> = {};
+      items.forEach(item => {
+        if (!customerPrices[item.id]) {
+          initialPrices[item.id] = item.retail_price || 0;
+        }
+      });
+      if (Object.keys(initialPrices).length > 0) {
+        setCustomerPrices(prev => ({ ...prev, ...initialPrices }));
+      }
+    }
+  }, [items, customerPrices]);
+
+  const filteredItems = items.filter(item => {
+    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         item.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         item.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
+    return matchesSearch && matchesCategory;
   });
 
-  const [selectedInventoryItem, setSelectedInventoryItem] = useState<InventoryItemExtended | null>(null);
-  const [isCustomerPriceManual, setIsCustomerPriceManual] = useState(false);
+  const categories = Array.from(new Set(items.map(item => item.category).filter(Boolean)));
 
-  // Calculate retail price from supplier cost and markup
-  useEffect(() => {
-    if (formData.supplierCost > 0 && formData.markupPercentage >= 0) {
-      const newRetailPrice = formData.supplierCost * (1 + formData.markupPercentage / 100);
-      setFormData(prev => ({
-        ...prev,
-        retailPrice: parseFloat(newRetailPrice.toFixed(2))
-      }));
-    }
-  }, [formData.supplierCost, formData.markupPercentage]);
+  const handleQuantityChange = (itemId: string, quantity: number) => {
+    setQuantities(prev => ({ ...prev, [itemId]: quantity }));
+  };
 
-  // Auto-update customer price to match retail price (unless manually adjusted)
-  useEffect(() => {
-    if (!isCustomerPriceManual && formData.retailPrice > 0) {
-      setFormData(prev => ({
-        ...prev,
-        customerPrice: formData.retailPrice
-      }));
-    }
-  }, [formData.retailPrice, isCustomerPriceManual]);
+  const handleCustomerPriceChange = (itemId: string, price: number) => {
+    setCustomerPrices(prev => ({ ...prev, [itemId]: price }));
+    setManuallyAdjusted(prev => ({ ...prev, [itemId]: true }));
+  };
 
-  const handleInventoryItemSelect = (itemId: string) => {
+  const handleResetToRetail = (itemId: string) => {
     const item = items.find(i => i.id === itemId);
     if (item) {
-      setSelectedInventoryItem(item);
-      setFormData(prev => ({
-        ...prev,
-        partName: item.name,
-        partNumber: item.sku,
-        supplierName: item.supplier || '',
-        supplierCost: item.cost || item.unit_price || 0,
-        retailPrice: item.unit_price || 0,
-        customerPrice: item.unit_price || 0,
-        inventoryItemId: item.id
-      }));
-      setIsCustomerPriceManual(false);
+      setCustomerPrices(prev => ({ ...prev, [itemId]: item.retail_price || 0 }));
+      setManuallyAdjusted(prev => ({ ...prev, [itemId]: false }));
     }
   };
 
-  const handleInputChange = (field: keyof WorkOrderPartFormValues, value: any) => {
-    if (field === 'customerPrice') {
-      setIsCustomerPriceManual(true);
-    }
+  const handleInvoiceNumberChange = (itemId: string, invoiceNumber: string) => {
+    setInvoiceNumbers(prev => ({ ...prev, [itemId]: invoiceNumber }));
+  };
+
+  const handlePoLineChange = (itemId: string, poLine: string) => {
+    setPoLines(prev => ({ ...prev, [itemId]: poLine }));
+  };
+
+  const handleAddPart = (item: any) => {
+    const quantity = quantities[item.id] || 1;
+    const customerPrice = customerPrices[item.id] || item.retail_price || 0;
     
-    if (field === 'retailPrice') {
-      // When retail price is manually changed, recalculate markup percentage
-      const newRetailPrice = parseFloat(value) || 0;
-      if (formData.supplierCost > 0 && newRetailPrice > 0) {
-        const newMarkupPercentage = ((newRetailPrice - formData.supplierCost) / formData.supplierCost) * 100;
-        setFormData(prev => ({
-          ...prev,
-          retailPrice: newRetailPrice,
-          markupPercentage: parseFloat(newMarkupPercentage.toFixed(2))
-        }));
-      } else {
-        setFormData(prev => ({ ...prev, [field]: newRetailPrice }));
-      }
+    if (quantity <= 0) {
+      toast.error('Quantity must be greater than 0');
       return;
     }
 
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const resetCustomerPriceToRetail = () => {
-    setFormData(prev => ({
-      ...prev,
-      customerPrice: prev.retailPrice
-    }));
-    setIsCustomerPriceManual(false);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (formData.partName && formData.quantity > 0) {
-      onAddPart(formData);
-      // Reset form
-      setFormData({
-        partName: '',
-        partNumber: '',
-        supplierName: '',
-        supplierCost: 0,
-        markupPercentage: 25,
-        retailPrice: 0,
-        customerPrice: 0,
-        quantity: 1,
-        partType: 'inventory',
-        invoiceNumber: '',
-        poLine: '',
-        notes: '',
-        inventoryItemId: ''
-      });
-      setSelectedInventoryItem(null);
-      setIsCustomerPriceManual(false);
+    if (quantity > (item.current_stock || 0)) {
+      toast.error(`Insufficient stock. Available: ${item.current_stock || 0}`);
+      return;
     }
+
+    const part: WorkOrderPartFormValues = {
+      workOrderId,
+      jobLineId,
+      partName: item.name,
+      partNumber: item.sku || '',
+      quantity,
+      supplierCost: item.cost || 0,
+      customerPrice,
+      description: item.description || '',
+      invoiceNumber: invoiceNumbers[item.id] || '',
+      poLine: poLines[item.id] || '',
+      inventoryItemId: item.id
+    };
+
+    onAddPart(part);
+    
+    // Reset form for this item
+    setQuantities(prev => ({ ...prev, [item.id]: 1 }));
+    setCustomerPrices(prev => ({ ...prev, [item.id]: item.retail_price || 0 }));
+    setManuallyAdjusted(prev => ({ ...prev, [item.id]: false }));
+    setInvoiceNumbers(prev => ({ ...prev, [item.id]: '' }));
+    setPoLines(prev => ({ ...prev, [item.id]: '' }));
+    
+    toast.success('Part added successfully');
   };
 
-  const availableItems = items.filter(item => 
-    !existingParts.some(part => part.inventoryItemId === item.id)
-  );
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <RefreshCw className="h-6 w-6 animate-spin mr-2" />
+        Loading inventory items...
+      </div>
+    );
+  }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Plus className="h-5 w-5" />
-          Add Inventory Part
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Inventory Item Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="inventoryItem">Select Inventory Item</Label>
-            <Select
-              value={selectedInventoryItem?.id || ''}
-              onValueChange={handleInventoryItemSelect}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={isLoading ? "Loading inventory..." : "Choose an inventory item"} />
-              </SelectTrigger>
-              <SelectContent>
-                {availableItems.map((item) => (
-                  <SelectItem key={item.id} value={item.id}>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{item.name}</span>
-                      <span className="text-sm text-muted-foreground">
-                        SKU: {item.sku} | Stock: {item.quantity} | ${item.unit_price?.toFixed(2)}
-                      </span>
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder="Search inventory items..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+          <SelectTrigger className="w-full sm:w-48">
+            <SelectValue placeholder="All Categories" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            {categories.map(category => (
+              <SelectItem key={category} value={category}>{category}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-3 max-h-96 overflow-y-auto">
+        {filteredItems.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>No inventory items found</p>
+          </div>
+        ) : (
+          filteredItems.map(item => (
+            <Card key={item.id} className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <div>
+                    <h4 className="font-medium">{item.name}</h4>
+                    <p className="text-sm text-muted-foreground">SKU: {item.sku || 'N/A'}</p>
+                    {item.description && (
+                      <p className="text-sm text-muted-foreground">{item.description}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={item.current_stock && item.current_stock > 0 ? 'default' : 'destructive'}>
+                      Stock: {item.current_stock || 0}
+                    </Badge>
+                    <Badge variant="outline">
+                      Cost: ${(item.cost || 0).toFixed(2)}
+                    </Badge>
+                    <Badge variant="outline">
+                      Retail: ${(item.retail_price || 0).toFixed(2)}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <Label htmlFor={`quantity-${item.id}`}>Quantity</Label>
+                    <Input
+                      id={`quantity-${item.id}`}
+                      type="number"
+                      min="1"
+                      max={item.current_stock || 0}
+                      value={quantities[item.id] || 1}
+                      onChange={(e) => handleQuantityChange(item.id, parseInt(e.target.value) || 0)}
+                      className="w-full"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Label htmlFor={`customer-price-${item.id}`}>Customer Price</Label>
+                      {manuallyAdjusted[item.id] && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleResetToRetail(item.id)}
+                          className="h-6 px-2 text-xs"
+                        >
+                          <RefreshCw className="h-3 w-3 mr-1" />
+                          Reset to Retail
+                        </Button>
+                      )}
                     </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+                    <div className="relative">
+                      <Input
+                        id={`customer-price-${item.id}`}
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={customerPrices[item.id] || 0}
+                        onChange={(e) => handleCustomerPriceChange(item.id, parseFloat(e.target.value) || 0)}
+                        className={manuallyAdjusted[item.id] ? "border-yellow-400" : ""}
+                      />
+                      {manuallyAdjusted[item.id] && (
+                        <AlertCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-yellow-500" />
+                      )}
+                    </div>
+                    {manuallyAdjusted[item.id] && (
+                      <p className="text-xs text-yellow-600 mt-1">Manually adjusted from retail price</p>
+                    )}
+                  </div>
+                </div>
 
-          {/* Part Details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="partName">Part Name</Label>
-              <Input
-                id="partName"
-                value={formData.partName}
-                onChange={(e) => handleInputChange('partName', e.target.value)}
-                placeholder="Enter part name"
-                required
-              />
-            </div>
+                <div className="space-y-3">
+                  <div>
+                    <Label htmlFor={`invoice-${item.id}`}>Invoice #</Label>
+                    <Input
+                      id={`invoice-${item.id}`}
+                      value={invoiceNumbers[item.id] || ''}
+                      onChange={(e) => handleInvoiceNumberChange(item.id, e.target.value)}
+                      placeholder="Invoice number"
+                    />
+                  </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="partNumber">Part Number</Label>
-              <Input
-                id="partNumber"
-                value={formData.partNumber}
-                onChange={(e) => handleInputChange('partNumber', e.target.value)}
-                placeholder="Enter part number"
-              />
-            </div>
+                  <div>
+                    <Label htmlFor={`po-line-${item.id}`}>PO Line</Label>
+                    <Input
+                      id={`po-line-${item.id}`}
+                      value={poLines[item.id] || ''}
+                      onChange={(e) => handlePoLineChange(item.id, e.target.value)}
+                      placeholder="PO line"
+                    />
+                  </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="supplierName">Supplier</Label>
-              <Input
-                id="supplierName"
-                value={formData.supplierName}
-                onChange={(e) => handleInputChange('supplierName', e.target.value)}
-                placeholder="Enter supplier name"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="quantity">Quantity</Label>
-              <Input
-                id="quantity"
-                type="number"
-                min="1"
-                value={formData.quantity}
-                onChange={(e) => handleInputChange('quantity', parseInt(e.target.value) || 1)}
-                required
-              />
-            </div>
-          </div>
-
-          {/* Pricing */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="supplierCost">Supplier Cost</Label>
-              <Input
-                id="supplierCost"
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.supplierCost}
-                onChange={(e) => handleInputChange('supplierCost', parseFloat(e.target.value) || 0)}
-                placeholder="0.00"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="markupPercentage">Markup %</Label>
-              <Input
-                id="markupPercentage"
-                type="number"
-                step="0.1"
-                min="0"
-                value={formData.markupPercentage}
-                onChange={(e) => handleInputChange('markupPercentage', parseFloat(e.target.value) || 0)}
-                placeholder="25"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="retailPrice">Retail/List Price</Label>
-              <Input
-                id="retailPrice"
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.retailPrice}
-                onChange={(e) => handleInputChange('retailPrice', e.target.value)}
-                placeholder="0.00"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="customerPrice">Customer Price</Label>
-                {isCustomerPriceManual && formData.customerPrice !== formData.retailPrice && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={resetCustomerPriceToRetail}
-                    className="h-auto p-1 text-xs"
+                  <Button 
+                    onClick={() => handleAddPart(item)}
+                    disabled={!item.current_stock || item.current_stock <= 0}
+                    className="w-full"
                   >
-                    <RotateCcw className="h-3 w-3 mr-1" />
-                    Reset to Retail
+                    Add Part
                   </Button>
-                )}
+                </div>
               </div>
-              <div className="relative">
-                <Input
-                  id="customerPrice"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.customerPrice}
-                  onChange={(e) => handleInputChange('customerPrice', parseFloat(e.target.value) || 0)}
-                  placeholder="0.00"
-                  className={isCustomerPriceManual && formData.customerPrice !== formData.retailPrice ? 'border-amber-300 bg-amber-50' : ''}
-                />
-                {isCustomerPriceManual && formData.customerPrice !== formData.retailPrice && (
-                  <Badge variant="secondary" className="absolute -top-2 -right-2 text-xs bg-amber-100 text-amber-800">
-                    Custom
-                  </Badge>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Additional Fields */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="invoiceNumber">Invoice #</Label>
-              <Input
-                id="invoiceNumber"
-                value={formData.invoiceNumber}
-                onChange={(e) => handleInputChange('invoiceNumber', e.target.value)}
-                placeholder="Enter invoice number"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="poLine">PO Line</Label>
-              <Input
-                id="poLine"
-                value={formData.poLine}
-                onChange={(e) => handleInputChange('poLine', e.target.value)}
-                placeholder="Enter PO line"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes</Label>
-            <Input
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => handleInputChange('notes', e.target.value)}
-              placeholder="Additional notes"
-            />
-          </div>
-
-          <Button type="submit" className="w-full">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Inventory Part
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+            </Card>
+          ))
+        )}
+      </div>
+    </div>
   );
-};
+}
