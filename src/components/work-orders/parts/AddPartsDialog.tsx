@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 interface AddPartsDialogProps {
   workOrderId: string;
   jobLineId?: string;
-  onPartsAdd: () => void; // Changed to simple callback
+  onPartsAdd: () => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
@@ -40,6 +40,12 @@ export function AddPartsDialog({
     setSelectedParts(prev => prev.filter((_, i) => i !== index));
   };
 
+  const handlePartSaved = () => {
+    // Close dialog and refresh when individual part is saved
+    setIsOpen(false);
+    onPartsAdd();
+  };
+
   const handleSubmit = async () => {
     if (selectedParts.length === 0) {
       toast.error('Please add at least one part');
@@ -51,7 +57,7 @@ export function AddPartsDialog({
       await saveMultipleWorkOrderParts(workOrderId, jobLineId, selectedParts);
       setSelectedParts([]);
       setIsOpen(false);
-      onPartsAdd(); // Call the callback to refresh parts list
+      onPartsAdd();
       toast.success(`${selectedParts.length} part${selectedParts.length !== 1 ? 's' : ''} added successfully`);
     } catch (error) {
       console.error('Error adding parts:', error);
@@ -88,6 +94,7 @@ export function AddPartsDialog({
               workOrderId={workOrderId}
               jobLineId={jobLineId}
               onAddPart={handleAddPart}
+              onPartSaved={handlePartSaved}
             />
           </TabsContent>
           
@@ -96,6 +103,7 @@ export function AddPartsDialog({
               workOrderId={workOrderId}
               jobLineId={jobLineId}
               onAddPart={handleAddPart}
+              onPartSaved={handlePartSaved}
             />
           </TabsContent>
         </Tabs>
