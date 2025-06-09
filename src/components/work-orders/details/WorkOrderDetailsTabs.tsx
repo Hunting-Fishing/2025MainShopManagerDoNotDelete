@@ -44,7 +44,7 @@ export function WorkOrderDetailsTabs({
           <Package className="h-4 w-4" />
           Parts & Inventory
         </TabsTrigger>
-        <TabsTrigger value="history" className="flex items-center gap-2">
+        <TabsTrigger value="history" className="flex items-center gap-2 text-lg">
           <History className="h-4 w-4" />
           History
         </TabsTrigger>
