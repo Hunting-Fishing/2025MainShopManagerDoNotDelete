@@ -33,6 +33,10 @@ export interface WorkOrderPart {
   dateAdded: string;
   attachments: string[];
   notesInternal?: string;
+  // Physical location fields
+  binLocation?: string;
+  warehouseLocation?: string;
+  shelfLocation?: string;
 }
 
 export interface WorkOrderPartFormValues {
@@ -46,11 +50,8 @@ export interface WorkOrderPartFormValues {
   customerPrice: number;
   quantity: number;
   partType: 'inventory' | 'non-inventory';
-  invoiceNumber?: string;
-  poLine?: string;
-  notes?: string;
   inventoryItemId?: string;
-  // Enhanced fields
+  // Enhanced fields with all the missing ones
   category?: string;
   isTaxable: boolean;
   coreChargeAmount: number;
@@ -60,7 +61,18 @@ export interface WorkOrderPartFormValues {
   installedBy?: string;
   status: PartStatus;
   isStockItem: boolean;
+  // Reference fields
+  invoiceNumber?: string;
+  poLine?: string;
+  // Notes fields
+  notes?: string;
   notesInternal?: string;
+  // Physical location fields
+  binLocation?: string;
+  warehouseLocation?: string;
+  shelfLocation?: string;
+  // Attachment fields
+  attachments?: string[];
 }
 
 export const PART_TYPES = [
@@ -143,4 +155,15 @@ export interface WarrantyTerm {
   days: number;
   description?: string;
   isActive: boolean;
+}
+
+// Location interface for physical storage
+export interface PartLocation {
+  id: string;
+  name: string;
+  description?: string;
+  warehouse?: string;
+  aisle?: string;
+  shelf?: string;
+  bin?: string;
 }
