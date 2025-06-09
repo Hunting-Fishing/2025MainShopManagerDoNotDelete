@@ -1,3 +1,4 @@
+
 export interface WorkOrderPart {
   id: string;
   workOrderId: string;
@@ -7,6 +8,7 @@ export interface WorkOrderPart {
   partNumber?: string;
   supplierName?: string;
   supplierCost: number;
+  supplierSuggestedRetailPrice?: number;
   markupPercentage: number;
   retailPrice: number;
   customerPrice: number;
@@ -38,6 +40,7 @@ export interface WorkOrderPartFormValues {
   partNumber?: string;
   supplierName?: string;
   supplierCost: number;
+  supplierSuggestedRetailPrice?: number;
   markupPercentage: number;
   retailPrice: number;
   customerPrice: number;
