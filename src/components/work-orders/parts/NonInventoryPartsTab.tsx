@@ -1,12 +1,13 @@
+
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Minus } from 'lucide-react';
-import { WorkOrderPartFormValues } from '@/types/workOrderPart';
 import { SupplierSelector } from './SupplierSelector';
+import { WorkOrderPartFormValues } from '@/types/workOrderPart';
+import { Plus } from 'lucide-react';
 
 interface NonInventoryPartsTabProps {
   workOrderId: string;
@@ -15,7 +16,7 @@ interface NonInventoryPartsTabProps {
 }
 
 export function NonInventoryPartsTab({ workOrderId, jobLineId, onAddPart }: NonInventoryPartsTabProps) {
-  const [formData, setFormData] = useState<WorkOrderPartFormValues>({
+  const [formData, setFormData] = useState<Partial<WorkOrderPartFormValues>>({
     partName: '',
     partNumber: '',
     supplierName: '',
@@ -27,65 +28,112 @@ export function NonInventoryPartsTab({ workOrderId, jobLineId, onAddPart }: NonI
     partType: 'non-inventory',
     invoiceNumber: '',
     poLine: '',
-    notes: '',
+    notes: ''
   });
 
-  const [userAdjustmentMarkup, setUserAdjustmentMarkup] = useState<number>(0);
-  const [baseMarkupCalculated, setBaseMarkupCalculated] = useState<boolean>(false);
+  const [isUserAdjusted, setIsUserAdjusted] = useState(false);
 
+  // Calculate retail price based on supplier cost and markup
   useEffect(() => {
-    if (formData.supplierCost > 0 && formData.retailPrice > 0) {
-      const calculatedMarkup = ((formData.retailPrice - formData.supplierCost) / formData.supplierCost) * 100;
-      setFormData(prev => ({ ...prev, markupPercentage: Number(calculatedMarkup.toFixed(2)) }));
-      setBaseMarkupCalculated(true);
-    } else {
-      setFormData(prev => ({ ...prev, markupPercentage: 0 }));
-      setBaseMarkupCalculated(false);
+    if (!isUserAdjusted && formData.supplierCost && formData.markupPercentage) {
+      const calculatedRetailPrice = formData.supplierCost * (1 + formData.markupPercentage / 100);
+      setFormData(prev => ({
+        ...prev,
+        retailPrice: calculatedRetailPrice,
+        customerPrice: calculatedRetailPrice
+      }));
     }
-  }, [formData.supplierCost, formData.retailPrice]);
+  }, [formData.supplierCost, formData.markupPercentage, isUserAdjusted]);
 
+  // Calculate markup percentage when retail price or customer price changes manually
   useEffect(() => {
-    const totalMarkup = formData.markupPercentage + userAdjustmentMarkup;
-    const newCustomerPrice = formData.supplierCost * (1 + totalMarkup / 100);
-    setFormData(prev => ({ ...prev, customerPrice: Number(newCustomerPrice.toFixed(2)) }));
-  }, [formData.markupPercentage, userAdjustmentMarkup, formData.supplierCost]);
+    if (isUserAdjusted && formData.supplierCost && formData.retailPrice) {
+      const calculatedMarkup = ((formData.retailPrice - formData.supplierCost) / formData.supplierCost) * 100;
+      setFormData(prev => ({
+        ...prev,
+        markupPercentage: calculatedMarkup
+      }));
+    }
+  }, [formData.retailPrice, formData.supplierCost, isUserAdjusted]);
 
-  const handleInputChange = (field: keyof WorkOrderPartFormValues, value: string | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleInputChange = (field: keyof WorkOrderPartFormValues, value: any) => {
+    // Mark as user adjusted if they're changing retail or customer price
+    if (field === 'retailPrice' || field === 'customerPrice') {
+      setIsUserAdjusted(true);
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (formData.partName && formData.supplierCost > 0) {
-      onAddPart(formData);
-      setFormData({
-        partName: '',
-        partNumber: '',
-        supplierName: '',
-        supplierCost: 0,
-        markupPercentage: 0,
-        retailPrice: 0,
-        customerPrice: 0,
-        quantity: 1,
-        partType: 'non-inventory',
-        invoiceNumber: '',
-        poLine: '',
-        notes: '',
-      });
-      setUserAdjustmentMarkup(0);
-      setBaseMarkupCalculated(false);
+  const handleSupplierChange = (supplier: string) => {
+    handleInputChange('supplierName', supplier);
+  };
+
+  const handleSubmit = () => {
+    if (!formData.partName) {
+      alert('Part name is required');
+      return;
+    }
+
+    const partToAdd: WorkOrderPartFormValues = {
+      partName: formData.partName || '',
+      partNumber: formData.partNumber,
+      supplierName: formData.supplierName,
+      supplierCost: Number(formData.supplierCost) || 0,
+      markupPercentage: Number(formData.markupPercentage) || 0,
+      retailPrice: Number(formData.retailPrice) || 0,
+      customerPrice: Number(formData.customerPrice) || 0,
+      quantity: Number(formData.quantity) || 1,
+      partType: 'non-inventory',
+      invoiceNumber: formData.invoiceNumber,
+      poLine: formData.poLine,
+      notes: formData.notes
+    };
+
+    onAddPart(partToAdd);
+    
+    // Reset form
+    setFormData({
+      partName: '',
+      partNumber: '',
+      supplierName: '',
+      supplierCost: 0,
+      markupPercentage: 0,
+      retailPrice: 0,
+      customerPrice: 0,
+      quantity: 1,
+      partType: 'non-inventory',
+      invoiceNumber: '',
+      poLine: '',
+      notes: ''
+    });
+    setIsUserAdjusted(false);
+  };
+
+  const resetToCalculated = () => {
+    setIsUserAdjusted(false);
+    if (formData.supplierCost && formData.markupPercentage) {
+      const calculatedRetailPrice = formData.supplierCost * (1 + formData.markupPercentage / 100);
+      setFormData(prev => ({
+        ...prev,
+        retailPrice: calculatedRetailPrice,
+        customerPrice: calculatedRetailPrice
+      }));
     }
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Add Non-Inventory Part</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Basic Part Information */}
-          <div className="grid grid-cols-2 gap-4">
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Add Non-Inventory Part</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Part Information */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="partName">Part Name *</Label>
               <Input
@@ -93,162 +141,124 @@ export function NonInventoryPartsTab({ workOrderId, jobLineId, onAddPart }: NonI
                 value={formData.partName}
                 onChange={(e) => handleInputChange('partName', e.target.value)}
                 placeholder="Enter part name"
-                required
               />
             </div>
             <div>
               <Label htmlFor="partNumber">Part Number</Label>
               <Input
                 id="partNumber"
-                value={formData.partNumber || ''}
+                value={formData.partNumber}
                 onChange={(e) => handleInputChange('partNumber', e.target.value)}
                 placeholder="Enter part number"
               />
             </div>
           </div>
 
-          {/* Supplier and Purchase Information */}
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="supplier">Supplier</Label>
-              <SupplierSelector
-                value={formData.supplierName || ''}
-                onChange={(supplier) => handleInputChange('supplierName', supplier)}
-                placeholder="Select or enter supplier"
-              />
-            </div>
+          {/* Purchase Tracking */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="invoiceNumber">Invoice #</Label>
               <Input
                 id="invoiceNumber"
-                value={formData.invoiceNumber || ''}
+                value={formData.invoiceNumber}
                 onChange={(e) => handleInputChange('invoiceNumber', e.target.value)}
-                placeholder="Invoice number"
+                placeholder="Enter invoice number"
               />
             </div>
             <div>
               <Label htmlFor="poLine">PO Line</Label>
               <Input
                 id="poLine"
-                value={formData.poLine || ''}
+                value={formData.poLine}
                 onChange={(e) => handleInputChange('poLine', e.target.value)}
-                placeholder="Purchase order line"
+                placeholder="Enter PO line"
               />
             </div>
           </div>
 
-          {/* Cost and Pricing */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Supplier and Cost */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="supplierCost">Supplier Cost *</Label>
+              <Label>Supplier</Label>
+              <SupplierSelector
+                value={formData.supplierName || ''}
+                onChange={handleSupplierChange}
+                placeholder="Select or enter supplier"
+              />
+            </div>
+            <div>
+              <Label htmlFor="supplierCost">Supplier Cost ($)</Label>
               <Input
                 id="supplierCost"
                 type="number"
                 step="0.01"
-                min="0"
                 value={formData.supplierCost}
                 onChange={(e) => handleInputChange('supplierCost', parseFloat(e.target.value) || 0)}
                 placeholder="0.00"
-                required
+              />
+            </div>
+          </div>
+
+          {/* Pricing */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="markupPercentage">Base Markup %</Label>
+              <Input
+                id="markupPercentage"
+                type="number"
+                step="0.01"
+                value={formData.retailPrice > 0 ? formData.markupPercentage?.toFixed(2) : ''}
+                onChange={(e) => handleInputChange('markupPercentage', parseFloat(e.target.value) || 0)}
+                placeholder={formData.retailPrice > 0 ? "0.00" : "Enter retail price first"}
+                className="bg-gray-50"
               />
             </div>
             <div>
-              <Label htmlFor="retailPrice">Retail / List Price</Label>
+              <Label htmlFor="retailPrice">Retail/List Price ($)</Label>
               <Input
                 id="retailPrice"
                 type="number"
                 step="0.01"
-                min="0"
                 value={formData.retailPrice}
                 onChange={(e) => handleInputChange('retailPrice', parseFloat(e.target.value) || 0)}
                 placeholder="0.00"
               />
             </div>
-          </div>
-
-          {/* Base Markup and Customer Price */}
-          <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="baseMarkup">Base Markup %</Label>
-              <Input
-                id="baseMarkup"
-                type="number"
-                step="0.01"
-                value={baseMarkupCalculated ? formData.markupPercentage : ''}
-                placeholder={baseMarkupCalculated ? undefined : "Enter Retail Price to calculate"}
-                readOnly
-                className="bg-gray-50"
-              />
-            </div>
-            <div>
-              <Label htmlFor="customerPrice">Customer Price</Label>
+              <Label htmlFor="customerPrice">Customer Price ($)</Label>
               <Input
                 id="customerPrice"
                 type="number"
                 step="0.01"
                 value={formData.customerPrice}
-                readOnly
-                className="bg-gray-50"
+                onChange={(e) => handleInputChange('customerPrice', parseFloat(e.target.value) || 0)}
+                placeholder="0.00"
               />
             </div>
           </div>
 
           {/* User Adjustment Section */}
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-green-800 font-medium">User Adjustment Markup %</Label>
-              <div className="flex items-center space-x-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setUserAdjustmentMarkup(prev => Math.max(prev - 1, -100))}
-                  className="h-8 w-8 p-0"
+          {isUserAdjusted && (
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-medium text-green-800">Price Manually Adjusted</h4>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={resetToCalculated}
+                  className="text-green-700 border-green-300 hover:bg-green-100"
                 >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <Input
-                  type="number"
-                  step="0.1"
-                  value={userAdjustmentMarkup}
-                  onChange={(e) => setUserAdjustmentMarkup(parseFloat(e.target.value) || 0)}
-                  className="w-20 text-center bg-green-100 border-green-300"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setUserAdjustmentMarkup(prev => prev + 1)}
-                  className="h-8 w-8 p-0"
-                >
-                  <Plus className="h-4 w-4" />
+                  Reset to Calculated
                 </Button>
               </div>
+              <p className="text-sm text-green-700">
+                You've manually adjusted the pricing. The markup percentage has been recalculated based on your retail price of ${formData.retailPrice?.toFixed(2)} vs supplier cost of ${formData.supplierCost?.toFixed(2)}.
+              </p>
             </div>
-            
-            {/* Enhanced Summary */}
-            <div className="text-sm space-y-1 text-green-700">
-              <div className="flex justify-between">
-                <span>Base Markup:</span>
-                <span>{formData.markupPercentage.toFixed(2)}%</span>
-              </div>
-              <div className="flex justify-between">
-                <span>User Adjustment:</span>
-                <span>{userAdjustmentMarkup > 0 ? '+' : ''}{userAdjustmentMarkup.toFixed(1)}%</span>
-              </div>
-              <div className="flex justify-between font-medium border-t border-green-300 pt-1">
-                <span>Total Markup:</span>
-                <span>{(formData.markupPercentage + userAdjustmentMarkup).toFixed(2)}%</span>
-              </div>
-              <div className="flex justify-between font-medium">
-                <span>Final Customer Price:</span>
-                <span>${formData.customerPrice.toFixed(2)}</span>
-              </div>
-            </div>
-          </div>
+          )}
 
-          {/* Quantity and Notes */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Quantity */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="quantity">Quantity</Label>
               <Input
@@ -257,25 +267,43 @@ export function NonInventoryPartsTab({ workOrderId, jobLineId, onAddPart }: NonI
                 min="1"
                 value={formData.quantity}
                 onChange={(e) => handleInputChange('quantity', parseInt(e.target.value) || 1)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                value={formData.notes || ''}
-                onChange={(e) => handleInputChange('notes', e.target.value)}
-                placeholder="Additional notes"
-                className="min-h-[40px]"
+                placeholder="1"
               />
             </div>
           </div>
 
-          <Button type="submit" className="w-full">
-            Add Part
+          {/* Notes */}
+          <div>
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              value={formData.notes}
+              onChange={(e) => handleInputChange('notes', e.target.value)}
+              placeholder="Additional notes about this part"
+              rows={3}
+            />
+          </div>
+
+          {/* Summary */}
+          <div className="p-4 bg-muted rounded-lg">
+            <h4 className="font-medium mb-2">Part Summary</h4>
+            <div className="text-sm space-y-1">
+              <p><strong>Part:</strong> {formData.partName || 'Not specified'}</p>
+              <p><strong>Quantity:</strong> {formData.quantity}</p>
+              <p><strong>Unit Price:</strong> ${(formData.customerPrice || 0).toFixed(2)}</p>
+              <p><strong>Total:</strong> ${((formData.customerPrice || 0) * (formData.quantity || 1)).toFixed(2)}</p>
+              {formData.supplierCost > 0 && (
+                <p><strong>Markup:</strong> {(formData.markupPercentage || 0).toFixed(1)}%</p>
+              )}
+            </div>
+          </div>
+
+          <Button onClick={handleSubmit} className="w-full">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Part to Work Order
           </Button>
-        </form>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
