@@ -20,10 +20,17 @@ export async function getInventorySuppliers(): Promise<string[]> {
 
     console.log('Raw supplier data from database:', data);
 
-    // Simplified data processing - just extract the names
-    const supplierNames = data?.map(item => item.name) || [];
+    if (!data) {
+      console.log('No data returned from suppliers query');
+      return [];
+    }
+
+    // Extract names from the data array
+    const supplierNames = data
+      .map(item => item.name)
+      .filter(name => name && typeof name === 'string' && name.trim().length > 0);
     
-    console.log(`Retrieved ${supplierNames.length} suppliers:`, supplierNames);
+    console.log(`Retrieved ${supplierNames.length} valid suppliers:`, supplierNames);
     return supplierNames;
   } catch (error) {
     console.error("Error fetching inventory suppliers:", error);
@@ -45,9 +52,10 @@ export async function addInventorySupplier(name: string): Promise<void> {
       .from("inventory_suppliers")
       .select("id")
       .eq("name", name.trim())
-      .single();
+      .maybeSingle();
 
-    if (checkError && checkError.code !== 'PGRST116') {
+    if (checkError) {
+      console.error('Error checking for existing supplier:', checkError);
       throw checkError;
     }
 

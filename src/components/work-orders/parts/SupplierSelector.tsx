@@ -124,9 +124,9 @@ export function SupplierSelector({ value, onChange, placeholder = "Select suppli
               </SelectItem>
             ))
           ) : (
-            <SelectItem value="" disabled>
-              No suppliers found
-            </SelectItem>
+            <div className="p-2 text-center text-slate-500 text-sm">
+              No suppliers found. Click + to add one.
+            </div>
           )}
         </SelectContent>
       </Select>
