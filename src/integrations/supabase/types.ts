@@ -8306,6 +8306,7 @@ export type Database = {
           install_date: string | null
           installed_by: string | null
           inventory_item_id: string | null
+          invoice_number: string | null
           is_stock_item: boolean | null
           is_taxable: boolean | null
           job_line_id: string | null
@@ -8315,11 +8316,13 @@ export type Database = {
           part_name: string
           part_number: string | null
           part_type: string
+          po_line: string | null
           quantity: number
           retail_price: number | null
           status: string | null
           supplier_cost: number | null
           supplier_name: string | null
+          supplier_suggested_retail_price: number | null
           updated_at: string | null
           warranty_duration: string | null
           warranty_expiry_date: string | null
@@ -8337,6 +8340,7 @@ export type Database = {
           install_date?: string | null
           installed_by?: string | null
           inventory_item_id?: string | null
+          invoice_number?: string | null
           is_stock_item?: boolean | null
           is_taxable?: boolean | null
           job_line_id?: string | null
@@ -8346,11 +8350,13 @@ export type Database = {
           part_name: string
           part_number?: string | null
           part_type: string
+          po_line?: string | null
           quantity?: number
           retail_price?: number | null
           status?: string | null
           supplier_cost?: number | null
           supplier_name?: string | null
+          supplier_suggested_retail_price?: number | null
           updated_at?: string | null
           warranty_duration?: string | null
           warranty_expiry_date?: string | null
@@ -8368,6 +8374,7 @@ export type Database = {
           install_date?: string | null
           installed_by?: string | null
           inventory_item_id?: string | null
+          invoice_number?: string | null
           is_stock_item?: boolean | null
           is_taxable?: boolean | null
           job_line_id?: string | null
@@ -8377,11 +8384,13 @@ export type Database = {
           part_name?: string
           part_number?: string | null
           part_type?: string
+          po_line?: string | null
           quantity?: number
           retail_price?: number | null
           status?: string | null
           supplier_cost?: number | null
           supplier_name?: string | null
+          supplier_suggested_retail_price?: number | null
           updated_at?: string | null
           warranty_duration?: string | null
           warranty_expiry_date?: string | null
@@ -8967,6 +8976,7 @@ export type Database = {
           install_date: string | null
           installed_by: string | null
           inventory_item_id: string | null
+          invoice_number: string | null
           is_stock_item: boolean | null
           is_taxable: boolean | null
           job_line_id: string | null
@@ -8976,11 +8986,13 @@ export type Database = {
           part_name: string
           part_number: string | null
           part_type: string
+          po_line: string | null
           quantity: number
           retail_price: number | null
           status: string | null
           supplier_cost: number | null
           supplier_name: string | null
+          supplier_suggested_retail_price: number | null
           updated_at: string | null
           warranty_duration: string | null
           warranty_expiry_date: string | null
@@ -9061,6 +9073,7 @@ export type Database = {
           install_date: string | null
           installed_by: string | null
           inventory_item_id: string | null
+          invoice_number: string | null
           is_stock_item: boolean | null
           is_taxable: boolean | null
           job_line_id: string | null
@@ -9070,11 +9083,13 @@ export type Database = {
           part_name: string
           part_number: string | null
           part_type: string
+          po_line: string | null
           quantity: number
           retail_price: number | null
           status: string | null
           supplier_cost: number | null
           supplier_name: string | null
+          supplier_suggested_retail_price: number | null
           updated_at: string | null
           warranty_duration: string | null
           warranty_expiry_date: string | null
@@ -9234,6 +9249,33 @@ export type Database = {
               p_status?: string
               p_is_stock_item?: boolean
             }
+          | {
+              p_work_order_id: string
+              p_job_line_id: string
+              p_inventory_item_id: string
+              p_part_name: string
+              p_part_number: string
+              p_supplier_name: string
+              p_supplier_cost: number
+              p_supplier_suggested_retail_price: number
+              p_markup_percentage: number
+              p_retail_price: number
+              p_customer_price: number
+              p_quantity: number
+              p_part_type: string
+              p_invoice_number: string
+              p_po_line: string
+              p_notes: string
+              p_category?: string
+              p_is_taxable?: boolean
+              p_core_charge_amount?: number
+              p_core_charge_applied?: boolean
+              p_warranty_duration?: string
+              p_install_date?: string
+              p_installed_by?: string
+              p_status?: string
+              p_is_stock_item?: boolean
+            }
         Returns: string
       }
       insert_work_order_time_entry: {
@@ -9321,6 +9363,31 @@ export type Database = {
               p_part_number: string
               p_supplier_name: string
               p_supplier_cost: number
+              p_markup_percentage: number
+              p_retail_price: number
+              p_customer_price: number
+              p_quantity: number
+              p_part_type: string
+              p_invoice_number: string
+              p_po_line: string
+              p_notes: string
+              p_category?: string
+              p_is_taxable?: boolean
+              p_core_charge_amount?: number
+              p_core_charge_applied?: boolean
+              p_warranty_duration?: string
+              p_install_date?: string
+              p_installed_by?: string
+              p_status?: string
+              p_is_stock_item?: boolean
+            }
+          | {
+              p_id: string
+              p_part_name: string
+              p_part_number: string
+              p_supplier_name: string
+              p_supplier_cost: number
+              p_supplier_suggested_retail_price: number
               p_markup_percentage: number
               p_retail_price: number
               p_customer_price: number

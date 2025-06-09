@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { WorkOrderJobLine } from '@/types/jobLine';
+import { getJobLineParts } from './workOrder/workOrderPartsService';
 
 export async function loadJobLinesFromDatabase(workOrderId: string): Promise<WorkOrderJobLine[]> {
   try {
@@ -10,7 +11,7 @@ export async function loadJobLinesFromDatabase(workOrderId: string): Promise<Wor
 
     if (error) throw error;
 
-    return (data || []).map((item: any): WorkOrderJobLine => ({
+    const jobLines = (data || []).map((item: any): WorkOrderJobLine => ({
       id: item.id,
       workOrderId: item.work_order_id,
       name: item.name,
@@ -23,8 +24,22 @@ export async function loadJobLinesFromDatabase(workOrderId: string): Promise<Wor
       status: item.status as WorkOrderJobLine['status'],
       notes: item.notes,
       createdAt: item.created_at,
-      updatedAt: item.updated_at
+      updatedAt: item.updated_at,
+      parts: [] // Will be loaded separately
     }));
+
+    // Load parts for each job line
+    for (const jobLine of jobLines) {
+      try {
+        const parts = await getJobLineParts(jobLine.id);
+        jobLine.parts = parts;
+      } catch (error) {
+        console.error(`Error loading parts for job line ${jobLine.id}:`, error);
+        jobLine.parts = [];
+      }
+    }
+
+    return jobLines;
   } catch (error) {
     console.error('Error loading job lines from database:', error);
     throw new Error('Failed to load job lines from database');
