@@ -1,10 +1,10 @@
 
 import React, { useState } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Trash2, Edit, Clock, DollarSign } from 'lucide-react';
 import { WorkOrderJobLine } from '@/types/jobLine';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Edit, Trash2, Eye } from 'lucide-react';
 import { jobLineStatusMap } from '@/types/jobLine';
 import { EditJobLineDialog } from './EditJobLineDialog';
 import { JobLinePartsDisplay } from '../parts/JobLinePartsDisplay';
@@ -21,154 +21,138 @@ interface JobLinesTableProps {
 
 export function JobLinesTable({ 
   jobLines, 
-  isEditMode = false, 
+  isEditMode = false,
   onUpdate = () => {},
   onDelete = () => {},
   onAddParts,
   onRemovePart
 }: JobLinesTableProps) {
-  const [editDialogOpen, setEditDialogOpen] = useState<string | null>(null);
+  const [editingJobLine, setEditingJobLine] = useState<WorkOrderJobLine | null>(null);
 
-  const handleEditClick = (jobLineId: string) => {
-    setEditDialogOpen(jobLineId);
+  const handleEdit = (jobLine: WorkOrderJobLine) => {
+    setEditingJobLine(jobLine);
   };
 
   const handleSaveEdit = (updatedJobLine: WorkOrderJobLine) => {
     onUpdate(updatedJobLine);
-    setEditDialogOpen(null);
+    setEditingJobLine(null);
   };
 
   const handlePartsAdded = () => {
-    // Simple callback to refresh parts display
-    console.log('Parts added, refreshing display');
+    // Callback to refresh the job lines display after parts are added
+    console.log('Parts added - refreshing job lines display');
   };
 
   return (
     <>
-      <div className="rounded-md border">
+      <div className="border rounded-lg overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[300px]">Service</TableHead>
-              <TableHead className="w-[100px]">Status</TableHead>
-              <TableHead className="w-[80px]">Hours</TableHead>
-              <TableHead className="w-[100px]">Rate</TableHead>
-              <TableHead className="w-[100px]">Labor Cost</TableHead>
-              <TableHead className="w-[100px]">Total</TableHead>
-              {isEditMode && <TableHead className="w-[150px]">Actions</TableHead>}
+              <TableHead>Service</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Hours</TableHead>
+              <TableHead>Rate</TableHead>
+              <TableHead>Labor Cost</TableHead>
+              <TableHead>Total</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {jobLines.map((jobLine) => {
               const statusInfo = jobLineStatusMap[jobLine.status] || jobLineStatusMap.pending;
-              
-              // Calculate total including parts
               const partsTotal = jobLine.parts?.reduce((total, part) => 
                 total + (part.customerPrice * part.quantity), 0) || 0;
               const totalWithParts = (jobLine.totalAmount || 0) + partsTotal;
 
               return (
-                <TableRow key={jobLine.id}>
-                  <TableCell>
-                    <div className="space-y-2">
-                      <div className="space-y-1">
+                <React.Fragment key={jobLine.id}>
+                  <TableRow>
+                    <TableCell>
+                      <div>
                         <div className="font-medium">{jobLine.name}</div>
-                        {jobLine.description && (
-                          <div className="text-sm text-muted-foreground">
-                            {jobLine.description}
-                          </div>
-                        )}
                         {jobLine.category && (
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-xs mt-1">
                             {jobLine.category}
                           </Badge>
                         )}
-                      </div>
-                      
-                      {/* Parts Display */}
-                      <JobLinePartsDisplay 
-                        parts={jobLine.parts || []}
-                        onRemovePart={onRemovePart}
-                        isEditMode={isEditMode}
-                      />
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={statusInfo.classes}>
-                      {statusInfo.label}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-3 w-3 text-muted-foreground" />
-                      <span className="text-sm">
-                        {jobLine.estimatedHours?.toFixed(1) || '0.0'}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <DollarSign className="h-3 w-3 text-muted-foreground" />
-                      <span className="text-sm">
-                        {jobLine.laborRate?.toFixed(2) || '0.00'}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <DollarSign className="h-3 w-3 text-muted-foreground" />
-                      <span className="text-sm">
-                        {jobLine.totalAmount?.toFixed(2) || '0.00'}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <DollarSign className="h-3 w-3 text-green-600" />
-                      <span className="text-sm font-medium text-green-600">
-                        {totalWithParts.toFixed(2)}
-                      </span>
-                    </div>
-                  </TableCell>
-                  {isEditMode && (
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <AddPartsDialog
-                          workOrderId={jobLine.workOrderId || ''}
-                          jobLineId={jobLine.id}
-                          onPartsAdd={handlePartsAdded}
-                        />
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEditClick(jobLine.id)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onDelete(jobLine.id)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {jobLine.description && (
+                          <div className="text-sm text-muted-foreground mt-1">
+                            {jobLine.description}
+                          </div>
+                        )}
                       </div>
                     </TableCell>
+                    <TableCell>
+                      <Badge className={statusInfo.classes}>
+                        {statusInfo.label}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{jobLine.estimatedHours?.toFixed(1) || '0.0'}</TableCell>
+                    <TableCell>${jobLine.laborRate?.toFixed(2) || '0.00'}</TableCell>
+                    <TableCell>${jobLine.totalAmount?.toFixed(2) || '0.00'}</TableCell>
+                    <TableCell>
+                      <span className="font-medium text-green-600">
+                        ${totalWithParts.toFixed(2)}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        {isEditMode && (
+                          <AddPartsDialog
+                            workOrderId={jobLine.workOrderId || ''}
+                            jobLineId={jobLine.id}
+                            onPartsAdd={handlePartsAdded}
+                          />
+                        )}
+                        {isEditMode && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEdit(jobLine)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => onDelete(jobLine.id)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                  {/* Parts Row - Show parts attached to this job line */}
+                  {jobLine.parts && jobLine.parts.length > 0 && (
+                    <TableRow>
+                      <TableCell colSpan={7} className="bg-muted/30 p-0">
+                        <div className="p-4">
+                          <JobLinePartsDisplay 
+                            parts={jobLine.parts}
+                            onRemovePart={onRemovePart}
+                            isEditMode={isEditMode}
+                          />
+                        </div>
+                      </TableCell>
+                    </TableRow>
                   )}
-                </TableRow>
+                </React.Fragment>
               );
             })}
           </TableBody>
         </Table>
       </div>
 
-      {/* Edit Dialog */}
-      {editDialogOpen && (
+      {editingJobLine && (
         <EditJobLineDialog
-          jobLine={jobLines.find(jl => jl.id === editDialogOpen)!}
-          open={!!editDialogOpen}
-          onOpenChange={() => setEditDialogOpen(null)}
+          jobLine={editingJobLine}
+          open={!!editingJobLine}
+          onOpenChange={() => setEditingJobLine(null)}
           onSave={handleSaveEdit}
         />
       )}

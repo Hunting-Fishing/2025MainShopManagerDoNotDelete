@@ -72,7 +72,7 @@ export function JobLineCard({
                 </p>
               )}
               
-              <div className="grid grid-cols-4 gap-4 text-sm">
+              <div className="grid grid-cols-4 gap-4 text-sm mb-3">
                 <div>
                   <span className="text-muted-foreground">Hours:</span>
                   <span className="ml-1 font-medium">
@@ -99,12 +99,16 @@ export function JobLineCard({
                 </div>
               </div>
 
-              {/* Parts Display */}
-              <JobLinePartsDisplay 
-                parts={jobLine.parts || []}
-                onRemovePart={onRemovePart}
-                isEditMode={isEditMode}
-              />
+              {/* Parts Display - Always show if parts exist */}
+              {jobLine.parts && jobLine.parts.length > 0 && (
+                <div className="mt-3 p-3 bg-muted/30 rounded-lg">
+                  <JobLinePartsDisplay 
+                    parts={jobLine.parts}
+                    onRemovePart={onRemovePart}
+                    isEditMode={isEditMode}
+                  />
+                </div>
+              )}
             </div>
             
             <div className="flex items-center gap-1 ml-4">
