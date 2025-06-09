@@ -2,24 +2,23 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, RefreshCw } from 'lucide-react';
-import { WorkOrderJobLine } from '@/types/jobLine';
 import { JobLinesGrid } from '../job-lines/JobLinesGrid';
 import { AddJobLineDialog } from '../job-lines/AddJobLineDialog';
 import { toast } from 'sonner';
+import { WorkOrderJobLine } from '@/types/jobLine';
 import { 
-  getWorkOrderJobLines, 
-  createWorkOrderJobLine, 
-  updateWorkOrderJobLine, 
-  deleteWorkOrderJobLine 
-} from '@/services/workOrder/jobLineService';
-import { jobLineParserEnhanced } from '@/services/workOrder/jobLineParserEnhanced';
+  loadJobLinesFromDatabase, 
+  saveJobLinesToDatabase,
+  deleteJobLineFromDatabase 
+} from '@/services/jobLineDatabase';
+import { parseJobLinesFromDescription } from '@/services/jobLineParserEnhanced';
 
 interface JobLinesSectionProps {
   workOrderId: string;
   description: string;
   jobLines: WorkOrderJobLine[];
   onJobLinesChange: (jobLines: WorkOrderJobLine[]) => void;
-  shopId: string;
+  shopId?: string;
   isEditMode?: boolean;
 }
 
@@ -47,8 +46,7 @@ export function JobLinesSection({
     
     setIsLoading(true);
     try {
-      const lines = await getWorkOrderJobLines(workOrderId);
-      
+      const lines = await loadJobLinesFromDatabase(workOrderId);
       // Ensure all job lines have the enhanced fields with defaults
       const enhancedLines = lines.map(line => ({
         ...line,
@@ -70,7 +68,6 @@ export function JobLinesSection({
           notesInternal: part.notesInternal || null
         }))
       }));
-      
       onJobLinesChange(enhancedLines);
     } catch (error) {
       console.error('Error loading job lines:', error);
@@ -89,73 +86,47 @@ export function JobLinesSection({
     setIsRefreshing(true);
     try {
       // Parse job lines from description
-      const parsedJobLines = await jobLineParserEnhanced.parseJobLines(description, shopId);
+      const parsedJobLines = parseJobLinesFromDescription(description);
       
       if (parsedJobLines.length === 0) {
         toast.info('No job lines could be parsed from the description');
         return;
       }
 
-      // Save parsed job lines to database
-      const savedJobLines: WorkOrderJobLine[] = [];
-      for (const jobLine of parsedJobLines) {
-        try {
-          const saved = await createWorkOrderJobLine(workOrderId, jobLine);
-          if (saved) {
-            // Ensure the saved job line has enhanced fields with defaults
-            const enhancedSaved = {
-              ...saved,
-              parts: (saved.parts || []).map(part => ({
-                ...part,
-                category: part.category || 'Other',
-                isTaxable: part.isTaxable ?? true,
-                coreChargeAmount: part.coreChargeAmount || 0,
-                coreChargeApplied: part.coreChargeApplied ?? false,
-                warrantyDuration: part.warrantyDuration || 'No Warranty',
-                warrantyExpiryDate: part.warrantyExpiryDate || null,
-                installDate: part.installDate || null,
-                installedBy: part.installedBy || null,
-                status: part.status || 'ordered',
-                isStockItem: part.isStockItem ?? false,
-                dateAdded: part.dateAdded || new Date().toISOString(),
-                attachments: part.attachments || [],
-                notesInternal: part.notesInternal || null
-              }))
-            };
-            savedJobLines.push(enhancedSaved);
-          }
-        } catch (error) {
-          console.error('Error saving job line:', error);
-        }
-      }
+      // Assign work order ID to parsed job lines
+      const jobLinesWithWorkOrderId = parsedJobLines.map(line => ({
+        ...line,
+        workOrderId,
+        id: crypto.randomUUID()
+      }));
 
-      if (savedJobLines.length > 0) {
-        // Combine with existing job lines, ensuring enhanced fields
-        const combinedJobLines = [...jobLines, ...savedJobLines].map(line => ({
-          ...line,
-          parts: (line.parts || []).map(part => ({
-            ...part,
-            category: part.category || 'Other',
-            isTaxable: part.isTaxable ?? true,
-            coreChargeAmount: part.coreChargeAmount || 0,
-            coreChargeApplied: part.coreChargeApplied ?? false,
-            warrantyDuration: part.warrantyDuration || 'No Warranty',
-            warrantyExpiryDate: part.warrantyExpiryDate || null,
-            installDate: part.installDate || null,
-            installedBy: part.installedBy || null,
-            status: part.status || 'ordered',
-            isStockItem: part.isStockItem ?? false,
-            dateAdded: part.dateAdded || new Date().toISOString(),
-            attachments: part.attachments || [],
-            notesInternal: part.notesInternal || null
-          }))
-        }));
-        
-        onJobLinesChange(combinedJobLines);
-        toast.success(`Successfully parsed and added ${savedJobLines.length} job line${savedJobLines.length > 1 ? 's' : ''}`);
-      } else {
-        toast.error('Failed to save parsed job lines');
-      }
+      // Save to database
+      await saveJobLinesToDatabase(workOrderId, [...jobLines, ...jobLinesWithWorkOrderId]);
+
+      // Update state with enhanced fields
+      const enhancedJobLines = jobLinesWithWorkOrderId.map(line => ({
+        ...line,
+        parts: (line.parts || []).map(part => ({
+          ...part,
+          category: part.category || 'Other',
+          isTaxable: part.isTaxable ?? true,
+          coreChargeAmount: part.coreChargeAmount || 0,
+          coreChargeApplied: part.coreChargeApplied ?? false,
+          warrantyDuration: part.warrantyDuration || 'No Warranty',
+          warrantyExpiryDate: part.warrantyExpiryDate || null,
+          installDate: part.installDate || null,
+          installedBy: part.installedBy || null,
+          status: part.status || 'ordered',
+          isStockItem: part.isStockItem ?? false,
+          dateAdded: part.dateAdded || new Date().toISOString(),
+          attachments: part.attachments || [],
+          notesInternal: part.notesInternal || null
+        }))
+      }));
+
+      const combinedJobLines = [...jobLines, ...enhancedJobLines];
+      onJobLinesChange(combinedJobLines);
+      toast.success(`Successfully parsed and added ${enhancedJobLines.length} job line${enhancedJobLines.length > 1 ? 's' : ''}`);
     } catch (error) {
       console.error('Error refreshing job lines:', error);
       toast.error('Failed to parse job lines from description');
@@ -164,52 +135,55 @@ export function JobLinesSection({
     }
   };
 
-  const handleJobLineAdd = async (newJobLine: WorkOrderJobLine) => {
+  const handleJobLineAdd = async (newJobLines: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>[]) => {
     try {
-      const savedJobLine = await createWorkOrderJobLine(workOrderId, newJobLine);
-      if (savedJobLine) {
-        // Ensure the saved job line has enhanced fields with defaults
-        const enhancedSaved = {
-          ...savedJobLine,
-          parts: (savedJobLine.parts || []).map(part => ({
-            ...part,
-            category: part.category || 'Other',
-            isTaxable: part.isTaxable ?? true,
-            coreChargeAmount: part.coreChargeAmount || 0,
-            coreChargeApplied: part.coreChargeApplied ?? false,
-            warrantyDuration: part.warrantyDuration || 'No Warranty',
-            warrantyExpiryDate: part.warrantyExpiryDate || null,
-            installDate: part.installDate || null,
-            installedBy: part.installedBy || null,
-            status: part.status || 'ordered',
-            isStockItem: part.isStockItem ?? false,
-            dateAdded: part.dateAdded || new Date().toISOString(),
-            attachments: part.attachments || [],
-            notesInternal: part.notesInternal || null
-          }))
-        };
-        
-        const updatedJobLines = [...jobLines, enhancedSaved];
-        onJobLinesChange(updatedJobLines);
-        setShowAddDialog(false);
-        toast.success('Job line added successfully');
-      }
+      // Convert to full job lines with IDs and timestamps
+      const jobLinesWithIds = newJobLines.map(line => ({
+        ...line,
+        id: crypto.randomUUID(),
+        workOrderId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        parts: (line.parts || []).map(part => ({
+          ...part,
+          category: part.category || 'Other',
+          isTaxable: part.isTaxable ?? true,
+          coreChargeAmount: part.coreChargeAmount || 0,
+          coreChargeApplied: part.coreChargeApplied ?? false,
+          warrantyDuration: part.warrantyDuration || 'No Warranty',
+          warrantyExpiryDate: part.warrantyExpiryDate || null,
+          installDate: part.installDate || null,
+          installedBy: part.installedBy || null,
+          status: part.status || 'ordered',
+          isStockItem: part.isStockItem ?? false,
+          dateAdded: part.dateAdded || new Date().toISOString(),
+          attachments: part.attachments || [],
+          notesInternal: part.notesInternal || null
+        }))
+      }));
+
+      // Save to database
+      const updatedJobLines = [...jobLines, ...jobLinesWithIds];
+      await saveJobLinesToDatabase(workOrderId, updatedJobLines);
+      
+      onJobLinesChange(updatedJobLines);
+      setShowAddDialog(false);
+      toast.success(`${jobLinesWithIds.length} job line${jobLinesWithIds.length > 1 ? 's' : ''} added successfully`);
     } catch (error) {
-      console.error('Error adding job line:', error);
-      toast.error('Failed to add job line');
+      console.error('Error adding job lines:', error);
+      toast.error('Failed to add job lines');
     }
   };
 
   const handleJobLineUpdate = async (updatedJobLine: WorkOrderJobLine) => {
     try {
-      const savedJobLine = await updateWorkOrderJobLine(updatedJobLine.id, updatedJobLine);
-      if (savedJobLine) {
-        const updatedJobLines = jobLines.map(line => 
-          line.id === updatedJobLine.id ? savedJobLine : line
-        );
-        onJobLinesChange(updatedJobLines);
-        toast.success('Job line updated successfully');
-      }
+      const updatedJobLines = jobLines.map(line => 
+        line.id === updatedJobLine.id ? updatedJobLine : line
+      );
+      
+      await saveJobLinesToDatabase(workOrderId, updatedJobLines);
+      onJobLinesChange(updatedJobLines);
+      toast.success('Job line updated successfully');
     } catch (error) {
       console.error('Error updating job line:', error);
       toast.error('Failed to update job line');
@@ -218,7 +192,7 @@ export function JobLinesSection({
 
   const handleJobLineDelete = async (jobLineId: string) => {
     try {
-      await deleteWorkOrderJobLine(jobLineId);
+      await deleteJobLineFromDatabase(jobLineId);
       const updatedJobLines = jobLines.filter(line => line.id !== jobLineId);
       onJobLinesChange(updatedJobLines);
       toast.success('Job line deleted successfully');
@@ -237,6 +211,7 @@ export function JobLinesSection({
             Services and labor items for this work order
           </p>
         </div>
+        
         <div className="flex items-center gap-2">
           {description && (
             <Button
@@ -249,13 +224,14 @@ export function JobLinesSection({
               Parse from Description
             </Button>
           )}
+          
           {isEditMode && (
             <Button
-              variant="outline"
               size="sm"
               onClick={() => setShowAddDialog(true)}
+              className="flex items-center gap-2"
             >
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="h-4 w-4" />
               Add Job Line
             </Button>
           )}
@@ -267,15 +243,16 @@ export function JobLinesSection({
         onUpdate={handleJobLineUpdate}
         onDelete={handleJobLineDelete}
         isEditMode={isEditMode}
-        isLoading={isLoading}
       />
 
-      <AddJobLineDialog
-        workOrderId={workOrderId}
-        open={showAddDialog}
-        onOpenChange={setShowAddDialog}
-        onJobLineAdd={handleJobLineAdd}
-      />
+      {showAddDialog && (
+        <AddJobLineDialog
+          workOrderId={workOrderId}
+          onJobLineAdd={handleJobLineAdd}
+          open={showAddDialog}
+          onOpenChange={setShowAddDialog}
+        />
+      )}
     </div>
   );
 }
