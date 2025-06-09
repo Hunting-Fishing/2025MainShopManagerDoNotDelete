@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Clock, Package, FileText, Wrench, History } from 'lucide-react';
@@ -19,7 +20,6 @@ interface WorkOrderDetailsTabsProps {
   onJobLinesChange: (jobLines: WorkOrderJobLine[]) => void;
   jobLinesLoading: boolean;
   isEditMode?: boolean;
-  onPartsUpdated?: () => void;
 }
 
 export function WorkOrderDetailsTabs({
@@ -32,8 +32,7 @@ export function WorkOrderDetailsTabs({
   jobLines,
   onJobLinesChange,
   jobLinesLoading,
-  isEditMode = false,
-  onPartsUpdated
+  isEditMode = false
 }: WorkOrderDetailsTabsProps) {
   return (
     <Tabs defaultValue="services" className="w-full">
@@ -68,7 +67,6 @@ export function WorkOrderDetailsTabs({
           onJobLinesChange={onJobLinesChange}
           shopId={workOrder.customer_id}
           isEditMode={isEditMode}
-          onPartsUpdated={onPartsUpdated}
         />
       </TabsContent>
 
@@ -76,7 +74,6 @@ export function WorkOrderDetailsTabs({
         <WorkOrderPartsSection
           workOrderId={workOrder.id}
           isEditMode={isEditMode}
-          onPartsUpdated={onPartsUpdated}
         />
       </TabsContent>
 

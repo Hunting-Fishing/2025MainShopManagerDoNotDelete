@@ -17,7 +17,6 @@ interface JobLineCardProps {
   onAddParts?: (jobLineId: string, parts: any[]) => void;
   onRemovePart?: (partId: string) => void;
   isEditMode?: boolean;
-  onPartsUpdated?: () => void;
 }
 
 export function JobLineCard({ 
@@ -26,8 +25,7 @@ export function JobLineCard({
   onDelete,
   onAddParts,
   onRemovePart,
-  isEditMode = false,
-  onPartsUpdated
+  isEditMode = false 
 }: JobLineCardProps) {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const statusInfo = jobLineStatusMap[jobLine.status] || jobLineStatusMap.pending;
@@ -41,11 +39,8 @@ export function JobLineCard({
   };
 
   const handlePartsAdded = () => {
-    // Trigger refresh to get updated parts data
+    // Simple callback to refresh parts display
     console.log('Parts added to job line:', jobLine.id);
-    if (onPartsUpdated) {
-      onPartsUpdated();
-    }
   };
 
   // Calculate total including parts
@@ -77,7 +72,7 @@ export function JobLineCard({
                 </p>
               )}
               
-              <div className="grid grid-cols-4 gap-4 text-sm mb-3">
+              <div className="grid grid-cols-4 gap-4 text-sm">
                 <div>
                   <span className="text-muted-foreground">Hours:</span>
                   <span className="ml-1 font-medium">
@@ -104,16 +99,12 @@ export function JobLineCard({
                 </div>
               </div>
 
-              {/* Parts Display - Always show if parts exist */}
-              {jobLine.parts && jobLine.parts.length > 0 && (
-                <div className="mt-3 p-3 bg-muted/30 rounded-lg">
-                  <JobLinePartsDisplay 
-                    parts={jobLine.parts}
-                    onRemovePart={onRemovePart}
-                    isEditMode={isEditMode}
-                  />
-                </div>
-              )}
+              {/* Parts Display */}
+              <JobLinePartsDisplay 
+                parts={jobLine.parts || []}
+                onRemovePart={onRemovePart}
+                isEditMode={isEditMode}
+              />
             </div>
             
             <div className="flex items-center gap-1 ml-4">
