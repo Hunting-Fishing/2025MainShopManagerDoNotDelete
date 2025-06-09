@@ -35,6 +35,7 @@ import Equipment from '@/pages/Equipment';
 import EquipmentDetails from '@/pages/EquipmentDetails';
 import Notifications from '@/pages/Notifications';
 import Authentication from '@/pages/Authentication';
+import Login from '@/pages/Login';
 import Reports from '@/pages/Reports';
 import NotFound from '@/pages/NotFound';
 
@@ -55,7 +56,7 @@ function App() {
         <div className="min-h-screen bg-background font-sans antialiased">
           <Routes>
             {/* Public routes */}
-            <Route path="/login" element={<Authentication />} />
+            <Route path="/login" element={<Login />} />
             <Route path="/auth" element={<Authentication />} />
             
             {/* Protected routes */}
