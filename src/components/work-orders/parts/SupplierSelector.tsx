@@ -114,7 +114,7 @@ export function SupplierSelector({ value, onChange, placeholder = "Select suppli
     <div className="flex gap-2">
       <Select value={value} onValueChange={onChange}>
         <SelectTrigger className="flex-1">
-          <SelectValue placeholder={placeholder} />
+          <SelectValue placeholder={suppliers.length > 0 ? placeholder : "No suppliers available"} />
         </SelectTrigger>
         <SelectContent>
           {suppliers.length > 0 ? (
@@ -124,9 +124,9 @@ export function SupplierSelector({ value, onChange, placeholder = "Select suppli
               </SelectItem>
             ))
           ) : (
-            <div className="p-2 text-center text-slate-500 text-sm">
+            <SelectItem value="__no_suppliers__" disabled className="text-slate-500 text-sm">
               No suppliers found. Click + to add one.
-            </div>
+            </SelectItem>
           )}
         </SelectContent>
       </Select>
