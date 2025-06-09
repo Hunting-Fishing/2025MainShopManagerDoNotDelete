@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ServiceMainCategory, ServiceJob } from '@/types/service';
 import { SelectedService } from '@/types/selectedService';
 import { Badge } from '@/components/ui/badge';
-import { Clock, DollarSign, Plus } from 'lucide-react';
+import { Clock, DollarSign, Plus, Check } from 'lucide-react';
 
 interface ServiceCompactViewProps {
   categories: ServiceMainCategory[];
@@ -17,7 +17,7 @@ export function ServiceCompactView({
   categories,
   onServiceSelect,
   selectedServices,
-  maxItems = 20
+  maxItems = 50
 }: ServiceCompactViewProps) {
   // Get all services flattened
   const allServices = categories.flatMap(category =>
@@ -37,41 +37,49 @@ export function ServiceCompactView({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-medium text-slate-700">Quick Service Selection</h4>
+        <h4 className="text-sm font-medium text-slate-700">Available Services</h4>
         <Badge variant="outline" className="text-xs">
-          {allServices.length} of {categories.reduce((total, cat) => 
-            total + cat.subcategories.reduce((subTotal, sub) => 
-              subTotal + sub.jobs.length, 0), 0)} services
+          {allServices.length} services
         </Badge>
       </div>
 
-      <div className="grid gap-2 max-h-96 overflow-y-auto">
+      <div className="space-y-2 max-h-96 overflow-y-auto">
         {allServices.map((service) => (
           <div
             key={service.id}
-            className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
+            className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
           >
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-sm truncate">{service.name}</span>
+            <div className="flex-1 min-w-0 space-y-1">
+              <div className="flex items-center gap-3">
+                <span className="font-medium text-sm">{service.name}</span>
                 {isServiceSelected(service.id) && (
-                  <Badge variant="secondary" className="text-xs">Selected</Badge>
+                  <Badge variant="secondary" className="text-xs flex items-center gap-1">
+                    <Check className="h-3 w-3" />
+                    Selected
+                  </Badge>
                 )}
               </div>
               
-              <div className="text-xs text-gray-500 truncate">
-                {service.categoryName} → {service.subcategoryName}
-              </div>
+              {service.description && (
+                <p className="text-xs text-muted-foreground line-clamp-2">
+                  {service.description}
+                </p>
+              )}
               
-              <div className="flex items-center gap-3 mt-1">
+              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                <span className="font-medium">
+                  {service.categoryName} → {service.subcategoryName}
+                </span>
+                
                 {service.estimatedTime && (
-                  <div className="flex items-center gap-1 text-xs text-gray-500">
+                  <div className="flex items-center gap-1">
                     <Clock className="h-3 w-3" />
                     {service.estimatedTime}min
                   </div>
                 )}
+                
                 {service.price && (
-                  <div className="flex items-center gap-1 text-xs text-gray-500">
+                  <div className="flex items-center gap-1">
                     <DollarSign className="h-3 w-3" />
                     ${service.price}
                   </div>
@@ -88,12 +96,22 @@ export function ServiceCompactView({
                 }
               }}
               disabled={isServiceSelected(service.id)}
-              className="ml-3 flex-shrink-0"
+              className="ml-4 flex-shrink-0"
             >
-              <Plus className="h-3 w-3" />
+              {isServiceSelected(service.id) ? (
+                <Check className="h-3 w-3" />
+              ) : (
+                <Plus className="h-3 w-3" />
+              )}
             </Button>
           </div>
         ))}
+        
+        {allServices.length === 0 && (
+          <div className="text-center py-8 text-muted-foreground">
+            No services found matching your criteria
+          </div>
+        )}
       </div>
     </div>
   );

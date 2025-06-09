@@ -4,6 +4,8 @@ import { ServiceMainCategory, ServiceJob } from '@/types/service';
 import { SelectedService } from '@/types/selectedService';
 import { ServiceSearch } from './ServiceSearch';
 import { ServiceCategoryList } from './ServiceCategoryList';
+import { ServiceCompactView } from './ServiceCompactView';
+import { ServiceDetailsViewToggle } from './ServiceDetailsViewToggle';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface SmartServiceSelectorProps {
@@ -22,6 +24,7 @@ export const SmartServiceSelector: React.FC<SmartServiceSelectorProps> = ({
   onUpdateServices
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [viewMode, setViewMode] = useState<'list' | 'cards'>('list');
 
   // Filter and highlight categories based on search term
   const filteredCategories = useMemo(() => {
@@ -80,7 +83,13 @@ export const SmartServiceSelector: React.FC<SmartServiceSelectorProps> = ({
   return (
     <Card className="bg-card border shadow-sm">
       <CardHeader className="bg-card border-b">
-        <CardTitle>Select Services</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle>Select Services</CardTitle>
+          <ServiceDetailsViewToggle
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+          />
+        </div>
         <div className="space-y-4">
           <ServiceSearch
             value={searchTerm}
@@ -100,16 +109,25 @@ export const SmartServiceSelector: React.FC<SmartServiceSelectorProps> = ({
         </div>
       </CardHeader>
       <CardContent className="bg-card p-6">
-        <ServiceCategoryList
-          categories={filteredCategories}
-          selectedServices={selectedServices}
-          onServiceSelect={onServiceSelect}
-          onRemoveService={onRemoveService || (() => {})}
-          onUpdateServices={onUpdateServices || (() => {})}
-          expandedCategories={expandedCategories}
-          expandedSubcategories={expandedSubcategories}
-          searchHighlight={searchTerm}
-        />
+        {viewMode === 'list' ? (
+          <ServiceCompactView
+            categories={filteredCategories}
+            onServiceSelect={handleServiceSelect}
+            selectedServices={selectedServices}
+            maxItems={50}
+          />
+        ) : (
+          <ServiceCategoryList
+            categories={filteredCategories}
+            selectedServices={selectedServices}
+            onServiceSelect={onServiceSelect}
+            onRemoveService={onRemoveService || (() => {})}
+            onUpdateServices={onUpdateServices || (() => {})}
+            expandedCategories={expandedCategories}
+            expandedSubcategories={expandedSubcategories}
+            searchHighlight={searchTerm}
+          />
+        )}
       </CardContent>
     </Card>
   );
