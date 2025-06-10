@@ -6,7 +6,7 @@ import { JobLinesTable } from './JobLinesTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ResponsiveGrid } from '@/components/ui/responsive-grid';
 import { Button } from '@/components/ui/button';
-import { Clock, DollarSign, Wrench, LayoutList, LayoutGrid } from 'lucide-react';
+import { Clock, DollarSign, Wrench, LayoutList, LayoutGrid, Package, TrendingUp } from 'lucide-react';
 
 interface JobLinesGridProps {
   jobLines: WorkOrderJobLine[];
@@ -31,6 +31,28 @@ export function JobLinesGrid({
   
   const totalHours = jobLines.reduce((sum, line) => sum + (line.estimatedHours || 0), 0);
   const totalAmount = jobLines.reduce((sum, line) => sum + (line.totalAmount || 0), 0);
+  
+  // Calculate parts totals from all job lines
+  const partsCalculations = jobLines.reduce((totals, line) => {
+    const lineParts = line.parts || [];
+    
+    lineParts.forEach(part => {
+      totals.totalParts += part.quantity;
+      totals.totalPartsCost += (part.supplierCost * part.quantity);
+      totals.totalPartsSellPrice += (part.customerPrice * part.quantity);
+    });
+    
+    return totals;
+  }, {
+    totalParts: 0,
+    totalPartsCost: 0,
+    totalPartsSellPrice: 0
+  });
+  
+  const partsMargin = partsCalculations.totalPartsSellPrice - partsCalculations.totalPartsCost;
+  const partsMarginPercent = partsCalculations.totalPartsCost > 0 
+    ? ((partsMargin / partsCalculations.totalPartsCost) * 100) 
+    : 0;
 
   if (jobLines.length === 0) {
     return (
@@ -108,33 +130,97 @@ export function JobLinesGrid({
         </ResponsiveGrid>
       )}
 
-      {showSummary && (totalHours > 0 || totalAmount > 0) && (
-        <Card className="bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Wrench className="h-5 w-5" />
-              Summary
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-blue-600" />
-                <div>
-                  <div className="text-sm text-muted-foreground">Total Labor Time</div>
-                  <div className="font-semibold">{totalHours.toFixed(1)} hours</div>
+      {showSummary && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Labor Summary */}
+          {(totalHours > 0 || totalAmount > 0) && (
+            <Card className="bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Wrench className="h-5 w-5" />
+                  Labor Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-blue-600" />
+                    <div>
+                      <div className="text-sm text-muted-foreground">Total Labor Time</div>
+                      <div className="font-semibold">{totalHours.toFixed(1)} hours</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-green-600" />
+                    <div>
+                      <div className="text-sm text-muted-foreground">Total Labor Cost</div>
+                      <div className="font-semibold">${totalAmount.toFixed(2)}</div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-green-600" />
-                <div>
-                  <div className="text-sm text-muted-foreground">Total Labor Cost</div>
-                  <div className="font-semibold">${totalAmount.toFixed(2)}</div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Parts Summary */}
+          <Card className="bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Parts Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {partsCalculations.totalParts > 0 ? (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center gap-2">
+                      <Package className="h-4 w-4 text-green-600" />
+                      <div>
+                        <div className="text-sm text-muted-foreground"># of Parts</div>
+                        <div className="font-semibold">{partsCalculations.totalParts}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-4 w-4 text-blue-600" />
+                      <div>
+                        <div className="text-sm text-muted-foreground">Parts Cost</div>
+                        <div className="font-semibold">${partsCalculations.totalPartsCost.toFixed(2)}</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-4 w-4 text-green-600" />
+                      <div>
+                        <div className="text-sm text-muted-foreground">Parts Sell Price</div>
+                        <div className="font-semibold">${partsCalculations.totalPartsSellPrice.toFixed(2)}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-purple-600" />
+                      <div>
+                        <div className="text-sm text-muted-foreground">Parts Margin</div>
+                        <div className="font-semibold">
+                          ${partsMargin.toFixed(2)} ({partsMarginPercent.toFixed(1)}%)
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              ) : (
+                <div className="text-center py-4">
+                  <Package className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-50" />
+                  <p className="text-sm text-muted-foreground">No parts added to job lines yet</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Add parts to individual job lines to see totals here
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );
