@@ -1,12 +1,12 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Plus, Save } from 'lucide-react';
 import { WorkOrderPartFormValues, PART_CATEGORIES, PART_STATUSES, WARRANTY_DURATIONS } from '@/types/workOrderPart';
 import { saveWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
@@ -25,13 +25,14 @@ export function NonInventoryPartsTab({
   onAddPart,
   onPartSaved
 }: NonInventoryPartsTabProps) {
-  const [formData, setFormData] = useState<Partial<WorkOrderPartFormValues>>({
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState<WorkOrderPartFormValues>({
     partName: '',
     partNumber: '',
     supplierName: '',
     supplierCost: 0,
     supplierSuggestedRetailPrice: 0,
-    markupPercentage: 100,
+    markupPercentage: 25,
     retailPrice: 0,
     customerPrice: 0,
     quantity: 1,
@@ -41,125 +42,136 @@ export function NonInventoryPartsTab({
     coreChargeAmount: 0,
     coreChargeApplied: false,
     warrantyDuration: '',
-    installDate: '',
-    installedBy: '',
     status: 'ordered',
     isStockItem: false,
-    invoiceNumber: '',
-    poLine: '',
     notes: '',
-    notesInternal: ''
+    attachments: []
   });
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleInputChange = (field: keyof WorkOrderPartFormValues, value: any) => {
-    setFormData(prev => {
-      const updated = { ...prev, [field]: value };
-      
-      // Auto-calculate retail price when supplier cost or markup changes
-      if (field === 'supplierCost' || field === 'markupPercentage') {
-        const supplierCost = field === 'supplierCost' ? value : (updated.supplierCost || 0);
-        const markup = field === 'markupPercentage' ? value : (updated.markupPercentage || 0);
-        updated.retailPrice = supplierCost * (1 + markup / 100);
-        updated.customerPrice = updated.retailPrice; // Default customer price to retail price
-      }
-      
-      return updated;
-    });
+  const calculatePrices = (cost: number, markup: number, suggestedRetail?: number) => {
+    const retailPrice = suggestedRetail && suggestedRetail > 0 ? suggestedRetail : cost * (1 + markup / 100);
+    const customerPrice = retailPrice;
+    
+    setFormData(prev => ({
+      ...prev,
+      retailPrice,
+      customerPrice
+    }));
   };
 
-  const handleSubmit = async (saveDirectly: boolean = false) => {
-    if (!formData.partName || !formData.supplierCost) {
-      toast.error('Part name and supplier cost are required');
+  const handleCostChange = (value: number) => {
+    setFormData(prev => ({ ...prev, supplierCost: value }));
+    calculatePrices(value, formData.markupPercentage, formData.supplierSuggestedRetailPrice);
+  };
+
+  const handleMarkupChange = (value: number) => {
+    setFormData(prev => ({ ...prev, markupPercentage: value }));
+    calculatePrices(formData.supplierCost, value, formData.supplierSuggestedRetailPrice);
+  };
+
+  const handleSuggestedRetailChange = (value: number) => {
+    setFormData(prev => ({ ...prev, supplierSuggestedRetailPrice: value }));
+    calculatePrices(formData.supplierCost, formData.markupPercentage, value);
+  };
+
+  const handleAddToList = () => {
+    if (!formData.partName.trim()) {
+      toast.error('Part name is required');
       return;
     }
 
-    const partData: WorkOrderPartFormValues = {
-      partName: formData.partName!,
-      partNumber: formData.partNumber || '',
-      supplierName: formData.supplierName || '',
-      supplierCost: formData.supplierCost!,
-      supplierSuggestedRetailPrice: formData.supplierSuggestedRetailPrice || 0,
-      markupPercentage: formData.markupPercentage || 100,
-      retailPrice: formData.retailPrice || 0,
-      customerPrice: formData.customerPrice || 0,
-      quantity: formData.quantity || 1,
+    onAddPart(formData);
+    
+    // Reset form
+    setFormData({
+      partName: '',
+      partNumber: '',
+      supplierName: '',
+      supplierCost: 0,
+      supplierSuggestedRetailPrice: 0,
+      markupPercentage: 25,
+      retailPrice: 0,
+      customerPrice: 0,
+      quantity: 1,
       partType: 'non-inventory',
-      category: formData.category || '',
-      isTaxable: formData.isTaxable ?? true,
-      coreChargeAmount: formData.coreChargeAmount || 0,
-      coreChargeApplied: formData.coreChargeApplied || false,
-      warrantyDuration: formData.warrantyDuration || '',
-      installDate: formData.installDate || '',
-      installedBy: formData.installedBy || '',
-      status: formData.status || 'ordered',
+      category: '',
+      isTaxable: true,
+      coreChargeAmount: 0,
+      coreChargeApplied: false,
+      warrantyDuration: '',
+      status: 'ordered',
       isStockItem: false,
-      invoiceNumber: formData.invoiceNumber || '',
-      poLine: formData.poLine || '',
-      notes: formData.notes || '',
-      notesInternal: formData.notesInternal || ''
-    };
+      notes: '',
+      attachments: []
+    });
+    
+    toast.success('Part added to list');
+  };
 
-    if (saveDirectly) {
-      setIsSubmitting(true);
-      try {
-        await saveWorkOrderPart(workOrderId, jobLineId, partData);
-        toast.success('Part saved successfully');
-        onPartSaved();
-        // Reset form
-        setFormData({
-          partName: '',
-          partNumber: '',
-          supplierName: '',
-          supplierCost: 0,
-          supplierSuggestedRetailPrice: 0,
-          markupPercentage: 100,
-          retailPrice: 0,
-          customerPrice: 0,
-          quantity: 1,
-          partType: 'non-inventory',
-          category: '',
-          isTaxable: true,
-          coreChargeAmount: 0,
-          coreChargeApplied: false,
-          warrantyDuration: '',
-          installDate: '',
-          installedBy: '',
-          status: 'ordered',
-          isStockItem: false,
-          invoiceNumber: '',
-          poLine: '',
-          notes: '',
-          notesInternal: ''
-        });
-      } catch (error) {
-        console.error('Error saving part:', error);
-        toast.error('Failed to save part');
-      } finally {
-        setIsSubmitting(false);
-      }
-    } else {
-      onAddPart(partData);
-      toast.success('Part added to list');
+  const handleSaveDirectly = async () => {
+    if (!formData.partName.trim()) {
+      toast.error('Part name is required');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      console.log('Saving non-inventory part:', formData);
+      await saveWorkOrderPart(workOrderId, jobLineId, formData);
+      
+      // Reset form
+      setFormData({
+        partName: '',
+        partNumber: '',
+        supplierName: '',
+        supplierCost: 0,
+        supplierSuggestedRetailPrice: 0,
+        markupPercentage: 25,
+        retailPrice: 0,
+        customerPrice: 0,
+        quantity: 1,
+        partType: 'non-inventory',
+        category: '',
+        isTaxable: true,
+        coreChargeAmount: 0,
+        coreChargeApplied: false,
+        warrantyDuration: '',
+        status: 'ordered',
+        isStockItem: false,
+        notes: '',
+        attachments: []
+      });
+      
+      toast.success('Part saved successfully');
+      onPartSaved();
+    } catch (error) {
+      console.error('Error saving part:', error);
+      toast.error('Failed to save part: ' + (error as Error).message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  const totalPrice = formData.quantity * formData.customerPrice;
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Non-Inventory Part Details</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <span>Add Non-Inventory Part</span>
+          <Badge variant="outline">{formData.partType}</Badge>
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Basic Information */}
+          {/* Basic Info */}
           <div className="space-y-2">
             <Label htmlFor="partName">Part Name *</Label>
             <Input
               id="partName"
+              value={formData.partName}
+              onChange={(e) => setFormData(prev => ({ ...prev, partName: e.target.value }))}
               placeholder="Enter part name"
-              value={formData.partName || ''}
-              onChange={(e) => handleInputChange('partName', e.target.value)}
             />
           </div>
 
@@ -167,30 +179,33 @@ export function NonInventoryPartsTab({
             <Label htmlFor="partNumber">Part Number</Label>
             <Input
               id="partNumber"
-              placeholder="Enter part number"
               value={formData.partNumber || ''}
-              onChange={(e) => handleInputChange('partNumber', e.target.value)}
+              onChange={(e) => setFormData(prev => ({ ...prev, partNumber: e.target.value }))}
+              placeholder="Enter part number"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="supplierName">Supplier Name</Label>
+            <Label htmlFor="supplierName">Supplier</Label>
             <Input
               id="supplierName"
-              placeholder="Enter supplier name"
               value={formData.supplierName || ''}
-              onChange={(e) => handleInputChange('supplierName', e.target.value)}
+              onChange={(e) => setFormData(prev => ({ ...prev, supplierName: e.target.value }))}
+              placeholder="Enter supplier name"
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="category">Category</Label>
-            <Select value={formData.category || ''} onValueChange={(value) => handleInputChange('category', value)}>
+            <Select
+              value={formData.category || ''}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
-                {PART_CATEGORIES.map((category) => (
+                {PART_CATEGORIES.map(category => (
                   <SelectItem key={category} value={category}>
                     {category}
                   </SelectItem>
@@ -199,52 +214,39 @@ export function NonInventoryPartsTab({
             </Select>
           </div>
 
-          {/* Pricing Information */}
+          {/* Pricing */}
           <div className="space-y-2">
-            <Label htmlFor="supplierCost">Supplier Cost *</Label>
+            <Label htmlFor="supplierCost">Supplier Cost</Label>
             <Input
               id="supplierCost"
               type="number"
               step="0.01"
-              placeholder="0"
-              value={formData.supplierCost || ''}
-              onChange={(e) => handleInputChange('supplierCost', parseFloat(e.target.value) || 0)}
+              min="0"
+              value={formData.supplierCost}
+              onChange={(e) => handleCostChange(parseFloat(e.target.value) || 0)}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="supplierSuggestedRetailPrice">Supplier Suggested Retail Price</Label>
+            <Label htmlFor="suggestedRetail">Suggested Retail Price</Label>
             <Input
-              id="supplierSuggestedRetailPrice"
+              id="suggestedRetail"
               type="number"
               step="0.01"
-              placeholder="0"
+              min="0"
               value={formData.supplierSuggestedRetailPrice || ''}
-              onChange={(e) => handleInputChange('supplierSuggestedRetailPrice', parseFloat(e.target.value) || 0)}
+              onChange={(e) => handleSuggestedRetailChange(parseFloat(e.target.value) || 0)}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="markupPercentage">Markup %</Label>
+            <Label htmlFor="markup">Markup %</Label>
             <Input
-              id="markupPercentage"
+              id="markup"
               type="number"
-              step="0.01"
-              placeholder="0"
-              value={formData.markupPercentage || ''}
-              onChange={(e) => handleInputChange('markupPercentage', parseFloat(e.target.value) || 0)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="retailPrice">Retail Price</Label>
-            <Input
-              id="retailPrice"
-              type="number"
-              step="0.01"
-              placeholder="0"
-              value={formData.retailPrice || ''}
-              onChange={(e) => handleInputChange('retailPrice', parseFloat(e.target.value) || 0)}
+              min="0"
+              value={formData.markupPercentage}
+              onChange={(e) => handleMarkupChange(parseFloat(e.target.value) || 0)}
             />
           </div>
 
@@ -254,9 +256,9 @@ export function NonInventoryPartsTab({
               id="customerPrice"
               type="number"
               step="0.01"
-              placeholder="0"
-              value={formData.customerPrice || ''}
-              onChange={(e) => handleInputChange('customerPrice', parseFloat(e.target.value) || 0)}
+              min="0"
+              value={formData.customerPrice}
+              onChange={(e) => setFormData(prev => ({ ...prev, customerPrice: parseFloat(e.target.value) || 0 }))}
             />
           </div>
 
@@ -265,20 +267,23 @@ export function NonInventoryPartsTab({
             <Input
               id="quantity"
               type="number"
-              placeholder="1"
-              value={formData.quantity || ''}
-              onChange={(e) => handleInputChange('quantity', parseInt(e.target.value) || 1)}
+              min="1"
+              value={formData.quantity}
+              onChange={(e) => setFormData(prev => ({ ...prev, quantity: parseInt(e.target.value) || 1 }))}
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="status">Status</Label>
-            <Select value={formData.status || ''} onValueChange={(value) => handleInputChange('status', value)}>
+            <Select
+              value={formData.status}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as any }))}
+            >
               <SelectTrigger>
-                <SelectValue placeholder="Select status" />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {PART_STATUSES.map((status) => (
+                {PART_STATUSES.map(status => (
                   <SelectItem key={status} value={status}>
                     {status.charAt(0).toUpperCase() + status.slice(1)}
                   </SelectItem>
@@ -288,13 +293,16 @@ export function NonInventoryPartsTab({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="warrantyDuration">Warranty Duration</Label>
-            <Select value={formData.warrantyDuration || ''} onValueChange={(value) => handleInputChange('warrantyDuration', value)}>
+            <Label htmlFor="warranty">Warranty</Label>
+            <Select
+              value={formData.warrantyDuration || ''}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, warrantyDuration: value }))}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select warranty" />
               </SelectTrigger>
               <SelectContent>
-                {WARRANTY_DURATIONS.map((duration) => (
+                {WARRANTY_DURATIONS.map(duration => (
                   <SelectItem key={duration} value={duration}>
                     {duration}
                   </SelectItem>
@@ -302,126 +310,47 @@ export function NonInventoryPartsTab({
               </SelectContent>
             </Select>
           </div>
-
-          {/* Installation Information */}
-          <div className="space-y-2">
-            <Label htmlFor="installDate">Install Date</Label>
-            <Input
-              id="installDate"
-              type="date"
-              value={formData.installDate || ''}
-              onChange={(e) => handleInputChange('installDate', e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="installedBy">Installed By (Technician)</Label>
-            <Input
-              id="installedBy"
-              placeholder="Enter technician name"
-              value={formData.installedBy || ''}
-              onChange={(e) => handleInputChange('installedBy', e.target.value)}
-            />
-          </div>
-
-          {/* Reference Information */}
-          <div className="space-y-2">
-            <Label htmlFor="invoiceNumber">Invoice Number</Label>
-            <Input
-              id="invoiceNumber"
-              placeholder="Enter invoice number"
-              value={formData.invoiceNumber || ''}
-              onChange={(e) => handleInputChange('invoiceNumber', e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="poLine">PO Line</Label>
-            <Input
-              id="poLine"
-              placeholder="Enter PO line"
-              value={formData.poLine || ''}
-              onChange={(e) => handleInputChange('poLine', e.target.value)}
-            />
-          </div>
-
-          {/* Core Charge Information */}
-          <div className="space-y-2">
-            <Label htmlFor="coreChargeAmount">Core Charge Amount</Label>
-            <Input
-              id="coreChargeAmount"
-              type="number"
-              step="0.01"
-              placeholder="0"
-              value={formData.coreChargeAmount || ''}
-              onChange={(e) => handleInputChange('coreChargeAmount', parseFloat(e.target.value) || 0)}
-            />
-          </div>
         </div>
 
-        {/* Checkboxes */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="isTaxable"
-              checked={formData.isTaxable ?? true}
-              onCheckedChange={(checked) => handleInputChange('isTaxable', checked)}
-            />
-            <Label htmlFor="isTaxable">Taxable?</Label>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="coreChargeApplied"
-              checked={formData.coreChargeApplied || false}
-              onCheckedChange={(checked) => handleInputChange('coreChargeApplied', checked)}
-            />
-            <Label htmlFor="coreChargeApplied">Core Charge Applied</Label>
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="notes">Notes</Label>
+          <Textarea
+            id="notes"
+            value={formData.notes || ''}
+            onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+            placeholder="Additional notes..."
+            rows={3}
+          />
         </div>
 
-        {/* Notes Section */}
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea
-              id="notes"
-              placeholder="Enter any notes about this part"
-              value={formData.notes || ''}
-              onChange={(e) => handleInputChange('notes', e.target.value)}
-              rows={3}
-            />
+        {/* Price Summary */}
+        <div className="bg-muted p-4 rounded-lg">
+          <div className="flex justify-between items-center">
+            <span className="font-medium">Total Price:</span>
+            <span className="text-lg font-bold">${totalPrice.toFixed(2)}</span>
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="notesInternal">Internal Notes</Label>
-            <Textarea
-              id="notesInternal"
-              placeholder="Enter internal notes (not visible to customer)"
-              value={formData.notesInternal || ''}
-              onChange={(e) => handleInputChange('notesInternal', e.target.value)}
-              rows={2}
-            />
+          <div className="text-sm text-muted-foreground">
+            {formData.quantity} × ${formData.customerPrice.toFixed(2)}
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-2 pt-4">
+        <div className="flex gap-2 justify-end">
           <Button
             variant="outline"
-            onClick={() => handleSubmit(false)}
+            onClick={handleAddToList}
             className="flex items-center gap-2"
           >
             <Plus className="h-4 w-4" />
-            Add Another Part
+            Add to List
           </Button>
           <Button
-            onClick={() => handleSubmit(true)}
+            onClick={handleSaveDirectly}
             disabled={isSubmitting}
             className="flex items-center gap-2"
           >
             <Save className="h-4 w-4" />
-            {isSubmitting ? 'Saving...' : 'Save Part to Work Order'}
+            {isSubmitting ? 'Saving...' : 'Save Part'}
           </Button>
         </div>
       </CardContent>
