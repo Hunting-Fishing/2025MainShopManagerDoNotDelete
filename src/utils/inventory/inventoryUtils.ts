@@ -60,7 +60,6 @@ export const formatInventoryItem = (dbItem: any): InventoryItemExtended => {
     // Product Details - only including properties that exist in InventoryItemExtended type
     weight: dbItem.weight || 0,
     dimensions: dbItem.dimensions || '',
-    material: dbItem.material || '',
     modelYear: dbItem.model_year || '',
     oemPartNumber: dbItem.oem_part_number || '',
     universalPart: dbItem.universal_part || false,
