@@ -54,9 +54,9 @@ export const formatInventoryItem = (dbItem: any): InventoryItemExtended => {
     onHold: dbItem.on_hold || 0,
     onOrder: dbItem.on_order || 0,
     
-    // Pricing - using camelCase versions that are in the type definition
-    sellPricePerUnit: dbItem.sell_price_per_unit || 0,
-    costPerUnit: dbItem.cost_per_unit || 0,
+    // Pricing - using correct property names from type definition
+    sell_price_per_unit: dbItem.sell_price_per_unit || 0,
+    cost_per_unit: dbItem.cost_per_unit || 0,
     marginMarkup: dbItem.margin_markup || 0,
     
     // Taxes & Fees
