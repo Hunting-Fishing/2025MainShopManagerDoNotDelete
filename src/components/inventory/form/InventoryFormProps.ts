@@ -3,7 +3,7 @@ import { InventoryItemExtended } from "@/types/inventory";
 
 export interface InventoryFormProps {
   item?: InventoryItemExtended;
-  onSubmit: (formData: Omit<InventoryItemExtended, "id">) => Promise<void>;
+  onSubmit: (formData: Partial<InventoryItemExtended>) => Promise<void>;
   onCancel?: () => void;
   isLoading?: boolean;
 }
