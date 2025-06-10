@@ -3,24 +3,28 @@ import { supabase } from "@/integrations/supabase/client";
 import { InventoryItemExtended } from "@/types/inventory";
 import { formatInventoryItem } from "@/utils/inventory/inventoryUtils";
 
-// Get all inventory items
+/**
+ * Get all inventory items
+ */
 export const getInventoryItems = async (): Promise<InventoryItemExtended[]> => {
   try {
     const { data, error } = await supabase
       .from('inventory')
       .select('*')
-      .order('name');
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
-    
-    return (data || []).map(formatInventoryItem);
+
+    return data?.map(formatInventoryItem) || [];
   } catch (error) {
     console.error("Error fetching inventory items:", error);
     throw error;
   }
 };
 
-// Get inventory item by ID
+/**
+ * Get inventory item by ID
+ */
 export const getInventoryItemById = async (id: string): Promise<InventoryItemExtended | null> => {
   try {
     const { data, error } = await supabase
@@ -39,55 +43,60 @@ export const getInventoryItemById = async (id: string): Promise<InventoryItemExt
   }
 };
 
-// Create new inventory item
-export const createInventoryItem = async (item: Omit<InventoryItemExtended, 'id' | 'created_at' | 'updated_at'>): Promise<InventoryItemExtended> => {
+/**
+ * Create a new inventory item
+ */
+export const createInventoryItem = async (
+  item: Omit<InventoryItemExtended, 'id' | 'created_at' | 'updated_at'>
+): Promise<InventoryItemExtended> => {
   try {
+    // Map form fields to database columns
     const dbItem = {
       name: item.name,
       sku: item.sku,
       description: item.description,
-      unit_price: item.unit_price,
+      unit_price: item.unit_price || 0,
       category: item.category,
+      subcategory: item.subcategory,
       supplier: item.supplier,
       status: item.status,
-      quantity: item.quantity,
-      reorder_point: item.reorder_point,
+      quantity: item.quantity || 0,
+      reorder_point: item.reorder_point || 0,
       location: item.location,
       
-      // Additional fields
+      // Basic Info fields
       part_number: item.partNumber,
       barcode: item.barcode,
-      subcategory: item.subcategory,
       manufacturer: item.manufacturer,
       vehicle_compatibility: item.vehicleCompatibility,
       
       // Inventory Management
       measurement_unit: item.measurementUnit,
-      on_hold: item.onHold,
-      on_order: item.onOrder,
-      min_stock_level: item.minStockLevel,
-      max_stock_level: item.maxStockLevel,
+      on_hold: item.onHold || 0,
+      on_order: item.onOrder || 0,
+      min_stock_level: item.minStockLevel || 0,
+      max_stock_level: item.maxStockLevel || 0,
       
       // Pricing
-      sell_price_per_unit: item.sell_price_per_unit,
-      cost_per_unit: item.cost_per_unit,
-      margin_markup: item.marginMarkup,
+      sell_price_per_unit: item.sell_price_per_unit || 0,
+      cost_per_unit: item.cost_per_unit || 0,
+      margin_markup: item.marginMarkup || 0,
       
       // Taxes & Fees
-      tax_rate: item.taxRate,
-      tax_exempt: item.taxExempt,
-      environmental_fee: item.environmentalFee,
-      core_charge: item.coreCharge,
-      hazmat_fee: item.hazmatFee,
+      tax_rate: item.taxRate || 0,
+      tax_exempt: item.taxExempt || false,
+      environmental_fee: item.environmentalFee || 0,
+      core_charge: item.coreCharge || 0,
+      hazmat_fee: item.hazmatFee || 0,
       
       // Product Details
-      weight: item.weight,
+      weight: item.weight || 0,
       dimensions: item.dimensions,
       color: item.color,
       material: item.material,
       model_year: item.modelYear,
       oem_part_number: item.oemPartNumber,
-      universal_part: item.universalPart,
+      universal_part: item.universalPart || false,
       warranty_period: item.warrantyPeriod,
       
       // Additional Info
@@ -103,7 +112,7 @@ export const createInventoryItem = async (item: Omit<InventoryItemExtended, 'id'
       .single();
 
     if (error) throw error;
-    
+
     return formatInventoryItem(data);
   } catch (error) {
     console.error("Error creating inventory item:", error);
@@ -111,63 +120,70 @@ export const createInventoryItem = async (item: Omit<InventoryItemExtended, 'id'
   }
 };
 
-// Update inventory item
-export const updateInventoryItem = async (id: string, updates: Partial<InventoryItemExtended>): Promise<InventoryItemExtended> => {
+/**
+ * Update an existing inventory item
+ */
+export const updateInventoryItem = async (
+  id: string,
+  updates: Partial<InventoryItemExtended>
+): Promise<InventoryItemExtended> => {
   try {
-    const dbUpdates: any = {};
-    
-    // Map form fields to database fields
-    if (updates.name !== undefined) dbUpdates.name = updates.name;
-    if (updates.sku !== undefined) dbUpdates.sku = updates.sku;
-    if (updates.description !== undefined) dbUpdates.description = updates.description;
-    if (updates.unit_price !== undefined) dbUpdates.unit_price = updates.unit_price;
-    if (updates.category !== undefined) dbUpdates.category = updates.category;
-    if (updates.supplier !== undefined) dbUpdates.supplier = updates.supplier;
-    if (updates.status !== undefined) dbUpdates.status = updates.status;
-    if (updates.quantity !== undefined) dbUpdates.quantity = updates.quantity;
-    if (updates.reorder_point !== undefined) dbUpdates.reorder_point = updates.reorder_point;
-    if (updates.location !== undefined) dbUpdates.location = updates.location;
-    
-    // Additional fields
-    if (updates.partNumber !== undefined) dbUpdates.part_number = updates.partNumber;
-    if (updates.barcode !== undefined) dbUpdates.barcode = updates.barcode;
-    if (updates.subcategory !== undefined) dbUpdates.subcategory = updates.subcategory;
-    if (updates.manufacturer !== undefined) dbUpdates.manufacturer = updates.manufacturer;
-    if (updates.vehicleCompatibility !== undefined) dbUpdates.vehicle_compatibility = updates.vehicleCompatibility;
-    
-    // Inventory Management
-    if (updates.measurementUnit !== undefined) dbUpdates.measurement_unit = updates.measurementUnit;
-    if (updates.onHold !== undefined) dbUpdates.on_hold = updates.onHold;
-    if (updates.onOrder !== undefined) dbUpdates.on_order = updates.onOrder;
-    if (updates.minStockLevel !== undefined) dbUpdates.min_stock_level = updates.minStockLevel;
-    if (updates.maxStockLevel !== undefined) dbUpdates.max_stock_level = updates.maxStockLevel;
-    
-    // Pricing
-    if (updates.sell_price_per_unit !== undefined) dbUpdates.sell_price_per_unit = updates.sell_price_per_unit;
-    if (updates.cost_per_unit !== undefined) dbUpdates.cost_per_unit = updates.cost_per_unit;
-    if (updates.marginMarkup !== undefined) dbUpdates.margin_markup = updates.marginMarkup;
-    
-    // Taxes & Fees
-    if (updates.taxRate !== undefined) dbUpdates.tax_rate = updates.taxRate;
-    if (updates.taxExempt !== undefined) dbUpdates.tax_exempt = updates.taxExempt;
-    if (updates.environmentalFee !== undefined) dbUpdates.environmental_fee = updates.environmentalFee;
-    if (updates.coreCharge !== undefined) dbUpdates.core_charge = updates.coreCharge;
-    if (updates.hazmatFee !== undefined) dbUpdates.hazmat_fee = updates.hazmatFee;
-    
-    // Product Details
-    if (updates.weight !== undefined) dbUpdates.weight = updates.weight;
-    if (updates.dimensions !== undefined) dbUpdates.dimensions = updates.dimensions;
-    if (updates.color !== undefined) dbUpdates.color = updates.color;
-    if (updates.material !== undefined) dbUpdates.material = updates.material;
-    if (updates.modelYear !== undefined) dbUpdates.model_year = updates.modelYear;
-    if (updates.oemPartNumber !== undefined) dbUpdates.oem_part_number = updates.oemPartNumber;
-    if (updates.universalPart !== undefined) dbUpdates.universal_part = updates.universalPart;
-    if (updates.warrantyPeriod !== undefined) dbUpdates.warranty_period = updates.warrantyPeriod;
-    
-    // Additional Info
-    if (updates.dateBought !== undefined) dbUpdates.date_bought = updates.dateBought;
-    if (updates.dateLast !== undefined) dbUpdates.date_last = updates.dateLast;
-    if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
+    // Map form fields to database columns, ensuring category, subcategory, and status are properly mapped
+    const dbUpdates = {
+      ...(updates.name !== undefined && { name: updates.name }),
+      ...(updates.sku !== undefined && { sku: updates.sku }),
+      ...(updates.description !== undefined && { description: updates.description }),
+      ...(updates.unit_price !== undefined && { unit_price: updates.unit_price }),
+      ...(updates.category !== undefined && { category: updates.category }),
+      ...(updates.subcategory !== undefined && { subcategory: updates.subcategory }),
+      ...(updates.supplier !== undefined && { supplier: updates.supplier }),
+      ...(updates.status !== undefined && { status: updates.status }),
+      ...(updates.quantity !== undefined && { quantity: updates.quantity }),
+      ...(updates.reorder_point !== undefined && { reorder_point: updates.reorder_point }),
+      ...(updates.location !== undefined && { location: updates.location }),
+      
+      // Basic Info fields
+      ...(updates.partNumber !== undefined && { part_number: updates.partNumber }),
+      ...(updates.barcode !== undefined && { barcode: updates.barcode }),
+      ...(updates.manufacturer !== undefined && { manufacturer: updates.manufacturer }),
+      ...(updates.vehicleCompatibility !== undefined && { vehicle_compatibility: updates.vehicleCompatibility }),
+      
+      // Inventory Management
+      ...(updates.measurementUnit !== undefined && { measurement_unit: updates.measurementUnit }),
+      ...(updates.onHold !== undefined && { on_hold: updates.onHold }),
+      ...(updates.onOrder !== undefined && { on_order: updates.onOrder }),
+      ...(updates.minStockLevel !== undefined && { min_stock_level: updates.minStockLevel }),
+      ...(updates.maxStockLevel !== undefined && { max_stock_level: updates.maxStockLevel }),
+      
+      // Pricing
+      ...(updates.sell_price_per_unit !== undefined && { sell_price_per_unit: updates.sell_price_per_unit }),
+      ...(updates.cost_per_unit !== undefined && { cost_per_unit: updates.cost_per_unit }),
+      ...(updates.marginMarkup !== undefined && { margin_markup: updates.marginMarkup }),
+      
+      // Taxes & Fees
+      ...(updates.taxRate !== undefined && { tax_rate: updates.taxRate }),
+      ...(updates.taxExempt !== undefined && { tax_exempt: updates.taxExempt }),
+      ...(updates.environmentalFee !== undefined && { environmental_fee: updates.environmentalFee }),
+      ...(updates.coreCharge !== undefined && { core_charge: updates.coreCharge }),
+      ...(updates.hazmatFee !== undefined && { hazmat_fee: updates.hazmatFee }),
+      
+      // Product Details
+      ...(updates.weight !== undefined && { weight: updates.weight }),
+      ...(updates.dimensions !== undefined && { dimensions: updates.dimensions }),
+      ...(updates.color !== undefined && { color: updates.color }),
+      ...(updates.material !== undefined && { material: updates.material }),
+      ...(updates.modelYear !== undefined && { model_year: updates.modelYear }),
+      ...(updates.oemPartNumber !== undefined && { oem_part_number: updates.oemPartNumber }),
+      ...(updates.universalPart !== undefined && { universal_part: updates.universalPart }),
+      ...(updates.warrantyPeriod !== undefined && { warranty_period: updates.warrantyPeriod }),
+      
+      // Additional Info
+      ...(updates.dateBought !== undefined && { date_bought: updates.dateBought }),
+      ...(updates.dateLast !== undefined && { date_last: updates.dateLast }),
+      ...(updates.notes !== undefined && { notes: updates.notes })
+    };
+
+    console.log("Updating inventory item with:", { id, dbUpdates });
 
     const { data, error } = await supabase
       .from('inventory')
@@ -177,7 +193,7 @@ export const updateInventoryItem = async (id: string, updates: Partial<Inventory
       .single();
 
     if (error) throw error;
-    
+
     return formatInventoryItem(data);
   } catch (error) {
     console.error("Error updating inventory item:", error);
@@ -185,26 +201,29 @@ export const updateInventoryItem = async (id: string, updates: Partial<Inventory
   }
 };
 
-// Update inventory quantity
-export const updateInventoryQuantity = async (id: string, quantity: number): Promise<InventoryItemExtended> => {
+/**
+ * Update inventory quantity
+ */
+export const updateInventoryQuantity = async (
+  id: string,
+  quantity: number
+): Promise<void> => {
   try {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('inventory')
       .update({ quantity })
-      .eq('id', id)
-      .select()
-      .single();
+      .eq('id', id);
 
     if (error) throw error;
-    
-    return formatInventoryItem(data);
   } catch (error) {
     console.error("Error updating inventory quantity:", error);
     throw error;
   }
 };
 
-// Delete inventory item
+/**
+ * Delete an inventory item
+ */
 export const deleteInventoryItem = async (id: string): Promise<void> => {
   try {
     const { error } = await supabase
