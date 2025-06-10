@@ -1,5 +1,4 @@
 
-
 // Export all inventory-related types from a single file
 
 // Basic inventory item interface
@@ -130,4 +129,3 @@ export * from './transactions';
 export * from './vendors';
 export * from './purchaseOrders';
 export * from './locations';
-
