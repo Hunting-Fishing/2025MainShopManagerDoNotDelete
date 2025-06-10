@@ -55,8 +55,8 @@ export const formatInventoryItem = (dbItem: any): InventoryItemExtended => {
     onOrder: dbItem.on_order || 0,
     
     // Pricing - using correct property names from type definition
-    sellPricePerUnit: dbItem.sell_price_per_unit || 0,
-    costPerUnit: dbItem.cost_per_unit || 0,
+    sell_price_per_unit: dbItem.sell_price_per_unit || 0,
+    cost_per_unit: dbItem.cost_per_unit || 0,
     marginMarkup: dbItem.margin_markup || 0,
     
     // Taxes & Fees
