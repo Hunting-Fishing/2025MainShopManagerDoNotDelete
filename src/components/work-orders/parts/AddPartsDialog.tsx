@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 
 interface AddPartsDialogProps {
   workOrderId: string;
+  jobLineId?: string;
   onPartsAdd: () => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -22,6 +23,7 @@ interface AddPartsDialogProps {
 
 export function AddPartsDialog({
   workOrderId,
+  jobLineId,
   onPartsAdd,
   open,
   onOpenChange
@@ -32,7 +34,7 @@ export function AddPartsDialog({
     try {
       setIsSubmitting(true);
       
-      const success = await saveWorkOrderPart(workOrderId, partData);
+      const success = await saveWorkOrderPart(workOrderId, partData, jobLineId);
       
       if (success) {
         toast.success('Part added successfully');

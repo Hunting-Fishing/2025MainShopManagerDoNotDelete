@@ -1,25 +1,22 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { WorkOrderPartFormValues, PART_CATEGORIES, PART_STATUSES, WARRANTY_DURATIONS } from '@/types/workOrderPart';
-import { Badge } from '@/components/ui/badge';
-import { Loader2 } from 'lucide-react';
 
 const partFormSchema = z.object({
   partName: z.string().min(1, 'Part name is required'),
   partNumber: z.string().optional(),
   supplierName: z.string().optional(),
-  supplierCost: z.number().min(0, 'Cost must be positive'),
-  markupPercentage: z.number().min(0, 'Markup must be positive'),
-  retailPrice: z.number().min(0, 'Retail price must be positive'),
+  supplierCost: z.number().min(0, 'Supplier cost must be positive'),
+  markupPercentage: z.number().min(0, 'Markup percentage must be positive'),
   customerPrice: z.number().min(0, 'Customer price must be positive'),
   quantity: z.number().min(1, 'Quantity must be at least 1'),
   partType: z.enum(['inventory', 'non-inventory']),
@@ -34,509 +31,325 @@ const partFormSchema = z.object({
   notesInternal: z.string().optional(),
   binLocation: z.string().optional(),
   warehouseLocation: z.string().optional(),
-  shelfLocation: z.string().optional()
+  shelfLocation: z.string().optional(),
 });
 
-type PartFormData = z.infer<typeof partFormSchema>;
-
 interface UnifiedPartEntryFormProps {
-  onSubmit: (data: WorkOrderPartFormValues) => Promise<void>;
+  onSubmit: (data: WorkOrderPartFormValues) => void;
   onCancel: () => void;
-  initialData?: Partial<WorkOrderPartFormValues>;
   isSubmitting?: boolean;
 }
 
 export function UnifiedPartEntryForm({
   onSubmit,
   onCancel,
-  initialData,
   isSubmitting = false
 }: UnifiedPartEntryFormProps) {
-  const [activeTab, setActiveTab] = useState<'basic' | 'pricing' | 'details' | 'location'>('basic');
-
-  const form = useForm<PartFormData>({
+  const form = useForm<WorkOrderPartFormValues>({
     resolver: zodResolver(partFormSchema),
     defaultValues: {
-      partName: initialData?.partName || '',
-      partNumber: initialData?.partNumber || '',
-      supplierName: initialData?.supplierName || '',
-      supplierCost: initialData?.supplierCost || 0,
-      markupPercentage: initialData?.markupPercentage || 25,
-      retailPrice: initialData?.retailPrice || 0,
-      customerPrice: initialData?.customerPrice || 0,
-      quantity: initialData?.quantity || 1,
-      partType: initialData?.partType || 'non-inventory',
-      category: initialData?.category || '',
-      isTaxable: initialData?.isTaxable || true,
-      coreChargeAmount: initialData?.coreChargeAmount || 0,
-      coreChargeApplied: initialData?.coreChargeApplied || false,
-      warrantyDuration: initialData?.warrantyDuration || '',
-      status: initialData?.status || 'ordered',
-      isStockItem: initialData?.isStockItem || false,
-      notes: initialData?.notes || '',
-      notesInternal: initialData?.notesInternal || '',
-      binLocation: initialData?.binLocation || '',
-      warehouseLocation: initialData?.warehouseLocation || '',
-      shelfLocation: initialData?.shelfLocation || ''
+      partName: '',
+      partNumber: '',
+      supplierName: '',
+      supplierCost: 0,
+      markupPercentage: 0,
+      retailPrice: 0,
+      customerPrice: 0,
+      quantity: 1,
+      partType: 'non-inventory',
+      category: '',
+      isTaxable: true,
+      coreChargeAmount: 0,
+      coreChargeApplied: false,
+      warrantyDuration: '',
+      status: 'ordered',
+      isStockItem: false,
+      notes: '',
+      notesInternal: '',
+      binLocation: '',
+      warehouseLocation: '',
+      shelfLocation: '',
+      attachments: [],
     }
   });
 
-  const handleSubmit = async (data: PartFormData) => {
+  const handleSubmit = (data: WorkOrderPartFormValues) => {
+    // Calculate retail price from supplier cost and markup
+    const retailPrice = data.supplierCost * (1 + data.markupPercentage / 100);
+    
     const formattedData: WorkOrderPartFormValues = {
       ...data,
-      dateAdded: new Date().toISOString(),
-      attachments: []
+      retailPrice,
+      // Remove dateAdded as it's not in the type definition
     };
-    await onSubmit(formattedData);
+    
+    onSubmit(formattedData);
   };
 
   const watchSupplierCost = form.watch('supplierCost');
   const watchMarkupPercentage = form.watch('markupPercentage');
 
-  // Auto-calculate retail price when cost or markup changes
+  // Auto-calculate customer price based on supplier cost and markup
   React.useEffect(() => {
-    const retailPrice = watchSupplierCost * (1 + watchMarkupPercentage / 100);
-    form.setValue('retailPrice', retailPrice);
-    form.setValue('customerPrice', retailPrice);
+    const calculatedPrice = watchSupplierCost * (1 + watchMarkupPercentage / 100);
+    form.setValue('customerPrice', calculatedPrice);
+    form.setValue('retailPrice', calculatedPrice);
   }, [watchSupplierCost, watchMarkupPercentage, form]);
 
-  const tabs = [
-    { id: 'basic', label: 'Basic Info' },
-    { id: 'pricing', label: 'Pricing' },
-    { id: 'details', label: 'Details' },
-    { id: 'location', label: 'Location' }
-  ];
-
   return (
-    <div className="space-y-6">
-      {/* Tab Navigation */}
-      <div className="flex space-x-1 border-b">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
-            className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
-              activeTab === tab.id
-                ? 'bg-primary text-primary-foreground border-b-2 border-primary'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+      {/* Basic Information */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="partName">Part Name *</Label>
+          <Input
+            id="partName"
+            {...form.register('partName')}
+            placeholder="Enter part name"
+          />
+          {form.formState.errors.partName && (
+            <p className="text-sm text-red-600 mt-1">
+              {form.formState.errors.partName.message}
+            </p>
+          )}
+        </div>
+        
+        <div>
+          <Label htmlFor="partNumber">Part Number</Label>
+          <Input
+            id="partNumber"
+            {...form.register('partNumber')}
+            placeholder="Enter part number"
+          />
+        </div>
       </div>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-          
-          {/* Basic Info Tab */}
-          {activeTab === 'basic' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="partName"
-                render={({ field }) => (
-                  <FormItem className="md:col-span-2">
-                    <FormLabel>Part Name *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter part name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+      {/* Supplier and Category */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="supplierName">Supplier</Label>
+          <Input
+            id="supplierName"
+            {...form.register('supplierName')}
+            placeholder="Enter supplier name"
+          />
+        </div>
+        
+        <div>
+          <Label htmlFor="category">Category</Label>
+          <Select onValueChange={(value) => form.setValue('category', value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              {PART_CATEGORIES.map((category) => (
+                <SelectItem key={category} value={category}>
+                  {category}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
-              <FormField
-                control={form.control}
-                name="partNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Part Number</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter part number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+      {/* Pricing */}
+      <div className="grid grid-cols-3 gap-4">
+        <div>
+          <Label htmlFor="supplierCost">Supplier Cost *</Label>
+          <Input
+            id="supplierCost"
+            type="number"
+            step="0.01"
+            {...form.register('supplierCost', { valueAsNumber: true })}
+            placeholder="0.00"
+          />
+        </div>
+        
+        <div>
+          <Label htmlFor="markupPercentage">Markup % *</Label>
+          <Input
+            id="markupPercentage"
+            type="number"
+            step="0.01"
+            {...form.register('markupPercentage', { valueAsNumber: true })}
+            placeholder="0.00"
+          />
+        </div>
+        
+        <div>
+          <Label htmlFor="customerPrice">Customer Price *</Label>
+          <Input
+            id="customerPrice"
+            type="number"
+            step="0.01"
+            {...form.register('customerPrice', { valueAsNumber: true })}
+            placeholder="0.00"
+          />
+        </div>
+      </div>
 
-              <FormField
-                control={form.control}
-                name="supplierName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Supplier</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter supplier name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+      {/* Quantity and Type */}
+      <div className="grid grid-cols-3 gap-4">
+        <div>
+          <Label htmlFor="quantity">Quantity *</Label>
+          <Input
+            id="quantity"
+            type="number"
+            min="1"
+            {...form.register('quantity', { valueAsNumber: true })}
+            placeholder="1"
+          />
+        </div>
+        
+        <div>
+          <Label htmlFor="partType">Part Type</Label>
+          <Select onValueChange={(value: 'inventory' | 'non-inventory') => form.setValue('partType', value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="inventory">Inventory</SelectItem>
+              <SelectItem value="non-inventory">Non-Inventory</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div>
+          <Label htmlFor="status">Status</Label>
+          <Select onValueChange={(value: any) => form.setValue('status', value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select status" />
+            </SelectTrigger>
+            <SelectContent>
+              {PART_STATUSES.map((status) => (
+                <SelectItem key={status} value={status}>
+                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {PART_CATEGORIES.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+      {/* Warranty and Options */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="warrantyDuration">Warranty Duration</Label>
+          <Select onValueChange={(value) => form.setValue('warrantyDuration', value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select warranty" />
+            </SelectTrigger>
+            <SelectContent>
+              {WARRANTY_DURATIONS.map((duration) => (
+                <SelectItem key={duration} value={duration}>
+                  {duration}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div>
+          <Label htmlFor="coreChargeAmount">Core Charge Amount</Label>
+          <Input
+            id="coreChargeAmount"
+            type="number"
+            step="0.01"
+            {...form.register('coreChargeAmount', { valueAsNumber: true })}
+            placeholder="0.00"
+          />
+        </div>
+      </div>
 
-              <FormField
-                control={form.control}
-                name="quantity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Quantity *</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        min="1"
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          )}
+      {/* Location Fields */}
+      <div className="grid grid-cols-3 gap-4">
+        <div>
+          <Label htmlFor="warehouseLocation">Warehouse</Label>
+          <Input
+            id="warehouseLocation"
+            {...form.register('warehouseLocation')}
+            placeholder="Warehouse location"
+          />
+        </div>
+        
+        <div>
+          <Label htmlFor="shelfLocation">Shelf</Label>
+          <Input
+            id="shelfLocation"
+            {...form.register('shelfLocation')}
+            placeholder="Shelf location"
+          />
+        </div>
+        
+        <div>
+          <Label htmlFor="binLocation">Bin</Label>
+          <Input
+            id="binLocation"
+            {...form.register('binLocation')}
+            placeholder="Bin location"
+          />
+        </div>
+      </div>
 
-          {/* Pricing Tab */}
-          {activeTab === 'pricing' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="supplierCost"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Supplier Cost *</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.01"
-                        min="0"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+      {/* Checkboxes */}
+      <div className="flex gap-6">
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="isTaxable"
+            {...form.register('isTaxable')}
+          />
+          <Label htmlFor="isTaxable">Taxable</Label>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="coreChargeApplied"
+            {...form.register('coreChargeApplied')}
+          />
+          <Label htmlFor="coreChargeApplied">Core Charge Applied</Label>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="isStockItem"
+            {...form.register('isStockItem')}
+          />
+          <Label htmlFor="isStockItem">Stock Item</Label>
+        </div>
+      </div>
 
-              <FormField
-                control={form.control}
-                name="markupPercentage"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Markup %</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.1"
-                        min="0"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+      {/* Notes */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="notes">Customer Notes</Label>
+          <Textarea
+            id="notes"
+            {...form.register('notes')}
+            placeholder="Notes visible to customer"
+            className="min-h-[80px]"
+          />
+        </div>
+        
+        <div>
+          <Label htmlFor="notesInternal">Internal Notes</Label>
+          <Textarea
+            id="notesInternal"
+            {...form.register('notesInternal')}
+            placeholder="Internal notes"
+            className="min-h-[80px]"
+          />
+        </div>
+      </div>
 
-              <FormField
-                control={form.control}
-                name="retailPrice"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Retail Price</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.01"
-                        min="0"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="customerPrice"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Customer Price *</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.01"
-                        min="0"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="isTaxable"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Taxable Item</FormLabel>
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="coreChargeApplied"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Core Charge Applied</FormLabel>
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              {form.watch('coreChargeApplied') && (
-                <FormField
-                  control={form.control}
-                  name="coreChargeAmount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Core Charge Amount</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          step="0.01"
-                          min="0"
-                          {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-            </div>
-          )}
-
-          {/* Details Tab */}
-          {activeTab === 'details' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {PART_STATUSES.map((status) => (
-                          <SelectItem key={status} value={status}>
-                            {status.charAt(0).toUpperCase() + status.slice(1)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="warrantyDuration"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Warranty Duration</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select warranty" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {WARRANTY_DURATIONS.map((duration) => (
-                          <SelectItem key={duration} value={duration}>
-                            {duration}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="isStockItem"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Stock Item</FormLabel>
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem className="md:col-span-2">
-                    <FormLabel>Customer Notes</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Notes visible to customer"
-                        className="min-h-[80px]"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="notesInternal"
-                render={({ field }) => (
-                  <FormItem className="md:col-span-2">
-                    <FormLabel>Internal Notes</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Internal notes (not visible to customer)"
-                        className="min-h-[80px]"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          )}
-
-          {/* Location Tab */}
-          {activeTab === 'location' && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="warehouseLocation"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Warehouse</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Warehouse location" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="shelfLocation"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Shelf</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Shelf location" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="binLocation"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Bin</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Bin location" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          )}
-
-          {/* Form Actions */}
-          <div className="flex justify-end space-x-4 pt-6 border-t">
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Adding Part...
-                </>
-              ) : (
-                'Add Part'
-              )}
-            </Button>
-          </div>
-        </form>
-      </Form>
-    </div>
+      {/* Form Actions */}
+      <div className="flex justify-end gap-3 pt-4 border-t">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Adding Part...' : 'Add Part'}
+        </Button>
+      </div>
+    </form>
   );
 }
