@@ -1,18 +1,15 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2 } from 'lucide-react';
-import { WorkOrderJobLine } from '@/types/jobLine';
 import { JobLineEditDialog } from './JobLineEditDialog';
 import { AddPartsDialog } from '../parts/AddPartsDialog';
 import { JobLinePartsDisplay } from './JobLinePartsDisplay';
 import { Badge } from '@/components/ui/badge';
-import {
-  calculateTotalJobLineAmount,
-  calculateTotalEstimatedHours,
-  calculateTotalPartsCost,
-} from '@/lib/utils';
+import { calculateTotalJobLineAmount, calculateTotalEstimatedHours, calculateTotalPartsCost } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { WorkOrderJobLine } from '@/types/jobLine';
 
 interface JobLinesGridProps {
   workOrderId: string;
@@ -21,9 +18,9 @@ interface JobLinesGridProps {
   isEditMode?: boolean;
 }
 
-export function JobLinesGrid({ workOrderId, jobLines, onJobLinesChange, isEditMode = false }) {
+export function JobLinesGrid({ workOrderId, jobLines, onJobLinesChange, isEditMode = false }: JobLinesGridProps) {
   const [editingJobLine, setEditingJobLine] = React.useState<WorkOrderJobLine | null>(null);
-  const [addingPartsToJobLine, setAddingPartsToJobLine] = React.useState<string | null>(null);
+  const [addingPartsToJobLine, setAddingPartsToJobLine] = React.useState<WorkOrderJobLine | null>(null);
   const [jobLinesWithParts, setJobLinesWithParts] = React.useState<WorkOrderJobLine[]>([]);
   const { toast } = useToast();
 
@@ -32,19 +29,19 @@ export function JobLinesGrid({ workOrderId, jobLines, onJobLinesChange, isEditMo
   }, [jobLines]);
 
   const loadJobLinesWithParts = () => {
-    const updatedJobLines = jobLines.map(jobLine => ({
+    const updatedJobLines = jobLines.map((jobLine) => ({
       ...jobLine,
-      totalAmount: calculateTotalJobLineAmount(jobLine),
+      totalAmount: calculateTotalJobLineAmount(jobLine)
     }));
     setJobLinesWithParts(updatedJobLines);
   };
 
   const handleRemoveJobLine = (jobLineId: string) => {
-    const updatedJobLines = jobLines.filter(jl => jl.id !== jobLineId);
+    const updatedJobLines = jobLines.filter((jl) => jl.id !== jobLineId);
     onJobLinesChange(updatedJobLines);
   };
 
-  const handlePartsAdded = () => {
+  const handlePartsAdd = () => {
     loadJobLinesWithParts();
     setAddingPartsToJobLine(null);
   };
@@ -63,21 +60,21 @@ export function JobLinesGrid({ workOrderId, jobLines, onJobLinesChange, isEditMo
           </h4>
           <div className="text-2xl font-bold">{jobLines.length}</div>
         </Card>
-
+        
         <Card className="p-4">
           <h4 className="text-sm font-medium text-muted-foreground">
             Total Estimated Hours
           </h4>
           <div className="text-2xl font-bold">{totalEstimatedHours}</div>
         </Card>
-
+        
         <Card className="p-4">
           <h4 className="text-sm font-medium text-muted-foreground">
             Total Parts Cost
           </h4>
           <div className="text-2xl font-bold">${totalPartsCost}</div>
         </Card>
-
+        
         <Card className="p-4">
           <h4 className="text-sm font-medium text-muted-foreground">
             Total Job Lines Amount
@@ -86,7 +83,7 @@ export function JobLinesGrid({ workOrderId, jobLines, onJobLinesChange, isEditMo
         </Card>
       </div>
 
-      {/* Job Lines */}
+      {/* Job Lines List */}
       <div className="space-y-4">
         {jobLinesWithParts.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
@@ -95,30 +92,47 @@ export function JobLinesGrid({ workOrderId, jobLines, onJobLinesChange, isEditMo
         ) : (
           jobLinesWithParts.map((jobLine) => (
             <Card key={jobLine.id} className="p-4">
-              <div className="flex justify-between items-start mb-4">
+              <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <h4 className="font-semibold">{jobLine.name}</h4>
-                    <Badge variant="outline" className="text-xs">
-                      {jobLine.status}
-                    </Badge>
+                    <h3 className="font-semibold">{jobLine.name}</h3>
+                    <Badge variant="outline">{jobLine.status}</Badge>
                   </div>
+                  
                   {jobLine.description && (
                     <p className="text-sm text-muted-foreground mb-2">
                       {jobLine.description}
                     </p>
                   )}
-                  <div className="flex gap-4 text-sm">
-                    <span>Hours: {jobLine.estimatedHours || 0}</span>
-                    <span>Rate: ${jobLine.laborRate || 0}/hr</span>
-                    <span className="font-medium">
-                      Total: ${jobLine.totalAmount || 0}
-                    </span>
+                  
+                  <div className="text-sm text-muted-foreground">
+                    {jobLine.estimatedHours && (
+                      <span className="mr-4">Hours: {jobLine.estimatedHours}</span>
+                    )}
+                    {jobLine.laborRate && (
+                      <span className="mr-4">Rate: ${jobLine.laborRate}</span>
+                    )}
+                    {jobLine.totalAmount && (
+                      <span className="text-green-600 font-medium">
+                        Total: ${jobLine.totalAmount.toFixed(2)}
+                      </span>
+                    )}
                   </div>
+                  
+                  {jobLine.parts && (
+                    <JobLinePartsDisplay parts={jobLine.parts} />
+                  )}
                 </div>
-
+                
                 {isEditMode && (
-                  <div className="flex gap-2">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAddingPartsToJobLine(jobLine)}
+                    >
+                      Add Parts
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
@@ -136,34 +150,18 @@ export function JobLinesGrid({ workOrderId, jobLines, onJobLinesChange, isEditMo
                   </div>
                 )}
               </div>
-
-              {/* Parts Display */}
-              <JobLinePartsDisplay
-                jobLine={jobLine}
-                onPartsChange={handlePartsAdded}
-              />
-
-              {/* Add Parts Button */}
-              <div className="mt-4 pt-4 border-t">
-                <AddPartsDialog
-                  workOrderId={workOrderId}
-                  jobLineId={jobLine.id}
-                  onPartsAdd={handlePartsAdded}
-                />
-              </div>
             </Card>
           ))
         )}
       </div>
 
-      {/* Edit Dialog */}
       {editingJobLine && (
         <JobLineEditDialog
           jobLine={editingJobLine}
           open={!!editingJobLine}
-          onOpenChange={() => setEditingJobLine(null)}
+          onOpenChange={(open) => !open && setEditingJobLine(null)}
           onSave={(updatedJobLine) => {
-            const updatedJobLines = jobLines.map(jl =>
+            const updatedJobLines = jobLines.map((jl) =>
               jl.id === updatedJobLine.id ? updatedJobLine : jl
             );
             onJobLinesChange(updatedJobLines);
@@ -172,14 +170,13 @@ export function JobLinesGrid({ workOrderId, jobLines, onJobLinesChange, isEditMo
         />
       )}
 
-      {/* Add Parts Dialog */}
       {addingPartsToJobLine && (
         <AddPartsDialog
-          open={!!addingPartsToJobLine}
-          onOpenChange={() => setAddingPartsToJobLine(null)}
           workOrderId={workOrderId}
-          jobLineId={addingPartsToJobLine}
-          onPartsAdd={handlePartsAdded}
+          jobLineId={addingPartsToJobLine.id}
+          open={!!addingPartsToJobLine}
+          onOpenChange={(open) => !open && setAddingPartsToJobLine(null)}
+          onPartsAdd={handlePartsAdd}
         />
       )}
     </div>
