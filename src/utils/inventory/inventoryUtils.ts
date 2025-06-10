@@ -1,5 +1,7 @@
+
 import { InventoryItemExtended } from "@/types/inventory";
 import { supabase } from "@/integrations/supabase/client";
+import { getInventoryStatus, needsReorder } from "./statusUtils";
 
 /**
  * Get inventory item by ID
@@ -54,7 +56,6 @@ export const formatInventoryItem = (dbItem: any): InventoryItemExtended => {
     onOrder: dbItem.on_order || 0,
     
     // Pricing - using correct property names from type definition
-    sell_price_per_unit: dbItem.sell_price_per_unit || 0,
     cost_per_unit: dbItem.cost_per_unit || 0,
     marginMarkup: dbItem.margin_markup || 0,
     
@@ -83,22 +84,6 @@ export const formatInventoryItem = (dbItem: any): InventoryItemExtended => {
 };
 
 /**
- * Get inventory status based on quantity and reorder point
- */
-export const getInventoryStatus = (item: Partial<InventoryItemExtended>): string => {
-  const quantity = Number(item.quantity) || 0;
-  const reorderPoint = Number(item.reorder_point) || 0;
-  
-  if (quantity <= 0) {
-    return "out_of_stock";
-  } else if (quantity <= reorderPoint) {
-    return "low_stock";
-  } else {
-    return "in_stock";
-  }
-};
-
-/**
  * Format inventory item for API submission
  */
 export const formatInventoryForApi = (item: Partial<InventoryItemExtended>) => {
@@ -124,19 +109,17 @@ export const mapApiToInventoryItem = (apiItem: any): InventoryItemExtended => {
 };
 
 /**
- * Count items with low stock
+ * Count items with low stock - now using centralized status logic
  */
 export const countLowStockItems = (items: InventoryItemExtended[]): number => {
-  return items.filter(item => 
-    item.quantity > 0 && item.quantity <= item.reorder_point
-  ).length;
+  return items.filter(item => getInventoryStatus(item) === "low_stock").length;
 };
 
 /**
- * Count items that are out of stock
+ * Count items that are out of stock - now using centralized status logic
  */
 export const countOutOfStockItems = (items: InventoryItemExtended[]): number => {
-  return items.filter(item => item.quantity <= 0).length;
+  return items.filter(item => getInventoryStatus(item) === "out_of_stock").length;
 };
 
 /**
@@ -147,3 +130,6 @@ export const calculateTotalValue = (items: InventoryItemExtended[]): number => {
     return total + (item.unit_price * item.quantity);
   }, 0);
 };
+
+// Re-export from status utils for backward compatibility
+export { getInventoryStatus, needsReorder } from "./statusUtils";
