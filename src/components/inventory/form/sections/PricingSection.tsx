@@ -41,7 +41,7 @@ export function PricingSection({
               <h4 className="font-medium text-blue-900 mb-2">Pricing Calculation Helper</h4>
               <div className="text-sm text-blue-700 space-y-1">
                 <p>Total Cost: ${(values.unit_price || 0).toFixed(2)} for {values.quantity || 0} units</p>
-                <p>Suggested Cost Per Unit: ${suggestedSellPricePerUnit.toFixed(2)} per unit</p>
+                <p className="text-xl text-left font-bold">Suggested Cost Per Unit: ${suggestedSellPricePerUnit.toFixed(2)} per unit</p>
                 {values.sell_price_per_unit && <p>Profit Per Unit: ${((values.sell_price_per_unit || 0) - suggestedSellPricePerUnit).toFixed(2)}</p>}
               </div>
             </div>}
