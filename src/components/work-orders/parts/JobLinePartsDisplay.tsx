@@ -1,106 +1,139 @@
 
-import React, { useState } from 'react';
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ChevronDown, ChevronRight, Package, Eye, Trash2 } from 'lucide-react';
-import { WorkOrderPart } from '@/types/workOrderPart';
-import { ViewPartDetailsDialog } from './ViewPartDetailsDialog';
+import { Trash2, Edit } from 'lucide-react';
+import { WorkOrderPart, partStatusMap } from '@/types/workOrderPart';
 
 interface JobLinePartsDisplayProps {
   parts: WorkOrderPart[];
   onRemovePart?: (partId: string) => void;
+  onEditPart?: (part: WorkOrderPart) => void;
   isEditMode?: boolean;
 }
 
-export function JobLinePartsDisplay({ parts, onRemovePart, isEditMode = false }: JobLinePartsDisplayProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [selectedPart, setSelectedPart] = useState<WorkOrderPart | null>(null);
-
-  if (!parts || parts.length === 0) {
-    return null;
+export function JobLinePartsDisplay({
+  parts,
+  onRemovePart,
+  onEditPart,
+  isEditMode = false
+}: JobLinePartsDisplayProps) {
+  if (parts.length === 0) {
+    return (
+      <div className="text-center py-4 text-muted-foreground">
+        No parts added yet
+      </div>
+    );
   }
 
-  const totalPartsValue = parts.reduce((total, part) => total + (part.customerPrice * part.quantity), 0);
-
   return (
-    <div className="mt-3 border-t pt-3">
-      <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-        <CollapsibleTrigger asChild>
-          <Button variant="ghost" size="sm" className="w-full justify-between p-0 h-auto">
-            <div className="flex items-center gap-2">
-              {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-              <Package className="h-4 w-4" />
-              <span className="font-medium">Parts ({parts.length})</span>
-              <Badge variant="outline" className="text-green-600">
-                ${totalPartsValue.toFixed(2)}
-              </Badge>
-            </div>
-          </Button>
-        </CollapsibleTrigger>
-        
-        <CollapsibleContent className="space-y-2 mt-2">
-          {parts.map((part) => (
-            <Card key={part.id} className="bg-muted/30">
-              <CardContent className="p-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h5 className="font-medium text-sm">{part.partName}</h5>
-                      <Badge variant="outline" className="text-xs">
-                        {part.partType}
-                      </Badge>
-                    </div>
-                    
-                    <div className="text-xs text-muted-foreground space-y-1">
-                      {part.partNumber && (
-                        <div>Part #: {part.partNumber}</div>
-                      )}
-                      <div className="flex gap-4">
-                        <span>Qty: {part.quantity}</span>
-                        <span>Price: ${part.customerPrice.toFixed(2)}</span>
-                        <span>Total: ${(part.quantity * part.customerPrice).toFixed(2)}</span>
-                      </div>
-                      {part.supplierName && (
-                        <div>Supplier: {part.supplierName}</div>
-                      )}
+    <div className="space-y-3">
+      {parts.map((part) => (
+        <Card key={part.id} className="border-slate-200">
+          <CardContent className="p-4">
+            <div className="flex items-start justify-between">
+              <div className="flex-1 space-y-2">
+                <div className="flex items-center gap-2">
+                  <h4 className="font-medium text-slate-900">{part.partName}</h4>
+                  {part.partNumber && (
+                    <Badge variant="outline" className="text-xs">
+                      {part.partNumber}
+                    </Badge>
+                  )}
+                  <Badge 
+                    variant="secondary" 
+                    className={partStatusMap[part.status]?.classes || 'bg-gray-100 text-gray-800'}
+                  >
+                    {partStatusMap[part.status]?.label || part.status}
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium text-slate-600">Quantity:</span>
+                    <div className="text-slate-900">{part.quantity}</div>
+                  </div>
+                  <div>
+                    <span className="font-medium text-slate-600">Unit Price:</span>
+                    <div className="text-slate-900">${part.customerPrice.toFixed(2)}</div>
+                  </div>
+                  <div>
+                    <span className="font-medium text-slate-600">Total:</span>
+                    <div className="text-slate-900 font-medium">
+                      ${(part.customerPrice * part.quantity).toFixed(2)}
                     </div>
                   </div>
-                  
-                  <div className="flex items-center gap-1">
+                  {part.supplierName && (
+                    <div>
+                      <span className="font-medium text-slate-600">Supplier:</span>
+                      <div className="text-slate-900">{part.supplierName}</div>
+                    </div>
+                  )}
+                </div>
+
+                {part.category && (
+                  <div className="text-sm">
+                    <span className="font-medium text-slate-600">Category:</span>
+                    <span className="ml-1 text-slate-900">{part.category}</span>
+                  </div>
+                )}
+
+                {part.notes && (
+                  <div className="text-sm">
+                    <span className="font-medium text-slate-600">Notes:</span>
+                    <div className="text-slate-700 mt-1">{part.notes}</div>
+                  </div>
+                )}
+
+                {part.warrantyDuration && (
+                  <div className="text-sm">
+                    <span className="font-medium text-slate-600">Warranty:</span>
+                    <span className="ml-1 text-slate-900">{part.warrantyDuration}</span>
+                  </div>
+                )}
+
+                {/* Physical Location */}
+                {(part.warehouseLocation || part.shelfLocation || part.binLocation) && (
+                  <div className="text-sm">
+                    <span className="font-medium text-slate-600">Location:</span>
+                    <span className="ml-1 text-slate-900">
+                      {[part.warehouseLocation, part.shelfLocation, part.binLocation]
+                        .filter(Boolean)
+                        .join(' - ')}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {isEditMode && (
+                <div className="flex items-center gap-2 ml-4">
+                  {onEditPart && (
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setSelectedPart(part)}
+                      onClick={() => onEditPart(part)}
+                      className="h-8 w-8 p-0"
                     >
-                      <Eye className="h-4 w-4" />
+                      <Edit className="h-4 w-4" />
                     </Button>
-                    {isEditMode && onRemovePart && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onRemovePart(part.id)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
+                  )}
+                  {onRemovePart && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onRemovePart(part.id)}
+                      className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </CollapsibleContent>
-      </Collapsible>
-      
-      {selectedPart && (
-        <ViewPartDetailsDialog
-          part={selectedPart}
-          open={!!selectedPart}
-          onOpenChange={() => setSelectedPart(null)}
-        />
-      )}
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }

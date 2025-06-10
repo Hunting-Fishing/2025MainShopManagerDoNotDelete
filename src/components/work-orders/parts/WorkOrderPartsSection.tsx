@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Package, Plus } from 'lucide-react';
 import { WorkOrderPart } from '@/types/workOrderPart';
-import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
+import { getWorkOrderParts, deleteWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
 import { AddPartsDialog } from './AddPartsDialog';
 import { JobLinePartsDisplay } from './JobLinePartsDisplay';
 import { toast } from 'sonner';
@@ -47,13 +47,23 @@ export function WorkOrderPartsSection({
 
   const handleRemovePart = async (partId: string) => {
     try {
-      // Remove part logic would go here
-      await loadParts();
-      toast.success('Part removed successfully');
+      const success = await deleteWorkOrderPart(partId);
+      if (success) {
+        await loadParts();
+        toast.success('Part removed successfully');
+      } else {
+        toast.error('Failed to remove part');
+      }
     } catch (error) {
       console.error('Error removing part:', error);
       toast.error('Failed to remove part');
     }
+  };
+
+  const handleEditPart = (part: WorkOrderPart) => {
+    // TODO: Implement edit functionality
+    console.log('Edit part:', part);
+    toast.info('Edit functionality coming soon');
   };
 
   const totalValue = parts.reduce((total, part) => total + (part.customerPrice * part.quantity), 0);
@@ -122,6 +132,7 @@ export function WorkOrderPartsSection({
           <JobLinePartsDisplay 
             parts={parts}
             onRemovePart={handleRemovePart}
+            onEditPart={handleEditPart}
             isEditMode={isEditMode}
           />
         )}

@@ -1,165 +1,75 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import { WorkOrderPart, WorkOrderPartFormValues } from '@/types/workOrderPart';
+import { supabase } from "@/integrations/supabase/client";
+import { WorkOrderPart, WorkOrderPartFormValues } from "@/types/workOrderPart";
 
-// Helper function to map database row to WorkOrderPart
-function mapDatabaseRowToPart(row: any): WorkOrderPart {
-  return {
-    id: row.id,
-    workOrderId: row.work_order_id,
-    jobLineId: row.job_line_id,
-    inventoryItemId: row.inventory_item_id,
-    partName: row.part_name,
-    partNumber: row.part_number,
-    supplierName: row.supplier_name,
-    supplierCost: row.supplier_cost || 0,
-    supplierSuggestedRetailPrice: row.supplier_suggested_retail_price,
-    markupPercentage: row.markup_percentage || 0,
-    retailPrice: row.retail_price || 0,
-    customerPrice: row.customer_price || 0,
-    quantity: row.quantity || 1,
-    partType: row.part_type,
-    invoiceNumber: row.invoice_number,
-    poLine: row.po_line,
-    notes: row.notes,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-    category: row.category,
-    isTaxable: row.is_taxable || false,
-    coreChargeAmount: row.core_charge_amount || 0,
-    coreChargeApplied: row.core_charge_applied || false,
-    warrantyDuration: row.warranty_duration,
-    warrantyExpiryDate: row.warranty_expiry_date,
-    installDate: row.install_date,
-    installedBy: row.installed_by,
-    status: row.status,
-    isStockItem: row.is_stock_item || false,
-    dateAdded: row.date_added || row.created_at,
-    attachments: Array.isArray(row.attachments) ? row.attachments : [],
-    notesInternal: row.notes_internal,
-    binLocation: row.bin_location,
-    warehouseLocation: row.warehouse_location,
-    shelfLocation: row.shelf_location
-  };
-}
-
-export const getJobLineParts = async (jobLineId: string): Promise<WorkOrderPart[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('work_order_parts')
-      .select('*')
-      .eq('job_line_id', jobLineId);
-
-    if (error) {
-      console.error('Error fetching job line parts:', error);
-      throw error;
-    }
-
-    return (data || []).map(mapDatabaseRowToPart);
-  } catch (error) {
-    console.error('Error in getJobLineParts:', error);
-    throw error;
-  }
-};
-
+/**
+ * Get all parts for a work order
+ */
 export const getWorkOrderParts = async (workOrderId: string): Promise<WorkOrderPart[]> => {
   try {
     const { data, error } = await supabase
       .from('work_order_parts')
       .select('*')
-      .eq('work_order_id', workOrderId);
-
-    if (error) {
-      console.error('Error fetching work order parts:', error);
-      throw error;
-    }
-
-    return (data || []).map(mapDatabaseRowToPart);
+      .eq('work_order_id', workOrderId)
+      .order('created_at', { ascending: false });
+      
+    if (error) throw error;
+    
+    return data?.map(item => ({
+      id: item.id,
+      workOrderId: item.work_order_id,
+      jobLineId: item.job_line_id,
+      inventoryItemId: item.inventory_item_id,
+      partName: item.part_name,
+      partNumber: item.part_number,
+      supplierName: item.supplier_name,
+      supplierCost: item.supplier_cost,
+      supplierSuggestedRetailPrice: item.supplier_suggested_retail_price,
+      markupPercentage: item.markup_percentage,
+      retailPrice: item.retail_price,
+      customerPrice: item.customer_price,
+      quantity: item.quantity,
+      partType: item.part_type,
+      invoiceNumber: item.invoice_number,
+      poLine: item.po_line,
+      notes: item.notes,
+      createdAt: item.created_at,
+      updatedAt: item.updated_at,
+      category: item.category,
+      isTaxable: item.is_taxable || false,
+      coreChargeAmount: item.core_charge_amount || 0,
+      coreChargeApplied: item.core_charge_applied || false,
+      warrantyDuration: item.warranty_duration,
+      warrantyExpiryDate: item.warranty_expiry_date,
+      installDate: item.install_date,
+      installedBy: item.installed_by,
+      status: item.status || 'ordered',
+      isStockItem: item.is_stock_item || false,
+      dateAdded: item.date_added || item.created_at,
+      attachments: item.attachments || [],
+      notesInternal: item.notes_internal,
+      binLocation: item.bin_location,
+      warehouseLocation: item.warehouse_location,
+      shelfLocation: item.shelf_location
+    })) || [];
   } catch (error) {
-    console.error('Error in getWorkOrderParts:', error);
-    throw error;
+    console.error('Error fetching work order parts:', error);
+    return [];
   }
 };
 
-export const addWorkOrderPart = async (
+/**
+ * Save a part to a work order
+ */
+export const saveWorkOrderPart = async (
   workOrderId: string,
-  jobLineId: string | undefined,
   partData: WorkOrderPartFormValues
-): Promise<string> => {
-  try {
-    const { data, error } = await supabase
-      .from('work_order_parts')
-      .insert([
-        {
-          work_order_id: workOrderId,
-          job_line_id: jobLineId,
-          inventory_item_id: partData.inventoryItemId,
-          part_name: partData.partName,
-          part_number: partData.partNumber,
-          supplier_name: partData.supplierName,
-          supplier_cost: partData.supplierCost,
-          supplier_suggested_retail_price: partData.supplierSuggestedRetailPrice,
-          markup_percentage: partData.markupPercentage,
-          retail_price: partData.retailPrice,
-          customer_price: partData.customerPrice,
-          quantity: partData.quantity,
-          part_type: partData.partType,
-          category: partData.category,
-          is_taxable: partData.isTaxable,
-          core_charge_amount: partData.coreChargeAmount,
-          core_charge_applied: partData.coreChargeApplied,
-          warranty_duration: partData.warrantyDuration,
-          install_date: partData.installDate,
-          installed_by: partData.installedBy,
-          status: partData.status,
-          is_stock_item: partData.isStockItem,
-          invoice_number: partData.invoiceNumber,
-          po_line: partData.poLine,
-          notes: partData.notes,
-          notes_internal: partData.notesInternal,
-          bin_location: partData.binLocation,
-          warehouse_location: partData.warehouseLocation,
-          shelf_location: partData.shelfLocation,
-          attachments: partData.attachments || []
-        }
-      ])
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error adding work order part:', error);
-      throw error;
-    }
-
-    return data.id;
-  } catch (error) {
-    console.error('Error in addWorkOrderPart:', error);
-    throw error;
-  }
-};
-
-export const saveWorkOrderPart = addWorkOrderPart;
-
-export const saveMultipleWorkOrderParts = async (
-  workOrderId: string,
-  jobLineId: string | undefined,
-  parts: WorkOrderPartFormValues[]
-): Promise<void> => {
-  console.log('Saving multiple work order parts:', { workOrderId, jobLineId, parts });
-  
-  for (const part of parts) {
-    await addWorkOrderPart(workOrderId, jobLineId, part);
-  }
-};
-
-export const updateWorkOrderPart = async (
-  partId: string,
-  partData: Partial<WorkOrderPartFormValues>
-): Promise<void> => {
+): Promise<boolean> => {
   try {
     const { error } = await supabase
       .from('work_order_parts')
-      .update({
+      .insert({
+        work_order_id: workOrderId,
         part_name: partData.partName,
         part_number: partData.partNumber,
         supplier_name: partData.supplierName,
@@ -179,40 +89,83 @@ export const updateWorkOrderPart = async (
         installed_by: partData.installedBy,
         status: partData.status,
         is_stock_item: partData.isStockItem,
-        invoice_number: partData.invoiceNumber,
-        po_line: partData.poLine,
+        date_added: partData.dateAdded,
+        attachments: partData.attachments,
         notes: partData.notes,
         notes_internal: partData.notesInternal,
         bin_location: partData.binLocation,
         warehouse_location: partData.warehouseLocation,
         shelf_location: partData.shelfLocation,
-        attachments: partData.attachments
-      })
-      .eq('id', partId);
-
-    if (error) {
-      console.error('Error updating work order part:', error);
-      throw error;
-    }
+        invoice_number: partData.invoiceNumber,
+        po_line: partData.poLine
+      });
+      
+    if (error) throw error;
+    return true;
   } catch (error) {
-    console.error('Error in updateWorkOrderPart:', error);
-    throw error;
+    console.error('Error saving work order part:', error);
+    return false;
   }
 };
 
-export const deleteWorkOrderPart = async (partId: string): Promise<void> => {
+/**
+ * Update a work order part
+ */
+export const updateWorkOrderPart = async (
+  partId: string,
+  partData: Partial<WorkOrderPartFormValues>
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('work_order_parts')
+      .update({
+        part_name: partData.partName,
+        part_number: partData.partNumber,
+        supplier_name: partData.supplierName,
+        supplier_cost: partData.supplierCost,
+        supplier_suggested_retail_price: partData.supplierSuggestedRetailPrice,
+        markup_percentage: partData.markupPercentage,
+        retail_price: partData.retailPrice,
+        customer_price: partData.customerPrice,
+        quantity: partData.quantity,
+        part_type: partData.partType,
+        category: partData.category,
+        is_taxable: partData.isTaxable,
+        core_charge_amount: partData.coreChargeAmount,
+        core_charge_applied: partData.coreChargeApplied,
+        warranty_duration: partData.warrantyDuration,
+        status: partData.status,
+        is_stock_item: partData.isStockItem,
+        notes: partData.notes,
+        notes_internal: partData.notesInternal,
+        bin_location: partData.binLocation,
+        warehouse_location: partData.warehouseLocation,
+        shelf_location: partData.shelfLocation
+      })
+      .eq('id', partId);
+      
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Error updating work order part:', error);
+    return false;
+  }
+};
+
+/**
+ * Delete a work order part
+ */
+export const deleteWorkOrderPart = async (partId: string): Promise<boolean> => {
   try {
     const { error } = await supabase
       .from('work_order_parts')
       .delete()
       .eq('id', partId);
-
-    if (error) {
-      console.error('Error deleting work order part:', error);
-      throw error;
-    }
+      
+    if (error) throw error;
+    return true;
   } catch (error) {
-    console.error('Error in deleteWorkOrderPart:', error);
-    throw error;
+    console.error('Error deleting work order part:', error);
+    return false;
   }
 };
