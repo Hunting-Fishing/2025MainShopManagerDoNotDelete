@@ -1,4 +1,3 @@
-
 import { InventoryItemExtended } from "@/types/inventory";
 import { supabase } from "@/integrations/supabase/client";
 
