@@ -69,6 +69,11 @@ export function AddPartsDialog({
     }
   };
 
+  const handleFromInventoryClick = () => {
+    console.log('From Inventory button clicked');
+    setInventorySelectionOpen(true);
+  };
+
   const defaultTrigger = (
     <Button variant="outline" size="sm">
       <Plus className="h-4 w-4 mr-1" />
@@ -103,7 +108,7 @@ export function AddPartsDialog({
               <Button 
                 variant="outline" 
                 className="justify-start h-auto p-4"
-                onClick={() => setInventorySelectionOpen(true)}
+                onClick={handleFromInventoryClick}
               >
                 <div className="text-left">
                   <div className="font-medium">From Inventory</div>
