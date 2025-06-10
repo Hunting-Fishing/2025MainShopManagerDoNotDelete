@@ -10,11 +10,14 @@ import { AddJobLineDialog } from './AddJobLineDialog';
 interface JobLinesGridProps {
   jobLines: WorkOrderJobLine[];
   workOrderId: string;
-  onJobLineAdded: () => void;
-  onJobLineUpdated: (jobLine: WorkOrderJobLine) => void;
-  onJobLineDeleted: (jobLineId: string) => void;
+  onJobLineAdded?: () => void;
+  onJobLineUpdated?: (jobLine: WorkOrderJobLine) => void;
+  onJobLineDeleted?: (jobLineId: string) => void;
   onRemovePart?: (partId: string) => void;
   isEditMode?: boolean;
+  showSummary?: boolean;
+  onUpdate?: (updatedJobLine: WorkOrderJobLine) => Promise<void>;
+  onDelete?: (jobLineId: string) => Promise<void>;
 }
 
 export function JobLinesGrid({
@@ -24,21 +27,34 @@ export function JobLinesGrid({
   onJobLineUpdated,
   onJobLineDeleted,
   onRemovePart,
-  isEditMode = false
+  isEditMode = false,
+  showSummary = true,
+  onUpdate,
+  onDelete
 }: JobLinesGridProps) {
   const [addJobLineDialogOpen, setAddJobLineDialogOpen] = useState(false);
 
   const handleJobLineAdded = () => {
-    onJobLineAdded();
+    if (onJobLineAdded) {
+      onJobLineAdded();
+    }
     setAddJobLineDialogOpen(false);
   };
 
-  const handleJobLineUpdated = (updatedJobLine: WorkOrderJobLine) => {
-    onJobLineUpdated(updatedJobLine);
+  const handleJobLineUpdated = async (updatedJobLine: WorkOrderJobLine) => {
+    if (onUpdate) {
+      await onUpdate(updatedJobLine);
+    } else if (onJobLineUpdated) {
+      onJobLineUpdated(updatedJobLine);
+    }
   };
 
-  const handleJobLineDeleted = (jobLineId: string) => {
-    onJobLineDeleted(jobLineId);
+  const handleJobLineDeleted = async (jobLineId: string) => {
+    if (onDelete) {
+      await onDelete(jobLineId);
+    } else if (onJobLineDeleted) {
+      onJobLineDeleted(jobLineId);
+    }
   };
 
   const calculateTotal = () => {
@@ -70,7 +86,7 @@ export function JobLinesGrid({
           )}
         </div>
         
-        {jobLines.length > 0 && (
+        {showSummary && jobLines.length > 0 && (
           <div className="flex gap-4 text-sm text-slate-600">
             <span>Total Lines: {jobLines.length}</span>
             <span>Total Value: ${calculateTotal().toFixed(2)}</span>
@@ -112,7 +128,7 @@ export function JobLinesGrid({
       {isEditMode && (
         <AddJobLineDialog
           workOrderId={workOrderId}
-          onJobLineAdded={handleJobLineAdded}
+          onJobLineAdd={handleJobLineAdded}
           open={addJobLineDialogOpen}
           onOpenChange={setAddJobLineDialogOpen}
         />
