@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Trash2, Edit } from 'lucide-react';
+import { Trash2, Edit, Plus } from 'lucide-react';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { jobLineStatusMap } from '@/types/jobLine';
 import { EditJobLineDialog } from './EditJobLineDialog';
@@ -28,6 +28,7 @@ export function JobLineCard({
   isEditMode = false 
 }: JobLineCardProps) {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [addPartsDialogOpen, setAddPartsDialogOpen] = useState(false);
   const statusInfo = jobLineStatusMap[jobLine.status] || jobLineStatusMap.pending;
 
   const handleEditClick = () => {
@@ -41,6 +42,7 @@ export function JobLineCard({
   const handlePartsAdded = () => {
     // Simple callback to refresh parts display
     console.log('Parts added to job line:', jobLine.id);
+    setAddPartsDialogOpen(false);
   };
 
   // Calculate total including parts
@@ -109,11 +111,13 @@ export function JobLineCard({
             
             <div className="flex items-center gap-1 ml-4">
               {isEditMode && (
-                <AddPartsDialog
-                  workOrderId={jobLine.workOrderId || ''}
-                  jobLineId={jobLine.id}
-                  onPartsAdd={handlePartsAdded}
-                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setAddPartsDialogOpen(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
               )}
               {isEditMode && (
                 <>
@@ -144,6 +148,14 @@ export function JobLineCard({
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
         onSave={handleSaveEdit}
+      />
+
+      <AddPartsDialog
+        workOrderId={jobLine.workOrderId || ''}
+        jobLineId={jobLine.id}
+        onPartsAdd={handlePartsAdded}
+        open={addPartsDialogOpen}
+        onOpenChange={setAddPartsDialogOpen}
       />
     </>
   );

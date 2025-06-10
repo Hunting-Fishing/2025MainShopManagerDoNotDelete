@@ -5,60 +5,55 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Save, Search } from 'lucide-react';
-import { WorkOrderPartFormValues } from '@/types/workOrderPart';
+import { Search, Package, Plus } from 'lucide-react';
+import { getInventoryItems } from '@/services/inventoryService';
 import { saveWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
-import { supabase } from '@/integrations/supabase/client';
+import { InventoryItemExtended } from '@/types/inventory';
+import { WorkOrderPartFormValues } from '@/types/workOrderPart';
 import { toast } from 'sonner';
-
-interface InventoryItem {
-  id: string;
-  name: string;
-  part_number?: string;
-  category?: string;
-  cost_price?: number;
-  retail_price?: number;
-  quantity?: number;
-  location?: string;
-}
 
 interface InventoryPartsTabProps {
   workOrderId: string;
   jobLineId?: string;
-  onAddPart: (part: WorkOrderPartFormValues) => void;
-  onPartSaved: () => void;
+  onPartAdded: () => void;
+  onCancel: () => void;
 }
 
 export function InventoryPartsTab({
   workOrderId,
   jobLineId,
-  onAddPart,
-  onPartSaved
+  onPartAdded,
+  onCancel
 }: InventoryPartsTabProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [inventoryItems, setInventoryItems] = useState<InventoryItemExtended[]>([]);
+  const [filteredItems, setFilteredItems] = useState<InventoryItemExtended[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
-  const [quantity, setQuantity] = useState(1);
-  const [customerPrice, setCustomerPrice] = useState(0);
+  const [selectedItems, setSelectedItems] = useState<Map<string, number>>(new Map());
 
   useEffect(() => {
     loadInventoryItems();
   }, []);
 
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      const filtered = inventoryItems.filter(item => 
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.category.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredItems(filtered);
+    } else {
+      setFilteredItems(inventoryItems);
+    }
+  }, [searchQuery, inventoryItems]);
+
   const loadInventoryItems = async () => {
-    setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('parts_inventory')
-        .select('*')
-        .order('name');
-
-      if (error) throw error;
-
-      setInventoryItems(data || []);
+      setLoading(true);
+      const items = await getInventoryItems();
+      setInventoryItems(items);
+      setFilteredItems(items);
     } catch (error) {
       console.error('Error loading inventory items:', error);
       toast.error('Failed to load inventory items');
@@ -67,244 +62,136 @@ export function InventoryPartsTab({
     }
   };
 
-  const filteredItems = inventoryItems.filter(item =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (item.part_number && item.part_number.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
-  const handleSelectItem = (item: InventoryItem) => {
-    setSelectedItem(item);
-    setCustomerPrice(item.retail_price || item.cost_price || 0);
-    setQuantity(1);
+  const handleQuantityChange = (itemId: string, quantity: number) => {
+    const newSelected = new Map(selectedItems);
+    if (quantity > 0) {
+      newSelected.set(itemId, quantity);
+    } else {
+      newSelected.delete(itemId);
+    }
+    setSelectedItems(newSelected);
   };
 
-  const handleAddToList = () => {
-    if (!selectedItem) {
-      toast.error('Please select an inventory item');
+  const handleAddSelectedParts = async () => {
+    if (selectedItems.size === 0) {
+      toast.error('Please select at least one item');
       return;
     }
 
-    const partData: WorkOrderPartFormValues = {
-      partName: selectedItem.name,
-      partNumber: selectedItem.part_number || '',
-      supplierName: '',
-      supplierCost: selectedItem.cost_price || 0,
-      supplierSuggestedRetailPrice: selectedItem.retail_price || 0,
-      markupPercentage: 0,
-      retailPrice: selectedItem.retail_price || 0,
-      customerPrice: customerPrice,
-      quantity: quantity,
-      partType: 'inventory',
-      inventoryItemId: selectedItem.id,
-      category: selectedItem.category || '',
-      isTaxable: true,
-      coreChargeAmount: 0,
-      coreChargeApplied: false,
-      status: 'received',
-      isStockItem: true,
-      notes: '',
-      attachments: []
-    };
-
-    onAddPart(partData);
-    setSelectedItem(null);
-    setQuantity(1);
-    setCustomerPrice(0);
-    toast.success('Part added to list');
-  };
-
-  const handleSaveDirectly = async () => {
-    if (!selectedItem) {
-      toast.error('Please select an inventory item');
-      return;
-    }
-
-    setIsSubmitting(true);
     try {
-      const partData: WorkOrderPartFormValues = {
-        partName: selectedItem.name,
-        partNumber: selectedItem.part_number || '',
-        supplierName: '',
-        supplierCost: selectedItem.cost_price || 0,
-        supplierSuggestedRetailPrice: selectedItem.retail_price || 0,
-        markupPercentage: 0,
-        retailPrice: selectedItem.retail_price || 0,
-        customerPrice: customerPrice,
-        quantity: quantity,
-        partType: 'inventory',
-        inventoryItemId: selectedItem.id,
-        category: selectedItem.category || '',
-        isTaxable: true,
-        coreChargeAmount: 0,
-        coreChargeApplied: false,
-        status: 'received',
-        isStockItem: true,
-        notes: '',
-        attachments: []
-      };
+      for (const [itemId, quantity] of selectedItems.entries()) {
+        const inventoryItem = inventoryItems.find(item => item.id === itemId);
+        if (!inventoryItem) continue;
 
-      console.log('Saving inventory part:', partData);
-      await saveWorkOrderPart(workOrderId, jobLineId, partData);
-      
-      setSelectedItem(null);
-      setQuantity(1);
-      setCustomerPrice(0);
-      toast.success('Part saved successfully');
-      onPartSaved();
+        const partData: WorkOrderPartFormValues = {
+          partName: inventoryItem.name,
+          partNumber: inventoryItem.sku,
+          supplierName: inventoryItem.supplier,
+          supplierCost: inventoryItem.unit_price * 0.7, // Assuming 30% markup
+          markupPercentage: 30,
+          retailPrice: inventoryItem.unit_price,
+          customerPrice: inventoryItem.unit_price,
+          quantity: quantity,
+          partType: 'inventory' as const,
+          inventoryItemId: inventoryItem.id,
+          category: inventoryItem.category,
+          isTaxable: true,
+          coreChargeAmount: 0,
+          coreChargeApplied: false,
+          status: 'ordered' as const,
+          isStockItem: true
+        };
+
+        await saveWorkOrderPart(workOrderId, partData, jobLineId);
+      }
+
+      toast.success(`Added ${selectedItems.size} parts successfully`);
+      setSelectedItems(new Map());
+      onPartAdded();
     } catch (error) {
-      console.error('Error saving part:', error);
-      toast.error('Failed to save part: ' + (error as Error).message);
-    } finally {
-      setIsSubmitting(false);
+      console.error('Error adding parts:', error);
+      toast.error('Failed to add parts');
     }
   };
 
   return (
     <div className="space-y-4">
-      {/* Search */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Search className="h-5 w-5" />
-            Search Inventory
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="relative">
-              <Search className="h-4 w-4 absolute left-3 top-3 text-muted-foreground" />
-              <Input
-                placeholder="Search by part name or number..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
+      <div className="flex gap-4">
+        <div className="flex-1">
+          <Label htmlFor="search">Search Inventory</Label>
+          <div className="relative">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="search"
+              placeholder="Search by name, SKU, or category..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8"
+            />
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Inventory Items Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Available Parts</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="text-center py-4">Loading inventory...</div>
-          ) : filteredItems.length === 0 ? (
-            <div className="text-center py-4 text-muted-foreground">
-              {searchTerm ? 'No parts found matching your search' : 'No inventory items available'}
+      {loading ? (
+        <div className="text-center py-8">Loading inventory...</div>
+      ) : (
+        <div className="space-y-3 max-h-96 overflow-y-auto">
+          {filteredItems.length === 0 ? (
+            <div className="text-center py-8">
+              <Package className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+              <p className="text-muted-foreground">
+                {searchQuery ? 'No items found matching your search' : 'No inventory items available'}
+              </p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Part Number</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Cost</TableHead>
-                  <TableHead>Retail</TableHead>
-                  <TableHead>Stock</TableHead>
-                  <TableHead>Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredItems.map((item) => (
-                  <TableRow
-                    key={item.id}
-                    className={selectedItem?.id === item.id ? 'bg-muted' : ''}
-                  >
-                    <TableCell className="font-medium">{item.name}</TableCell>
-                    <TableCell>{item.part_number || '-'}</TableCell>
-                    <TableCell>{item.category || '-'}</TableCell>
-                    <TableCell>${(item.cost_price || 0).toFixed(2)}</TableCell>
-                    <TableCell>${(item.retail_price || 0).toFixed(2)}</TableCell>
-                    <TableCell>
-                      <Badge variant={item.quantity && item.quantity > 0 ? 'default' : 'destructive'}>
-                        {item.quantity || 0}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant={selectedItem?.id === item.id ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => handleSelectItem(item)}
-                      >
-                        {selectedItem?.id === item.id ? 'Selected' : 'Select'}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            filteredItems.map((item) => (
+              <Card key={item.id} className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-medium">{item.name}</h4>
+                      <Badge variant="outline">{item.sku}</Badge>
+                      <Badge variant="secondary">{item.category}</Badge>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      <span>Price: ${item.unit_price.toFixed(2)}</span>
+                      <span className="ml-4">Stock: {item.quantity}</span>
+                      <span className="ml-4">Location: {item.location}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor={`qty-${item.id}`} className="text-sm">Qty:</Label>
+                    <Input
+                      id={`qty-${item.id}`}
+                      type="number"
+                      min="0"
+                      max={item.quantity}
+                      placeholder="0"
+                      className="w-20"
+                      value={selectedItems.get(item.id) || ''}
+                      onChange={(e) => handleQuantityChange(item.id, parseInt(e.target.value) || 0)}
+                    />
+                  </div>
+                </div>
+              </Card>
+            ))
           )}
-        </CardContent>
-      </Card>
-
-      {/* Selected Item Details */}
-      {selectedItem && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Selected Part: {selectedItem.name}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="quantity">Quantity</Label>
-                <Input
-                  id="quantity"
-                  type="number"
-                  min="1"
-                  value={quantity}
-                  onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="customerPrice">Customer Price</Label>
-                <Input
-                  id="customerPrice"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={customerPrice}
-                  onChange={(e) => setCustomerPrice(parseFloat(e.target.value) || 0)}
-                />
-              </div>
-            </div>
-
-            <div className="bg-muted p-4 rounded-lg">
-              <div className="flex justify-between items-center">
-                <span className="font-medium">Total Price:</span>
-                <span className="text-lg font-bold">${(quantity * customerPrice).toFixed(2)}</span>
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {quantity} × ${customerPrice.toFixed(2)}
-              </div>
-            </div>
-
-            <div className="flex gap-2 justify-end">
-              <Button
-                variant="outline"
-                onClick={handleAddToList}
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Add to List
-              </Button>
-              <Button
-                onClick={handleSaveDirectly}
-                disabled={isSubmitting}
-                className="flex items-center gap-2"
-              >
-                <Save className="h-4 w-4" />
-                {isSubmitting ? 'Saving...' : 'Save Part'}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        </div>
       )}
+
+      <div className="flex justify-end gap-2 pt-4 border-t">
+        <Button variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button 
+          onClick={handleAddSelectedParts}
+          disabled={selectedItems.size === 0}
+          className="flex items-center gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          Add Selected Parts ({selectedItems.size})
+        </Button>
+      </div>
     </div>
   );
 }
