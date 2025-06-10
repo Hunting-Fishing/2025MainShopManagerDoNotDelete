@@ -1,3 +1,4 @@
+
 import { NavItem } from "./SidebarNavItem";
 
 import {
@@ -126,41 +127,5 @@ export const navigationItems: NavItem[] = [
     href: "/reports",
     icon: TrendingUp,
     title: "Business Reports"
-  },
-  {
-    name: "Team Chat",
-    href: "/chat",
-    icon: MessageSquare,
-    title: "Team Communication"
-  },
-  {
-    name: "Calls",
-    href: "/calls",
-    icon: Phone,
-    title: "Call Management"
-  },
-  {
-    name: "Shopping",
-    href: "/shopping",
-    icon: ShoppingCart,
-    title: "Tool Shopping"
-  },
-  {
-    name: "DIY Bay",
-    href: "/diy-bay",
-    icon: Building,
-    title: "DIY Bay Management"
-  },
-  {
-    name: "Equipment",
-    href: "/equipment",
-    icon: Cog,
-    title: "Equipment Management"
-  },
-  {
-    name: "Settings",
-    href: "/settings",
-    icon: Settings,
-    title: "Application Settings"
   }
 ];
