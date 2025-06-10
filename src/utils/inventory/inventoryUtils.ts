@@ -1,3 +1,4 @@
+
 import { InventoryItemExtended } from "@/types/inventory";
 import { supabase } from "@/integrations/supabase/client";
 import { getInventoryStatus, needsReorder } from "./statusUtils";
@@ -56,11 +57,6 @@ export const formatInventoryItem = (dbItem: any): InventoryItemExtended => {
     
     // Pricing - using correct property names from type definition
     marginMarkup: dbItem.margin_markup || 0,
-    
-    // Taxes & Fees - removing invalid properties that don't exist in type
-    environmentalFee: dbItem.environmental_fee || 0,
-    coreCharge: dbItem.core_charge || 0,
-    hazmatFee: dbItem.hazmat_fee || 0,
     
     // Product Details
     weight: dbItem.weight || 0,
