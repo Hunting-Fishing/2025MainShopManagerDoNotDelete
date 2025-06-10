@@ -26,20 +26,50 @@ export interface InventoryItemExtended extends InventoryItem {
   location?: string;
   status: string;
   supplier: string;
-  // Additional fields
+  
+  // Additional fields from form sections
   partNumber?: string;
   barcode?: string;
   subcategory?: string;
   manufacturer?: string;
   vehicleCompatibility?: string;
+  
+  // Inventory Management
+  measurementUnit?: string;
   onHold?: number;
   onOrder?: number;
-  cost?: number;
+  minStockLevel?: number;
+  maxStockLevel?: number;
+  
+  // Pricing
+  sell_price_per_unit?: number;
+  cost_per_unit?: number;
   marginMarkup?: number;
+  
+  // Taxes & Fees
+  taxRate?: number;
+  taxExempt?: boolean;
+  environmentalFee?: number;
+  coreCharge?: number;
+  hazmatFee?: number;
+  
+  // Product Details
+  weight?: number;
+  dimensions?: string;
+  color?: string;
+  material?: string;
+  modelYear?: string;
+  oemPartNumber?: string;
+  universalPart?: boolean;
   warrantyPeriod?: string;
+  
+  // Additional Info
   dateBought?: string;
   dateLast?: string;
   notes?: string;
+  
+  // Legacy fields for backward compatibility
+  cost?: number;
 }
 
 // Auto-reorder settings

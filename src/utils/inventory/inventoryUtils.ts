@@ -1,5 +1,27 @@
 
 import { InventoryItemExtended } from "@/types/inventory";
+import { supabase } from "@/integrations/supabase/client";
+
+/**
+ * Get inventory item by ID
+ */
+export const getInventoryItemById = async (id: string): Promise<InventoryItemExtended | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('inventory')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
+    if (!data) return null;
+
+    return formatInventoryItem(data);
+  } catch (error) {
+    console.error("Error fetching inventory item by ID:", error);
+    throw error;
+  }
+};
 
 /**
  * Format inventory item from database to application format
