@@ -33,7 +33,7 @@ export function JobLineEditDialog({
     }
   };
   return <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md bg-sky-400">
         <DialogHeader>
           <DialogTitle>Edit Job Line</DialogTitle>
         </DialogHeader>
