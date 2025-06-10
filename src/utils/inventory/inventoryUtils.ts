@@ -52,8 +52,6 @@ export const formatInventoryItem = (dbItem: any): InventoryItemExtended => {
     // Inventory Management
     onHold: dbItem.on_hold || 0,
     onOrder: dbItem.on_order || 0,
-    minStockLevel: dbItem.min_stock_level || 0,
-    maxStockLevel: dbItem.max_stock_level || 0,
     
     // Pricing
     sellPricePerUnit: dbItem.sell_price_per_unit || 0,
