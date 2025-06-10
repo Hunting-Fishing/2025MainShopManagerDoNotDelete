@@ -11,6 +11,26 @@ import { AdditionalInfoSection } from './sections/AdditionalInfoSection';
 import { Button } from '@/components/ui/button';
 import { InventoryItemExtended } from '@/types/inventory';
 
+const MEASUREMENT_UNITS = [
+  'Each',
+  'Box',
+  'Case',
+  'Pack',
+  'Set',
+  'Kit',
+  'Gallon',
+  'Quart',
+  'Liter',
+  'Pound',
+  'Ounce',
+  'Kilogram',
+  'Gram',
+  'Foot',
+  'Inch',
+  'Meter',
+  'Yard'
+];
+
 export function InventoryForm({ item, onSubmit, onCancel, isLoading }: InventoryFormProps) {
   const [values, setValues] = useState<Partial<InventoryItemExtended>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -97,6 +117,7 @@ export function InventoryForm({ item, onSubmit, onCancel, isLoading }: Inventory
               values={values} 
               errors={errors} 
               onChange={handleChange} 
+              measurementUnits={MEASUREMENT_UNITS}
             />
           </TabsContent>
 
