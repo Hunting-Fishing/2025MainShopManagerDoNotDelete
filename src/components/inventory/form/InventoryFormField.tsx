@@ -16,7 +16,8 @@ export interface InventoryFormFieldProps {
   max?: string;
   step?: string;
   description?: string;
-  as?: string; // Added this property
+  as?: string;
+  disabled?: boolean; // Added this property
 }
 
 export function InventoryFormField({
@@ -32,7 +33,8 @@ export function InventoryFormField({
   max,
   step,
   description,
-  as
+  as,
+  disabled = false
 }: InventoryFormFieldProps) {
   const renderField = () => {
     if (as === "textarea") {
@@ -45,6 +47,7 @@ export function InventoryFormField({
           placeholder={placeholder}
           className={error ? "border-red-500" : ""}
           rows={4}
+          disabled={disabled}
         />
       );
     }
@@ -61,6 +64,7 @@ export function InventoryFormField({
         step={step}
         placeholder={placeholder}
         className={error ? "border-red-500" : ""}
+        disabled={disabled}
       />
     );
   };
