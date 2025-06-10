@@ -13,6 +13,7 @@ import CustomerDetails from '@/pages/CustomerDetails';
 import CreateCustomer from '@/pages/CreateCustomer';
 import Calendar from '@/pages/Calendar';
 import Inventory from '@/pages/Inventory';
+import InventoryAdd from '@/pages/InventoryAdd';
 import Invoices from '@/pages/Invoices';
 import Reports from '@/pages/Reports';
 import FeedbackAnalytics from '@/pages/FeedbackAnalytics';
@@ -35,6 +36,7 @@ function App() {
               <Route path="/customers/create" element={<Layout><CreateCustomer /></Layout>} />
               <Route path="/calendar" element={<Layout><Calendar /></Layout>} />
               <Route path="/inventory" element={<Layout><Inventory /></Layout>} />
+              <Route path="/inventory/add" element={<Layout><InventoryAdd /></Layout>} />
               <Route path="/parts-tracking" element={<Layout><PartsTracking /></Layout>} />
               <Route path="/invoices" element={<Layout><Invoices /></Layout>} />
               <Route path="/reports" element={<Layout><Reports /></Layout>} />
