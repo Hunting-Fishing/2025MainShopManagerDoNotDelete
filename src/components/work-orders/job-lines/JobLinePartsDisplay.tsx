@@ -2,16 +2,22 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Package, Eye } from 'lucide-react';
+import { Package, Eye, Trash2 } from 'lucide-react';
 import { WorkOrderPart } from '@/types/workOrderPart';
 
 interface JobLinePartsDisplayProps {
   parts: WorkOrderPart[];
   onViewPart?: (part: WorkOrderPart) => void;
+  onRemovePart?: (partId: string) => void;
   isEditMode?: boolean;
 }
 
-export function JobLinePartsDisplay({ parts, onViewPart, isEditMode = false }: JobLinePartsDisplayProps) {
+export function JobLinePartsDisplay({ 
+  parts, 
+  onViewPart, 
+  onRemovePart,
+  isEditMode = false 
+}: JobLinePartsDisplayProps) {
   if (!parts || parts.length === 0) {
     return null;
   }
@@ -48,15 +54,27 @@ export function JobLinePartsDisplay({ parts, onViewPart, isEditMode = false }: J
               </div>
             </div>
             
-            {onViewPart && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onViewPart(part)}
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
-            )}
+            <div className="flex items-center gap-1">
+              {onViewPart && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onViewPart(part)}
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+              )}
+              {isEditMode && onRemovePart && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onRemovePart(part.id)}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </div>
         ))}
       </div>
