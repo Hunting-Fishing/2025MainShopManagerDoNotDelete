@@ -10,26 +10,34 @@ import { toast } from 'sonner';
 
 interface AddPartsDialogProps {
   workOrderId: string;
-  jobLineId: string;
+  jobLineId?: string;
   onPartsAdd: () => void;
   trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function AddPartsDialog({ 
   workOrderId, 
   jobLineId, 
   onPartsAdd,
-  trigger 
+  trigger,
+  open,
+  onOpenChange
 }: AddPartsDialogProps) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [inventorySelectionOpen, setInventorySelectionOpen] = useState(false);
+
+  // Use external open state if provided, otherwise use internal state
+  const isOpen = open !== undefined ? open : internalOpen;
+  const setOpen = onOpenChange || setInternalOpen;
 
   const handleAddInventoryItem = async (item: InventoryItemExtended) => {
     try {
       // Create a work order part from the inventory item
       const newPart: Omit<WorkOrderPart, 'id' | 'createdAt' | 'updatedAt'> = {
         workOrderId,
-        jobLineId,
+        jobLineId: jobLineId || '',
         inventoryItemId: item.id,
         partName: item.name,
         partNumber: item.sku || '',
@@ -70,18 +78,25 @@ export function AddPartsDialog({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          {trigger || defaultTrigger}
-        </DialogTrigger>
+      <Dialog open={isOpen} onOpenChange={setOpen}>
+        {trigger && (
+          <DialogTrigger asChild>
+            {trigger}
+          </DialogTrigger>
+        )}
+        {!trigger && !open && (
+          <DialogTrigger asChild>
+            {defaultTrigger}
+          </DialogTrigger>
+        )}
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Parts to Job Line</DialogTitle>
+            <DialogTitle>Add Parts to {jobLineId ? 'Job Line' : 'Work Order'}</DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Choose how you want to add parts to this job line:
+              Choose how you want to add parts:
             </p>
             
             <div className="grid gap-3">
