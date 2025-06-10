@@ -1,8 +1,6 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { InventoryFormField } from '../InventoryFormField';
-import { Badge } from '@/components/ui/badge';
 
 interface PricingSectionProps {
   values: any;
@@ -11,151 +9,116 @@ interface PricingSectionProps {
 }
 
 export function PricingSection({ values, errors, onChange }: PricingSectionProps) {
-  const calculateMargin = () => {
-    const cost = parseFloat(values.cost || '0');
-    const price = parseFloat(values.unit_price || '0');
-    if (cost > 0 && price > 0) {
-      const margin = ((price - cost) / price) * 100;
-      return margin.toFixed(2);
-    }
-    return '0.00';
-  };
-
-  const calculateMarkup = () => {
-    const cost = parseFloat(values.cost || '0');
-    const price = parseFloat(values.unit_price || '0');
-    if (cost > 0 && price > 0) {
-      const markup = ((price - cost) / cost) * 100;
-      return markup.toFixed(2);
-    }
-    return '0.00';
-  };
+  // Calculate total value based on unit price and quantity
+  const totalValue = (values.unit_price || 0) * (values.quantity || 0);
+  
+  // Calculate per-unit sell price if we have total cost and quantity
+  const suggestedSellPricePerUnit = values.quantity > 0 ? (values.unit_price || 0) / (values.quantity || 1) : 0;
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Cost & Pricing</CardTitle>
+          <CardTitle className="text-lg">Pricing Information</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <InventoryFormField
-              label="Unit Cost"
-              name="cost"
-              type="number"
-              step="0.01"
-              min="0"
-              value={values.cost || ''}
-              onChange={(e) => onChange('cost', parseFloat(e.target.value) || 0)}
-              error={errors.cost}
-              placeholder="0.00"
-              description="Your cost for this item"
-            />
-
-            <InventoryFormField
-              label="Unit Price"
+              label="Cost Price (Total)"
               name="unit_price"
               type="number"
-              step="0.01"
-              min="0"
               value={values.unit_price || ''}
               onChange={(e) => onChange('unit_price', parseFloat(e.target.value) || 0)}
               error={errors.unit_price}
-              placeholder="0.00"
-              description="Selling price per unit"
-              required
+              min="0"
+              step="0.01"
+              placeholder="500.00"
+              description="Total cost for the entire item/quantity"
             />
 
             <InventoryFormField
-              label="List Price (MSRP)"
-              name="msrp"
+              label="Sell Price Per Unit"
+              name="sell_price_per_unit"
               type="number"
-              step="0.01"
+              value={values.sell_price_per_unit || ''}
+              onChange={(e) => onChange('sell_price_per_unit', parseFloat(e.target.value) || 0)}
+              error={errors.sell_price_per_unit}
               min="0"
-              value={values.msrp || ''}
-              onChange={(e) => onChange('msrp', parseFloat(e.target.value) || 0)}
-              error={errors.msrp}
-              placeholder="0.00"
-              description="Manufacturer suggested retail price"
+              step="0.01"
+              placeholder="45.00"
+              description="Price per unit (e.g., per lb, per piece)"
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <InventoryFormField
-              label="Last Cost"
-              name="lastCost"
-              type="number"
-              step="0.01"
-              min="0"
-              value={values.lastCost || ''}
-              onChange={(e) => onChange('lastCost', parseFloat(e.target.value) || 0)}
-              error={errors.lastCost}
-              placeholder="0.00"
-              description="Most recent purchase cost"
-            />
-
-            <InventoryFormField
-              label="Average Cost"
-              name="averageCost"
-              type="number"
-              step="0.01"
-              min="0"
-              value={values.averageCost || ''}
-              onChange={(e) => onChange('averageCost', parseFloat(e.target.value) || 0)}
-              error={errors.averageCost}
-              placeholder="0.00"
-              description="Average cost over time"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <InventoryFormField
-              label="Discount Percentage"
-              name="discountPercent"
-              type="number"
-              step="0.01"
-              min="0"
-              max="100"
-              value={values.discountPercent || ''}
-              onChange={(e) => onChange('discountPercent', parseFloat(e.target.value) || 0)}
-              error={errors.discountPercent}
-              placeholder="0.00"
-              description="Standard discount percentage"
-            />
-
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <InventoryFormField
               label="Markup Percentage"
               name="marginMarkup"
               type="number"
-              step="0.01"
-              min="0"
               value={values.marginMarkup || ''}
               onChange={(e) => onChange('marginMarkup', parseFloat(e.target.value) || 0)}
               error={errors.marginMarkup}
-              placeholder="0.00"
-              description="Standard markup percentage"
+              min="0"
+              step="0.1"
+              placeholder="50.0"
+              description="Markup percentage over cost"
+            />
+
+            <InventoryFormField
+              label="Cost Per Unit"
+              name="cost_per_unit"
+              type="number"
+              value={values.cost_per_unit || ''}
+              onChange={(e) => onChange('cost_per_unit', parseFloat(e.target.value) || 0)}
+              error={errors.cost_per_unit}
+              min="0"
+              step="0.01"
+              placeholder="16.67"
+              description="Cost per individual unit"
+            />
+
+            <InventoryFormField
+              label="Total Item Value"
+              name="total_value"
+              type="number"
+              value={totalValue.toFixed(2)}
+              disabled
+              description="Calculated: Cost Price × Quantity"
             />
           </div>
 
-          {values.cost && values.unit_price && (
-            <div className="bg-muted p-4 rounded-lg">
-              <h4 className="font-medium mb-2">Calculated Metrics</h4>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Margin: </span>
-                  <Badge variant="outline" className="ml-2 bg-green-50 text-green-800">
-                    {calculateMargin()}%
-                  </Badge>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Markup: </span>
-                  <Badge variant="outline" className="ml-2 bg-blue-50 text-blue-800">
-                    {calculateMarkup()}%
-                  </Badge>
-                </div>
+          {values.quantity > 0 && suggestedSellPricePerUnit > 0 && (
+            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <h4 className="font-medium text-blue-900 mb-2">Pricing Calculation Helper</h4>
+              <div className="text-sm text-blue-700 space-y-1">
+                <p>Total Cost: ${(values.unit_price || 0).toFixed(2)} for {values.quantity || 0} units</p>
+                <p>Suggested Cost Per Unit: ${suggestedSellPricePerUnit.toFixed(2)} per unit</p>
+                {values.sell_price_per_unit && (
+                  <p>Profit Per Unit: ${((values.sell_price_per_unit || 0) - suggestedSellPricePerUnit).toFixed(2)}</p>
+                )}
               </div>
             </div>
           )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <InventoryFormField
+              label="Date Purchased"
+              name="dateBought"
+              type="date"
+              value={values.dateBought || ''}
+              onChange={(e) => onChange('dateBought', e.target.value)}
+              error={errors.dateBought}
+            />
+
+            <InventoryFormField
+              label="Last Price Update"
+              name="dateLast"
+              type="date"
+              value={values.dateLast || ''}
+              onChange={(e) => onChange('dateLast', e.target.value)}
+              error={errors.dateLast}
+            />
+          </div>
         </CardContent>
       </Card>
     </div>
