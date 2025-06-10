@@ -10,17 +10,23 @@ import { Badge } from '@/components/ui/badge';
 import { calculateTotalJobLineAmount, calculateTotalEstimatedHours, calculateTotalPartsCost } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { WorkOrderJobLine } from '@/types/jobLine';
+import { jobLineStatusMap } from '@/types/jobLine';
 
 interface JobLinesGridProps {
   workOrderId: string;
   jobLines: WorkOrderJobLine[];
-  onJobLinesChange: (jobLines: WorkOrderJobLine[]) => void;
+  onJobLinesChange?: (jobLines: WorkOrderJobLine[]) => void;
   isEditMode?: boolean;
 }
 
-export function JobLinesGrid({ workOrderId, jobLines, onJobLinesChange, isEditMode = false }: JobLinesGridProps) {
+export function JobLinesGrid({ 
+  workOrderId, 
+  jobLines, 
+  onJobLinesChange, 
+  isEditMode = false 
+}: JobLinesGridProps) {
   const [editingJobLine, setEditingJobLine] = React.useState<WorkOrderJobLine | null>(null);
-  const [addingPartsToJobLine, setAddingPartsToJobLine] = React.useState<WorkOrderJobLine | null>(null);
+  const [addingPartsToJobLine, setAddingPartsToJobLine] = React.useState<string | null>(null);
   const [jobLinesWithParts, setJobLinesWithParts] = React.useState<WorkOrderJobLine[]>([]);
   const { toast } = useToast();
 
@@ -37,13 +43,45 @@ export function JobLinesGrid({ workOrderId, jobLines, onJobLinesChange, isEditMo
   };
 
   const handleRemoveJobLine = (jobLineId: string) => {
+    if (!onJobLinesChange) {
+      console.error('onJobLinesChange is not provided to JobLinesGrid');
+      toast({
+        title: "Error",
+        description: "Cannot remove job line - missing callback function",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     const updatedJobLines = jobLines.filter((jl) => jl.id !== jobLineId);
     onJobLinesChange(updatedJobLines);
   };
 
-  const handlePartsAdd = () => {
+  const handlePartsAdded = () => {
     loadJobLinesWithParts();
     setAddingPartsToJobLine(null);
+  };
+
+  const handleEditJobLine = (jobLine: WorkOrderJobLine) => {
+    setEditingJobLine(jobLine);
+  };
+
+  const handleSaveJobLine = (updatedJobLine: WorkOrderJobLine) => {
+    if (!onJobLinesChange) {
+      console.error('onJobLinesChange is not provided to JobLinesGrid');
+      toast({
+        title: "Error", 
+        description: "Cannot save job line changes - missing callback function",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const updatedJobLines = jobLines.map((jl) => 
+      jl.id === updatedJobLine.id ? updatedJobLine : jl
+    );
+    onJobLinesChange(updatedJobLines);
+    setEditingJobLine(null);
   };
 
   const totalEstimatedHours = calculateTotalEstimatedHours(jobLines);
@@ -60,21 +98,21 @@ export function JobLinesGrid({ workOrderId, jobLines, onJobLinesChange, isEditMo
           </h4>
           <div className="text-2xl font-bold">{jobLines.length}</div>
         </Card>
-        
+
         <Card className="p-4">
           <h4 className="text-sm font-medium text-muted-foreground">
             Total Estimated Hours
           </h4>
           <div className="text-2xl font-bold">{totalEstimatedHours}</div>
         </Card>
-        
+
         <Card className="p-4">
           <h4 className="text-sm font-medium text-muted-foreground">
             Total Parts Cost
           </h4>
           <div className="text-2xl font-bold">${totalPartsCost}</div>
         </Card>
-        
+
         <Card className="p-4">
           <h4 className="text-sm font-medium text-muted-foreground">
             Total Job Lines Amount
@@ -90,93 +128,105 @@ export function JobLinesGrid({ workOrderId, jobLines, onJobLinesChange, isEditMo
             No job lines added yet
           </div>
         ) : (
-          jobLinesWithParts.map((jobLine) => (
-            <Card key={jobLine.id} className="p-4">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="font-semibold">{jobLine.name}</h3>
-                    <Badge variant="outline">{jobLine.status}</Badge>
+          jobLinesWithParts.map((jobLine) => {
+            const statusInfo = jobLineStatusMap[jobLine.status] || jobLineStatusMap.pending;
+            
+            return (
+              <Card key={jobLine.id} className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h4 className="font-medium">{jobLine.name}</h4>
+                      <Badge className={statusInfo.classes}>
+                        {statusInfo.label}
+                      </Badge>
+                      {jobLine.category && (
+                        <Badge variant="outline" className="text-xs">
+                          {jobLine.category}
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    {jobLine.description && (
+                      <p className="text-sm text-muted-foreground mb-3">
+                        {jobLine.description}
+                      </p>
+                    )}
+                    
+                    <div className="grid grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Hours:</span>
+                        <span className="ml-1 font-medium">
+                          {jobLine.estimatedHours?.toFixed(1) || '0.0'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Rate:</span>
+                        <span className="ml-1 font-medium">
+                          ${jobLine.laborRate?.toFixed(2) || '0.00'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Labor:</span>
+                        <span className="ml-1 font-medium">
+                          ${jobLine.totalAmount?.toFixed(2) || '0.00'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Total:</span>
+                        <span className="ml-1 font-medium text-green-600">
+                          ${(jobLine.totalAmount || 0).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Parts Display */}
+                    <JobLinePartsDisplay 
+                      parts={jobLine.parts || []}
+                      isEditMode={isEditMode}
+                    />
                   </div>
                   
-                  {jobLine.description && (
-                    <p className="text-sm text-muted-foreground mb-2">
-                      {jobLine.description}
-                    </p>
-                  )}
-                  
-                  <div className="text-sm text-muted-foreground">
-                    {jobLine.estimatedHours && (
-                      <span className="mr-4">Hours: {jobLine.estimatedHours}</span>
-                    )}
-                    {jobLine.laborRate && (
-                      <span className="mr-4">Rate: ${jobLine.laborRate}</span>
-                    )}
-                    {jobLine.totalAmount && (
-                      <span className="text-green-600 font-medium">
-                        Total: ${jobLine.totalAmount.toFixed(2)}
-                      </span>
+                  <div className="flex items-center gap-1 ml-4">
+                    {isEditMode && onJobLinesChange && (
+                      <>
+                        <AddPartsDialog
+                          workOrderId={workOrderId}
+                          jobLineId={jobLine.id}
+                          onPartsAdd={handlePartsAdded}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditJobLine(jobLine)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveJobLine(jobLine.id)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
                     )}
                   </div>
-                  
-                  {jobLine.parts && (
-                    <JobLinePartsDisplay parts={jobLine.parts} />
-                  )}
                 </div>
-                
-                {isEditMode && (
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setAddingPartsToJobLine(jobLine)}
-                    >
-                      Add Parts
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setEditingJobLine(jobLine)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleRemoveJobLine(jobLine.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </Card>
-          ))
+              </Card>
+            );
+          })
         )}
       </div>
 
+      {/* Edit Dialog */}
       {editingJobLine && (
         <JobLineEditDialog
           jobLine={editingJobLine}
           open={!!editingJobLine}
           onOpenChange={(open) => !open && setEditingJobLine(null)}
-          onSave={(updatedJobLine) => {
-            const updatedJobLines = jobLines.map((jl) =>
-              jl.id === updatedJobLine.id ? updatedJobLine : jl
-            );
-            onJobLinesChange(updatedJobLines);
-            setEditingJobLine(null);
-          }}
-        />
-      )}
-
-      {addingPartsToJobLine && (
-        <AddPartsDialog
-          workOrderId={workOrderId}
-          jobLineId={addingPartsToJobLine.id}
-          open={!!addingPartsToJobLine}
-          onOpenChange={(open) => !open && setAddingPartsToJobLine(null)}
-          onPartsAdd={handlePartsAdd}
+          onSave={handleSaveJobLine}
         />
       )}
     </div>
