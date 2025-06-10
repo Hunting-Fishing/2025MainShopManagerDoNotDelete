@@ -4,20 +4,29 @@ import { InventoryItemExtended } from "@/types/inventory";
 import { formatInventoryItem } from "@/utils/inventory/inventoryUtils";
 
 /**
- * Get all inventory items
+ * Get all inventory items from the database
  */
 export const getInventoryItems = async (): Promise<InventoryItemExtended[]> => {
   try {
+    console.log('Fetching inventory items from database...');
+    
     const { data, error } = await supabase
       .from('inventory')
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error fetching inventory items:", error);
+      throw error;
+    }
 
-    return data?.map(formatInventoryItem) || [];
+    console.log(`Successfully fetched ${data?.length || 0} inventory items`);
+    
+    if (!data) return [];
+    
+    return data.map(item => formatInventoryItem(item));
   } catch (error) {
-    console.error("Error fetching inventory items:", error);
+    console.error("Error in getInventoryItems:", error);
     throw error;
   }
 };
@@ -50,34 +59,36 @@ export const createInventoryItem = async (
   item: Omit<InventoryItemExtended, 'id' | 'created_at' | 'updated_at'>
 ): Promise<InventoryItemExtended> => {
   try {
-    // Map form fields to database columns
-    const dbItem = {
+    console.log('Creating inventory item:', item);
+    
+    const inventoryData = {
+      // Basic Information
       name: item.name,
       sku: item.sku,
-      description: item.description,
-      unit_price: item.unit_price || 0,
-      category: item.category,
-      subcategory: item.subcategory,
-      supplier: item.supplier,
-      status: item.status,
-      quantity: item.quantity || 0,
-      reorder_point: item.reorder_point || 0,
-      location: item.location,
+      description: item.description || '',
+      part_number: item.partNumber || '',
+      barcode: item.barcode || '',
+      category: item.category || '',
+      subcategory: item.subcategory || '',
+      manufacturer: item.manufacturer || '',
+      vehicle_compatibility: item.vehicleCompatibility || '',
       
-      // Basic Info fields
-      part_number: item.partNumber,
-      barcode: item.barcode,
-      manufacturer: item.manufacturer,
-      vehicle_compatibility: item.vehicleCompatibility,
+      // Location and Status
+      location: item.location || '',
+      status: item.status || 'active',
+      supplier: item.supplier || '',
       
       // Inventory Management
-      measurement_unit: item.measurementUnit,
+      quantity: item.quantity || 0,
+      measurement_unit: item.measurementUnit || '',
       on_hold: item.onHold || 0,
       on_order: item.onOrder || 0,
+      reorder_point: item.reorder_point || 0,
       min_stock_level: item.minStockLevel || 0,
       max_stock_level: item.maxStockLevel || 0,
       
       // Pricing
+      unit_price: item.unit_price || 0,
       sell_price_per_unit: item.sell_price_per_unit || 0,
       cost_per_unit: item.cost_per_unit || 0,
       margin_markup: item.marginMarkup || 0,
@@ -91,31 +102,35 @@ export const createInventoryItem = async (
       
       // Product Details
       weight: item.weight || 0,
-      dimensions: item.dimensions,
-      color: item.color,
-      material: item.material,
-      model_year: item.modelYear,
-      oem_part_number: item.oemPartNumber,
+      dimensions: item.dimensions || '',
+      color: item.color || '',
+      material: item.material || '',
+      model_year: item.modelYear || '',
+      oem_part_number: item.oemPartNumber || '',
       universal_part: item.universalPart || false,
-      warranty_period: item.warrantyPeriod,
+      warranty_period: item.warrantyPeriod || '',
       
       // Additional Info
-      date_bought: item.dateBought,
-      date_last: item.dateLast,
-      notes: item.notes
+      date_bought: item.dateBought || '',
+      date_last: item.dateLast || '',
+      notes: item.notes || ''
     };
 
     const { data, error } = await supabase
       .from('inventory')
-      .insert([dbItem])
+      .insert([inventoryData])
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error creating inventory item:", error);
+      throw error;
+    }
 
+    console.log('Successfully created inventory item:', data);
     return formatInventoryItem(data);
   } catch (error) {
-    console.error("Error creating inventory item:", error);
+    console.error("Error in createInventoryItem:", error);
     throw error;
   }
 };
@@ -128,34 +143,36 @@ export const updateInventoryItem = async (
   updates: Partial<InventoryItemExtended>
 ): Promise<InventoryItemExtended> => {
   try {
-    // Map form fields to database columns, ensuring category, subcategory, and status are properly mapped
-    const dbUpdates = {
+    console.log('Updating inventory item:', id, updates);
+    
+    const inventoryData = {
+      // Basic Information
       ...(updates.name !== undefined && { name: updates.name }),
       ...(updates.sku !== undefined && { sku: updates.sku }),
       ...(updates.description !== undefined && { description: updates.description }),
-      ...(updates.unit_price !== undefined && { unit_price: updates.unit_price }),
-      ...(updates.category !== undefined && { category: updates.category }),
-      ...(updates.subcategory !== undefined && { subcategory: updates.subcategory }),
-      ...(updates.supplier !== undefined && { supplier: updates.supplier }),
-      ...(updates.status !== undefined && { status: updates.status }),
-      ...(updates.quantity !== undefined && { quantity: updates.quantity }),
-      ...(updates.reorder_point !== undefined && { reorder_point: updates.reorder_point }),
-      ...(updates.location !== undefined && { location: updates.location }),
-      
-      // Basic Info fields
       ...(updates.partNumber !== undefined && { part_number: updates.partNumber }),
       ...(updates.barcode !== undefined && { barcode: updates.barcode }),
+      ...(updates.category !== undefined && { category: updates.category }),
+      ...(updates.subcategory !== undefined && { subcategory: updates.subcategory }),
       ...(updates.manufacturer !== undefined && { manufacturer: updates.manufacturer }),
       ...(updates.vehicleCompatibility !== undefined && { vehicle_compatibility: updates.vehicleCompatibility }),
       
+      // Location and Status
+      ...(updates.location !== undefined && { location: updates.location }),
+      ...(updates.status !== undefined && { status: updates.status }),
+      ...(updates.supplier !== undefined && { supplier: updates.supplier }),
+      
       // Inventory Management
+      ...(updates.quantity !== undefined && { quantity: updates.quantity }),
       ...(updates.measurementUnit !== undefined && { measurement_unit: updates.measurementUnit }),
       ...(updates.onHold !== undefined && { on_hold: updates.onHold }),
       ...(updates.onOrder !== undefined && { on_order: updates.onOrder }),
+      ...(updates.reorder_point !== undefined && { reorder_point: updates.reorder_point }),
       ...(updates.minStockLevel !== undefined && { min_stock_level: updates.minStockLevel }),
       ...(updates.maxStockLevel !== undefined && { max_stock_level: updates.maxStockLevel }),
       
       // Pricing
+      ...(updates.unit_price !== undefined && { unit_price: updates.unit_price }),
       ...(updates.sell_price_per_unit !== undefined && { sell_price_per_unit: updates.sell_price_per_unit }),
       ...(updates.cost_per_unit !== undefined && { cost_per_unit: updates.cost_per_unit }),
       ...(updates.marginMarkup !== undefined && { margin_markup: updates.marginMarkup }),
@@ -183,20 +200,22 @@ export const updateInventoryItem = async (
       ...(updates.notes !== undefined && { notes: updates.notes })
     };
 
-    console.log("Updating inventory item with:", { id, dbUpdates });
-
     const { data, error } = await supabase
       .from('inventory')
-      .update(dbUpdates)
+      .update(inventoryData)
       .eq('id', id)
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error updating inventory item:", error);
+      throw error;
+    }
 
+    console.log('Successfully updated inventory item:', data);
     return formatInventoryItem(data);
   } catch (error) {
-    console.error("Error updating inventory item:", error);
+    console.error("Error in updateInventoryItem:", error);
     throw error;
   }
 };
@@ -207,14 +226,17 @@ export const updateInventoryItem = async (
 export const updateInventoryQuantity = async (
   id: string,
   quantity: number
-): Promise<void> => {
+): Promise<InventoryItemExtended> => {
   try {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('inventory')
       .update({ quantity })
-      .eq('id', id);
+      .eq('id', id)
+      .select()
+      .single();
 
     if (error) throw error;
+    return formatInventoryItem(data);
   } catch (error) {
     console.error("Error updating inventory quantity:", error);
     throw error;

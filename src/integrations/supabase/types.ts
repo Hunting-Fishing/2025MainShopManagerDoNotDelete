@@ -3528,6 +3528,141 @@ export type Database = {
           },
         ]
       }
+      inventory: {
+        Row: {
+          barcode: string | null
+          category: string | null
+          color: string | null
+          core_charge: number | null
+          cost_per_unit: number | null
+          created_at: string | null
+          date_bought: string | null
+          date_last: string | null
+          description: string | null
+          dimensions: string | null
+          environmental_fee: number | null
+          hazmat_fee: number | null
+          id: string
+          location: string | null
+          manufacturer: string | null
+          margin_markup: number | null
+          material: string | null
+          max_stock_level: number | null
+          measurement_unit: string | null
+          min_stock_level: number | null
+          model_year: string | null
+          name: string
+          notes: string | null
+          oem_part_number: string | null
+          on_hold: number | null
+          on_order: number | null
+          part_number: string | null
+          quantity: number | null
+          reorder_point: number | null
+          sell_price_per_unit: number | null
+          sku: string
+          status: string | null
+          subcategory: string | null
+          supplier: string | null
+          tax_exempt: boolean | null
+          tax_rate: number | null
+          unit_price: number | null
+          universal_part: boolean | null
+          updated_at: string | null
+          vehicle_compatibility: string | null
+          warranty_period: string | null
+          weight: number | null
+        }
+        Insert: {
+          barcode?: string | null
+          category?: string | null
+          color?: string | null
+          core_charge?: number | null
+          cost_per_unit?: number | null
+          created_at?: string | null
+          date_bought?: string | null
+          date_last?: string | null
+          description?: string | null
+          dimensions?: string | null
+          environmental_fee?: number | null
+          hazmat_fee?: number | null
+          id?: string
+          location?: string | null
+          manufacturer?: string | null
+          margin_markup?: number | null
+          material?: string | null
+          max_stock_level?: number | null
+          measurement_unit?: string | null
+          min_stock_level?: number | null
+          model_year?: string | null
+          name: string
+          notes?: string | null
+          oem_part_number?: string | null
+          on_hold?: number | null
+          on_order?: number | null
+          part_number?: string | null
+          quantity?: number | null
+          reorder_point?: number | null
+          sell_price_per_unit?: number | null
+          sku: string
+          status?: string | null
+          subcategory?: string | null
+          supplier?: string | null
+          tax_exempt?: boolean | null
+          tax_rate?: number | null
+          unit_price?: number | null
+          universal_part?: boolean | null
+          updated_at?: string | null
+          vehicle_compatibility?: string | null
+          warranty_period?: string | null
+          weight?: number | null
+        }
+        Update: {
+          barcode?: string | null
+          category?: string | null
+          color?: string | null
+          core_charge?: number | null
+          cost_per_unit?: number | null
+          created_at?: string | null
+          date_bought?: string | null
+          date_last?: string | null
+          description?: string | null
+          dimensions?: string | null
+          environmental_fee?: number | null
+          hazmat_fee?: number | null
+          id?: string
+          location?: string | null
+          manufacturer?: string | null
+          margin_markup?: number | null
+          material?: string | null
+          max_stock_level?: number | null
+          measurement_unit?: string | null
+          min_stock_level?: number | null
+          model_year?: string | null
+          name?: string
+          notes?: string | null
+          oem_part_number?: string | null
+          on_hold?: number | null
+          on_order?: number | null
+          part_number?: string | null
+          quantity?: number | null
+          reorder_point?: number | null
+          sell_price_per_unit?: number | null
+          sku?: string
+          status?: string | null
+          subcategory?: string | null
+          supplier?: string | null
+          tax_exempt?: boolean | null
+          tax_rate?: number | null
+          unit_price?: number | null
+          universal_part?: boolean | null
+          updated_at?: string | null
+          vehicle_compatibility?: string | null
+          warranty_period?: string | null
+          weight?: number | null
+        }
+        Relationships: []
+      }
       inventory_adjustments: {
         Row: {
           adjusted_by: string | null
