@@ -7,6 +7,9 @@ export {
   type ExportOptions 
 } from './exportUtils';
 
+// PDF export utilities
+export { exportToPDF } from './pdfExport';
+
 // Date utilities
 export { 
   getFormattedDate, 
