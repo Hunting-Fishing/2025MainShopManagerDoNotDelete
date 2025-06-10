@@ -1,153 +1,141 @@
-import React, { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { InventoryItemExtended } from "@/types/inventory";
-export interface InventoryFormProps {
-  initialData?: Partial<InventoryItemExtended>;
-  onSubmit: (formData: Omit<InventoryItemExtended, "id">) => Promise<void> | void;
-  isLoading?: boolean;
-  onCancel: () => void;
-}
-export function InventoryForm({
-  initialData,
-  onSubmit,
-  isLoading = false,
-  onCancel
-}: InventoryFormProps) {
-  const [formData, setFormData] = useState<Partial<InventoryItemExtended>>(initialData || {
-    name: '',
-    sku: '',
-    description: '',
-    category: '',
-    supplier: '',
-    location: '',
-    quantity: 0,
-    reorder_point: 5,
-    unit_price: 0,
-    status: 'In Stock'
-  });
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const {
-      name,
-      value
-    } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+
+import React, { useState, useEffect } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { InventoryFormProps } from './InventoryFormProps';
+import { BasicInfoSection } from './sections/BasicInfoSection';
+import { PricingSection } from './sections/PricingSection';
+import { InventoryManagementSection } from './sections/InventoryManagementSection';
+import { TaxAndFeesSection } from './sections/TaxAndFeesSection';
+import { ProductDetailsSection } from './sections/ProductDetailsSection';
+import { AdditionalInfoSection } from './sections/AdditionalInfoSection';
+import { Button } from '@/components/ui/button';
+import { InventoryItemExtended } from '@/types/inventory';
+
+export function InventoryForm({ item, onSubmit, onCancel, isLoading }: InventoryFormProps) {
+  const [values, setValues] = useState<Partial<InventoryItemExtended>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [activeTab, setActiveTab] = useState('basic');
+
+  useEffect(() => {
+    if (item) {
+      setValues(item);
+    }
+  }, [item]);
+
+  const handleChange = (field: string, value: any) => {
+    setValues(prev => ({ ...prev, [field]: value }));
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
   };
-  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const {
-      name,
-      value
-    } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: Number(value)
-    }));
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    
+    if (!values.name?.trim()) {
+      newErrors.name = 'Item name is required';
+    }
+    
+    if (values.price && values.price < 0) {
+      newErrors.price = 'Price cannot be negative';
+    }
+    
+    if (values.quantity && values.quantity < 0) {
+      newErrors.quantity = 'Quantity cannot be negative';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-  const handleSubmit = (e: React.FormEvent) => {
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData as Omit<InventoryItemExtended, "id">);
+    
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      await onSubmit(values);
+    } catch (error) {
+      console.error('Error submitting form:', error);
+    }
   };
-  return <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow-sm border">
-      <h2 className="text-2xl font-bold">{initialData ? 'Edit' : 'Add'} Inventory Item</h2>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-              Item Name *
-            </label>
-            <Input id="name" name="name" value={formData.name} onChange={handleChange} required />
-          </div>
-          
-          <div>
-            <label htmlFor="sku" className="block text-sm font-medium text-gray-700 mb-1">
-              SKU *
-            </label>
-            <Input id="sku" name="sku" value={formData.sku} onChange={handleChange} required />
-          </div>
-          
-          <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-              Category
-            </label>
-            <Select value={formData.category || ''} onValueChange={value => handleSelectChange('category', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Parts">Parts</SelectItem>
-                <SelectItem value="Fluids">Fluids</SelectItem>
-                <SelectItem value="Tools">Tools</SelectItem>
-                <SelectItem value="Accessories" className="bg-cyan-200">Accessories</SelectItem>
-                <SelectItem value="Other">Other</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div>
-            <label htmlFor="supplier" className="block text-sm font-medium text-gray-700 mb-1">
-              Supplier
-            </label>
-            <Input id="supplier" name="supplier" value={formData.supplier || ''} onChange={handleChange} />
-          </div>
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="basic">Basic Info</TabsTrigger>
+          <TabsTrigger value="pricing">Pricing</TabsTrigger>
+          <TabsTrigger value="inventory">Inventory</TabsTrigger>
+          <TabsTrigger value="taxes">Taxes & Fees</TabsTrigger>
+          <TabsTrigger value="details">Details</TabsTrigger>
+          <TabsTrigger value="additional">Additional</TabsTrigger>
+        </TabsList>
+
+        <div className="mt-6">
+          <TabsContent value="basic">
+            <BasicInfoSection 
+              values={values} 
+              errors={errors} 
+              onChange={handleChange} 
+            />
+          </TabsContent>
+
+          <TabsContent value="pricing">
+            <PricingSection 
+              values={values} 
+              errors={errors} 
+              onChange={handleChange} 
+            />
+          </TabsContent>
+
+          <TabsContent value="inventory">
+            <InventoryManagementSection 
+              values={values} 
+              errors={errors} 
+              onChange={handleChange} 
+            />
+          </TabsContent>
+
+          <TabsContent value="taxes">
+            <TaxAndFeesSection 
+              values={values} 
+              errors={errors} 
+              onChange={handleChange} 
+            />
+          </TabsContent>
+
+          <TabsContent value="details">
+            <ProductDetailsSection 
+              values={values} 
+              errors={errors} 
+              onChange={handleChange} 
+            />
+          </TabsContent>
+
+          <TabsContent value="additional">
+            <AdditionalInfoSection 
+              values={values} 
+              errors={errors} 
+              onChange={handleChange} 
+            />
+          </TabsContent>
         </div>
-        
-        <div className="space-y-4">
-          <div>
-            <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-1">
-              Quantity *
-            </label>
-            <Input id="quantity" name="quantity" type="number" value={formData.quantity} onChange={handleNumberChange} required />
-          </div>
-          
-          <div>
-            <label htmlFor="reorder_point" className="block text-sm font-medium text-gray-700 mb-1">
-              Reorder Point
-            </label>
-            <Input id="reorder_point" name="reorder_point" type="number" value={formData.reorder_point} onChange={handleNumberChange} />
-          </div>
-          
-          <div>
-            <label htmlFor="unit_price" className="block text-sm font-medium text-gray-700 mb-1">
-              Unit Price *
-            </label>
-            <Input id="unit_price" name="unit_price" type="number" step="0.01" value={formData.unit_price} onChange={handleNumberChange} required />
-          </div>
-          
-          <div>
-            <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
-              Location
-            </label>
-            <Input id="location" name="location" value={formData.location || ''} onChange={handleChange} />
-          </div>
-        </div>
-      </div>
-      
-      <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-          Description
-        </label>
-        <Textarea id="description" name="description" value={formData.description || ''} onChange={handleChange} rows={3} />
-      </div>
-      
-      <div className="flex justify-end space-x-4 pt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
+      </Tabs>
+
+      <div className="flex justify-end gap-3 pt-6 border-t">
+        {onCancel && (
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+        )}
         <Button type="submit" disabled={isLoading}>
-          {isLoading ? "Saving..." : (initialData ? "Update" : "Add") + " Item"}
+          {isLoading ? 'Saving...' : item ? 'Update Item' : 'Create Item'}
         </Button>
       </div>
-    </form>;
+    </form>
+  );
 }
