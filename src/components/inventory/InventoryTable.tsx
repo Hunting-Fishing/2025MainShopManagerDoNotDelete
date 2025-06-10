@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { InventoryItemExtended } from "@/types/inventory";
 import { formatCurrency } from "@/utils/formatters";
 import { Badge } from "@/components/ui/badge";
-import { Edit } from "lucide-react";
+import { Edit, Info } from "lucide-react";
 import { EditInventoryDialog } from "./EditInventoryDialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export interface InventoryTableProps {
   items: InventoryItemExtended[];
@@ -41,6 +42,7 @@ export function InventoryTable({ items, onUpdateItem }: InventoryTableProps) {
     
     switch (status.toLowerCase()) {
       case "in stock":
+      case "active":
         className = "bg-green-100 text-green-800 border-green-300";
         break;
       case "low stock":
@@ -64,6 +66,82 @@ export function InventoryTable({ items, onUpdateItem }: InventoryTableProps) {
         {status}
       </Badge>
     );
+  };
+
+  // Function to render the list of applicable fees
+  const renderApplicableFees = (item: InventoryItemExtended) => {
+    const fees = [];
+    
+    if (item.coreChargeApplicable && item.coreCharge) {
+      fees.push(`Core: ${formatCurrency(item.coreCharge)}`);
+    }
+    
+    if (item.hazardousFeeApplicable && item.hazardousFee) {
+      fees.push(`Hazardous: ${formatCurrency(item.hazardousFee)}`);
+    }
+    
+    if (item.shippingFee) {
+      fees.push(`Shipping: ${formatCurrency(item.shippingFee)}`);
+    }
+    
+    if (item.otherFees) {
+      fees.push(`Other: ${formatCurrency(item.otherFees)}`);
+    }
+    
+    return fees.length > 0 ? (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center text-xs text-blue-600 cursor-help">
+              <Info className="h-3.5 w-3.5 mr-1" /> Fees
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <div className="text-xs space-y-1">
+              {fees.map((fee, index) => (
+                <div key={index}>{fee}</div>
+              ))}
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    ) : null;
+  };
+
+  // Function to render the applicable taxes
+  const renderApplicableTaxes = (item: InventoryItemExtended) => {
+    const taxes = [];
+    
+    if (item.gstApplicable && item.gstRate) {
+      taxes.push(`GST: ${item.gstRate}%`);
+    }
+    
+    if (item.pstApplicable && item.pstRate) {
+      taxes.push(`PST: ${item.pstRate}%`);
+    }
+    
+    if (item.hstApplicable && item.hstRate) {
+      taxes.push(`HST: ${item.hstRate}%`);
+    }
+    
+    return taxes.length > 0 ? (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center text-xs text-purple-600 cursor-help">
+              <Info className="h-3.5 w-3.5 mr-1" /> Tax
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <div className="text-xs space-y-1">
+              {taxes.map((tax, index) => (
+                <div key={index}>{tax}</div>
+              ))}
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    ) : null;
   };
 
   return (
@@ -93,6 +171,15 @@ export function InventoryTable({ items, onUpdateItem }: InventoryTableProps) {
                         {item.description}
                       </p>
                     )}
+                    <div className="flex items-center gap-2 mt-1">
+                      {renderApplicableFees(item)}
+                      {renderApplicableTaxes(item)}
+                      {item.unitOfMeasurement && item.unitOfMeasurement !== 'each' && (
+                        <span className="text-xs text-gray-500">
+                          Unit: {item.unitOfMeasurement}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </TableCell>
                 <TableCell>{item.sku}</TableCell>

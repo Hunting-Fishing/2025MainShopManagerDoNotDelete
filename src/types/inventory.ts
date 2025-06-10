@@ -1,4 +1,3 @@
-
 // Export all inventory-related types from a single file
 
 // Basic inventory item interface
@@ -16,7 +15,7 @@ export interface InventoryItem {
   reorder_point?: number;
 }
 
-// Extended inventory item with all properties
+// Extended inventory item with all properties including new tax, fee, and measurement fields
 export interface InventoryItemExtended extends InventoryItem {
   quantity: number;
   reorder_point: number;
@@ -27,7 +26,8 @@ export interface InventoryItemExtended extends InventoryItem {
   location?: string;
   status: string;
   supplier: string;
-  // Additional fields
+  
+  // Existing additional fields
   partNumber?: string;
   barcode?: string;
   subcategory?: string;
@@ -41,6 +41,55 @@ export interface InventoryItemExtended extends InventoryItem {
   dateBought?: string;
   dateLast?: string;
   notes?: string;
+  
+  // New measurement and quantity fields
+  unitOfMeasurement?: string;
+  measurementType?: 'weight' | 'volume' | 'length' | 'count' | 'other';
+  minQuantity?: number;
+  maxQuantity?: number;
+  optimalQuantity?: number;
+  
+  // New tax fields
+  pstRate?: number;
+  gstRate?: number;
+  hstRate?: number;
+  pstApplicable?: boolean;
+  gstApplicable?: boolean;
+  hstApplicable?: boolean;
+  
+  // New fee fields
+  coreCharge?: number;
+  coreChargeApplicable?: boolean;
+  hazardousFee?: number;
+  hazardousFeeApplicable?: boolean;
+  shippingFee?: number;
+  otherFees?: number;
+  feeDescription?: string;
+  
+  // Additional product details
+  weight?: number;
+  weightUnit?: string;
+  dimensions?: string;
+  serialNumberRequired?: boolean;
+  lotNumberRequired?: boolean;
+  expirationDate?: string;
+  batchNumber?: string;
+  countryOfOrigin?: string;
+  hsCode?: string;
+  
+  // Pricing and cost details
+  lastCost?: number;
+  averageCost?: number;
+  listPrice?: number;
+  msrp?: number;
+  discountPercent?: number;
+  
+  // Additional inventory management
+  binLocation?: string;
+  shelfLife?: number;
+  shelfLifeUnit?: string;
+  temperatureRequirement?: string;
+  handlingInstructions?: string;
 }
 
 // Auto-reorder settings
@@ -144,3 +193,64 @@ export interface Vendor {
   created_at: string;
   updated_at: string;
 }
+
+// New measurement unit options
+export interface MeasurementUnit {
+  value: string;
+  label: string;
+  type: 'weight' | 'volume' | 'length' | 'count' | 'other';
+}
+
+export const MEASUREMENT_UNITS: MeasurementUnit[] = [
+  // Weight
+  { value: 'lb', label: 'Pounds (lb)', type: 'weight' },
+  { value: 'oz', label: 'Ounces (oz)', type: 'weight' },
+  { value: 'kg', label: 'Kilograms (kg)', type: 'weight' },
+  { value: 'g', label: 'Grams (g)', type: 'weight' },
+  { value: 'mg', label: 'Milligrams (mg)', type: 'weight' },
+  { value: 'ton', label: 'Tons', type: 'weight' },
+  
+  // Volume
+  { value: 'gal', label: 'Gallons (gal)', type: 'volume' },
+  { value: 'qt', label: 'Quarts (qt)', type: 'volume' },
+  { value: 'pt', label: 'Pints (pt)', type: 'volume' },
+  { value: 'fl_oz', label: 'Fluid Ounces (fl oz)', type: 'volume' },
+  { value: 'l', label: 'Liters (L)', type: 'volume' },
+  { value: 'ml', label: 'Milliliters (mL)', type: 'volume' },
+  
+  // Length
+  { value: 'ft', label: 'Feet (ft)', type: 'length' },
+  { value: 'in', label: 'Inches (in)', type: 'length' },
+  { value: 'm', label: 'Meters (m)', type: 'length' },
+  { value: 'cm', label: 'Centimeters (cm)', type: 'length' },
+  { value: 'mm', label: 'Millimeters (mm)', type: 'length' },
+  
+  // Count
+  { value: 'each', label: 'Each', type: 'count' },
+  { value: 'pair', label: 'Pair', type: 'count' },
+  { value: 'set', label: 'Set', type: 'count' },
+  { value: 'pack', label: 'Pack', type: 'count' },
+  { value: 'box', label: 'Box', type: 'count' },
+  { value: 'case', label: 'Case', type: 'count' },
+  { value: 'dozen', label: 'Dozen', type: 'count' },
+  
+  // Other
+  { value: 'roll', label: 'Roll', type: 'other' },
+  { value: 'sheet', label: 'Sheet', type: 'other' },
+  { value: 'linear_ft', label: 'Linear Feet', type: 'other' },
+  { value: 'sq_ft', label: 'Square Feet', type: 'other' },
+];
+
+// Tax rate presets
+export const TAX_PRESETS = {
+  GST_RATE: 5,
+  PST_BC: 7,
+  PST_SK: 6,
+  PST_MB: 7,
+  PST_QC: 9.975,
+  HST_ON: 13,
+  HST_NB: 15,
+  HST_NS: 15,
+  HST_PE: 15,
+  HST_NL: 15,
+};

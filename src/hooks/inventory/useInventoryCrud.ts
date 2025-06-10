@@ -50,7 +50,71 @@ export function useInventoryCrud() {
         reorder_point: item.reorder_point || 0,
         status: item.status || 'active',
         description: item.description,
-        location: item.location
+        location: item.location,
+        
+        // Extended fields
+        partNumber: item.partNumber,
+        barcode: item.barcode,
+        subcategory: item.subcategory,
+        manufacturer: item.manufacturer,
+        vehicleCompatibility: item.vehicleCompatibility,
+        onHold: item.onHold,
+        onOrder: item.onOrder,
+        cost: item.cost,
+        marginMarkup: item.marginMarkup,
+        warrantyPeriod: item.warrantyPeriod,
+        dateBought: item.dateBought,
+        dateLast: item.dateLast,
+        notes: item.notes,
+        
+        // New measurement fields
+        unitOfMeasurement: item.unitOfMeasurement,
+        measurementType: item.measurementType,
+        minQuantity: item.minQuantity,
+        maxQuantity: item.maxQuantity,
+        optimalQuantity: item.optimalQuantity,
+        
+        // New tax fields
+        pstRate: item.pstRate,
+        gstRate: item.gstRate,
+        hstRate: item.hstRate,
+        pstApplicable: item.pstApplicable,
+        gstApplicable: item.gstApplicable,
+        hstApplicable: item.hstApplicable,
+        
+        // New fee fields
+        coreCharge: item.coreCharge,
+        coreChargeApplicable: item.coreChargeApplicable,
+        hazardousFee: item.hazardousFee,
+        hazardousFeeApplicable: item.hazardousFeeApplicable,
+        shippingFee: item.shippingFee,
+        otherFees: item.otherFees,
+        feeDescription: item.feeDescription,
+        
+        // Additional product details
+        weight: item.weight,
+        weightUnit: item.weightUnit,
+        dimensions: item.dimensions,
+        serialNumberRequired: item.serialNumberRequired,
+        lotNumberRequired: item.lotNumberRequired,
+        expirationDate: item.expirationDate,
+        batchNumber: item.batchNumber,
+        countryOfOrigin: item.countryOfOrigin,
+        hsCode: item.hsCode,
+        
+        // Pricing and cost details
+        lastCost: item.lastCost,
+        averageCost: item.averageCost,
+        listPrice: item.listPrice,
+        msrp: item.msrp,
+        discountPercent: item.discountPercent,
+        
+        // Additional inventory management
+        binLocation: item.binLocation,
+        shelfLife: item.shelfLife,
+        shelfLifeUnit: item.shelfLifeUnit,
+        temperatureRequirement: item.temperatureRequirement,
+        handlingInstructions: item.handlingInstructions
       };
       
       const { data, error } = await supabase
