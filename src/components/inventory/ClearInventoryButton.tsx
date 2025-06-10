@@ -23,13 +23,9 @@ interface ClearInventoryButtonProps {
 export function ClearInventoryButton({ onCleared }: ClearInventoryButtonProps) {
   const handleClearInventory = async () => {
     try {
-      const success = await clearAllInventoryItems();
-      if (success) {
-        toast.success('All inventory items have been cleared from the database');
-        onCleared?.();
-      } else {
-        toast.error('Failed to clear inventory items');
-      }
+      await clearAllInventoryItems();
+      toast.success('All inventory items have been cleared from the database');
+      onCleared?.();
     } catch (error) {
       console.error('Error clearing inventory:', error);
       toast.error('Failed to clear inventory items');
