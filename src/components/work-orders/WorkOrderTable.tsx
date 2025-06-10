@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { WorkOrder } from '@/types/workOrder';
@@ -8,14 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Eye, Edit, Clock, User, Calendar } from 'lucide-react';
 import { formatDate } from '@/utils/dateUtils';
 import { toast } from 'sonner';
-
 interface WorkOrderTableProps {
   workOrders: WorkOrder[];
 }
-
-export function WorkOrderTable({ workOrders }: WorkOrderTableProps) {
+export function WorkOrderTable({
+  workOrders
+}: WorkOrderTableProps) {
   const navigate = useNavigate();
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending':
@@ -32,7 +30,6 @@ export function WorkOrderTable({ workOrders }: WorkOrderTableProps) {
         return 'bg-gray-100 text-gray-800';
     }
   };
-
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'low':
@@ -47,7 +44,6 @@ export function WorkOrderTable({ workOrders }: WorkOrderTableProps) {
         return 'bg-gray-100 text-gray-800';
     }
   };
-
   const handleViewWorkOrder = (workOrderId: string) => {
     try {
       console.log('Navigating to work order details:', workOrderId);
@@ -57,7 +53,6 @@ export function WorkOrderTable({ workOrders }: WorkOrderTableProps) {
       toast.error('Failed to open work order details');
     }
   };
-
   const handleEditWorkOrder = (workOrderId: string) => {
     try {
       console.log('Navigating to work order edit:', workOrderId);
@@ -67,11 +62,8 @@ export function WorkOrderTable({ workOrders }: WorkOrderTableProps) {
       toast.error('Failed to open work order editor');
     }
   };
-
-  return (
-    <div className="space-y-4">
-      {workOrders.map((workOrder) => (
-        <Card key={workOrder.id} className="hover:shadow-md transition-shadow">
+  return <div className="space-y-4">
+      {workOrders.map(workOrder => <Card key={workOrder.id} className="hover:shadow-md transition-shadow bg-blue-100">
           <CardHeader className="pb-4">
             <div className="flex justify-between items-start">
               <div className="space-y-2">
@@ -79,70 +71,48 @@ export function WorkOrderTable({ workOrders }: WorkOrderTableProps) {
                   {workOrder.description || `Work Order ${workOrder.id.slice(0, 8)}`}
                 </CardTitle>
                 <div className="flex items-center gap-4 text-sm text-gray-600">
-                  {workOrder.customer_name && (
-                    <div className="flex items-center gap-1">
+                  {workOrder.customer_name && <div className="flex items-center gap-1">
                       <User className="h-4 w-4" />
                       <span>{workOrder.customer_name}</span>
-                    </div>
-                  )}
+                    </div>}
                   <div className="flex items-center gap-1">
                     <Calendar className="h-4 w-4" />
                     <span>{formatDate(workOrder.created_at)}</span>
                   </div>
-                  {workOrder.estimated_hours && (
-                    <div className="flex items-center gap-1">
+                  {workOrder.estimated_hours && <div className="flex items-center gap-1">
                       <Clock className="h-4 w-4" />
                       <span>{workOrder.estimated_hours}h estimated</span>
-                    </div>
-                  )}
+                    </div>}
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <Badge className={getStatusColor(workOrder.status)}>
                   {workOrder.status.replace('-', ' ')}
                 </Badge>
-                {workOrder.priority && (
-                  <Badge variant="outline" className={getPriorityColor(workOrder.priority)}>
+                {workOrder.priority && <Badge variant="outline" className={getPriorityColor(workOrder.priority)}>
                     {workOrder.priority}
-                  </Badge>
-                )}
+                  </Badge>}
               </div>
             </div>
           </CardHeader>
           <CardContent>
             <div className="flex justify-between items-center">
               <div className="text-sm text-gray-600">
-                {workOrder.service_type && (
-                  <span className="font-medium">Service: {workOrder.service_type}</span>
-                )}
-                {workOrder.total_cost && (
-                  <span className="ml-4">Cost: ${workOrder.total_cost}</span>
-                )}
+                {workOrder.service_type && <span className="font-medium">Service: {workOrder.service_type}</span>}
+                {workOrder.total_cost && <span className="ml-4">Cost: ${workOrder.total_cost}</span>}
               </div>
               <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => handleViewWorkOrder(workOrder.id)}
-                  className="flex items-center gap-1"
-                >
+                <Button variant="outline" size="sm" onClick={() => handleViewWorkOrder(workOrder.id)} className="flex items-center gap-1">
                   <Eye className="h-4 w-4" />
                   View
                 </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => handleEditWorkOrder(workOrder.id)}
-                  className="flex items-center gap-1"
-                >
+                <Button variant="outline" size="sm" onClick={() => handleEditWorkOrder(workOrder.id)} className="flex items-center gap-1">
                   <Edit className="h-4 w-4" />
                   Edit
                 </Button>
               </div>
             </div>
           </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
+        </Card>)}
+    </div>;
 }
