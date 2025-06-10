@@ -3,353 +3,402 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Shield, AlertTriangle, Calendar, Clock, CheckCircle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Calendar, AlertTriangle, CheckCircle, Clock, Search, Filter } from 'lucide-react';
 import { WorkOrderPart } from '@/types/workOrderPart';
-import { format, differenceInDays, addDays, addMonths, addYears } from 'date-fns';
 
 interface WarrantyStatus {
   part: WorkOrderPart;
+  status: 'active' | 'expiring-soon' | 'expired' | 'no-warranty';
   daysRemaining: number;
-  status: 'active' | 'expiring' | 'expired' | 'no-warranty';
   expiryDate: Date | null;
 }
 
 export function PartsWarrantyTracking() {
-  const [warranties, setWarranties] = useState<WarrantyStatus[]>([]);
+  const [warrantyItems, setWarrantyItems] = useState<WarrantyStatus[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   useEffect(() => {
-    loadWarrantyData();
-  }, []);
+    const fetchWarrantyData = async () => {
+      try {
+        setLoading(true);
+        
+        // Simulated data - replace with actual API call
+        const mockParts: WorkOrderPart[] = [
+          {
+            id: '1',
+            workOrderId: 'WO-001',
+            partName: 'Brake Pads - Front',
+            partNumber: 'BP-001',
+            supplierName: 'AutoParts Inc',
+            supplierCost: 45.00,
+            markupPercentage: 40,
+            retailPrice: 63.00,
+            customerPrice: 63.00,
+            quantity: 1,
+            partType: 'inventory',
+            createdAt: '2023-01-15T10:00:00Z',
+            updatedAt: '2023-01-15T10:00:00Z',
+            category: 'Brakes',
+            isTaxable: true,
+            coreChargeAmount: 15.00,
+            coreChargeApplied: true,
+            warrantyDuration: '1 Year',
+            installDate: '2023-06-15',
+            installedBy: 'John Smith',
+            status: 'installed',
+            isStockItem: true,
+            dateAdded: '2023-01-15',
+            attachments: []
+          },
+          {
+            id: '2',
+            workOrderId: 'WO-002',
+            partName: 'Oil Filter',
+            partNumber: 'OF-205',
+            supplierName: 'FilterPro',
+            supplierCost: 12.00,
+            markupPercentage: 50,
+            retailPrice: 18.00,
+            customerPrice: 18.00,
+            quantity: 1,
+            partType: 'inventory',
+            createdAt: '2023-02-10T10:00:00Z',
+            updatedAt: '2023-02-10T10:00:00Z',
+            category: 'Filters',
+            isTaxable: true,
+            coreChargeAmount: 0,
+            coreChargeApplied: false,
+            warrantyDuration: '90 Days',
+            installDate: '2023-11-15',
+            installedBy: 'Mike Johnson',
+            status: 'installed',
+            isStockItem: true,
+            dateAdded: '2023-02-10',
+            attachments: []
+          }
+        ];
 
-  const loadWarrantyData = async () => {
-    try {
-      setLoading(true);
-      
-      const { data: parts, error } = await supabase
-        .from('work_order_parts')
-        .select('*')
-        .eq('status', 'installed');
-
-      if (error) throw error;
-
-      if (!parts || parts.length === 0) {
-        setWarranties([]);
-        return;
-      }
-
-      const warrantyStatuses = parts.map(part => {
-        let expiryDate: Date | null = null;
-        let daysRemaining = 0;
-        let status: 'active' | 'expiring' | 'expired' | 'no-warranty' = 'no-warranty';
-
-        if (part.warranty_expiry_date) {
-          expiryDate = new Date(part.warranty_expiry_date);
-          daysRemaining = differenceInDays(expiryDate, new Date());
+        const warrantyStatuses: WarrantyStatus[] = mockParts.map(part => {
+          const installDate = part.installDate ? new Date(part.installDate) : null;
+          const warrantyDuration = part.warrantyDuration || 'No Warranty';
           
-          if (daysRemaining < 0) {
+          let expiryDate: Date | null = null;
+          let daysRemaining = 0;
+          
+          if (installDate && warrantyDuration !== 'No Warranty') {
+            expiryDate = new Date(installDate);
+            
+            switch (warrantyDuration) {
+              case '30 Days':
+                expiryDate.setDate(expiryDate.getDate() + 30);
+                break;
+              case '90 Days':
+                expiryDate.setDate(expiryDate.getDate() + 90);
+                break;
+              case '6 Months':
+                expiryDate.setMonth(expiryDate.getMonth() + 6);
+                break;
+              case '1 Year':
+                expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+                break;
+              case '2 Years':
+                expiryDate.setFullYear(expiryDate.getFullYear() + 2);
+                break;
+              case '3 Years':
+                expiryDate.setFullYear(expiryDate.getFullYear() + 3);
+                break;
+              case 'Lifetime':
+                expiryDate = null; // Lifetime warranty
+                break;
+            }
+            
+            if (expiryDate) {
+              const today = new Date();
+              daysRemaining = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+            }
+          }
+          
+          let status: 'active' | 'expiring-soon' | 'expired' | 'no-warranty';
+          
+          if (warrantyDuration === 'No Warranty') {
+            status = 'no-warranty';
+          } else if (warrantyDuration === 'Lifetime') {
+            status = 'active';
+          } else if (daysRemaining < 0) {
             status = 'expired';
           } else if (daysRemaining <= 30) {
-            status = 'expiring';
+            status = 'expiring-soon';
           } else {
             status = 'active';
           }
-        } else if (part.warranty_duration && part.warranty_duration !== 'No Warranty' && part.install_date) {
-          // Calculate expiry date from install date and warranty duration
-          const installDate = new Date(part.install_date);
           
-          switch (part.warranty_duration) {
-            case '30 Days':
-              expiryDate = addDays(installDate, 30);
-              break;
-            case '90 Days':
-              expiryDate = addDays(installDate, 90);
-              break;
-            case '6 Months':
-              expiryDate = addMonths(installDate, 6);
-              break;
-            case '1 Year':
-              expiryDate = addYears(installDate, 1);
-              break;
-            case '2 Years':
-              expiryDate = addYears(installDate, 2);
-              break;
-            case '3 Years':
-              expiryDate = addYears(installDate, 3);
-              break;
-            case 'Lifetime':
-              status = 'active';
-              daysRemaining = 999999; // Represent as "never expires"
-              break;
-            default:
-              status = 'no-warranty';
-          }
+          return {
+            part,
+            status,
+            daysRemaining,
+            expiryDate
+          };
+        });
 
-          if (expiryDate && part.warranty_duration !== 'Lifetime') {
-            daysRemaining = differenceInDays(expiryDate, new Date());
-            
-            if (daysRemaining < 0) {
-              status = 'expired';
-            } else if (daysRemaining <= 30) {
-              status = 'expiring';
-            } else {
-              status = 'active';
-            }
-          }
-        }
+        setWarrantyItems(warrantyStatuses);
+      } catch (error) {
+        console.error('Error fetching warranty data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-        return {
-          part,
-          daysRemaining,
-          status,
-          expiryDate
-        };
-      });
+    fetchWarrantyData();
+  }, []);
 
-      // Sort by days remaining (ascending)
-      warrantyStatuses.sort((a, b) => {
-        if (a.status === 'expired' && b.status !== 'expired') return -1;
-        if (b.status === 'expired' && a.status !== 'expired') return 1;
-        if (a.status === 'expiring' && b.status === 'active') return -1;
-        if (b.status === 'expiring' && a.status === 'active') return 1;
-        return a.daysRemaining - b.daysRemaining;
-      });
-
-      setWarranties(warrantyStatuses);
-
-    } catch (error) {
-      console.error('Error loading warranty data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const filteredItems = warrantyItems.filter(item => {
+    const matchesSearch = item.part.partName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (item.part.partNumber || '').toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (statusFilter === 'all') return matchesSearch;
+    return matchesSearch && item.status === statusFilter;
+  });
 
   const getStatusBadge = (status: WarrantyStatus['status']) => {
-    const variants = {
-      'active': 'bg-green-100 text-green-800',
-      'expiring': 'bg-yellow-100 text-yellow-800',
-      'expired': 'bg-red-100 text-red-800',
-      'no-warranty': 'bg-gray-100 text-gray-800'
-    };
-
-    const labels = {
-      'active': 'Active',
-      'expiring': 'Expiring Soon',
-      'expired': 'Expired',
-      'no-warranty': 'No Warranty'
-    };
-
-    return (
-      <Badge className={variants[status]}>
-        {labels[status]}
-      </Badge>
-    );
+    switch (status) {
+      case 'active':
+        return <Badge className="bg-green-100 text-green-800">Active</Badge>;
+      case 'expiring-soon':
+        return <Badge className="bg-yellow-100 text-yellow-800">Expiring Soon</Badge>;
+      case 'expired':
+        return <Badge className="bg-red-100 text-red-800">Expired</Badge>;
+      case 'no-warranty':
+        return <Badge variant="secondary">No Warranty</Badge>;
+      default:
+        return <Badge variant="outline">Unknown</Badge>;
+    }
   };
 
   const getStatusIcon = (status: WarrantyStatus['status']) => {
     switch (status) {
-      case 'active': return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case 'expiring': return <Clock className="h-4 w-4 text-yellow-600" />;
-      case 'expired': return <AlertTriangle className="h-4 w-4 text-red-600" />;
-      case 'no-warranty': return <Shield className="h-4 w-4 text-gray-600" />;
+      case 'active':
+        return <CheckCircle className="h-4 w-4 text-green-600" />;
+      case 'expiring-soon':
+        return <Clock className="h-4 w-4 text-yellow-600" />;
+      case 'expired':
+        return <AlertTriangle className="h-4 w-4 text-red-600" />;
+      case 'no-warranty':
+        return <Calendar className="h-4 w-4 text-gray-400" />;
+      default:
+        return <Calendar className="h-4 w-4 text-gray-400" />;
     }
   };
 
-  const formatDaysRemaining = (daysRemaining: number, status: WarrantyStatus['status']) => {
-    if (status === 'no-warranty') return 'No Warranty';
-    if (daysRemaining > 999) return 'Lifetime';
-    if (daysRemaining < 0) return `Expired ${Math.abs(daysRemaining)} days ago`;
-    if (daysRemaining === 0) return 'Expires today';
-    if (daysRemaining === 1) return '1 day remaining';
-    return `${daysRemaining} days remaining`;
+  const warrantyStats = {
+    total: warrantyItems.length,
+    active: warrantyItems.filter(item => item.status === 'active').length,
+    expiringSoon: warrantyItems.filter(item => item.status === 'expiring-soon').length,
+    expired: warrantyItems.filter(item => item.status === 'expired').length,
+    noWarranty: warrantyItems.filter(item => item.status === 'no-warranty').length
   };
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <Card key={i}>
-              <CardContent className="p-6">
-                <div className="animate-pulse space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                  <div className="h-8 bg-gray-200 rounded w-3/4"></div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading warranty data...</p>
         </div>
       </div>
     );
   }
 
-  const activeWarranties = warranties.filter(w => w.status === 'active').length;
-  const expiringWarranties = warranties.filter(w => w.status === 'expiring').length;
-  const expiredWarranties = warranties.filter(w => w.status === 'expired').length;
-  const noWarrantyParts = warranties.filter(w => w.status === 'no-warranty').length;
-
   return (
     <div className="space-y-6">
-      <Alert>
-        <Shield className="h-4 w-4" />
-        <AlertDescription>
-          Warranty tracking for installed parts. Monitor coverage, expiration dates, and get alerts for expiring warranties.
-        </AlertDescription>
-      </Alert>
-
-      {/* Warranty Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Warranty Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <CheckCircle className="h-4 w-4" />
-              Active Warranties
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{activeWarranties}</div>
-            <Badge variant="outline" className="mt-1 bg-green-50 text-green-700">Protected</Badge>
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <Calendar className="h-8 w-8 text-blue-600" />
+              <div className="ml-3">
+                <p className="text-sm font-medium text-gray-500">Total Parts</p>
+                <p className="text-2xl font-bold">{warrantyStats.total}</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              Expiring Soon
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{expiringWarranties}</div>
-            <Badge variant="outline" className="mt-1 bg-yellow-50 text-yellow-700">
-              {expiringWarranties > 0 ? 'Action Needed' : 'All Good'}
-            </Badge>
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <CheckCircle className="h-8 w-8 text-green-600" />
+              <div className="ml-3">
+                <p className="text-sm font-medium text-gray-500">Active</p>
+                <p className="text-2xl font-bold">{warrantyStats.active}</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4" />
-              Expired
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{expiredWarranties}</div>
-            <Badge variant="outline" className="mt-1 bg-red-50 text-red-700">No Coverage</Badge>
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <Clock className="h-8 w-8 text-yellow-600" />
+              <div className="ml-3">
+                <p className="text-sm font-medium text-gray-500">Expiring Soon</p>
+                <p className="text-2xl font-bold">{warrantyStats.expiringSoon}</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Shield className="h-4 w-4" />
-              No Warranty
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{noWarrantyParts}</div>
-            <Badge variant="outline" className="mt-1 bg-gray-50 text-gray-700">No Coverage</Badge>
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <AlertTriangle className="h-8 w-8 text-red-600" />
+              <div className="ml-3">
+                <p className="text-sm font-medium text-gray-500">Expired</p>
+                <p className="text-2xl font-bold">{warrantyStats.expired}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <Calendar className="h-8 w-8 text-gray-400" />
+              <div className="ml-3">
+                <p className="text-sm font-medium text-gray-500">No Warranty</p>
+                <p className="text-2xl font-bold">{warrantyStats.noWarranty}</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Warranty Alerts */}
-      {expiringWarranties > 0 && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            You have {expiringWarranties} warranties expiring within 30 days. Consider proactive customer outreach for warranty claims or renewals.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Warranty List */}
+      {/* Filters and Search */}
       <Card>
         <CardHeader>
-          <CardTitle>Warranty Status Details</CardTitle>
-          <CardDescription>
-            Complete warranty information for all installed parts
-          </CardDescription>
+          <CardTitle>Warranty Tracking</CardTitle>
+          <CardDescription>Monitor parts warranty status and expiration dates</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {warranties.length === 0 ? (
-              <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
-                <Shield className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                <p className="text-gray-500">No installed parts with warranty information</p>
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Search parts by name or number..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
               </div>
-            ) : (
-              warranties.map((warranty) => (
-                <div key={warranty.part.id} className="border rounded-lg p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center gap-3">
-                        {getStatusIcon(warranty.status)}
-                        <h3 className="font-medium">{warranty.part.part_name}</h3>
-                        {getStatusBadge(warranty.status)}
-                        {warranty.part.category && (
-                          <Badge variant="outline">{warranty.part.category}</Badge>
-                        )}
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
-                        <div>
-                          <span className="font-medium">Part #:</span> {warranty.part.part_number || 'N/A'}
-                        </div>
-                        <div>
-                          <span className="font-medium">Warranty:</span> {warranty.part.warranty_duration || 'None'}
-                        </div>
-                        <div>
-                          <span className="font-medium">Install Date:</span> {
-                            warranty.part.install_date 
-                              ? format(new Date(warranty.part.install_date), 'MMM dd, yyyy')
-                              : 'N/A'
-                          }
-                        </div>
-                        <div>
-                          <span className="font-medium">Expires:</span> {
-                            warranty.expiryDate 
-                              ? format(warranty.expiryDate, 'MMM dd, yyyy')
-                              : 'N/A'
-                          }
-                        </div>
-                      </div>
+            </div>
+            <div className="w-full sm:w-48">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="expiring-soon">Expiring Soon</SelectItem>
+                  <SelectItem value="expired">Expired</SelectItem>
+                  <SelectItem value="no-warranty">No Warranty</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
 
-                      <div className="flex items-center gap-4 text-sm">
-                        <span className="font-medium">Status:</span>
-                        <span className={
-                          warranty.status === 'expired' ? 'text-red-600' :
-                          warranty.status === 'expiring' ? 'text-yellow-600' :
-                          warranty.status === 'active' ? 'text-green-600' :
-                          'text-gray-600'
-                        }>
-                          {formatDaysRemaining(warranty.daysRemaining, warranty.status)}
-                        </span>
-                        
-                        {warranty.part.installed_by && (
-                          <>
-                            <span className="text-gray-300">•</span>
-                            <span>Installed by: {warranty.part.installed_by}</span>
-                          </>
+          {/* Warranty Table */}
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Part Name</TableHead>
+                  <TableHead>Part Number</TableHead>
+                  <TableHead>Warranty Duration</TableHead>
+                  <TableHead>Install Date</TableHead>
+                  <TableHead>Expiry Date</TableHead>
+                  <TableHead>Days Remaining</TableHead>
+                  <TableHead>Installed By</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredItems.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                      No warranty items found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredItems.map((item) => (
+                    <TableRow key={item.part.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {getStatusIcon(item.status)}
+                          {getStatusBadge(item.status)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium">{item.part.partName}</TableCell>
+                      <TableCell>
+                        <code className="text-sm bg-gray-100 px-2 py-1 rounded">
+                          {item.part.partNumber || 'N/A'}
+                        </code>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">
+                          {item.part.warrantyDuration || 'No Warranty'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {item.part.installDate 
+                          ? new Date(item.part.installDate).toLocaleDateString()
+                          : 'Not installed'
+                        }
+                      </TableCell>
+                      <TableCell>
+                        {item.expiryDate 
+                          ? item.expiryDate.toLocaleDateString()
+                          : item.part.warrantyDuration === 'Lifetime' 
+                            ? 'Lifetime' 
+                            : 'N/A'
+                        }
+                      </TableCell>
+                      <TableCell>
+                        {item.part.warrantyDuration === 'Lifetime' ? (
+                          <span className="text-green-600 font-medium">Lifetime</span>
+                        ) : item.part.warrantyDuration === 'No Warranty' ? (
+                          <span className="text-gray-500">N/A</span>
+                        ) : item.daysRemaining < 0 ? (
+                          <span className="text-red-600 font-medium">
+                            Expired {Math.abs(item.daysRemaining)} days ago
+                          </span>
+                        ) : (
+                          <span className={item.daysRemaining <= 30 ? 'text-yellow-600 font-medium' : 'text-green-600'}>
+                            {item.daysRemaining} days
+                          </span>
                         )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {warranty.status === 'expiring' && (
+                      </TableCell>
+                      <TableCell>
+                        {item.part.installedBy || 'Unknown'}
+                      </TableCell>
+                      <TableCell>
                         <Button variant="outline" size="sm">
-                          <Calendar className="h-4 w-4 mr-2" />
-                          Contact Customer
+                          View Details
                         </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>

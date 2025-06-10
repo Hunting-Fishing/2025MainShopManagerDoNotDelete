@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useReportData } from "@/hooks/useReportData";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { addDays, subDays } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
@@ -9,6 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
+import { DateRange } from "react-day-picker";
 
 // Import the report tabs
 import { RevenueReportTab } from "@/components/reports/RevenueReportTab";
@@ -16,7 +17,7 @@ import { ServicesReportTab } from "@/components/reports/ServicesReportTab";
 import { CustomerReportTab } from "@/components/reports/CustomerReportTab";
 
 export default function Analytics() {
-  const [timeRange, setTimeRange] = useState({
+  const [timeRange, setTimeRange] = useState<DateRange | undefined>({
     from: subDays(new Date(), 30),
     to: new Date(),
   });
@@ -25,7 +26,7 @@ export default function Analytics() {
   const { reportData, loading, error, refetch } = useReportData();
 
   // Handle date range changes
-  const handleDateRangeChange = (range: { from: Date; to: Date }) => {
+  const handleDateRangeChange = (range: DateRange | undefined) => {
     setTimeRange(range);
     refetch();
   };
@@ -65,10 +66,9 @@ export default function Analytics() {
             <RefreshCw className="h-4 w-4 mr-1" />
             Refresh
           </Button>
-          <DateRangePicker 
-            from={timeRange.from}
-            to={timeRange.to}
-            onUpdate={handleDateRangeChange}
+          <DatePickerWithRange 
+            date={timeRange}
+            onDateChange={handleDateRangeChange}
           />
         </div>
       </div>
