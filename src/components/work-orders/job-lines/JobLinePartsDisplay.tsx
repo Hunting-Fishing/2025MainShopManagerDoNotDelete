@@ -8,9 +8,10 @@ import { WorkOrderPart } from '@/types/workOrderPart';
 interface JobLinePartsDisplayProps {
   parts: WorkOrderPart[];
   onViewPart?: (part: WorkOrderPart) => void;
+  isEditMode?: boolean;
 }
 
-export function JobLinePartsDisplay({ parts, onViewPart }: JobLinePartsDisplayProps) {
+export function JobLinePartsDisplay({ parts, onViewPart, isEditMode = false }: JobLinePartsDisplayProps) {
   if (!parts || parts.length === 0) {
     return null;
   }
