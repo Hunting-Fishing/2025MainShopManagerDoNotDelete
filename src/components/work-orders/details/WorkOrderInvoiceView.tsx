@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { WorkOrder } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
@@ -123,3 +124,4 @@ export function WorkOrderInvoiceView({ workOrder, jobLines }: WorkOrderInvoiceVi
     </div>
   );
 }
+
