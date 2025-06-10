@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { InventorySelectionDialog } from '../inventory/InventorySelectionDialog';
+import { ManualPartEntryDialog } from './ManualPartEntryDialog';
 import { InventoryItemExtended } from '@/types/inventory';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { toast } from 'sonner';
@@ -27,6 +28,7 @@ export function AddPartsDialog({
 }: AddPartsDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const [inventorySelectionOpen, setInventorySelectionOpen] = useState(false);
+  const [manualEntryOpen, setManualEntryOpen] = useState(false);
 
   // Use external open state if provided, otherwise use internal state
   const isOpen = open !== undefined ? open : internalOpen;
@@ -69,9 +71,28 @@ export function AddPartsDialog({
     }
   };
 
+  const handleAddManualPart = async (part: Omit<WorkOrderPart, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      // Here you would typically save to database
+      console.log('Adding manual part:', part);
+      
+      setManualEntryOpen(false);
+      setOpen(false);
+      onPartsAdd();
+    } catch (error) {
+      console.error('Error adding manual part:', error);
+      toast.error('Failed to add part');
+    }
+  };
+
   const handleFromInventoryClick = () => {
     console.log('From Inventory button clicked');
     setInventorySelectionOpen(true);
+  };
+
+  const handleManualEntryClick = () => {
+    console.log('Manual Entry button clicked');
+    setManualEntryOpen(true);
   };
 
   const defaultTrigger = (
@@ -121,9 +142,7 @@ export function AddPartsDialog({
               <Button 
                 variant="outline" 
                 className="justify-start h-auto p-4"
-                onClick={() => {
-                  toast.info('Manual part entry coming soon');
-                }}
+                onClick={handleManualEntryClick}
               >
                 <div className="text-left">
                   <div className="font-medium">Manual Entry</div>
@@ -141,6 +160,14 @@ export function AddPartsDialog({
         open={inventorySelectionOpen}
         onOpenChange={setInventorySelectionOpen}
         onAddItem={handleAddInventoryItem}
+      />
+
+      <ManualPartEntryDialog
+        open={manualEntryOpen}
+        onOpenChange={setManualEntryOpen}
+        workOrderId={workOrderId}
+        jobLineId={jobLineId}
+        onPartAdd={handleAddManualPart}
       />
     </>
   );
