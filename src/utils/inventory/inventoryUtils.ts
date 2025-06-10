@@ -50,7 +50,6 @@ export const formatInventoryItem = (dbItem: any): InventoryItemExtended => {
     vehicleCompatibility: dbItem.vehicle_compatibility || '',
     
     // Inventory Management
-    measurementUnit: dbItem.measurement_unit || '',
     onHold: dbItem.on_hold || 0,
     onOrder: dbItem.on_order || 0,
     minStockLevel: dbItem.min_stock_level || 0,
