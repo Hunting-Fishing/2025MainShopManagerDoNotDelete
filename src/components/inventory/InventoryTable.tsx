@@ -1,9 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { InventoryItemExtended } from "@/types/inventory";
 import { formatCurrency } from "@/utils/formatters";
 import { Badge } from "@/components/ui/badge";
+import { Edit } from "lucide-react";
+import { EditInventoryDialog } from "./EditInventoryDialog";
 
 export interface InventoryTableProps {
   items: InventoryItemExtended[];
@@ -11,6 +14,19 @@ export interface InventoryTableProps {
 }
 
 export function InventoryTable({ items, onUpdateItem }: InventoryTableProps) {
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<InventoryItemExtended | null>(null);
+
+  const handleEditClick = (item: InventoryItemExtended) => {
+    setSelectedItem(item);
+    setEditDialogOpen(true);
+  };
+
+  const handleItemUpdated = () => {
+    // Refresh the inventory data
+    window.location.reload();
+  };
+
   if (items.length === 0) {
     return (
       <div className="text-center p-8 border rounded-md bg-gray-50">
@@ -51,49 +67,69 @@ export function InventoryTable({ items, onUpdateItem }: InventoryTableProps) {
   };
 
   return (
-    <div className="border rounded-md overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[240px]">Item</TableHead>
-            <TableHead className="w-[100px]">SKU</TableHead>
-            <TableHead className="w-[100px]">Category</TableHead>
-            <TableHead className="w-[120px]">Supplier</TableHead>
-            <TableHead className="w-[100px] text-right">Qty</TableHead>
-            <TableHead className="w-[100px] text-right">Price</TableHead>
-            <TableHead className="w-[120px] text-center">Status</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {items.map((item) => (
-            <TableRow key={item.id} className="hover:bg-gray-50 cursor-pointer">
-              <TableCell className="font-medium">
-                <div>
-                  {item.name}
-                  {item.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
-                      {item.description}
-                    </p>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell>{item.sku}</TableCell>
-              <TableCell>{item.category}</TableCell>
-              <TableCell>{item.supplier || "—"}</TableCell>
-              <TableCell className="text-right">
-                {item.quantity}
-                {item.reorder_point && item.quantity <= item.reorder_point && (
-                  <p className="text-xs text-red-600">Low Stock</p>
-                )}
-              </TableCell>
-              <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
-              <TableCell className="text-center">
-                {renderStatusBadge(item.status)}
-              </TableCell>
+    <>
+      <div className="border rounded-md overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[240px]">Item</TableHead>
+              <TableHead className="w-[100px]">SKU</TableHead>
+              <TableHead className="w-[100px]">Category</TableHead>
+              <TableHead className="w-[120px]">Supplier</TableHead>
+              <TableHead className="w-[100px] text-right">Qty</TableHead>
+              <TableHead className="w-[100px] text-right">Price</TableHead>
+              <TableHead className="w-[120px] text-center">Status</TableHead>
+              <TableHead className="w-[100px] text-center">Actions</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+          </TableHeader>
+          <TableBody>
+            {items.map((item) => (
+              <TableRow key={item.id} className="hover:bg-gray-50">
+                <TableCell className="font-medium">
+                  <div>
+                    {item.name}
+                    {item.description && (
+                      <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
+                        {item.description}
+                      </p>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>{item.sku}</TableCell>
+                <TableCell>{item.category}</TableCell>
+                <TableCell>{item.supplier || "—"}</TableCell>
+                <TableCell className="text-right">
+                  {item.quantity}
+                  {item.reorder_point && item.quantity <= item.reorder_point && (
+                    <p className="text-xs text-red-600">Low Stock</p>
+                  )}
+                </TableCell>
+                <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
+                <TableCell className="text-center">
+                  {renderStatusBadge(item.status)}
+                </TableCell>
+                <TableCell className="text-center">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEditClick(item)}
+                    className="h-8 w-8 p-0"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <EditInventoryDialog
+        item={selectedItem}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onItemUpdated={handleItemUpdated}
+      />
+    </>
   );
 }
