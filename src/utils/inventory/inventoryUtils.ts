@@ -57,9 +57,7 @@ export const formatInventoryItem = (dbItem: any): InventoryItemExtended => {
     // Pricing - using correct property names from type definition
     marginMarkup: dbItem.margin_markup || 0,
     
-    // Taxes & Fees
-    taxRate: dbItem.tax_rate || 0,
-    taxExempt: dbItem.tax_exempt || false,
+    // Taxes & Fees - removing invalid properties that don't exist in type
     environmentalFee: dbItem.environmental_fee || 0,
     coreCharge: dbItem.core_charge || 0,
     hazmatFee: dbItem.hazmat_fee || 0,
