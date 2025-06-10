@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Grid3X3 } from 'lucide-react';
@@ -7,16 +8,20 @@ import { toast } from 'sonner';
 
 interface JobLinesSectionProps {
   workOrderId: string;
+  description?: string; // Add description property
   jobLines: WorkOrderJobLine[];
   onJobLinesChange: (jobLines: WorkOrderJobLine[]) => void;
+  shopId?: string;
   loading?: boolean;
   isEditMode?: boolean;
 }
 
 export function JobLinesSection({
   workOrderId,
+  description,
   jobLines,
   onJobLinesChange,
+  shopId,
   loading = false,
   isEditMode = false
 }: JobLinesSectionProps) {

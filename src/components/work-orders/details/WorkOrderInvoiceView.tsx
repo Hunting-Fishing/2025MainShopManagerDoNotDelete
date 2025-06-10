@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { WorkOrder } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
@@ -32,9 +33,9 @@ export function WorkOrderInvoiceView({ workOrder, jobLines }: WorkOrderInvoiceVi
         <div className="grid grid-cols-2 gap-8 mb-6">
           <div>
             <h3 className="font-semibold text-gray-900 mb-2">Bill To:</h3>
-            <p className="text-gray-900 font-medium">{workOrder.customer}</p>
-            <p className="text-gray-600 text-sm">{workOrder.customerEmail}</p>
-            <p className="text-gray-600 text-sm">{workOrder.customerPhone}</p>
+            <p className="text-gray-900 font-medium">{workOrder.customer || workOrder.customer_name}</p>
+            <p className="text-gray-600 text-sm">{workOrder.customer_email}</p>
+            <p className="text-gray-600 text-sm">{workOrder.customer_phone}</p>
           </div>
           
           <div className="text-right">
@@ -52,25 +53,25 @@ export function WorkOrderInvoiceView({ workOrder, jobLines }: WorkOrderInvoiceVi
         </div>
 
         {/* Vehicle Information */}
-        {workOrder.vehicleDetails && (
+        {workOrder.vehicle && (
           <div className="bg-gray-50 p-4 rounded-lg">
             <h3 className="font-semibold text-gray-900 mb-2">Vehicle Information</h3>
             <div className="grid grid-cols-4 gap-4 text-sm">
               <div>
                 <span className="text-gray-600">Year:</span>
-                <span className="ml-2 text-gray-900">{workOrder.vehicleDetails.year}</span>
+                <span className="ml-2 text-gray-900">{workOrder.vehicle.year}</span>
               </div>
               <div>
                 <span className="text-gray-600">Make:</span>
-                <span className="ml-2 text-gray-900">{workOrder.vehicleDetails.make}</span>
+                <span className="ml-2 text-gray-900">{workOrder.vehicle.make}</span>
               </div>
               <div>
                 <span className="text-gray-600">Model:</span>
-                <span className="ml-2 text-gray-900">{workOrder.vehicleDetails.model}</span>
+                <span className="ml-2 text-gray-900">{workOrder.vehicle.model}</span>
               </div>
               <div>
                 <span className="text-gray-600">VIN:</span>
-                <span className="ml-2 text-gray-900">{workOrder.vehicleDetails.vin}</span>
+                <span className="ml-2 text-gray-900">{workOrder.vehicle.vin}</span>
               </div>
             </div>
           </div>
@@ -101,15 +102,15 @@ export function WorkOrderInvoiceView({ workOrder, jobLines }: WorkOrderInvoiceVi
           <div className="text-right">
             <div className="grid grid-cols-2 gap-2 text-sm">
               <span className="text-gray-600">Subtotal:</span>
-              <span className="text-gray-900">${workOrder.subtotal?.toFixed(2)}</span>
+              <span className="text-gray-900">${workOrder.subtotal?.toFixed(2) || '0.00'}</span>
               
-              <span className="text-gray-600">Tax ({workOrder.tax_rate * 100}%):</span>
-              <span className="text-gray-900">${workOrder.tax?.toFixed(2)}</span>
+              <span className="text-gray-600">Tax ({(workOrder.tax_rate || 0) * 100}%):</span>
+              <span className="text-gray-900">${workOrder.tax_amount?.toFixed(2) || '0.00'}</span>
             </div>
             
             <div className="mt-4">
               <span className="text-xl font-semibold text-gray-900">Total:</span>
-              <span className="text-xl font-bold text-gray-900 ml-2">${workOrder.total?.toFixed(2)}</span>
+              <span className="text-xl font-bold text-gray-900 ml-2">${workOrder.total_amount?.toFixed(2) || '0.00'}</span>
             </div>
           </div>
         </div>
