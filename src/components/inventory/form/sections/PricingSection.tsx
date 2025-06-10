@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { InventoryFormField } from '../InventoryFormField';
@@ -82,7 +83,8 @@ export function PricingSection({ values, errors, onChange }: PricingSectionProps
               name="total_value"
               type="number"
               value={totalValue.toFixed(2)}
-              disabled
+              onChange={() => {}} // Dummy onChange since this is a calculated field
+              disabled={true}
               description="Calculated: Cost Price × Quantity"
             />
           </div>
