@@ -1,14 +1,14 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { InventoryItemExtended } from "@/types/inventory";
-import { formatInventoryItem } from "@/utils/inventory/inventoryUtils";
+import { supabase } from '@/integrations/supabase/client';
+import { InventoryItemExtended } from '@/types/inventory';
+import { formatInventoryItem } from '@/utils/inventory/inventoryUtils';
 
 /**
  * Get all inventory items from the database
  */
 export const getInventoryItems = async (): Promise<InventoryItemExtended[]> => {
   try {
-    console.log('Fetching inventory items from database...');
+    console.log("Fetching inventory items from database...");
     
     const { data, error } = await supabase
       .from('inventory')
@@ -22,9 +22,11 @@ export const getInventoryItems = async (): Promise<InventoryItemExtended[]> => {
 
     console.log(`Successfully fetched ${data?.length || 0} inventory items`);
     
-    if (!data) return [];
-    
-    return data.map(item => formatInventoryItem(item));
+    if (!data || data.length === 0) {
+      return [];
+    }
+
+    return data.map(formatInventoryItem);
   } catch (error) {
     console.error("Error in getInventoryItems:", error);
     throw error;
@@ -59,10 +61,9 @@ export const createInventoryItem = async (
   item: Omit<InventoryItemExtended, 'id' | 'created_at' | 'updated_at'>
 ): Promise<InventoryItemExtended> => {
   try {
-    console.log('Creating inventory item:', item);
-    
-    const inventoryData = {
-      // Basic Information
+    console.log("Creating inventory item:", item);
+
+    const dbItem = {
       name: item.name,
       sku: item.sku,
       description: item.description || '',
@@ -72,13 +73,9 @@ export const createInventoryItem = async (
       subcategory: item.subcategory || '',
       manufacturer: item.manufacturer || '',
       vehicle_compatibility: item.vehicleCompatibility || '',
-      
-      // Location and Status
       location: item.location || '',
       status: item.status || 'active',
       supplier: item.supplier || '',
-      
-      // Inventory Management
       quantity: item.quantity || 0,
       measurement_unit: item.measurementUnit || '',
       on_hold: item.onHold || 0,
@@ -86,21 +83,15 @@ export const createInventoryItem = async (
       reorder_point: item.reorder_point || 0,
       min_stock_level: item.minStockLevel || 0,
       max_stock_level: item.maxStockLevel || 0,
-      
-      // Pricing
       unit_price: item.unit_price || 0,
       sell_price_per_unit: item.sell_price_per_unit || 0,
       cost_per_unit: item.cost_per_unit || 0,
       margin_markup: item.marginMarkup || 0,
-      
-      // Taxes & Fees
       tax_rate: item.taxRate || 0,
       tax_exempt: item.taxExempt || false,
       environmental_fee: item.environmentalFee || 0,
       core_charge: item.coreCharge || 0,
       hazmat_fee: item.hazmatFee || 0,
-      
-      // Product Details
       weight: item.weight || 0,
       dimensions: item.dimensions || '',
       color: item.color || '',
@@ -109,8 +100,6 @@ export const createInventoryItem = async (
       oem_part_number: item.oemPartNumber || '',
       universal_part: item.universalPart || false,
       warranty_period: item.warrantyPeriod || '',
-      
-      // Additional Info
       date_bought: item.dateBought || '',
       date_last: item.dateLast || '',
       notes: item.notes || ''
@@ -118,7 +107,7 @@ export const createInventoryItem = async (
 
     const { data, error } = await supabase
       .from('inventory')
-      .insert([inventoryData])
+      .insert([dbItem])
       .select()
       .single();
 
@@ -127,7 +116,7 @@ export const createInventoryItem = async (
       throw error;
     }
 
-    console.log('Successfully created inventory item:', data);
+    console.log("Created inventory item:", data);
     return formatInventoryItem(data);
   } catch (error) {
     console.error("Error in createInventoryItem:", error);
@@ -143,66 +132,58 @@ export const updateInventoryItem = async (
   updates: Partial<InventoryItemExtended>
 ): Promise<InventoryItemExtended> => {
   try {
-    console.log('Updating inventory item:', id, updates);
-    
-    const inventoryData = {
-      // Basic Information
-      ...(updates.name !== undefined && { name: updates.name }),
-      ...(updates.sku !== undefined && { sku: updates.sku }),
-      ...(updates.description !== undefined && { description: updates.description }),
-      ...(updates.partNumber !== undefined && { part_number: updates.partNumber }),
-      ...(updates.barcode !== undefined && { barcode: updates.barcode }),
-      ...(updates.category !== undefined && { category: updates.category }),
-      ...(updates.subcategory !== undefined && { subcategory: updates.subcategory }),
-      ...(updates.manufacturer !== undefined && { manufacturer: updates.manufacturer }),
-      ...(updates.vehicleCompatibility !== undefined && { vehicle_compatibility: updates.vehicleCompatibility }),
-      
-      // Location and Status
-      ...(updates.location !== undefined && { location: updates.location }),
-      ...(updates.status !== undefined && { status: updates.status }),
-      ...(updates.supplier !== undefined && { supplier: updates.supplier }),
-      
-      // Inventory Management
-      ...(updates.quantity !== undefined && { quantity: updates.quantity }),
-      ...(updates.measurementUnit !== undefined && { measurement_unit: updates.measurementUnit }),
-      ...(updates.onHold !== undefined && { on_hold: updates.onHold }),
-      ...(updates.onOrder !== undefined && { on_order: updates.onOrder }),
-      ...(updates.reorder_point !== undefined && { reorder_point: updates.reorder_point }),
-      ...(updates.minStockLevel !== undefined && { min_stock_level: updates.minStockLevel }),
-      ...(updates.maxStockLevel !== undefined && { max_stock_level: updates.maxStockLevel }),
-      
-      // Pricing
-      ...(updates.unit_price !== undefined && { unit_price: updates.unit_price }),
-      ...(updates.sell_price_per_unit !== undefined && { sell_price_per_unit: updates.sell_price_per_unit }),
-      ...(updates.cost_per_unit !== undefined && { cost_per_unit: updates.cost_per_unit }),
-      ...(updates.marginMarkup !== undefined && { margin_markup: updates.marginMarkup }),
-      
-      // Taxes & Fees
-      ...(updates.taxRate !== undefined && { tax_rate: updates.taxRate }),
-      ...(updates.taxExempt !== undefined && { tax_exempt: updates.taxExempt }),
-      ...(updates.environmentalFee !== undefined && { environmental_fee: updates.environmentalFee }),
-      ...(updates.coreCharge !== undefined && { core_charge: updates.coreCharge }),
-      ...(updates.hazmatFee !== undefined && { hazmat_fee: updates.hazmatFee }),
-      
-      // Product Details
-      ...(updates.weight !== undefined && { weight: updates.weight }),
-      ...(updates.dimensions !== undefined && { dimensions: updates.dimensions }),
-      ...(updates.color !== undefined && { color: updates.color }),
-      ...(updates.material !== undefined && { material: updates.material }),
-      ...(updates.modelYear !== undefined && { model_year: updates.modelYear }),
-      ...(updates.oemPartNumber !== undefined && { oem_part_number: updates.oemPartNumber }),
-      ...(updates.universalPart !== undefined && { universal_part: updates.universalPart }),
-      ...(updates.warrantyPeriod !== undefined && { warranty_period: updates.warrantyPeriod }),
-      
-      // Additional Info
-      ...(updates.dateBought !== undefined && { date_bought: updates.dateBought }),
-      ...(updates.dateLast !== undefined && { date_last: updates.dateLast }),
-      ...(updates.notes !== undefined && { notes: updates.notes })
+    console.log("Updating inventory item:", { id, updates });
+
+    const dbUpdates = {
+      name: updates.name,
+      sku: updates.sku,
+      description: updates.description,
+      part_number: updates.partNumber,
+      barcode: updates.barcode,
+      category: updates.category,
+      subcategory: updates.subcategory,
+      manufacturer: updates.manufacturer,
+      vehicle_compatibility: updates.vehicleCompatibility,
+      location: updates.location,
+      status: updates.status,
+      supplier: updates.supplier,
+      quantity: updates.quantity,
+      measurement_unit: updates.measurementUnit,
+      on_hold: updates.onHold,
+      on_order: updates.onOrder,
+      reorder_point: updates.reorder_point,
+      min_stock_level: updates.minStockLevel,
+      max_stock_level: updates.maxStockLevel,
+      unit_price: updates.unit_price,
+      sell_price_per_unit: updates.sell_price_per_unit,
+      cost_per_unit: updates.cost_per_unit,
+      margin_markup: updates.marginMarkup,
+      tax_rate: updates.taxRate,
+      tax_exempt: updates.taxExempt,
+      environmental_fee: updates.environmentalFee,
+      core_charge: updates.coreCharge,
+      hazmat_fee: updates.hazmatFee,
+      weight: updates.weight,
+      dimensions: updates.dimensions,
+      color: updates.color,
+      material: updates.material,
+      model_year: updates.modelYear,
+      oem_part_number: updates.oemPartNumber,
+      universal_part: updates.universalPart,
+      warranty_period: updates.warrantyPeriod,
+      date_bought: updates.dateBought,
+      date_last: updates.dateLast,
+      notes: updates.notes
     };
+
+    // Remove undefined values
+    const cleanUpdates = Object.fromEntries(
+      Object.entries(dbUpdates).filter(([_, value]) => value !== undefined)
+    );
 
     const { data, error } = await supabase
       .from('inventory')
-      .update(inventoryData)
+      .update(cleanUpdates)
       .eq('id', id)
       .select()
       .single();
@@ -212,7 +193,7 @@ export const updateInventoryItem = async (
       throw error;
     }
 
-    console.log('Successfully updated inventory item:', data);
+    console.log("Updated inventory item:", data);
     return formatInventoryItem(data);
   } catch (error) {
     console.error("Error in updateInventoryItem:", error);
@@ -221,7 +202,7 @@ export const updateInventoryItem = async (
 };
 
 /**
- * Update inventory quantity
+ * Update inventory item quantity
  */
 export const updateInventoryQuantity = async (
   id: string,
@@ -256,6 +237,38 @@ export const deleteInventoryItem = async (id: string): Promise<void> => {
     if (error) throw error;
   } catch (error) {
     console.error("Error deleting inventory item:", error);
+    throw error;
+  }
+};
+
+/**
+ * Clear all inventory items
+ */
+export const clearAllInventoryItems = async (): Promise<boolean> => {
+  try {
+    // First get all inventory items to check if there are any
+    const { data: items, error: fetchError } = await supabase
+      .from('inventory')
+      .select('id');
+      
+    if (fetchError) throw fetchError;
+    
+    if (!items || items.length === 0) {
+      // No items to delete
+      return true;
+    }
+      
+    // Delete all inventory items
+    const { error: deleteError } = await supabase
+      .from('inventory')
+      .delete()
+      .gte('id', '0'); // Use a condition that matches all items
+    
+    if (deleteError) throw deleteError;
+    
+    return true;
+  } catch (error) {
+    console.error("Error clearing inventory:", error);
     throw error;
   }
 };
