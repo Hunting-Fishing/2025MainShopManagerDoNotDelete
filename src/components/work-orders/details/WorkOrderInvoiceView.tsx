@@ -2,12 +2,14 @@
 import React from 'react';
 import { WorkOrder } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { InvoiceHeader } from './invoice/InvoiceHeader';
-import { InvoiceCustomerInfo } from './invoice/InvoiceCustomerInfo';
-import { InvoiceVehicleInfo } from './invoice/InvoiceVehicleInfo';
-import { InvoiceServicesSection } from './invoice/InvoiceServicesSection';
-import { InvoiceTotalsSection } from './invoice/InvoiceTotalsSection';
-import { InvoiceFooter } from './invoice/InvoiceFooter';
+import { 
+  InvoiceHeader,
+  InvoiceCustomerInfo,
+  InvoiceVehicleInfo,
+  InvoiceServicesSection,
+  InvoiceTotalsSection,
+  InvoiceFooter
+} from './invoice';
 
 interface WorkOrderInvoiceViewProps {
   workOrder: WorkOrder;
