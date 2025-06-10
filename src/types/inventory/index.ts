@@ -1,5 +1,4 @@
 
-
 // Export all inventory-related types from a single file
 
 // Basic inventory item interface
@@ -43,7 +42,9 @@ export interface InventoryItemExtended extends InventoryItem {
   maxStockLevel?: number;
   
   // Pricing
+  sellPricePerUnit?: number;
   sell_price_per_unit?: number;
+  costPerUnit?: number;
   cost_per_unit?: number;
   marginMarkup?: number;
   
@@ -130,4 +131,3 @@ export * from './transactions';
 export * from './vendors';
 export * from './purchaseOrders';
 export * from './locations';
-

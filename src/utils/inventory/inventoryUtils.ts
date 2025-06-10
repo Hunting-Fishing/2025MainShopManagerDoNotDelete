@@ -58,7 +58,9 @@ export const formatInventoryItem = (dbItem: any): InventoryItemExtended => {
     maxStockLevel: dbItem.max_stock_level || 0,
     
     // Pricing
+    sellPricePerUnit: dbItem.sell_price_per_unit || 0,
     sell_price_per_unit: dbItem.sell_price_per_unit || 0,
+    costPerUnit: dbItem.cost_per_unit || 0,
     cost_per_unit: dbItem.cost_per_unit || 0,
     marginMarkup: dbItem.margin_markup || 0,
     
