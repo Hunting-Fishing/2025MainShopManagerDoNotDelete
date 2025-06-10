@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,7 +8,6 @@ import { jobLineStatusMap } from '@/types/jobLine';
 import { EditJobLineDialog } from './EditJobLineDialog';
 import { JobLinePartsDisplay } from '../parts/JobLinePartsDisplay';
 import { AddPartsDialog } from '../parts/AddPartsDialog';
-
 interface JobLineCardProps {
   jobLine: WorkOrderJobLine;
   onUpdate: (jobLine: WorkOrderJobLine) => void;
@@ -18,27 +16,23 @@ interface JobLineCardProps {
   onRemovePart?: (partId: string) => void;
   isEditMode?: boolean;
 }
-
-export function JobLineCard({ 
-  jobLine, 
-  onUpdate, 
+export function JobLineCard({
+  jobLine,
+  onUpdate,
   onDelete,
   onAddParts,
   onRemovePart,
-  isEditMode = false 
+  isEditMode = false
 }: JobLineCardProps) {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [addPartsDialogOpen, setAddPartsDialogOpen] = useState(false);
   const statusInfo = jobLineStatusMap[jobLine.status] || jobLineStatusMap.pending;
-
   const handleEditClick = () => {
     setEditDialogOpen(true);
   };
-
   const handleSaveEdit = (updatedJobLine: WorkOrderJobLine) => {
     onUpdate(updatedJobLine);
   };
-
   const handlePartsAdded = () => {
     // Simple callback to refresh parts display
     console.log('Parts added to job line:', jobLine.id);
@@ -46,13 +40,10 @@ export function JobLineCard({
   };
 
   // Calculate total including parts
-  const partsTotal = jobLine.parts?.reduce((total, part) => 
-    total + (part.customerPrice * part.quantity), 0) || 0;
+  const partsTotal = jobLine.parts?.reduce((total, part) => total + part.customerPrice * part.quantity, 0) || 0;
   const totalWithParts = (jobLine.totalAmount || 0) + partsTotal;
-
-  return (
-    <>
-      <Card className="border-l-4 border-l-blue-500">
+  return <>
+      <Card className="border-l-4 border-l-blue-500 bg-cyan-100 rounded-lg">
         <CardContent className="p-4">
           <div className="flex items-start justify-between">
             <div className="flex-1">
@@ -61,18 +52,14 @@ export function JobLineCard({
                 <Badge className={statusInfo.classes}>
                   {statusInfo.label}
                 </Badge>
-                {jobLine.category && (
-                  <Badge variant="outline" className="text-xs">
+                {jobLine.category && <Badge variant="outline" className="text-xs">
                     {jobLine.category}
-                  </Badge>
-                )}
+                  </Badge>}
               </div>
               
-              {jobLine.description && (
-                <p className="text-sm text-muted-foreground mb-3">
+              {jobLine.description && <p className="text-sm text-muted-foreground mb-3">
                   {jobLine.description}
-                </p>
-              )}
+                </p>}
               
               <div className="grid grid-cols-4 gap-4 text-sm">
                 <div>
@@ -102,61 +89,28 @@ export function JobLineCard({
               </div>
 
               {/* Parts Display */}
-              <JobLinePartsDisplay 
-                parts={jobLine.parts || []}
-                onRemovePart={onRemovePart}
-                isEditMode={isEditMode}
-              />
+              <JobLinePartsDisplay parts={jobLine.parts || []} onRemovePart={onRemovePart} isEditMode={isEditMode} />
             </div>
             
             <div className="flex items-center gap-1 ml-4">
-              {isEditMode && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setAddPartsDialogOpen(true)}
-                >
+              {isEditMode && <Button variant="ghost" size="sm" onClick={() => setAddPartsDialogOpen(true)}>
                   <Plus className="h-4 w-4" />
-                </Button>
-              )}
-              {isEditMode && (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleEditClick}
-                  >
+                </Button>}
+              {isEditMode && <>
+                  <Button variant="ghost" size="sm" onClick={handleEditClick}>
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onDelete(jobLine.id)}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                  >
+                  <Button variant="ghost" size="sm" onClick={() => onDelete(jobLine.id)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
                     <Trash2 className="h-4 w-4" />
                   </Button>
-                </>
-              )}
+                </>}
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <EditJobLineDialog
-        jobLine={jobLine}
-        open={editDialogOpen}
-        onOpenChange={setEditDialogOpen}
-        onSave={handleSaveEdit}
-      />
+      <EditJobLineDialog jobLine={jobLine} open={editDialogOpen} onOpenChange={setEditDialogOpen} onSave={handleSaveEdit} />
 
-      <AddPartsDialog
-        workOrderId={jobLine.workOrderId || ''}
-        jobLineId={jobLine.id}
-        onPartsAdd={handlePartsAdded}
-        open={addPartsDialogOpen}
-        onOpenChange={setAddPartsDialogOpen}
-      />
-    </>
-  );
+      <AddPartsDialog workOrderId={jobLine.workOrderId || ''} jobLineId={jobLine.id} onPartsAdd={handlePartsAdded} open={addPartsDialogOpen} onOpenChange={setAddPartsDialogOpen} />
+    </>;
 }
