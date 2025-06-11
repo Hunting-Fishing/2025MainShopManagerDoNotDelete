@@ -78,7 +78,7 @@ export function UnifiedPartEntryForm({
       <Tabs defaultValue="basic" className="w-full">
         <TabsList className="grid w-full grid-cols-4 bg-emerald-400 rounded-lg">
           <TabsTrigger value="basic" className="text-lg">Basic Info</TabsTrigger>
-          <TabsTrigger value="pricing">Pricing</TabsTrigger>
+          <TabsTrigger value="pricing" className="text-lg">Pricing</TabsTrigger>
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="location">Location</TabsTrigger>
         </TabsList>
