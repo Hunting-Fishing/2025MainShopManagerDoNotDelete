@@ -6,7 +6,8 @@ import {
   Palette, 
   Package, 
   Wrench,
-  Hash
+  Hash,
+  FileText
 } from 'lucide-react';
 import { CompanyTab } from '@/components/settings/CompanyTab';
 import { TeamTab } from '@/components/settings/TeamTab';
@@ -15,6 +16,7 @@ import { BrandingTab } from '@/components/settings/BrandingTab';
 import { InventorySettingsTab } from '@/components/settings/InventorySettingsTab';
 import { DIYBayRatesTab } from '@/components/settings/DIYBayRatesTab';
 import { WorkOrderNumberingTab } from '@/components/settings/WorkOrderNumberingTab';
+import { WorkOrderPreferencesTab } from '@/components/settings/WorkOrderPreferencesTab';
 import { SettingsTabConfig } from '@/types/settingsConfig';
 
 export const SETTINGS_TABS: SettingsTabConfig[] = [
@@ -38,6 +40,13 @@ export const SETTINGS_TABS: SettingsTabConfig[] = [
     icon: Hash,
     component: WorkOrderNumberingTab,
     description: 'Configure work order numbering and settings'
+  },
+  {
+    id: 'work-order-preferences',
+    label: 'Work Order Preferences',
+    icon: FileText,
+    component: WorkOrderPreferencesTab,
+    description: 'Configure work order behavior and display options'
   },
   {
     id: 'inventory',

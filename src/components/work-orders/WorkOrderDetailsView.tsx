@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -13,6 +12,7 @@ import { getWorkOrderTimeEntries } from '@/services/workOrder/workOrderQueryServ
 import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
 import { WorkOrderDetailsHeader } from './details/WorkOrderDetailsHeader';
 import { WorkOrderDetailsTabs } from './details/WorkOrderDetailsTabs';
+import { useWorkOrderPreferences } from '@/hooks/useWorkOrderPreferences';
 import { toast } from '@/hooks/use-toast';
 
 interface WorkOrderDetailsViewProps {
@@ -23,6 +23,7 @@ export function WorkOrderDetailsView({ workOrderId: propWorkOrderId }: WorkOrder
   const { id: paramWorkOrderId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const workOrderId = propWorkOrderId || paramWorkOrderId;
+  const { shouldAutoEdit, loading: preferencesLoading } = useWorkOrderPreferences();
 
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
   const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
@@ -39,6 +40,20 @@ export function WorkOrderDetailsView({ workOrderId: propWorkOrderId }: WorkOrder
       fetchWorkOrderData(workOrderId);
     }
   }, [workOrderId]);
+
+  // Auto-enable edit mode based on user preferences and work order status
+  useEffect(() => {
+    if (workOrder && !preferencesLoading) {
+      // Only auto-edit if work order is not completed and user has auto-edit enabled
+      const canAutoEdit = shouldAutoEdit() && 
+                          workOrder.status !== 'completed' && 
+                          workOrder.status !== 'cancelled';
+      
+      if (canAutoEdit) {
+        setIsEditMode(true);
+      }
+    }
+  }, [workOrder, shouldAutoEdit, preferencesLoading]);
 
   const fetchWorkOrderData = async (id: string) => {
     try {
@@ -95,6 +110,10 @@ export function WorkOrderDetailsView({ workOrderId: propWorkOrderId }: WorkOrder
     // navigate(`/invoices/${invoiceId}`);
   };
 
+  const handleEditToggle = () => {
+    setIsEditMode(!isEditMode);
+  };
+
   if (!workOrderId) {
     return (
       <Alert variant="destructive">
@@ -106,7 +125,7 @@ export function WorkOrderDetailsView({ workOrderId: propWorkOrderId }: WorkOrder
     );
   }
 
-  if (loading) {
+  if (loading || preferencesLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
@@ -132,7 +151,7 @@ export function WorkOrderDetailsView({ workOrderId: propWorkOrderId }: WorkOrder
     <div className="space-y-6">
       <WorkOrderDetailsHeader 
         workOrder={workOrder}
-        onEdit={() => setIsEditMode(!isEditMode)}
+        onEdit={handleEditToggle}
         onInvoiceCreated={handleInvoiceCreated}
         isEditMode={isEditMode}
       />
