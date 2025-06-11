@@ -9,7 +9,7 @@ import {
   InvoiceServicesSection,
   InvoiceTotalsSection,
   InvoiceFooter
-} from './invoice';
+} from './details/invoice';
 
 interface WorkOrderInvoiceViewProps {
   workOrder: WorkOrder;
