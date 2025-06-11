@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -18,6 +17,8 @@ import Invoices from '@/pages/Invoices';
 import Reports from '@/pages/Reports';
 import FeedbackAnalytics from '@/pages/FeedbackAnalytics';
 import PartsTracking from '@/pages/PartsTracking';
+import QuoteDetails from './pages/QuoteDetails';
+import Quotes from './pages/Quotes';
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,8 @@ function App() {
               <Route path="/invoices" element={<Layout><Invoices /></Layout>} />
               <Route path="/reports" element={<Layout><Reports /></Layout>} />
               <Route path="/feedback-analytics" element={<Layout><FeedbackAnalytics /></Layout>} />
+              <Route path="/quotes" element={<Quotes />} />
+              <Route path="/quotes/:id" element={<QuoteDetails />} />
             </Routes>
           </div>
         </BrowserRouter>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { WorkOrder } from '@/types/workOrder';
@@ -16,14 +15,18 @@ import { WorkOrderPartsSection } from './parts/WorkOrderPartsSection';
 import { WorkOrderDetailsTab } from './details/WorkOrderDetailsTab';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
+import { WorkOrderDetailsActions } from './details/WorkOrderDetailsActions';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 interface WorkOrderDetailsViewProps {
   workOrderId?: string;
 }
 
-export function WorkOrderDetailsView({ workOrderId: workOrderIdProp }: WorkOrderDetailsViewProps) {
+export function WorkOrderDetailsView({ workOrderId }: WorkOrderDetailsViewProps) {
+  const navigate = useNavigate();
   const { id } = useParams();
-  const workOrderId = workOrderIdProp || id || '';
+  const workOrderId = workOrderId || id || '';
   const [isEditMode, setIsEditMode] = useState(false);
   const [allParts, setAllParts] = useState<WorkOrderPart[]>([]);
   const [partsLoading, setPartsLoading] = useState(false);
@@ -50,6 +53,17 @@ export function WorkOrderDetailsView({ workOrderId: workOrderIdProp }: WorkOrder
     fetchAllParts();
   }, [workOrderId]);
 
+  // Handle invoice creation success
+  const handleInvoiceCreated = (invoiceId: string) => {
+    console.log('Invoice created:', invoiceId);
+    toast({
+      title: "Invoice Created",
+      description: "Work order was successfully converted to an invoice",
+    });
+    // Optionally navigate to the invoice
+    navigate(`/invoices/${invoiceId}`);
+  };
+
   if (workOrderLoading || jobLinesLoading || partsLoading) {
     return <div>Loading...</div>;
   }
@@ -64,42 +78,26 @@ export function WorkOrderDetailsView({ workOrderId: workOrderIdProp }: WorkOrder
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-semibold">Work Order #{workOrder.id}</h1>
-          <p className="text-muted-foreground">
-            View and manage work order details.
+          <h1 className="text-2xl font-bold tracking-tight">
+            Work Order {workOrder?.work_order_number || workOrder?.id}
+          </h1>
+          <p className="text-muted-foreground max-w-2xl">
+            {workOrder?.description || 'No description provided'}
           </p>
         </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" asChild>
-            <Link to={`/work-orders/${workOrderId}/invoice`} target="_blank" className="flex items-center">
-              <Printer className="mr-2 h-4 w-4" />
-              View Invoice
-            </Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link to={`/work-orders/${workOrderId}/view`} className="flex items-center">
-              <Eye className="mr-2 h-4 w-4" />
-              View Public
-            </Link>
-          </Button>
-          <Button variant="ghost" onClick={() => setIsEditMode(!isEditMode)}>
-            {isEditMode ? (
-              <>
-                <Pencil className="mr-2 h-4 w-4" />
-                Exit Edit Mode
-              </>
-            ) : (
-              <>
-                <Pencil className="mr-2 h-4 w-4" />
-                Edit Work Order
-              </>
-            )}
-          </Button>
-        </div>
+        
+        {workOrder && (
+          <WorkOrderDetailsActions
+            workOrder={workOrder}
+            onEdit={() => setIsEditMode(true)}
+            onInvoiceCreated={handleInvoiceCreated}
+          />
+        )}
       </div>
-      
+
       <Tabs defaultValue="work-order">
         <TabsList className="mb-4">
           <TabsTrigger value="work-order">Work Order Details</TabsTrigger>

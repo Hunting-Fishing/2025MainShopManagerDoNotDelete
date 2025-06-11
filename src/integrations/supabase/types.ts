@@ -773,6 +773,39 @@ export type Database = {
           },
         ]
       }
+      conversion_audit: {
+        Row: {
+          conversion_notes: string | null
+          converted_by: string | null
+          created_at: string
+          id: string
+          source_id: string
+          source_type: string
+          target_id: string
+          target_type: string
+        }
+        Insert: {
+          conversion_notes?: string | null
+          converted_by?: string | null
+          created_at?: string
+          id?: string
+          source_id: string
+          source_type: string
+          target_id: string
+          target_type: string
+        }
+        Update: {
+          conversion_notes?: string | null
+          converted_by?: string | null
+          created_at?: string
+          id?: string
+          source_id?: string
+          source_type?: string
+          target_id?: string
+          target_type?: string
+        }
+        Relationships: []
+      }
       customer_activities: {
         Row: {
           action: string
@@ -6372,6 +6405,150 @@ export type Database = {
           },
         ]
       }
+      quote_items: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          display_order: number | null
+          id: string
+          item_type: string
+          name: string
+          quantity: number
+          quote_id: string
+          total_price: number
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          item_type?: string
+          name: string
+          quantity?: number
+          quote_id: string
+          total_price?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          item_type?: string
+          name?: string
+          quantity?: number
+          quote_id?: string
+          total_price?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotes: {
+        Row: {
+          approved_at: string | null
+          converted_at: string | null
+          converted_to_work_order_id: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          expiry_date: string | null
+          id: string
+          notes: string | null
+          quote_number: string | null
+          rejected_at: string | null
+          sent_at: string | null
+          status: string
+          subtotal: number | null
+          tax_amount: number | null
+          tax_rate: number | null
+          terms_conditions: string | null
+          total_amount: number | null
+          updated_at: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          converted_at?: string | null
+          converted_to_work_order_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          expiry_date?: string | null
+          id?: string
+          notes?: string | null
+          quote_number?: string | null
+          rejected_at?: string | null
+          sent_at?: string | null
+          status?: string
+          subtotal?: number | null
+          tax_amount?: number | null
+          tax_rate?: number | null
+          terms_conditions?: string | null
+          total_amount?: number | null
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          converted_at?: string | null
+          converted_to_work_order_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          expiry_date?: string | null
+          id?: string
+          notes?: string | null
+          quote_number?: string | null
+          rejected_at?: string | null
+          sent_at?: string | null
+          status?: string
+          subtotal?: number | null
+          tax_amount?: number | null
+          tax_rate?: number | null
+          terms_conditions?: string | null
+          total_amount?: number | null
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_converted_to_work_order_id_fkey"
+            columns: ["converted_to_work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recurring_events: {
         Row: {
           base_event_id: string | null
@@ -9438,6 +9615,18 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      convert_quote_to_work_order: {
+        Args: { p_quote_id: string; p_converted_by: string; p_notes?: string }
+        Returns: string
+      }
+      convert_work_order_to_invoice: {
+        Args: {
+          p_work_order_id: string
+          p_converted_by: string
+          p_notes?: string
+        }
+        Returns: string
+      }
       count_email_events: {
         Args: { campaign_id_param: string; event_type_param: string }
         Returns: number
@@ -9483,6 +9672,10 @@ export type Database = {
       delete_work_order_time_entries: {
         Args: { work_order_id: string }
         Returns: undefined
+      }
+      generate_quote_number: {
+        Args: { p_shop_id?: string }
+        Returns: string
       }
       generate_recurring_reminder: {
         Args: { parent_id: string }

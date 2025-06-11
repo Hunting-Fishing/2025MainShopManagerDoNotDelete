@@ -1,131 +1,193 @@
-
-import { NavItem } from "./SidebarNavItem";
-
-import {
-  Home,
-  Users,
-  Wrench,
-  Calendar,
+import { 
+  LayoutDashboard, 
+  Users, 
+  Wrench, 
+  Receipt, 
   FileText,
-  Package,
-  TrendingUp,
-  Settings,
+  Package, 
+  Calendar,
   MessageSquare,
-  Phone,
-  ShoppingCart,
-  Bell,
-  UserPlus,
-  Search,
+  Settings,
   BarChart3,
-  Shield,
-  DollarSign,
-  Building,
-  Truck,
-  ClipboardCheck,
+  ClipboardList,
+  Phone,
+  Star,
+  Bell,
   Cog,
-  PlusCircle,
-  BookOpen,
-  MapPin,
-  HeartHandshake,
-  Package2,
-  Activity
-} from "lucide-react";
+  Shield,
+  HelpCircle,
+  ShoppingCart,
+  Building2,
+  Truck,
+  UserCog,
+  FileBarChart,
+  Building
+} from 'lucide-react';
 
-export const mainNavigationItems: NavItem[] = [
+export const navigation = [
   {
-    name: "New Customer",
-    href: "/customers/create",
-    icon: UserPlus,
-    title: "Create a new customer profile"
+    title: 'Dashboard',
+    items: [
+      {
+        title: 'Dashboard',
+        href: '/dashboard',
+        icon: LayoutDashboard,
+      },
+    ],
   },
   {
-    name: "New Work Order",
-    href: "/work-orders/create",
-    icon: PlusCircle,
-    title: "Create a new work order"
+    title: 'Customers',
+    items: [
+      {
+        title: 'Customers',
+        href: '/customers',
+        icon: Users,
+      },
+    ],
   },
   {
-    name: "Search",
-    href: "/search",
-    icon: Search,
-    title: "Search"
+    title: 'Inventory',
+    items: [
+      {
+        title: 'Products',
+        href: '/products',
+        icon: Package,
+      },
+      {
+        title: 'Suppliers',
+        href: '/suppliers',
+        icon: Truck,
+      },
+      {
+        title: 'Stock Control',
+        href: '/stock-control',
+        icon: BarChart3,
+      },
+      {
+        title: 'Purchase Orders',
+        href: '/purchase-orders',
+        icon: ShoppingCart,
+      },
+    ],
   },
   {
-    name: "Notifications",
-    href: "/notifications",
-    icon: Bell,
-    title: "Notifications"
-  }
-];
-
-export const secondaryNavigationItems: NavItem[] = [
-  {
-    name: "Knowledge Base",
-    href: "/knowledge-base",
-    icon: BookOpen,
-    title: "Knowledge Base"
+    title: 'Scheduling',
+    items: [
+      {
+        title: 'Calendar',
+        href: '/calendar',
+        icon: Calendar,
+      },
+      {
+        title: 'Service Reminders',
+        href: '/service-reminders',
+        icon: Bell,
+      },
+    ],
   },
   {
-    name: "Community",
-    href: "/community",
-    icon: HeartHandshake,
-    title: "Community"
+    title: 'Communications',
+    items: [
+      {
+        title: 'Customer Comms',
+        href: '/customer-comms',
+        icon: MessageSquare,
+      },
+      {
+        title: 'Call Logger',
+        href: '/call-logger',
+        icon: Phone,
+      },
+    ],
   },
   {
-    name: "Map",
-    href: "/map",
-    icon: MapPin,
-    title: "Map"
-  }
-];
-
-export const navigationItems: NavItem[] = [
-  {
-    name: "Dashboard",
-    href: "/",
-    icon: Home,
-    title: "Main Dashboard"
+    title: 'Operations',
+    items: [
+      {
+        title: 'Quotes',
+        href: '/quotes',
+        icon: FileText,
+      },
+      {
+        title: 'Work Orders',
+        href: '/work-orders',
+        icon: Wrench,
+      },
+      {
+        title: 'Invoices',
+        href: '/invoices',
+        icon: Receipt,
+      },
+      {
+        title: 'Service Board',
+        href: '/service-board',
+        icon: ClipboardList,
+      },
+    ],
   },
   {
-    name: "Work Orders",
-    href: "/work-orders",
-    icon: Wrench,
-    title: "Work Order Management"
+    title: 'Company',
+    items: [
+      {
+        title: 'Company Profile',
+        href: '/company-profile',
+        icon: Building,
+      },
+      {
+        title: 'Staff Members',
+        href: '/staff-members',
+        icon: UserCog,
+      },
+      {
+        title: 'Vehicles',
+        href: '/vehicles',
+        icon: Truck,
+      },
+      {
+        title: 'Documents',
+        href: '/documents',
+        icon: FileBarChart,
+      },
+    ],
   },
   {
-    name: "Customers",
-    href: "/customers",
-    icon: Users,
-    title: "Customer Management"
+    title: 'Services',
+    items: [
+      {
+        title: 'Service Editor',
+        href: '/service-editor',
+        icon: Cog,
+      },
+      {
+        title: 'Service Library',
+        href: '/service-library',
+        icon: Star,
+      },
+    ],
   },
   {
-    name: "Calendar",
-    href: "/calendar",
-    icon: Calendar,
-    title: "Schedule & Calendar"
+    title: 'Settings',
+    items: [
+      {
+        title: 'Settings',
+        href: '/settings',
+        icon: Settings,
+      },
+    ],
   },
   {
-    name: "Inventory",
-    href: "/inventory",
-    icon: Package,
-    title: "Inventory Management"
+    title: 'Support',
+    items: [
+      {
+        title: 'Help',
+        href: '/help',
+        icon: HelpCircle,
+      },
+      {
+        title: 'Security',
+        href: '/security',
+        icon: Shield,
+      },
+    ],
   },
-  {
-    name: "Parts Tracking",
-    href: "/parts-tracking",
-    icon: Package2,
-    title: "Comprehensive Parts Tracking & Analytics"
-  },
-  {
-    name: "Invoices",
-    href: "/invoices",
-    icon: FileText,
-    title: "Invoice Management"
-  },
-  {
-    name: "Reports",
-    href: "/reports",
-    icon: TrendingUp,
-    title: "Business Reports"
-  }
 ];
