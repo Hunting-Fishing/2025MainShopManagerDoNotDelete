@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CustomerDocument } from '@/types/document';
-import { deleteDocument } from '@/services/documentService';
+import { DocumentService } from '@/services/documentService';
 import { Download, Eye, FileText, Trash2, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -20,28 +20,28 @@ export const DocumentList: React.FC<DocumentListProps> = ({
 }) => {
   const { toast } = useToast();
 
-  const handleView = (document: CustomerDocument) => {
-    if (document.file_url) {
-      window.open(document.file_url, '_blank');
+  const handleView = (doc: CustomerDocument) => {
+    if (doc.file_url) {
+      window.open(doc.file_url, '_blank');
     }
   };
 
-  const handleDownload = (document: CustomerDocument) => {
-    if (document.file_url) {
-      const link = document.createElement('a');
-      link.href = document.file_url;
-      link.download = document.title;
-      document.body.appendChild(link);
+  const handleDownload = (doc: CustomerDocument) => {
+    if (doc.file_url) {
+      const link = window.document.createElement('a');
+      link.href = doc.file_url;
+      link.download = doc.title;
+      window.document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      window.document.body.removeChild(link);
     }
   };
 
-  const handleDelete = async (document: CustomerDocument) => {
+  const handleDelete = async (doc: CustomerDocument) => {
     if (window.confirm('Are you sure you want to delete this document?')) {
       try {
-        await deleteDocument(document.id);
-        onDocumentDeleted(document.id);
+        await DocumentService.deleteDocument(doc.id);
+        onDocumentDeleted(doc.id);
         toast({
           title: "Success",
           description: "Document deleted successfully.",
@@ -57,14 +57,14 @@ export const DocumentList: React.FC<DocumentListProps> = ({
     }
   };
 
-  const handleDownloadProp = (document: CustomerDocument) => {
-    if (document.file_url) {
-      const linkElement = document.createElement('a');
-      linkElement.href = document.file_url;
-      linkElement.download = document.title;
-      document.body.appendChild(linkElement);
+  const handleDownloadProp = (doc: CustomerDocument) => {
+    if (doc.file_url) {
+      const linkElement = window.document.createElement('a');
+      linkElement.href = doc.file_url;
+      linkElement.download = doc.title;
+      window.document.body.appendChild(linkElement);
       linkElement.click();
-      document.body.removeChild(linkElement);
+      window.document.body.removeChild(linkElement);
     }
   };
 
