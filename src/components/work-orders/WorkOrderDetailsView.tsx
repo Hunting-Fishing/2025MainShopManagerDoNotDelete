@@ -10,6 +10,7 @@ import { Pencil, Eye, Printer } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { JobLinesGrid } from './job-lines/JobLinesGrid';
 import { WorkOrderDocuments } from './details/WorkOrderDocuments';
+import { WorkOrderPartsSection } from './parts/WorkOrderPartsSection';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -93,11 +94,10 @@ export function WorkOrderDetailsView({ workOrderId: workOrderIdProp }: WorkOrder
         </TabsContent>
 
         <TabsContent value="parts">
-          <Card>
-            <CardContent className="p-6">
-              <p className="text-muted-foreground">Inventory items feature will be implemented soon.</p>
-            </CardContent>
-          </Card>
+          <WorkOrderPartsSection
+            workOrderId={workOrderId}
+            isEditMode={isEditMode}
+          />
         </TabsContent>
 
         <TabsContent value="time">
