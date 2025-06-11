@@ -1,10 +1,10 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Package } from 'lucide-react';
+import React from 'react';
 import { WorkOrderInventoryItem } from '@/types/workOrder';
-import { AddInventoryButton } from './AddInventoryButton';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Plus, Package } from 'lucide-react';
+import { WorkOrderInventoryTable } from './WorkOrderInventoryTable';
 
 interface WorkOrderInventorySectionProps {
   workOrderId: string;
@@ -17,73 +17,86 @@ export function WorkOrderInventorySection({
   inventoryItems,
   isEditMode = false
 }: WorkOrderInventorySectionProps) {
-  const [items, setItems] = useState<WorkOrderInventoryItem[]>(inventoryItems);
-
-  useEffect(() => {
-    setItems(inventoryItems);
-  }, [inventoryItems]);
-
-  const totalValue = items.reduce((total, item) => total + (item.total || 0), 0);
+  const totalValue = inventoryItems.reduce((sum, item) => sum + item.total, 0);
 
   return (
-    <Card className="border-slate-200 dark:border-slate-700">
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Package className="h-5 w-5 text-blue-600" />
-            <CardTitle className="text-lg">Parts & Inventory</CardTitle>
-            <Badge variant="secondary">{items.length}</Badge>
-          </div>
-          {isEditMode && (
-            <AddInventoryButton
-              onShowDialog={() => {
-                // Handle showing inventory dialog
-                console.log('Show inventory dialog');
-              }}
-            />
-          )}
-        </div>
-        
-        {items.length > 0 && (
-          <div className="flex gap-4 text-sm text-slate-600">
-            <span>Total Items: {items.length}</span>
-            <span>Total Value: ${totalValue.toFixed(2)}</span>
-          </div>
-        )}
-      </CardHeader>
-
-      <CardContent className="pt-0">
-        {items.length === 0 ? (
-          <div className="text-center py-8 border-2 border-dashed border-slate-200 rounded-lg">
-            <Package className="h-8 w-8 mx-auto text-slate-400 mb-2" />
-            <p className="text-slate-500 mb-4">No inventory items added yet</p>
-            {isEditMode ? (
-              <p className="text-sm text-slate-400">
-                Add parts and materials needed for this work order
-              </p>
-            ) : (
-              <p className="text-sm text-slate-400">
-                Inventory items will appear here when added in edit mode
-              </p>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {items.map((item) => (
-              <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
+    <div className="space-y-6">
+      {/* Inventory Summary */}
+      {inventoryItems.length > 0 && (
+        <div className="grid grid-cols-3 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <Package className="h-5 w-5 text-blue-500" />
                 <div>
-                  <p className="font-medium">{item.name}</p>
-                  <p className="text-sm text-muted-foreground">SKU: {item.sku}</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium">${item.total.toFixed(2)}</p>
-                  <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                  <p className="text-sm text-muted-foreground">Items</p>
+                  <p className="text-2xl font-bold">{inventoryItems.length}</p>
                 </div>
               </div>
-            ))}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <Package className="h-5 w-5 text-green-500" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Quantity</p>
+                  <p className="text-2xl font-bold">
+                    {inventoryItems.reduce((sum, item) => sum + item.quantity, 0)}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <Package className="h-5 w-5 text-purple-500" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Value</p>
+                  <p className="text-2xl font-bold">${totalValue.toFixed(2)}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Inventory Table */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Inventory Items</CardTitle>
+            {isEditMode && (
+              <Button size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Inventory Item
+              </Button>
+            )}
           </div>
-        )}
-      </CardContent>
-    </Card>
+        </CardHeader>
+        <CardContent>
+          {inventoryItems.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No inventory items added yet</p>
+              {isEditMode && (
+                <Button variant="outline" className="mt-4">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add First Item
+                </Button>
+              )}
+            </div>
+          ) : (
+            <WorkOrderInventoryTable 
+              items={inventoryItems}
+              readonly={!isEditMode}
+            />
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

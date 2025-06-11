@@ -1,13 +1,14 @@
 
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, Package, FileText, Wrench, History } from 'lucide-react';
+import { Clock, Package, FileText, Wrench, History, Users } from 'lucide-react';
 import { WorkOrder, TimeEntry, WorkOrderInventoryItem } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { TimeTrackingSection } from '../time-tracking/TimeTrackingSection';
 import { WorkOrderInventorySection } from '../inventory/WorkOrderInventorySection';
 import { JobLinesSection } from '../form-fields/JobLinesSection';
 import { WorkOrderPartsSection } from '../parts/WorkOrderPartsSection';
+import { PartsAndLaborTab } from './PartsAndLaborTab';
 
 interface WorkOrderDetailsTabsProps {
   workOrder: WorkOrder;
@@ -35,29 +36,42 @@ export function WorkOrderDetailsTabs({
   isEditMode = false
 }: WorkOrderDetailsTabsProps) {
   return (
-    <Tabs defaultValue="services" className="w-full">
-      <TabsList className="grid w-full grid-cols-5 bg-teal-500 rounded">
-        <TabsTrigger value="services" className="flex items-center gap-2 text-lg">
-          <Wrench className="h-4 w-4" />
-          Labor & Services
+    <Tabs defaultValue="overview" className="w-full">
+      <TabsList className="grid w-full grid-cols-6 bg-teal-500 rounded">
+        <TabsTrigger value="overview" className="flex items-center gap-2 text-sm">
+          <Users className="h-4 w-4" />
+          Overview
         </TabsTrigger>
-        <TabsTrigger value="parts" className="flex items-center gap-2 text-lg">
+        <TabsTrigger value="services" className="flex items-center gap-2 text-sm">
+          <Wrench className="h-4 w-4" />
+          Labor
+        </TabsTrigger>
+        <TabsTrigger value="parts" className="flex items-center gap-2 text-sm">
           <Package className="h-4 w-4" />
           Parts
         </TabsTrigger>
-        <TabsTrigger value="time" className="flex items-center gap-2 text-lg">
+        <TabsTrigger value="time" className="flex items-center gap-2 text-sm">
           <Clock className="h-4 w-4" />
-          Time Tracking
+          Time
         </TabsTrigger>
-        <TabsTrigger value="inventory" className="flex items-center gap-2 text-lg">
+        <TabsTrigger value="inventory" className="flex items-center gap-2 text-sm">
           <Package className="h-4 w-4" />
           Inventory
         </TabsTrigger>
-        <TabsTrigger value="history" className="flex items-center gap-2 text-lg">
+        <TabsTrigger value="history" className="flex items-center gap-2 text-sm">
           <History className="h-4 w-4" />
           History
         </TabsTrigger>
       </TabsList>
+
+      <TabsContent value="overview" className="space-y-4">
+        <PartsAndLaborTab
+          workOrder={workOrder}
+          jobLines={jobLines}
+          onJobLinesChange={onJobLinesChange}
+          isEditMode={isEditMode}
+        />
+      </TabsContent>
 
       <TabsContent value="services" className="space-y-4">
         <JobLinesSection

@@ -1,10 +1,9 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Clock, Plus } from 'lucide-react';
 import { TimeEntry } from '@/types/workOrder';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Plus, Clock } from 'lucide-react';
 
 interface TimeTrackingSectionProps {
   workOrderId: string;
@@ -19,70 +18,99 @@ export function TimeTrackingSection({
   onUpdateTimeEntries,
   isEditMode = false
 }: TimeTrackingSectionProps) {
-  const totalHours = timeEntries.reduce((total, entry) => total + (entry.duration || 0), 0);
-  const billableHours = timeEntries.filter(entry => entry.billable).reduce((total, entry) => total + (entry.duration || 0), 0);
+  const totalTime = timeEntries.reduce((sum, entry) => sum + (entry.duration || 0), 0);
+  const billableTime = timeEntries.filter(entry => entry.billable).reduce((sum, entry) => sum + (entry.duration || 0), 0);
+
+  const formatTime = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours}h ${mins}m`;
+  };
 
   return (
-    <Card className="border-slate-200 dark:border-slate-700">
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Clock className="h-5 w-5 text-blue-600" />
-            <CardTitle className="text-lg">Time Tracking</CardTitle>
-            <Badge variant="secondary">{timeEntries.length}</Badge>
-          </div>
-          {isEditMode && (
-            <Button size="sm" variant="outline">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Time Entry
-            </Button>
-          )}
-        </div>
-        
-        {timeEntries.length > 0 && (
-          <div className="flex gap-4 text-sm text-slate-600">
-            <span>Total Hours: {(totalHours / 60).toFixed(1)}</span>
-            <span>Billable Hours: {(billableHours / 60).toFixed(1)}</span>
-          </div>
-        )}
-      </CardHeader>
+    <div className="space-y-6">
+      {/* Time Summary */}
+      <div className="grid grid-cols-2 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-blue-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Total Time</p>
+                <p className="text-2xl font-bold">{formatTime(totalTime)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-      <CardContent className="pt-0">
-        {timeEntries.length === 0 ? (
-          <div className="text-center py-8 border-2 border-dashed border-slate-200 rounded-lg">
-            <Clock className="h-8 w-8 mx-auto text-slate-400 mb-2" />
-            <p className="text-slate-500 mb-4">No time entries recorded yet</p>
-            {isEditMode ? (
-              <p className="text-sm text-slate-400">
-                Add time entries to track work performed on this order
-              </p>
-            ) : (
-              <p className="text-sm text-slate-400">
-                Time entries will appear here when added in edit mode
-              </p>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-green-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Billable Time</p>
+                <p className="text-2xl font-bold">{formatTime(billableTime)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Time Entries */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Time Entries</CardTitle>
+            {isEditMode && (
+              <Button size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Time Entry
+              </Button>
             )}
           </div>
-        ) : (
-          <div className="space-y-3">
-            {timeEntries.map((entry) => (
-              <div key={entry.id} className="flex items-center justify-between p-3 border rounded-lg">
-                <div>
-                  <p className="font-medium">{entry.employee_name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {entry.start_time} - {entry.end_time || 'In Progress'}
-                  </p>
+        </CardHeader>
+        <CardContent>
+          {timeEntries.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No time entries recorded yet</p>
+              {isEditMode && (
+                <Button variant="outline" className="mt-4">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add First Time Entry
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {timeEntries.map((entry) => (
+                <div key={entry.id} className="border rounded-lg p-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-medium">{entry.employee_name}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(entry.start_time).toLocaleDateString()} - {formatTime(entry.duration)}
+                      </p>
+                      {entry.notes && (
+                        <p className="text-sm mt-1">{entry.notes}</p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
+                        entry.billable 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {entry.billable ? 'Billable' : 'Non-billable'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-medium">{(entry.duration / 60).toFixed(1)} hrs</p>
-                  <Badge variant={entry.billable ? 'default' : 'secondary'}>
-                    {entry.billable ? 'Billable' : 'Non-billable'}
-                  </Badge>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
