@@ -21,9 +21,16 @@ export function WorkOrderDetailsView() {
   const isEditRoute = location.pathname.includes('/edit');
   const [isEditMode, setIsEditMode] = useState(isEditRoute || shouldAutoEdit());
   const [timeEntries, setTimeEntries] = useState<any[]>([]);
+  const [notes, setNotes] = useState<string>('');
 
   const { workOrder, isLoading, error } = useWorkOrder(id!);
   const { jobLines, isLoading: jobLinesLoading } = useJobLines(id!);
+
+  useEffect(() => {
+    if (workOrder) {
+      setNotes(workOrder.notes || '');
+    }
+  }, [workOrder]);
 
   useEffect(() => {
     if (isEditRoute) {
@@ -45,6 +52,15 @@ export function WorkOrderDetailsView() {
 
   const handleUpdateTimeEntries = (updatedEntries: any[]) => {
     setTimeEntries(updatedEntries);
+  };
+
+  const handleUpdateNotes = (updatedNotes: string) => {
+    setNotes(updatedNotes);
+  };
+
+  const handleJobLinesChange = (updatedJobLines: any[]) => {
+    // Handle job lines changes if needed
+    console.log('Job lines changed:', updatedJobLines);
   };
 
   const handleCancelEdit = () => {
@@ -135,11 +151,11 @@ export function WorkOrderDetailsView() {
         timeEntries={timeEntries}
         onUpdateTimeEntries={handleUpdateTimeEntries}
         inventoryItems={workOrder.inventoryItems || []}
-        notes={workOrder.notes || ''}
-        onUpdateNotes={() => {}}
-        jobLines={jobLines}
+        notes={notes}
+        onUpdateNotes={handleUpdateNotes}
+        jobLines={jobLines || []}
         parts={[]}
-        onJobLinesChange={() => {}}
+        onJobLinesChange={handleJobLinesChange}
         jobLinesLoading={jobLinesLoading}
         isEditMode={false}
       />

@@ -16,8 +16,22 @@ export function WorkOrderOverviewHeader({
   jobLines,
   allParts
 }: WorkOrderOverviewHeaderProps) {
-  const totalEstimatedHours = jobLines.reduce((sum, line) => sum + (line.estimated_hours || 0), 0);
-  const totalAmount = jobLines.reduce((sum, line) => sum + (line.total_amount || 0), 0);
+  console.log('WorkOrderOverviewHeader - jobLines:', jobLines);
+  console.log('WorkOrderOverviewHeader - allParts:', allParts);
+  
+  const totalEstimatedHours = jobLines.reduce((sum, line) => {
+    const hours = Number(line.estimated_hours) || 0;
+    return sum + hours;
+  }, 0);
+  
+  const totalAmount = jobLines.reduce((sum, line) => {
+    const amount = Number(line.total_amount) || 0;
+    return sum + amount;
+  }, 0);
+
+  const totalPartsCount = allParts.length + jobLines.reduce((sum, line) => {
+    return sum + (line.parts?.length || 0);
+  }, 0);
 
   return (
     <Card>
@@ -36,7 +50,7 @@ export function WorkOrderOverviewHeader({
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Parts Count</p>
-            <p className="text-2xl font-bold">{allParts.length}</p>
+            <p className="text-2xl font-bold">{totalPartsCount}</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Total Amount</p>
