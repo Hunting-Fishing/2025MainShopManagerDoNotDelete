@@ -1,150 +1,75 @@
 
-import React, { useState, useEffect } from 'react';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Form } from '@/components/ui/form';
-import { toast } from '@/hooks/use-toast';
-import { workOrderFormSchema, type WorkOrderFormSchemaValues } from '@/schemas/workOrderSchema';
-import { createWorkOrder } from '@/services/workOrder';
-import { useTechnicians } from '@/hooks/useTechnicians';
-import { useCustomers } from '@/hooks/useCustomers';
+import React from "react";
+import { Form } from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
+import { UseFormReturn } from "react-hook-form";
+import { WorkOrderFormFields } from "./WorkOrderFormFields";
+import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
+import { useTechnicians } from "@/hooks/useTechnicians";
 
-// Import form field components
-import { CustomerInfoSection } from './CustomerInfoSection';
-import { StatusFields } from './form-fields/StatusFields';
-import { AssignmentFields } from './form-fields/AssignmentFields';
-import { NotesField } from './form-fields/NotesField';
-import { WorkOrderInventoryField } from './inventory/WorkOrderInventoryField';
+interface WorkOrderCreateFormProps {
+  form: UseFormReturn<WorkOrderFormSchemaValues>;
+  onSubmit: (values: WorkOrderFormSchemaValues) => Promise<void>;
+  prePopulatedCustomer?: {
+    customerId?: string;
+    customerName?: string;
+    customerEmail?: string;
+    customerPhone?: string;
+    customerAddress?: string;
+    title?: string;
+    description?: string;
+    priority?: string;
+    equipmentName?: string;
+    equipmentType?: string;
+    vehicleMake?: string;
+    vehicleModel?: string;
+    vehicleYear?: string;
+    vehicleLicensePlate?: string;
+    vehicleVin?: string;
+  };
+}
 
-export function WorkOrderCreateForm() {
-  const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const { technicians, loading: technicianLoading, error: technicianError } = useTechnicians();
-  const { filteredCustomers: customers, loading: customersLoading } = useCustomers();
+export const WorkOrderCreateForm: React.FC<WorkOrderCreateFormProps> = ({
+  form,
+  onSubmit,
+  prePopulatedCustomer
+}) => {
+  const isSubmitting = form.formState.isSubmitting;
+  const { technicians, isLoading: technicianLoading, error: technicianError } = useTechnicians();
 
-  const form = useForm<WorkOrderFormSchemaValues>({
-    resolver: zodResolver(workOrderFormSchema),
-    defaultValues: {
-      customer: '',
-      description: '',
-      status: 'pending',
-      priority: 'medium',
-      technician: '',
-      location: '',
-      dueDate: '',
-      notes: '',
-      vehicleMake: '',
-      vehicleModel: '',
-      vehicleYear: '',
-      odometer: '',
-      licensePlate: '',
-      vin: '',
-      inventoryItems: [],
-    }
-  });
-
-  const onSubmit = async (values: WorkOrderFormSchemaValues) => {
-    try {
-      setIsSubmitting(true);
-      
-      // Create the work order with proper type conversion
-      const workOrder = await createWorkOrder({
-        customer_name: values.customer,
-        description: values.description,
-        status: values.status,
-        technician_id: values.technician || null,
-        notes: values.notes || null,
-        vehicle_make: values.vehicleMake || null,
-        vehicle_model: values.vehicleModel || null,
-        vehicle_year: values.vehicleYear ? parseInt(values.vehicleYear, 10) : null,
-        vehicle_license_plate: values.licensePlate || null,
-        vehicle_vin: values.vin || null,
-      });
-
-      toast({
-        title: "Success",
-        description: "Work order created successfully"
-      });
-
-      navigate(`/work-orders/${workOrder.id}`);
-    } catch (error: any) {
-      console.error('Error creating work order:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create work order",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleSaveDraft = () => {
+    // TODO: Implement save as draft functionality
+    console.log('Save as draft functionality to be implemented');
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Create Work Order</h1>
-          <p className="text-muted-foreground">Create a new work order for your shop</p>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <WorkOrderFormFields 
+          form={form} 
+          technicians={technicians}
+          technicianLoading={technicianLoading}
+          technicianError={technicianError}
+          prePopulatedCustomer={prePopulatedCustomer}
+        />
+        
+        <div className="flex justify-end space-x-4 pt-6 border-t">
+          <Button type="button" variant="outline" onClick={handleSaveDraft}>
+            Save as Draft
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating Work Order...
+              </>
+            ) : (
+              "Create Work Order"
+            )}
+          </Button>
         </div>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Work Order Details</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Customer Information */}
-                <CustomerInfoSection 
-                  form={form} 
-                  customers={customers} 
-                  isLoading={customersLoading} 
-                />
-                
-                {/* Status & Priority */}
-                <StatusFields form={form} />
-                
-                {/* Assignment */}
-                <AssignmentFields 
-                  form={form} 
-                  technicians={technicians}
-                  technicianLoading={technicianLoading}
-                  technicianError={technicianError}
-                />
-                
-                {/* Notes */}
-                <NotesField form={form} />
-
-                {/* Inventory Items */}
-                <WorkOrderInventoryField form={form} />
-              </div>
-
-              <div className="flex justify-end gap-4 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate('/work-orders')}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit" 
-                  className="bg-blue-600 hover:bg-blue-700"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "Creating..." : "Create Work Order"}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-    </div>
+      </form>
+    </Form>
   );
-}
+};

@@ -1,91 +1,117 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { WorkOrder, TimeEntry, WorkOrderInventoryItem } from '@/types/workOrder';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, Loader2 } from 'lucide-react';
+import { WorkOrder, WorkOrderInventoryItem, TimeEntry } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { getWorkOrderById } from '@/services/workOrder';
-import { useJobLines } from '@/hooks/useJobLines';
-import { useJobLineParts } from '@/hooks/useJobLineParts';
+import { getWorkOrderJobLines } from '@/services/workOrder/jobLinesService';
+import { getWorkOrderInventoryItems } from '@/services/workOrder/workOrderInventoryService';
+import { getWorkOrderTimeEntries } from '@/services/workOrder/workOrderQueryService';
+import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
 import { WorkOrderDetailsHeader } from './details/WorkOrderDetailsHeader';
 import { WorkOrderDetailsTabs } from './details/WorkOrderDetailsTabs';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 interface WorkOrderDetailsViewProps {
   workOrderId?: string;
 }
 
-export function WorkOrderDetailsView({ workOrderId }: WorkOrderDetailsViewProps) {
+export function WorkOrderDetailsView({ workOrderId: propWorkOrderId }: WorkOrderDetailsViewProps) {
+  const { id: paramWorkOrderId } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const workOrderId = propWorkOrderId || paramWorkOrderId;
+
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
-  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
+  const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
   const [inventoryItems, setInventoryItems] = useState<WorkOrderInventoryItem[]>([]);
-  const [notes, setNotes] = useState('');
+  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
+  const [parts, setParts] = useState<WorkOrderPart[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const { jobLines, setJobLines, isLoading: jobLinesLoading } = useJobLines(workOrderId || '');
-  const { parts } = useJobLineParts(workOrderId || '');
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [notes, setNotes] = useState('');
 
   useEffect(() => {
     if (workOrderId) {
-      fetchWorkOrderData();
+      fetchWorkOrderData(workOrderId);
     }
   }, [workOrderId]);
 
-  const fetchWorkOrderData = async () => {
-    if (!workOrderId) return;
-    
+  const fetchWorkOrderData = async (id: string) => {
     try {
       setLoading(true);
       setError(null);
-      
-      const data = await getWorkOrderById(workOrderId);
-      if (data) {
-        setWorkOrder(data);
-        setTimeEntries(data.timeEntries || []);
-        setInventoryItems(data.inventoryItems || []);
-        setNotes(data.notes || '');
-      } else {
+
+      const [workOrderData, jobLinesData, inventoryData, timeData, partsData] = await Promise.all([
+        getWorkOrderById(id),
+        getWorkOrderJobLines(id),
+        getWorkOrderInventoryItems(id),
+        getWorkOrderTimeEntries(id),
+        getWorkOrderParts(id)
+      ]);
+
+      if (!workOrderData) {
         setError('Work order not found');
+        return;
       }
+
+      setWorkOrder(workOrderData);
+      setJobLines(jobLinesData);
+      
+      // Transform inventory data to include total property
+      const transformedInventory = inventoryData.map(item => ({
+        ...item,
+        total: item.quantity * item.unit_price
+      }));
+      setInventoryItems(transformedInventory);
+      
+      setTimeEntries(timeData);
+      setParts(partsData);
+      setNotes(workOrderData.notes || '');
+      
+      console.log('Parts loaded:', partsData);
     } catch (err) {
-      console.error('Error fetching work order:', err);
+      console.error('Error fetching work order data:', err);
       setError('Failed to load work order details');
+      toast({
+        title: "Error",
+        description: "Failed to load work order details",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleEdit = () => {
-    navigate(`/work-orders/${workOrderId}/edit`);
-  };
-
   const handleInvoiceCreated = (invoiceId: string) => {
-    navigate(`/invoices/${invoiceId}`);
+    toast({
+      title: "Success",
+      description: "Invoice created successfully",
+    });
+    // Optionally navigate to invoice details
+    // navigate(`/invoices/${invoiceId}`);
   };
 
-  const handleUpdateTimeEntries = (entries: TimeEntry[]) => {
-    setTimeEntries(entries);
-  };
-
-  const handleUpdateNotes = (newNotes: string) => {
-    setNotes(newNotes);
-  };
-
-  const handleJobLinesChange = (newJobLines: WorkOrderJobLine[]) => {
-    setJobLines(newJobLines);
-  };
+  if (!workOrderId) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          No work order ID provided
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-            <p className="text-lg">Loading work order details...</p>
-          </div>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-lg">Loading work order details...</p>
         </div>
       </div>
     );
@@ -93,36 +119,36 @@ export function WorkOrderDetailsView({ workOrderId }: WorkOrderDetailsViewProps)
 
   if (error || !workOrder) {
     return (
-      <div className="container mx-auto p-6">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            {error || 'Work order not found'}
-          </AlertDescription>
-        </Alert>
-      </div>
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          {error || 'Work order not found'}
+        </AlertDescription>
+      </Alert>
     );
   }
 
   return (
-    <div id="work-order-details-content" className="container mx-auto p-6 space-y-6">
-      <WorkOrderDetailsHeader
+    <div className="space-y-6">
+      <WorkOrderDetailsHeader 
         workOrder={workOrder}
-        onEdit={handleEdit}
+        onEdit={() => setIsEditMode(!isEditMode)}
         onInvoiceCreated={handleInvoiceCreated}
+        isEditMode={isEditMode}
       />
-      
+
       <WorkOrderDetailsTabs
         workOrder={workOrder}
         timeEntries={timeEntries}
-        onUpdateTimeEntries={handleUpdateTimeEntries}
+        onUpdateTimeEntries={setTimeEntries}
         inventoryItems={inventoryItems}
         notes={notes}
-        onUpdateNotes={handleUpdateNotes}
+        onUpdateNotes={setNotes}
         jobLines={jobLines}
         parts={parts}
-        onJobLinesChange={handleJobLinesChange}
-        jobLinesLoading={jobLinesLoading}
+        onJobLinesChange={setJobLines}
+        jobLinesLoading={loading}
+        isEditMode={isEditMode}
       />
     </div>
   );

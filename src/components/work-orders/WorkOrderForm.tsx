@@ -3,6 +3,7 @@ import React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { workOrderFormSchema, WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
+import { WorkOrderCreateForm } from "./WorkOrderCreateForm";
 
 interface WorkOrderFormProps {
   onSubmit?: (values: WorkOrderFormSchemaValues) => Promise<void>;
@@ -41,12 +42,5 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
     }
   };
 
-  // This is a basic form wrapper - implement specific form fields as needed
-  return (
-    <div className="space-y-4">
-      <p className="text-muted-foreground">
-        WorkOrderForm component - implement specific form fields based on your requirements
-      </p>
-    </div>
-  );
+  return <WorkOrderCreateForm form={form} onSubmit={handleSubmit} />;
 };

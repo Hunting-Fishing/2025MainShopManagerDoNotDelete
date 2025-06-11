@@ -24,8 +24,8 @@ export const workOrderFormSchema = z.object({
     quantity: z.number(),
     unit_price: z.number(),
     total: z.number(),
-    notes: z.string().optional(),
-  })).default([]),
+    notes: z.string().optional()
+  })).default([])
 });
 
 export type WorkOrderFormSchemaValues = z.infer<typeof workOrderFormSchema>;
