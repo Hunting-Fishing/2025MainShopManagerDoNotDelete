@@ -47,3 +47,12 @@ export const JOB_LINE_STATUSES = [
 ] as const;
 
 export type JobLineStatus = typeof JOB_LINE_STATUSES[number];
+
+// Status mapping for UI display
+export const jobLineStatusMap: Record<string, { label: string; classes: string }> = {
+  'pending': { label: 'Pending', classes: 'bg-yellow-100 text-yellow-800' },
+  'in-progress': { label: 'In Progress', classes: 'bg-blue-100 text-blue-800' },
+  'completed': { label: 'Completed', classes: 'bg-green-100 text-green-800' },
+  'on-hold': { label: 'On Hold', classes: 'bg-orange-100 text-orange-800' },
+  'cancelled': { label: 'Cancelled', classes: 'bg-red-100 text-red-800' }
+};

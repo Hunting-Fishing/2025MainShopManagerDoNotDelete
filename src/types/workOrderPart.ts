@@ -22,11 +22,17 @@ export interface WorkOrderPart {
   customerPrice?: number; // Alias for unit_price
   category?: string;
   warrantyDuration?: string;
+  warrantyExpiryDate?: string;
   binLocation?: string;
   installDate?: string;
   dateAdded?: string; // Alias for created_at
   partType?: string;
   installedBy?: string;
+  markupPercentage?: number;
+  inventoryItemId?: string;
+  coreChargeApplied?: boolean;
+  coreChargeAmount?: number;
+  isTaxable?: boolean;
   
   // CamelCase aliases for backward compatibility
   workOrderId?: string; // Alias for work_order_id
@@ -41,6 +47,18 @@ export interface WorkOrderPartFormValues {
   unit_price: number;
   job_line_id?: string;
   notes?: string;
+  status?: string;
+  
+  // Additional form fields
+  partName?: string;
+  partNumber?: string;
+  supplierName?: string;
+  supplierCost?: number;
+  customerPrice?: number;
+  category?: string;
+  partType?: string;
+  markupPercentage?: number;
+  isTaxable?: boolean;
 }
 
 export const WORK_ORDER_PART_STATUSES = [
@@ -57,6 +75,18 @@ export const WORK_ORDER_PART_STATUSES = [
 export const PART_STATUSES = WORK_ORDER_PART_STATUSES;
 
 export type WorkOrderPartStatus = typeof WORK_ORDER_PART_STATUSES[number];
+
+// Part types
+export const PART_TYPES = [
+  'OEM',
+  'Aftermarket',
+  'Rebuilt',
+  'Used',
+  'Core',
+  'Special Order'
+] as const;
+
+export type PartType = typeof PART_TYPES[number];
 
 // Status mapping for UI display
 export const partStatusMap: Record<string, { label: string; classes: string }> = {

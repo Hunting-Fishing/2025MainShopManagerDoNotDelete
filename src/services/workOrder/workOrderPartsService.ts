@@ -93,6 +93,11 @@ export async function upsertWorkOrderPart(part: Partial<WorkOrderPart>): Promise
 }
 
 /**
+ * Save a work order part (alias for upsertWorkOrderPart)
+ */
+export const saveWorkOrderPart = upsertWorkOrderPart;
+
+/**
  * Delete a work order part
  */
 export async function deleteWorkOrderPart(partId: string): Promise<void> {
