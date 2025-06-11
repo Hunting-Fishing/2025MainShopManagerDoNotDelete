@@ -43,7 +43,7 @@ export const CustomerDocumentsTab: React.FC<CustomerDocumentsTabProps> = ({ cust
     }
     
     if (categoryFilter) {
-      filtered = filtered.filter(doc => doc.category === categoryFilter);
+      filtered = filtered.filter(doc => doc.category_id === categoryFilter);
     }
     
     setFilteredDocuments(filtered);

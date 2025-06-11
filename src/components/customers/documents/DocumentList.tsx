@@ -1,16 +1,24 @@
 
 import React, { useState } from 'react';
-import { CustomerDocument } from '@/types/document';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { CustomerDocument } from '@/types/document';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { DownloadCloud, Eye, FileText, MoreHorizontal, Pencil, Trash2, Upload } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { deleteDocument, getDocumentDownloadUrl, getDocumentPreviewUrl } from '@/services/documentService';
+import { 
+  FileText, 
+  Image, 
+  ExternalLink, 
+  Link, 
+  Download, 
+  Eye, 
+  MoreHorizontal,
+  Trash2,
+  Edit
+} from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { getDocumentDownloadUrl, deleteDocument } from '@/services/documentService';
 import { useToast } from '@/hooks/use-toast';
 import { DocumentVersionDialog } from './DocumentVersionDialog';
-import { formatDistanceToNow } from 'date-fns';
 
 interface DocumentListProps {
   documents: CustomerDocument[];
@@ -23,49 +31,30 @@ export const DocumentList: React.FC<DocumentListProps> = ({
   onDocumentUpdated,
   onDocumentDeleted
 }) => {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [previewTitle, setPreviewTitle] = useState('');
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [isVersionDialogOpen, setIsVersionDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<CustomerDocument | null>(null);
+  const [isVersionDialogOpen, setIsVersionDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  const handlePreview = async (document: CustomerDocument) => {
-    try {
-      const url = await getDocumentPreviewUrl(document.file_path);
-      if (url) {
-        setPreviewUrl(url);
-        setPreviewTitle(document.title);
-        setIsPreviewOpen(true);
-      } else {
-        throw new Error("Could not generate preview URL");
-      }
-    } catch (error) {
-      console.error("Error previewing document:", error);
-      toast({
-        title: "Preview unavailable",
-        description: "Could not generate a preview for this document",
-        variant: "destructive",
-      });
+  const getDocumentIcon = (documentType: string) => {
+    switch (documentType) {
+      case 'pdf':
+        return <FileText className="h-5 w-5" />;
+      case 'image':
+        return <Image className="h-5 w-5" />;
+      case 'weblink':
+        return <ExternalLink className="h-5 w-5" />;
+      case 'internal_link':
+        return <Link className="h-5 w-5" />;
+      default:
+        return <FileText className="h-5 w-5" />;
     }
   };
 
-  const handleDownload = async (docItem: CustomerDocument) => {
+  const handleDownload = async (document: CustomerDocument) => {
     try {
-      const url = await getDocumentDownloadUrl(docItem.file_path);
-      if (url) {
-        // Create a temporary anchor element and trigger download
-        const a = document.createElement('a') as HTMLAnchorElement;
-        a.href = url;
-        a.download = docItem.original_name;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      } else {
-        throw new Error("Could not generate download URL");
-      }
+      const url = await getDocumentDownloadUrl(document);
+      window.open(url, '_blank');
     } catch (error) {
-      console.error("Error downloading document:", error);
       toast({
         title: "Download failed",
         description: "Could not download the document",
@@ -74,21 +63,30 @@ export const DocumentList: React.FC<DocumentListProps> = ({
     }
   };
 
+  const handlePreview = async (document: CustomerDocument) => {
+    try {
+      if (document.file_url) {
+        window.open(document.file_url, '_blank');
+      }
+    } catch (error) {
+      toast({
+        title: "Preview failed",
+        description: "Could not preview the document",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleDelete = async (document: CustomerDocument) => {
-    if (window.confirm(`Are you sure you want to delete "${document.title}"?`)) {
+    if (window.confirm('Are you sure you want to delete this document?')) {
       try {
-        const success = await deleteDocument(document.id);
-        if (success) {
-          toast({
-            title: "Document deleted",
-            description: "The document was deleted successfully",
-          });
-          onDocumentDeleted(document.id);
-        } else {
-          throw new Error("Failed to delete document");
-        }
+        await deleteDocument(document.id);
+        onDocumentDeleted(document.id);
+        toast({
+          title: "Document deleted",
+          description: "The document has been successfully deleted",
+        });
       } catch (error) {
-        console.error("Error deleting document:", error);
         toast({
           title: "Delete failed",
           description: "Could not delete the document",
@@ -98,174 +96,119 @@ export const DocumentList: React.FC<DocumentListProps> = ({
     }
   };
 
-  const handleUploadVersion = (document: CustomerDocument) => {
+  const handleNewVersion = (document: CustomerDocument) => {
     setSelectedDocument(document);
     setIsVersionDialogOpen(true);
   };
 
-  const getDocumentIcon = (fileType: string) => {
-    if (fileType.startsWith('image/')) {
-      return <img 
-        src="/placeholder.svg" 
-        alt="Document thumbnail" 
-        className="h-10 w-10 object-cover rounded" 
-      />;
-    }
-    
-    return <FileText className="h-10 w-10 text-blue-500" />;
-  };
-
-  const getFormattedDate = (dateString: string) => {
-    try {
-      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
-    } catch (error) {
-      return "Unknown date";
-    }
-  };
-
-  const getFormattedSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
-
   if (documents.length === 0) {
     return (
-      <div className="text-center py-8">
-        <FileText className="h-12 w-12 mx-auto text-gray-400" />
-        <h3 className="mt-2 text-lg font-medium text-gray-900">No documents</h3>
-        <p className="mt-1 text-sm text-gray-500">
-          This customer doesn't have any documents yet.
-        </p>
+      <div className="text-center py-12">
+        <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">No documents found</h3>
+        <p className="text-gray-500">Upload your first document to get started.</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {documents.map((doc) => (
-        <Card key={doc.id} className="p-4">
-          <div className="flex items-center">
-            <div className="mr-4 flex-shrink-0">
-              {getDocumentIcon(doc.file_type)}
-            </div>
-            
-            <div className="flex-1 min-w-0">
-              <h4 className="text-sm font-medium text-gray-900 truncate">
-                {doc.title}
-              </h4>
-              
-              <div className="mt-1 flex flex-wrap gap-2 items-center text-xs text-gray-500">
-                <span>{doc.file_type.split('/')[1]?.toUpperCase() || doc.file_type}</span>
-                <span>•</span>
-                <span>{getFormattedSize(doc.file_size)}</span>
-                <span>•</span>
-                <span>v{doc.version}</span>
-                <span>•</span>
-                <span>{getFormattedDate(doc.created_at)}</span>
-                
-                {doc.is_shared && (
-                  <>
-                    <span>•</span>
-                    <Badge variant="outline" className="text-xs">Shared</Badge>
-                  </>
-                )}
-                
-                {doc.tags && doc.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {doc.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {documents.map((document) => (
+          <Card key={document.id} className="hover:shadow-md transition-shadow">
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center space-x-2">
+                  {getDocumentIcon(document.document_type)}
+                  <CardTitle className="text-sm font-medium truncate">
+                    {document.title}
+                  </CardTitle>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handlePreview(document)}>
+                      <Eye className="mr-2 h-4 w-4" />
+                      Preview
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleDownload(document)}>
+                      <Download className="mr-2 h-4 w-4" />
+                      Download
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleNewVersion(document)}>
+                      <Edit className="mr-2 h-4 w-4" />
+                      New Version
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => handleDelete(document)}
+                      className="text-red-600"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
-              
-              {doc.description && (
-                <p className="mt-1 text-xs text-gray-500 line-clamp-2">
-                  {doc.description}
+            </CardHeader>
+            <CardContent className="pt-0">
+              {document.description && (
+                <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                  {document.description}
                 </p>
               )}
-            </div>
-            
-            <div className="ml-4 flex-shrink-0 flex items-center space-x-2">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => handlePreview(doc)}
-                title="Preview"
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
               
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => handleDownload(doc)}
-                title="Download"
-              >
-                <DownloadCloud className="h-4 w-4" />
-              </Button>
-              
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => handleUploadVersion(doc)}>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Upload New Version
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Edit Details
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem 
-                    onClick={() => handleDelete(doc)}
-                    className="text-red-600"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-        </Card>
-      ))}
-      
-      {/* Document Preview Dialog */}
-      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-        <DialogContent className="sm:max-w-4xl h-[80vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>{previewTitle}</DialogTitle>
-          </DialogHeader>
-          
-          <div className="flex-1 overflow-hidden">
-            {previewUrl && (
-              <iframe 
-                src={previewUrl} 
-                className="w-full h-full border-0" 
-                title={previewTitle}
-              />
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Document Version Upload Dialog */}
+              <div className="flex flex-wrap gap-1 mb-3">
+                <Badge variant="secondary" className="text-xs">
+                  {document.document_type.toUpperCase()}
+                </Badge>
+                {document.category_name && (
+                  <Badge variant="outline" className="text-xs">
+                    {document.category_name}
+                  </Badge>
+                )}
+              </div>
+
+              {document.tags && document.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-3">
+                  {document.tags.slice(0, 2).map((tag, index) => (
+                    <Badge key={index} variant="outline" className="text-xs">
+                      {tag}
+                    </Badge>
+                  ))}
+                  {document.tags.length > 2 && (
+                    <Badge variant="outline" className="text-xs">
+                      +{document.tags.length - 2} more
+                    </Badge>
+                  )}
+                </div>
+              )}
+
+              <div className="text-xs text-gray-500">
+                Created {new Date(document.created_at).toLocaleDateString()}
+                {document.created_by_name && (
+                  <span> by {document.created_by_name}</span>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
       {selectedDocument && (
         <DocumentVersionDialog
           document={selectedDocument}
           open={isVersionDialogOpen}
           onOpenChange={setIsVersionDialogOpen}
-          onVersionUploaded={onDocumentUpdated}
+          onVersionUploaded={() => {
+            onDocumentUpdated();
+            setIsVersionDialogOpen(false);
+          }}
         />
       )}
-    </div>
+    </>
   );
 };
