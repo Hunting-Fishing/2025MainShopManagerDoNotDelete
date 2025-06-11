@@ -26,7 +26,7 @@ export interface WorkOrderPart {
   installDate?: string;
   dateAdded?: string; // Alias for created_at
   partType?: string;
-  installedBy?: string; // Added missing property
+  installedBy?: string;
   
   // CamelCase aliases for backward compatibility
   workOrderId?: string; // Alias for work_order_id
@@ -52,6 +52,9 @@ export const WORK_ORDER_PART_STATUSES = [
   'backordered',
   'defective'
 ] as const;
+
+// Export alias for backward compatibility
+export const PART_STATUSES = WORK_ORDER_PART_STATUSES;
 
 export type WorkOrderPartStatus = typeof WORK_ORDER_PART_STATUSES[number];
 
