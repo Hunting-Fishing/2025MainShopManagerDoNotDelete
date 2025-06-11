@@ -1,13 +1,11 @@
 
 import React from 'react';
-import { format } from 'date-fns';
 
 export function InvoiceFooter() {
-  const currentDate = new Date();
-  
   return (
-    <div className="p-8 bg-gray-50 text-center text-gray-600 text-sm">
-      Invoice generated on {format(currentDate, 'MMM dd, yyyy')}
+    <div className="p-8 border-t border-gray-200 text-center text-sm text-gray-500">
+      <p className="mb-2">Thank you for your business!</p>
+      <p>If you have any questions about this invoice, please contact us.</p>
     </div>
   );
 }

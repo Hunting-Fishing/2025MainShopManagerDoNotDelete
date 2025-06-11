@@ -7,54 +7,35 @@ interface InvoiceTotalsSectionProps {
 }
 
 export function InvoiceTotalsSection({ workOrder }: InvoiceTotalsSectionProps) {
-  const subtotal = workOrder.subtotal || 0;
+  const subtotal = workOrder.subtotal || workOrder.total_cost || 0;
   const taxRate = workOrder.tax_rate || 0;
-  const taxAmount = workOrder.tax_amount || 0;
-  const totalAmount = workOrder.total_amount || 0;
+  const taxAmount = workOrder.tax_amount || (subtotal * taxRate);
+  const totalAmount = workOrder.total_amount || (subtotal + taxAmount);
 
   return (
     <div className="p-8 border-t border-gray-200">
-      <div className="flex justify-end space-x-4">
-        <div className="text-right">
-          <InvoiceSubtotals 
-            subtotal={subtotal}
-            taxRate={taxRate}
-            taxAmount={taxAmount}
-          />
-          <InvoiceTotal totalAmount={totalAmount} />
+      <div className="max-w-md ml-auto">
+        <div className="space-y-2">
+          <div className="flex justify-between">
+            <span className="text-gray-600">Subtotal:</span>
+            <span className="font-medium">${subtotal.toFixed(2)}</span>
+          </div>
+          
+          {taxRate > 0 && (
+            <div className="flex justify-between">
+              <span className="text-gray-600">Tax ({(taxRate * 100).toFixed(1)}%):</span>
+              <span className="font-medium">${taxAmount.toFixed(2)}</span>
+            </div>
+          )}
+          
+          <div className="border-t pt-2">
+            <div className="flex justify-between text-lg font-bold">
+              <span>Total:</span>
+              <span>${totalAmount.toFixed(2)}</span>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-interface InvoiceSubtotalsProps {
-  subtotal: number;
-  taxRate: number;
-  taxAmount: number;
-}
-
-function InvoiceSubtotals({ subtotal, taxRate, taxAmount }: InvoiceSubtotalsProps) {
-  return (
-    <div className="grid grid-cols-2 gap-2 text-sm">
-      <span className="text-gray-600">Subtotal:</span>
-      <span className="text-gray-900">${subtotal.toFixed(2)}</span>
-      
-      <span className="text-gray-600">Tax ({(taxRate * 100).toFixed(1)}%):</span>
-      <span className="text-gray-900">${taxAmount.toFixed(2)}</span>
-    </div>
-  );
-}
-
-interface InvoiceTotalProps {
-  totalAmount: number;
-}
-
-function InvoiceTotal({ totalAmount }: InvoiceTotalProps) {
-  return (
-    <div className="mt-4">
-      <span className="text-xl font-semibold text-gray-900">Total:</span>
-      <span className="text-xl font-bold text-gray-900 ml-2">${totalAmount.toFixed(2)}</span>
     </div>
   );
 }

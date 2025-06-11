@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -5,6 +6,7 @@ import { UnifiedPartEntryForm } from './UnifiedPartEntryForm';
 import { WorkOrderPartFormValues } from '@/types/workOrderPart';
 import { saveWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
 import { toast } from 'sonner';
+
 interface AddPartsDialogProps {
   workOrderId: string;
   jobLineId?: string;
@@ -12,6 +14,7 @@ interface AddPartsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
 export function AddPartsDialog({
   workOrderId,
   jobLineId,
@@ -20,10 +23,12 @@ export function AddPartsDialog({
   onOpenChange
 }: AddPartsDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleAddPart = async (partData: WorkOrderPartFormValues) => {
     try {
       setIsSubmitting(true);
       const success = await saveWorkOrderPart(workOrderId, partData, jobLineId);
+      
       if (success) {
         toast.success('Part added successfully');
         onPartsAdd();
@@ -38,11 +43,14 @@ export function AddPartsDialog({
       setIsSubmitting(false);
     }
   };
+
   const handleCancel = () => {
     onOpenChange(false);
   };
-  return <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-sky-200">
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add Parts & Materials</DialogTitle>
           <DialogDescription>
@@ -57,7 +65,11 @@ export function AddPartsDialog({
           </TabsList>
           
           <TabsContent value="manual" className="mt-6">
-            <UnifiedPartEntryForm onSubmit={handleAddPart} onCancel={handleCancel} isSubmitting={isSubmitting} />
+            <UnifiedPartEntryForm 
+              onSubmit={handleAddPart} 
+              onCancel={handleCancel} 
+              isSubmitting={isSubmitting} 
+            />
           </TabsContent>
           
           <TabsContent value="inventory" className="mt-6">
@@ -68,5 +80,6 @@ export function AddPartsDialog({
           </TabsContent>
         </Tabs>
       </DialogContent>
-    </Dialog>;
+    </Dialog>
+  );
 }
