@@ -12,9 +12,10 @@ import {
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Receipt, Loader2 } from 'lucide-react';
+import { Receipt, Loader2, AlertTriangle } from 'lucide-react';
 import { convertWorkOrderToInvoice } from '@/services/quote/quoteService';
 import { toast } from '@/hooks/use-toast';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface ConvertToInvoiceButtonProps {
   workOrderId: string;
@@ -71,19 +72,24 @@ export function ConvertToInvoiceButton({
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button 
-          variant="outline" 
+          variant={canConvert ? "default" : "outline"}
           size="sm"
           disabled={!canConvert}
-          className="flex items-center gap-2"
+          className={`flex items-center gap-2 ${
+            canConvert 
+              ? "bg-green-600 hover:bg-green-700 text-white" 
+              : "opacity-60"
+          }`}
         >
           <Receipt className="h-4 w-4" />
-          Convert to Invoice
+          <span className="hidden sm:inline">Convert to Invoice</span>
+          <span className="sm:hidden">Invoice</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Receipt className="h-5 w-5" />
+            <Receipt className="h-5 w-5 text-green-600" />
             Convert to Invoice
           </DialogTitle>
           <DialogDescription>
@@ -92,7 +98,17 @@ export function ConvertToInvoiceButton({
         </DialogHeader>
 
         <div className="space-y-4">
-          <div>
+          {!canConvert && (
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                Work order must be completed before it can be converted to an invoice.
+                Current status: <span className="font-medium capitalize">{workOrderStatus}</span>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <div className="space-y-2">
             <Label htmlFor="notes">Conversion Notes (Optional)</Label>
             <Textarea
               id="notes"
@@ -102,15 +118,10 @@ export function ConvertToInvoiceButton({
               rows={3}
               className="resize-none"
             />
+            <p className="text-xs text-muted-foreground">
+              These notes will be included in the invoice details.
+            </p>
           </div>
-
-          {!canConvert && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
-              <p className="text-sm text-yellow-800">
-                Work order must be completed before it can be converted to an invoice.
-              </p>
-            </div>
-          )}
         </div>
 
         <DialogFooter>
@@ -124,6 +135,7 @@ export function ConvertToInvoiceButton({
           <Button
             onClick={handleConvert}
             disabled={isConverting || !canConvert}
+            className="bg-green-600 hover:bg-green-700"
           >
             {isConverting ? (
               <>

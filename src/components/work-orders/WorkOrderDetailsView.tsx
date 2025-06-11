@@ -72,7 +72,7 @@ export function WorkOrderDetailsView({ workOrderId: propWorkOrderId }: WorkOrder
       setParts(partsData);
       setNotes(workOrderData.notes || '');
       
-      console.log('Parts loaded:', partsData);
+      console.log('Work order data loaded successfully');
     } catch (err) {
       console.error('Error fetching work order data:', err);
       setError('Failed to load work order details');
@@ -83,6 +83,12 @@ export function WorkOrderDetailsView({ workOrderId: propWorkOrderId }: WorkOrder
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEdit = () => {
+    if (workOrderId) {
+      navigate(`/work-orders/${workOrderId}/edit`);
     }
   };
 
@@ -97,21 +103,26 @@ export function WorkOrderDetailsView({ workOrderId: propWorkOrderId }: WorkOrder
 
   if (!workOrderId) {
     return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          No work order ID provided
-        </AlertDescription>
-      </Alert>
+      <div className="container mx-auto p-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            No work order ID provided
+          </AlertDescription>
+        </Alert>
+      </div>
     );
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-lg">Loading work order details...</p>
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+            <p className="text-lg font-medium">Loading work order details...</p>
+            <p className="text-sm text-muted-foreground">Please wait while we fetch the information</p>
+          </div>
         </div>
       </div>
     );
@@ -119,20 +130,22 @@ export function WorkOrderDetailsView({ workOrderId: propWorkOrderId }: WorkOrder
 
   if (error || !workOrder) {
     return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          {error || 'Work order not found'}
-        </AlertDescription>
-      </Alert>
+      <div className="container mx-auto p-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {error || 'Work order not found'}
+          </AlertDescription>
+        </Alert>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div id="work-order-details-content" className="container mx-auto p-6 space-y-6 max-w-7xl">
       <WorkOrderDetailsHeader 
         workOrder={workOrder}
-        onEdit={() => setIsEditMode(!isEditMode)}
+        onEdit={handleEdit}
         onInvoiceCreated={handleInvoiceCreated}
         isEditMode={isEditMode}
       />
