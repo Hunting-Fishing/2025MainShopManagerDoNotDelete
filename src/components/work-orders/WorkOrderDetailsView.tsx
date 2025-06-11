@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import { useWorkOrder } from '@/hooks/useWorkOrder';
@@ -11,6 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Edit, Eye, ArrowLeft } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
+import { WorkOrderPart } from '@/types/workOrderPart';
 
 export function WorkOrderDetailsView() {
   const { id } = useParams<{ id: string }>();
@@ -22,6 +23,7 @@ export function WorkOrderDetailsView() {
   const [isEditMode, setIsEditMode] = useState(isEditRoute || shouldAutoEdit());
   const [timeEntries, setTimeEntries] = useState<any[]>([]);
   const [notes, setNotes] = useState<string>('');
+  const [workOrderParts, setWorkOrderParts] = useState<WorkOrderPart[]>([]);
 
   const { workOrder, isLoading, error } = useWorkOrder(id!);
   const { jobLines, isLoading: jobLinesLoading } = useJobLines(id!);
@@ -31,6 +33,18 @@ export function WorkOrderDetailsView() {
       setNotes(workOrder.notes || '');
     }
   }, [workOrder]);
+
+  useEffect(() => {
+    if (id) {
+      // Fetch standalone work order parts (not attached to job lines)
+      getWorkOrderParts(id).then(parts => {
+        console.log('Standalone work order parts:', parts);
+        setWorkOrderParts(parts);
+      }).catch(error => {
+        console.error('Error fetching work order parts:', error);
+      });
+    }
+  }, [id]);
 
   useEffect(() => {
     if (isEditRoute) {
@@ -122,6 +136,9 @@ export function WorkOrderDetailsView() {
     );
   }
 
+  console.log('WorkOrderDetailsView - passing jobLines:', jobLines);
+  console.log('WorkOrderDetailsView - passing workOrderParts:', workOrderParts);
+
   return (
     <WorkOrderPageLayout 
       title={`Work Order #${workOrder.work_order_number || workOrder.id?.slice(-8)}`}
@@ -154,7 +171,7 @@ export function WorkOrderDetailsView() {
         notes={notes}
         onUpdateNotes={handleUpdateNotes}
         jobLines={jobLines || []}
-        parts={[]}
+        parts={workOrderParts}
         onJobLinesChange={handleJobLinesChange}
         jobLinesLoading={jobLinesLoading}
         isEditMode={false}

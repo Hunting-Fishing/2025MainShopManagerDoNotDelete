@@ -38,6 +38,20 @@ export function WorkOrderDetailsTabs({
   jobLinesLoading,
   isEditMode
 }: WorkOrderDetailsTabsProps) {
+  // Extract all parts from job lines
+  const allPartsFromJobLines = jobLines.reduce((acc: WorkOrderPart[], jobLine) => {
+    if (jobLine.parts && jobLine.parts.length > 0) {
+      return [...acc, ...jobLine.parts];
+    }
+    return acc;
+  }, []);
+
+  // Combine standalone parts with parts from job lines
+  const allParts = [...parts, ...allPartsFromJobLines];
+
+  console.log('WorkOrderDetailsTabs - jobLines received:', jobLines);
+  console.log('WorkOrderDetailsTabs - allParts calculated:', allParts);
+
   return (
     <Tabs defaultValue="overview" className="w-full">
       <TabsList className="grid w-full grid-cols-6">
@@ -53,7 +67,7 @@ export function WorkOrderDetailsTabs({
         <WorkOrderDetailsTab
           workOrder={workOrder}
           jobLines={jobLines}
-          allParts={parts}
+          allParts={allParts}
           onJobLinesChange={onJobLinesChange}
           isEditMode={isEditMode}
         />
