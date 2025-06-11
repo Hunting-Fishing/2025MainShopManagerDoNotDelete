@@ -11,13 +11,17 @@ interface JobLinesGridProps {
   jobLines: WorkOrderJobLine[];
   onJobLinesChange: (updatedJobLines: WorkOrderJobLine[]) => void;
   isEditMode: boolean;
+  onUpdate?: (updatedJobLine: WorkOrderJobLine) => Promise<void>;
+  onDelete?: (jobLineId: string) => Promise<void>;
 }
 
 export function JobLinesGrid({ 
   workOrderId, 
   jobLines, 
   onJobLinesChange, 
-  isEditMode 
+  isEditMode,
+  onUpdate,
+  onDelete
 }: JobLinesGridProps) {
   const { updatePartJobLine } = useJobLineParts(workOrderId);
 
@@ -68,6 +72,8 @@ export function JobLinesGrid({
             key={jobLine.id} 
             jobLine={jobLine}
             isEditMode={isEditMode}
+            onUpdate={onUpdate}
+            onDelete={onDelete}
             onPartsChange={(newParts) => {
               const updatedJobLines = jobLines.map(jl => 
                 jl.id === jobLine.id ? { ...jl, parts: newParts } : jl
