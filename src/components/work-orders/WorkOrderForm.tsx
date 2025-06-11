@@ -3,7 +3,6 @@ import React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { workOrderFormSchema, WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
-import { WorkOrderCreateForm } from "./WorkOrderCreateForm";
 
 interface WorkOrderFormProps {
   onSubmit?: (values: WorkOrderFormSchemaValues) => Promise<void>;
@@ -42,5 +41,11 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
     }
   };
 
-  return <WorkOrderCreateForm form={form} onSubmit={handleSubmit} />;
+  // Return a form component or form fields here
+  // This component needs to be implemented based on your specific needs
+  return (
+    <div>
+      {/* Implement form fields here */}
+    </div>
+  );
 };

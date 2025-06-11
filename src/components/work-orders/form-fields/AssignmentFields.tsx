@@ -49,7 +49,7 @@ export function AssignmentFields({
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="">No technician assigned</SelectItem>
+                <SelectItem value="unassigned">No technician assigned</SelectItem>
                 {technicians.map((technician) => (
                   <SelectItem key={technician.id} value={technician.id}>
                     {technician.name}
