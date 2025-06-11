@@ -80,7 +80,7 @@ export function JobLineCard({
                     </Badge>}
                 </div>
                 
-                {localJobLine.description && <p className="text-gray-600 text-sm mb-3">{localJobLine.description}</p>}
+                {localJobLine.description && <p className="text-gray-600 mb-3 text-base">{localJobLine.description}</p>}
 
                 {/* Job Line Details */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
@@ -113,7 +113,7 @@ export function JobLineCard({
 
               {/* Actions */}
               {isEditMode && <div className="flex items-center gap-2 ml-4">
-                  <Button variant="outline" size="sm" onClick={() => setAddPartsDialogOpen(true)} className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setAddPartsDialogOpen(true)} className="flex items-center gap-2 text-slate-950 bg-green-500 hover:bg-green-400 text-lg">
                     <Plus className="h-4 w-4" />
                     Add Parts
                   </Button>
