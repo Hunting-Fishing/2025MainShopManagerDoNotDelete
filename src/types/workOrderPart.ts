@@ -39,6 +39,9 @@ export interface WorkOrderPart {
   poLine?: string;
   isStockItem?: boolean;
   notesInternal?: string;
+  attachments?: any;
+  warehouseLocation?: string;
+  shelfLocation?: string;
   
   // CamelCase aliases for backward compatibility
   workOrderId?: string; // Alias for work_order_id
@@ -74,6 +77,13 @@ export interface WorkOrderPartFormValues {
   poLine?: string;
   isStockItem?: boolean;
   notesInternal?: string;
+  binLocation?: string;
+  installDate?: string;
+  installedBy?: string;
+  inventoryItemId?: string;
+  attachments?: any;
+  warehouseLocation?: string;
+  shelfLocation?: string;
 }
 
 export const WORK_ORDER_PART_STATUSES = [

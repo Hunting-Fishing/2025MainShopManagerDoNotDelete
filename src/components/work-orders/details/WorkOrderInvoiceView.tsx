@@ -25,10 +25,7 @@ export function WorkOrderInvoiceView({ workOrder, jobLines }: WorkOrderInvoiceVi
         <InvoiceVehicleInfo vehicle={workOrder.vehicle} />
       </div>
 
-      <InvoiceServicesSection 
-        workOrderId={workOrder.id}
-        jobLines={jobLines} 
-      />
+      <InvoiceServicesSection jobLines={jobLines} />
 
       <InvoiceTotalsSection workOrder={workOrder} />
 

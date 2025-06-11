@@ -13,9 +13,10 @@ interface EditJobLineDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdate?: (updatedJobLine: WorkOrderJobLine) => void;
+  onSave?: (updatedJobLine: WorkOrderJobLine) => void;
 }
 
-export function EditJobLineDialog({ jobLine, open, onOpenChange, onUpdate }: EditJobLineDialogProps) {
+export function EditJobLineDialog({ jobLine, open, onOpenChange, onUpdate, onSave }: EditJobLineDialogProps) {
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -45,13 +46,17 @@ export function EditJobLineDialog({ jobLine, open, onOpenChange, onUpdate }: Edi
   }, [jobLine]);
 
   const handleSave = () => {
+    const updatedJobLine: WorkOrderJobLine = {
+      ...jobLine,
+      ...formData,
+      updated_at: new Date().toISOString()
+    };
+    
     if (onUpdate) {
-      const updatedJobLine: WorkOrderJobLine = {
-        ...jobLine,
-        ...formData,
-        updated_at: new Date().toISOString()
-      };
       onUpdate(updatedJobLine);
+    }
+    if (onSave) {
+      onSave(updatedJobLine);
     }
     onOpenChange(false);
   };
