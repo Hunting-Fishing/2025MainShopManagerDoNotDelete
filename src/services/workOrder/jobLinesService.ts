@@ -68,6 +68,11 @@ export async function upsertWorkOrderJobLine(jobLine: Partial<WorkOrderJobLine>)
 }
 
 /**
+ * Update a job line (alias for upsertWorkOrderJobLine for backward compatibility)
+ */
+export const updateWorkOrderJobLine = upsertWorkOrderJobLine;
+
+/**
  * Delete a job line
  */
 export async function deleteWorkOrderJobLine(jobLineId: string): Promise<void> {

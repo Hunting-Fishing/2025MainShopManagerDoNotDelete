@@ -26,6 +26,11 @@ export interface WorkOrderPart {
   installDate?: string;
   dateAdded?: string; // Alias for created_at
   partType?: string;
+  installedBy?: string; // Added missing property
+  
+  // CamelCase aliases for backward compatibility
+  workOrderId?: string; // Alias for work_order_id
+  jobLineId?: string; // Alias for job_line_id
 }
 
 export interface WorkOrderPartFormValues {

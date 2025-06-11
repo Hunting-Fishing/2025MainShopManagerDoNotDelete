@@ -18,6 +18,12 @@ export interface WorkOrderJobLine {
   created_at: string;
   updated_at: string;
   parts?: WorkOrderPart[];
+  
+  // CamelCase aliases for backward compatibility
+  workOrderId?: string; // Alias for work_order_id
+  estimatedHours?: number; // Alias for estimated_hours
+  laborRate?: number; // Alias for labor_rate
+  totalAmount?: number; // Alias for total_amount
 }
 
 export interface JobLineFormValues {
