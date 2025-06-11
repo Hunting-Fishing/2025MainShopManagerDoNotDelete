@@ -8,7 +8,8 @@ export {
   getWorkOrderById,
   getWorkOrdersByCustomerId,
   getWorkOrdersByStatus,
-  getUniqueTechnicians
+  getUniqueTechnicians,
+  getWorkOrderTimeEntries
 } from './workOrderQueryService';
 
 export { 
