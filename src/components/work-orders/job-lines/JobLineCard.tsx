@@ -1,178 +1,249 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2, Plus } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Pencil, Trash2, Plus } from 'lucide-react';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { JobLineDialog } from './JobLineDialog';
-import { AddPartsDialog } from '../parts/AddPartsDialog';
+import { WorkOrderPart } from '@/types/workOrderPart';
 import { DroppableJobLinePartsSection } from '../parts/DroppableJobLinePartsSection';
-import { updateWorkOrderJobLine, deleteWorkOrderJobLine } from '@/services/workOrder/jobLinesService';
-import { toast } from 'sonner';
+import { JobLineEditDialog } from './JobLineEditDialog';
+import { AddPartsDialog } from '../parts/AddPartsDialog';
+import { EditPartDialog } from '../parts/EditPartDialog';
+import { deleteWorkOrderJobLine, updateWorkOrderJobLine } from '@/services/workOrder/jobLinesService';
+import { deleteWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
+import { useToast } from '@/hooks/use-toast';
 
 interface JobLineCardProps {
   jobLine: WorkOrderJobLine;
+  isEditMode?: boolean;
   onUpdate?: (updatedJobLine: WorkOrderJobLine) => void;
   onDelete?: (jobLineId: string) => void;
-  onPartsChange?: (newParts: any[]) => void;
-  isEditMode?: boolean;
+  onPartsChange?: (newParts: WorkOrderPart[]) => void;
 }
 
-export function JobLineCard({ 
-  jobLine, 
+export function JobLineCard({
+  jobLine,
+  isEditMode = false,
   onUpdate,
   onDelete,
-  onPartsChange,
-  isEditMode = false 
+  onPartsChange
 }: JobLineCardProps) {
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [showAddPartsDialog, setShowAddPartsDialog] = useState(false);
+  const { toast } = useToast();
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isAddPartsDialogOpen, setIsAddPartsDialogOpen] = useState(false);
+  const [editingPart, setEditingPart] = useState<WorkOrderPart | null>(null);
 
   const handleEdit = () => {
-    setShowEditDialog(true);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!onDelete) return;
+    
+    try {
+      const success = await deleteWorkOrderJobLine(jobLine.id);
+      if (success) {
+        onDelete(jobLine.id);
+        toast({
+          title: "Job line deleted",
+          description: "The job line has been successfully deleted.",
+        });
+      } else {
+        throw new Error('Failed to delete job line');
+      }
+    } catch (error) {
+      console.error('Error deleting job line:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete job line. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSave = async (updatedJobLine: WorkOrderJobLine) => {
     try {
-      console.log('Saving job line with data:', updatedJobLine);
-      
-      // Call the update service with the complete updated job line data
-      await updateWorkOrderJobLine(updatedJobLine.id, {
+      console.log('Saving job line updates:', updatedJobLine);
+      const success = await updateWorkOrderJobLine(jobLine.id, {
         name: updatedJobLine.name,
         description: updatedJobLine.description,
         estimatedHours: updatedJobLine.estimatedHours,
         laborRate: updatedJobLine.laborRate,
-        totalAmount: updatedJobLine.totalAmount,
+        notes: updatedJobLine.notes, // Make sure notes are included
         status: updatedJobLine.status,
-        notes: updatedJobLine.notes, // Ensure notes are included
         category: updatedJobLine.category,
-        subcategory: updatedJobLine.subcategory
+        subcategory: updatedJobLine.subcategory,
+        totalAmount: updatedJobLine.totalAmount
       });
-
-      console.log('Job line updated successfully');
-      toast.success('Job line updated successfully');
       
-      if (onUpdate) {
+      if (success && onUpdate) {
+        console.log('Job line updated successfully, calling onUpdate');
         onUpdate(updatedJobLine);
+        toast({
+          title: "Job line updated",
+          description: "The job line has been successfully updated.",
+        });
+      } else {
+        throw new Error('Failed to update job line');
       }
     } catch (error) {
       console.error('Error updating job line:', error);
-      toast.error('Failed to update job line');
+      toast({
+        title: "Error",
+        description: "Failed to update job line. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this job line?')) return;
-    
+  const handleRemovePart = async (partId: string) => {
     try {
-      await deleteWorkOrderJobLine(jobLine.id);
-      toast.success('Job line deleted successfully');
-      
-      if (onDelete) {
-        onDelete(jobLine.id);
+      const success = await deleteWorkOrderPart(partId);
+      if (success && onPartsChange && jobLine.parts) {
+        const updatedParts = jobLine.parts.filter(part => part.id !== partId);
+        onPartsChange(updatedParts);
+        toast({
+          title: "Part removed",
+          description: "The part has been successfully removed.",
+        });
       }
     } catch (error) {
-      console.error('Error deleting job line:', error);
-      toast.error('Failed to delete job line');
+      console.error('Error removing part:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove part. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
-  const handlePartsAdd = () => {
-    // Refresh parts when new parts are added
-    if (onPartsChange) {
-      // This will trigger a refresh of the parts in the parent component
-      onPartsChange(jobLine.parts || []);
+  const handleEditPart = (part: WorkOrderPart) => {
+    setEditingPart(part);
+  };
+
+  const handlePartsAdded = () => {
+    // Refresh parts data after adding
+    if (onPartsChange && jobLine.parts) {
+      // This will trigger a re-fetch of parts in the parent component
+      onPartsChange([...jobLine.parts]);
     }
-    setShowAddPartsDialog(false);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      case 'in-progress':
+        return 'bg-blue-100 text-blue-800';
+      case 'on-hold':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
 
   return (
     <>
-      <Card className="mb-4">
+      <Card>
         <CardHeader className="pb-3">
-          <div className="flex justify-between items-start">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <h3 className="text-lg font-semibold">{jobLine.name}</h3>
-                <Badge variant="outline">{jobLine.status}</Badge>
-              </div>
-              {jobLine.description && (
-                <p className="text-sm text-muted-foreground mb-2">{jobLine.description}</p>
-              )}
-              {jobLine.notes && (
-                <div className="mt-2">
-                  <p className="text-xs font-medium text-muted-foreground">Internal Notes:</p>
-                  <p className="text-sm text-muted-foreground">{jobLine.notes}</p>
-                </div>
-              )}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <CardTitle className="text-lg">{jobLine.name}</CardTitle>
+              <Badge className={getStatusColor(jobLine.status)}>
+                {jobLine.status}
+              </Badge>
             </div>
             {isEditMode && (
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowAddPartsDialog(true)}
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Parts
+              <div className="flex items-center space-x-2">
+                <Button variant="outline" size="sm" onClick={handleEdit}>
+                  <Pencil className="h-4 w-4" />
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleEdit}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleDelete}
-                >
+                <Button variant="outline" size="sm" onClick={handleDelete}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
             )}
           </div>
+          {jobLine.description && (
+            <p className="text-sm text-muted-foreground">{jobLine.description}</p>
+          )}
+          {jobLine.notes && (
+            <div className="text-sm">
+              <span className="font-medium">Notes: </span>
+              <span className="text-muted-foreground">{jobLine.notes}</span>
+            </div>
+          )}
         </CardHeader>
-        
         <CardContent>
-          <div className="grid grid-cols-3 gap-4 mb-4">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">Estimated Hours</p>
-              <p className="text-sm">{jobLine.estimatedHours || 0}</p>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div>
+                <span className="font-medium">Hours:</span> {jobLine.estimatedHours || 0}
+              </div>
+              <div>
+                <span className="font-medium">Rate:</span> ${jobLine.laborRate || 0}
+              </div>
+              <div>
+                <span className="font-medium">Total:</span> ${jobLine.totalAmount || 0}
+              </div>
+              <div>
+                <span className="font-medium">Parts:</span> {jobLine.parts?.length || 0}
+              </div>
             </div>
+            
             <div>
-              <p className="text-xs font-medium text-muted-foreground">Labor Rate</p>
-              <p className="text-sm">${jobLine.laborRate || 0}</p>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">Total</p>
-              <p className="text-sm font-semibold">${jobLine.totalAmount || 0}</p>
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-medium">Parts</h4>
+                {isEditMode && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setIsAddPartsDialogOpen(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Parts
+                  </Button>
+                )}
+              </div>
+              <DroppableJobLinePartsSection
+                jobLineId={jobLine.id}
+                parts={jobLine.parts || []}
+                onRemovePart={isEditMode ? handleRemovePart : undefined}
+                onEditPart={isEditMode ? handleEditPart : undefined}
+                isEditMode={isEditMode}
+              />
             </div>
           </div>
-
-          <DroppableJobLinePartsSection
-            jobLine={jobLine}
-            onPartsChange={onPartsChange}
-          />
         </CardContent>
       </Card>
 
-      <JobLineDialog
+      <JobLineEditDialog
         jobLine={jobLine}
-        open={showEditDialog}
-        onOpenChange={setShowEditDialog}
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
         onSave={handleSave}
       />
 
       <AddPartsDialog
         workOrderId={jobLine.workOrderId || ''}
         jobLineId={jobLine.id}
-        onPartsAdd={handlePartsAdd}
-        open={showAddPartsDialog}
-        onOpenChange={setShowAddPartsDialog}
+        onPartsAdd={handlePartsAdded}
+        open={isAddPartsDialogOpen}
+        onOpenChange={setIsAddPartsDialogOpen}
       />
+
+      {editingPart && (
+        <EditPartDialog
+          open={!!editingPart}
+          onOpenChange={(open) => !open && setEditingPart(null)}
+          part={editingPart}
+          onSave={() => {
+            setEditingPart(null);
+            handlePartsAdded();
+          }}
+        />
+      )}
     </>
   );
 }
