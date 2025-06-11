@@ -21,7 +21,8 @@ export function useParts() {
   const removePart = async (partId: string): Promise<boolean> => {
     try {
       setIsLoading(true);
-      return await deleteWorkOrderPart(partId);
+      await deleteWorkOrderPart(partId);
+      return true;
     } catch (error) {
       console.error('Error removing part:', error);
       return false;
