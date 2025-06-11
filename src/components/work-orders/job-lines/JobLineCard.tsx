@@ -64,7 +64,7 @@ export function JobLineCard({
   const partsTotal = (localJobLine.parts || []).reduce((total, part) => total + part.customerPrice * part.quantity, 0);
   return <>
       <Card className="border-slate-200">
-        <CardContent className="p-4">
+        <CardContent className="p-4 bg-sky-300">
           <div className="space-y-4">
             {/* Header */}
             <div className="flex items-start justify-between">
