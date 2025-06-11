@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Customer } from '@/types/customer';
@@ -52,8 +53,12 @@ export const CustomerDocumentsTab: React.FC<CustomerDocumentsTabProps> = ({ cust
     setIsLoading(true);
     try {
       const docs = await getCustomerDocuments(customer.id);
-      setDocuments(docs);
-      setFilteredDocuments(docs);
+      // Filter and cast to CustomerDocument[] ensuring customer_id is present
+      const customerDocs = docs
+        .filter(doc => doc.customer_id === customer.id)
+        .map(doc => ({ ...doc, customer_id: customer.id } as CustomerDocument));
+      setDocuments(customerDocs);
+      setFilteredDocuments(customerDocs);
     } catch (error) {
       console.error("Error loading documents:", error);
     } finally {

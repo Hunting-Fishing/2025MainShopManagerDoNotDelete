@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -45,26 +46,16 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
     if (onClick) {
       onClick(document);
     }
-    // Log the access with proper parameters
-    DocumentService.logAccess(
-      document.id, 
-      'view', 
-      'current_user_id', 
-      'Current User'
-    );
+    // Log the access with simplified parameters
+    DocumentService.logAccess(document.id, 'view');
   };
 
   const handleDownload = () => {
     if (onDownload) {
       onDownload(document);
     }
-    // Log the access with proper parameters  
-    DocumentService.logAccess(
-      document.id, 
-      'download', 
-      'current_user_id', 
-      'Current User'
-    );
+    // Log the access with simplified parameters  
+    DocumentService.logAccess(document.id, 'download');
   };
 
   const handleEdit = () => {
