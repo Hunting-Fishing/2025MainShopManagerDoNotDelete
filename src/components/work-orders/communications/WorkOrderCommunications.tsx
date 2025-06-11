@@ -2,19 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Phone, MessageSquare, History, Plus } from 'lucide-react';
+import { Phone, MessageSquare, Plus, Mail } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 import { WorkOrder } from '@/types/workOrder';
 import { CommunicationHistory } from './CommunicationHistory';
 import { SendSmsDialog } from './SendSmsDialog';
 import { MakeCallDialog } from './MakeCallDialog';
 import { RecordCommunicationDialog } from './RecordCommunicationDialog';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
-
-interface WorkOrderCommunicationsProps {
-  workOrder: WorkOrder;
-}
 
 interface CustomerCommunication {
   id: string;
@@ -33,48 +28,44 @@ interface CustomerCommunication {
   updated_at: string;
 }
 
+interface WorkOrderCommunicationsProps {
+  workOrder: WorkOrder;
+}
+
 export function WorkOrderCommunications({ workOrder }: WorkOrderCommunicationsProps) {
   const [communications, setCommunications] = useState<CustomerCommunication[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showSmsDialog, setShowSmsDialog] = useState(false);
-  const [showCallDialog, setShowCallDialog] = useState(false);
-  const [showRecordDialog, setShowRecordDialog] = useState(false);
-
-  // Get customer info from work order
-  const customerId = workOrder.customer_id;
-  const customerName = workOrder.customer_name || workOrder.customer || 'Unknown Customer';
-  const customerPhone = workOrder.customer_phone || '';
-  const customerEmail = workOrder.customer_email || '';
-
-  useEffect(() => {
-    if (customerId) {
-      fetchCommunications();
-    }
-  }, [customerId]);
+  const [sendSmsOpen, setSendSmsOpen] = useState(false);
+  const [makeCallOpen, setMakeCallOpen] = useState(false);
+  const [recordCommOpen, setRecordCommOpen] = useState(false);
 
   const fetchCommunications = async () => {
+    if (!workOrder.customer_id) return;
+
     try {
       setLoading(true);
-      console.log('Fetching communications for customer:', customerId);
-
       const { data, error } = await supabase
         .from('customer_communications')
         .select('*')
-        .eq('customer_id', customerId)
+        .eq('customer_id', workOrder.customer_id)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching communications:', error);
-        throw error;
-      }
+      if (error) throw error;
 
-      console.log('Communications fetched:', data);
-      setCommunications(data || []);
+      // Type cast the database response to match our interface
+      const typedCommunications: CustomerCommunication[] = (data || []).map(comm => ({
+        ...comm,
+        type: comm.type as 'email' | 'phone' | 'text' | 'in-person',
+        direction: comm.direction as 'inbound' | 'outbound',
+        status: comm.status as 'pending' | 'sent' | 'delivered' | 'failed' | 'completed'
+      }));
+
+      setCommunications(typedCommunications);
     } catch (error) {
       console.error('Error fetching communications:', error);
       toast({
         title: "Error",
-        description: "Failed to load communications",
+        description: "Failed to load communication history",
         variant: "destructive",
       });
     } finally {
@@ -82,30 +73,25 @@ export function WorkOrderCommunications({ workOrder }: WorkOrderCommunicationsPr
     }
   };
 
-  const handleCommunicationSent = () => {
+  useEffect(() => {
     fetchCommunications();
-    toast({
-      title: "Success",
-      description: "Communication sent successfully",
-    });
+  }, [workOrder.customer_id]);
+
+  const handleCommunicationSuccess = () => {
+    fetchCommunications();
+    setSendSmsOpen(false);
+    setMakeCallOpen(false);
+    setRecordCommOpen(false);
   };
 
-  const handleCommunicationRecorded = () => {
-    fetchCommunications();
-    toast({
-      title: "Success",
-      description: "Communication recorded successfully",
-    });
-  };
-
-  if (!customerId) {
+  if (!workOrder.customer_id) {
     return (
       <Card>
         <CardHeader>
           <CardTitle>Customer Communications</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">No customer assigned to this work order.</p>
+          <p className="text-muted-foreground">No customer associated with this work order.</p>
         </CardContent>
       </Card>
     );
@@ -117,86 +103,73 @@ export function WorkOrderCommunications({ workOrder }: WorkOrderCommunicationsPr
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Customer Communications</span>
-            <div className="flex items-center gap-2">
+            <div className="flex gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setShowSmsDialog(true)}
-                disabled={!customerPhone}
+                onClick={() => setSendSmsOpen(true)}
+                className="flex items-center gap-2"
               >
-                <MessageSquare className="h-4 w-4 mr-2" />
+                <MessageSquare className="h-4 w-4" />
                 Send SMS
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setShowCallDialog(true)}
-                disabled={!customerPhone}
+                onClick={() => setMakeCallOpen(true)}
+                className="flex items-center gap-2"
               >
-                <Phone className="h-4 w-4 mr-2" />
+                <Phone className="h-4 w-4" />
                 Make Call
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setShowRecordDialog(true)}
+                onClick={() => setRecordCommOpen(true)}
+                className="flex items-center gap-2"
               >
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="h-4 w-4" />
                 Record Communication
               </Button>
             </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="history" className="w-full">
-            <TabsList className="grid w-full grid-cols-1">
-              <TabsTrigger value="history" className="flex items-center gap-2">
-                <History className="h-4 w-4" />
-                Communication History
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="history" className="mt-4">
-              <CommunicationHistory 
-                communications={communications}
-                loading={loading}
-              />
-            </TabsContent>
-          </Tabs>
+          <CommunicationHistory 
+            communications={communications}
+            loading={loading}
+          />
         </CardContent>
       </Card>
 
-      {/* SMS Dialog */}
+      {/* Dialogs */}
       <SendSmsDialog
-        open={showSmsDialog}
-        onOpenChange={setShowSmsDialog}
-        customerId={customerId}
-        customerName={customerName}
-        phoneNumber={customerPhone}
+        open={sendSmsOpen}
+        onOpenChange={setSendSmsOpen}
+        customerId={workOrder.customer_id}
+        customerName={workOrder.customer_name || 'Customer'}
+        phoneNumber={workOrder.customer_phone || ''}
         workOrderId={workOrder.id}
-        onSuccess={handleCommunicationSent}
+        onSuccess={handleCommunicationSuccess}
       />
 
-      {/* Call Dialog */}
       <MakeCallDialog
-        open={showCallDialog}
-        onOpenChange={setShowCallDialog}
-        customerId={customerId}
-        customerName={customerName}
-        phoneNumber={customerPhone}
+        open={makeCallOpen}
+        onOpenChange={setMakeCallOpen}
+        customerId={workOrder.customer_id}
+        customerName={workOrder.customer_name || 'Customer'}
+        phoneNumber={workOrder.customer_phone || ''}
         workOrderId={workOrder.id}
-        onSuccess={handleCommunicationSent}
+        onSuccess={handleCommunicationSuccess}
       />
 
-      {/* Record Communication Dialog */}
       <RecordCommunicationDialog
-        open={showRecordDialog}
-        onOpenChange={setShowRecordDialog}
-        customerId={customerId}
-        customerName={customerName}
-        customerEmail={customerEmail}
-        customerPhone={customerPhone}
+        open={recordCommOpen}
+        onOpenChange={setRecordCommOpen}
+        customerId={workOrder.customer_id}
+        customerName={workOrder.customer_name || 'Customer'}
         workOrderId={workOrder.id}
-        onSuccess={handleCommunicationRecorded}
+        onSuccess={handleCommunicationSuccess}
       />
     </div>
   );
