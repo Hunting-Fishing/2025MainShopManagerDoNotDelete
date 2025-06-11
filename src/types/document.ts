@@ -42,6 +42,11 @@ export interface Document {
   category_name?: string;
 }
 
+// Add CustomerDocument type (alias for Document with customer context)
+export interface CustomerDocument extends Document {
+  customer_id: string;
+}
+
 export interface DocumentVersion {
   id: string;
   document_id: string;
@@ -90,4 +95,16 @@ export interface CreateDocumentData {
   is_public?: boolean;
   metadata?: Record<string, any>;
   tags?: string[];
+}
+
+// Add SavedSearch type
+export interface SavedSearch {
+  id: string;
+  name: string;
+  description?: string;
+  search_query: Record<string, any>;
+  user_id: string;
+  is_global: boolean;
+  created_at: string;
+  updated_at: string;
 }
