@@ -1,7 +1,8 @@
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { WorkOrder } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
@@ -10,11 +11,11 @@ import {
   Package, 
   DollarSign, 
   Clock, 
-  AlertTriangle,
   Calculator,
-  TrendingUp,
-  Timer
+  AlertTriangle,
+  Tag
 } from 'lucide-react';
+import { calculateWorkOrderTotalsWithDiscounts } from '@/services/discountService';
 
 interface WorkOrderOverviewHeaderProps {
   workOrder: WorkOrder;
@@ -27,160 +28,213 @@ export function WorkOrderOverviewHeader({
   jobLines, 
   allParts 
 }: WorkOrderOverviewHeaderProps) {
-  // Calculate metrics
+  const [totalsWithDiscounts, setTotalsWithDiscounts] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadTotalsWithDiscounts();
+  }, [workOrder.id, jobLines, allParts]);
+
+  const loadTotalsWithDiscounts = async () => {
+    try {
+      const totals = await calculateWorkOrderTotalsWithDiscounts(workOrder.id);
+      setTotalsWithDiscounts(totals);
+    } catch (error) {
+      console.error('Error loading totals with discounts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Calculate basic metrics
   const totalJobs = jobLines.length;
   const totalParts = allParts.length;
+  const totalEstimatedHours = jobLines.reduce((sum, job) => sum + (job.estimatedHours || 0), 0);
   
-  // Parts financial calculations
-  const partsCost = allParts.reduce((sum, part) => sum + (part.supplierCost * part.quantity), 0);
-  const partsRetail = allParts.reduce((sum, part) => sum + (part.customerPrice * part.quantity), 0);
-  const partsMarkup = partsRetail - partsCost;
-  const markupPercentage = partsCost > 0 ? ((partsMarkup / partsCost) * 100) : 0;
+  // Parts financial metrics
+  const partsRetailTotal = allParts.reduce((sum, part) => sum + (part.customerPrice * part.quantity), 0);
+  const partsCostTotal = allParts.reduce((sum, part) => sum + (part.supplierCost * part.quantity), 0);
   
-  // Time calculations
-  const estimatedHoursTotal = jobLines.reduce((sum, job) => sum + (job.estimatedHours || 0), 0);
-  const totalLaborCost = jobLines.reduce((sum, job) => sum + (job.totalAmount || 0), 0);
+  // Labor metrics
+  const laborSubtotal = jobLines.reduce((sum, job) => sum + (job.totalAmount || 0), 0);
   
   // Job lines without parts
-  const jobLinesWithoutParts = jobLines.filter(job => 
-    !job.parts || job.parts.length === 0
-  );
-  const jobsWithoutPartsCount = jobLinesWithoutParts.length;
+  const jobLinesWithoutParts = jobLines.filter(job => !job.parts || job.parts.length === 0);
   
-  // Overall work order totals
-  const grandTotal = totalLaborCost + partsRetail;
+  // Discount information
+  const hasDiscounts = totalsWithDiscounts && totalsWithDiscounts.total_discounts > 0;
+  const grandTotal = totalsWithDiscounts?.final_total || (laborSubtotal + partsRetailTotal);
+  const totalDiscounts = totalsWithDiscounts?.total_discounts || 0;
 
   return (
     <div className="space-y-4">
-      {/* Alert for jobs without parts */}
-      {jobsWithoutPartsCount > 0 && (
-        <Card className="border-pink-200 bg-pink-50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-pink-800">
-              <AlertTriangle className="h-5 w-5" />
-              <span className="font-medium">
-                {jobsWithoutPartsCount} job line{jobsWithoutPartsCount !== 1 ? 's' : ''} without parts
-              </span>
-              <Badge variant="outline" className="bg-pink-100 text-pink-800 border-pink-300">
-                Attention Required
-              </Badge>
-            </div>
-            <div className="mt-2 text-sm text-pink-700">
-              The following job lines don't have any parts assigned:
-            </div>
-            <div className="mt-1 flex flex-wrap gap-1">
-              {jobLinesWithoutParts.map(job => (
-                <Badge key={job.id} variant="outline" className="bg-pink-100 text-pink-800 border-pink-300">
-                  {job.name}
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+      {/* Alert for job lines without parts */}
+      {jobLinesWithoutParts.length > 0 && (
+        <Alert className="border-pink-200 bg-pink-50">
+          <AlertTriangle className="h-4 w-4 text-pink-600" />
+          <AlertDescription className="text-pink-800">
+            <strong>{jobLinesWithoutParts.length}</strong> job line{jobLinesWithoutParts.length > 1 ? 's' : ''} 
+            {jobLinesWithoutParts.length > 1 ? ' have' : ' has'} no parts associated:
+            <span className="ml-2 font-medium">
+              {jobLinesWithoutParts.map(job => job.name).join(', ')}
+            </span>
+          </AlertDescription>
+        </Alert>
       )}
 
-      {/* Main metrics grid */}
+      {/* Main metrics cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-        {/* Jobs Overview */}
-        <Card>
+        {/* Jobs */}
+        <Card className="bg-blue-50 border-blue-200">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <Wrench className="h-4 w-4 text-blue-600" />
-              <span className="text-sm font-medium text-slate-600">Total Jobs</span>
+              <Wrench className="h-5 w-5 text-blue-600" />
+              <span className="text-sm font-medium text-blue-900">Total Jobs</span>
             </div>
-            <div className="text-2xl font-bold text-slate-900">{totalJobs}</div>
-            {jobsWithoutPartsCount > 0 && (
-              <div className="text-xs text-pink-600 mt-1">
-                {jobsWithoutPartsCount} without parts
-              </div>
-            )}
+            <div className="text-2xl font-bold text-blue-900">{totalJobs}</div>
           </CardContent>
         </Card>
 
         {/* Parts Count */}
-        <Card>
+        <Card className="bg-purple-50 border-purple-200">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <Package className="h-4 w-4 text-orange-600" />
-              <span className="text-sm font-medium text-slate-600">Total Parts</span>
+              <Package className="h-5 w-5 text-purple-600" />
+              <span className="text-sm font-medium text-purple-900">Total Parts</span>
             </div>
-            <div className="text-2xl font-bold text-slate-900">{totalParts}</div>
-            <div className="text-xs text-slate-500 mt-1">
-              Across all jobs
-            </div>
+            <div className="text-2xl font-bold text-purple-900">{totalParts}</div>
           </CardContent>
         </Card>
 
         {/* Parts Cost */}
-        <Card>
+        <Card className="bg-orange-50 border-orange-200">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <DollarSign className="h-4 w-4 text-red-600" />
-              <span className="text-sm font-medium text-slate-600">Parts Cost</span>
+              <DollarSign className="h-5 w-5 text-orange-600" />
+              <span className="text-sm font-medium text-orange-900">Parts Cost</span>
             </div>
-            <div className="text-2xl font-bold text-slate-900">${partsCost.toFixed(2)}</div>
-            <div className="text-xs text-slate-500 mt-1">
-              Supplier cost
+            <div className="text-2xl font-bold text-orange-900">
+              ${partsCostTotal.toFixed(2)}
             </div>
           </CardContent>
         </Card>
 
         {/* Parts Retail */}
-        <Card>
+        <Card className="bg-green-50 border-green-200">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="h-4 w-4 text-green-600" />
-              <span className="text-sm font-medium text-slate-600">Parts Retail</span>
+              <DollarSign className="h-5 w-5 text-green-600" />
+              <span className="text-sm font-medium text-green-900">Parts Retail</span>
             </div>
-            <div className="text-2xl font-bold text-slate-900">${partsRetail.toFixed(2)}</div>
-            <div className="text-xs text-green-600 mt-1">
-              +${partsMarkup.toFixed(2)} ({markupPercentage.toFixed(1)}%)
+            <div className="text-2xl font-bold text-green-900">
+              ${partsRetailTotal.toFixed(2)}
             </div>
           </CardContent>
         </Card>
 
         {/* Estimated Hours */}
-        <Card>
+        <Card className="bg-indigo-50 border-indigo-200">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <Clock className="h-4 w-4 text-purple-600" />
-              <span className="text-sm font-medium text-slate-600">Est. Hours</span>
+              <Clock className="h-5 w-5 text-indigo-600" />
+              <span className="text-sm font-medium text-indigo-900">Est. Hours</span>
             </div>
-            <div className="text-2xl font-bold text-slate-900">{estimatedHoursTotal.toFixed(1)}</div>
-            <div className="text-xs text-slate-500 mt-1">
-              Total estimated
+            <div className="text-2xl font-bold text-indigo-900">
+              {totalEstimatedHours.toFixed(1)}
             </div>
           </CardContent>
         </Card>
 
         {/* Labor Total */}
-        <Card>
+        <Card className="bg-yellow-50 border-yellow-200">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <Calculator className="h-4 w-4 text-indigo-600" />
-              <span className="text-sm font-medium text-slate-600">Labor Total</span>
+              <Wrench className="h-5 w-5 text-yellow-600" />
+              <span className="text-sm font-medium text-yellow-900">Labor Total</span>
             </div>
-            <div className="text-2xl font-bold text-slate-900">${totalLaborCost.toFixed(2)}</div>
-            <div className="text-xs text-slate-500 mt-1">
-              All job lines
+            <div className="text-2xl font-bold text-yellow-900">
+              {hasDiscounts && totalsWithDiscounts.labor_discounts > 0 ? (
+                <div>
+                  <span className="line-through text-lg text-muted-foreground">
+                    ${laborSubtotal.toFixed(2)}
+                  </span>
+                  <div>${totalsWithDiscounts.labor_total.toFixed(2)}</div>
+                </div>
+              ) : (
+                `$${laborSubtotal.toFixed(2)}`
+              )}
             </div>
           </CardContent>
         </Card>
 
         {/* Grand Total */}
-        <Card className="border-slate-300 bg-slate-50">
+        <Card className="bg-slate-50 border-slate-300">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <Timer className="h-4 w-4 text-slate-700" />
-              <span className="text-sm font-medium text-slate-700">Grand Total</span>
+              <Calculator className="h-5 w-5 text-slate-600" />
+              <span className="text-sm font-medium text-slate-900">Grand Total</span>
+              {hasDiscounts && (
+                <Tag className="h-4 w-4 text-green-600" />
+              )}
             </div>
-            <div className="text-2xl font-bold text-slate-900">${grandTotal.toFixed(2)}</div>
-            <div className="text-xs text-slate-600 mt-1">
-              Labor + Parts
+            <div className="text-2xl font-bold text-slate-900">
+              ${grandTotal.toFixed(2)}
             </div>
+            {hasDiscounts && (
+              <div className="text-sm">
+                <span className="text-muted-foreground">Savings: </span>
+                <span className="text-green-600 font-medium">
+                  ${totalDiscounts.toFixed(2)}
+                </span>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
+
+      {/* Detailed breakdown if discounts are applied */}
+      {hasDiscounts && (
+        <Card className="bg-green-50 border-green-200">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Tag className="h-5 w-5 text-green-600" />
+              <span className="font-medium text-green-900">Discount Summary</span>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              {totalsWithDiscounts.labor_discounts > 0 && (
+                <div>
+                  <span className="text-muted-foreground">Labor Discounts:</span>
+                  <div className="font-medium text-green-700">
+                    -${totalsWithDiscounts.labor_discounts.toFixed(2)}
+                  </div>
+                </div>
+              )}
+              {totalsWithDiscounts.parts_discounts > 0 && (
+                <div>
+                  <span className="text-muted-foreground">Parts Discounts:</span>
+                  <div className="font-medium text-green-700">
+                    -${totalsWithDiscounts.parts_discounts.toFixed(2)}
+                  </div>
+                </div>
+              )}
+              {totalsWithDiscounts.work_order_discounts > 0 && (
+                <div>
+                  <span className="text-muted-foreground">Order Discounts:</span>
+                  <div className="font-medium text-green-700">
+                    -${totalsWithDiscounts.work_order_discounts.toFixed(2)}
+                  </div>
+                </div>
+              )}
+              <div>
+                <span className="text-muted-foreground">Total Savings:</span>
+                <div className="font-bold text-green-700">
+                  -${totalDiscounts.toFixed(2)}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

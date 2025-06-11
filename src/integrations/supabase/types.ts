@@ -1607,6 +1607,87 @@ export type Database = {
         }
         Relationships: []
       }
+      discount_audit_log: {
+        Row: {
+          action_type: string
+          discount_id: string
+          discount_table: string
+          id: string
+          new_values: Json | null
+          old_values: Json | null
+          performed_at: string
+          performed_by: string
+          reason: string | null
+        }
+        Insert: {
+          action_type: string
+          discount_id: string
+          discount_table: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          performed_at?: string
+          performed_by: string
+          reason?: string | null
+        }
+        Update: {
+          action_type?: string
+          discount_id?: string
+          discount_table?: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          performed_at?: string
+          performed_by?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
+      discount_types: {
+        Row: {
+          applies_to: string
+          created_at: string
+          created_by: string
+          default_value: number
+          description: string | null
+          discount_type: string
+          id: string
+          is_active: boolean
+          max_discount_amount: number | null
+          name: string
+          requires_approval: boolean
+          updated_at: string
+        }
+        Insert: {
+          applies_to: string
+          created_at?: string
+          created_by: string
+          default_value?: number
+          description?: string | null
+          discount_type: string
+          id?: string
+          is_active?: boolean
+          max_discount_amount?: number | null
+          name: string
+          requires_approval?: boolean
+          updated_at?: string
+        }
+        Update: {
+          applies_to?: string
+          created_at?: string
+          created_by?: string
+          default_value?: number
+          description?: string | null
+          discount_type?: string
+          id?: string
+          is_active?: boolean
+          max_discount_amount?: number | null
+          name?: string
+          requires_approval?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       diy_bay_rate_history: {
         Row: {
           bay_id: string | null
@@ -4561,6 +4642,66 @@ export type Database = {
           },
         ]
       }
+      job_line_discounts: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          created_by: string
+          discount_amount: number
+          discount_name: string
+          discount_type: string
+          discount_type_id: string | null
+          discount_value: number
+          id: string
+          job_line_id: string
+          reason: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by: string
+          discount_amount: number
+          discount_name: string
+          discount_type: string
+          discount_type_id?: string | null
+          discount_value: number
+          id?: string
+          job_line_id: string
+          reason?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string
+          discount_amount?: number
+          discount_name?: string
+          discount_type?: string
+          discount_type_id?: string | null
+          discount_value?: number
+          id?: string
+          job_line_id?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_line_discounts_discount_type_id_fkey"
+            columns: ["discount_type_id"]
+            isOneToOne: false
+            referencedRelation: "discount_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_line_discounts_job_line_id_fkey"
+            columns: ["job_line_id"]
+            isOneToOne: false
+            referencedRelation: "work_order_job_lines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       labor_rates: {
         Row: {
           created_at: string
@@ -5436,6 +5577,66 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      part_discounts: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          created_by: string
+          discount_amount: number
+          discount_name: string
+          discount_type: string
+          discount_type_id: string | null
+          discount_value: number
+          id: string
+          part_id: string
+          reason: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by: string
+          discount_amount: number
+          discount_name: string
+          discount_type: string
+          discount_type_id?: string | null
+          discount_value: number
+          id?: string
+          part_id: string
+          reason?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string
+          discount_amount?: number
+          discount_name?: string
+          discount_type?: string
+          discount_type_id?: string | null
+          discount_value?: number
+          id?: string
+          part_id?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "part_discounts_discount_type_id_fkey"
+            columns: ["discount_type_id"]
+            isOneToOne: false
+            referencedRelation: "discount_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "part_discounts_part_id_fkey"
+            columns: ["part_id"]
+            isOneToOne: false
+            referencedRelation: "work_order_parts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       parts_categories: {
         Row: {
@@ -8264,6 +8465,69 @@ export type Database = {
           },
         ]
       }
+      work_order_discounts: {
+        Row: {
+          applies_to: string
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          created_by: string
+          discount_amount: number
+          discount_name: string
+          discount_type: string
+          discount_type_id: string | null
+          discount_value: number
+          id: string
+          reason: string | null
+          work_order_id: string
+        }
+        Insert: {
+          applies_to: string
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by: string
+          discount_amount: number
+          discount_name: string
+          discount_type: string
+          discount_type_id?: string | null
+          discount_value: number
+          id?: string
+          reason?: string | null
+          work_order_id: string
+        }
+        Update: {
+          applies_to?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string
+          discount_amount?: number
+          discount_name?: string
+          discount_type?: string
+          discount_type_id?: string | null
+          discount_value?: number
+          id?: string
+          reason?: string | null
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_discounts_discount_type_id_fkey"
+            columns: ["discount_type_id"]
+            isOneToOne: false
+            referencedRelation: "discount_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_order_discounts_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_order_document_categories: {
         Row: {
           created_at: string | null
@@ -9154,9 +9418,17 @@ export type Database = {
         Args: { campaign_id: string; criteria?: string }
         Returns: string
       }
+      calculate_job_line_total_with_discounts: {
+        Args: { job_line_id_param: string }
+        Returns: Json
+      }
       calculate_job_line_total_with_parts: {
         Args: { job_line_id_param: string }
         Returns: number
+      }
+      calculate_work_order_totals_with_discounts: {
+        Args: { work_order_id_param: string }
+        Returns: Json
       }
       check_inventory_availability: {
         Args: { item_id: string; requested_quantity: number }
