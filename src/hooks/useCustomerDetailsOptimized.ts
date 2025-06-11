@@ -26,7 +26,7 @@ export const useCustomerDetailsOptimized = (customerId: string) => {
         ]);
         
         setCustomer(customerData);
-        setWorkOrders(workOrdersData as WorkOrder[]); // Fix: Explicitly cast to WorkOrder[]
+        setWorkOrders(workOrdersData);
         
       } catch (err) {
         console.error('Error fetching customer details:', err);
@@ -55,7 +55,7 @@ export const useCustomerDetailsOptimized = (customerId: string) => {
               getWorkOrdersByCustomerId(customerId)
             ]);
             setCustomer(customerData);
-            setWorkOrders(workOrdersData as WorkOrder[]); // Fix: Explicitly cast to WorkOrder[]
+            setWorkOrders(workOrdersData);
           } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to refresh data');
           } finally {
