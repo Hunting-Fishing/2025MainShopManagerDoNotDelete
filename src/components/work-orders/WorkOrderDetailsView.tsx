@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { WorkOrder } from '@/types/workOrder';
@@ -73,48 +74,56 @@ export function WorkOrderDetailsView({ workOrderId: workOrderIdProp }: WorkOrder
         </div>
       </div>
       
-      <WorkOrderTabs />
-      
-      <TabsContent value="job-lines">
-        <JobLinesGrid 
-          workOrderId={workOrderId}
-          jobLines={jobLines}
-          onJobLinesChange={setJobLines}
-          isEditMode={isEditMode}
-        />
-      </TabsContent>
+      <Tabs defaultValue="job-lines">
+        <TabsList className="mb-4">
+          <TabsTrigger value="job-lines">Job Lines</TabsTrigger>
+          <TabsTrigger value="parts">Parts & Inventory</TabsTrigger>
+          <TabsTrigger value="time">Time Tracking</TabsTrigger>
+          <TabsTrigger value="documents">Documents</TabsTrigger>
+          <TabsTrigger value="communications">Communications</TabsTrigger>
+        </TabsList>
 
-      <TabsContent value="parts">
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-muted-foreground">Inventory items feature will be implemented soon.</p>
-          </CardContent>
-        </Card>
-      </TabsContent>
+        <TabsContent value="job-lines">
+          <JobLinesGrid 
+            workOrderId={workOrderId}
+            jobLines={jobLines}
+            onJobLinesChange={setJobLines}
+            isEditMode={isEditMode}
+          />
+        </TabsContent>
 
-      <TabsContent value="time">
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-muted-foreground">Time tracking feature will be implemented soon.</p>
-          </CardContent>
-        </Card>
-      </TabsContent>
-      
-      <TabsContent value="documents">
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-muted-foreground">Document management feature will be implemented soon.</p>
-          </CardContent>
-        </Card>
-      </TabsContent>
-      
-      <TabsContent value="communications">
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-muted-foreground">Communications feature will be implemented soon.</p>
-          </CardContent>
-        </Card>
-      </TabsContent>
+        <TabsContent value="parts">
+          <Card>
+            <CardContent className="p-6">
+              <p className="text-muted-foreground">Inventory items feature will be implemented soon.</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="time">
+          <Card>
+            <CardContent className="p-6">
+              <p className="text-muted-foreground">Time tracking feature will be implemented soon.</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="documents">
+          <Card>
+            <CardContent className="p-6">
+              <p className="text-muted-foreground">Document management feature will be implemented soon.</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="communications">
+          <Card>
+            <CardContent className="p-6">
+              <p className="text-muted-foreground">Communications feature will be implemented soon.</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

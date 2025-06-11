@@ -66,7 +66,7 @@ const WorkOrderDetails = () => {
     );
   }
 
-  return <WorkOrderDetailsView workOrder={workOrder} />;
+  return <WorkOrderDetailsView workOrderId={id} />;
 };
 
 export default WorkOrderDetails;
