@@ -1,184 +1,120 @@
-
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import React, { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { WorkOrder } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { WorkOrderPart } from '@/types/workOrderPart';
-import { getWorkOrderJobLines } from '@/services/workOrder/jobLinesService';
-import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
-import { WorkOrderPageLayout } from './WorkOrderPageLayout';
+import { useWorkOrder } from '@/hooks/useWorkOrder';
+import { useJobLines } from '@/hooks/useJobLines';
+import { Button } from '@/components/ui/button';
+import { Pencil, Eye, Printer } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { WorkOrderTabs } from './WorkOrderTabs';
 import { JobLinesGrid } from './job-lines/JobLinesGrid';
-import { WorkOrderPartsSection } from './parts/WorkOrderPartsSection';
-import { WorkOrderInvoiceView } from './WorkOrderInvoiceView';
-import { FileText, Edit, Eye, RefreshCw } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface WorkOrderDetailsViewProps {
-  workOrder: WorkOrder;
+  workOrderId?: string;
 }
 
-export function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsViewProps) {
-  const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
-  const [parts, setParts] = useState<WorkOrderPart[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [view, setView] = useState<'details' | 'invoice'>('details');
+export function WorkOrderDetailsView({ workOrderId: workOrderIdProp }: WorkOrderDetailsViewProps) {
+  const { id } = useParams();
+  const workOrderId = workOrderIdProp || id || '';
   const [isEditMode, setIsEditMode] = useState(false);
+  const { workOrder, isLoading: workOrderLoading, error: workOrderError } = useWorkOrder(workOrderId);
+  const { jobLines, setJobLines, isLoading: jobLinesLoading, error: jobLinesError } = useJobLines(workOrderId);
 
-  useEffect(() => {
-    loadWorkOrderData();
-  }, [workOrder.id]);
+  if (workOrderLoading || jobLinesLoading) {
+    return <div>Loading...</div>;
+  }
 
-  const loadWorkOrderData = async () => {
-    try {
-      setLoading(true);
-      console.log('Loading work order data for:', workOrder.id);
-      
-      const [jobLinesData, partsData] = await Promise.all([
-        getWorkOrderJobLines(workOrder.id),
-        getWorkOrderParts(workOrder.id)
-      ]);
-      
-      console.log('Job lines loaded:', jobLinesData);
-      console.log('Parts loaded:', partsData);
-      
-      // Attach parts to their respective job lines
-      const jobLinesWithParts = jobLinesData.map(jobLine => {
-        const jobLineParts = partsData.filter(part => part.jobLineId === jobLine.id);
-        console.log(`Parts for job line ${jobLine.id}:`, jobLineParts);
-        return {
-          ...jobLine,
-          parts: jobLineParts
-        };
-      });
-      
-      setJobLines(jobLinesWithParts);
-      setParts(partsData);
-    } catch (error) {
-      console.error('Error loading work order data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (workOrderError || jobLinesError) {
+    return <div>Error: {workOrderError?.message || jobLinesError?.message}</div>;
+  }
 
-  const handleRefreshData = async () => {
-    setRefreshing(true);
-    await loadWorkOrderData();
-    setRefreshing(false);
-  };
-
-  const handleJobLinesChange = (updatedJobLines: WorkOrderJobLine[]) => {
-    setJobLines(updatedJobLines);
-  };
-
-  const actions = (
-    <div className="flex gap-2">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleRefreshData}
-        disabled={refreshing}
-        className="flex items-center gap-2"
-      >
-        <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-        Refresh
-      </Button>
-      <Button
-        variant={view === 'details' ? 'default' : 'outline'}
-        size="sm"
-        onClick={() => setView('details')}
-      >
-        <Eye className="h-4 w-4 mr-2" />
-        Details
-      </Button>
-      <Button
-        variant={view === 'invoice' ? 'default' : 'outline'}
-        size="sm"
-        onClick={() => setView('invoice')}
-      >
-        <FileText className="h-4 w-4 mr-2" />
-        Invoice View
-      </Button>
-      <Button
-        variant={isEditMode ? 'default' : 'outline'}
-        size="sm"
-        onClick={() => setIsEditMode(!isEditMode)}
-      >
-        <Edit className="h-4 w-4 mr-2" />
-        {isEditMode ? 'View Mode' : 'Edit Mode'}
-      </Button>
-    </div>
-  );
-
-  if (loading) {
-    return (
-      <WorkOrderPageLayout
-        title="Loading Work Order..."
-        backLink="/work-orders"
-      >
-        <div className="text-center py-8">Loading work order details...</div>
-      </WorkOrderPageLayout>
-    );
+  if (!workOrder) {
+    return <div>Work order not found</div>;
   }
 
   return (
-    <WorkOrderPageLayout
-      title={`Work Order #${workOrder.work_order_number || workOrder.id.slice(0, 8)}`}
-      description={workOrder.description}
-      backLink="/work-orders"
-      actions={actions}
-    >
-      {view === 'invoice' ? (
-        <WorkOrderInvoiceView workOrder={workOrder} jobLines={jobLines} />
-      ) : (
-        <div className="space-y-6">
-          {/* Work Order Info Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Work Order Information</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <span className="text-sm font-medium text-muted-foreground">Status:</span>
-                  <Badge variant="outline" className="ml-2">
-                    {workOrder.status}
-                  </Badge>
-                </div>
-                <div>
-                  <span className="text-sm font-medium text-muted-foreground">Customer:</span>
-                  <span className="ml-2">{workOrder.customer_name || 'N/A'}</span>
-                </div>
-                <div>
-                  <span className="text-sm font-medium text-muted-foreground">Vehicle:</span>
-                  <span className="ml-2">
-                    {workOrder.vehicle ? 
-                      `${workOrder.vehicle.year} ${workOrder.vehicle.make} ${workOrder.vehicle.model}` : 
-                      'N/A'
-                    }
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Job Lines Section */}
-          <JobLinesGrid
-            workOrderId={workOrder.id}
-            jobLines={jobLines}
-            onJobLinesChange={handleJobLinesChange}
-            isEditMode={isEditMode}
-            showSummary={true}
-          />
-
-          {/* Parts Section */}
-          <WorkOrderPartsSection
-            workOrderId={workOrder.id}
-            isEditMode={isEditMode}
-          />
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold">Work Order #{workOrder.id}</h1>
+          <p className="text-muted-foreground">
+            View and manage work order details.
+          </p>
         </div>
-      )}
-    </WorkOrderPageLayout>
+        <div className="flex items-center space-x-2">
+          <Button variant="outline" asChild>
+            <Link to={`/work-orders/${workOrderId}/invoice`} target="_blank" className="flex items-center">
+              <Printer className="mr-2 h-4 w-4" />
+              View Invoice
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link to={`/work-orders/${workOrderId}/view`} className="flex items-center">
+              <Eye className="mr-2 h-4 w-4" />
+              View Public
+            </Link>
+          </Button>
+          <Button variant="ghost" onClick={() => setIsEditMode(!isEditMode)}>
+            {isEditMode ? (
+              <>
+                <Pencil className="mr-2 h-4 w-4" />
+                Exit Edit Mode
+              </>
+            ) : (
+              <>
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit Work Order
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+      
+      <WorkOrderTabs />
+      
+      <TabsContent value="job-lines">
+        <JobLinesGrid 
+          workOrderId={workOrderId}
+          jobLines={jobLines}
+          onJobLinesChange={setJobLines}
+          isEditMode={isEditMode}
+        />
+      </TabsContent>
+
+      <TabsContent value="parts">
+        <Card>
+          <CardContent className="p-6">
+            <p className="text-muted-foreground">Inventory items feature will be implemented soon.</p>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="time">
+        <Card>
+          <CardContent className="p-6">
+            <p className="text-muted-foreground">Time tracking feature will be implemented soon.</p>
+          </CardContent>
+        </Card>
+      </TabsContent>
+      
+      <TabsContent value="documents">
+        <Card>
+          <CardContent className="p-6">
+            <p className="text-muted-foreground">Document management feature will be implemented soon.</p>
+          </CardContent>
+        </Card>
+      </TabsContent>
+      
+      <TabsContent value="communications">
+        <Card>
+          <CardContent className="p-6">
+            <p className="text-muted-foreground">Communications feature will be implemented soon.</p>
+          </CardContent>
+        </Card>
+      </TabsContent>
+    </div>
   );
 }
