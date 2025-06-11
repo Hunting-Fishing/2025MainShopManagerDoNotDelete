@@ -41,11 +41,12 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
     }
   };
 
-  // Return a form component or form fields here
-  // This component needs to be implemented based on your specific needs
+  // This is a basic form wrapper - implement specific form fields as needed
   return (
-    <div>
-      {/* Implement form fields here */}
+    <div className="space-y-4">
+      <p className="text-muted-foreground">
+        WorkOrderForm component - implement specific form fields based on your requirements
+      </p>
     </div>
   );
 };
