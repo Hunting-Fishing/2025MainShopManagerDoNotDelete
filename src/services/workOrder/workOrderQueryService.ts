@@ -1,6 +1,6 @@
-import { supabase } from '@/integrations/supabase/client';
-import { WorkOrder } from '@/types/workOrder';
-import { normalizeWorkOrder } from '@/utils/workOrders/formatters';
+import { supabase } from "@/integrations/supabase/client";
+import { WorkOrder, TimeEntry } from "@/types/workOrder";
+import { normalizeWorkOrder } from "@/utils/workOrders/formatters";
 
 /**
  * Enhanced work order enrichment with robust error handling
