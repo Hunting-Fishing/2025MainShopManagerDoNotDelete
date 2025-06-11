@@ -11,14 +11,26 @@ interface JobLineCardProps {
   jobLine: WorkOrderJobLine;
   onEdit?: (jobLine: WorkOrderJobLine) => void;
   onDelete?: (jobLineId: string) => void;
+  onUpdate?: (updatedJobLine: WorkOrderJobLine) => void | Promise<void>;
+  onPartsChange?: (newParts: any) => void;
+  isEditMode?: boolean;
 }
 
-export function JobLineCard({ jobLine, onEdit, onDelete }: JobLineCardProps) {
+export function JobLineCard({ 
+  jobLine, 
+  onEdit, 
+  onDelete, 
+  onUpdate, 
+  onPartsChange, 
+  isEditMode = false 
+}: JobLineCardProps) {
   const statusInfo = jobLineStatusMap[jobLine.status || 'pending'];
 
   const handleEdit = () => {
     if (onEdit) {
       onEdit(jobLine);
+    } else if (onUpdate) {
+      onUpdate(jobLine);
     }
   };
 
@@ -39,7 +51,7 @@ export function JobLineCard({ jobLine, onEdit, onDelete }: JobLineCardProps) {
             {statusInfo.label}
           </Badge>
           <div className="flex gap-1">
-            {onEdit && (
+            {(onEdit || onUpdate) && (
               <Button
                 variant="ghost"
                 size="sm"

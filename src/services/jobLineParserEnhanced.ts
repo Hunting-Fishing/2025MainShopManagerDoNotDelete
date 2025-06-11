@@ -15,8 +15,8 @@ export function parseEnhancedJobLineData(data: any[]): WorkOrderJobLine[] {
     status: item.status,
     notes: item.notes,
     display_order: item.display_order || 0,
-    created_at: item.createdAt || item.created_at || new Date().toISOString(),
-    updated_at: item.updatedAt || item.updated_at || new Date().toISOString()
+    created_at: item.created_at || new Date().toISOString(),
+    updated_at: item.updated_at || new Date().toISOString()
   }));
 }
 
@@ -37,4 +37,8 @@ export function validateJobLineData(jobLine: Partial<WorkOrderJobLine>): WorkOrd
     created_at: jobLine.created_at || new Date().toISOString(),
     updated_at: jobLine.updated_at || new Date().toISOString()
   };
+}
+
+export function generateTempJobLineId(): string {
+  return `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
