@@ -1,22 +1,20 @@
-import { WorkOrderPart } from './workOrderPart';
 
-// Job Line Types for Work Orders
 export interface WorkOrderJobLine {
   id: string;
-  workOrderId?: string;
+  work_order_id: string;
   name: string;
   category?: string;
   subcategory?: string;
   description?: string;
-  estimatedHours?: number;
-  laborRate?: number;
-  totalAmount?: number;
-  status: 'pending' | 'in-progress' | 'completed' | 'on-hold';
+  estimated_hours?: number;
+  labor_rate?: number;
+  labor_rate_type?: string;
+  total_amount?: number;
+  status?: string;
   notes?: string;
-  createdAt: string;
-  updatedAt: string;
-  // NEW: Parts attached to this job line
-  parts?: WorkOrderPart[];
+  display_order?: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface JobLineFormValues {
@@ -24,24 +22,9 @@ export interface JobLineFormValues {
   category?: string;
   subcategory?: string;
   description?: string;
-  estimatedHours?: number;
-  laborRate?: number;
+  estimated_hours?: number;
+  labor_rate?: number;
+  labor_rate_type?: string;
+  status?: string;
+  notes?: string;
 }
-
-// Job line status options
-export const JOB_LINE_STATUSES = [
-  'pending',
-  'in-progress', 
-  'completed',
-  'on-hold'
-] as const;
-
-export type JobLineStatus = typeof JOB_LINE_STATUSES[number];
-
-// Status mapping for UI display
-export const jobLineStatusMap: Record<JobLineStatus, { label: string; classes: string }> = {
-  'pending': { label: 'Pending', classes: 'bg-gray-100 text-gray-800' },
-  'in-progress': { label: 'In Progress', classes: 'bg-blue-100 text-blue-800' },
-  'completed': { label: 'Completed', classes: 'bg-green-100 text-green-800' },
-  'on-hold': { label: 'On Hold', classes: 'bg-yellow-100 text-yellow-800' }
-};

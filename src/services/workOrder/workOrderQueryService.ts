@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { WorkOrder } from '@/types/workOrder';
 import { normalizeWorkOrder } from '@/utils/workOrders/formatters';
@@ -297,3 +296,55 @@ export const getUniqueTechnicians = async (): Promise<string[]> => {
     return [];
   }
 };
+
+/**
+ * Get time entries for a work order
+ */
+export async function getWorkOrderTimeEntries(workOrderId: string) {
+  try {
+    console.log('getWorkOrderTimeEntries: Fetching time entries for work order:', workOrderId);
+    
+    const { data, error } = await supabase
+      .from('work_order_time_entries')
+      .select('*')
+      .eq('work_order_id', workOrderId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('getWorkOrderTimeEntries: Error:', error);
+      throw error;
+    }
+
+    console.log('getWorkOrderTimeEntries: Successfully fetched time entries:', data?.length || 0);
+    return data || [];
+  } catch (error) {
+    console.error('getWorkOrderTimeEntries: Failed to fetch time entries:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get inventory items for a work order
+ */
+export async function getWorkOrderInventoryItems(workOrderId: string) {
+  try {
+    console.log('getWorkOrderInventoryItems: Fetching inventory items for work order:', workOrderId);
+    
+    const { data, error } = await supabase
+      .from('work_order_inventory_items')
+      .select('*')
+      .eq('work_order_id', workOrderId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('getWorkOrderInventoryItems: Error:', error);
+      throw error;
+    }
+
+    console.log('getWorkOrderInventoryItems: Successfully fetched inventory items:', data?.length || 0);
+    return data || [];
+  } catch (error) {
+    console.error('getWorkOrderInventoryItems: Failed to fetch inventory items:', error);
+    throw error;
+  }
+}

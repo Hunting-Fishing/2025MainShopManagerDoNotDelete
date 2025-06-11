@@ -2,113 +2,91 @@
 import { supabase } from '@/integrations/supabase/client';
 import { WorkOrderJobLine } from '@/types/jobLine';
 
-export const getWorkOrderJobLines = async (workOrderId: string): Promise<WorkOrderJobLine[]> => {
-  const { data, error } = await supabase
-    .rpc('get_work_order_job_lines', { work_order_id_param: workOrderId });
-
-  if (error) {
-    console.error('Error fetching work order job lines:', error);
-    throw error;
-  }
-
-  return data?.map((jobLine: any) => ({
-    id: jobLine.id,
-    workOrderId: jobLine.work_order_id,
-    name: jobLine.name,
-    category: jobLine.category,
-    subcategory: jobLine.subcategory,
-    description: jobLine.description,
-    estimatedHours: jobLine.estimated_hours,
-    laborRate: jobLine.labor_rate,
-    totalAmount: jobLine.total_amount,
-    status: jobLine.status as 'pending' | 'in-progress' | 'completed' | 'on-hold',
-    notes: jobLine.notes,
-    createdAt: jobLine.created_at,
-    updatedAt: jobLine.updated_at,
-    parts: [] // Parts will be loaded separately and attached
-  })) || [];
-};
-
-export const updateWorkOrderJobLine = async (
-  jobLineId: string,
-  updates: Partial<Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>>
-): Promise<boolean> => {
+/**
+ * Get all job lines for a work order
+ */
+export async function getWorkOrderJobLines(workOrderId: string): Promise<WorkOrderJobLine[]> {
   try {
-    console.log('Updating job line with ID:', jobLineId, 'and data:', updates);
+    console.log('getWorkOrderJobLines: Fetching job lines for work order:', workOrderId);
     
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('work_order_job_lines')
-      .update({
-        name: updates.name,
-        category: updates.category,
-        subcategory: updates.subcategory,
-        description: updates.description,
-        estimated_hours: updates.estimatedHours,
-        labor_rate: updates.laborRate,
-        total_amount: updates.totalAmount,
-        status: updates.status,
-        notes: updates.notes, // Make sure notes are included in the update
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', jobLineId);
+      .select('*')
+      .eq('work_order_id', workOrderId)
+      .order('display_order', { ascending: true });
 
     if (error) {
-      console.error('Database error updating job line:', error);
+      console.error('getWorkOrderJobLines: Error:', error);
       throw error;
     }
 
-    console.log('Job line updated successfully in database');
-    return true;
+    console.log('getWorkOrderJobLines: Successfully fetched job lines:', data?.length || 0);
+    return data || [];
   } catch (error) {
-    console.error('Error updating work order job line:', error);
-    return false;
+    console.error('getWorkOrderJobLines: Failed to fetch job lines:', error);
+    throw error;
   }
-};
+}
 
-export const saveWorkOrderJobLines = async (
-  workOrderId: string, 
-  jobLines: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>[]
-): Promise<boolean> => {
+/**
+ * Create or update a job line
+ */
+export async function upsertWorkOrderJobLine(jobLine: Partial<WorkOrderJobLine>): Promise<WorkOrderJobLine> {
   try {
-    // Delete existing job lines for this work order
-    await supabase.rpc('delete_work_order_job_lines', { 
-      work_order_id_param: workOrderId 
-    });
+    console.log('upsertWorkOrderJobLine: Upserting job line:', jobLine);
+    
+    const { data, error } = await supabase
+      .from('work_order_job_lines')
+      .upsert({
+        id: jobLine.id,
+        work_order_id: jobLine.work_order_id,
+        name: jobLine.name,
+        category: jobLine.category,
+        subcategory: jobLine.subcategory,
+        description: jobLine.description,
+        estimated_hours: jobLine.estimated_hours,
+        labor_rate: jobLine.labor_rate,
+        total_amount: jobLine.total_amount,
+        status: jobLine.status || 'pending',
+        notes: jobLine.notes,
+        display_order: jobLine.display_order || 0,
+      })
+      .select()
+      .single();
 
-    // Insert new job lines
-    for (let i = 0; i < jobLines.length; i++) {
-      const jobLine = jobLines[i];
-      await supabase.rpc('upsert_work_order_job_line', {
-        p_id: null, // Let the function generate a new ID
-        p_work_order_id: workOrderId,
-        p_name: jobLine.name,
-        p_category: jobLine.category || null,
-        p_subcategory: jobLine.subcategory || null,
-        p_description: jobLine.description || null,
-        p_estimated_hours: jobLine.estimatedHours || 0,
-        p_labor_rate: jobLine.laborRate || 0,
-        p_total_amount: jobLine.totalAmount || 0,
-        p_status: jobLine.status,
-        p_notes: jobLine.notes || null,
-        p_display_order: i
-      });
+    if (error) {
+      console.error('upsertWorkOrderJobLine: Error:', error);
+      throw error;
     }
 
-    return true;
+    console.log('upsertWorkOrderJobLine: Successfully upserted job line:', data);
+    return data;
   } catch (error) {
-    console.error('Error saving work order job lines:', error);
-    return false;
+    console.error('upsertWorkOrderJobLine: Failed to upsert job line:', error);
+    throw error;
   }
-};
+}
 
-export const deleteWorkOrderJobLine = async (jobLineId: string): Promise<boolean> => {
+/**
+ * Delete a job line
+ */
+export async function deleteWorkOrderJobLine(jobLineId: string): Promise<void> {
   try {
-    await supabase.rpc('delete_work_order_job_line', { 
-      job_line_id_param: jobLineId 
-    });
-    return true;
+    console.log('deleteWorkOrderJobLine: Deleting job line:', jobLineId);
+    
+    const { error } = await supabase
+      .from('work_order_job_lines')
+      .delete()
+      .eq('id', jobLineId);
+
+    if (error) {
+      console.error('deleteWorkOrderJobLine: Error:', error);
+      throw error;
+    }
+
+    console.log('deleteWorkOrderJobLine: Successfully deleted job line');
   } catch (error) {
-    console.error('Error deleting work order job line:', error);
-    return false;
+    console.error('deleteWorkOrderJobLine: Failed to delete job line:', error);
+    throw error;
   }
-};
+}
