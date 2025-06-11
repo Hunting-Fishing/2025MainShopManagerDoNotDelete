@@ -6,6 +6,7 @@ import { WorkOrderPart } from '@/types/workOrderPart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { JobLinesWithPartsDisplay } from './JobLinesWithPartsDisplay';
 import { WorkOrderOverviewHeader } from './WorkOrderOverviewHeader';
+import { WorkOrderCommunications } from '../communications/WorkOrderCommunications';
 
 interface WorkOrderDetailsTabProps {
   workOrder: WorkOrder;
@@ -61,6 +62,9 @@ export function WorkOrderDetailsTab({
           )}
         </CardContent>
       </Card>
+
+      {/* Customer Communications */}
+      <WorkOrderCommunications workOrder={workOrder} />
 
       {/* Job Lines with Parts */}
       <JobLinesWithPartsDisplay
