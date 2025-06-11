@@ -1,9 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Grid3X3 } from 'lucide-react';
+import { Plus, Grid3X3, RefreshCw } from 'lucide-react';
 import { WorkOrderJobLine } from '@/types/jobLine';
+import { getJobLineParts } from '@/services/workOrder/workOrderPartsService';
 import { JobLineCard } from './JobLineCard';
 import { AddJobLineDialog } from './AddJobLineDialog';
 
@@ -27,6 +28,45 @@ export function JobLinesGrid({
   isEditMode = false
 }: JobLinesGridProps) {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [jobLinesWithParts, setJobLinesWithParts] = useState<WorkOrderJobLine[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Load parts for each job line
+  const loadPartsForJobLines = async (jobLinesToLoad: WorkOrderJobLine[]) => {
+    console.log('Loading parts for job lines in grid:', jobLinesToLoad);
+    try {
+      const jobLinesWithPartsData = await Promise.all(
+        jobLinesToLoad.map(async (jobLine) => {
+          try {
+            const parts = await getJobLineParts(jobLine.id);
+            console.log(`Parts loaded for job line ${jobLine.id}:`, parts);
+            return { ...jobLine, parts };
+          } catch (error) {
+            console.error(`Error loading parts for job line ${jobLine.id}:`, error);
+            return { ...jobLine, parts: [] };
+          }
+        })
+      );
+      setJobLinesWithParts(jobLinesWithPartsData);
+    } catch (error) {
+      console.error('Error loading parts for job lines:', error);
+      setJobLinesWithParts(jobLinesToLoad.map(jl => ({ ...jl, parts: [] })));
+    }
+  };
+
+  useEffect(() => {
+    if (jobLines.length > 0) {
+      loadPartsForJobLines(jobLines);
+    } else {
+      setJobLinesWithParts([]);
+    }
+  }, [jobLines]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadPartsForJobLines(jobLines);
+    setRefreshing(false);
+  };
 
   const handleUpdateJobLine = (updatedJobLine: WorkOrderJobLine) => {
     if (onUpdate) {
@@ -66,8 +106,8 @@ export function JobLinesGrid({
   };
 
   const calculateTotals = () => {
-    const laborTotal = jobLines.reduce((total, line) => total + (line.totalAmount || 0), 0);
-    const partsTotal = jobLines.reduce((total, line) => {
+    const laborTotal = jobLinesWithParts.reduce((total, line) => total + (line.totalAmount || 0), 0);
+    const partsTotal = jobLinesWithParts.reduce((total, line) => {
       return total + (line.parts?.reduce((partTotal, part) => 
         partTotal + (part.customerPrice * part.quantity), 0) || 0);
     }, 0);
@@ -83,27 +123,39 @@ export function JobLinesGrid({
           <CardTitle className="flex items-center gap-2">
             <Grid3X3 className="h-5 w-5" />
             Job Lines
-            {jobLines.length > 0 && (
+            {jobLinesWithParts.length > 0 && (
               <span className="text-sm font-normal text-muted-foreground">
-                ({jobLines.length})
+                ({jobLinesWithParts.length})
               </span>
             )}
           </CardTitle>
-          {isEditMode && (
+          <div className="flex items-center gap-2">
             <Button
-              onClick={() => setAddDialogOpen(true)}
+              variant="outline"
               size="sm"
+              onClick={handleRefresh}
+              disabled={refreshing}
               className="flex items-center gap-2"
             >
-              <Plus className="h-4 w-4" />
-              Add Job Line
+              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              Refresh
             </Button>
-          )}
+            {isEditMode && (
+              <Button
+                onClick={() => setAddDialogOpen(true)}
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add Job Line
+              </Button>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {jobLines.length === 0 ? (
+          {jobLinesWithParts.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <p>No job lines added yet</p>
               {isEditMode && (
@@ -112,12 +164,13 @@ export function JobLinesGrid({
             </div>
           ) : (
             <>
-              {jobLines.map((jobLine) => (
+              {jobLinesWithParts.map((jobLine) => (
                 <JobLineCard
                   key={jobLine.id}
                   jobLine={jobLine}
                   onUpdate={handleUpdateJobLine}
                   onDelete={handleDeleteJobLine}
+                  onPartsUpdate={handleRefresh}
                   isEditMode={isEditMode}
                 />
               ))}

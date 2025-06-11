@@ -12,7 +12,7 @@ import { WorkOrderPageLayout } from './WorkOrderPageLayout';
 import { JobLinesGrid } from './job-lines/JobLinesGrid';
 import { WorkOrderPartsSection } from './parts/WorkOrderPartsSection';
 import { WorkOrderInvoiceView } from './WorkOrderInvoiceView';
-import { FileText, Edit, Eye } from 'lucide-react';
+import { FileText, Edit, Eye, RefreshCw } from 'lucide-react';
 
 interface WorkOrderDetailsViewProps {
   workOrder: WorkOrder;
@@ -22,6 +22,7 @@ export function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsViewProps) {
   const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
   const [parts, setParts] = useState<WorkOrderPart[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [view, setView] = useState<'details' | 'invoice'>('details');
   const [isEditMode, setIsEditMode] = useState(false);
 
@@ -32,14 +33,20 @@ export function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsViewProps) {
   const loadWorkOrderData = async () => {
     try {
       setLoading(true);
+      console.log('Loading work order data for:', workOrder.id);
+      
       const [jobLinesData, partsData] = await Promise.all([
         getWorkOrderJobLines(workOrder.id),
         getWorkOrderParts(workOrder.id)
       ]);
       
+      console.log('Job lines loaded:', jobLinesData);
+      console.log('Parts loaded:', partsData);
+      
       // Attach parts to their respective job lines
       const jobLinesWithParts = jobLinesData.map(jobLine => {
         const jobLineParts = partsData.filter(part => part.jobLineId === jobLine.id);
+        console.log(`Parts for job line ${jobLine.id}:`, jobLineParts);
         return {
           ...jobLine,
           parts: jobLineParts
@@ -55,12 +62,28 @@ export function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsViewProps) {
     }
   };
 
+  const handleRefreshData = async () => {
+    setRefreshing(true);
+    await loadWorkOrderData();
+    setRefreshing(false);
+  };
+
   const handleJobLinesChange = (updatedJobLines: WorkOrderJobLine[]) => {
     setJobLines(updatedJobLines);
   };
 
   const actions = (
     <div className="flex gap-2">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleRefreshData}
+        disabled={refreshing}
+        className="flex items-center gap-2"
+      >
+        <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+        Refresh
+      </Button>
       <Button
         variant={view === 'details' ? 'default' : 'outline'}
         size="sm"
