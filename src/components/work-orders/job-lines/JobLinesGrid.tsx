@@ -1,123 +1,177 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, Grid3X3 } from 'lucide-react';
+import { Plus, Briefcase } from 'lucide-react';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { JobLineCard } from './JobLineCard';
 import { AddJobLineDialog } from './AddJobLineDialog';
+import { getJobLineParts } from '@/services/workOrder/workOrderPartsService';
 
 interface JobLinesGridProps {
-  jobLines: WorkOrderJobLine[];
   workOrderId: string;
-  onJobLineAdded?: () => void;
-  onJobLineUpdated?: (jobLine: WorkOrderJobLine) => void;
-  onJobLineDeleted?: (jobLineId: string) => void;
-  onRemovePart?: (partId: string) => void;
-  isEditMode?: boolean;
+  jobLines: WorkOrderJobLine[];
+  onUpdateJobLines?: (jobLines: WorkOrderJobLine[]) => void;
+  onAddJobLine?: (jobLine: WorkOrderJobLine) => void;
+  onUpdateJobLine?: (jobLine: WorkOrderJobLine) => void;
+  onDeleteJobLine?: (jobLineId: string) => void;
   showSummary?: boolean;
-  onUpdate?: (updatedJobLine: WorkOrderJobLine) => Promise<void>;
-  onDelete?: (jobLineId: string) => Promise<void>;
+  isEditMode?: boolean;
 }
 
 export function JobLinesGrid({
-  jobLines,
   workOrderId,
-  onJobLineAdded,
-  onJobLineUpdated,
-  onJobLineDeleted,
-  onRemovePart,
-  isEditMode = false,
-  showSummary = true,
-  onUpdate,
-  onDelete
+  jobLines,
+  onUpdateJobLines,
+  onAddJobLine,
+  onUpdateJobLine,
+  onDeleteJobLine,
+  showSummary = false,
+  isEditMode = false
 }: JobLinesGridProps) {
-  const [addJobLineDialogOpen, setAddJobLineDialogOpen] = useState(false);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [jobLinesWithParts, setJobLinesWithParts] = useState<WorkOrderJobLine[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const handleJobLineAdded = () => {
-    if (onJobLineAdded) {
-      onJobLineAdded();
+  // Load parts for each job line
+  useEffect(() => {
+    const loadJobLinesWithParts = async () => {
+      setLoading(true);
+      try {
+        const jobLinesWithPartsData = await Promise.all(
+          jobLines.map(async (jobLine) => {
+            try {
+              const parts = await getJobLineParts(jobLine.id);
+              return { ...jobLine, parts };
+            } catch (error) {
+              console.error(`Error loading parts for job line ${jobLine.id}:`, error);
+              return { ...jobLine, parts: [] };
+            }
+          })
+        );
+        setJobLinesWithParts(jobLinesWithPartsData);
+      } catch (error) {
+        console.error('Error loading job lines with parts:', error);
+        setJobLinesWithParts(jobLines.map(jl => ({ ...jl, parts: [] })));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (jobLines.length > 0) {
+      loadJobLinesWithParts();
+    } else {
+      setJobLinesWithParts([]);
     }
-    setAddJobLineDialogOpen(false);
+  }, [jobLines]);
+
+  const handleAddJobLine = (newJobLine: WorkOrderJobLine) => {
+    onAddJobLine?.(newJobLine);
+    setAddDialogOpen(false);
   };
 
-  const handleJobLineUpdated = async (updatedJobLine: WorkOrderJobLine) => {
-    if (onUpdate) {
-      await onUpdate(updatedJobLine);
-    } else if (onJobLineUpdated) {
-      onJobLineUpdated(updatedJobLine);
+  const handleUpdateJobLine = (updatedJobLine: WorkOrderJobLine) => {
+    onUpdateJobLine?.(updatedJobLine);
+    // Refresh the job lines with parts
+    setJobLinesWithParts(prev => 
+      prev.map(jl => jl.id === updatedJobLine.id ? { ...updatedJobLine, parts: jl.parts } : jl)
+    );
+  };
+
+  const handleDeleteJobLine = (jobLineId: string) => {
+    onDeleteJobLine?.(jobLineId);
+    setJobLinesWithParts(prev => prev.filter(jl => jl.id !== jobLineId));
+  };
+
+  const refreshJobLineParts = async (jobLineId: string) => {
+    try {
+      const parts = await getJobLineParts(jobLineId);
+      setJobLinesWithParts(prev => 
+        prev.map(jl => jl.id === jobLineId ? { ...jl, parts } : jl)
+      );
+    } catch (error) {
+      console.error('Error refreshing job line parts:', error);
     }
   };
 
-  const handleJobLineDeleted = async (jobLineId: string) => {
-    if (onDelete) {
-      await onDelete(jobLineId);
-    } else if (onJobLineDeleted) {
-      onJobLineDeleted(jobLineId);
-    }
-  };
+  // Calculate totals
+  const totalLabor = jobLinesWithParts.reduce((sum, jl) => sum + (jl.totalAmount || 0), 0);
+  const totalParts = jobLinesWithParts.reduce((sum, jl) => 
+    sum + (jl.parts?.reduce((partSum, part) => partSum + (part.customerPrice * part.quantity), 0) || 0), 0
+  );
+  const grandTotal = totalLabor + totalParts;
 
-  const calculateTotal = () => {
-    return jobLines.reduce((total, jobLine) => {
-      const laborTotal = jobLine.totalAmount || 0;
-      const partsTotal = jobLine.parts?.reduce((partSum, part) => 
-        partSum + (part.customerPrice * part.quantity), 0) || 0;
-      return total + laborTotal + partsTotal;
-    }, 0);
-  };
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Briefcase className="h-5 w-5" />
+            Services & Job Lines
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-4">Loading job lines...</div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border-slate-200 dark:border-slate-700">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Grid3X3 className="h-5 w-5 text-blue-600" />
-            <CardTitle className="text-lg">Job Lines</CardTitle>
+            <Briefcase className="h-5 w-5 text-blue-600" />
+            <CardTitle className="text-lg">Services & Job Lines</CardTitle>
+            <Badge variant="secondary">{jobLinesWithParts.length}</Badge>
           </div>
           {isEditMode && (
             <Button
               size="sm"
-              onClick={() => setAddJobLineDialogOpen(true)}
+              onClick={() => setAddDialogOpen(true)}
               className="flex items-center gap-2"
             >
               <Plus className="h-4 w-4" />
-              Add Job Line
+              Add Service
             </Button>
           )}
         </div>
         
-        {showSummary && jobLines.length > 0 && (
-          <div className="flex gap-4 text-sm text-slate-600">
-            <span>Total Lines: {jobLines.length}</span>
-            <span>Total Value: ${calculateTotal().toFixed(2)}</span>
+        {showSummary && jobLinesWithParts.length > 0 && (
+          <div className="flex gap-6 text-sm text-slate-600">
+            <span>Labor: ${totalLabor.toFixed(2)}</span>
+            <span>Parts: ${totalParts.toFixed(2)}</span>
+            <span className="font-medium text-slate-900">Total: ${grandTotal.toFixed(2)}</span>
           </div>
         )}
       </CardHeader>
 
       <CardContent className="pt-0">
-        {jobLines.length === 0 ? (
+        {jobLinesWithParts.length === 0 ? (
           <div className="text-center py-8 border-2 border-dashed border-slate-200 rounded-lg">
-            <Grid3X3 className="h-8 w-8 mx-auto text-slate-400 mb-2" />
-            <p className="text-slate-500 mb-4">No job lines added yet</p>
+            <Briefcase className="h-8 w-8 mx-auto text-slate-400 mb-2" />
+            <p className="text-slate-500 mb-4">No services added yet</p>
             {isEditMode ? (
               <p className="text-sm text-slate-400">
-                Add job lines to break down the work order into specific tasks
+                Add services and job lines for this work order
               </p>
             ) : (
               <p className="text-sm text-slate-400">
-                Job lines will appear here when added in edit mode
+                Services will appear here when added in edit mode
               </p>
             )}
           </div>
         ) : (
-          <div className="grid gap-4">
-            {jobLines.map((jobLine) => (
+          <div className="space-y-4">
+            {jobLinesWithParts.map((jobLine) => (
               <JobLineCard
                 key={jobLine.id}
                 jobLine={jobLine}
-                onUpdate={handleJobLineUpdated}
-                onDelete={handleJobLineDeleted}
-                onRemovePart={onRemovePart}
+                onUpdate={handleUpdateJobLine}
+                onDelete={handleDeleteJobLine}
+                onAddParts={() => refreshJobLineParts(jobLine.id)}
                 isEditMode={isEditMode}
               />
             ))}
@@ -128,9 +182,9 @@ export function JobLinesGrid({
       {isEditMode && (
         <AddJobLineDialog
           workOrderId={workOrderId}
-          onJobLineAdd={handleJobLineAdded}
-          open={addJobLineDialogOpen}
-          onOpenChange={setAddJobLineDialogOpen}
+          open={addDialogOpen}
+          onOpenChange={setAddDialogOpen}
+          onJobLineAdd={handleAddJobLine}
         />
       )}
     </Card>
