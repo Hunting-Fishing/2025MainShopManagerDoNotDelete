@@ -979,13 +979,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "customer_documents_category_fkey"
-            columns: ["category"]
-            isOneToOne: false
-            referencedRelation: "document_categories"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "customer_documents_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
@@ -1752,50 +1745,94 @@ export type Database = {
           },
         ]
       }
+      document_access_logs: {
+        Row: {
+          access_type: string
+          accessed_by: string
+          accessed_by_name: string
+          created_at: string
+          document_id: string
+          id: string
+          ip_address: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          access_type: string
+          accessed_by: string
+          accessed_by_name: string
+          created_at?: string
+          document_id: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          access_type?: string
+          accessed_by?: string
+          accessed_by_name?: string
+          created_at?: string
+          document_id?: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_access_logs_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_categories: {
         Row: {
+          color: string | null
           created_at: string
-          created_by: string
           description: string | null
+          icon: string | null
           id: string
           name: string
-          shop_id: string
           updated_at: string
         }
         Insert: {
+          color?: string | null
           created_at?: string
-          created_by: string
           description?: string | null
+          icon?: string | null
           id?: string
           name: string
-          shop_id: string
           updated_at?: string
         }
         Update: {
+          color?: string | null
           created_at?: string
-          created_by?: string
           description?: string | null
+          icon?: string | null
           id?: string
           name?: string
-          shop_id?: string
           updated_at?: string
         }
         Relationships: []
       }
       document_tags: {
         Row: {
+          color: string | null
           created_at: string
           id: string
           name: string
           usage_count: number
         }
         Insert: {
+          color?: string | null
           created_at?: string
           id?: string
           name: string
           usage_count?: number
         }
         Update: {
+          color?: string | null
           created_at?: string
           id?: string
           name?: string
@@ -1806,34 +1843,34 @@ export type Database = {
       document_versions: {
         Row: {
           created_at: string
+          created_by: string
+          created_by_name: string
           document_id: string
-          file_path: string
-          file_size: number
+          file_path: string | null
+          file_size: number | null
           id: string
-          uploaded_by: string
-          uploaded_by_name: string
           version_notes: string | null
           version_number: number
         }
         Insert: {
           created_at?: string
+          created_by: string
+          created_by_name: string
           document_id: string
-          file_path: string
-          file_size: number
+          file_path?: string | null
+          file_size?: number | null
           id?: string
-          uploaded_by: string
-          uploaded_by_name: string
           version_notes?: string | null
           version_number: number
         }
         Update: {
           created_at?: string
+          created_by?: string
+          created_by_name?: string
           document_id?: string
-          file_path?: string
-          file_size?: number
+          file_path?: string | null
+          file_size?: number | null
           id?: string
-          uploaded_by?: string
-          uploaded_by_name?: string
           version_notes?: string | null
           version_number?: number
         }
@@ -1842,7 +1879,101 @@ export type Database = {
             foreignKeyName: "document_versions_document_id_fkey"
             columns: ["document_id"]
             isOneToOne: false
-            referencedRelation: "customer_documents"
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          created_by: string
+          created_by_name: string
+          customer_id: string | null
+          description: string | null
+          document_type: string
+          file_path: string | null
+          file_size: number | null
+          file_url: string | null
+          id: string
+          is_archived: boolean
+          is_public: boolean
+          metadata: Json | null
+          mime_type: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+          updated_by: string | null
+          updated_by_name: string | null
+          work_order_id: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          created_by: string
+          created_by_name: string
+          customer_id?: string | null
+          description?: string | null
+          document_type: string
+          file_path?: string | null
+          file_size?: number | null
+          file_url?: string | null
+          id?: string
+          is_archived?: boolean
+          is_public?: boolean
+          metadata?: Json | null
+          mime_type?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string | null
+          work_order_id?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          created_by?: string
+          created_by_name?: string
+          customer_id?: string | null
+          description?: string | null
+          document_type?: string
+          file_path?: string | null
+          file_size?: number | null
+          file_url?: string | null
+          id?: string
+          is_archived?: boolean
+          is_public?: boolean
+          metadata?: Json | null
+          mime_type?: string | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string | null
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "document_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
             referencedColumns: ["id"]
           },
         ]
@@ -9430,6 +9561,17 @@ export type Database = {
         Args: { user_id: string }
         Returns: boolean
       }
+      log_document_access: {
+        Args: {
+          p_document_id: string
+          p_access_type: string
+          p_accessed_by: string
+          p_accessed_by_name: string
+          p_ip_address?: string
+          p_user_agent?: string
+        }
+        Returns: string
+      }
       process_referral_reward: {
         Args: { referral_id: string; points?: number }
         Returns: string
@@ -9470,6 +9612,31 @@ export type Database = {
       remove_role_from_user: {
         Args: { user_role_id_param: string }
         Returns: boolean
+      }
+      search_documents: {
+        Args: {
+          p_search_query?: string
+          p_category_id?: string
+          p_document_type?: string
+          p_tags?: string[]
+          p_work_order_id?: string
+          p_customer_id?: string
+          p_limit?: number
+          p_offset?: number
+        }
+        Returns: {
+          id: string
+          title: string
+          description: string
+          document_type: string
+          file_url: string
+          category_name: string
+          tags: string[]
+          created_by_name: string
+          created_at: string
+          updated_at: string
+          relevance_score: number
+        }[]
       }
       update_email_processing_schedule: {
         Args: { new_settings: Json }

@@ -8,8 +8,8 @@ import { useJobLines } from '@/hooks/useJobLines';
 import { Button } from '@/components/ui/button';
 import { Pencil, Eye, Printer } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { WorkOrderTabs } from './WorkOrderTabs';
 import { JobLinesGrid } from './job-lines/JobLinesGrid';
+import { WorkOrderDocuments } from './details/WorkOrderDocuments';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -109,11 +109,7 @@ export function WorkOrderDetailsView({ workOrderId: workOrderIdProp }: WorkOrder
         </TabsContent>
         
         <TabsContent value="documents">
-          <Card>
-            <CardContent className="p-6">
-              <p className="text-muted-foreground">Document management feature will be implemented soon.</p>
-            </CardContent>
-          </Card>
+          <WorkOrderDocuments workOrderId={workOrderId} />
         </TabsContent>
         
         <TabsContent value="communications">
