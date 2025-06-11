@@ -7,12 +7,16 @@ interface WorkOrderEditFormProps {
   workOrderId: string;
   timeEntries: TimeEntry[];
   onUpdateTimeEntries: (updatedEntries: TimeEntry[]) => void;
+  onCancel?: () => void;
+  onSave?: () => void;
 }
 
 export const WorkOrderEditForm: React.FC<WorkOrderEditFormProps> = ({
   workOrderId,
   timeEntries,
-  onUpdateTimeEntries
+  onUpdateTimeEntries,
+  onCancel,
+  onSave
 }) => {
   return (
     <div className="space-y-8">

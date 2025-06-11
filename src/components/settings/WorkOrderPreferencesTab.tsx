@@ -4,10 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Settings, User, Wrench } from 'lucide-react';
 
 interface WorkOrderPreferences {
   auto_edit_mode: boolean;
@@ -25,6 +25,8 @@ export function WorkOrderPreferencesTab() {
   const [preferences, setPreferences] = useState<WorkOrderPreferences>(DEFAULT_PREFERENCES);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [userRole, setUserRole] = useState<string>('');
+  const { toast } = useToast();
 
   useEffect(() => {
     loadPreferences();
@@ -33,7 +35,10 @@ export function WorkOrderPreferencesTab() {
   const loadPreferences = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
       const { data, error } = await supabase
         .from('profiles')
@@ -43,11 +48,14 @@ export function WorkOrderPreferencesTab() {
 
       if (error) throw error;
 
+      setUserRole(data?.job_title || '');
+
+      // Type guard and safe access to work_order_preferences
       const notificationPrefs = data?.notification_preferences;
-      if (notificationPrefs && typeof notificationPrefs === 'object' && notificationPrefs !== null) {
+      if (notificationPrefs && typeof notificationPrefs === 'object' && notificationPrefs !== null && !Array.isArray(notificationPrefs)) {
         const workOrderPrefs = (notificationPrefs as any).work_order_preferences;
         if (workOrderPrefs && typeof workOrderPrefs === 'object') {
-          setPreferences(workOrderPrefs as WorkOrderPreferences);
+          setPreferences({ ...DEFAULT_PREFERENCES, ...workOrderPrefs });
         } else {
           // Apply role-based defaults
           const roleBasedDefaults = getRoleBasedDefaults(data?.job_title);
@@ -59,11 +67,12 @@ export function WorkOrderPreferencesTab() {
         setPreferences({ ...DEFAULT_PREFERENCES, ...roleBasedDefaults });
       }
     } catch (error) {
-      console.error('Error loading preferences:', error);
+      console.error('Error loading work order preferences:', error);
+      setPreferences(DEFAULT_PREFERENCES);
       toast({
         title: "Error",
         description: "Failed to load work order preferences",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
@@ -73,6 +82,7 @@ export function WorkOrderPreferencesTab() {
   const getRoleBasedDefaults = (jobTitle?: string): Partial<WorkOrderPreferences> => {
     const role = jobTitle?.toLowerCase() || '';
     
+    // Technicians and service advisors get auto-edit by default
     if (role.includes('technician') || role.includes('advisor') || role.includes('manager')) {
       return { auto_edit_mode: true };
     }
@@ -81,10 +91,11 @@ export function WorkOrderPreferencesTab() {
   };
 
   const savePreferences = async () => {
-    setSaving(true);
     try {
+      setSaving(true);
+      
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) throw new Error('No user found');
 
       // Get current notification preferences
       const { data: currentData } = await supabase
@@ -93,63 +104,112 @@ export function WorkOrderPreferencesTab() {
         .eq('id', user.id)
         .single();
 
-      const currentNotificationPrefs = currentData?.notification_preferences || {};
-      const updatedNotificationPrefs = {
-        ...(typeof currentNotificationPrefs === 'object' && currentNotificationPrefs !== null ? currentNotificationPrefs : {}),
-        work_order_preferences: preferences
+      // Prepare the preferences object that conforms to Json type
+      const currentPrefs = currentData?.notification_preferences || {};
+      const updatedPrefs = {
+        ...(typeof currentPrefs === 'object' && currentPrefs !== null && !Array.isArray(currentPrefs) ? currentPrefs : {}),
+        work_order_preferences: {
+          auto_edit_mode: preferences.auto_edit_mode,
+          show_all_tabs: preferences.show_all_tabs,
+          default_status_filter: preferences.default_status_filter
+        }
       };
 
       const { error } = await supabase
         .from('profiles')
-        .update({ notification_preferences: updatedNotificationPrefs })
+        .update({ 
+          notification_preferences: updatedPrefs as any
+        })
         .eq('id', user.id);
 
       if (error) throw error;
 
       toast({
         title: "Success",
-        description: "Work order preferences saved successfully",
+        description: "Work order preferences saved successfully"
       });
     } catch (error) {
-      console.error('Error saving preferences:', error);
+      console.error('Error saving work order preferences:', error);
       toast({
-        title: "Error", 
+        title: "Error",
         description: "Failed to save work order preferences",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setSaving(false);
     }
   };
 
-  const updatePreference = (key: keyof WorkOrderPreferences, value: any) => {
+  const handlePreferenceChange = (key: keyof WorkOrderPreferences, value: any) => {
     setPreferences(prev => ({
       ...prev,
       [key]: value
     }));
   };
 
+  const getRoleBadgeVariant = (role: string) => {
+    const lowerRole = role.toLowerCase();
+    if (lowerRole.includes('technician')) return 'info';
+    if (lowerRole.includes('advisor')) return 'warning';
+    if (lowerRole.includes('manager')) return 'success';
+    return 'secondary';
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-6 w-6 animate-spin" />
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center gap-3">
+        <Settings className="h-5 w-5" />
+        <div>
+          <h3 className="text-lg font-medium">Work Order Preferences</h3>
+          <p className="text-sm text-muted-foreground">
+            Customize how work orders behave for your role and workflow
+          </p>
+        </div>
+      </div>
+
+      {userRole && (
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              <CardTitle className="text-base">Your Role</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2">
+              <Badge variant={getRoleBadgeVariant(userRole)}>
+                {userRole}
+              </Badge>
+              <span className="text-sm text-muted-foreground">
+                Preferences are optimized for your role
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
-          <CardTitle>Work Order Preferences</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Wrench className="h-4 w-4" />
+            Editing Behavior
+          </CardTitle>
           <CardDescription>
-            Configure how work orders behave when you open them
+            Control how work orders open and behave when you access them
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="auto-edit">Auto-Edit Mode</Label>
+              <Label htmlFor="auto-edit">Auto-edit Mode</Label>
               <p className="text-sm text-muted-foreground">
                 Automatically enter edit mode when opening work orders
               </p>
@@ -157,7 +217,7 @@ export function WorkOrderPreferencesTab() {
             <Switch
               id="auto-edit"
               checked={preferences.auto_edit_mode}
-              onCheckedChange={(checked) => updatePreference('auto_edit_mode', checked)}
+              onCheckedChange={(checked) => handlePreferenceChange('auto_edit_mode', checked)}
             />
           </div>
 
@@ -165,44 +225,50 @@ export function WorkOrderPreferencesTab() {
             <div className="space-y-0.5">
               <Label htmlFor="show-tabs">Show All Tabs</Label>
               <p className="text-sm text-muted-foreground">
-                Display all work order tabs by default
+                Display all available tabs in work order details
               </p>
             </div>
             <Switch
               id="show-tabs"
               checked={preferences.show_all_tabs}
-              onCheckedChange={(checked) => updatePreference('show_all_tabs', checked)}
+              onCheckedChange={(checked) => handlePreferenceChange('show_all_tabs', checked)}
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="status-filter">Default Status Filter</Label>
-            <Select
-              value={preferences.default_status_filter}
-              onValueChange={(value) => updatePreference('default_status_filter', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select default status filter" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="scheduled">Scheduled</SelectItem>
-                <SelectItem value="in-progress">In Progress</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex justify-end">
-            <Button onClick={savePreferences} disabled={saving}>
-              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Preferences
-            </Button>
           </div>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Default Filters</CardTitle>
+          <CardDescription>
+            Set your preferred default filters for work order lists
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Label htmlFor="status-filter">Default Status Filter</Label>
+            <select
+              id="status-filter"
+              className="w-full p-2 border rounded"
+              value={preferences.default_status_filter}
+              onChange={(e) => handlePreferenceChange('default_status_filter', e.target.value)}
+            >
+              <option value="all">All Statuses</option>
+              <option value="pending">Pending</option>
+              <option value="in-progress">In Progress</option>
+              <option value="on-hold">On Hold</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="flex justify-end">
+        <Button onClick={savePreferences} disabled={saving}>
+          {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Save Preferences
+        </Button>
+      </div>
     </div>
   );
 }

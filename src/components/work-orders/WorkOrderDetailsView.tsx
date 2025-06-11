@@ -13,7 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 export function WorkOrderDetailsView() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { workOrder, loading, error } = useWorkOrder(id!);
+  const { workOrder, isLoading, error } = useWorkOrder(id!);
   const { shouldAutoEdit } = useWorkOrderPreferences();
   const [isEditing, setIsEditing] = useState(false);
 
@@ -28,7 +28,7 @@ export function WorkOrderDetailsView() {
     }
   }, [workOrder, shouldAutoEdit]);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="container mx-auto py-6 space-y-6">
         <Skeleton className="h-8 w-64" />
@@ -56,7 +56,9 @@ export function WorkOrderDetailsView() {
   if (isEditing) {
     return (
       <WorkOrderEditForm 
-        workOrder={workOrder} 
+        workOrderId={workOrder.id}
+        timeEntries={workOrder.timeEntries || []}
+        onUpdateTimeEntries={() => {}}
         onCancel={() => setIsEditing(false)}
         onSave={() => setIsEditing(false)}
       />
@@ -84,8 +86,24 @@ export function WorkOrderDetailsView() {
         </Button>
       </div>
 
-      <WorkOrderOverviewHeader workOrder={workOrder} />
-      <WorkOrderDetailsTabs workOrder={workOrder} />
+      <WorkOrderOverviewHeader 
+        workOrder={workOrder}
+        jobLines={workOrder.jobLines || []}
+        allParts={[]}
+      />
+      <WorkOrderDetailsTabs 
+        workOrder={workOrder}
+        timeEntries={workOrder.timeEntries || []}
+        onUpdateTimeEntries={() => {}}
+        inventoryItems={workOrder.inventoryItems || []}
+        notes={workOrder.notes || ''}
+        onUpdateNotes={() => {}}
+        jobLines={workOrder.jobLines || []}
+        parts={[]}
+        onJobLinesChange={() => {}}
+        jobLinesLoading={false}
+        isEditMode={false}
+      />
     </div>
   );
 }
