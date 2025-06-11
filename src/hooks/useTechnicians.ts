@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Technician {
   id: string;
@@ -10,45 +10,39 @@ interface Technician {
 
 export function useTechnicians() {
   const [technicians, setTechnicians] = useState<Technician[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const fetchTechnicians = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name, job_title')
+          .order('first_name', { ascending: true });
+        
+        if (error) throw error;
+        
+        const formattedTechnicians = data?.map(profile => ({
+          id: profile.id,
+          name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Unknown',
+          jobTitle: profile.job_title || undefined,
+        })) || [];
+        
+        setTechnicians(formattedTechnicians);
+      } catch (err) {
+        console.error('Error fetching technicians:', err);
+        setError('Failed to load technicians');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchTechnicians();
   }, []);
 
-  const fetchTechnicians = async () => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name, job_title')
-        .not('job_title', 'is', null);
-
-      if (error) throw error;
-
-      const technicianData = (data || []).map((profile) => ({
-        id: profile.id,
-        name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim(),
-        jobTitle: profile.job_title
-      }));
-      
-      setTechnicians(technicianData);
-    } catch (err) {
-      console.error('Error fetching technicians:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error occurred');
-      setTechnicians([]); // No fallback data
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return {
-    technicians,
-    isLoading,
-    error,
-    refetch: fetchTechnicians
-  };
+  return { technicians, loading, error };
 }
