@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -22,14 +21,11 @@ const WorkOrders = React.lazy(() => import('@/pages/WorkOrders'));
 const WorkOrderDetails = React.lazy(() => import('@/pages/WorkOrderDetails'));
 const WorkOrderEdit = React.lazy(() => import('@/pages/WorkOrderEdit'));
 const WorkOrderCreate = React.lazy(() => import('@/pages/WorkOrderCreate'));
-const Customers = React.lazy(() => import('@/pages/Customers'));
 const CustomerDetails = React.lazy(() => import('@/pages/CustomerDetails'));
-const CustomerCreate = React.lazy(() => import('@/pages/CustomerCreate'));
 const CustomerEdit = React.lazy(() => import('@/pages/CustomerEdit'));
 const VehicleDetails = React.lazy(() => import('@/pages/VehicleDetails'));
 const Inventory = React.lazy(() => import('@/pages/Inventory'));
 const InventoryAdd = React.lazy(() => import('@/pages/InventoryAdd'));
-const InventoryEdit = React.lazy(() => import('@/pages/InventoryEdit'));
 const Invoices = React.lazy(() => import('@/pages/Invoices'));
 const InvoiceDetails = React.lazy(() => import('@/pages/InvoiceDetails'));
 const InvoiceCreate = React.lazy(() => import('@/pages/InvoiceCreate'));
@@ -37,15 +33,12 @@ const InvoiceEdit = React.lazy(() => import('@/pages/InvoiceEdit'));
 const Equipment = React.lazy(() => import('@/pages/Equipment'));
 const EquipmentDetails = React.lazy(() => import('@/pages/EquipmentDetails'));
 const Team = React.lazy(() => import('@/pages/Team'));
-const TeamMemberDetails = React.lazy(() => import('@/pages/TeamMemberDetails'));
-const TeamCreate = React.lazy(() => import('@/pages/TeamCreate'));
 const TeamRoles = React.lazy(() => import('@/pages/TeamRoles'));
 const Calendar = React.lazy(() => import('@/pages/Calendar'));
 const Quotes = React.lazy(() => import('@/pages/Quotes'));
 const Reports = React.lazy(() => import('@/pages/Reports'));
 const Settings = React.lazy(() => import('@/pages/Settings'));
 const Maintenance = React.lazy(() => import('@/pages/Maintenance'));
-const MaintenanceScheduler = React.lazy(() => import('@/pages/MaintenanceScheduler'));
 const Chat = React.lazy(() => import('@/pages/Chat'));
 const Forms = React.lazy(() => import('@/pages/Forms'));
 const Feedback = React.lazy(() => import('@/pages/Feedback'));
@@ -59,7 +52,7 @@ const Developer = React.lazy(() => import('@/pages/Developer'));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: 5 * 60 * 1000,
       retry: 1,
     },
   },
@@ -77,38 +70,45 @@ function AppContent() {
                   <AuthGate>
                     <OnboardingGate>
                       <Layout>
-                        <React.Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div></div>}>
+                        <React.Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary" /></div>}>
                           <Routes>
                             <Route path="/" element={<Dashboard />} />
-                            <Route path="/dashboard" element={<Dashboard />} />
+                            
+                            {/* Work Orders */}
                             <Route path="/work-orders" element={<WorkOrders />} />
                             <Route path="/work-orders/create" element={<WorkOrderCreate />} />
                             <Route path="/work-orders/:id" element={<WorkOrderDetails />} />
                             <Route path="/work-orders/:id/edit" element={<WorkOrderEdit />} />
-                            <Route path="/customers" element={<Customers />} />
-                            <Route path="/customers/create" element={<CustomerCreate />} />
+                            
+                            {/* Customers */}
                             <Route path="/customers/:id" element={<CustomerDetails />} />
                             <Route path="/customers/:id/edit" element={<CustomerEdit />} />
                             <Route path="/customers/:customerId/vehicles/:vehicleId" element={<VehicleDetails />} />
+                            
+                            {/* Inventory */}
                             <Route path="/inventory" element={<Inventory />} />
                             <Route path="/inventory/add" element={<InventoryAdd />} />
-                            <Route path="/inventory/:id/edit" element={<InventoryEdit />} />
+                            
+                            {/* Invoices */}
                             <Route path="/invoices" element={<Invoices />} />
                             <Route path="/invoices/create" element={<InvoiceCreate />} />
                             <Route path="/invoices/:id" element={<InvoiceDetails />} />
                             <Route path="/invoices/:id/edit" element={<InvoiceEdit />} />
+                            
+                            {/* Equipment */}
                             <Route path="/equipment" element={<Equipment />} />
                             <Route path="/equipment/:id" element={<EquipmentDetails />} />
+                            
+                            {/* Team */}
                             <Route path="/team" element={<Team />} />
-                            <Route path="/team/create" element={<TeamCreate />} />
                             <Route path="/team/roles" element={<TeamRoles />} />
-                            <Route path="/team/:id" element={<TeamMemberDetails />} />
+                            
+                            {/* Other routes */}
                             <Route path="/calendar" element={<Calendar />} />
                             <Route path="/quotes" element={<Quotes />} />
                             <Route path="/reports" element={<Reports />} />
                             <Route path="/settings" element={<Settings />} />
                             <Route path="/maintenance" element={<Maintenance />} />
-                            <Route path="/maintenance/scheduler" element={<MaintenanceScheduler />} />
                             <Route path="/chat" element={<Chat />} />
                             <Route path="/forms" element={<Forms />} />
                             <Route path="/feedback" element={<Feedback />} />
@@ -129,8 +129,6 @@ function AppContent() {
           </LanguageProvider>
         </TooltipProvider>
       </ThemeProvider>
-      <Toaster />
-      <RadixToaster />
     </ReactErrorBoundary>
   );
 }
@@ -140,8 +138,10 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <Router>
         <AppContent />
+        <Toaster />
+        <RadixToaster />
+        <ReactQueryDevtools initialIsOpen={false} />
       </Router>
-      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );
 }
