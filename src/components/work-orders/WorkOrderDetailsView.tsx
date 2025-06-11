@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { WorkOrderDetailsActions } from './details/WorkOrderDetailsActions';
-import { WorkOrderDetailsTabs } from './details/WorkOrderDetailsTabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface WorkOrderDetailsViewProps {
@@ -129,8 +128,17 @@ export function WorkOrderDetailsView({ workOrderId }: WorkOrderDetailsViewProps)
         </div>
       </div>
 
-      {/* Tabs Section */}
-      <WorkOrderDetailsTabs workOrder={workOrder} />
+      {/* Simplified tabs for now - will be enhanced later */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Work Order Details</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            Additional work order details and tabs will be displayed here
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }
