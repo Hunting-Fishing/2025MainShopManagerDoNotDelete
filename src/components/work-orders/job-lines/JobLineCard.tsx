@@ -68,7 +68,7 @@ export function JobLineCard({
           <div className="space-y-4">
             {/* Header */}
             <div className="flex items-start justify-between">
-              <div className="flex-1">
+              <div className="flex-1 bg-orange-400">
                 <div className="flex items-center gap-2 mb-2">
                   <h3 className="font-semibold text-lg">{localJobLine.name}</h3>
                   <Badge variant="secondary" className={jobLineStatusMap[localJobLine.status]?.classes || 'bg-gray-100 text-gray-800'}>
