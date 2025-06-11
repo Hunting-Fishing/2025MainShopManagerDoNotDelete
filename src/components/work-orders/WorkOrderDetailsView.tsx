@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useWorkOrder } from '@/hooks/useWorkOrder';
 import { useWorkOrderPreferences } from '@/hooks/useWorkOrderPreferences';
 import { WorkOrderEditForm } from './WorkOrderEditForm';
@@ -13,11 +13,21 @@ import { Skeleton } from '@/components/ui/skeleton';
 export function WorkOrderDetailsView() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { workOrder, isLoading, error } = useWorkOrder(id!);
   const { shouldAutoEdit } = useWorkOrderPreferences();
-  const [isEditing, setIsEditing] = useState(false);
+  
+  // Check if we're on the edit route
+  const isEditRoute = location.pathname.includes('/edit');
+  const [isEditing, setIsEditing] = useState(isEditRoute);
 
   useEffect(() => {
+    // If we're on the edit route, start in edit mode
+    if (isEditRoute) {
+      setIsEditing(true);
+      return;
+    }
+
     // Auto-edit logic based on user preferences and work order status
     if (workOrder && shouldAutoEdit()) {
       // Don't auto-edit if work order is completed or cancelled
@@ -26,7 +36,7 @@ export function WorkOrderDetailsView() {
         setIsEditing(true);
       }
     }
-  }, [workOrder, shouldAutoEdit]);
+  }, [workOrder, shouldAutoEdit, isEditRoute]);
 
   if (isLoading) {
     return (
@@ -53,14 +63,40 @@ export function WorkOrderDetailsView() {
     );
   }
 
+  const handleEditToggle = () => {
+    if (isEditing) {
+      // If currently editing, go back to view mode
+      setIsEditing(false);
+      // Update URL to remove /edit if present
+      if (isEditRoute) {
+        navigate(`/work-orders/${id}`);
+      }
+    } else {
+      // If currently viewing, go to edit mode
+      setIsEditing(true);
+      // Update URL to include /edit
+      navigate(`/work-orders/${id}/edit`);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    navigate(`/work-orders/${id}`);
+  };
+
+  const handleSaveEdit = () => {
+    setIsEditing(false);
+    navigate(`/work-orders/${id}`);
+  };
+
   if (isEditing) {
     return (
       <WorkOrderEditForm 
         workOrderId={workOrder.id}
         timeEntries={workOrder.timeEntries || []}
         onUpdateTimeEntries={() => {}}
-        onCancel={() => setIsEditing(false)}
-        onSave={() => setIsEditing(false)}
+        onCancel={handleCancelEdit}
+        onSave={handleSaveEdit}
       />
     );
   }
@@ -78,7 +114,7 @@ export function WorkOrderDetailsView() {
         </Button>
         
         <Button
-          onClick={() => setIsEditing(true)}
+          onClick={handleEditToggle}
           className="mb-4"
         >
           <Edit className="mr-2 h-4 w-4" />
