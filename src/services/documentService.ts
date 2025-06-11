@@ -1,195 +1,17 @@
-import { supabase } from "@/lib/supabase";
-import { Document, DocumentCategory, CustomerDocument, DocumentVersion, DocumentAccessLog, DocumentSearchParams } from "@/types/document";
-import { v4 as uuidv4 } from 'uuid';
 
-const getCustomerDocuments = async (customerId: string): Promise<CustomerDocument[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('documents')
-      .select('*')
-      .eq('customer_id', customerId);
+import { supabase } from '@/integrations/supabase/client';
+import { Document, DocumentCategory, DocumentVersion, DocumentAccessLog, DocumentSearchParams, CreateDocumentData, CustomerDocument } from '@/types/document';
 
-    if (error) {
-      console.error("Error fetching customer documents:", error);
-      return [];
-    }
-
-    return data as CustomerDocument[];
-  } catch (error) {
-    console.error("Error fetching customer documents:", error);
-    return [];
-  }
-};
-
-const getDocumentCategories = async (): Promise<DocumentCategory[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('document_categories')
-      .select('*');
-
-    if (error) {
-      console.error("Error fetching document categories:", error);
-      return [];
-    }
-
-    return data as DocumentCategory[];
-  } catch (error) {
-    console.error("Error fetching document categories:", error);
-    return [];
-  }
-};
-
-const uploadDocumentVersion = async (
-  documentId: string,
-  file: File,
-  versionNotes?: string
-): Promise<DocumentVersion | null> => {
-  try {
-    // Upload file to storage
-    const filePath = `documents/${documentId}/versions/${uuidv4()}-${file.name}`;
-    const { error: uploadError } = await supabase.storage
-      .from('public')
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: false
-      });
-
-    if (uploadError) {
-      console.error("Error uploading file:", uploadError);
-      throw uploadError;
-    }
-
-    // Get file size
-    const { data: fileSizeData, error: fileSizeError } = await supabase.storage
-      .from('public')
-      .getMetadata(filePath);
-
-    if (fileSizeError) {
-      console.error("Error getting file metadata:", fileSizeError);
-    }
-
-    const fileSize = fileSizeData?.size || 0;
-
-    // Create new document version record
-    const { data: versionData, error: versionError } = await supabase
-      .from('document_versions')
-      .insert([
-        {
-          document_id: documentId,
-          file_path: filePath,
-          file_size: fileSize,
-          version_notes: versionNotes,
-          created_by: 'current_user_id', // Replace with actual user ID
-          created_by_name: 'Current User' // Replace with actual user name
-        }
-      ])
-      .select()
-      .single();
-
-    if (versionError) {
-      console.error("Error creating document version:", versionError);
-      throw versionError;
-    }
-
-    return versionData as DocumentVersion;
-  } catch (error) {
-    console.error("Error uploading document version:", error);
-    return null;
-  }
-};
-
-const getDocumentDownloadUrl = async (filePath: string): Promise<string | null> => {
-  try {
-    const { data } = await supabase.storage
-      .from('public')
-      .getPublicUrl(filePath);
-
-    return data.publicUrl;
-  } catch (error) {
-    console.error("Error getting download URL:", error);
-    return null;
-  }
-};
-
-const uploadDocument = async (
-  file: File,
-  documentData: Omit<Document, 'id' | 'created_at' | 'updated_at'>
-): Promise<Document | null> => {
-  try {
-    // Generate unique file path
-    const filePath = `documents/${uuidv4()}-${file.name}`;
-
-    // Upload file to storage
-    const { error: uploadError } = await supabase.storage
-      .from('public')
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: false
-      });
-
-    if (uploadError) {
-      console.error("Error uploading file:", uploadError);
-      throw uploadError;
-    }
-
-    // Get file size
-    const { data: fileSizeData, error: fileSizeError } = await supabase.storage
-      .from('public')
-      .getMetadata(filePath);
-
-    if (fileSizeError) {
-      console.error("Error getting file metadata:", fileSizeError);
-    }
-
-    const fileSize = fileSizeData?.size || 0;
-
-    // Create document record in database
-    const { data: documentDataResult, error: documentError } = await supabase
-      .from('documents')
-      .insert([
-        {
-          ...documentData,
-          file_path: filePath,
-          file_size: fileSize,
-        }
-      ])
-      .select()
-      .single();
-
-    if (documentError) {
-      console.error("Error creating document:", documentError);
-      throw documentError;
-    }
-
-    return documentDataResult as Document;
-  } catch (error) {
-    console.error("Error uploading document:", error);
-    return null;
-  }
-};
-
-const deleteDocument = async (documentId: string): Promise<void> => {
-  try {
-    const { error } = await supabase
-      .from('documents')
-      .delete()
-      .eq('id', documentId);
-
-    if (error) throw error;
-  } catch (error) {
-    console.error('Error deleting document:', error);
-    throw error;
-  }
-};
-
-const getDocuments = async (params: DocumentSearchParams): Promise<Document[]> => {
-  try {
+// Export the DocumentService class and individual functions
+export class DocumentService {
+  static async getDocuments(params: DocumentSearchParams = {}): Promise<Document[]> {
     let query = supabase
       .from('documents')
-      .select('*');
+      .select('*, category:document_categories(name)')
+      .eq('is_archived', false);
 
     if (params.search_query) {
-      query = query.ilike('title', `%${params.search_query}%`);
+      query = query.or(`title.ilike.%${params.search_query}%,description.ilike.%${params.search_query}%`);
     }
 
     if (params.category_id) {
@@ -198,10 +20,6 @@ const getDocuments = async (params: DocumentSearchParams): Promise<Document[]> =
 
     if (params.document_type) {
       query = query.eq('document_type', params.document_type);
-    }
-
-    if (params.tags && params.tags.length > 0) {
-      query = query.contains('tags', params.tags);
     }
 
     if (params.work_order_id) {
@@ -217,109 +35,219 @@ const getDocuments = async (params: DocumentSearchParams): Promise<Document[]> =
     }
 
     if (params.offset) {
-      query = query.range(params.offset, (params.offset + params.limit) - 1);
+      query = query.range(params.offset, params.offset + (params.limit || 50) - 1);
     }
 
-    const { data, error } = await query;
+    const { data, error } = await query.order('created_at', { ascending: false });
 
-    if (error) {
-      console.error("Error fetching documents:", error);
-      return [];
-    }
+    if (error) throw error;
 
-    return data as Document[];
-  } catch (error) {
-    console.error("Error fetching documents:", error);
-    return [];
+    return data?.map(doc => ({
+      ...doc,
+      category_name: doc.category?.name
+    })) || [];
   }
-};
 
-const createDocument = async (documentData: any): Promise<Document | null> => {
-  try {
+  static async createDocument(documentData: CreateDocumentData): Promise<Document> {
     const { data, error } = await supabase
       .from('documents')
-      .insert([documentData])
-      .select()
+      .insert(documentData)
+      .select('*, category:document_categories(name)')
       .single();
 
-    if (error) {
-      console.error("Error creating document:", error);
-      throw error;
-    }
+    if (error) throw error;
 
-    return data as Document;
-  } catch (error) {
-    console.error("Error creating document:", error);
-    return null;
+    return {
+      ...data,
+      category_name: data.category?.name
+    };
   }
-};
 
-const updateDocument = async (id: string, updates: any): Promise<Document | null> => {
-  try {
+  static async updateDocument(id: string, updates: Partial<Document>): Promise<Document> {
     const { data, error } = await supabase
       .from('documents')
       .update(updates)
       .eq('id', id)
+      .select('*, category:document_categories(name)')
+      .single();
+
+    if (error) throw error;
+
+    return {
+      ...data,
+      category_name: data.category?.name
+    };
+  }
+
+  static async deleteDocument(id: string): Promise<void> {
+    // First get the document to find the file path
+    const { data: document } = await supabase
+      .from('documents')
+      .select('file_path')
+      .eq('id', id)
+      .single();
+
+    // Delete the file from storage if it exists
+    if (document?.file_path) {
+      try {
+        const { data: files } = await supabase.storage
+          .from('documents')
+          .list('', { search: document.file_path });
+
+        if (files && files.length > 0) {
+          await supabase.storage
+            .from('documents')
+            .remove([document.file_path]);
+        }
+      } catch (storageError) {
+        console.warn('Failed to delete file from storage:', storageError);
+      }
+    }
+
+    // Delete the document record
+    const { error } = await supabase
+      .from('documents')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+  }
+
+  static async getCategories(): Promise<DocumentCategory[]> {
+    const { data, error } = await supabase
+      .from('document_categories')
+      .select('*')
+      .order('name');
+
+    if (error) throw error;
+    return data || [];
+  }
+
+  static async uploadFile(file: File, folder = 'general'): Promise<{ path: string; url: string }> {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+    const filePath = `${folder}/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('documents')
+      .upload(filePath, file);
+
+    if (uploadError) throw uploadError;
+
+    const { data: urlData } = supabase.storage
+      .from('documents')
+      .getPublicUrl(filePath);
+
+    return {
+      path: filePath,
+      url: urlData.publicUrl
+    };
+  }
+
+  static async getDocumentDownloadUrl(filePath: string): Promise<string> {
+    const { data } = supabase.storage
+      .from('documents')
+      .getPublicUrl(filePath);
+
+    return data.publicUrl;
+  }
+
+  static async uploadDocumentVersion(
+    documentId: string,
+    file: File,
+    versionNotes?: string
+  ): Promise<DocumentVersion> {
+    // Get current document to determine folder structure
+    const { data: document } = await supabase
+      .from('documents')
+      .select('title, file_path')
+      .eq('id', documentId)
+      .single();
+
+    if (!document) throw new Error('Document not found');
+
+    // Upload new version
+    const { path: newFilePath, url: newFileUrl } = await this.uploadFile(file, 'versions');
+
+    // Get current version number
+    const { data: versions } = await supabase
+      .from('document_versions')
+      .select('version_number')
+      .eq('document_id', documentId)
+      .order('version_number', { ascending: false })
+      .limit(1);
+
+    const nextVersion = (versions?.[0]?.version_number || 0) + 1;
+
+    // Create version record
+    const { data: version, error } = await supabase
+      .from('document_versions')
+      .insert({
+        document_id: documentId,
+        version_number: nextVersion,
+        file_path: newFilePath,
+        file_size: file.size,
+        version_notes: versionNotes,
+        created_by: 'current_user_id', // This should come from auth context
+        created_by_name: 'Current User' // This should come from auth context
+      })
       .select()
       .single();
 
-    if (error) {
-      console.error("Error updating document:", error);
-      throw error;
-    }
+    if (error) throw error;
 
-    return data as Document;
-  } catch (error) {
-    console.error("Error updating document:", error);
-    return null;
+    // Update main document to point to new version
+    await supabase
+      .from('documents')
+      .update({
+        file_path: newFilePath,
+        file_url: newFileUrl,
+        file_size: file.size,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', documentId);
+
+    return version;
   }
-};
 
-const logAccess = async (
-  documentId: string,
-  accessType: 'view' | 'download' | 'edit' | 'delete',
-  accessedBy: string,
-  accessedByName: string,
-  ipAddress?: string,
-  userAgent?: string
-): Promise<DocumentAccessLog | null> => {
-  try {
+  static async logAccess(
+    documentId: string,
+    accessType: 'view' | 'download' | 'edit' | 'delete',
+    accessedBy: string,
+    accessedByName: string,
+    ipAddress?: string,
+    userAgent?: string
+  ): Promise<DocumentAccessLog> {
     const { data, error } = await supabase
       .from('document_access_logs')
-      .insert([
-        {
-          document_id: documentId,
-          access_type: accessType,
-          accessed_by: accessedBy,
-          accessed_by_name: accessedByName,
-          ip_address: ipAddress,
-          user_agent: userAgent,
-        }
-      ])
+      .insert({
+        document_id: documentId,
+        access_type: accessType,
+        accessed_by: accessedBy,
+        accessed_by_name: accessedByName,
+        ip_address: ipAddress,
+        user_agent: userAgent
+      })
       .select()
       .single();
 
-    if (error) {
-      console.error("Error logging document access:", error);
-      return null;
-    }
-
-    return data as DocumentAccessLog;
-  } catch (error) {
-    console.error("Error logging document access:", error);
-    return null;
+    if (error) throw error;
+    return data;
   }
-};
+}
 
-export {
-  getCustomerDocuments,
-  getDocumentCategories,
-  uploadDocumentVersion,
-  getDocumentDownloadUrl,
-  uploadDocument,
-  deleteDocument,
-  getDocuments,
-  createDocument,
-  updateDocument,
-  logAccess
-};
+// Export individual functions for backward compatibility
+export const getDocuments = DocumentService.getDocuments.bind(DocumentService);
+export const createDocument = DocumentService.createDocument.bind(DocumentService);
+export const updateDocument = DocumentService.updateDocument.bind(DocumentService);
+export const deleteDocument = DocumentService.deleteDocument.bind(DocumentService);
+export const getDocumentCategories = DocumentService.getCategories.bind(DocumentService);
+export const uploadDocument = DocumentService.uploadFile.bind(DocumentService);
+export const getDocumentDownloadUrl = DocumentService.getDocumentDownloadUrl.bind(DocumentService);
+export const uploadDocumentVersion = DocumentService.uploadDocumentVersion.bind(DocumentService);
+
+// Customer-specific document functions
+export async function getCustomerDocuments(customerId: string): Promise<CustomerDocument[]> {
+  const documents = await DocumentService.getDocuments({ customer_id: customerId });
+  return documents.map(doc => ({ ...doc, customer_id: customerId }));
+}
