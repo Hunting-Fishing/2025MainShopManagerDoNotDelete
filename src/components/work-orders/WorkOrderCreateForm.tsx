@@ -51,7 +51,7 @@ export function WorkOrderCreateForm() {
     try {
       setIsSubmitting(true);
       
-      // Create the work order
+      // Create the work order with proper type conversion
       const workOrder = await createWorkOrder({
         customer_name: values.customer,
         description: values.description,
@@ -60,7 +60,7 @@ export function WorkOrderCreateForm() {
         notes: values.notes || null,
         vehicle_make: values.vehicleMake || null,
         vehicle_model: values.vehicleModel || null,
-        vehicle_year: values.vehicleYear ? parseInt(values.vehicleYear) : null,
+        vehicle_year: values.vehicleYear ? parseInt(values.vehicleYear, 10) : null,
         vehicle_license_plate: values.licensePlate || null,
         vehicle_vin: values.vin || null,
       });
