@@ -1,109 +1,105 @@
 
 import React, { useState, useEffect } from 'react';
-import { useWorkOrder } from '@/hooks/useWorkOrder';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, AlertCircle } from 'lucide-react';
-import { WorkOrderDetailsActions } from './details/WorkOrderDetailsActions';
-import { WorkOrderDetailsTabs } from './details/WorkOrderDetailsTabs';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { TimeEntry, WorkOrderInventoryItem } from '@/types/workOrder';
+import { AlertCircle, Loader2 } from 'lucide-react';
+import { WorkOrder, WorkOrderInventoryItem, TimeEntry } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { getWorkOrderTimeEntries } from '@/services/workOrder/workOrderQueryService';
-import { getWorkOrderInventoryItems } from '@/services/workOrder/workOrderQueryService';
+import { getWorkOrderById } from '@/services/workOrder';
 import { getWorkOrderJobLines } from '@/services/workOrder/jobLinesService';
+import { getWorkOrderInventoryItems } from '@/services/workOrder/workOrderInventoryService';
+import { getWorkOrderTimeEntries } from '@/services/workOrder/workOrderQueryService';
+import { WorkOrderDetailsHeader } from './details/WorkOrderDetailsHeader';
+import { WorkOrderDetailsTabs } from './details/WorkOrderDetailsTabs';
 import { toast } from '@/hooks/use-toast';
 
 interface WorkOrderDetailsViewProps {
-  workOrderId: string;
+  workOrderId?: string;
 }
 
-export function WorkOrderDetailsView({ workOrderId }: WorkOrderDetailsViewProps) {
-  const { workOrder, isLoading, error } = useWorkOrder(workOrderId);
-  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
-  const [inventoryItems, setInventoryItems] = useState<WorkOrderInventoryItem[]>([]);
+export function WorkOrderDetailsView({ workOrderId: propWorkOrderId }: WorkOrderDetailsViewProps) {
+  const { id: paramWorkOrderId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const workOrderId = propWorkOrderId || paramWorkOrderId;
+
+  const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
   const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<WorkOrderInventoryItem[]>([]);
+  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [notes, setNotes] = useState('');
-  const [jobLinesLoading, setJobLinesLoading] = useState(false);
-  const [dataLoading, setDataLoading] = useState(true);
 
-  // Load additional work order data
   useEffect(() => {
-    if (workOrder?.id) {
-      loadWorkOrderData();
-      setNotes(workOrder.notes || workOrder.description || '');
+    if (workOrderId) {
+      fetchWorkOrderData(workOrderId);
     }
-  }, [workOrder?.id]);
+  }, [workOrderId]);
 
-  const loadWorkOrderData = async () => {
-    if (!workOrder?.id) return;
-
+  const fetchWorkOrderData = async (id: string) => {
     try {
-      setDataLoading(true);
-      setJobLinesLoading(true);
+      setLoading(true);
+      setError(null);
 
-      // Load time entries
-      try {
-        const timeData = await getWorkOrderTimeEntries(workOrder.id);
-        setTimeEntries(timeData || []);
-      } catch (err) {
-        console.error('Error loading time entries:', err);
+      const [workOrderData, jobLinesData, inventoryData, timeData] = await Promise.all([
+        getWorkOrderById(id),
+        getWorkOrderJobLines(id),
+        getWorkOrderInventoryItems(id),
+        getWorkOrderTimeEntries(id)
+      ]);
+
+      if (!workOrderData) {
+        setError('Work order not found');
+        return;
       }
 
-      // Load inventory items
-      try {
-        const inventoryData = await getWorkOrderInventoryItems(workOrder.id);
-        setInventoryItems(inventoryData || []);
-      } catch (err) {
-        console.error('Error loading inventory items:', err);
-      }
-
-      // Load job lines
-      try {
-        const jobLinesData = await getWorkOrderJobLines(workOrder.id);
-        setJobLines(jobLinesData || []);
-      } catch (err) {
-        console.error('Error loading job lines:', err);
-      }
-
+      setWorkOrder(workOrderData);
+      setJobLines(jobLinesData);
+      
+      // Transform inventory data to include total property
+      const transformedInventory = inventoryData.map(item => ({
+        ...item,
+        total: item.quantity * item.unit_price
+      }));
+      setInventoryItems(transformedInventory);
+      
+      setTimeEntries(timeData);
+      setNotes(workOrderData.notes || '');
     } catch (err) {
-      console.error('Error loading work order data:', err);
+      console.error('Error fetching work order data:', err);
+      setError('Failed to load work order details');
       toast({
         title: "Error",
         description: "Failed to load work order details",
         variant: "destructive"
       });
     } finally {
-      setDataLoading(false);
-      setJobLinesLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleEdit = () => {
-    console.log('Edit work order:', workOrderId);
-  };
-
   const handleInvoiceCreated = (invoiceId: string) => {
-    console.log('Invoice created:', invoiceId);
     toast({
       title: "Success",
-      description: "Invoice created successfully"
+      description: "Invoice created successfully",
     });
+    // Optionally navigate to invoice details
+    // navigate(`/invoices/${invoiceId}`);
   };
 
-  const handleUpdateTimeEntries = (entries: TimeEntry[]) => {
-    setTimeEntries(entries);
-  };
+  if (!workOrderId) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          No work order ID provided
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
-  const handleUpdateNotes = (newNotes: string) => {
-    setNotes(newNotes);
-  };
-
-  const handleJobLinesChange = (newJobLines: WorkOrderJobLine[]) => {
-    setJobLines(newJobLines);
-  };
-
-  if (isLoading || dataLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
@@ -119,156 +115,32 @@ export function WorkOrderDetailsView({ workOrderId }: WorkOrderDetailsViewProps)
       <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          {error?.message || 'Work order not found'}
+          {error || 'Work order not found'}
         </AlertDescription>
       </Alert>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold">
-            Work Order #{workOrder.work_order_number || workOrder.id.slice(0, 8)}
-          </h1>
-          <div className="flex items-center gap-2 mt-2">
-            <Badge variant="secondary">{workOrder.status}</Badge>
-            {workOrder.service_type && (
-              <Badge variant="outline">{workOrder.service_type}</Badge>
-            )}
-          </div>
-        </div>
-        
-        <WorkOrderDetailsActions
-          workOrder={workOrder}
-          onEdit={handleEdit}
-          onInvoiceCreated={handleInvoiceCreated}
-        />
-      </div>
+    <div className="space-y-6">
+      <WorkOrderDetailsHeader 
+        workOrder={workOrder}
+        onEdit={() => setIsEditMode(!isEditMode)}
+        onInvoiceCreated={handleInvoiceCreated}
+        isEditMode={isEditMode}
+      />
 
-      {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Work Order Details */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Work Order Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Description</label>
-                <p className="mt-1">{workOrder.description || 'No description provided'}</p>
-              </div>
-              
-              {workOrder.total_cost && (
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Total Cost</label>
-                  <p className="mt-1 text-lg font-semibold">${workOrder.total_cost}</p>
-                </div>
-              )}
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Created</label>
-                  <p className="mt-1">{new Date(workOrder.created_at).toLocaleDateString()}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Last Updated</label>
-                  <p className="mt-1">{new Date(workOrder.updated_at).toLocaleDateString()}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Customer Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Customer Information</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {workOrder.customer_name ? (
-                <div className="space-y-2">
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Name</label>
-                    <p className="mt-1">{workOrder.customer_name}</p>
-                  </div>
-                  {workOrder.customer_email && (
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">Email</label>
-                      <p className="mt-1">{workOrder.customer_email}</p>
-                    </div>
-                  )}
-                  {workOrder.customer_phone && (
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">Phone</label>
-                      <p className="mt-1">{workOrder.customer_phone}</p>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  {workOrder.customer_id ? 'Loading customer details...' : 'No customer assigned'}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Vehicle Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Vehicle Information</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {workOrder.vehicle_make || workOrder.vehicle_model || workOrder.vehicle_year ? (
-                <div className="space-y-2">
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Vehicle</label>
-                    <p className="mt-1">
-                      {[workOrder.vehicle_year, workOrder.vehicle_make, workOrder.vehicle_model]
-                        .filter(Boolean)
-                        .join(' ')}
-                    </p>
-                  </div>
-                  {workOrder.vehicle_vin && (
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">VIN</label>
-                      <p className="mt-1">{workOrder.vehicle_vin}</p>
-                    </div>
-                  )}
-                  {workOrder.vehicle_license_plate && (
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">License Plate</label>
-                      <p className="mt-1">{workOrder.vehicle_license_plate}</p>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  {workOrder.vehicle_id ? 'Loading vehicle details...' : 'No vehicle assigned'}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Detailed Tabs */}
       <WorkOrderDetailsTabs
         workOrder={workOrder}
         timeEntries={timeEntries}
-        onUpdateTimeEntries={handleUpdateTimeEntries}
+        onUpdateTimeEntries={setTimeEntries}
         inventoryItems={inventoryItems}
         notes={notes}
-        onUpdateNotes={handleUpdateNotes}
+        onUpdateNotes={setNotes}
         jobLines={jobLines}
-        onJobLinesChange={handleJobLinesChange}
-        jobLinesLoading={jobLinesLoading}
-        isEditMode={false}
+        onJobLinesChange={setJobLines}
+        jobLinesLoading={loading}
+        isEditMode={isEditMode}
       />
     </div>
   );

@@ -1,4 +1,6 @@
 
+import { WorkOrderPart } from './workOrderPart';
+
 export interface WorkOrderJobLine {
   id: string;
   work_order_id: string;
@@ -15,6 +17,7 @@ export interface WorkOrderJobLine {
   display_order?: number;
   created_at: string;
   updated_at: string;
+  parts?: WorkOrderPart[];
 }
 
 export interface JobLineFormValues {
@@ -28,3 +31,13 @@ export interface JobLineFormValues {
   status?: string;
   notes?: string;
 }
+
+export const JOB_LINE_STATUSES = [
+  'pending',
+  'in-progress',
+  'completed',
+  'on-hold',
+  'cancelled'
+] as const;
+
+export type JobLineStatus = typeof JOB_LINE_STATUSES[number];

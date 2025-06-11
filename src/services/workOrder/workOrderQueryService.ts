@@ -300,7 +300,7 @@ export const getUniqueTechnicians = async (): Promise<string[]> => {
 /**
  * Get time entries for a work order
  */
-export async function getWorkOrderTimeEntries(workOrderId: string) {
+export async function getWorkOrderTimeEntries(workOrderId: string): Promise<TimeEntry[]> {
   try {
     console.log('getWorkOrderTimeEntries: Fetching time entries for work order:', workOrderId);
     
@@ -308,7 +308,7 @@ export async function getWorkOrderTimeEntries(workOrderId: string) {
       .from('work_order_time_entries')
       .select('*')
       .eq('work_order_id', workOrderId)
-      .order('created_at', { ascending: false });
+      .order('start_time', { ascending: false });
 
     if (error) {
       console.error('getWorkOrderTimeEntries: Error:', error);
