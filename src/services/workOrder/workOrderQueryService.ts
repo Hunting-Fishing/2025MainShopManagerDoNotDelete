@@ -89,6 +89,96 @@ export const getWorkOrderById = async (id: string): Promise<WorkOrder | null> =>
   return normalizedData;
 };
 
+export const getWorkOrdersByCustomerId = async (customerId: string): Promise<WorkOrder[]> => {
+  const { data, error } = await supabase
+    .from("work_orders")
+    .select(`
+      *,
+      customers(
+        id,
+        first_name,
+        last_name,
+        email,
+        phone,
+        address,
+        city,
+        state,
+        zip_code
+      ),
+      vehicles(
+        id,
+        year,
+        make,
+        model,
+        vin,
+        license_plate,
+        trim
+      )
+    `)
+    .eq("customer_id", customerId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching work orders by customer ID:", error);
+    throw error;
+  }
+
+  return (data || []).map(workOrder => normalizeWorkOrderData(workOrder));
+};
+
+export const getWorkOrdersByStatus = async (status: string): Promise<WorkOrder[]> => {
+  const { data, error } = await supabase
+    .from("work_orders")
+    .select(`
+      *,
+      customers(
+        id,
+        first_name,
+        last_name,
+        email,
+        phone,
+        address,
+        city,
+        state,
+        zip_code
+      ),
+      vehicles(
+        id,
+        year,
+        make,
+        model,
+        vin,
+        license_plate,
+        trim
+      )
+    `)
+    .eq("status", status)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching work orders by status:", error);
+    throw error;
+  }
+
+  return (data || []).map(workOrder => normalizeWorkOrderData(workOrder));
+};
+
+export const getUniqueTechnicians = async (): Promise<string[]> => {
+  const { data, error } = await supabase
+    .from("work_orders")
+    .select("technician_id")
+    .not("technician_id", "is", null);
+
+  if (error) {
+    console.error("Error fetching unique technicians:", error);
+    throw error;
+  }
+
+  // Extract unique technician IDs
+  const uniqueTechnicians = [...new Set(data?.map(row => row.technician_id).filter(Boolean) || [])];
+  return uniqueTechnicians;
+};
+
 // Helper function to normalize work order data from database
 function normalizeWorkOrderData(dbWorkOrder: any): WorkOrder {
   const customer = dbWorkOrder.customers;
