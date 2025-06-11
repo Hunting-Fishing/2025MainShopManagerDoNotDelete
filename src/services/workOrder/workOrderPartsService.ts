@@ -100,7 +100,7 @@ export const saveWorkOrderPart = upsertWorkOrderPart;
 /**
  * Delete a work order part
  */
-export async function deleteWorkOrderPart(partId: string): Promise<void> {
+export async function deleteWorkOrderPart(partId: string): Promise<boolean> {
   try {
     console.log('deleteWorkOrderPart: Deleting part:', partId);
     
@@ -115,8 +115,9 @@ export async function deleteWorkOrderPart(partId: string): Promise<void> {
     }
 
     console.log('deleteWorkOrderPart: Successfully deleted part');
+    return true;
   } catch (error) {
     console.error('deleteWorkOrderPart: Failed to delete part:', error);
-    throw error;
+    return false;
   }
 }

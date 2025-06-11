@@ -19,7 +19,9 @@ export interface WorkOrderPart {
   partNumber?: string; // Alias for part_number
   supplierName?: string;
   supplierCost?: number;
+  supplierSuggestedRetailPrice?: number;
   customerPrice?: number; // Alias for unit_price
+  retailPrice?: number;
   category?: string;
   warrantyDuration?: string;
   warrantyExpiryDate?: string;
@@ -33,6 +35,10 @@ export interface WorkOrderPart {
   coreChargeApplied?: boolean;
   coreChargeAmount?: number;
   isTaxable?: boolean;
+  invoiceNumber?: string;
+  poLine?: string;
+  isStockItem?: boolean;
+  notesInternal?: string;
   
   // CamelCase aliases for backward compatibility
   workOrderId?: string; // Alias for work_order_id
@@ -54,11 +60,20 @@ export interface WorkOrderPartFormValues {
   partNumber?: string;
   supplierName?: string;
   supplierCost?: number;
+  supplierSuggestedRetailPrice?: number;
   customerPrice?: number;
+  retailPrice?: number;
   category?: string;
   partType?: string;
   markupPercentage?: number;
   isTaxable?: boolean;
+  coreChargeAmount?: number;
+  coreChargeApplied?: boolean;
+  warrantyDuration?: string;
+  invoiceNumber?: string;
+  poLine?: string;
+  isStockItem?: boolean;
+  notesInternal?: string;
 }
 
 export const WORK_ORDER_PART_STATUSES = [
@@ -87,6 +102,19 @@ export const PART_TYPES = [
 ] as const;
 
 export type PartType = typeof PART_TYPES[number];
+
+// Warranty durations
+export const WARRANTY_DURATIONS = [
+  '30 days',
+  '90 days',
+  '6 months',
+  '1 year',
+  '2 years',
+  '3 years',
+  'Lifetime'
+] as const;
+
+export type WarrantyDuration = typeof WARRANTY_DURATIONS[number];
 
 // Status mapping for UI display
 export const partStatusMap: Record<string, { label: string; classes: string }> = {
