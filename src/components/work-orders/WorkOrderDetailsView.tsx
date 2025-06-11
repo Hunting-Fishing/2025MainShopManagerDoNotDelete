@@ -122,17 +122,56 @@ export function WorkOrderDetailsView() {
         </Button>
       </div>
 
-      <WorkOrderOverviewHeader 
-        workOrder={workOrder}
-        jobLines={workOrder.jobLines || []}
-        allParts={[]}
-      />
+      {/* Work Order Header with Real Data */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">
+              Work Order #{workOrder.work_order_number || workOrder.id.slice(0, 8)}
+            </h1>
+            <p className="text-lg text-gray-600 mt-1">{workOrder.description}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm text-gray-500">Status</p>
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 capitalize">
+              {workOrder.status}
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div>
+            <h3 className="text-sm font-medium text-gray-500 mb-2">Customer</h3>
+            <p className="text-lg font-semibold">{workOrder.customer_name || 'Unknown Customer'}</p>
+            <p className="text-sm text-gray-600">{workOrder.customer_city}, {workOrder.customer_state}</p>
+          </div>
+          
+          <div>
+            <h3 className="text-sm font-medium text-gray-500 mb-2">Vehicle</h3>
+            <p className="text-lg font-semibold">
+              {workOrder.vehicle_year} {workOrder.vehicle_make} {workOrder.vehicle_model}
+            </p>
+            <p className="text-sm text-gray-600">VIN: {workOrder.vehicle_vin}</p>
+          </div>
+          
+          <div>
+            <h3 className="text-sm font-medium text-gray-500 mb-2">Created</h3>
+            <p className="text-lg font-semibold">
+              {new Date(workOrder.created_at).toLocaleDateString()}
+            </p>
+            <p className="text-sm text-gray-600">
+              {new Date(workOrder.created_at).toLocaleTimeString()}
+            </p>
+          </div>
+        </div>
+      </div>
+
       <WorkOrderDetailsTabs 
         workOrder={workOrder}
         timeEntries={workOrder.timeEntries || []}
         onUpdateTimeEntries={() => {}}
         inventoryItems={workOrder.inventoryItems || []}
-        notes={workOrder.notes || ''}
+        notes={workOrder.notes || workOrder.description || ''}
         onUpdateNotes={() => {}}
         jobLines={workOrder.jobLines || []}
         parts={[]}
