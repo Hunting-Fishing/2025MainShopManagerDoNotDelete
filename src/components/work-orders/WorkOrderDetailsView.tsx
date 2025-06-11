@@ -1,159 +1,136 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { WorkOrder } from '@/types/workOrder';
-import { WorkOrderJobLine } from '@/types/jobLine';
-import { WorkOrderPart } from '@/types/workOrderPart';
+
+import React from 'react';
 import { useWorkOrder } from '@/hooks/useWorkOrder';
-import { useJobLines } from '@/hooks/useJobLines';
-import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
-import { Button } from '@/components/ui/button';
-import { Pencil, Eye, Printer } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { JobLinesGrid } from './job-lines/JobLinesGrid';
-import { WorkOrderDocuments } from './details/WorkOrderDocuments';
-import { WorkOrderPartsSection } from './parts/WorkOrderPartsSection';
-import { WorkOrderDetailsTab } from './details/WorkOrderDetailsTab';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { WorkOrderDetailsActions } from './details/WorkOrderDetailsActions';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
+import { WorkOrderDetailsTabs } from './details/WorkOrderDetailsTabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface WorkOrderDetailsViewProps {
-  workOrderId?: string;
+  workOrderId: string;
 }
 
 export function WorkOrderDetailsView({ workOrderId }: WorkOrderDetailsViewProps) {
-  const navigate = useNavigate();
-  const { id } = useParams();
-  const workOrderId = workOrderId || id || '';
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [allParts, setAllParts] = useState<WorkOrderPart[]>([]);
-  const [partsLoading, setPartsLoading] = useState(false);
-  
-  const { workOrder, isLoading: workOrderLoading, error: workOrderError } = useWorkOrder(workOrderId);
-  const { jobLines, setJobLines, isLoading: jobLinesLoading, error: jobLinesError } = useJobLines(workOrderId);
+  const { workOrder, isLoading, error } = useWorkOrder(workOrderId);
 
-  // Fetch all work order parts
-  useEffect(() => {
-    if (!workOrderId) return;
-    
-    const fetchAllParts = async () => {
-      try {
-        setPartsLoading(true);
-        const parts = await getWorkOrderParts(workOrderId);
-        setAllParts(parts);
-      } catch (error) {
-        console.error('Error fetching work order parts:', error);
-      } finally {
-        setPartsLoading(false);
-      }
-    };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-lg">Loading work order details...</p>
+        </div>
+      </div>
+    );
+  }
 
-    fetchAllParts();
-  }, [workOrderId]);
+  if (error || !workOrder) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          {error?.message || 'Work order not found'}
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
-  // Handle invoice creation success
-  const handleInvoiceCreated = (invoiceId: string) => {
-    console.log('Invoice created:', invoiceId);
-    toast({
-      title: "Invoice Created",
-      description: "Work order was successfully converted to an invoice",
-    });
-    // Optionally navigate to the invoice
-    navigate(`/invoices/${invoiceId}`);
+  const handleEdit = () => {
+    // Navigate to edit page or show edit modal
+    console.log('Edit work order:', workOrderId);
   };
 
-  if (workOrderLoading || jobLinesLoading || partsLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (workOrderError || jobLinesError) {
-    return <div>Error: {workOrderError?.message || jobLinesError?.message}</div>;
-  }
-
-  if (!workOrder) {
-    return <div>Work order not found</div>;
-  }
+  const handleInvoiceCreated = (invoiceId: string) => {
+    console.log('Invoice created:', invoiceId);
+    // Handle navigation or refresh
+  };
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+      <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            Work Order {workOrder?.work_order_number || workOrder?.id}
+          <h1 className="text-3xl font-bold">
+            Work Order #{workOrder.work_order_number || workOrder.id.slice(0, 8)}
           </h1>
-          <p className="text-muted-foreground max-w-2xl">
-            {workOrder?.description || 'No description provided'}
-          </p>
+          <div className="flex items-center gap-2 mt-2">
+            <Badge variant="secondary">{workOrder.status}</Badge>
+            {workOrder.service_type && (
+              <Badge variant="outline">{workOrder.service_type}</Badge>
+            )}
+          </div>
         </div>
         
-        {workOrder && (
-          <WorkOrderDetailsActions
-            workOrder={workOrder}
-            onEdit={() => setIsEditMode(true)}
-            onInvoiceCreated={handleInvoiceCreated}
-          />
-        )}
+        <WorkOrderDetailsActions
+          workOrder={workOrder}
+          onEdit={handleEdit}
+          onInvoiceCreated={handleInvoiceCreated}
+        />
       </div>
 
-      <Tabs defaultValue="work-order">
-        <TabsList className="mb-4">
-          <TabsTrigger value="work-order">Work Order Details</TabsTrigger>
-          <TabsTrigger value="job-lines">Job Lines</TabsTrigger>
-          <TabsTrigger value="parts">Parts</TabsTrigger>
-          <TabsTrigger value="time">Time Tracking</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
-          <TabsTrigger value="communications">Communications</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="work-order">
-          <WorkOrderDetailsTab 
-            workOrder={workOrder}
-            jobLines={jobLines}
-            allParts={allParts}
-            onJobLinesChange={setJobLines}
-            isEditMode={isEditMode}
-          />
-        </TabsContent>
-
-        <TabsContent value="job-lines">
-          <JobLinesGrid 
-            workOrderId={workOrderId}
-            jobLines={jobLines}
-            onJobLinesChange={setJobLines}
-            isEditMode={isEditMode}
-          />
-        </TabsContent>
-
-        <TabsContent value="parts">
-          <WorkOrderPartsSection
-            workOrderId={workOrderId}
-            isEditMode={isEditMode}
-          />
-        </TabsContent>
-
-        <TabsContent value="time">
+      {/* Main Content */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Work Order Details */}
+        <div className="lg:col-span-2">
           <Card>
-            <CardContent className="p-6">
-              <p className="text-muted-foreground">Time tracking feature will be implemented soon.</p>
+            <CardHeader>
+              <CardTitle>Work Order Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Description</label>
+                <p className="mt-1">{workOrder.description || 'No description provided'}</p>
+              </div>
+              
+              {workOrder.total_cost && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Total Cost</label>
+                  <p className="mt-1 text-lg font-semibold">${workOrder.total_cost}</p>
+                </div>
+              )}
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Created</label>
+                  <p className="mt-1">{new Date(workOrder.created_at).toLocaleDateString()}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Last Updated</label>
+                  <p className="mt-1">{new Date(workOrder.updated_at).toLocaleDateString()}</p>
+                </div>
+              </div>
             </CardContent>
           </Card>
-        </TabsContent>
-        
-        <TabsContent value="documents">
-          <WorkOrderDocuments workOrderId={workOrderId} />
-        </TabsContent>
-        
-        <TabsContent value="communications">
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Customer Info */}
           <Card>
-            <CardContent className="p-6">
-              <p className="text-muted-foreground">Communications feature will be implemented soon.</p>
+            <CardHeader>
+              <CardTitle>Customer Information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">Customer details will be loaded here</p>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+
+          {/* Vehicle Info */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Vehicle Information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">Vehicle details will be loaded here</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Tabs Section */}
+      <WorkOrderDetailsTabs workOrder={workOrder} />
     </div>
   );
 }

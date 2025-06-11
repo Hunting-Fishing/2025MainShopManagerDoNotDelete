@@ -1,312 +1,332 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Quote, QuoteItem, QuoteFormValues, ConversionAudit } from '@/types/quote';
+import { Quote, QuoteItem, ConversionAudit, QuoteStatus, QuoteItemType } from '@/types/quote';
 
-export const getAllQuotes = async (): Promise<Quote[]> => {
-  try {
-    console.log('Fetching all quotes...');
-    
-    const { data, error } = await supabase
-      .from('quotes')
-      .select(`
-        *,
-        customers:customer_id (
-          first_name,
-          last_name,
-          email,
-          phone
-        ),
-        vehicles:vehicle_id (
-          year,
-          make,
-          model
-        )
-      `)
-      .order('created_at', { ascending: false });
+export async function getAllQuotes(): Promise<Quote[]> {
+  console.log('quoteService: Fetching all quotes...');
+  
+  const { data, error } = await supabase
+    .from('quotes')
+    .select(`
+      *,
+      customers (
+        first_name,
+        last_name,
+        email,
+        phone
+      ),
+      vehicles (
+        year,
+        make,
+        model
+      )
+    `)
+    .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching quotes:', error);
-      throw error;
-    }
-
-    console.log('Quotes fetched successfully:', data?.length);
-    
-    return data?.map(quote => ({
-      ...quote,
-      customer_name: quote.customers ? 
-        `${quote.customers.first_name} ${quote.customers.last_name}` : 
-        'Unknown Customer',
-      customer_email: quote.customers?.email || '',
-      customer_phone: quote.customers?.phone || '',
-      vehicle_year: quote.vehicles?.year?.toString() || '',
-      vehicle_make: quote.vehicles?.make || '',
-      vehicle_model: quote.vehicles?.model || ''
-    })) || [];
-  } catch (error) {
-    console.error('Error in getAllQuotes:', error);
-    throw error;
+  if (error) {
+    console.error('quoteService: Error fetching quotes:', error);
+    throw new Error(`Failed to fetch quotes: ${error.message}`);
   }
-};
 
-export const getQuoteById = async (id: string): Promise<Quote | null> => {
-  try {
-    console.log('Fetching quote by ID:', id);
-    
-    const { data, error } = await supabase
-      .from('quotes')
-      .select(`
-        *,
-        customers:customer_id (
-          first_name,
-          last_name,
-          email,
-          phone,
-          address,
-          city,
-          state,
-          postal_code
-        ),
-        vehicles:vehicle_id (
-          year,
-          make,
-          model,
-          vin,
-          license_plate
-        )
-      `)
-      .eq('id', id)
-      .single();
+  console.log('quoteService: Raw quotes data:', data);
 
-    if (error) {
-      console.error('Error fetching quote:', error);
-      throw error;
-    }
+  // Transform and type cast the data properly
+  const quotes: Quote[] = (data || []).map(quote => ({
+    id: quote.id,
+    quote_number: quote.quote_number,
+    customer_id: quote.customer_id,
+    vehicle_id: quote.vehicle_id,
+    status: quote.status as QuoteStatus,
+    subtotal: quote.subtotal || 0,
+    tax_rate: quote.tax_rate || 0,
+    tax_amount: quote.tax_amount || 0,
+    total_amount: quote.total_amount || 0,
+    expiry_date: quote.expiry_date,
+    notes: quote.notes,
+    terms_conditions: quote.terms_conditions,
+    created_by: quote.created_by,
+    created_at: quote.created_at,
+    updated_at: quote.updated_at,
+    sent_at: quote.sent_at,
+    approved_at: quote.approved_at,
+    rejected_at: quote.rejected_at,
+    converted_at: quote.converted_at,
+    converted_to_work_order_id: quote.converted_to_work_order_id,
+    // UI fields from joins
+    customer_name: quote.customers ? `${quote.customers.first_name} ${quote.customers.last_name}` : '',
+    customer_email: quote.customers?.email || '',
+    customer_phone: quote.customers?.phone || '',
+    vehicle_year: quote.vehicles?.year || '',
+    vehicle_make: quote.vehicles?.make || '',
+    vehicle_model: quote.vehicles?.model || ''
+  }));
 
-    if (!data) return null;
+  console.log('quoteService: Transformed quotes:', quotes);
+  return quotes;
+}
 
-    // Fetch quote items
-    const { data: items, error: itemsError } = await supabase
-      .from('quote_items')
-      .select('*')
-      .eq('quote_id', id)
-      .order('display_order', { ascending: true });
+export async function getQuoteById(id: string): Promise<Quote | null> {
+  console.log('quoteService: Fetching quote by ID:', id);
+  
+  const { data, error } = await supabase
+    .from('quotes')
+    .select(`
+      *,
+      customers (
+        first_name,
+        last_name,
+        email,
+        phone
+      ),
+      vehicles (
+        year,
+        make,
+        model
+      )
+    `)
+    .eq('id', id)
+    .maybeSingle();
 
-    if (itemsError) {
-      console.error('Error fetching quote items:', itemsError);
-      throw itemsError;
-    }
-
-    return {
-      ...data,
-      customer_name: data.customers ? 
-        `${data.customers.first_name} ${data.customers.last_name}` : 
-        'Unknown Customer',
-      customer_email: data.customers?.email || '',
-      customer_phone: data.customers?.phone || '',
-      vehicle_year: data.vehicles?.year?.toString() || '',
-      vehicle_make: data.vehicles?.make || '',
-      vehicle_model: data.vehicles?.model || '',
-      items: items || []
-    };
-  } catch (error) {
-    console.error('Error in getQuoteById:', error);
-    throw error;
+  if (error) {
+    console.error('quoteService: Error fetching quote:', error);
+    throw new Error(`Failed to fetch quote: ${error.message}`);
   }
-};
 
-export const createQuote = async (quoteData: QuoteFormValues): Promise<Quote | null> => {
-  try {
-    console.log('Creating quote:', quoteData);
-
-    // Calculate totals
-    const subtotal = quoteData.items.reduce((sum, item) => 
-      sum + (item.quantity * item.unit_price), 0
-    );
-    const tax_rate = 0.08;
-    const tax_amount = subtotal * tax_rate;
-    const total_amount = subtotal + tax_amount;
-
-    // Create quote
-    const { data: quote, error: quoteError } = await supabase
-      .from('quotes')
-      .insert({
-        customer_id: quoteData.customer_id,
-        vehicle_id: quoteData.vehicle_id || null,
-        subtotal,
-        tax_rate,
-        tax_amount,
-        total_amount,
-        expiry_date: quoteData.expiry_date || null,
-        notes: quoteData.notes || null,
-        terms_conditions: quoteData.terms_conditions || null,
-        status: 'draft'
-      })
-      .select()
-      .single();
-
-    if (quoteError) {
-      console.error('Error creating quote:', quoteError);
-      throw quoteError;
-    }
-
-    // Create quote items
-    if (quoteData.items.length > 0) {
-      const items = quoteData.items.map((item, index) => ({
-        quote_id: quote.id,
-        name: item.name,
-        description: item.description || null,
-        category: item.category || null,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        total_price: item.quantity * item.unit_price,
-        item_type: item.item_type,
-        display_order: index
-      }));
-
-      const { error: itemsError } = await supabase
-        .from('quote_items')
-        .insert(items);
-
-      if (itemsError) {
-        console.error('Error creating quote items:', itemsError);
-        throw itemsError;
-      }
-    }
-
-    console.log('Quote created successfully:', quote.id);
-    return await getQuoteById(quote.id);
-  } catch (error) {
-    console.error('Error in createQuote:', error);
-    throw error;
+  if (!data) {
+    console.log('quoteService: Quote not found');
+    return null;
   }
-};
 
-export const updateQuoteStatus = async (
-  id: string, 
-  status: Quote['status']
-): Promise<Quote | null> => {
-  try {
-    console.log('Updating quote status:', id, status);
-    
-    const updateData: any = { status };
-    
-    // Set timestamp fields based on status
-    if (status === 'sent') updateData.sent_at = new Date().toISOString();
-    if (status === 'approved') updateData.approved_at = new Date().toISOString();
-    if (status === 'rejected') updateData.rejected_at = new Date().toISOString();
+  console.log('quoteService: Quote data:', data);
 
-    const { error } = await supabase
-      .from('quotes')
-      .update(updateData)
-      .eq('id', id);
+  // Transform the data properly
+  const quote: Quote = {
+    id: data.id,
+    quote_number: data.quote_number,
+    customer_id: data.customer_id,
+    vehicle_id: data.vehicle_id,
+    status: data.status as QuoteStatus,
+    subtotal: data.subtotal || 0,
+    tax_rate: data.tax_rate || 0,
+    tax_amount: data.tax_amount || 0,
+    total_amount: data.total_amount || 0,
+    expiry_date: data.expiry_date,
+    notes: data.notes,
+    terms_conditions: data.terms_conditions,
+    created_by: data.created_by,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+    sent_at: data.sent_at,
+    approved_at: data.approved_at,
+    rejected_at: data.rejected_at,
+    converted_at: data.converted_at,
+    converted_to_work_order_id: data.converted_to_work_order_id,
+    // UI fields from joins
+    customer_name: data.customers ? `${data.customers.first_name} ${data.customers.last_name}` : '',
+    customer_email: data.customers?.email || '',
+    customer_phone: data.customers?.phone || '',
+    vehicle_year: data.vehicles?.year || '',
+    vehicle_make: data.vehicles?.make || '',
+    vehicle_model: data.vehicles?.model || ''
+  };
 
-    if (error) {
-      console.error('Error updating quote status:', error);
-      throw error;
-    }
+  return quote;
+}
 
-    console.log('Quote status updated successfully');
-    return await getQuoteById(id);
-  } catch (error) {
-    console.error('Error in updateQuoteStatus:', error);
-    throw error;
+export async function getQuoteItems(quoteId: string): Promise<QuoteItem[]> {
+  console.log('quoteService: Fetching quote items for quote:', quoteId);
+  
+  const { data, error } = await supabase
+    .from('quote_items')
+    .select('*')
+    .eq('quote_id', quoteId)
+    .order('display_order', { ascending: true });
+
+  if (error) {
+    console.error('quoteService: Error fetching quote items:', error);
+    throw new Error(`Failed to fetch quote items: ${error.message}`);
   }
-};
 
-export const convertQuoteToWorkOrder = async (
-  quoteId: string,
-  notes?: string
-): Promise<string> => {
-  try {
-    console.log('Converting quote to work order:', quoteId);
-    
-    const { data, error } = await supabase.rpc('convert_quote_to_work_order', {
-      p_quote_id: quoteId,
-      p_converted_by: 'current-user', // Replace with actual user ID
-      p_notes: notes || null
-    });
+  // Type cast the items properly
+  const items: QuoteItem[] = (data || []).map(item => ({
+    id: item.id,
+    quote_id: item.quote_id,
+    name: item.name,
+    description: item.description,
+    category: item.category,
+    quantity: item.quantity,
+    unit_price: item.unit_price,
+    total_price: item.total_price,
+    item_type: item.item_type as QuoteItemType,
+    display_order: item.display_order,
+    created_at: item.created_at,
+    updated_at: item.updated_at
+  }));
 
-    if (error) {
-      console.error('Error converting quote to work order:', error);
-      throw error;
-    }
+  console.log('quoteService: Quote items:', items);
+  return items;
+}
 
-    console.log('Quote converted to work order successfully:', data);
-    return data;
-  } catch (error) {
-    console.error('Error in convertQuoteToWorkOrder:', error);
-    throw error;
+export async function updateQuoteStatus(id: string, status: QuoteStatus): Promise<Quote | null> {
+  console.log('quoteService: Updating quote status:', id, status);
+  
+  const updateData: any = {
+    status,
+    updated_at: new Date().toISOString()
+  };
+
+  // Set status-specific timestamps
+  switch (status) {
+    case 'sent':
+      updateData.sent_at = new Date().toISOString();
+      break;
+    case 'approved':
+      updateData.approved_at = new Date().toISOString();
+      break;
+    case 'rejected':
+      updateData.rejected_at = new Date().toISOString();
+      break;
   }
-};
 
-export const convertWorkOrderToInvoice = async (
-  workOrderId: string,
-  notes?: string
-): Promise<string> => {
-  try {
-    console.log('Converting work order to invoice:', workOrderId);
-    
-    const { data, error } = await supabase.rpc('convert_work_order_to_invoice', {
-      p_work_order_id: workOrderId,
-      p_converted_by: 'current-user', // Replace with actual user ID
-      p_notes: notes || null
-    });
+  const { data, error } = await supabase
+    .from('quotes')
+    .update(updateData)
+    .eq('id', id)
+    .select(`
+      *,
+      customers (
+        first_name,
+        last_name,
+        email,
+        phone
+      ),
+      vehicles (
+        year,
+        make,
+        model
+      )
+    `)
+    .maybeSingle();
 
-    if (error) {
-      console.error('Error converting work order to invoice:', error);
-      throw error;
-    }
-
-    console.log('Work order converted to invoice successfully:', data);
-    return data;
-  } catch (error) {
-    console.error('Error in convertWorkOrderToInvoice:', error);
-    throw error;
+  if (error) {
+    console.error('quoteService: Error updating quote status:', error);
+    throw new Error(`Failed to update quote status: ${error.message}`);
   }
-};
 
-export const getConversionHistory = async (
-  sourceType: 'quote' | 'work_order',
-  sourceId: string
-): Promise<ConversionAudit[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('conversion_audit')
-      .select('*')
-      .eq('source_type', sourceType)
-      .eq('source_id', sourceId)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching conversion history:', error);
-      throw error;
-    }
-
-    return data || [];
-  } catch (error) {
-    console.error('Error in getConversionHistory:', error);
-    throw error;
+  if (!data) {
+    return null;
   }
-};
 
-export const deleteQuote = async (id: string): Promise<boolean> => {
-  try {
-    console.log('Deleting quote:', id);
-    
-    const { error } = await supabase
-      .from('quotes')
-      .delete()
-      .eq('id', id);
+  // Transform the data properly
+  const quote: Quote = {
+    id: data.id,
+    quote_number: data.quote_number,
+    customer_id: data.customer_id,
+    vehicle_id: data.vehicle_id,
+    status: data.status as QuoteStatus,
+    subtotal: data.subtotal || 0,
+    tax_rate: data.tax_rate || 0,
+    tax_amount: data.tax_amount || 0,
+    total_amount: data.total_amount || 0,
+    expiry_date: data.expiry_date,
+    notes: data.notes,
+    terms_conditions: data.terms_conditions,
+    created_by: data.created_by,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+    sent_at: data.sent_at,
+    approved_at: data.approved_at,
+    rejected_at: data.rejected_at,
+    converted_at: data.converted_at,
+    converted_to_work_order_id: data.converted_to_work_order_id,
+    // UI fields from joins
+    customer_name: data.customers ? `${data.customers.first_name} ${data.customers.last_name}` : '',
+    customer_email: data.customers?.email || '',
+    customer_phone: data.customers?.phone || '',
+    vehicle_year: data.vehicles?.year || '',
+    vehicle_make: data.vehicles?.make || '',
+    vehicle_model: data.vehicles?.model || ''
+  };
 
-    if (error) {
-      console.error('Error deleting quote:', error);
-      throw error;
-    }
+  console.log('quoteService: Updated quote:', quote);
+  return quote;
+}
 
-    console.log('Quote deleted successfully');
-    return true;
-  } catch (error) {
-    console.error('Error in deleteQuote:', error);
-    return false;
+export async function convertQuoteToWorkOrder(quoteId: string, notes?: string): Promise<string> {
+  console.log('quoteService: Converting quote to work order:', quoteId);
+  
+  // Get current user ID (you may need to adjust this based on your auth setup)
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    throw new Error('User not authenticated');
   }
-};
+
+  const { data, error } = await supabase.rpc('convert_quote_to_work_order', {
+    p_quote_id: quoteId,
+    p_converted_by: user.id,
+    p_notes: notes || null
+  });
+
+  if (error) {
+    console.error('quoteService: Error converting quote to work order:', error);
+    throw new Error(`Failed to convert quote to work order: ${error.message}`);
+  }
+
+  console.log('quoteService: Work order created:', data);
+  return data; // This should be the new work order ID
+}
+
+export async function convertWorkOrderToInvoice(workOrderId: string, notes?: string): Promise<string> {
+  console.log('quoteService: Converting work order to invoice:', workOrderId);
+  
+  // Get current user ID
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    throw new Error('User not authenticated');
+  }
+
+  const { data, error } = await supabase.rpc('convert_work_order_to_invoice', {
+    p_work_order_id: workOrderId,
+    p_converted_by: user.id,
+    p_notes: notes || null
+  });
+
+  if (error) {
+    console.error('quoteService: Error converting work order to invoice:', error);
+    throw new Error(`Failed to convert work order to invoice: ${error.message}`);
+  }
+
+  console.log('quoteService: Invoice created:', data);
+  return data; // This should be the new invoice ID
+}
+
+export async function getConversionAudit(): Promise<ConversionAudit[]> {
+  console.log('quoteService: Fetching conversion audit records...');
+  
+  const { data, error } = await supabase
+    .from('conversion_audit')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('quoteService: Error fetching conversion audit:', error);
+    throw new Error(`Failed to fetch conversion audit: ${error.message}`);
+  }
+
+  // Type cast the audit records properly
+  const auditRecords: ConversionAudit[] = (data || []).map(record => ({
+    id: record.id,
+    source_type: record.source_type as 'quote' | 'work_order',
+    source_id: record.source_id,
+    target_type: record.target_type as 'work_order' | 'invoice',
+    target_id: record.target_id,
+    converted_by: record.converted_by,
+    conversion_notes: record.conversion_notes,
+    created_at: record.created_at
+  }));
+
+  console.log('quoteService: Conversion audit records:', auditRecords);
+  return auditRecords;
+}

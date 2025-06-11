@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { WorkOrder } from '@/types/workOrder';
 import { ConvertToInvoiceButton } from '../ConvertToInvoiceButton';
-import { Edit, Print, Share } from 'lucide-react';
+import { Edit, Printer, Share } from 'lucide-react';
 
 interface WorkOrderDetailsActionsProps {
   workOrder: WorkOrder;
@@ -28,7 +28,7 @@ export function WorkOrderDetailsActions({
       </Button>
       
       <Button variant="outline" size="sm">
-        <Print className="h-4 w-4 mr-2" />
+        <Printer className="h-4 w-4 mr-2" />
         Print
       </Button>
       
