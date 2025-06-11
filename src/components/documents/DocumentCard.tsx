@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,13 +8,19 @@ import { Download, Eye, FileText, Image, Link, ExternalLink } from 'lucide-react
 
 interface DocumentCardProps {
   document: Document;
+  onClick?: (document: Document) => void;
   onView?: (document: Document) => void;
+  onEdit?: (document: Document) => void;
+  onDelete?: (document: Document) => void;
   onDownload?: (document: Document) => void;
 }
 
 export const DocumentCard: React.FC<DocumentCardProps> = ({
   document,
+  onClick,
   onView,
+  onEdit,
+  onDelete,
   onDownload
 }) => {
   const getIconForType = (type: string) => {
@@ -37,6 +42,9 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
     if (onView) {
       onView(document);
     }
+    if (onClick) {
+      onClick(document);
+    }
     // Log the access with proper parameters
     DocumentService.logAccess(
       document.id, 
@@ -57,6 +65,18 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
       'current_user_id', 
       'Current User'
     );
+  };
+
+  const handleEdit = () => {
+    if (onEdit) {
+      onEdit(document);
+    }
+  };
+
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete(document);
+    }
   };
 
   return (
@@ -111,6 +131,26 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
               <Download className="h-4 w-4 mr-1" />
               Download
             </Button>
+
+            {onEdit && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleEdit}
+              >
+                Edit
+              </Button>
+            )}
+
+            {onDelete && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDelete}
+              >
+                Delete
+              </Button>
+            )}
           </div>
         </div>
       </CardContent>

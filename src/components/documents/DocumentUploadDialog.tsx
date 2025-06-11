@@ -1,133 +1,88 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { useDocumentCategories } from '@/hooks/useDocumentCategories';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { Document, DocumentCategory } from '@/types/document';
 import { DocumentService } from '@/services/documentService';
-import { CreateDocumentData } from '@/types/document';
-import { Upload } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
 
 interface DocumentUploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onDocumentCreated: (documentData: CreateDocumentData) => Promise<void>;
-  workOrderId?: string;
-  customerId?: string;
+  onDocumentUploaded: (document: Document) => void;
+  categories: DocumentCategory[];
 }
 
-export function DocumentUploadDialog({
+export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
   open,
   onOpenChange,
-  onDocumentCreated,
-  workOrderId,
-  customerId,
-}: DocumentUploadDialogProps) {
+  onDocumentUploaded,
+  categories
+}) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [categoryId, setCategoryId] = useState('');
-  const [documentType, setDocumentType] = useState<'pdf' | 'image' | 'weblink' | 'internal_link'>('pdf');
-  const [isPublic, setIsPublic] = useState(false);
   const [file, setFile] = useState<File | null>(null);
-  const [webUrl, setWebUrl] = useState('');
+  const [categoryId, setCategoryId] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-
-  const { categories } = useDocumentCategories();
+  const { toast } = useToast();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      setFile(selectedFile);
-      if (!title) {
-        setTitle(selectedFile.name.replace(/\.[^/.]+$/, ''));
-      }
-      // Auto-detect document type
-      if (selectedFile.type.includes('pdf')) {
-        setDocumentType('pdf');
-      } else if (selectedFile.type.includes('image')) {
-        setDocumentType('image');
-      }
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!title.trim()) {
+    if (!file) {
       toast({
-        title: "Error",
-        description: "Please enter a title",
+        title: "No file selected",
+        description: "Please select a file to upload",
         variant: "destructive",
       });
       return;
     }
-
-    if (documentType !== 'weblink' && documentType !== 'internal_link' && !file) {
-      toast({
-        title: "Error",
-        description: "Please select a file",
-        variant: "destructive",
-      });
-      return;
-    }
-
+    
     setIsUploading(true);
+    
     try {
-      let fileUrl = '';
-      let filePath = '';
-      let fileSize = 0;
-      let mimeType = '';
-
-      if (file && (documentType === 'pdf' || documentType === 'image')) {
-        fileUrl = await DocumentService.uploadFile(file, `uploads/${Date.now()}_${file.name}`);
-        filePath = `uploads/${Date.now()}_${file.name}`;
-        fileSize = file.size;
-        mimeType = file.type;
-      } else if (documentType === 'weblink') {
-        fileUrl = webUrl;
-      }
-
-      const documentData: CreateDocumentData = {
-        title: title.trim(),
-        description: description.trim() || undefined,
-        document_type: documentType,
-        file_path: filePath || undefined,
-        file_url: fileUrl || undefined,
-        file_size: fileSize || undefined,
-        mime_type: mimeType || undefined,
-        category_id: categoryId || undefined,
-        work_order_id: workOrderId,
-        customer_id: customerId,
-        is_public: isPublic,
-        created_by: 'current-user-id', // TODO: Get from auth context
-        created_by_name: 'Current User', // TODO: Get from auth context
-      };
-
-      await onDocumentCreated(documentData);
+      const documentType = file.type.startsWith('image/') ? 'image' : 'pdf';
       
-      // Reset form
-      setTitle('');
-      setDescription('');
-      setCategoryId('');
-      setDocumentType('pdf');
-      setIsPublic(false);
-      setFile(null);
-      setWebUrl('');
-      onOpenChange(false);
-
-      toast({
-        title: "Success",
-        description: "Document uploaded successfully",
+      // Upload the file first
+      const uploadResult = await DocumentService.uploadFile(file);
+      
+      // Create the document record
+      const document = await DocumentService.createDocument({
+        title,
+        description: description || undefined,
+        document_type: documentType,
+        file_path: uploadResult.path,
+        file_size: file.size,
+        mime_type: file.type,
+        category_id: categoryId || undefined,
+        tags,
+        created_by: 'current_user_id',
+        created_by_name: 'Current User'
       });
-    } catch (error) {
-      console.error('Error creating document:', error);
+      
       toast({
-        title: "Error",
-        description: "Failed to upload document",
+        title: "Document uploaded",
+        description: "The document was uploaded successfully",
+      });
+      
+      onDocumentUploaded(document);
+      resetForm();
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error uploading document:", error);
+      toast({
+        title: "Upload failed",
+        description: "There was a problem uploading the document",
         variant: "destructive",
       });
     } finally {
@@ -135,86 +90,53 @@ export function DocumentUploadDialog({
     }
   };
 
+  const resetForm = () => {
+    setTitle('');
+    setDescription('');
+    setFile(null);
+    setCategoryId('');
+    setTags([]);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Upload Document</DialogTitle>
+          <DialogDescription>
+            Upload a new document to the system
+          </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="title">Title</Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Document title"
-              required
+            <Input 
+              id="title" 
+              value={title} 
+              onChange={(e) => setTitle(e.target.value)} 
+              required 
+              className="mt-1"
             />
           </div>
-
+          
           <div>
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Optional description"
-              rows={3}
+              className="mt-1"
             />
           </div>
-
-          <div>
-            <Label htmlFor="document-type">Document Type</Label>
-            <Select value={documentType} onValueChange={(value: any) => setDocumentType(value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select document type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pdf">PDF Document</SelectItem>
-                <SelectItem value="image">Image</SelectItem>
-                <SelectItem value="weblink">Web Link</SelectItem>
-                <SelectItem value="internal_link">Internal Link</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {(documentType === 'pdf' || documentType === 'image') && (
-            <div>
-              <Label htmlFor="file">File</Label>
-              <Input
-                id="file"
-                type="file"
-                onChange={handleFileChange}
-                accept={documentType === 'pdf' ? '.pdf' : 'image/*'}
-                required
-              />
-            </div>
-          )}
-
-          {documentType === 'weblink' && (
-            <div>
-              <Label htmlFor="web-url">Web URL</Label>
-              <Input
-                id="web-url"
-                type="url"
-                value={webUrl}
-                onChange={(e) => setWebUrl(e.target.value)}
-                placeholder="https://example.com"
-                required
-              />
-            </div>
-          )}
-
+          
           <div>
             <Label htmlFor="category">Category</Label>
             <Select value={categoryId} onValueChange={setCategoryId}>
-              <SelectTrigger>
+              <SelectTrigger className="mt-1">
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No category</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name}
@@ -223,33 +145,38 @@ export function DocumentUploadDialog({
               </SelectContent>
             </Select>
           </div>
-
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="is-public"
-              checked={isPublic}
-              onCheckedChange={setIsPublic}
+          
+          <div>
+            <Label htmlFor="file">Select File</Label>
+            <Input 
+              id="file" 
+              type="file" 
+              onChange={handleFileChange} 
+              className="mt-1"
+              accept=".pdf,image/*"
             />
-            <Label htmlFor="is-public">Make this document public</Label>
+            {file && (
+              <p className="text-sm text-gray-500 mt-1">
+                Selected: {file.name} ({(file.size / 1024).toFixed(2)} KB)
+              </p>
+            )}
           </div>
-
-          <div className="flex justify-end space-x-2">
-            <Button
-              type="button"
-              variant="outline"
+          
+          <DialogFooter>
+            <Button 
+              type="button" 
+              variant="outline" 
               onClick={() => onOpenChange(false)}
+              disabled={isUploading}
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={!title.trim() || isUploading}
-            >
-              {isUploading ? 'Uploading...' : 'Upload'}
+            <Button type="submit" disabled={isUploading || !title}>
+              {isUploading ? "Uploading..." : "Upload"}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
   );
-}
+};
