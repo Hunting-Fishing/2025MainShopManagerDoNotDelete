@@ -84,7 +84,7 @@ export function UnifiedPartEntryForm({
         </TabsList>
 
         <TabsContent value="basic" className="space-y-4">
-          <Card>
+          <Card className="bg-sky-300">
             <CardHeader>
               <CardTitle>Part Information</CardTitle>
             </CardHeader>
