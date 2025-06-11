@@ -39,8 +39,16 @@ export const useWorkOrderPreferences = () => {
       if (error) throw error;
 
       // Check if user has work order preferences set
-      if (data?.notification_preferences?.work_order_preferences) {
-        setPreferences(data.notification_preferences.work_order_preferences);
+      const notificationPrefs = data?.notification_preferences;
+      if (notificationPrefs && typeof notificationPrefs === 'object' && notificationPrefs !== null) {
+        const workOrderPrefs = (notificationPrefs as any).work_order_preferences;
+        if (workOrderPrefs && typeof workOrderPrefs === 'object') {
+          setPreferences(workOrderPrefs as WorkOrderPreferences);
+        } else {
+          // Apply role-based defaults
+          const roleBasedDefaults = getRoleBasedDefaults(data?.job_title);
+          setPreferences({ ...DEFAULT_PREFERENCES, ...roleBasedDefaults });
+        }
       } else {
         // Apply role-based defaults
         const roleBasedDefaults = getRoleBasedDefaults(data?.job_title);
