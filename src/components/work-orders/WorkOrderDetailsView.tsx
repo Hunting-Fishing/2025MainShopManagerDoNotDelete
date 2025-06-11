@@ -1,11 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import { useWorkOrder } from '@/hooks/useWorkOrder';
-import { useWorkOrderPreferences } from '@/hooks/useWorkOrderPreferences';
 import { useJobLines } from '@/hooks/useJobLines';
-import { WorkOrderEditForm } from './WorkOrderEditForm';
 import { WorkOrderDetailsTabs } from './details/WorkOrderDetailsTabs';
+import { WorkOrderEditForm } from './WorkOrderEditForm';
 import { WorkOrderPageLayout } from './WorkOrderPageLayout';
+import { WorkOrderOverviewHeader } from './details/WorkOrderOverviewHeader';
 import { Button } from '@/components/ui/button';
 import { Edit, Eye, ArrowLeft } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -17,9 +18,10 @@ export function WorkOrderDetailsView() {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const navigate = useNavigate();
-  const { preferences, shouldAutoEdit } = useWorkOrderPreferences();
   
   const isEditRoute = location.pathname.includes('/edit');
+  const shouldAutoEdit = () => location.state?.autoEdit === true;
+  
   const [isEditMode, setIsEditMode] = useState(isEditRoute || shouldAutoEdit());
   const [timeEntries, setTimeEntries] = useState<any[]>([]);
   const [notes, setNotes] = useState<string>('');
@@ -49,70 +51,60 @@ export function WorkOrderDetailsView() {
   useEffect(() => {
     if (isEditRoute) {
       setIsEditMode(true);
-    } else if (shouldAutoEdit()) {
-      setIsEditMode(true);
     }
-  }, [isEditRoute, shouldAutoEdit]);
+  }, [isEditRoute]);
 
-  const handleEditToggle = () => {
+  const handleToggleEditMode = () => {
     if (isEditMode) {
       navigate(`/work-orders/${id}`);
-      setIsEditMode(false);
     } else {
       navigate(`/work-orders/${id}/edit`);
-      setIsEditMode(true);
     }
-  };
-
-  const handleUpdateTimeEntries = (updatedEntries: any[]) => {
-    setTimeEntries(updatedEntries);
   };
 
   const handleUpdateNotes = (updatedNotes: string) => {
     setNotes(updatedNotes);
   };
 
-  const handleJobLinesChange = (updatedJobLines: any[]) => {
-    // Handle job lines changes if needed
-    console.log('Job lines changed:', updatedJobLines);
+  const handleUpdateTimeEntries = (updatedEntries: any[]) => {
+    setTimeEntries(updatedEntries);
   };
 
-  const handleCancelEdit = () => {
-    navigate(`/work-orders/${id}`);
-    setIsEditMode(false);
+  const handleJobLinesChange = (updatedJobLines: any[]) => {
+    // Handle job lines changes if needed
+    console.log('Job lines updated:', updatedJobLines);
+  };
+
+  const handleCancel = () => {
+    if (isEditRoute) {
+      navigate(`/work-orders/${id}`);
+    } else {
+      navigate('/work-orders');
+    }
   };
 
   const handleSave = () => {
-    // Save logic here
-    console.log('Saving work order...');
+    // Handle save logic
+    console.log('Saving work order changes...');
     navigate(`/work-orders/${id}`);
-    setIsEditMode(false);
   };
 
-  if (isLoading) {
+  if (isLoading || jobLinesLoading) {
     return (
-      <WorkOrderPageLayout 
-        title="Loading Work Order..." 
-        backLink="/work-orders"
-      >
-        <div className="space-y-6">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-48 w-full" />
-          <Skeleton className="h-96 w-full" />
-        </div>
-      </WorkOrderPageLayout>
+      <div className="container mx-auto py-6 space-y-6">
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-48 w-full" />
+        <Skeleton className="h-96 w-full" />
+      </div>
     );
   }
 
   if (error || !workOrder) {
     return (
-      <WorkOrderPageLayout 
-        title="Work Order Not Found" 
-        backLink="/work-orders"
-      >
+      <div className="container mx-auto py-6">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Work Order Not Found</h2>
-          <p className="text-gray-600 mb-4">The work order you're looking for could not be found.</p>
+          <p className="text-gray-600 mb-4">Unable to load work order details.</p>
           <Button asChild>
             <Link to="/work-orders">
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -120,9 +112,24 @@ export function WorkOrderDetailsView() {
             </Link>
           </Button>
         </div>
-      </WorkOrderPageLayout>
+      </div>
     );
   }
+
+  // Extract all parts from job lines
+  const allPartsFromJobLines = jobLines.reduce((acc: WorkOrderPart[], jobLine) => {
+    if (jobLine.parts && jobLine.parts.length > 0) {
+      return [...acc, ...jobLine.parts];
+    }
+    return acc;
+  }, []);
+
+  // Combine standalone parts with parts from job lines
+  const allParts = [...workOrderParts, ...allPartsFromJobLines];
+
+  console.log('WorkOrderDetailsView - jobLines with parts:', jobLines);
+  console.log('WorkOrderDetailsView - allParts:', allParts);
+  console.log('WorkOrderDetailsView - workOrder data:', workOrder);
 
   if (isEditMode) {
     return (
@@ -130,52 +137,45 @@ export function WorkOrderDetailsView() {
         workOrderId={id!}
         timeEntries={timeEntries}
         onUpdateTimeEntries={handleUpdateTimeEntries}
-        onCancel={handleCancelEdit}
+        onCancel={handleCancel}
         onSave={handleSave}
       />
     );
   }
 
-  console.log('WorkOrderDetailsView - passing jobLines:', jobLines);
-  console.log('WorkOrderDetailsView - passing workOrderParts:', workOrderParts);
-
   return (
     <WorkOrderPageLayout 
       title={`Work Order #${workOrder.work_order_number || workOrder.id?.slice(-8)}`}
-      description={workOrder.description}
-      backLink="/work-orders"
       actions={
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={handleEditToggle}
-          >
-            <Edit className="mr-2 h-4 w-4" />
-            Edit
-          </Button>
-          <Button
-            variant="default"
-            onClick={handleEditToggle}
-          >
-            <Eye className="mr-2 h-4 w-4" />
-            View
-          </Button>
-        </div>
+        <Button onClick={handleToggleEditMode} className="flex items-center gap-2">
+          <Edit className="h-4 w-4" />
+          Edit Work Order
+        </Button>
       }
     >
-      <WorkOrderDetailsTabs 
-        workOrder={workOrder}
-        timeEntries={timeEntries}
-        onUpdateTimeEntries={handleUpdateTimeEntries}
-        inventoryItems={workOrder.inventoryItems || []}
-        notes={notes}
-        onUpdateNotes={handleUpdateNotes}
-        jobLines={jobLines || []}
-        parts={workOrderParts}
-        onJobLinesChange={handleJobLinesChange}
-        jobLinesLoading={jobLinesLoading}
-        isEditMode={false}
-      />
+      <div className="space-y-6">
+        {/* Work Order Overview Header */}
+        <WorkOrderOverviewHeader 
+          workOrder={workOrder}
+          jobLines={jobLines || []}
+          allParts={allParts}
+        />
+
+        {/* Work Order Details Tabs */}
+        <WorkOrderDetailsTabs 
+          workOrder={workOrder}
+          timeEntries={timeEntries}
+          onUpdateTimeEntries={handleUpdateTimeEntries}
+          inventoryItems={workOrder.inventoryItems || []}
+          notes={notes}
+          onUpdateNotes={handleUpdateNotes}
+          jobLines={jobLines || []}
+          parts={workOrderParts}
+          onJobLinesChange={handleJobLinesChange}
+          jobLinesLoading={jobLinesLoading}
+          isEditMode={false}
+        />
+      </div>
     </WorkOrderPageLayout>
   );
 }
