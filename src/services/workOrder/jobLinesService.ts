@@ -29,6 +29,42 @@ export const getWorkOrderJobLines = async (workOrderId: string): Promise<WorkOrd
   })) || [];
 };
 
+export const updateWorkOrderJobLine = async (
+  jobLineId: string,
+  updates: Partial<Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>>
+): Promise<boolean> => {
+  try {
+    console.log('Updating job line with ID:', jobLineId, 'and data:', updates);
+    
+    const { error } = await supabase
+      .from('work_order_job_lines')
+      .update({
+        name: updates.name,
+        category: updates.category,
+        subcategory: updates.subcategory,
+        description: updates.description,
+        estimated_hours: updates.estimatedHours,
+        labor_rate: updates.laborRate,
+        total_amount: updates.totalAmount,
+        status: updates.status,
+        notes: updates.notes, // Make sure notes are included in the update
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', jobLineId);
+
+    if (error) {
+      console.error('Database error updating job line:', error);
+      throw error;
+    }
+
+    console.log('Job line updated successfully in database');
+    return true;
+  } catch (error) {
+    console.error('Error updating work order job line:', error);
+    return false;
+  }
+};
+
 export const saveWorkOrderJobLines = async (
   workOrderId: string, 
   jobLines: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>[]
