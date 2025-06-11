@@ -1,10 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { WorkOrder } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
+import { WorkOrderPart } from '@/types/workOrderPart';
 import { useWorkOrder } from '@/hooks/useWorkOrder';
 import { useJobLines } from '@/hooks/useJobLines';
+import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
 import { Button } from '@/components/ui/button';
 import { Pencil, Eye, Printer } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -23,10 +25,32 @@ export function WorkOrderDetailsView({ workOrderId: workOrderIdProp }: WorkOrder
   const { id } = useParams();
   const workOrderId = workOrderIdProp || id || '';
   const [isEditMode, setIsEditMode] = useState(false);
+  const [allParts, setAllParts] = useState<WorkOrderPart[]>([]);
+  const [partsLoading, setPartsLoading] = useState(false);
+  
   const { workOrder, isLoading: workOrderLoading, error: workOrderError } = useWorkOrder(workOrderId);
   const { jobLines, setJobLines, isLoading: jobLinesLoading, error: jobLinesError } = useJobLines(workOrderId);
 
-  if (workOrderLoading || jobLinesLoading) {
+  // Fetch all work order parts
+  useEffect(() => {
+    if (!workOrderId) return;
+    
+    const fetchAllParts = async () => {
+      try {
+        setPartsLoading(true);
+        const parts = await getWorkOrderParts(workOrderId);
+        setAllParts(parts);
+      } catch (error) {
+        console.error('Error fetching work order parts:', error);
+      } finally {
+        setPartsLoading(false);
+      }
+    };
+
+    fetchAllParts();
+  }, [workOrderId]);
+
+  if (workOrderLoading || jobLinesLoading || partsLoading) {
     return <div>Loading...</div>;
   }
 
@@ -90,6 +114,7 @@ export function WorkOrderDetailsView({ workOrderId: workOrderIdProp }: WorkOrder
           <WorkOrderDetailsTab 
             workOrder={workOrder}
             jobLines={jobLines}
+            allParts={allParts}
             onJobLinesChange={setJobLines}
             isEditMode={isEditMode}
           />

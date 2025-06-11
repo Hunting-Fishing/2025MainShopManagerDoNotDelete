@@ -2,12 +2,15 @@
 import React from 'react';
 import { WorkOrder } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
+import { WorkOrderPart } from '@/types/workOrderPart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { JobLinesWithPartsDisplay } from './JobLinesWithPartsDisplay';
+import { WorkOrderOverviewHeader } from './WorkOrderOverviewHeader';
 
 interface WorkOrderDetailsTabProps {
   workOrder: WorkOrder;
   jobLines: WorkOrderJobLine[];
+  allParts: WorkOrderPart[];
   onJobLinesChange: (jobLines: WorkOrderJobLine[]) => void;
   isEditMode: boolean;
 }
@@ -15,11 +18,19 @@ interface WorkOrderDetailsTabProps {
 export function WorkOrderDetailsTab({
   workOrder,
   jobLines,
+  allParts,
   onJobLinesChange,
   isEditMode
 }: WorkOrderDetailsTabProps) {
   return (
     <div className="space-y-6">
+      {/* Comprehensive Overview Header */}
+      <WorkOrderOverviewHeader 
+        workOrder={workOrder}
+        jobLines={jobLines}
+        allParts={allParts}
+      />
+
       {/* Work Order Summary */}
       <Card>
         <CardHeader>
