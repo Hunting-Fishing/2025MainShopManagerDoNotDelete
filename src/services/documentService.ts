@@ -37,7 +37,8 @@ export class DocumentService {
     if (error) throw error;
     return (data || []).map(doc => ({
       ...doc,
-      document_type: doc.document_type as 'pdf' | 'image' | 'weblink' | 'internal_link'
+      document_type: doc.document_type as 'pdf' | 'image' | 'weblink' | 'internal_link',
+      metadata: (typeof doc.metadata === 'object' && doc.metadata !== null) ? doc.metadata as Record<string, any> : {}
     }));
   }
 
@@ -51,7 +52,8 @@ export class DocumentService {
     if (error) throw error;
     return {
       ...data,
-      document_type: data.document_type as 'pdf' | 'image' | 'weblink' | 'internal_link'
+      document_type: data.document_type as 'pdf' | 'image' | 'weblink' | 'internal_link',
+      metadata: (typeof data.metadata === 'object' && data.metadata !== null) ? data.metadata as Record<string, any> : {}
     };
   }
 
@@ -65,7 +67,8 @@ export class DocumentService {
     if (error) throw error;
     return {
       ...data,
-      document_type: data.document_type as 'pdf' | 'image' | 'weblink' | 'internal_link'
+      document_type: data.document_type as 'pdf' | 'image' | 'weblink' | 'internal_link',
+      metadata: (typeof data.metadata === 'object' && data.metadata !== null) ? data.metadata as Record<string, any> : {}
     };
   }
 
@@ -101,7 +104,8 @@ export class DocumentService {
     if (error) throw error;
     return {
       ...data,
-      document_type: data.document_type as 'pdf' | 'image' | 'weblink' | 'internal_link'
+      document_type: data.document_type as 'pdf' | 'image' | 'weblink' | 'internal_link',
+      metadata: (typeof data.metadata === 'object' && data.metadata !== null) ? data.metadata as Record<string, any> : {}
     };
   }
 
