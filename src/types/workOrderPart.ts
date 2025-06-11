@@ -49,11 +49,14 @@ export interface WorkOrderPart {
 }
 
 export interface WorkOrderPartFormValues {
+  // Required base properties
   part_number: string;
   name: string;
+  unit_price: number;
+  
+  // Optional base properties
   description?: string;
   quantity: number;
-  unit_price: number;
   job_line_id?: string;
   notes?: string;
   status?: string;

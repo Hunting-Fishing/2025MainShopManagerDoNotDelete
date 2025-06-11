@@ -21,7 +21,48 @@ export async function getJobLineParts(jobLineId: string): Promise<WorkOrderPart[
     }
 
     console.log('getJobLineParts: Successfully fetched parts:', data?.length || 0);
-    return data || [];
+    
+    // Map database fields to interface
+    return (data || []).map(part => ({
+      id: part.id,
+      work_order_id: part.work_order_id,
+      job_line_id: part.job_line_id,
+      part_number: part.part_number,
+      name: part.name || part.part_name || '',
+      description: part.description,
+      quantity: part.quantity,
+      unit_price: part.unit_price || part.customer_price || 0,
+      total_price: part.total_price || (part.quantity * (part.unit_price || part.customer_price || 0)),
+      status: part.status,
+      notes: part.notes,
+      created_at: part.created_at,
+      updated_at: part.updated_at,
+      // Map additional fields
+      supplierName: part.supplier_name,
+      supplierCost: part.supplier_cost,
+      supplierSuggestedRetailPrice: part.supplier_suggested_retail_price,
+      customerPrice: part.customer_price,
+      retailPrice: part.retail_price,
+      category: part.category,
+      warrantyDuration: part.warranty_duration,
+      warrantyExpiryDate: part.warranty_expiry_date,
+      binLocation: part.bin_location,
+      installDate: part.install_date,
+      partType: part.part_type,
+      installedBy: part.installed_by,
+      markupPercentage: part.markup_percentage,
+      inventoryItemId: part.inventory_item_id,
+      coreChargeApplied: part.core_charge_applied,
+      coreChargeAmount: part.core_charge_amount,
+      isTaxable: part.is_taxable,
+      invoiceNumber: part.invoice_number,
+      poLine: part.po_line,
+      isStockItem: part.is_stock_item,
+      notesInternal: part.notes_internal,
+      attachments: part.attachments,
+      warehouseLocation: part.warehouse_location,
+      shelfLocation: part.shelf_location
+    }));
   } catch (error) {
     console.error('getJobLineParts: Failed to fetch parts:', error);
     return [];
@@ -47,7 +88,48 @@ export async function getWorkOrderParts(workOrderId: string): Promise<WorkOrderP
     }
 
     console.log('getWorkOrderParts: Successfully fetched parts:', data?.length || 0);
-    return data || [];
+    
+    // Map database fields to interface
+    return (data || []).map(part => ({
+      id: part.id,
+      work_order_id: part.work_order_id,
+      job_line_id: part.job_line_id,
+      part_number: part.part_number,
+      name: part.name || part.part_name || '',
+      description: part.description,
+      quantity: part.quantity,
+      unit_price: part.unit_price || part.customer_price || 0,
+      total_price: part.total_price || (part.quantity * (part.unit_price || part.customer_price || 0)),
+      status: part.status,
+      notes: part.notes,
+      created_at: part.created_at,
+      updated_at: part.updated_at,
+      // Map additional fields
+      supplierName: part.supplier_name,
+      supplierCost: part.supplier_cost,
+      supplierSuggestedRetailPrice: part.supplier_suggested_retail_price,
+      customerPrice: part.customer_price,
+      retailPrice: part.retail_price,
+      category: part.category,
+      warrantyDuration: part.warranty_duration,
+      warrantyExpiryDate: part.warranty_expiry_date,
+      binLocation: part.bin_location,
+      installDate: part.install_date,
+      partType: part.part_type,
+      installedBy: part.installed_by,
+      markupPercentage: part.markup_percentage,
+      inventoryItemId: part.inventory_item_id,
+      coreChargeApplied: part.core_charge_applied,
+      coreChargeAmount: part.core_charge_amount,
+      isTaxable: part.is_taxable,
+      invoiceNumber: part.invoice_number,
+      poLine: part.po_line,
+      isStockItem: part.is_stock_item,
+      notesInternal: part.notes_internal,
+      attachments: part.attachments,
+      warehouseLocation: part.warehouse_location,
+      shelfLocation: part.shelf_location
+    }));
   } catch (error) {
     console.error('getWorkOrderParts: Failed to fetch parts:', error);
     return [];
@@ -72,7 +154,7 @@ export async function upsertWorkOrderPart(part: Partial<WorkOrderPart>): Promise
         description: part.description,
         quantity: part.quantity,
         unit_price: part.unit_price,
-        total_price: part.total_price,
+        total_price: part.total_price || (part.quantity || 0) * (part.unit_price || 0),
         status: part.status || 'pending',
         notes: part.notes
       })
@@ -85,7 +167,23 @@ export async function upsertWorkOrderPart(part: Partial<WorkOrderPart>): Promise
     }
 
     console.log('upsertWorkOrderPart: Successfully upserted part:', data);
-    return data;
+    
+    // Map response back to interface
+    return {
+      id: data.id,
+      work_order_id: data.work_order_id,
+      job_line_id: data.job_line_id,
+      part_number: data.part_number,
+      name: data.name,
+      description: data.description,
+      quantity: data.quantity,
+      unit_price: data.unit_price,
+      total_price: data.total_price,
+      status: data.status,
+      notes: data.notes,
+      created_at: data.created_at,
+      updated_at: data.updated_at
+    };
   } catch (error) {
     console.error('upsertWorkOrderPart: Failed to upsert part:', error);
     throw error;
@@ -100,7 +198,7 @@ export const saveWorkOrderPart = upsertWorkOrderPart;
 /**
  * Delete a work order part
  */
-export async function deleteWorkOrderPart(partId: string): Promise<boolean> {
+export async function deleteWorkOrderPart(partId: string): Promise<void> {
   try {
     console.log('deleteWorkOrderPart: Deleting part:', partId);
     
@@ -115,9 +213,8 @@ export async function deleteWorkOrderPart(partId: string): Promise<boolean> {
     }
 
     console.log('deleteWorkOrderPart: Successfully deleted part');
-    return true;
   } catch (error) {
     console.error('deleteWorkOrderPart: Failed to delete part:', error);
-    return false;
+    throw error;
   }
 }

@@ -13,7 +13,7 @@ import { useServiceCategories } from '@/hooks/useServiceCategories';
 
 interface ServiceBasedJobLineFormProps {
   workOrderId: string;
-  onSubmit: (jobLines: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>[]) => void;
+  onSubmit: (jobLines: Omit<WorkOrderJobLine, 'id' | 'created_at' | 'updated_at'>[]) => void;
   onCancel: () => void;
 }
 
@@ -49,14 +49,14 @@ export function ServiceBasedJobLineForm({ workOrderId, onSubmit, onCancel }: Ser
     if (selectedServices.length === 0) return;
 
     // Create job lines from selected services - submit all at once
-    const jobLines: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>[] = selectedServices.map(service => ({
-      workOrderId,
+    const jobLines: Omit<WorkOrderJobLine, 'id' | 'created_at' | 'updated_at'>[] = selectedServices.map(service => ({
+      work_order_id: workOrderId,
       name: service.name,
       category: service.categoryName,
       subcategory: service.subcategoryName,
       description: service.description || '',
-      estimatedHours: service.estimatedTime ? service.estimatedTime / 60 : undefined,
-      totalAmount: service.price || 0,
+      estimated_hours: service.estimatedTime ? service.estimatedTime / 60 : undefined,
+      total_amount: service.price || 0,
       status: 'pending',
       notes
     }));
