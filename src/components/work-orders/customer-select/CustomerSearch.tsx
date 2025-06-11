@@ -1,178 +1,152 @@
 
-import React, { useState, useEffect } from "react";
-import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
-import { Loader2, User, Search, X, Phone } from "lucide-react";
-import { Customer } from "@/types/customer";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { useDebounce } from "@/hooks/use-debounce";
+import React, { useState, useEffect } from 'react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Search, Plus, User } from 'lucide-react';
+import { Customer } from '@/types/customer';
+import { searchCustomers } from '@/services/customer/customerSearchService';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 interface CustomerSearchProps {
   onSelectCustomer: (customer: Customer | null) => void;
   selectedCustomer: Customer | null;
+  placeholder?: string;
 }
 
-export function CustomerSearch({ onSelectCustomer, selectedCustomer }: CustomerSearchProps) {
-  const [searchQuery, setSearchQuery] = useState("");
+export function CustomerSearch({ 
+  onSelectCustomer, 
+  selectedCustomer, 
+  placeholder = "Search customers..."
+}: CustomerSearchProps) {
+  const [searchTerm, setSearchTerm] = useState('');
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
-  const debouncedSearch = useDebounce(searchQuery, 300);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showResults, setShowResults] = useState(false);
 
-  // Search customers when input changes
   useEffect(() => {
-    const fetchCustomers = async () => {
-      if (debouncedSearch.length < 2) {
+    const performSearch = async () => {
+      if (searchTerm.length < 2) {
         setCustomers([]);
+        setShowResults(false);
         return;
       }
 
-      setLoading(true);
+      setIsLoading(true);
       try {
-        const { data, error } = await supabase
-          .from("customers")
-          .select("*")
-          .or(`first_name.ilike.%${debouncedSearch}%,last_name.ilike.%${debouncedSearch}%,email.ilike.%${debouncedSearch}%,phone.ilike.%${debouncedSearch}%`)
-          .limit(10);
-
-        if (error) throw error;
-        setCustomers(data || []);
-        setOpen(true);
+        const results = await searchCustomers(searchTerm, 10);
+        setCustomers(results);
+        setShowResults(true);
       } catch (error) {
-        console.error("Error searching customers:", error);
+        console.error('Error searching customers:', error);
+        setCustomers([]);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
-    fetchCustomers();
-  }, [debouncedSearch]);
-
-  // Handle clicking outside to close dropdown
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (!(e.target as HTMLElement).closest('.customer-search-container')) {
-        setOpen(false);
-      }
-    };
-    
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    const debounceTimer = setTimeout(performSearch, 300);
+    return () => clearTimeout(debounceTimer);
+  }, [searchTerm]);
 
   const handleSelectCustomer = (customer: Customer) => {
     onSelectCustomer(customer);
-    setOpen(false);
-    setSearchQuery(`${customer.first_name} ${customer.last_name}`);
+    setSearchTerm(`${customer.first_name} ${customer.last_name}`);
+    setShowResults(false);
   };
 
-  const handleClearSelection = () => {
+  const handleClear = () => {
+    setSearchTerm('');
+    setCustomers([]);
+    setShowResults(false);
     onSelectCustomer(null);
-    setSearchQuery("");
   };
+
+  if (selectedCustomer) {
+    return (
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="bg-blue-100 p-2 rounded-full">
+                <User className="h-4 w-4 text-blue-600" />
+              </div>
+              <div>
+                <p className="font-medium">
+                  {selectedCustomer.first_name} {selectedCustomer.last_name}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {selectedCustomer.email}
+                </p>
+                {selectedCustomer.phone && (
+                  <p className="text-sm text-muted-foreground">
+                    {selectedCustomer.phone}
+                  </p>
+                )}
+              </div>
+            </div>
+            <Button variant="outline" size="sm" onClick={handleClear}>
+              Change
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <div className="customer-search-container relative w-full">
-      {selectedCustomer ? (
-        <div className="flex items-center bg-white dark:bg-slate-800 p-3 rounded-md shadow-sm border border-slate-200 dark:border-slate-700">
-          <div className="bg-blue-100 dark:bg-blue-900 rounded-full p-2 mr-3">
-            <User className="h-5 w-5 text-blue-600 dark:text-blue-300" />
-          </div>
-          <div className="flex-1">
-            <p className="font-medium text-slate-900 dark:text-slate-100">
-              {selectedCustomer.first_name} {selectedCustomer.last_name}
-            </p>
-            <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
-              {selectedCustomer.phone && (
-                <div className="flex items-center gap-1">
-                  <Phone className="h-3 w-3" />
-                  <span>{selectedCustomer.phone}</span>
-                </div>
-              )}
-              {selectedCustomer.email && (
-                <span>{selectedCustomer.email}</span>
-              )}
+    <div className="relative">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+        <Input
+          type="text"
+          placeholder={placeholder}
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
+      {showResults && (
+        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+          {isLoading ? (
+            <div className="p-4 text-center text-gray-500">
+              Searching customers...
             </div>
-            {selectedCustomer.company && (
-              <Badge variant="outline" className="mt-1 text-xs">
-                {selectedCustomer.company}
-              </Badge>
-            )}
-          </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="ml-2 h-8 w-8" 
-            onClick={handleClearSelection}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      ) : (
-        <div className="relative">
-          <div className="absolute left-3 top-3 text-slate-400">
-            <Search className="h-4 w-4" />
-          </div>
-          <Input
-            className="pl-10 bg-white dark:bg-slate-800"
-            placeholder="Search customers by name, email, or phone..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onFocus={() => debouncedSearch.length >= 2 && setOpen(true)}
-          />
-          {loading && (
-            <div className="absolute right-3 top-3">
-              <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
-            </div>
-          )}
-          
-          {open && (
-            <div className="absolute z-50 mt-1 w-full bg-white dark:bg-slate-800 shadow-lg rounded-md border border-slate-200 dark:border-slate-700 max-h-80 overflow-auto">
-              {customers.length === 0 ? (
-                <div className="p-4 text-center text-sm text-slate-500 dark:text-slate-400">
-                  {debouncedSearch.length < 2 ? 
-                    "Type at least 2 characters to search" : 
-                    "No customers found"}
-                </div>
-              ) : (
-                <div className="py-1">
-                  {customers.map((customer) => (
-                    <div
-                      key={customer.id}
-                      className="px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border-b border-slate-100 dark:border-slate-700 last:border-b-0"
-                      onClick={() => handleSelectCustomer(customer)}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="bg-blue-100 dark:bg-blue-900 rounded-full p-2">
-                          <User className="h-4 w-4 text-blue-600 dark:text-blue-300" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="font-medium text-slate-900 dark:text-slate-100">
-                            {customer.first_name} {customer.last_name}
-                          </div>
-                          <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400 mt-1">
-                            {customer.phone && (
-                              <div className="flex items-center gap-1">
-                                <Phone className="h-3 w-3" />
-                                <span>{customer.phone}</span>
-                              </div>
-                            )}
-                            {customer.email && (
-                              <span>{customer.email}</span>
-                            )}
-                          </div>
-                          {customer.company && (
-                            <Badge variant="outline" className="mt-1 text-xs">
-                              {customer.company}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
+          ) : customers.length > 0 ? (
+            <div className="py-1">
+              {customers.map((customer) => (
+                <button
+                  key={customer.id}
+                  onClick={() => handleSelectCustomer(customer)}
+                  className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {customer.first_name} {customer.last_name}
+                      </p>
+                      <p className="text-sm text-gray-500">{customer.email}</p>
+                      {customer.phone && (
+                        <p className="text-sm text-gray-500">{customer.phone}</p>
+                      )}
                     </div>
-                  ))}
-                </div>
-              )}
+                    {customer.vehicles && customer.vehicles.length > 0 && (
+                      <Badge variant="secondary" className="text-xs">
+                        {customer.vehicles.length} vehicle{customer.vehicles.length > 1 ? 's' : ''}
+                      </Badge>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="p-4 text-center">
+              <p className="text-gray-500 mb-2">No customers found</p>
+              <Button size="sm" variant="outline">
+                <Plus className="h-4 w-4 mr-2" />
+                Add New Customer
+              </Button>
             </div>
           )}
         </div>
