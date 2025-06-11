@@ -13,6 +13,19 @@ export interface WorkOrderPart {
   notes?: string;
   created_at: string;
   updated_at: string;
+  
+  // Additional properties for parts tracking components
+  partName?: string; // Alias for name
+  partNumber?: string; // Alias for part_number
+  supplierName?: string;
+  supplierCost?: number;
+  customerPrice?: number; // Alias for unit_price
+  category?: string;
+  warrantyDuration?: string;
+  binLocation?: string;
+  installDate?: string;
+  dateAdded?: string; // Alias for created_at
+  partType?: string;
 }
 
 export interface WorkOrderPartFormValues {
@@ -30,7 +43,42 @@ export const WORK_ORDER_PART_STATUSES = [
   'ordered',
   'received',
   'installed',
-  'returned'
+  'returned',
+  'backordered',
+  'defective'
 ] as const;
 
 export type WorkOrderPartStatus = typeof WORK_ORDER_PART_STATUSES[number];
+
+// Status mapping for UI display
+export const partStatusMap: Record<string, { label: string; classes: string }> = {
+  'pending': { label: 'Pending', classes: 'bg-yellow-100 text-yellow-800' },
+  'ordered': { label: 'Ordered', classes: 'bg-blue-100 text-blue-800' },
+  'received': { label: 'Received', classes: 'bg-purple-100 text-purple-800' },
+  'installed': { label: 'Installed', classes: 'bg-green-100 text-green-800' },
+  'returned': { label: 'Returned', classes: 'bg-red-100 text-red-800' },
+  'backordered': { label: 'Backordered', classes: 'bg-orange-100 text-orange-800' },
+  'defective': { label: 'Defective', classes: 'bg-red-200 text-red-900' }
+};
+
+// Part categories
+export const PART_CATEGORIES = [
+  'Engine',
+  'Transmission',
+  'Brakes',
+  'Suspension',
+  'Electrical',
+  'Body',
+  'Interior',
+  'Exhaust',
+  'Cooling',
+  'Fuel System',
+  'Steering',
+  'Tires & Wheels',
+  'Filters',
+  'Fluids',
+  'Tools',
+  'Other'
+] as const;
+
+export type PartCategory = typeof PART_CATEGORIES[number];
