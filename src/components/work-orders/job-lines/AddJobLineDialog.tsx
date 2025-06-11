@@ -1,19 +1,29 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { Plus } from 'lucide-react';
-import { WorkOrderJobLine, JOB_LINE_STATUSES } from '@/types/jobLine';
+import { WorkOrderJobLine } from '@/types/jobLine';
 
 interface AddJobLineDialogProps {
   workOrderId: string;
-  onJobLineAdd: (jobLines: Omit<WorkOrderJobLine, 'id' | 'created_at' | 'updated_at'>[]) => void;
+  onJobLineAdd?: (newJobLines: Omit<WorkOrderJobLine, 'id' | 'created_at' | 'updated_at'>[]) => void;
+  onAdd?: (newJobLine: WorkOrderJobLine) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function AddJobLineDialog({ workOrderId, onJobLineAdd }: AddJobLineDialogProps) {
+export function AddJobLineDialog({ 
+  workOrderId, 
+  onJobLineAdd, 
+  onAdd,
+  open,
+  onOpenChange 
+}: AddJobLineDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -22,30 +32,40 @@ export function AddJobLineDialog({ workOrderId, onJobLineAdd }: AddJobLineDialog
     description: '',
     estimated_hours: 0,
     labor_rate: 0,
-    status: 'pending' as const,
+    labor_rate_type: 'hourly',
+    status: 'pending',
     notes: ''
   });
+
+  // Use controlled open state if provided, otherwise use internal state
+  const dialogOpen = open !== undefined ? open : isOpen;
+  const setDialogOpen = onOpenChange || setIsOpen;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const jobLine: Omit<WorkOrderJobLine, 'id' | 'created_at' | 'updated_at'> = {
+    const newJobLine = {
+      ...formData,
       work_order_id: workOrderId,
-      name: formData.name,
-      category: formData.category || undefined,
-      subcategory: formData.subcategory || undefined,
-      description: formData.description || undefined,
-      estimated_hours: formData.estimated_hours,
-      labor_rate: formData.labor_rate,
-      labor_rate_type: 'standard',
       total_amount: formData.estimated_hours * formData.labor_rate,
-      status: formData.status,
-      notes: formData.notes || undefined,
-      display_order: 0
+      display_order: 1
     };
 
-    onJobLineAdd([jobLine]);
-    setIsOpen(false);
+    if (onAdd) {
+      // For JobLinesGrid compatibility
+      const jobLineWithId: WorkOrderJobLine = {
+        ...newJobLine,
+        id: crypto.randomUUID(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      onAdd(jobLineWithId);
+    } else if (onJobLineAdd) {
+      // For WorkOrderLaborSection compatibility
+      onJobLineAdd([newJobLine]);
+    }
+
+    // Reset form
     setFormData({
       name: '',
       category: '',
@@ -53,115 +73,167 @@ export function AddJobLineDialog({ workOrderId, onJobLineAdd }: AddJobLineDialog
       description: '',
       estimated_hours: 0,
       labor_rate: 0,
+      labor_rate_type: 'hourly',
       status: 'pending',
       notes: ''
     });
+
+    setDialogOpen(false);
   };
 
+  const dialogContent = (
+    <DialogContent className="sm:max-w-[500px]">
+      <DialogHeader>
+        <DialogTitle>Add Job Line</DialogTitle>
+      </DialogHeader>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="name">Job Name *</Label>
+          <Input
+            id="name"
+            value={formData.name}
+            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+            placeholder="e.g., Oil Change, Brake Inspection"
+            required
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="category">Category</Label>
+            <Input
+              id="category"
+              value={formData.category}
+              onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+              placeholder="e.g., Maintenance"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="subcategory">Subcategory</Label>
+            <Input
+              id="subcategory"
+              value={formData.subcategory}
+              onChange={(e) => setFormData(prev => ({ ...prev, subcategory: e.target.value }))}
+              placeholder="e.g., Engine"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="description">Description</Label>
+          <Textarea
+            id="description"
+            value={formData.description}
+            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+            placeholder="Detailed description of the work to be performed"
+            rows={3}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="estimated_hours">Estimated Hours</Label>
+            <Input
+              id="estimated_hours"
+              type="number"
+              step="0.5"
+              min="0"
+              value={formData.estimated_hours}
+              onChange={(e) => setFormData(prev => ({ ...prev, estimated_hours: parseFloat(e.target.value) || 0 }))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="labor_rate">Labor Rate ($)</Label>
+            <Input
+              id="labor_rate"
+              type="number"
+              step="0.01"
+              min="0"
+              value={formData.labor_rate}
+              onChange={(e) => setFormData(prev => ({ ...prev, labor_rate: parseFloat(e.target.value) || 0 }))}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="labor_rate_type">Rate Type</Label>
+            <Select 
+              value={formData.labor_rate_type} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, labor_rate_type: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="hourly">Hourly</SelectItem>
+                <SelectItem value="flat">Flat Rate</SelectItem>
+                <SelectItem value="diagnostic">Diagnostic</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="status">Status</Label>
+            <Select 
+              value={formData.status} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="in-progress">In Progress</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="on-hold">On Hold</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="notes">Notes</Label>
+          <Textarea
+            id="notes"
+            value={formData.notes}
+            onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+            placeholder="Additional notes or special instructions"
+            rows={2}
+          />
+        </div>
+
+        <div className="flex justify-end space-x-2 pt-4">
+          <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+            Cancel
+          </Button>
+          <Button type="submit">
+            Add Job Line
+          </Button>
+        </div>
+      </form>
+    </DialogContent>
+  );
+
+  // If open prop is controlled externally, don't render trigger
+  if (open !== undefined) {
+    return (
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        {dialogContent}
+      </Dialog>
+    );
+  }
+
+  // Default behavior with trigger button
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
         <Button className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
           Add Job Line
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Add Job Line</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Job Line Name *</label>
-              <Input
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="e.g., Oil Change, Brake Inspection"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Category</label>
-              <Input
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                placeholder="e.g., Maintenance, Repair"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Description</label>
-            <Textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Describe the work to be performed..."
-              rows={3}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Estimated Hours</label>
-              <Input
-                type="number"
-                step="0.25"
-                value={formData.estimated_hours}
-                onChange={(e) => setFormData({ ...formData, estimated_hours: parseFloat(e.target.value) || 0 })}
-                min="0"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Labor Rate ($/hr)</label>
-              <Input
-                type="number"
-                step="0.01"
-                value={formData.labor_rate}
-                onChange={(e) => setFormData({ ...formData, labor_rate: parseFloat(e.target.value) || 0 })}
-                min="0"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Status</label>
-              <Select value={formData.status} onValueChange={(value: any) => setFormData({ ...formData, status: value })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {JOB_LINE_STATUSES.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ')}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Notes</label>
-            <Textarea
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              placeholder="Additional notes or instructions..."
-              rows={2}
-            />
-          </div>
-
-          <div className="flex justify-between">
-            <p className="text-sm text-muted-foreground">
-              Total: ${(formData.estimated_hours * formData.labor_rate).toFixed(2)}
-            </p>
-            <div className="flex gap-2">
-              <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit">Add Job Line</Button>
-            </div>
-          </div>
-        </form>
-      </DialogContent>
+      {dialogContent}
     </Dialog>
   );
 }
