@@ -52,6 +52,14 @@ export function EditableJobLinesGrid({
     onJobLinesChange(updatedJobLines);
   };
 
+  const handlePartsChange = (jobLineId: string, newParts: any[]) => {
+    const updatedJobLines = localJobLines.map(jobLine =>
+      jobLine.id === jobLineId ? { ...jobLine, parts: newParts } : jobLine
+    );
+    setLocalJobLines(updatedJobLines);
+    onJobLinesChange(updatedJobLines);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -69,6 +77,7 @@ export function EditableJobLinesGrid({
             jobLine={jobLine}
             onUpdate={handleUpdateJobLine}
             onDelete={handleDeleteJobLine}
+            onPartsChange={(newParts) => handlePartsChange(jobLine.id, newParts)}
             isEditMode={true}
           />
         ))}
