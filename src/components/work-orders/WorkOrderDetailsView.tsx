@@ -11,6 +11,7 @@ import { Link } from 'react-router-dom';
 import { JobLinesGrid } from './job-lines/JobLinesGrid';
 import { WorkOrderDocuments } from './details/WorkOrderDocuments';
 import { WorkOrderPartsSection } from './parts/WorkOrderPartsSection';
+import { WorkOrderDetailsTab } from './details/WorkOrderDetailsTab';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -75,14 +76,24 @@ export function WorkOrderDetailsView({ workOrderId: workOrderIdProp }: WorkOrder
         </div>
       </div>
       
-      <Tabs defaultValue="job-lines">
+      <Tabs defaultValue="work-order">
         <TabsList className="mb-4">
+          <TabsTrigger value="work-order">Work Order Details</TabsTrigger>
           <TabsTrigger value="job-lines">Job Lines</TabsTrigger>
-          <TabsTrigger value="parts">Parts & Inventory</TabsTrigger>
+          <TabsTrigger value="parts">Parts</TabsTrigger>
           <TabsTrigger value="time">Time Tracking</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
           <TabsTrigger value="communications">Communications</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="work-order">
+          <WorkOrderDetailsTab 
+            workOrder={workOrder}
+            jobLines={jobLines}
+            onJobLinesChange={setJobLines}
+            isEditMode={isEditMode}
+          />
+        </TabsContent>
 
         <TabsContent value="job-lines">
           <JobLinesGrid 
