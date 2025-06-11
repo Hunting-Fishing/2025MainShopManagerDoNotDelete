@@ -80,7 +80,7 @@ export function JobLineCard({
                     </Badge>}
                 </div>
                 
-                {localJobLine.description && <p className="text-gray-600 mb-3 text-base">{localJobLine.description}</p>}
+                {localJobLine.description && <p className="mb-3 text-neutral-950 text-lg font-semibold">{localJobLine.description}</p>}
 
                 {/* Job Line Details */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
