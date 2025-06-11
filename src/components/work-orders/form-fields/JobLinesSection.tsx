@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Grid3X3 } from 'lucide-react';
@@ -67,6 +66,7 @@ export function JobLinesSection({
         jobLines={jobLines}
         onUpdate={handleUpdateJobLine}
         onDelete={handleDeleteJobLine}
+        onJobLinesChange={onJobLinesChange}
         isEditMode={isEditMode}
       />
 
