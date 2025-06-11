@@ -1,14 +1,14 @@
-
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import { CustomerDocument, DocumentCategory } from '@/types/document';
+import { Textarea } from '@/components/ui/textarea';
+import { DocumentCategory, CustomerDocument, CreateDocumentData } from '@/types/document';
 import { uploadDocument } from '@/services/documentService';
+import { Upload, X } from 'lucide-react';
+import { TagInput } from './TagInput';
 
 interface DocumentUploadDialogProps {
   customerId: string;
@@ -23,135 +23,122 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
   open,
   onOpenChange,
   onDocumentUploaded,
-  categories
+  categories,
 }) => {
-  const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [categoryId, setCategoryId] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const { toast } = useToast();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const selectedFile = e.target.files[0];
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
       setFile(selectedFile);
       if (!title) {
-        setTitle(selectedFile.name);
+        setTitle(selectedFile.name.replace(/\.[^/.]+$/, ''));
       }
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!file) {
-      toast({
-        title: "No file selected",
-        description: "Please select a file to upload",
-        variant: "destructive",
-      });
-      return;
-    }
-    
+    if (!file || !title.trim()) return;
+
     setIsUploading(true);
-    
     try {
-      const metadata = {
-        description,
+      const documentData: CreateDocumentData = {
+        title: title.trim(),
+        description: description.trim() || undefined,
+        document_type: getDocumentType(file.type),
         category_id: categoryId || undefined,
+        customer_id: customerId,
+        tags,
+        is_public: false,
+        created_by: 'current-user-id', // TODO: Get from auth context
+        created_by_name: 'Current User', // TODO: Get from auth context
+      };
+
+      const uploadedDocument = await uploadDocument(file, documentData);
+      
+      // Ensure the document has customer_id for type safety
+      const customerDocument: CustomerDocument = {
+        ...uploadedDocument,
+        customer_id: customerId,
       };
       
-      const result = await uploadDocument(file, customerId, metadata);
+      onDocumentUploaded(customerDocument);
       
-      if (result) {
-        toast({
-          title: "Document uploaded",
-          description: "Your document was uploaded successfully",
-        });
-        
-        onDocumentUploaded(result);
-        resetForm();
-        onOpenChange(false);
-      } else {
-        throw new Error("Failed to upload document");
-      }
+      // Reset form
+      setTitle('');
+      setDescription('');
+      setCategoryId('');
+      setTags([]);
+      setFile(null);
+      onOpenChange(false);
     } catch (error) {
-      console.error("Error uploading document:", error);
-      toast({
-        title: "Upload failed",
-        description: "There was a problem uploading your document",
-        variant: "destructive",
-      });
+      console.error('Error uploading document:', error);
     } finally {
       setIsUploading(false);
     }
   };
 
-  const resetForm = () => {
-    setFile(null);
-    setTitle('');
-    setDescription('');
-    setCategoryId('');
+  const getDocumentType = (mimeType: string): 'pdf' | 'image' | 'weblink' | 'internal_link' => {
+    if (mimeType.includes('pdf')) return 'pdf';
+    if (mimeType.includes('image')) return 'image';
+    return 'pdf'; // default
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Upload Document</DialogTitle>
-          <DialogDescription>
-            Upload a new document for this customer
-          </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="file">Select File</Label>
-            <Input 
-              id="file" 
-              type="file" 
-              onChange={handleFileChange} 
-              className="mt-1"
-              accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif"
+            <Label htmlFor="file">File</Label>
+            <Input
+              id="file"
+              type="file"
+              onChange={handleFileChange}
+              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif"
+              required
             />
-            {file && (
-              <p className="text-sm text-gray-500 mt-1">
-                Selected: {file.name} ({(file.size / 1024).toFixed(2)} KB)
-              </p>
-            )}
           </div>
-          
+
           <div>
             <Label htmlFor="title">Title</Label>
             <Input
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="mt-1"
               placeholder="Document title"
               required
             />
           </div>
-          
+
           <div>
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="mt-1"
-              placeholder="Brief description of the document"
+              placeholder="Optional description"
+              rows={3}
             />
           </div>
-          
+
           <div>
             <Label htmlFor="category">Category</Label>
             <Select value={categoryId} onValueChange={setCategoryId}>
-              <SelectTrigger className="mt-1">
+              <SelectTrigger>
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="">No category</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name}
@@ -160,20 +147,31 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
               </SelectContent>
             </Select>
           </div>
-          
-          <DialogFooter>
-            <Button 
-              type="button" 
-              variant="outline" 
+
+          <div>
+            <Label>Tags</Label>
+            <TagInput
+              value={tags}
+              onChange={setTags}
+              placeholder="Add tags..."
+            />
+          </div>
+
+          <div className="flex justify-end space-x-2">
+            <Button
+              type="button"
+              variant="outline"
               onClick={() => onOpenChange(false)}
-              disabled={isUploading}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isUploading || !file}>
-              {isUploading ? "Uploading..." : "Upload"}
+            <Button
+              type="submit"
+              disabled={!file || !title.trim() || isUploading}
+            >
+              {isUploading ? 'Uploading...' : 'Upload'}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

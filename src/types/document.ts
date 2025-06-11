@@ -95,6 +95,8 @@ export interface CreateDocumentData {
   is_public?: boolean;
   metadata?: Record<string, any>;
   tags?: string[];
+  created_by: string;
+  created_by_name: string;
 }
 
 // Add SavedSearch type
