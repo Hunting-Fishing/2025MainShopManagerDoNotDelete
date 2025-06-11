@@ -48,24 +48,20 @@ export const DocumentVersionDialog: React.FC<DocumentVersionDialogProps> = ({
     setIsUploading(true);
     
     try {
-      const result = await uploadDocumentVersion(
+      await uploadDocumentVersion(
         document.id,
         file,
         versionNotes || undefined
       );
       
-      if (result) {
-        toast({
-          title: "New version uploaded",
-          description: `Version ${result.version_number} was uploaded successfully`,
-        });
-        
-        onVersionUploaded();
-        resetForm();
-        onOpenChange(false);
-      } else {
-        throw new Error("Failed to upload new version");
-      }
+      toast({
+        title: "New version uploaded",
+        description: "The new version was uploaded successfully",
+      });
+      
+      onVersionUploaded();
+      resetForm();
+      onOpenChange(false);
     } catch (error) {
       console.error("Error uploading version:", error);
       toast({

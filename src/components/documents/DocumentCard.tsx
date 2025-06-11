@@ -1,177 +1,119 @@
 
 import React from 'react';
-import { Document } from '@/types/document';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  FileText, 
-  Image, 
-  Link, 
-  ExternalLink, 
-  Download, 
-  Edit, 
-  Trash2,
-  MoreVertical
-} from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { formatDate } from '@/utils/dateUtils';
+import { Badge } from '@/components/ui/badge';
+import { Document } from '@/types/document';
 import { DocumentService } from '@/services/documentService';
+import { Download, Eye, FileText, Image, Link, ExternalLink } from 'lucide-react';
 
 interface DocumentCardProps {
   document: Document;
-  onClick: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
+  onView?: (document: Document) => void;
+  onDownload?: (document: Document) => void;
 }
 
-export function DocumentCard({ document, onClick, onEdit, onDelete }: DocumentCardProps) {
-  const getDocumentIcon = () => {
-    switch (document.document_type) {
+export const DocumentCard: React.FC<DocumentCardProps> = ({
+  document,
+  onView,
+  onDownload
+}) => {
+  const getIconForType = (type: string) => {
+    switch (type) {
       case 'pdf':
-        return <FileText className="h-8 w-8 text-red-500" />;
+        return <FileText className="h-4 w-4" />;
       case 'image':
-        return <Image className="h-8 w-8 text-blue-500" />;
+        return <Image className="h-4 w-4" />;
       case 'weblink':
-        return <ExternalLink className="h-8 w-8 text-green-500" />;
+        return <Link className="h-4 w-4" />;
       case 'internal_link':
-        return <Link className="h-8 w-8 text-purple-500" />;
+        return <ExternalLink className="h-4 w-4" />;
       default:
-        return <FileText className="h-8 w-8 text-gray-500" />;
+        return <FileText className="h-4 w-4" />;
     }
   };
 
-  const getDocumentTypeLabel = () => {
-    switch (document.document_type) {
-      case 'pdf':
-        return 'PDF';
-      case 'image':
-        return 'Image';
-      case 'weblink':
-        return 'Web Link';
-      case 'internal_link':
-        return 'Internal Link';
-      default:
-        return 'Document';
+  const handleView = () => {
+    if (onView) {
+      onView(document);
     }
+    // Log the access with proper parameters
+    DocumentService.logAccess(
+      document.id, 
+      'view', 
+      'current_user_id', 
+      'Current User'
+    );
   };
 
-  const handleDownload = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (document.file_url) {
-      await DocumentService.logAccess(document.id, 'download');
-      window.open(document.file_url, '_blank');
+  const handleDownload = () => {
+    if (onDownload) {
+      onDownload(document);
     }
-  };
-
-  const handleView = async () => {
-    await DocumentService.logAccess(document.id, 'view');
-    onClick();
-  };
-
-  const formatFileSize = (bytes?: number) => {
-    if (!bytes) return '';
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+    // Log the access with proper parameters  
+    DocumentService.logAccess(
+      document.id, 
+      'download', 
+      'current_user_id', 
+      'Current User'
+    );
   };
 
   return (
-    <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center space-x-3">
-            {getDocumentIcon()}
-            <div className="flex-1 min-w-0">
-              <h3 
-                className="text-sm font-medium text-gray-900 truncate hover:text-blue-600"
-                onClick={handleView}
-              >
-                {document.title}
-              </h3>
-              <p className="text-xs text-gray-500 mt-1">
-                {formatDate(document.created_at)}
-              </p>
-            </div>
-          </div>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleView}>
-                <FileText className="mr-2 h-4 w-4" />
-                View
-              </DropdownMenuItem>
-              {document.file_url && (
-                <DropdownMenuItem onClick={handleDownload}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Download
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuItem onClick={onEdit}>
-                <Edit className="mr-2 h-4 w-4" />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={onDelete} className="text-red-600">
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        {document.description && (
-          <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-            {document.description}
-          </p>
-        )}
-
+    <Card className="w-full">
+      <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <div className="flex flex-wrap gap-1">
-            <Badge variant="secondary" className="text-xs">
-              {getDocumentTypeLabel()}
-            </Badge>
-            {document.category_name && (
-              <Badge variant="outline" className="text-xs">
-                {document.category_name}
-              </Badge>
-            )}
+          <div className="flex items-center space-x-2">
+            {getIconForType(document.document_type)}
+            <CardTitle className="text-sm">{document.title}</CardTitle>
           </div>
-          {document.file_size && (
-            <span className="text-xs text-gray-400">
-              {formatFileSize(document.file_size)}
-            </span>
-          )}
+          <Badge variant="outline">
+            {document.document_type.toUpperCase()}
+          </Badge>
         </div>
-
-        {document.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-2">
-            {document.tags.slice(0, 3).map((tag, index) => (
+      </CardHeader>
+      
+      <CardContent className="pt-0">
+        {document.description && (
+          <p className="text-sm text-gray-600 mb-3">{document.description}</p>
+        )}
+        
+        {document.tags && document.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-3">
+            {document.tags.map((tag, index) => (
               <Badge key={index} variant="secondary" className="text-xs">
                 {tag}
               </Badge>
             ))}
-            {document.tags.length > 3 && (
-              <Badge variant="secondary" className="text-xs">
-                +{document.tags.length - 3} more
-              </Badge>
-            )}
           </div>
         )}
-
-        <div className="text-xs text-gray-400 mt-2">
-          By {document.created_by_name}
+        
+        <div className="flex items-center justify-between">
+          <div className="text-xs text-gray-500">
+            Created by {document.created_by_name} on {new Date(document.created_at).toLocaleDateString()}
+          </div>
+          
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleView}
+            >
+              <Eye className="h-4 w-4 mr-1" />
+              View
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownload}
+            >
+              <Download className="h-4 w-4 mr-1" />
+              Download
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
   );
-}
+};
