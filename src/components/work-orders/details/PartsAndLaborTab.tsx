@@ -23,120 +23,116 @@ export function PartsAndLaborTab({
   onJobLinesChange,
   isEditMode
 }: PartsAndLaborTabProps) {
-  // Calculate labor totals
-  const totalLaborHours = jobLines.reduce((sum, line) => sum + (line.estimated_hours || 0), 0);
-  const totalLaborCost = jobLines.reduce((sum, line) => sum + (line.total_amount || 0), 0);
-
-  // Calculate parts totals - use unit_price and quantity
-  const totalPartsValue = allParts.reduce((sum, part) => {
-    const unitPrice = part.unit_price || part.customerPrice || 0;
-    const quantity = part.quantity || 1;
-    return sum + (unitPrice * quantity);
+  // Calculate totals
+  const totalLaborCost = jobLines.reduce((sum, line) => {
+    const laborCost = (line.estimated_hours || 0) * (line.labor_rate || 0);
+    return sum + laborCost;
   }, 0);
 
-  // Calculate grand total
-  const grandTotal = totalLaborCost + totalPartsValue;
+  const totalPartsCost = allParts.reduce((sum, part) => {
+    return sum + (part.quantity * part.unit_price);
+  }, 0);
+
+  const grandTotal = totalLaborCost + totalPartsCost;
+
+  // Get parts for a specific job line
+  const getPartsForJobLine = (jobLineId: string) => {
+    return allParts.filter(part => part.job_line_id === jobLineId);
+  };
+
+  // Calculate parts cost for a specific job line
+  const getJobLinePartsCost = (jobLineId: string) => {
+    const jobLineParts = getPartsForJobLine(jobLineId);
+    return jobLineParts.reduce((sum, part) => sum + (part.quantity * part.unit_price), 0);
+  };
 
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-l-4 border-l-blue-500">
+        <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <Wrench className="h-5 w-5 text-blue-500" />
               <div>
-                <p className="text-sm text-muted-foreground">Labor Cost</p>
+                <p className="text-sm text-muted-foreground">Labor Subtotal</p>
                 <p className="text-2xl font-bold">${totalLaborCost.toFixed(2)}</p>
-                <p className="text-xs text-muted-foreground">{totalLaborHours.toFixed(1)} hours</p>
               </div>
             </div>
           </CardContent>
         </Card>
-
-        <Card className="border-l-4 border-l-green-500">
+        
+        <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <Package className="h-5 w-5 text-green-500" />
               <div>
-                <p className="text-sm text-muted-foreground">Parts Cost</p>
-                <p className="text-2xl font-bold">${totalPartsValue.toFixed(2)}</p>
-                <p className="text-xs text-muted-foreground">{allParts.length} parts</p>
+                <p className="text-sm text-muted-foreground">Parts Subtotal</p>
+                <p className="text-2xl font-bold">${totalPartsCost.toFixed(2)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
-
-        <Card className="border-l-4 border-l-purple-500">
+        
+        <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <DollarSign className="h-5 w-5 text-purple-500" />
               <div>
-                <p className="text-sm text-muted-foreground">Total</p>
+                <p className="text-sm text-muted-foreground">Grand Total</p>
                 <p className="text-2xl font-bold">${grandTotal.toFixed(2)}</p>
-                <p className="text-xs text-muted-foreground">Labor + Parts</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Detailed Breakdown */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Job Lines & Services</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {jobLines.map((jobLine, index) => {
-            // Get parts for this job line
-            const jobLineParts = allParts.filter(part => part.job_line_id === jobLine.id);
-            const jobLinePartsTotal = jobLineParts.reduce((sum, part) => {
-              const unitPrice = part.unit_price || part.customerPrice || 0;
-              const quantity = part.quantity || 1;
-              return sum + (unitPrice * quantity);
-            }, 0);
+      {/* Job Lines with Parts */}
+      <div className="space-y-4">
+        {jobLines.map((jobLine) => {
+          const jobLineParts = getPartsForJobLine(jobLine.id);
+          const jobLineLaborCost = (jobLine.estimated_hours || 0) * (jobLine.labor_rate || 0);
+          const jobLinePartsCost = getJobLinePartsCost(jobLine.id);
+          const jobLineTotal = jobLineLaborCost + jobLinePartsCost;
 
-            return (
-              <div key={jobLine.id} className="border rounded-lg p-4 space-y-4">
-                {/* Job Line Header */}
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg">{jobLine.name}</h3>
-                    {jobLine.description && (
-                      <p className="text-muted-foreground text-sm mt-1">{jobLine.description}</p>
-                    )}
-                    <div className="flex items-center gap-4 mt-2">
-                      <Badge variant="outline">{jobLine.category || 'General'}</Badge>
-                      <span className="text-sm text-muted-foreground">
-                        Status: <Badge variant="secondary">{jobLine.status || 'pending'}</Badge>
-                      </span>
-                    </div>
-                  </div>
+          return (
+            <Card key={jobLine.id} className="border-l-4 border-l-blue-500">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Wrench className="h-5 w-5" />
+                    {jobLine.name}
+                  </CardTitle>
+                  <Badge variant="outline" className="font-mono">
+                    {jobLine.category}
+                  </Badge>
                 </div>
-
+                {jobLine.description && (
+                  <p className="text-sm text-muted-foreground">{jobLine.description}</p>
+                )}
+              </CardHeader>
+              <CardContent className="space-y-4">
                 {/* Labor Details */}
-                <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium flex items-center gap-2">
-                      <Wrench className="h-4 w-4" />
-                      Labor Details
-                    </h4>
-                  </div>
+                <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
+                  <h4 className="font-medium mb-2 flex items-center gap-2">
+                    <Wrench className="h-4 w-4" />
+                    Labor Details
+                  </h4>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
-                      <span className="text-muted-foreground">Hours:</span>
+                      <p className="text-muted-foreground">Hours:</p>
                       <p className="font-medium">{jobLine.estimated_hours || 0}</p>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Rate:</span>
-                      <p className="font-medium">${jobLine.labor_rate || 0}/hr</p>
+                      <p className="text-muted-foreground">Rate:</p>
+                      <p className="font-medium">${(jobLine.labor_rate || 0).toFixed(2)}/hr</p>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Labor Cost:</span>
-                      <p className="font-medium">${(jobLine.total_amount || 0).toFixed(2)}</p>
+                      <p className="text-muted-foreground">Labor Cost:</p>
+                      <p className="font-medium">${jobLineLaborCost.toFixed(2)}</p>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Category:</span>
+                      <p className="text-muted-foreground">Category:</p>
                       <p className="font-medium">{jobLine.category || 'Basic Maintenance'}</p>
                     </div>
                   </div>
@@ -144,79 +140,73 @@ export function PartsAndLaborTab({
 
                 {/* Associated Parts */}
                 {jobLineParts.length > 0 && (
-                  <div className="bg-green-50 dark:bg-green-950 rounded-lg p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium flex items-center gap-2">
-                        <Package className="h-4 w-4" />
-                        Associated Parts ({jobLineParts.length})
-                      </h4>
-                    </div>
-                    <div className="space-y-2">
-                      {jobLineParts.map((part) => {
-                        const unitPrice = part.unit_price || part.customerPrice || 0;
-                        const quantity = part.quantity || 1;
-                        const lineTotal = unitPrice * quantity;
-                        
-                        return (
-                          <div key={part.id} className="flex items-center justify-between text-sm border-b border-green-200 dark:border-green-800 pb-2">
-                            <div className="flex-1">
-                              <p className="font-medium">{part.name}</p>
-                              <div className="flex items-center gap-4 text-muted-foreground">
-                                <span>Part #: {part.part_number}</span>
-                                <span>Qty: {quantity}</span>
-                                <span>Unit: ${unitPrice.toFixed(2)}</span>
-                                {part.status && (
-                                  <Badge variant="outline" className="text-xs">{part.status}</Badge>
-                                )}
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-medium">${lineTotal.toFixed(2)}</p>
-                            </div>
+                  <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg">
+                    <h4 className="font-medium mb-3 flex items-center gap-2">
+                      <Package className="h-4 w-4" />
+                      Associated Parts ({jobLineParts.length})
+                    </h4>
+                    <div className="space-y-3">
+                      {jobLineParts.map((part) => (
+                        <div key={part.id} className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded border">
+                          <div className="flex-1">
+                            <p className="font-medium">{part.name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              Part #: {part.part_number} • Qty: {part.quantity} • Unit: ${part.unit_price.toFixed(2)}
+                            </p>
+                            {part.status && (
+                              <Badge variant="secondary" className="mt-1 text-xs">
+                                {part.status}
+                              </Badge>
+                            )}
                           </div>
-                        );
-                      })}
-                      <div className="flex justify-between items-center pt-2 border-t border-green-200 dark:border-green-800">
-                        <span className="font-medium">Parts Subtotal:</span>
-                        <span className="font-medium">${jobLinePartsTotal.toFixed(2)}</span>
-                      </div>
+                          <div className="text-right">
+                            <p className="font-bold">${(part.quantity * part.unit_price).toFixed(2)}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <Separator className="my-3" />
+                    <div className="flex justify-between items-center font-medium">
+                      <span>Parts Subtotal:</span>
+                      <span>${jobLinePartsCost.toFixed(2)}</span>
                     </div>
                   </div>
                 )}
 
                 {/* Job Line Total */}
-                <div className="flex justify-between items-center pt-2 border-t border-gray-200 dark:border-gray-700">
-                  <span className="font-semibold">Job Line Total:</span>
-                  <span className="font-semibold text-lg">
-                    Labor: ${(jobLine.total_amount || 0).toFixed(2)} + Parts: ${jobLinePartsTotal.toFixed(2)}
-                  </span>
+                <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border-2 border-dashed">
+                  <div className="flex justify-between items-center text-lg font-bold">
+                    <span>Job Line Total:</span>
+                    <span>
+                      Labor: ${jobLineLaborCost.toFixed(2)} + Parts: ${jobLinePartsCost.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="text-right text-xl font-bold text-primary mt-2">
+                    ${jobLineTotal.toFixed(2)}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
 
-          {jobLines.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              <Wrench className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No job lines added yet</p>
-            </div>
-          )}
-
-          {/* Final Totals */}
-          <Separator />
+      {/* Summary Footer */}
+      <Card className="bg-primary/5 border-primary">
+        <CardContent className="p-6">
           <div className="space-y-2">
-            <div className="flex justify-between items-center text-lg">
+            <div className="flex justify-between text-lg">
               <span>Labor Subtotal:</span>
-              <span className="font-semibold">${totalLaborCost.toFixed(2)}</span>
+              <span className="font-mono">${totalLaborCost.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between items-center text-lg">
+            <div className="flex justify-between text-lg">
               <span>Parts Subtotal:</span>
-              <span className="font-semibold">${totalPartsValue.toFixed(2)}</span>
+              <span className="font-mono">${totalPartsCost.toFixed(2)}</span>
             </div>
             <Separator />
-            <div className="flex justify-between items-center text-xl font-bold">
+            <div className="flex justify-between text-xl font-bold">
               <span>Grand Total:</span>
-              <span className="text-primary">${grandTotal.toFixed(2)}</span>
+              <span className="font-mono">${grandTotal.toFixed(2)}</span>
             </div>
           </div>
         </CardContent>
