@@ -1,6 +1,7 @@
+
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { WorkOrder } from "@/types/workOrder";
+import { WorkOrder, WorkOrderInventoryItem, TimeEntry } from "@/types/workOrder";
 import { WorkOrderJobLine } from "@/types/jobLine";
 import { WorkOrderPart } from "@/types/workOrderPart";
 import { PartsAndLaborTab } from "./PartsAndLaborTab";
@@ -10,21 +11,37 @@ import { WorkOrderCommunications } from "../communications/WorkOrderCommunicatio
 
 interface WorkOrderDetailsTabsProps {
   workOrder: WorkOrder;
+  timeEntries: TimeEntry[];
+  onUpdateTimeEntries: (entries: TimeEntry[]) => void;
+  inventoryItems: WorkOrderInventoryItem[];
+  notes: string;
+  onUpdateNotes: (notes: string) => void;
   jobLines: WorkOrderJobLine[];
-  allParts: WorkOrderPart[];
   onJobLinesChange: (jobLines: WorkOrderJobLine[]) => void;
+  jobLinesLoading: boolean;
   isEditMode?: boolean;
 }
 
 export function WorkOrderDetailsTabs({
   workOrder,
+  timeEntries,
+  onUpdateTimeEntries,
+  inventoryItems,
+  notes,
+  onUpdateNotes,
   jobLines,
-  allParts,
   onJobLinesChange,
+  jobLinesLoading,
   isEditMode = false
 }: WorkOrderDetailsTabsProps) {
+  // Get all parts from job lines for the overview tab
+  const allParts: WorkOrderPart[] = jobLines.flatMap(jobLine => 
+    jobLine.parts || []
+  );
+
   const handleUpdateTimeEntries = (entries: any) => {
     console.log('Time entries updated:', entries);
+    onUpdateTimeEntries(entries);
   };
 
   return (
@@ -49,7 +66,7 @@ export function WorkOrderDetailsTabs({
       <TabsContent value="inventory" className="mt-6">
         <WorkOrderInventorySection
           workOrderId={workOrder.id}
-          inventoryItems={workOrder.inventory_items || []}
+          inventoryItems={inventoryItems}
           isEditMode={isEditMode}
         />
       </TabsContent>
@@ -57,7 +74,7 @@ export function WorkOrderDetailsTabs({
       <TabsContent value="time" className="mt-6">
         <TimeTrackingSection
           workOrderId={workOrder.id}
-          timeEntries={workOrder.time_entries || []}
+          timeEntries={timeEntries}
           onUpdateTimeEntries={handleUpdateTimeEntries}
           isEditMode={isEditMode}
         />
