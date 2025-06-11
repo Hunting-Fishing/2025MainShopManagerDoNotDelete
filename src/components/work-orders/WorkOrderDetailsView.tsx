@@ -5,10 +5,12 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { WorkOrder, WorkOrderInventoryItem, TimeEntry } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
+import { WorkOrderPart } from '@/types/workOrderPart';
 import { getWorkOrderById } from '@/services/workOrder';
 import { getWorkOrderJobLines } from '@/services/workOrder/jobLinesService';
 import { getWorkOrderInventoryItems } from '@/services/workOrder/workOrderInventoryService';
 import { getWorkOrderTimeEntries } from '@/services/workOrder/workOrderQueryService';
+import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
 import { WorkOrderDetailsHeader } from './details/WorkOrderDetailsHeader';
 import { WorkOrderDetailsTabs } from './details/WorkOrderDetailsTabs';
 import { toast } from '@/hooks/use-toast';
@@ -26,6 +28,7 @@ export function WorkOrderDetailsView({ workOrderId: propWorkOrderId }: WorkOrder
   const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
   const [inventoryItems, setInventoryItems] = useState<WorkOrderInventoryItem[]>([]);
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
+  const [parts, setParts] = useState<WorkOrderPart[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -42,11 +45,12 @@ export function WorkOrderDetailsView({ workOrderId: propWorkOrderId }: WorkOrder
       setLoading(true);
       setError(null);
 
-      const [workOrderData, jobLinesData, inventoryData, timeData] = await Promise.all([
+      const [workOrderData, jobLinesData, inventoryData, timeData, partsData] = await Promise.all([
         getWorkOrderById(id),
         getWorkOrderJobLines(id),
         getWorkOrderInventoryItems(id),
-        getWorkOrderTimeEntries(id)
+        getWorkOrderTimeEntries(id),
+        getWorkOrderParts(id)
       ]);
 
       if (!workOrderData) {
@@ -65,7 +69,10 @@ export function WorkOrderDetailsView({ workOrderId: propWorkOrderId }: WorkOrder
       setInventoryItems(transformedInventory);
       
       setTimeEntries(timeData);
+      setParts(partsData);
       setNotes(workOrderData.notes || '');
+      
+      console.log('Parts loaded:', partsData);
     } catch (err) {
       console.error('Error fetching work order data:', err);
       setError('Failed to load work order details');
@@ -138,6 +145,7 @@ export function WorkOrderDetailsView({ workOrderId: propWorkOrderId }: WorkOrder
         notes={notes}
         onUpdateNotes={setNotes}
         jobLines={jobLines}
+        parts={parts}
         onJobLinesChange={setJobLines}
         jobLinesLoading={loading}
         isEditMode={isEditMode}

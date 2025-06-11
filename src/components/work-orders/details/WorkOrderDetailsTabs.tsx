@@ -17,6 +17,7 @@ interface WorkOrderDetailsTabsProps {
   notes: string;
   onUpdateNotes: (notes: string) => void;
   jobLines: WorkOrderJobLine[];
+  parts: WorkOrderPart[];
   onJobLinesChange: (jobLines: WorkOrderJobLine[]) => void;
   jobLinesLoading: boolean;
   isEditMode?: boolean;
@@ -30,15 +31,11 @@ export function WorkOrderDetailsTabs({
   notes,
   onUpdateNotes,
   jobLines,
+  parts,
   onJobLinesChange,
   jobLinesLoading,
   isEditMode = false
 }: WorkOrderDetailsTabsProps) {
-  // Get all parts from job lines for the overview tab
-  const allParts: WorkOrderPart[] = jobLines.flatMap(jobLine => 
-    jobLine.parts || []
-  );
-
   const handleUpdateTimeEntries = (entries: any) => {
     console.log('Time entries updated:', entries);
     onUpdateTimeEntries(entries);
@@ -57,7 +54,7 @@ export function WorkOrderDetailsTabs({
         <PartsAndLaborTab
           workOrder={workOrder}
           jobLines={jobLines}
-          allParts={allParts}
+          allParts={parts}
           onJobLinesChange={onJobLinesChange}
           isEditMode={isEditMode}
         />
