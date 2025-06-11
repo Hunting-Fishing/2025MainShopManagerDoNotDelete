@@ -1,181 +1,155 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
-import { useWorkOrder } from '@/hooks/useWorkOrder';
-import { useJobLines } from '@/hooks/useJobLines';
-import { WorkOrderDetailsTabs } from './details/WorkOrderDetailsTabs';
-import { WorkOrderEditForm } from './WorkOrderEditForm';
-import { WorkOrderPageLayout } from './WorkOrderPageLayout';
-import { WorkOrderOverviewHeader } from './details/WorkOrderOverviewHeader';
-import { Button } from '@/components/ui/button';
-import { Edit, Eye, ArrowLeft } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Skeleton } from '@/components/ui/skeleton';
-import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, Loader2 } from 'lucide-react';
+import { WorkOrder, WorkOrderInventoryItem, TimeEntry } from '@/types/workOrder';
+import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
+import { getWorkOrderById } from '@/services/workOrder';
+import { getWorkOrderJobLines } from '@/services/workOrder/jobLinesService';
+import { getWorkOrderInventoryItems } from '@/services/workOrder/workOrderInventoryService';
+import { getWorkOrderTimeEntries } from '@/services/workOrder/workOrderQueryService';
+import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
+import { WorkOrderDetailsHeader } from './details/WorkOrderDetailsHeader';
+import { WorkOrderDetailsTabs } from './details/WorkOrderDetailsTabs';
+import { toast } from '@/hooks/use-toast';
 
-export function WorkOrderDetailsView() {
-  const { id } = useParams<{ id: string }>();
-  const location = useLocation();
+interface WorkOrderDetailsViewProps {
+  workOrderId?: string;
+}
+
+export function WorkOrderDetailsView({ workOrderId: propWorkOrderId }: WorkOrderDetailsViewProps) {
+  const { id: paramWorkOrderId } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  
-  const isEditRoute = location.pathname.includes('/edit');
-  const shouldAutoEdit = () => location.state?.autoEdit === true;
-  
-  const [isEditMode, setIsEditMode] = useState(isEditRoute || shouldAutoEdit());
-  const [timeEntries, setTimeEntries] = useState<any[]>([]);
-  const [notes, setNotes] = useState<string>('');
-  const [workOrderParts, setWorkOrderParts] = useState<WorkOrderPart[]>([]);
+  const workOrderId = propWorkOrderId || paramWorkOrderId;
 
-  const { workOrder, isLoading, error } = useWorkOrder(id!);
-  const { jobLines, isLoading: jobLinesLoading } = useJobLines(id!);
+  const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
+  const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<WorkOrderInventoryItem[]>([]);
+  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
+  const [parts, setParts] = useState<WorkOrderPart[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [notes, setNotes] = useState('');
 
   useEffect(() => {
-    if (workOrder) {
-      setNotes(workOrder.notes || '');
+    if (workOrderId) {
+      fetchWorkOrderData(workOrderId);
     }
-  }, [workOrder]);
+  }, [workOrderId]);
 
-  useEffect(() => {
-    if (id) {
-      // Fetch standalone work order parts (not attached to job lines)
-      getWorkOrderParts(id).then(parts => {
-        console.log('Standalone work order parts:', parts);
-        setWorkOrderParts(parts);
-      }).catch(error => {
-        console.error('Error fetching work order parts:', error);
+  const fetchWorkOrderData = async (id: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const [workOrderData, jobLinesData, inventoryData, timeData, partsData] = await Promise.all([
+        getWorkOrderById(id),
+        getWorkOrderJobLines(id),
+        getWorkOrderInventoryItems(id),
+        getWorkOrderTimeEntries(id),
+        getWorkOrderParts(id)
+      ]);
+
+      if (!workOrderData) {
+        setError('Work order not found');
+        return;
+      }
+
+      setWorkOrder(workOrderData);
+      setJobLines(jobLinesData);
+      
+      // Transform inventory data to include total property
+      const transformedInventory = inventoryData.map(item => ({
+        ...item,
+        total: item.quantity * item.unit_price
+      }));
+      setInventoryItems(transformedInventory);
+      
+      setTimeEntries(timeData);
+      setParts(partsData);
+      setNotes(workOrderData.notes || '');
+      
+      console.log('Parts loaded:', partsData);
+    } catch (err) {
+      console.error('Error fetching work order data:', err);
+      setError('Failed to load work order details');
+      toast({
+        title: "Error",
+        description: "Failed to load work order details",
+        variant: "destructive"
       });
-    }
-  }, [id]);
-
-  useEffect(() => {
-    if (isEditRoute) {
-      setIsEditMode(true);
-    }
-  }, [isEditRoute]);
-
-  const handleToggleEditMode = () => {
-    if (isEditMode) {
-      navigate(`/work-orders/${id}`);
-    } else {
-      navigate(`/work-orders/${id}/edit`);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleUpdateNotes = (updatedNotes: string) => {
-    setNotes(updatedNotes);
+  const handleInvoiceCreated = (invoiceId: string) => {
+    toast({
+      title: "Success",
+      description: "Invoice created successfully",
+    });
+    // Optionally navigate to invoice details
+    // navigate(`/invoices/${invoiceId}`);
   };
 
-  const handleUpdateTimeEntries = (updatedEntries: any[]) => {
-    setTimeEntries(updatedEntries);
-  };
-
-  const handleJobLinesChange = (updatedJobLines: any[]) => {
-    // Handle job lines changes if needed
-    console.log('Job lines updated:', updatedJobLines);
-  };
-
-  const handleCancel = () => {
-    if (isEditRoute) {
-      navigate(`/work-orders/${id}`);
-    } else {
-      navigate('/work-orders');
-    }
-  };
-
-  const handleSave = () => {
-    // Handle save logic
-    console.log('Saving work order changes...');
-    navigate(`/work-orders/${id}`);
-  };
-
-  if (isLoading || jobLinesLoading) {
+  if (!workOrderId) {
     return (
-      <div className="container mx-auto py-6 space-y-6">
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-48 w-full" />
-        <Skeleton className="h-96 w-full" />
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          No work order ID provided
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-lg">Loading work order details...</p>
+        </div>
       </div>
     );
   }
 
   if (error || !workOrder) {
     return (
-      <div className="container mx-auto py-6">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Work Order Not Found</h2>
-          <p className="text-gray-600 mb-4">Unable to load work order details.</p>
-          <Button asChild>
-            <Link to="/work-orders">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Work Orders
-            </Link>
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // Extract all parts from job lines
-  const allPartsFromJobLines = jobLines.reduce((acc: WorkOrderPart[], jobLine) => {
-    if (jobLine.parts && jobLine.parts.length > 0) {
-      return [...acc, ...jobLine.parts];
-    }
-    return acc;
-  }, []);
-
-  // Combine standalone parts with parts from job lines
-  const allParts = [...workOrderParts, ...allPartsFromJobLines];
-
-  console.log('WorkOrderDetailsView - jobLines with parts:', jobLines);
-  console.log('WorkOrderDetailsView - allParts:', allParts);
-  console.log('WorkOrderDetailsView - workOrder data:', workOrder);
-
-  if (isEditMode) {
-    return (
-      <WorkOrderEditForm
-        workOrderId={id!}
-        timeEntries={timeEntries}
-        onUpdateTimeEntries={handleUpdateTimeEntries}
-        onCancel={handleCancel}
-        onSave={handleSave}
-      />
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          {error || 'Work order not found'}
+        </AlertDescription>
+      </Alert>
     );
   }
 
   return (
-    <WorkOrderPageLayout 
-      title={`Work Order #${workOrder.work_order_number || workOrder.id?.slice(-8)}`}
-      actions={
-        <Button onClick={handleToggleEditMode} className="flex items-center gap-2">
-          <Edit className="h-4 w-4" />
-          Edit Work Order
-        </Button>
-      }
-    >
-      <div className="space-y-6">
-        {/* Work Order Overview Header */}
-        <WorkOrderOverviewHeader 
-          workOrder={workOrder}
-          jobLines={jobLines || []}
-          allParts={allParts}
-        />
+    <div className="space-y-6">
+      <WorkOrderDetailsHeader 
+        workOrder={workOrder}
+        onEdit={() => setIsEditMode(!isEditMode)}
+        onInvoiceCreated={handleInvoiceCreated}
+        isEditMode={isEditMode}
+      />
 
-        {/* Work Order Details Tabs */}
-        <WorkOrderDetailsTabs 
-          workOrder={workOrder}
-          timeEntries={timeEntries}
-          onUpdateTimeEntries={handleUpdateTimeEntries}
-          inventoryItems={workOrder.inventoryItems || []}
-          notes={notes}
-          onUpdateNotes={handleUpdateNotes}
-          jobLines={jobLines || []}
-          parts={workOrderParts}
-          onJobLinesChange={handleJobLinesChange}
-          jobLinesLoading={jobLinesLoading}
-          isEditMode={false}
-        />
-      </div>
-    </WorkOrderPageLayout>
+      <WorkOrderDetailsTabs
+        workOrder={workOrder}
+        timeEntries={timeEntries}
+        onUpdateTimeEntries={setTimeEntries}
+        inventoryItems={inventoryItems}
+        notes={notes}
+        onUpdateNotes={setNotes}
+        jobLines={jobLines}
+        parts={parts}
+        onJobLinesChange={setJobLines}
+        jobLinesLoading={loading}
+        isEditMode={isEditMode}
+      />
+    </div>
   );
 }
