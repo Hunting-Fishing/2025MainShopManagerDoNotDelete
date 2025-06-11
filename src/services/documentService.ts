@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Document, DocumentCategory, CreateDocumentData, DocumentSearchParams } from '@/types/document';
 
@@ -34,7 +35,10 @@ export class DocumentService {
     const { data, error } = await query;
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(doc => ({
+      ...doc,
+      document_type: doc.document_type as 'pdf' | 'image' | 'weblink' | 'internal_link'
+    }));
   }
 
   static async getDocument(id: string): Promise<Document> {
@@ -45,10 +49,13 @@ export class DocumentService {
       .single();
 
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      document_type: data.document_type as 'pdf' | 'image' | 'weblink' | 'internal_link'
+    };
   }
 
-  static async uploadDocument(documentData: CreateDocumentData): Promise<Document> {
+  static async createDocument(documentData: CreateDocumentData): Promise<Document> {
     const { data, error } = await supabase
       .from('documents')
       .insert(documentData)
@@ -56,7 +63,31 @@ export class DocumentService {
       .single();
 
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      document_type: data.document_type as 'pdf' | 'image' | 'weblink' | 'internal_link'
+    };
+  }
+
+  static async uploadDocument(documentData: CreateDocumentData): Promise<Document> {
+    return this.createDocument(documentData);
+  }
+
+  static async uploadFile(file: File, path: string): Promise<{ path: string; url: string }> {
+    const { data, error } = await supabase.storage
+      .from('documents')
+      .upload(path, file);
+
+    if (error) throw error;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('documents')
+      .getPublicUrl(data.path);
+
+    return {
+      path: data.path,
+      url: publicUrl
+    };
   }
 
   static async updateDocument(id: string, updates: Partial<CreateDocumentData>): Promise<Document> {
@@ -68,7 +99,10 @@ export class DocumentService {
       .single();
 
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      document_type: data.document_type as 'pdf' | 'image' | 'weblink' | 'internal_link'
+    };
   }
 
   static async deleteDocument(id: string): Promise<void> {
@@ -99,6 +133,7 @@ export class DocumentService {
         .insert({
           document_id: documentId,
           accessed_by: user.id,
+          accessed_by_name: user.email || 'Unknown User',
           access_type: accessType
         });
 
@@ -116,6 +151,6 @@ export class DocumentService {
   }
 }
 
-export const getCustomerDocuments = DocumentService.getDocuments;
+export const getCustomerDocuments = (searchParams: DocumentSearchParams) => DocumentService.getDocuments(searchParams);
 export const getDocumentCategories = DocumentService.getCategories;
 export const uploadDocumentVersion = DocumentService.uploadDocumentVersion;

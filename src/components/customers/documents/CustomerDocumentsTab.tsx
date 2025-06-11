@@ -52,7 +52,7 @@ export const CustomerDocumentsTab: React.FC<CustomerDocumentsTabProps> = ({ cust
   const loadDocuments = async () => {
     setIsLoading(true);
     try {
-      const docs = await getCustomerDocuments(customer.id);
+      const docs = await getCustomerDocuments({ customer_id: customer.id });
       // Filter and cast to CustomerDocument[] ensuring customer_id is present
       const customerDocs = docs
         .filter(doc => doc.customer_id === customer.id)
