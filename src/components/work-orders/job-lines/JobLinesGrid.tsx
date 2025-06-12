@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core';
 import { WorkOrderJobLine } from '@/types/jobLine';
@@ -34,7 +35,12 @@ export function JobLinesGrid({
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [activePart, setActivePart] = useState<WorkOrderPart | null>(null);
 
-  const { handleDragEnd } = usePartsDragDrop(parts, onPartsChange || (() => {}));
+  // Ensure we have a valid onPartsChange function
+  const handlePartsChange = onPartsChange || (() => {
+    console.warn('No onPartsChange handler provided');
+  });
+
+  const { handleDragEnd } = usePartsDragDrop(parts, handlePartsChange);
 
   const handleAddJobLine = (newJobLine: WorkOrderJobLine) => {
     const updatedJobLines = [...jobLines, newJobLine];
@@ -50,7 +56,7 @@ export function JobLinesGrid({
   };
 
   const handleDragEndInternal = (event: any) => {
-    console.log('Drag ended');
+    console.log('Drag ended, calling handleDragEnd');
     setActivePart(null);
     handleDragEnd(event);
   };
@@ -96,7 +102,7 @@ export function JobLinesGrid({
                   jobLine={jobLine}
                   onUpdate={onUpdate}
                   onDelete={onDelete}
-                  onPartsChange={onPartsChange}
+                  onPartsChange={handlePartsChange}
                   isEditMode={isEditMode}
                   parts={parts}
                 />
@@ -117,7 +123,7 @@ export function JobLinesGrid({
 
       <DragOverlay>
         {activePart ? (
-          <div className="opacity-90 rotate-3 scale-105">
+          <div className="opacity-90 rotate-3 scale-105 shadow-2xl">
             <DraggablePartCard
               part={activePart}
               isEditMode={false}
