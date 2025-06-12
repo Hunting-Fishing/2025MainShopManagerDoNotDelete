@@ -21,6 +21,11 @@ export default function CustomersPage() {
     handleFilterChange 
   } = useCustomers();
 
+  console.log('CustomersPage - loading:', loading);
+  console.log('CustomersPage - error:', error);
+  console.log('CustomersPage - customers:', customers);
+  console.log('CustomersPage - filteredCustomers:', filteredCustomers);
+
   const handleSearchChange = (search: string) => {
     handleFilterChange({
       search,
@@ -31,12 +36,44 @@ export default function CustomersPage() {
   };
 
   if (loading) {
-    return <LoadingSpinner size="lg" text="Loading customers..." className="mt-8" />;
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Customers</h1>
+            <p className="text-muted-foreground">
+              Manage your customers and view their service history
+            </p>
+          </div>
+          <Button asChild>
+            <Link to="/customers/create">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Customer
+            </Link>
+          </Button>
+        </div>
+        <LoadingSpinner size="lg" text="Loading customers..." className="mt-8" />
+      </div>
+    );
   }
 
   if (error) {
     return (
-      <div className="p-6">
+      <div className="space-y-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Customers</h1>
+            <p className="text-muted-foreground">
+              Manage your customers and view their service history
+            </p>
+          </div>
+          <Button asChild>
+            <Link to="/customers/create">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Customer
+            </Link>
+          </Button>
+        </div>
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-red-600">Error loading customers: {error}</p>
           <Button 
@@ -90,7 +127,7 @@ export default function CustomersPage() {
       </Card>
 
       {/* Customer List */}
-      {customers.length === 0 ? (
+      {!customers || customers.length === 0 ? (
         <EmptyState
           icon={<Users className="h-8 w-8 text-gray-400" />}
           title="No customers found"

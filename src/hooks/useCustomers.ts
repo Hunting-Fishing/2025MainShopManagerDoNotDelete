@@ -13,7 +13,7 @@ export interface CustomerFilters {
 export function useCustomers() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<CustomerFilters>({
     search: '',
@@ -36,12 +36,14 @@ export function useCustomers() {
     setError(null);
     
     try {
+      console.log('Fetching customers...');
       const data = await getAllCustomers();
-      setCustomers(data);
+      console.log('Customers fetched successfully:', data);
+      setCustomers(data || []);
     } catch (err) {
       console.error('Error fetching customers:', err);
       setError(err instanceof Error ? err.message : 'Unknown error occurred');
-      setCustomers([]); // No fallback data - use real data only
+      setCustomers([]);
     } finally {
       setIsLoading(false);
     }
@@ -71,10 +73,12 @@ export function useCustomers() {
       });
     }
 
+    console.log('Filtered customers:', filtered);
     setFilteredCustomers(filtered);
   };
 
   const handleFilterChange = (newFilters: CustomerFilters) => {
+    console.log('Filter change:', newFilters);
     setFilters(prevFilters => ({
       ...prevFilters,
       ...newFilters
@@ -84,7 +88,7 @@ export function useCustomers() {
   return {
     customers,
     filteredCustomers,
-    loading: isLoading, // Add alias for backward compatibility
+    loading: isLoading,
     isLoading,
     error,
     filters,

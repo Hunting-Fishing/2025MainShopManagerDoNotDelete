@@ -24,7 +24,33 @@ export const CustomersList = ({
 }: CustomersListProps) => {
   console.log('CustomersList - customers:', customers);
   console.log('CustomersList - filteredCustomers:', filteredCustomers);
+  console.log('CustomersList - loading:', loading);
+  console.log('CustomersList - error:', error);
   
+  if (loading) {
+    return (
+      <Card>
+        <div className="p-6">
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">Loading customers...</p>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <div className="p-6">
+          <div className="text-center py-8">
+            <p className="text-red-600">Error: {error}</p>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <div className="p-6 space-y-4">
@@ -47,8 +73,8 @@ export const CustomersList = ({
             <TableBody>
               <CustomerTable 
                 customers={filteredCustomers}
-                loading={loading}
-                error={error}
+                loading={false}
+                error={null}
               />
             </TableBody>
           </Table>
@@ -56,10 +82,13 @@ export const CustomersList = ({
         
         {/* Show customer count */}
         <div className="text-sm text-muted-foreground">
-          {filteredCustomers.length > 0 && (
+          {filteredCustomers && filteredCustomers.length > 0 && (
             <p>
-              Showing {filteredCustomers.length} of {customers.length} customers
+              Showing {filteredCustomers.length} of {customers?.length || 0} customers
             </p>
+          )}
+          {(!filteredCustomers || filteredCustomers.length === 0) && (
+            <p>No customers to display</p>
           )}
         </div>
       </div>
