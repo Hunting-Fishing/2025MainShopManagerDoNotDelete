@@ -76,6 +76,9 @@ export const CustomerWorkOrdersTab: React.FC<CustomerWorkOrdersTabProps> = ({
   loading = false,
   error
 }) => {
+  // Create the work order creation URL with pre-populated customer data
+  const createWorkOrderUrl = `/work-orders/create?customerId=${customer.id}&customerName=${encodeURIComponent(`${customer.first_name} ${customer.last_name}`)}&customerEmail=${encodeURIComponent(customer.email || '')}&customerPhone=${encodeURIComponent(customer.phone || '')}&customerAddress=${encodeURIComponent(customer.address || '')}`;
+
   if (loading) {
     return (
       <Card>
@@ -114,7 +117,7 @@ export const CustomerWorkOrdersTab: React.FC<CustomerWorkOrdersTabProps> = ({
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Work Orders</CardTitle>
         <Button asChild>
-          <Link to={`/work-orders/create?customerId=${customer.id}&customerName=${encodeURIComponent(`${customer.first_name} ${customer.last_name}`)}`}>
+          <Link to={createWorkOrderUrl}>
             <Plus className="mr-2 h-4 w-4" />
             Create Work Order
           </Link>
@@ -125,7 +128,7 @@ export const CustomerWorkOrdersTab: React.FC<CustomerWorkOrdersTabProps> = ({
           <div className="text-center py-8">
             <p className="text-muted-foreground mb-4">No work orders found for this customer.</p>
             <Button asChild variant="outline">
-              <Link to={`/work-orders/create?customerId=${customer.id}&customerName=${encodeURIComponent(`${customer.first_name} ${customer.last_name}`)}`}>
+              <Link to={createWorkOrderUrl}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create First Work Order
               </Link>
