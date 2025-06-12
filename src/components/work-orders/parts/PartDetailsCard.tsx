@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { Card, CardContent } from '@/components/ui/card';
@@ -22,6 +23,12 @@ export function PartDetailsCard({
 }: PartDetailsCardProps) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const statusInfo = partStatusMap[part.status || 'pending'];
+
+  // Ensure we have proper numeric values and calculate total
+  const quantity = Number(part.quantity) || 1;
+  const unitPrice = Number(part.unit_price) || 0;
+  const calculatedTotal = quantity * unitPrice;
+  const displayTotal = part.total_price || calculatedTotal;
 
   const handleEditClick = () => {
     setIsEditDialogOpen(true);
@@ -57,19 +64,19 @@ export function PartDetailsCard({
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Quantity:</span>
-                    <span className="font-medium">{part.quantity}</span>
+                    <span className="font-medium">{quantity}</span>
                   </div>
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Unit Price:</span>
-                    <span className="font-medium">${part.unit_price.toFixed(2)}</span>
+                    <span className="font-medium">${unitPrice.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Total:</span>
-                    <span className="font-bold text-lg flex items-center gap-1">
+                    <span className="font-bold text-lg flex items-center gap-1 text-green-600">
                       <DollarSign className="h-4 w-4" />
-                      {part.total_price.toFixed(2)}
+                      {displayTotal.toFixed(2)}
                     </span>
                   </div>
                 </div>
