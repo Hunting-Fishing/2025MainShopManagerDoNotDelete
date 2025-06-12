@@ -1,181 +1,124 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Calendar, User, Wrench } from 'lucide-react';
+import { ClipboardList, Plus } from 'lucide-react';
 import { Customer } from '@/types/customer';
+import { WorkOrder } from '@/types/workOrder';
 import { useWorkOrdersByCustomer } from '@/hooks/useWorkOrdersByCustomer';
-import { formatDate } from '@/lib/formatters';
 
 interface CustomerWorkOrdersTabProps {
   customer: Customer;
+  workOrders: WorkOrder[];
+  loading: boolean;
+  error?: string;
 }
 
-export function CustomerWorkOrdersTab({ customer }: CustomerWorkOrdersTabProps) {
-  const navigate = useNavigate();
-  const { workOrders, isLoading } = useWorkOrdersByCustomer(customer.id);
-
-  const handleCreateWorkOrder = () => {
-    // Pre-populate with customer information
+export function CustomerWorkOrdersTab({ customer, workOrders, loading, error }: CustomerWorkOrdersTabProps) {
+  
+  const createWorkOrderUrl = () => {
     const params = new URLSearchParams({
       customerId: customer.id,
-      customerName: `${customer.first_name} ${customer.last_name}`,
+      customerName: `${customer.first_name} ${customer.last_name}`.trim(),
       customerEmail: customer.email || '',
       customerPhone: customer.phone || '',
-      customerAddress: [
-        customer.address,
-        customer.city,
-        customer.state,
-        customer.zip_code
-      ].filter(Boolean).join(', ')
+      customerAddress: customer.address || '',
+      customerCity: customer.city || '',
+      customerState: customer.state || '',
+      customerZip: customer.postal_code || '', // Using postal_code instead of zip_code
     });
 
-    // If customer has vehicles, add the first vehicle info
+    // Add first vehicle if exists
     if (customer.vehicles && customer.vehicles.length > 0) {
       const vehicle = customer.vehicles[0];
+      params.append('vehicleId', vehicle.id);
       params.append('vehicleMake', vehicle.make || '');
       params.append('vehicleModel', vehicle.model || '');
       params.append('vehicleYear', vehicle.year?.toString() || '');
-      params.append('vehicleLicensePlate', vehicle.license_plate || '');
       params.append('vehicleVin', vehicle.vin || '');
+      params.append('vehicleLicensePlate', vehicle.license_plate || '');
     }
 
-    navigate(`/work-orders/create?${params.toString()}`);
+    return `/work-orders/create?${params.toString()}`;
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'in-progress':
-        return 'bg-blue-100 text-blue-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold">Work Orders</h2>
-          <Button 
-            onClick={handleCreateWorkOrder}
-            className="flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Create Work Order
-          </Button>
-        </div>
-        <div className="grid gap-4">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-6">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+      <div className="flex items-center justify-center h-32">
+        <div className="text-muted-foreground">Loading work orders...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-32">
+        <div className="text-red-600">Error loading work orders: {error}</div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Work Orders</h2>
-        <Button 
-          onClick={handleCreateWorkOrder}
-          className="flex items-center gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          Create Work Order
+        <h3 className="text-lg font-medium">Service History</h3>
+        <Button asChild>
+          <Link to={createWorkOrderUrl()}>
+            <Plus className="mr-2 h-4 w-4" />
+            Create Work Order
+          </Link>
         </Button>
       </div>
 
       {workOrders && workOrders.length > 0 ? (
         <div className="grid gap-4">
           {workOrders.map((workOrder) => (
-            <Card 
-              key={workOrder.id} 
-              className="cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => navigate(`/work-orders/${workOrder.id}`)}
-            >
+            <Card key={workOrder.id}>
               <CardHeader className="pb-3">
-                <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg">
-                    {workOrder.title || `Work Order #${workOrder.id.slice(0, 8)}`}
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">
+                    Work Order #{workOrder.work_order_number || workOrder.id.slice(0, 8)}
                   </CardTitle>
-                  <Badge className={getStatusColor(workOrder.status)}>
+                  <Badge variant={workOrder.status === 'completed' ? 'default' : 'secondary'}>
                     {workOrder.status}
                   </Badge>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {workOrder.description && (
-                    <p className="text-gray-600 text-sm line-clamp-2">
-                      {workOrder.description}
-                    </p>
-                  )}
-                  
-                  <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      {formatDate(new Date(workOrder.created_at))}
-                    </div>
-                    
-                    {workOrder.assigned_to && (
-                      <div className="flex items-center gap-1">
-                        <User className="h-4 w-4" />
-                        {workOrder.assigned_to}
-                      </div>
+                  <p className="text-sm text-muted-foreground">{workOrder.description}</p>
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Created: {new Date(workOrder.created_at).toLocaleDateString()}</span>
+                    {workOrder.total_cost && (
+                      <span className="font-medium">${workOrder.total_cost.toFixed(2)}</span>
                     )}
-                    
-                    <div className="flex items-center gap-1">
-                      <Wrench className="h-4 w-4" />
-                      Priority: {workOrder.priority || 'Medium'}
-                    </div>
                   </div>
-
-                  {workOrder.total_cost && (
-                    <div className="mt-2 text-right">
-                      <span className="text-lg font-semibold text-green-600">
-                        ${workOrder.total_cost.toFixed(2)}
-                      </span>
-                    </div>
-                  )}
+                  <div className="flex justify-end">
+                    <Button variant="outline" size="sm" asChild>
+                      <Link to={`/work-orders/${workOrder.id}`}>
+                        <ClipboardList className="mr-2 h-4 w-4" />
+                        View Details
+                      </Link>
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
       ) : (
-        <Card>
-          <CardContent className="text-center py-12">
-            <Wrench className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No Work Orders Found
-            </h3>
-            <p className="text-gray-500 mb-6">
-              This customer doesn't have any work orders yet. Create one to get started.
-            </p>
-            <Button 
-              onClick={handleCreateWorkOrder}
-              className="flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
+        <div className="text-center py-8 text-muted-foreground">
+          <ClipboardList className="mx-auto h-12 w-12 opacity-50 mb-4" />
+          <p>No service history found for this customer.</p>
+          <Button asChild className="mt-4">
+            <Link to={createWorkOrderUrl()}>
+              <Plus className="mr-2 h-4 w-4" />
               Create First Work Order
-            </Button>
-          </CardContent>
-        </Card>
+            </Link>
+          </Button>
+        </div>
       )}
     </div>
   );
