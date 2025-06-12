@@ -14,17 +14,17 @@ export function JobLinesTable({ jobLines, onUpdate, onDelete }: JobLinesTablePro
   const [editingJobLine, setEditingJobLine] = useState<WorkOrderJobLine | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  const handleEdit = (jobLine: WorkOrderJobLine) => {
-    setEditingJobLine(jobLine);
-    setIsEditDialogOpen(true);
-  };
-
-  const handleUpdate = (updatedJobLine: WorkOrderJobLine) => {
+  const handleUpdate = async (updatedJobLine: WorkOrderJobLine) => {
     if (onUpdate) {
       onUpdate(updatedJobLine);
     }
     setIsEditDialogOpen(false);
     setEditingJobLine(null);
+  };
+
+  const handlePartsChange = (newParts: any[]) => {
+    // Handle parts change if needed
+    console.log('Parts changed:', newParts);
   };
 
   if (jobLines.length === 0) {
@@ -42,8 +42,10 @@ export function JobLinesTable({ jobLines, onUpdate, onDelete }: JobLinesTablePro
           <JobLineCard
             key={jobLine.id}
             jobLine={jobLine}
-            onEdit={handleEdit}
+            onUpdate={onUpdate}
             onDelete={onDelete}
+            onPartsChange={handlePartsChange}
+            isEditMode={true}
           />
         ))}
       </div>

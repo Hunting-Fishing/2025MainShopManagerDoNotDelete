@@ -72,7 +72,7 @@ export function JobLinesGrid({
               <JobLineCard
                 key={jobLine.id}
                 jobLine={jobLine}
-                onEdit={onUpdate}
+                onUpdate={onUpdate}
                 onDelete={onDelete}
                 onPartsChange={handlePartsChange}
                 isEditMode={isEditMode}
