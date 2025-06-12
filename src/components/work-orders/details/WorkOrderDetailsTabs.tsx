@@ -10,6 +10,7 @@ import { TimeTrackingSection } from "../time-tracking/TimeTrackingSection";
 import { WorkOrderCommunications } from "../communications/WorkOrderCommunications";
 import { WorkOrderPartsSection } from "../parts/WorkOrderPartsSection";
 import { WorkOrderLaborSection } from "../labor/WorkOrderLaborSection";
+import { CreateWorkOrderTab } from "./CreateWorkOrderTab";
 
 interface WorkOrderDetailsTabsProps {
   workOrder: WorkOrder;
@@ -24,6 +25,8 @@ interface WorkOrderDetailsTabsProps {
   onPartsChange?: (parts: WorkOrderPart[]) => void;
   jobLinesLoading: boolean;
   isEditMode?: boolean;
+  isCreateMode?: boolean;
+  onCreateWorkOrder?: (data: any) => Promise<void>;
 }
 
 export function WorkOrderDetailsTabs({
@@ -38,12 +41,32 @@ export function WorkOrderDetailsTabs({
   onJobLinesChange,
   onPartsChange,
   jobLinesLoading,
-  isEditMode = false
+  isEditMode = false,
+  isCreateMode = false,
+  onCreateWorkOrder
 }: WorkOrderDetailsTabsProps) {
   const handleUpdateTimeEntries = (entries: any) => {
     console.log('Time entries updated:', entries);
     onUpdateTimeEntries(entries);
   };
+
+  // If in create mode, show a simplified tab layout focused on creation
+  if (isCreateMode) {
+    return (
+      <Tabs defaultValue="create" className="w-full">
+        <TabsList className="grid w-full grid-cols-1 bg-emerald-400">
+          <TabsTrigger value="create">Create Work Order</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="create" className="mt-6">
+          <CreateWorkOrderTab 
+            workOrder={workOrder}
+            onCreateWorkOrder={onCreateWorkOrder}
+          />
+        </TabsContent>
+      </Tabs>
+    );
+  }
 
   return (
     <Tabs defaultValue="overview" className="w-full">

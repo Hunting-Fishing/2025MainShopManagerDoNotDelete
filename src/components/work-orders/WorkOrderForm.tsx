@@ -1,13 +1,9 @@
-
 import React from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { workOrderFormSchema, WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
-import { WorkOrderCreateForm } from "./WorkOrderCreateForm";
+import { WorkOrderDetailsView } from "./WorkOrderDetailsView";
 
 interface WorkOrderFormProps {
-  onSubmit?: (values: WorkOrderFormSchemaValues) => Promise<void>;
-  initialValues?: Partial<WorkOrderFormSchemaValues>;
+  onSubmit?: (values: any) => Promise<void>;
+  initialValues?: any;
   prePopulatedCustomer?: {
     customerId?: string;
     customerName?: string;
@@ -27,38 +23,21 @@ interface WorkOrderFormProps {
   };
 }
 
+// This component is now deprecated in favor of the comprehensive WorkOrderDetailsView
+// Keeping it for backward compatibility but redirecting to the new interface
 export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
   onSubmit,
   initialValues = {},
   prePopulatedCustomer
 }) => {
-  const form = useForm<WorkOrderFormSchemaValues>({
-    resolver: zodResolver(workOrderFormSchema),
-    defaultValues: {
-      customer: prePopulatedCustomer?.customerName || "",
-      description: prePopulatedCustomer?.description || "",
-      status: "pending",
-      priority: (prePopulatedCustomer?.priority as any) || "medium",
-      technician: "",
-      location: "",
-      dueDate: "",
-      notes: "",
-      vehicleMake: prePopulatedCustomer?.vehicleMake || "",
-      vehicleModel: prePopulatedCustomer?.vehicleModel || "",
-      vehicleYear: prePopulatedCustomer?.vehicleYear || "",
-      odometer: "",
-      licensePlate: prePopulatedCustomer?.vehicleLicensePlate || "",
-      vin: prePopulatedCustomer?.vehicleVin || "",
-      inventoryItems: [],
-      ...initialValues
-    }
-  });
-
-  const handleSubmit = async (values: WorkOrderFormSchemaValues) => {
-    if (onSubmit) {
-      await onSubmit(values);
-    }
-  };
-
-  return <WorkOrderCreateForm form={form} onSubmit={handleSubmit} prePopulatedCustomer={prePopulatedCustomer} />;
+  console.warn('WorkOrderForm is deprecated. Use WorkOrderDetailsView instead.');
+  
+  return (
+    <WorkOrderDetailsView 
+      workOrderId="new"
+      isCreateMode={true}
+      prePopulatedData={prePopulatedCustomer}
+      onCreateWorkOrder={onSubmit}
+    />
+  );
 };

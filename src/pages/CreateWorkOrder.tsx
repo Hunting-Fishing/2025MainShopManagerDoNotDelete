@@ -1,13 +1,13 @@
 
 import React from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { WorkOrderForm } from '@/components/work-orders/WorkOrderForm';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { ResponsiveContainer } from '@/components/ui/responsive-container';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { createWorkOrder } from '@/services/workOrder';
-import { WorkOrderFormSchemaValues } from '@/schemas/workOrderSchema';
-import { useNavigate } from 'react-router-dom';
+import { WorkOrderDetailsView } from '@/components/work-orders/WorkOrderDetailsView';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const CreateWorkOrder = () => {
   const [searchParams] = useSearchParams();
@@ -15,7 +15,7 @@ const CreateWorkOrder = () => {
   const navigate = useNavigate();
 
   // Extract pre-populated data from URL parameters
-  const prePopulatedCustomer = {
+  const prePopulatedData = {
     customerId: searchParams.get('customerId') || undefined,
     customerName: searchParams.get('customerName') || undefined,
     customerEmail: searchParams.get('customerEmail') || undefined,
@@ -28,39 +28,10 @@ const CreateWorkOrder = () => {
     vehicleVin: searchParams.get('vehicleVin') || undefined,
   };
 
-  const handleSubmit = async (values: WorkOrderFormSchemaValues) => {
+  const handleCreateWorkOrder = async (workOrderData: any) => {
     try {
-      console.log('Creating work order with values:', values);
+      console.log('Creating work order with data:', workOrderData);
       
-      // Ensure inventory items have proper IDs and all required properties
-      const inventoryItems = values.inventoryItems.map(item => ({
-        id: item.id || crypto.randomUUID(),
-        name: item.name || '',
-        sku: item.sku || '',
-        category: item.category || '',
-        quantity: item.quantity || 0,
-        unit_price: item.unit_price || 0,
-        total: item.total || (item.quantity || 0) * (item.unit_price || 0),
-        notes: item.notes
-      }));
-      
-      const workOrderData = {
-        customer_id: prePopulatedCustomer.customerId,
-        description: values.description,
-        status: values.status,
-        priority: values.priority,
-        technician_id: values.technician,
-        location: values.location,
-        due_date: values.dueDate,
-        notes: values.notes,
-        vehicle_make: values.vehicleMake,
-        vehicle_model: values.vehicleModel,
-        vehicle_year: values.vehicleYear,
-        vehicle_license_plate: values.licensePlate,
-        vehicle_vin: values.vin,
-        inventory_items: inventoryItems
-      };
-
       const newWorkOrder = await createWorkOrder(workOrderData);
       
       toast({
@@ -82,19 +53,40 @@ const CreateWorkOrder = () => {
   };
 
   return (
-    <ResponsiveContainer maxWidth="full" className="py-6">
-      <Card className="mx-auto max-w-6xl">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold">Create New Work Order</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <WorkOrderForm 
-            onSubmit={handleSubmit}
-            prePopulatedCustomer={prePopulatedCustomer}
-          />
-        </CardContent>
-      </Card>
-    </ResponsiveContainer>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/work-orders')}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Work Orders
+            </Button>
+            
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Create New Work Order</h1>
+              <p className="text-sm text-gray-600 mt-1">
+                Use the comprehensive work order interface to create detailed work orders
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ResponsiveContainer maxWidth="full" className="py-6">
+        <WorkOrderDetailsView 
+          workOrderId="new"
+          isCreateMode={true}
+          prePopulatedData={prePopulatedData}
+          onCreateWorkOrder={handleCreateWorkOrder}
+        />
+      </ResponsiveContainer>
+    </div>
   );
 };
 

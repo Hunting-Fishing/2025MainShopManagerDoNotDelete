@@ -1,160 +1,198 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Loader2 } from 'lucide-react';
-import { WorkOrder, WorkOrderInventoryItem, TimeEntry } from '@/types/workOrder';
+import { WorkOrder, TimeEntry, WorkOrderInventoryItem } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
-import { getWorkOrderById } from '@/services/workOrder';
-import { getWorkOrderJobLines } from '@/services/workOrder/jobLinesService';
-import { getWorkOrderInventoryItems } from '@/services/workOrder/workOrderInventoryService';
-import { getWorkOrderTimeEntries } from '@/services/workOrder/workOrderQueryService';
-import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
 import { WorkOrderDetailsHeader } from './details/WorkOrderDetailsHeader';
 import { WorkOrderDetailsTabs } from './details/WorkOrderDetailsTabs';
-import { toast } from '@/hooks/use-toast';
+import { getWorkOrderById } from '@/services/workOrder';
+import { getWorkOrderJobLines } from '@/services/workOrder/workOrderJobLinesService';
+import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface WorkOrderDetailsViewProps {
   workOrderId?: string;
+  isCreateMode?: boolean;
+  prePopulatedData?: any;
+  onCreateWorkOrder?: (data: any) => Promise<void>;
 }
 
-export function WorkOrderDetailsView({ workOrderId: propWorkOrderId }: WorkOrderDetailsViewProps) {
+export function WorkOrderDetailsView({ 
+  workOrderId: propWorkOrderId, 
+  isCreateMode = false,
+  prePopulatedData,
+  onCreateWorkOrder 
+}: WorkOrderDetailsViewProps) {
   const { id: paramWorkOrderId } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  
   const workOrderId = propWorkOrderId || paramWorkOrderId;
-
-  // If this is the create route, don't try to fetch data
-  if (workOrderId === 'create') {
-    return null; // This will be handled by the CreateWorkOrder page
-  }
-
+  
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
   const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
-  const [inventoryItems, setInventoryItems] = useState<WorkOrderInventoryItem[]>([]);
-  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [parts, setParts] = useState<WorkOrderPart[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isEditMode, setIsEditMode] = useState(false);
+  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<WorkOrderInventoryItem[]>([]);
   const [notes, setNotes] = useState('');
+  const [loading, setLoading] = useState(!isCreateMode);
+  const [error, setError] = useState<string | null>(null);
+  const [isEditMode, setIsEditMode] = useState(isCreateMode);
+  const [jobLinesLoading, setJobLinesLoading] = useState(false);
 
   useEffect(() => {
-    if (workOrderId && workOrderId !== 'create') {
+    if (isCreateMode) {
+      // Initialize new work order with pre-populated data
+      const newWorkOrder: WorkOrder = {
+        id: 'new',
+        status: 'pending',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        customer_id: prePopulatedData?.customerId,
+        customer_name: prePopulatedData?.customerName,
+        customer_email: prePopulatedData?.customerEmail,
+        customer_phone: prePopulatedData?.customerPhone,
+        customer_address: prePopulatedData?.customerAddress,
+        vehicle_make: prePopulatedData?.vehicleMake,
+        vehicle_model: prePopulatedData?.vehicleModel,
+        vehicle_year: prePopulatedData?.vehicleYear,
+        vehicle_license_plate: prePopulatedData?.vehicleLicensePlate,
+        vehicle_vin: prePopulatedData?.vehicleVin,
+        description: '',
+        priority: 'medium',
+        technician_id: '',
+        location: '',
+        notes: '',
+        timeEntries: [],
+        inventoryItems: [],
+        jobLines: []
+      };
+      setWorkOrder(newWorkOrder);
+      setLoading(false);
+      return;
+    }
+
+    if (workOrderId && workOrderId !== 'new') {
       fetchWorkOrderData(workOrderId);
     }
-  }, [workOrderId]);
+  }, [workOrderId, isCreateMode, prePopulatedData]);
 
   const fetchWorkOrderData = async (id: string) => {
     try {
       setLoading(true);
       setError(null);
-
-      const [workOrderData, jobLinesData, inventoryData, timeData, partsData] = await Promise.all([
+      
+      const [workOrderData, jobLinesData, partsData] = await Promise.all([
         getWorkOrderById(id),
         getWorkOrderJobLines(id),
-        getWorkOrderInventoryItems(id),
-        getWorkOrderTimeEntries(id),
         getWorkOrderParts(id)
       ]);
 
-      if (!workOrderData) {
-        setError('Work order not found');
-        return;
+      if (workOrderData) {
+        setWorkOrder(workOrderData);
+        setTimeEntries(workOrderData.timeEntries || []);
+        setInventoryItems(workOrderData.inventoryItems || []);
+        setNotes(workOrderData.notes || '');
       }
 
-      setWorkOrder(workOrderData);
-      setJobLines(jobLinesData);
-      
-      // Transform inventory data to include total property
-      const transformedInventory = inventoryData.map(item => ({
-        ...item,
-        total: item.quantity * item.unit_price
-      }));
-      setInventoryItems(transformedInventory);
-      
-      setTimeEntries(timeData);
-      setParts(partsData);
-      setNotes(workOrderData.notes || '');
-      
-      console.log('Parts loaded:', partsData);
+      setJobLines(jobLinesData || []);
+      setParts(partsData || []);
     } catch (err) {
       console.error('Error fetching work order data:', err);
       setError('Failed to load work order details');
-      toast({
-        title: "Error",
-        description: "Failed to load work order details",
-        variant: "destructive"
-      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleInvoiceCreated = (invoiceId: string) => {
-    toast({
-      title: "Success",
-      description: "Invoice created successfully",
-    });
-    // Optionally navigate to invoice details
-    // navigate(`/invoices/${invoiceId}`);
+  const handleJobLinesChange = (updatedJobLines: WorkOrderJobLine[]) => {
+    setJobLines(updatedJobLines);
   };
 
-  if (!workOrderId || workOrderId === 'create') {
-    return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          No work order ID provided
-        </AlertDescription>
-      </Alert>
-    );
-  }
+  const handlePartsChange = (updatedParts: WorkOrderPart[]) => {
+    setParts(updatedParts);
+  };
+
+  const handleUpdateTimeEntries = (entries: TimeEntry[]) => {
+    setTimeEntries(entries);
+  };
+
+  const handleUpdateNotes = (updatedNotes: string) => {
+    setNotes(updatedNotes);
+  };
+
+  const handleEdit = () => {
+    setIsEditMode(true);
+  };
+
+  const handleInvoiceCreated = (invoiceId: string) => {
+    toast({
+      title: 'Success',
+      description: 'Invoice created successfully',
+    });
+    navigate(`/invoices/${invoiceId}`);
+  };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-lg">Loading work order details...</p>
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p className="text-lg">Loading work order details...</p>
+          </div>
         </div>
       </div>
     );
   }
 
-  if (error || !workOrder) {
+  if (error || (!workOrder && !isCreateMode)) {
     return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          {error || 'Work order not found'}
-        </AlertDescription>
-      </Alert>
+      <div className="container mx-auto p-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {error || 'Work order not found'}
+          </AlertDescription>
+        </Alert>
+      </div>
     );
   }
 
-  return (
-    <div className="space-y-6">
-      <WorkOrderDetailsHeader 
-        workOrder={workOrder}
-        onEdit={() => setIsEditMode(!isEditMode)}
-        onInvoiceCreated={handleInvoiceCreated}
-        isEditMode={isEditMode}
-      />
+  if (!workOrder) {
+    return null;
+  }
 
-      <div className="container mx-auto px-6">
+  return (
+    <div className="min-h-screen bg-background">
+      {!isCreateMode && (
+        <WorkOrderDetailsHeader 
+          workOrder={workOrder}
+          onEdit={handleEdit}
+          onInvoiceCreated={handleInvoiceCreated}
+          isEditMode={isEditMode}
+        />
+      )}
+
+      <div className="container mx-auto px-6 py-6">
         <WorkOrderDetailsTabs
           workOrder={workOrder}
           timeEntries={timeEntries}
-          onUpdateTimeEntries={setTimeEntries}
+          onUpdateTimeEntries={handleUpdateTimeEntries}
           inventoryItems={inventoryItems}
           notes={notes}
-          onUpdateNotes={setNotes}
+          onUpdateNotes={handleUpdateNotes}
           jobLines={jobLines}
           parts={parts}
-          onJobLinesChange={setJobLines}
-          jobLinesLoading={loading}
+          onJobLinesChange={handleJobLinesChange}
+          onPartsChange={handlePartsChange}
+          jobLinesLoading={jobLinesLoading}
           isEditMode={isEditMode}
+          isCreateMode={isCreateMode}
+          onCreateWorkOrder={onCreateWorkOrder}
         />
       </div>
     </div>
