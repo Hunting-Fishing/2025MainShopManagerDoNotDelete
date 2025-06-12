@@ -2,7 +2,6 @@
 import React from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { ResponsiveContainer } from '@/components/ui/responsive-container';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { createWorkOrder } from '@/services/workOrder';
 import { WorkOrderDetailsView } from '@/components/work-orders/WorkOrderDetailsView';
@@ -14,19 +13,28 @@ const CreateWorkOrder = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Extract pre-populated data from URL parameters
+  // Extract and clean up pre-populated data from URL parameters
   const prePopulatedData = {
     customerId: searchParams.get('customerId') || undefined,
     customerName: searchParams.get('customerName') || undefined,
     customerEmail: searchParams.get('customerEmail') || undefined,
     customerPhone: searchParams.get('customerPhone') || undefined,
     customerAddress: searchParams.get('customerAddress') || undefined,
+    customerCity: searchParams.get('customerCity') || undefined,
+    customerState: searchParams.get('customerState') || undefined,
+    customerZip: searchParams.get('customerZip') || undefined,
+    vehicleId: searchParams.get('vehicleId') || undefined,
     vehicleMake: searchParams.get('vehicleMake') || undefined,
     vehicleModel: searchParams.get('vehicleModel') || undefined,
     vehicleYear: searchParams.get('vehicleYear') || undefined,
     vehicleLicensePlate: searchParams.get('vehicleLicensePlate') || undefined,
     vehicleVin: searchParams.get('vehicleVin') || undefined,
   };
+
+  // Filter out empty strings and convert to undefined
+  const cleanedData = Object.fromEntries(
+    Object.entries(prePopulatedData).filter(([_, value]) => value && value.trim() !== '')
+  );
 
   const handleCreateWorkOrder = async (workOrderData: any) => {
     try {
@@ -71,7 +79,10 @@ const CreateWorkOrder = () => {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Create New Work Order</h1>
               <p className="text-sm text-gray-600 mt-1">
-                Use the comprehensive work order interface to create detailed work orders
+                {cleanedData.customerName 
+                  ? `Creating work order for ${cleanedData.customerName}` 
+                  : 'Use the comprehensive work order interface to create detailed work orders'
+                }
               </p>
             </div>
           </div>
@@ -82,7 +93,7 @@ const CreateWorkOrder = () => {
         <WorkOrderDetailsView 
           workOrderId="new"
           isCreateMode={true}
-          prePopulatedData={prePopulatedData}
+          prePopulatedData={cleanedData}
           onCreateWorkOrder={handleCreateWorkOrder}
         />
       </ResponsiveContainer>

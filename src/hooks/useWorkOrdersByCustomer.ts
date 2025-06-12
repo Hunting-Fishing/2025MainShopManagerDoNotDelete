@@ -17,18 +17,21 @@ export function useWorkOrdersByCustomer(customerId: string) {
 
     const fetchWorkOrders = async () => {
       setLoading(true);
+      setError(null);
+      
       try {
         console.log('Fetching work orders for customer:', customerId);
         
-        const { data, error } = await supabase
+        const { data, error: fetchError } = await supabase
           .from('work_orders')
           .select('*')
           .eq('customer_id', customerId)
           .order('created_at', { ascending: false });
 
-        if (error) {
-          console.error('Error fetching work orders:', error);
-          setError(error.message);
+        if (fetchError) {
+          console.error('Error fetching work orders:', fetchError);
+          setError(fetchError.message);
+          setWorkOrders([]);
         } else {
           console.log('Work orders fetched:', data?.length || 0);
           setWorkOrders(data || []);
@@ -36,6 +39,7 @@ export function useWorkOrdersByCustomer(customerId: string) {
       } catch (err) {
         console.error('Exception fetching work orders:', err);
         setError('Failed to fetch work orders');
+        setWorkOrders([]);
       } finally {
         setLoading(false);
       }

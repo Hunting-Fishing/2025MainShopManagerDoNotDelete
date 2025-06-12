@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 import {
   FormField,
@@ -16,6 +16,7 @@ import { Customer } from "@/types/customer";
 interface CustomerFieldsProps {
   form: UseFormReturn<WorkOrderFormSchemaValues>;
   prePopulatedCustomer?: {
+    customerId?: string;
     customerName?: string;
     customerEmail?: string;
     customerPhone?: string;
@@ -28,16 +29,29 @@ interface CustomerFieldsProps {
     vehicleLicensePlate?: string;
     vehicleVin?: string;
   };
+  selectedCustomer?: Customer | null;
+  onCustomerSelect?: (customer: Customer | null) => void;
 }
 
 export const CustomerFields: React.FC<CustomerFieldsProps> = ({ 
   form, 
-  prePopulatedCustomer 
+  prePopulatedCustomer,
+  selectedCustomer: externalSelectedCustomer,
+  onCustomerSelect
 }) => {
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(externalSelectedCustomer || null);
+
+  // Update local state when external customer changes
+  useEffect(() => {
+    if (externalSelectedCustomer !== undefined) {
+      setSelectedCustomer(externalSelectedCustomer);
+    }
+  }, [externalSelectedCustomer]);
 
   const handleSelectCustomer = (customer: Customer | null) => {
     setSelectedCustomer(customer);
+    onCustomerSelect?.(customer);
+    
     if (customer) {
       // Update form with customer data
       form.setValue("customer", `${customer.first_name} ${customer.last_name}`);
@@ -62,12 +76,35 @@ export const CustomerFields: React.FC<CustomerFieldsProps> = ({
     }
   };
 
-  // If we have pre-populated customer data, show the info display instead of search
-  if (prePopulatedCustomer?.customerName) {
+  // If we have a pre-selected customer or pre-populated customer data, show the info display
+  if (selectedCustomer || prePopulatedCustomer?.customerName) {
+    const displayData = selectedCustomer ? {
+      customerName: `${selectedCustomer.first_name} ${selectedCustomer.last_name}`,
+      customerEmail: selectedCustomer.email || '',
+      customerPhone: selectedCustomer.phone || '',
+      customerAddress: selectedCustomer.address || '',
+      equipmentName: prePopulatedCustomer?.equipmentName,
+      equipmentType: prePopulatedCustomer?.equipmentType,
+      vehicleMake: prePopulatedCustomer?.vehicleMake,
+      vehicleModel: prePopulatedCustomer?.vehicleModel,
+      vehicleYear: prePopulatedCustomer?.vehicleYear,
+      vehicleLicensePlate: prePopulatedCustomer?.vehicleLicensePlate,
+      vehicleVin: prePopulatedCustomer?.vehicleVin,
+    } : prePopulatedCustomer;
+
     return (
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Customer & Equipment Information</h3>
-        <CustomerInfoDisplay {...prePopulatedCustomer} />
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Customer & Equipment Information</h3>
+          <button
+            type="button"
+            onClick={() => handleSelectCustomer(null)}
+            className="text-sm text-blue-600 hover:text-blue-800"
+          >
+            Change Customer
+          </button>
+        </div>
+        <CustomerInfoDisplay {...displayData} />
       </div>
     );
   }
