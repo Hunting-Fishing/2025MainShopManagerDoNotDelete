@@ -1,176 +1,123 @@
 
 import React, { useState } from 'react';
-import { WorkOrderJobLine } from '@/types/jobLine';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash, Package } from 'lucide-react';
+import { WorkOrderJobLine } from '@/types/jobLine';
+import { JobLineEditDialog } from './JobLineEditDialog';
+import { Edit, Trash2, Clock, DollarSign } from 'lucide-react';
 import { jobLineStatusMap } from '@/types/jobLine';
-import { EditJobLineDialog } from './EditJobLineDialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 
 interface JobLineCardProps {
   jobLine: WorkOrderJobLine;
-  onEdit?: (jobLine: WorkOrderJobLine) => void;
+  onUpdate: (jobLine: WorkOrderJobLine) => void;
   onDelete?: (jobLineId: string) => void;
-  onUpdate?: (updatedJobLine: WorkOrderJobLine) => void | Promise<void>;
-  onPartsChange?: (newParts: any) => void;
+  onPartsChange?: (parts: any[]) => void;
   isEditMode?: boolean;
 }
 
 export function JobLineCard({ 
   jobLine, 
-  onEdit, 
-  onDelete, 
   onUpdate, 
-  onPartsChange, 
+  onDelete, 
+  onPartsChange,
   isEditMode = false 
 }: JobLineCardProps) {
-  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  
   const statusInfo = jobLineStatusMap[jobLine.status || 'pending'];
 
-  const handleEdit = () => {
-    if (onEdit) {
-      onEdit(jobLine);
-    } else {
-      setShowEditDialog(true);
-    }
-  };
-
-  const handleUpdate = (updatedJobLine: WorkOrderJobLine) => {
-    if (onUpdate) {
-      onUpdate(updatedJobLine);
-    }
-    setShowEditDialog(false);
+  const handleSave = async (updatedJobLine: WorkOrderJobLine) => {
+    onUpdate(updatedJobLine);
   };
 
   const handleDelete = () => {
-    if (onDelete) {
+    if (onDelete && window.confirm('Are you sure you want to delete this job line?')) {
       onDelete(jobLine.id);
     }
   };
 
   return (
     <>
-      <Card className="w-full">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
-            {jobLine.name}
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            <Badge className={statusInfo.classes}>
-              {statusInfo.label}
-            </Badge>
-            {isEditMode && (
-              <div className="flex gap-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleEdit}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-                {onDelete && (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                      >
-                        <Trash className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Job Line</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to delete this job line? This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDelete}>
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                )}
-              </div>
-            )}
+      <Card className="border-l-4 border-l-blue-500">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg font-medium">{jobLine.name}</CardTitle>
+            <div className="flex items-center gap-2">
+              <Badge className={statusInfo.classes}>
+                {statusInfo.label}
+              </Badge>
+              {isEditMode && (
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsEditDialogOpen(true)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  {onDelete && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleDelete}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </CardHeader>
+        
         <CardContent>
           {jobLine.description && (
-            <p className="text-sm text-muted-foreground mb-3">
-              {jobLine.description}
-            </p>
+            <p className="text-sm text-muted-foreground mb-4">{jobLine.description}</p>
           )}
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div>
-              <span className="text-muted-foreground">Hours: </span>
-              <span className="font-medium">{jobLine.estimated_hours || 0}</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Rate: </span>
-              <span className="font-medium">${jobLine.labor_rate || 0}</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Total: </span>
-              <span className="font-medium">${jobLine.total_amount?.toFixed(2) || '0.00'}</span>
-            </div>
-            {jobLine.parts && jobLine.parts.length > 0 && (
-              <div className="flex items-center gap-1">
-                <Package className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">{jobLine.parts.length} parts</span>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-blue-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Estimated Hours</p>
+                <p className="font-medium">{jobLine.estimated_hours || 0}</p>
               </div>
-            )}
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-green-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Labor Rate</p>
+                <p className="font-medium">${(jobLine.labor_rate || 0).toFixed(2)}</p>
+              </div>
+            </div>
           </div>
-
-          {jobLine.parts && jobLine.parts.length > 0 && (
-            <div className="mt-3 pt-3 border-t">
-              <h5 className="text-sm font-medium mb-2">Parts:</h5>
-              <div className="space-y-1">
-                {jobLine.parts.map((part) => (
-                  <div key={part.id} className="text-sm text-muted-foreground flex justify-between">
-                    <span>{part.name} (Qty: {part.quantity})</span>
-                    <span className="font-medium">${part.total_price}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
+          
+          <div className="flex items-center justify-between pt-3 border-t">
+            <span className="text-sm text-muted-foreground">Total Amount</span>
+            <span className="text-lg font-bold text-green-600">
+              ${(jobLine.total_amount || 0).toFixed(2)}
+            </span>
+          </div>
+          
           {jobLine.notes && (
-            <div className="mt-3 pt-3 border-t">
-              <p className="text-sm text-muted-foreground">
-                <span className="font-medium">Notes: </span>
-                {jobLine.notes}
+            <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                <span className="font-medium">Notes:</span> {jobLine.notes}
               </p>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {showEditDialog && (
-        <EditJobLineDialog
-          jobLine={jobLine}
-          open={showEditDialog}
-          onOpenChange={setShowEditDialog}
-          onUpdate={handleUpdate}
-        />
-      )}
+      <JobLineEditDialog
+        jobLine={jobLine}
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        onSave={handleSave}
+      />
     </>
   );
 }

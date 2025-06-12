@@ -1,11 +1,14 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { WorkOrderJobLine } from '@/types/jobLine';
+import { upsertWorkOrderJobLine } from '@/services/workOrder/jobLinesService';
+import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 interface JobLineEditDialogProps {
   jobLine: WorkOrderJobLine | null;
@@ -20,7 +23,8 @@ export function JobLineEditDialog({
   onOpenChange,
   onSave
 }: JobLineEditDialogProps) {
-  const [formData, setFormData] = React.useState<Partial<WorkOrderJobLine>>({});
+  const [formData, setFormData] = useState<Partial<WorkOrderJobLine>>({});
+  const [isSaving, setIsSaving] = useState(false);
 
   React.useEffect(() => {
     if (jobLine) {
@@ -29,12 +33,33 @@ export function JobLineEditDialog({
   }, [jobLine]);
 
   const handleSave = async () => {
-    if (jobLine && formData) {
-      await onSave({
+    if (!jobLine || !formData) return;
+
+    try {
+      setIsSaving(true);
+      
+      const updatedJobLine: WorkOrderJobLine = {
         ...jobLine,
-        ...formData
-      } as WorkOrderJobLine);
+        ...formData,
+        // Calculate total if needed
+        total_amount: formData.estimated_hours && formData.labor_rate 
+          ? (formData.estimated_hours * formData.labor_rate) 
+          : formData.total_amount || 0
+      };
+
+      // Save to database
+      const savedJobLine = await upsertWorkOrderJobLine(updatedJobLine);
+      
+      // Update parent component
+      await onSave(savedJobLine);
+      
+      toast.success('Job line updated successfully');
       onOpenChange(false);
+    } catch (error) {
+      console.error('Error saving job line:', error);
+      toast.error('Failed to save job line');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -90,10 +115,10 @@ export function JobLineEditDialog({
                 id="estimatedHours" 
                 type="number" 
                 step="0.1" 
-                value={formData.estimatedHours || ''} 
+                value={formData.estimated_hours || ''} 
                 onChange={e => setFormData({
                   ...formData,
-                  estimatedHours: parseFloat(e.target.value) || 0
+                  estimated_hours: parseFloat(e.target.value) || 0
                 })} 
               />
             </div>
@@ -104,21 +129,28 @@ export function JobLineEditDialog({
                 id="laborRate" 
                 type="number" 
                 step="0.01" 
-                value={formData.laborRate || ''} 
+                value={formData.labor_rate || ''} 
                 onChange={e => setFormData({
                   ...formData,
-                  laborRate: parseFloat(e.target.value) || 0
+                  labor_rate: parseFloat(e.target.value) || 0
                 })} 
               />
             </div>
           </div>
           
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>
               Cancel
             </Button>
-            <Button onClick={handleSave}>
-              Save Changes
+            <Button onClick={handleSave} disabled={isSaving}>
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
             </Button>
           </div>
         </div>

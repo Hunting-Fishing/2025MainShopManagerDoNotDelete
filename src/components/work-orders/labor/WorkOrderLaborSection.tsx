@@ -3,10 +3,11 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { EditableJobLinesGrid } from '../job-lines/EditableJobLinesGrid';
 import { JobLineCard } from '../job-lines/JobLineCard';
 import { AddJobLineDialog } from '../job-lines/AddJobLineDialog';
+import { deleteWorkOrderJobLine } from '@/services/workOrder/jobLinesService';
 import { Plus, Wrench } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface WorkOrderLaborSectionProps {
   workOrderId: string;
@@ -21,7 +22,7 @@ export function WorkOrderLaborSection({
   onJobLinesChange, 
   isEditMode = false 
 }: WorkOrderLaborSectionProps) {
-  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   const handleAddJobLines = (newJobLines: Omit<WorkOrderJobLine, 'id' | 'created_at' | 'updated_at'>[]) => {
     const jobLinesWithIds = newJobLines.map(jobLine => ({
@@ -40,9 +41,24 @@ export function WorkOrderLaborSection({
     onJobLinesChange(updatedJobLines);
   };
 
-  const handleDeleteJobLine = (jobLineId: string) => {
-    const updatedJobLines = jobLines.filter(jobLine => jobLine.id !== jobLineId);
-    onJobLinesChange(updatedJobLines);
+  const handleDeleteJobLine = async (jobLineId: string) => {
+    try {
+      setIsDeleting(jobLineId);
+      
+      // Delete from database
+      await deleteWorkOrderJobLine(jobLineId);
+      
+      // Update local state
+      const updatedJobLines = jobLines.filter(jobLine => jobLine.id !== jobLineId);
+      onJobLinesChange(updatedJobLines);
+      
+      toast.success('Job line deleted successfully');
+    } catch (error) {
+      console.error('Error deleting job line:', error);
+      toast.error('Failed to delete job line');
+    } finally {
+      setIsDeleting(null);
+    }
   };
 
   const totalLaborHours = jobLines.reduce((sum, line) => sum + (line.estimated_hours || 0), 0);
