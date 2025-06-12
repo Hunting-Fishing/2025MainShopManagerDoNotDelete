@@ -1,20 +1,22 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Loader2 } from 'lucide-react';
 import { WorkOrder, TimeEntry, WorkOrderInventoryItem } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
-import { getWorkOrderById } from '@/services/workOrder';
-import { getJobLinesByWorkOrderId } from '@/services/workOrder/jobLinesService';
-import { WorkOrderDetailsTabs } from './details/WorkOrderDetailsTabs';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { WorkOrderDetailsHeader } from './details/WorkOrderDetailsHeader';
-import { WorkOrderDetailsActions } from './details/WorkOrderDetailsActions';
+import { WorkOrderDetailsTabs } from './details/WorkOrderDetailsTabs';
+import { useWorkOrder } from '@/hooks/useWorkOrder';
+import { useJobLines } from '@/hooks/useJobLines';
+import { getWorkOrderJobLines } from '@/services/workOrder/jobLinesService';
+import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
+import { getWorkOrderTimeEntries } from '@/services/workOrder';
 
 interface WorkOrderDetailsViewProps {
   workOrderId: string;
   isCreateMode?: boolean;
+  isEditMode?: boolean;
   prePopulatedData?: any;
   onCreateWorkOrder?: (data: any) => Promise<void>;
 }
@@ -22,14 +24,11 @@ interface WorkOrderDetailsViewProps {
 export function WorkOrderDetailsView({
   workOrderId,
   isCreateMode = false,
-  prePopulatedData = {},
+  isEditMode: initialEditMode = false,
+  prePopulatedData,
   onCreateWorkOrder
 }: WorkOrderDetailsViewProps) {
-  const navigate = useNavigate();
-  const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
-  const [loading, setLoading] = useState(!isCreateMode);
-  const [error, setError] = useState<string | null>(null);
-  const [isEditMode, setIsEditMode] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(initialEditMode);
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [inventoryItems, setInventoryItems] = useState<WorkOrderInventoryItem[]>([]);
   const [notes, setNotes] = useState('');
@@ -37,63 +36,62 @@ export function WorkOrderDetailsView({
   const [parts, setParts] = useState<WorkOrderPart[]>([]);
   const [jobLinesLoading, setJobLinesLoading] = useState(false);
 
-  useEffect(() => {
-    if (isCreateMode) {
-      // Create a new work order template for creation mode
-      const newWorkOrder: WorkOrder = {
-        id: 'new',
-        status: 'pending',
-        description: prePopulatedData.description || '',
-        customer_name: prePopulatedData.customerName || '',
-        customer_id: prePopulatedData.customerId || '',
-        customer_email: prePopulatedData.customerEmail || '',
-        customer_phone: prePopulatedData.customerPhone || '',
-        customer_address: prePopulatedData.customerAddress || '',
-        vehicle_make: prePopulatedData.vehicleMake || '',
-        vehicle_model: prePopulatedData.vehicleModel || '',
-        vehicle_year: prePopulatedData.vehicleYear || '',
-        vehicle_license_plate: prePopulatedData.vehicleLicensePlate || '',
-        vehicle_vin: prePopulatedData.vehicleVin || '',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        priority: prePopulatedData.priority || 'medium',
-        notes: prePopulatedData.notes || ''
-      };
-      setWorkOrder(newWorkOrder);
-      setLoading(false);
-    } else if (workOrderId && workOrderId !== 'new') {
-      fetchWorkOrder(workOrderId);
-    }
-  }, [workOrderId, isCreateMode, prePopulatedData]);
+  // Create a mock work order for create mode
+  const mockWorkOrder: WorkOrder = {
+    id: 'new',
+    status: 'pending',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    description: '',
+    customer_name: prePopulatedData?.customerName || '',
+    customer_email: prePopulatedData?.customerEmail || '',
+    customer_phone: prePopulatedData?.customerPhone || '',
+    customer_address: prePopulatedData?.customerAddress || '',
+    vehicle_make: prePopulatedData?.vehicleMake || '',
+    vehicle_model: prePopulatedData?.vehicleModel || '',
+    vehicle_year: prePopulatedData?.vehicleYear || '',
+    vehicle_license_plate: prePopulatedData?.vehicleLicensePlate || '',
+    vehicle_vin: prePopulatedData?.vehicleVin || '',
+    ...prePopulatedData
+  };
 
-  const fetchWorkOrder = async (id: string) => {
+  // Use the hook only for existing work orders
+  const { workOrder: fetchedWorkOrder, isLoading, error } = useWorkOrder(
+    isCreateMode ? '' : workOrderId
+  );
+
+  const workOrder = isCreateMode ? mockWorkOrder : fetchedWorkOrder;
+
+  useEffect(() => {
+    if (workOrder && !isCreateMode) {
+      loadWorkOrderData();
+    }
+  }, [workOrder, isCreateMode]);
+
+  const loadWorkOrderData = async () => {
+    if (!workOrder?.id || isCreateMode) return;
+
     try {
-      setLoading(true);
-      setError(null);
+      setJobLinesLoading(true);
       
-      const data = await getWorkOrderById(id);
-      if (data) {
-        setWorkOrder(data);
-        setNotes(data.notes || '');
-        
-        // Fetch job lines
-        setJobLinesLoading(true);
-        try {
-          const jobLinesData = await getJobLinesByWorkOrderId(id);
-          setJobLines(jobLinesData || []);
-        } catch (err) {
-          console.error('Error fetching job lines:', err);
-        } finally {
-          setJobLinesLoading(false);
-        }
-      } else {
-        setError('Work order not found');
-      }
-    } catch (err) {
-      console.error('Error fetching work order:', err);
-      setError('Failed to load work order details');
+      // Load job lines
+      const jobLinesData = await getWorkOrderJobLines(workOrder.id);
+      setJobLines(jobLinesData);
+
+      // Load parts
+      const partsData = await getWorkOrderParts(workOrder.id);
+      setParts(partsData);
+
+      // Load time entries
+      const timeEntriesData = await getWorkOrderTimeEntries(workOrder.id);
+      setTimeEntries(timeEntriesData);
+
+      // Set notes from work order
+      setNotes(workOrder.notes || '');
+    } catch (error) {
+      console.error('Error loading work order data:', error);
     } finally {
-      setLoading(false);
+      setJobLinesLoading(false);
     }
   };
 
@@ -113,78 +111,73 @@ export function WorkOrderDetailsView({
     setParts(newParts);
   };
 
-  const handleEdit = () => {
-    setIsEditMode(true);
+  const handleToggleEditMode = () => {
+    setIsEditMode(!isEditMode);
   };
 
-  const handleInvoiceCreated = (invoiceId: string) => {
-    navigate(`/invoices/${invoiceId}`);
-  };
-
-  if (loading) {
+  if (isLoading && !isCreateMode) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-            <p className="text-lg">Loading work order details...</p>
-          </div>
-        </div>
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
 
-  if (error || !workOrder) {
+  if (error && !isCreateMode) {
     return (
-      <div className="container mx-auto p-6">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            {error || 'Work order not found'}
-          </AlertDescription>
-        </Alert>
-      </div>
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center">
+            <p className="text-destructive">Error loading work order: {error.message}</p>
+            <Button 
+              onClick={() => window.location.reload()} 
+              className="mt-4"
+            >
+              Retry
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!workOrder) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center">
+            <p className="text-muted-foreground">Work order not found</p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="space-y-6">
       {!isCreateMode && (
-        <>
-          <WorkOrderDetailsHeader 
-            workOrder={workOrder}
-            isEditMode={isEditMode}
-            onToggleEditMode={() => setIsEditMode(!isEditMode)}
-          />
-
-          <div className="container mx-auto px-6 py-4">
-            <WorkOrderDetailsActions
-              workOrder={workOrder}
-              onEdit={handleEdit}
-              onInvoiceCreated={handleInvoiceCreated}
-            />
-          </div>
-        </>
+        <WorkOrderDetailsHeader 
+          workOrder={workOrder}
+          isEditMode={isEditMode}
+        />
       )}
 
-      <div className="container mx-auto px-6 pb-6">
-        <WorkOrderDetailsTabs
-          workOrder={workOrder}
-          timeEntries={timeEntries}
-          onUpdateTimeEntries={handleUpdateTimeEntries}
-          inventoryItems={inventoryItems}
-          notes={notes}
-          onUpdateNotes={handleUpdateNotes}
-          jobLines={jobLines}
-          parts={parts}
-          onJobLinesChange={handleJobLinesChange}
-          onPartsChange={handlePartsChange}
-          jobLinesLoading={jobLinesLoading}
-          isEditMode={isEditMode}
-          isCreateMode={isCreateMode}
-          onCreateWorkOrder={onCreateWorkOrder}
-        />
-      </div>
+      <WorkOrderDetailsTabs
+        workOrder={workOrder}
+        timeEntries={timeEntries}
+        onUpdateTimeEntries={handleUpdateTimeEntries}
+        inventoryItems={inventoryItems}
+        notes={notes}
+        onUpdateNotes={handleUpdateNotes}
+        jobLines={jobLines}
+        parts={parts}
+        onJobLinesChange={handleJobLinesChange}
+        onPartsChange={handlePartsChange}
+        jobLinesLoading={jobLinesLoading}
+        isEditMode={isEditMode}
+        isCreateMode={isCreateMode}
+        onCreateWorkOrder={onCreateWorkOrder}
+      />
     </div>
   );
 }
