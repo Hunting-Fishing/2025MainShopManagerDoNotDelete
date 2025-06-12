@@ -49,12 +49,13 @@ export const FormNavigation: React.FC<FormNavigationProps> = ({
       ) : (
         <Button
           type="submit"
+          form="customer-create-form"
           disabled={isSubmitting}
           className="flex items-center"
         >
           <Save className="h-4 w-4 mr-2" />
           {isEditMode ? "Save Changes" : "Create Customer"}
-          {isSubmitting && <span className="ml-2 spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>}
+          {isSubmitting && <span className="ml-2 animate-spin">⏳</span>}
         </Button>
       )}
     </div>
