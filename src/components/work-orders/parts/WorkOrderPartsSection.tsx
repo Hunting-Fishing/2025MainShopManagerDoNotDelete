@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { WorkOrderPart } from '@/types/workOrderPart';
-import { getWorkOrderParts, transformPartData } from '@/services/workOrder/workOrderPartsService';
+import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
 import { PartsInventorySummary } from './PartsInventorySummary';
 import { PartDetailsCard } from './PartDetailsCard';
 import { Plus, Package } from 'lucide-react';
@@ -28,13 +28,13 @@ export function WorkOrderPartsSection({
   const fetchParts = async () => {
     try {
       setIsLoading(true);
-      const rawPartsData = await getWorkOrderParts(workOrderId);
-      // Transform the raw data to ensure proper mapping
-      const transformedParts = rawPartsData.map(transformPartData);
-      setParts(transformedParts);
+      const partsData = await getWorkOrderParts(workOrderId);
+      console.log('Fetched parts data:', partsData);
+      setParts(partsData);
     } catch (error) {
       console.error('Error fetching work order parts:', error);
       toast.error('Failed to load parts');
+      setParts([]);
     } finally {
       setIsLoading(false);
     }
