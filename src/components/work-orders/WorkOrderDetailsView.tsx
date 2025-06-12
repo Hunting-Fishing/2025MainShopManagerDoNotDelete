@@ -2,21 +2,18 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Form } from '@/components/ui/form';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { WorkOrderFormFields } from './WorkOrderFormFields';
-import { WorkOrderFormSchemaValues, workOrderFormSchema } from '@/schemas/workOrderSchema';
-import { useWorkOrderPrePopulation } from '@/hooks/useWorkOrderPrePopulation';
+import { workOrderFormSchema, WorkOrderFormSchemaValues } from '@/schemas/workOrderSchema';
 import { useTechnicians } from '@/hooks/useTechnicians';
-import { WorkOrderJobLine } from '@/types/jobLine';
-import { Loader2 } from 'lucide-react';
+import { useWorkOrderPrePopulation } from '@/hooks/useWorkOrderPrePopulation';
+import { CreateWorkOrderTab } from './details/CreateWorkOrderTab';
+import { WorkOrderDetailsTab } from './details/WorkOrderDetailsTab';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface WorkOrderDetailsViewProps {
-  workOrderId?: string;
+  workOrderId: string;
   isCreateMode?: boolean;
-  prePopulatedData?: any;
-  onCreateWorkOrder?: (data: any) => void;
+  prePopulatedData?: Record<string, any>;
+  onCreateWorkOrder?: (data: WorkOrderFormSchemaValues) => void;
 }
 
 export function WorkOrderDetailsView({
@@ -25,147 +22,107 @@ export function WorkOrderDetailsView({
   prePopulatedData = {},
   onCreateWorkOrder
 }: WorkOrderDetailsViewProps) {
-  const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Use the pre-population hook
+  const [activeTab, setActiveTab] = useState(isCreateMode ? 'create' : 'details');
+  const [isEditMode, setIsEditMode] = useState(isCreateMode);
+  const [jobLines, setJobLines] = useState([]);
+  const [allParts, setAllParts] = useState([]);
+
+  // Fetch technicians
+  const { 
+    technicians, 
+    isLoading: technicianLoading, 
+    error: technicianError 
+  } = useTechnicians();
+
+  // Pre-populate data handling
   const {
     selectedCustomer,
     selectedVehicle,
-    loading: customerLoading,
-    error: customerError,
+    loading: prePopulationLoading,
+    error: prePopulationError,
     getInitialFormData
   } = useWorkOrderPrePopulation(prePopulatedData);
 
-  // Get technicians
-  const {
-    technicians,
-    loading: technicianLoading,
-    error: technicianError
-  } = useTechnicians();
-
-  // Set up form with proper defaults
+  // Form setup
   const form = useForm<WorkOrderFormSchemaValues>({
     resolver: zodResolver(workOrderFormSchema),
     defaultValues: {
-      customer: '',
-      description: '',
       status: 'pending',
       priority: 'medium',
-      technician: '',
-      location: '',
-      dueDate: '',
-      notes: '',
-      vehicleMake: '',
-      vehicleModel: '',
-      vehicleYear: '',
-      odometer: '',
-      licensePlate: '',
-      vin: '',
-      customerEmail: '',
-      customerPhone: '',
-      customerAddress: '',
       inventoryItems: [],
+      ...getInitialFormData()
     }
   });
 
-  // Update form when customer data is loaded
+  // Update form when pre-populated data changes
   useEffect(() => {
-    if (!customerLoading) {
+    if (!prePopulationLoading && (selectedCustomer || prePopulatedData)) {
       const initialData = getInitialFormData();
-      console.log('Setting form values with:', initialData);
-      
-      // Reset form with new values
-      form.reset(initialData);
+      Object.keys(initialData).forEach(key => {
+        form.setValue(key as keyof WorkOrderFormSchemaValues, initialData[key]);
+      });
     }
-  }, [customerLoading, selectedCustomer, selectedVehicle, form, getInitialFormData]);
+  }, [selectedCustomer, selectedVehicle, prePopulationLoading, form, getInitialFormData]);
 
-  const onSubmit = async (data: WorkOrderFormSchemaValues) => {
-    if (!onCreateWorkOrder) return;
-    
-    setIsSubmitting(true);
-    try {
-      console.log('Submitting work order with data:', data);
-      
-      // Prepare work order data with customer and vehicle IDs if available
-      const workOrderData = {
-        ...data,
-        customer_id: selectedCustomer?.id,
-        vehicle_id: selectedVehicle?.id,
-        jobLines,
-      };
-      
-      await onCreateWorkOrder(workOrderData);
-    } catch (error) {
-      console.error('Error creating work order:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleJobLinesChange = (newJobLines: any[]) => {
+    setJobLines(newJobLines);
   };
 
-  if (customerLoading) {
+  if (isCreateMode) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin" />
-        <span className="ml-2">Loading customer information...</span>
-      </div>
+      <CreateWorkOrderTab
+        form={form}
+        technicians={technicians}
+        technicianLoading={technicianLoading}
+        technicianError={technicianError || null}
+        jobLines={jobLines}
+        onJobLinesChange={handleJobLinesChange}
+        workOrderId={workOrderId}
+        prePopulatedCustomer={{
+          customerName: prePopulatedData.customerName,
+          customerEmail: prePopulatedData.customerEmail,
+          customerPhone: prePopulatedData.customerPhone,
+          customerAddress: prePopulatedData.customerAddress,
+          vehicleMake: prePopulatedData.vehicleMake,
+          vehicleModel: prePopulatedData.vehicleModel,
+          vehicleYear: prePopulatedData.vehicleYear,
+          vehicleLicensePlate: prePopulatedData.vehicleLicensePlate,
+          vehicleVin: prePopulatedData.vehicleVin,
+        }}
+        onCreateWorkOrder={onCreateWorkOrder}
+      />
     );
   }
 
-  if (customerError) {
-    console.error('Customer loading error:', customerError);
-  }
-
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {isCreateMode ? 'Create New Work Order' : 'Work Order Details'}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <WorkOrderFormFields
-                form={form}
-                technicians={technicians}
-                technicianLoading={technicianLoading}
-                technicianError={technicianError}
-                jobLines={jobLines}
-                onJobLinesChange={setJobLines}
-                workOrderId={workOrderId}
-                prePopulatedCustomer={{
-                  customerName: form.getValues('customer'),
-                  customerEmail: form.getValues('customerEmail'),
-                  customerPhone: form.getValues('customerPhone'),
-                  customerAddress: form.getValues('customerAddress'),
-                  vehicleMake: form.getValues('vehicleMake'),
-                  vehicleModel: form.getValues('vehicleModel'),
-                  vehicleYear: form.getValues('vehicleYear'),
-                  vehicleLicensePlate: form.getValues('licensePlate'),
-                  vehicleVin: form.getValues('vin'),
-                }}
-              />
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="details">Details</TabsTrigger>
+        <TabsTrigger value="edit">Edit</TabsTrigger>
+      </TabsList>
 
-              {isCreateMode && (
-                <div className="flex justify-end space-x-4">
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Creating...
-                      </>
-                    ) : (
-                      'Create Work Order'
-                    )}
-                  </Button>
-                </div>
-              )}
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-    </div>
+      <TabsContent value="details">
+        <WorkOrderDetailsTab
+          workOrder={{} as any} // This would be loaded from the actual work order
+          jobLines={jobLines}
+          allParts={allParts}
+          onJobLinesChange={handleJobLinesChange}
+          isEditMode={false}
+        />
+      </TabsContent>
+
+      <TabsContent value="edit">
+        <CreateWorkOrderTab
+          form={form}
+          technicians={technicians}
+          technicianLoading={technicianLoading}
+          technicianError={technicianError || null}
+          jobLines={jobLines}
+          onJobLinesChange={handleJobLinesChange}
+          workOrderId={workOrderId}
+          isEditMode={true}
+        />
+      </TabsContent>
+    </Tabs>
   );
 }
