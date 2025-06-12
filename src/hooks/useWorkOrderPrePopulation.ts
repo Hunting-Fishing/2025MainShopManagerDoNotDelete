@@ -63,10 +63,6 @@ export function useWorkOrderPrePopulation(prePopulatedData: PrePopulatedData) {
               setSelectedVehicle(matchedVehicle);
               console.log('Vehicle matched:', matchedVehicle);
             }
-          } else if (customer.vehicles && customer.vehicles.length > 0) {
-            // Auto-select first vehicle if no specific vehicle ID provided
-            setSelectedVehicle(customer.vehicles[0]);
-            console.log('Auto-selected first vehicle:', customer.vehicles[0]);
           }
         }
       } catch (err) {
