@@ -21,6 +21,7 @@ interface WorkOrderDetailsTabsProps {
   jobLines: WorkOrderJobLine[];
   parts: WorkOrderPart[];
   onJobLinesChange: (jobLines: WorkOrderJobLine[]) => void;
+  onPartsChange?: (parts: WorkOrderPart[]) => void;
   jobLinesLoading: boolean;
   isEditMode?: boolean;
 }
@@ -35,6 +36,7 @@ export function WorkOrderDetailsTabs({
   jobLines,
   parts,
   onJobLinesChange,
+  onPartsChange,
   jobLinesLoading,
   isEditMode = false
 }: WorkOrderDetailsTabsProps) {
@@ -60,6 +62,7 @@ export function WorkOrderDetailsTabs({
           jobLines={jobLines} 
           allParts={parts} 
           onJobLinesChange={onJobLinesChange} 
+          onPartsChange={onPartsChange}
           isEditMode={isEditMode} 
         />
       </TabsContent>

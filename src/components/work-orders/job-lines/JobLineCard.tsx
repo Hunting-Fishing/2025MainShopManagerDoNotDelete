@@ -4,8 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { WorkOrderJobLine } from '@/types/jobLine';
+import { WorkOrderPart } from '@/types/workOrderPart';
 import { JobLineEditDialog } from './JobLineEditDialog';
-import { Edit, Trash2, Clock, DollarSign } from 'lucide-react';
+import { AddPartsDialog } from '../parts/AddPartsDialog';
+import { PartDetailsCard } from '../parts/PartDetailsCard';
+import { Edit, Trash2, Clock, DollarSign, Package, Plus } from 'lucide-react';
 import { jobLineStatusMap } from '@/types/jobLine';
 
 interface JobLineCardProps {
@@ -14,6 +17,9 @@ interface JobLineCardProps {
   onDelete?: (jobLineId: string) => void;
   onPartsChange?: (parts: any[]) => void;
   isEditMode?: boolean;
+  parts?: WorkOrderPart[];
+  onPartUpdate?: (part: WorkOrderPart) => void;
+  onPartRemove?: (partId: string) => void;
 }
 
 export function JobLineCard({ 
@@ -21,11 +27,16 @@ export function JobLineCard({
   onUpdate, 
   onDelete, 
   onPartsChange,
-  isEditMode = false 
+  isEditMode = false,
+  parts = [],
+  onPartUpdate,
+  onPartRemove
 }: JobLineCardProps) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [showAddPartsDialog, setShowAddPartsDialog] = useState(false);
   
   const statusInfo = jobLineStatusMap[jobLine.status || 'pending'];
+  const jobLineParts = parts.filter(part => part.job_line_id === jobLine.id);
 
   const handleSave = async (updatedJobLine: WorkOrderJobLine) => {
     onUpdate(updatedJobLine);
@@ -36,6 +47,15 @@ export function JobLineCard({
       onDelete(jobLine.id);
     }
   };
+
+  const handlePartAdd = (partData: any) => {
+    // This will be handled by the parent component
+    console.log('Part added to job line:', jobLine.id, partData);
+    setShowAddPartsDialog(false);
+  };
+
+  const partsTotal = jobLineParts.reduce((sum, part) => sum + part.total_price, 0);
+  const totalWithParts = (jobLine.total_amount || 0) + partsTotal;
 
   return (
     <>
@@ -94,11 +114,70 @@ export function JobLineCard({
               </div>
             </div>
           </div>
+
+          {/* Parts Section */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Package className="h-4 w-4 text-purple-500" />
+                <span className="text-sm font-medium">Parts ({jobLineParts.length})</span>
+              </div>
+              {isEditMode && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAddPartsDialog(true)}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Parts
+                </Button>
+              )}
+            </div>
+            
+            {jobLineParts.length > 0 ? (
+              <div className="space-y-2 bg-slate-50 dark:bg-slate-900 rounded-lg p-3">
+                {jobLineParts.map((part) => (
+                  <div key={part.id} className="flex items-center justify-between text-sm">
+                    <div>
+                      <span className="font-medium">{part.name}</span>
+                      <span className="text-muted-foreground ml-2">
+                        Qty: {part.quantity} × ${part.unit_price.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">${part.total_price.toFixed(2)}</span>
+                      {isEditMode && onPartRemove && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onPartRemove(part.id)}
+                          className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                <div className="border-t pt-2 mt-2">
+                  <div className="flex justify-between text-sm font-medium">
+                    <span>Parts Subtotal:</span>
+                    <span>${partsTotal.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-4 text-muted-foreground bg-slate-50 dark:bg-slate-900 rounded-lg">
+                <Package className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No parts added yet</p>
+              </div>
+            )}
+          </div>
           
           <div className="flex items-center justify-between pt-3 border-t">
-            <span className="text-sm text-muted-foreground">Total Amount</span>
+            <span className="text-sm text-muted-foreground">Total Amount (Labor + Parts)</span>
             <span className="text-lg font-bold text-green-600">
-              ${(jobLine.total_amount || 0).toFixed(2)}
+              ${totalWithParts.toFixed(2)}
             </span>
           </div>
           
@@ -118,6 +197,16 @@ export function JobLineCard({
         onOpenChange={setIsEditDialogOpen}
         onSave={handleSave}
       />
+
+      {showAddPartsDialog && (
+        <AddPartsDialog
+          workOrderId={jobLine.work_order_id}
+          jobLineId={jobLine.id}
+          onPartAdd={handlePartAdd}
+          open={showAddPartsDialog}
+          onOpenChange={setShowAddPartsDialog}
+        />
+      )}
     </>
   );
 }

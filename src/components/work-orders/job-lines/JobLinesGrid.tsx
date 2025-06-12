@@ -15,6 +15,8 @@ interface JobLinesGridProps {
   onDelete: (jobLineId: string) => void;
   onJobLinesChange: (jobLines: WorkOrderJobLine[]) => void;
   isEditMode?: boolean;
+  parts?: WorkOrderPart[];
+  onPartsChange?: (parts: WorkOrderPart[]) => void;
 }
 
 export function JobLinesGrid({
@@ -23,7 +25,9 @@ export function JobLinesGrid({
   onUpdate,
   onDelete,
   onJobLinesChange,
-  isEditMode = false
+  isEditMode = false,
+  parts = [],
+  onPartsChange
 }: JobLinesGridProps) {
   const [showAddDialog, setShowAddDialog] = useState(false);
 
@@ -33,9 +37,18 @@ export function JobLinesGrid({
     setShowAddDialog(false);
   };
 
-  const handlePartsChange = (newParts: WorkOrderPart[]) => {
-    // Handle parts change if needed
-    console.log('Parts changed:', newParts);
+  const handlePartUpdate = (updatedPart: WorkOrderPart) => {
+    if (onPartsChange) {
+      const updatedParts = parts.map(p => p.id === updatedPart.id ? updatedPart : p);
+      onPartsChange(updatedParts);
+    }
+  };
+
+  const handlePartRemove = (partId: string) => {
+    if (onPartsChange) {
+      const updatedParts = parts.filter(p => p.id !== partId);
+      onPartsChange(updatedParts);
+    }
   };
 
   return (
@@ -74,8 +87,11 @@ export function JobLinesGrid({
                 jobLine={jobLine}
                 onUpdate={onUpdate}
                 onDelete={onDelete}
-                onPartsChange={handlePartsChange}
+                onPartsChange={onPartsChange}
                 isEditMode={isEditMode}
+                parts={parts}
+                onPartUpdate={handlePartUpdate}
+                onPartRemove={handlePartRemove}
               />
             ))}
           </div>
