@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Check, Loader2 } from 'lucide-react';
+import { Check, Loader2, AlertCircle } from 'lucide-react';
 import { WorkOrder } from '@/types/workOrder';
 import { updateWorkOrderStatus } from '@/services/workOrder';
 import { toast } from '@/hooks/use-toast';
@@ -30,6 +30,7 @@ const statusOptions = [
 export function WorkOrderStatusUpdate({ workOrder, onStatusUpdated }: WorkOrderStatusUpdateProps) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState(workOrder.status);
+  const [error, setError] = useState<string | null>(null);
 
   const currentStatusOption = statusOptions.find(option => option.value === workOrder.status);
   
@@ -37,8 +38,10 @@ export function WorkOrderStatusUpdate({ workOrder, onStatusUpdated }: WorkOrderS
     if (newStatus === workOrder.status) return;
     
     setIsUpdating(true);
+    setError(null);
+    
     try {
-      console.log('Updating work order status:', workOrder.id, 'to:', newStatus);
+      console.log('Updating work order status:', workOrder.id, 'from:', workOrder.status, 'to:', newStatus);
       
       const updatedWorkOrder = await updateWorkOrderStatus(workOrder.id, newStatus);
       
@@ -50,12 +53,18 @@ export function WorkOrderStatusUpdate({ workOrder, onStatusUpdated }: WorkOrderS
         
         setSelectedStatus(newStatus);
         onStatusUpdated?.(newStatus);
+        
+        console.log('Status update successful, notifications should be created automatically');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating work order status:', error);
+      
+      const errorMessage = error?.message || 'Failed to update work order status';
+      setError(errorMessage);
+      
       toast({
         title: "Error",
-        description: "Failed to update work order status",
+        description: errorMessage,
         variant: "destructive"
       });
       
@@ -73,6 +82,12 @@ export function WorkOrderStatusUpdate({ workOrder, onStatusUpdated }: WorkOrderS
         <Badge className={currentStatusOption?.color}>
           {currentStatusOption?.label || workOrder.status}
         </Badge>
+        {error && (
+          <div className="flex items-center gap-1 text-red-600">
+            <AlertCircle className="h-4 w-4" />
+            <span className="text-xs">{error}</span>
+          </div>
+        )}
       </div>
       
       <Select

@@ -10045,6 +10045,16 @@ export type Database = {
         Args: { order_id: string; quantity_to_receive: number }
         Returns: undefined
       }
+      record_status_change_activity: {
+        Args: {
+          p_work_order_id: string
+          p_old_status: string
+          p_new_status: string
+          p_user_id: string
+          p_user_name: string
+        }
+        Returns: undefined
+      }
       record_team_history: {
         Args: {
           profile_id_param: string
