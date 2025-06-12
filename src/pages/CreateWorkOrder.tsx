@@ -33,7 +33,9 @@ const CreateWorkOrder = () => {
 
   // Filter out empty strings and convert to undefined
   const cleanedData = Object.fromEntries(
-    Object.entries(prePopulatedData).filter(([_, value]) => value && value.trim() !== '')
+    Object.entries(prePopulatedData)
+      .filter(([_, value]) => value && value.trim() !== '')
+      .map(([key, value]) => [key, decodeURIComponent(value as string)])
   );
 
   console.log('Pre-populated data from URL:', cleanedData);

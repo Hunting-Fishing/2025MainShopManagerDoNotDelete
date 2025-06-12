@@ -1,200 +1,171 @@
 
 import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Loader2 } from 'lucide-react';
-import { WorkOrder, WorkOrderInventoryItem, TimeEntry } from '@/types/workOrder';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Form } from '@/components/ui/form';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { WorkOrderFormFields } from './WorkOrderFormFields';
+import { WorkOrderFormSchemaValues, workOrderFormSchema } from '@/schemas/workOrderSchema';
+import { useWorkOrderPrePopulation } from '@/hooks/useWorkOrderPrePopulation';
+import { useTechnicians } from '@/hooks/useTechnicians';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { WorkOrderPart } from '@/types/workOrderPart';
-import { getWorkOrderById } from '@/services/workOrder';
-import { WorkOrderDetailsTabs } from './details/WorkOrderDetailsTabs';
-import { useToast } from '@/hooks/use-toast';
-
-interface PrePopulatedData {
-  customerId?: string;
-  customerName?: string;
-  customerEmail?: string;
-  customerPhone?: string;
-  customerAddress?: string;
-  customerCity?: string;
-  customerState?: string;
-  customerZip?: string;
-  vehicleId?: string;
-  vehicleMake?: string;
-  vehicleModel?: string;
-  vehicleYear?: string;
-  vehicleLicensePlate?: string;
-  vehicleVin?: string;
-}
+import { Loader2 } from 'lucide-react';
 
 interface WorkOrderDetailsViewProps {
-  workOrderId: string;
+  workOrderId?: string;
   isCreateMode?: boolean;
-  prePopulatedData?: PrePopulatedData;
-  onCreateWorkOrder?: (data: any) => Promise<void>;
+  prePopulatedData?: any;
+  onCreateWorkOrder?: (data: any) => void;
 }
 
-export function WorkOrderDetailsView({ 
-  workOrderId, 
+export function WorkOrderDetailsView({
+  workOrderId,
   isCreateMode = false,
   prePopulatedData = {},
   onCreateWorkOrder
 }: WorkOrderDetailsViewProps) {
-  const { toast } = useToast();
-  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
-  const [inventoryItems, setInventoryItems] = useState<WorkOrderInventoryItem[]>([]);
-  const [notes, setNotes] = useState('');
   const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
-  const [parts, setParts] = useState<WorkOrderPart[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Use the pre-population hook
+  const {
+    selectedCustomer,
+    selectedVehicle,
+    loading: customerLoading,
+    error: customerError,
+    getInitialFormData
+  } = useWorkOrderPrePopulation(prePopulatedData);
 
-  // For create mode, use a mock work order structure
-  const mockWorkOrder: WorkOrder = {
-    id: 'new',
-    status: 'pending',
-    description: '',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    customer_name: prePopulatedData.customerName || '',
-    customer_email: prePopulatedData.customerEmail || '',
-    customer_phone: prePopulatedData.customerPhone || '',
-    customer_address: prePopulatedData.customerAddress || '',
-    vehicle_make: prePopulatedData.vehicleMake || '',
-    vehicle_model: prePopulatedData.vehicleModel || '',
-    vehicle_year: prePopulatedData.vehicleYear || '',
-    vehicle_vin: prePopulatedData.vehicleVin || '',
-    vehicle_license_plate: prePopulatedData.vehicleLicensePlate || '',
-  };
+  // Get technicians
+  const {
+    technicians,
+    loading: technicianLoading,
+    error: technicianError
+  } = useTechnicians();
 
-  // Query for existing work order (skip if in create mode)
-  const { 
-    data: workOrder, 
-    isLoading, 
-    error,
-    refetch 
-  } = useQuery({
-    queryKey: ['work-order', workOrderId],
-    queryFn: () => getWorkOrderById(workOrderId),
-    enabled: !isCreateMode && workOrderId !== 'new',
-    retry: 1,
+  // Set up form with proper defaults
+  const form = useForm<WorkOrderFormSchemaValues>({
+    resolver: zodResolver(workOrderFormSchema),
+    defaultValues: {
+      customer: '',
+      description: '',
+      status: 'pending',
+      priority: 'medium',
+      technician: '',
+      location: '',
+      dueDate: '',
+      notes: '',
+      vehicleMake: '',
+      vehicleModel: '',
+      vehicleYear: '',
+      odometer: '',
+      licensePlate: '',
+      vin: '',
+      customerEmail: '',
+      customerPhone: '',
+      customerAddress: '',
+      inventoryItems: [],
+    }
   });
 
-  const currentWorkOrder = isCreateMode ? mockWorkOrder : workOrder;
-
+  // Update form when customer data is loaded
   useEffect(() => {
-    if (workOrder) {
-      // Initialize state with work order data
-      setTimeEntries(workOrder.timeEntries || []);
-      setInventoryItems(workOrder.inventoryItems || workOrder.inventory_items || []);
-      setNotes(workOrder.notes || '');
-      setJobLines(workOrder.jobLines || []);
+    if (!customerLoading) {
+      const initialData = getInitialFormData();
+      console.log('Setting form values with:', initialData);
+      
+      // Reset form with new values
+      form.reset(initialData);
     }
-  }, [workOrder]);
+  }, [customerLoading, selectedCustomer, selectedVehicle, form, getInitialFormData]);
 
-  const handleUpdateTimeEntries = (entries: TimeEntry[]) => {
-    setTimeEntries(entries);
-    toast({
-      title: "Time entries updated",
-      description: "Time tracking information has been saved.",
-    });
+  const onSubmit = async (data: WorkOrderFormSchemaValues) => {
+    if (!onCreateWorkOrder) return;
+    
+    setIsSubmitting(true);
+    try {
+      console.log('Submitting work order with data:', data);
+      
+      // Prepare work order data with customer and vehicle IDs if available
+      const workOrderData = {
+        ...data,
+        customer_id: selectedCustomer?.id,
+        vehicle_id: selectedVehicle?.id,
+        jobLines,
+      };
+      
+      await onCreateWorkOrder(workOrderData);
+    } catch (error) {
+      console.error('Error creating work order:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleUpdateNotes = (newNotes: string) => {
-    setNotes(newNotes);
-    toast({
-      title: "Notes updated",
-      description: "Work order notes have been saved.",
-    });
-  };
-
-  const handleJobLinesChange = (newJobLines: WorkOrderJobLine[]) => {
-    setJobLines(newJobLines);
-    console.log('Job lines updated:', newJobLines);
-  };
-
-  const handlePartsChange = (newParts: WorkOrderPart[]) => {
-    setParts(newParts);
-    console.log('Parts updated:', newParts);
-  };
-
-  // Loading state for existing work orders
-  if (!isCreateMode && isLoading) {
+  if (customerLoading) {
     return (
-      <div className="container mx-auto p-6">
-        <Card>
-          <CardContent className="p-8">
-            <div className="flex items-center justify-center">
-              <div className="text-center">
-                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-                <p className="text-lg">Loading work order details...</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Loading customer information...</span>
       </div>
     );
   }
 
-  // Error state for existing work orders
-  if (!isCreateMode && error) {
-    return (
-      <div className="container mx-auto p-6">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Error loading work order: {error instanceof Error ? error.message : 'Unknown error'}
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
-  // Missing work order
-  if (!isCreateMode && !workOrder) {
-    return (
-      <div className="container mx-auto p-6">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Work order not found
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
-  if (!currentWorkOrder) {
-    return (
-      <div className="container mx-auto p-6">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Unable to load work order data
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
+  if (customerError) {
+    console.error('Customer loading error:', customerError);
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <WorkOrderDetailsTabs
-        workOrder={currentWorkOrder}
-        timeEntries={timeEntries}
-        onUpdateTimeEntries={handleUpdateTimeEntries}
-        inventoryItems={inventoryItems}
-        notes={notes}
-        onUpdateNotes={handleUpdateNotes}
-        jobLines={jobLines}
-        parts={parts}
-        onJobLinesChange={handleJobLinesChange}
-        onPartsChange={handlePartsChange}
-        jobLinesLoading={false}
-        isEditMode={!isCreateMode}
-        isCreateMode={isCreateMode}
-        onCreateWorkOrder={onCreateWorkOrder}
-        prePopulatedData={prePopulatedData}
-      />
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            {isCreateMode ? 'Create New Work Order' : 'Work Order Details'}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <WorkOrderFormFields
+                form={form}
+                technicians={technicians}
+                technicianLoading={technicianLoading}
+                technicianError={technicianError}
+                jobLines={jobLines}
+                onJobLinesChange={setJobLines}
+                workOrderId={workOrderId}
+                prePopulatedCustomer={{
+                  customerName: form.getValues('customer'),
+                  customerEmail: form.getValues('customerEmail'),
+                  customerPhone: form.getValues('customerPhone'),
+                  customerAddress: form.getValues('customerAddress'),
+                  vehicleMake: form.getValues('vehicleMake'),
+                  vehicleModel: form.getValues('vehicleModel'),
+                  vehicleYear: form.getValues('vehicleYear'),
+                  vehicleLicensePlate: form.getValues('licensePlate'),
+                  vehicleVin: form.getValues('vin'),
+                }}
+              />
+
+              {isCreateMode && (
+                <div className="flex justify-end space-x-4">
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      'Create Work Order'
+                    )}
+                  </Button>
+                </div>
+              )}
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

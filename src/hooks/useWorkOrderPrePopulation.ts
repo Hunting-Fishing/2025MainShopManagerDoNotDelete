@@ -28,7 +28,10 @@ export function useWorkOrderPrePopulation(prePopulatedData: PrePopulatedData) {
 
   useEffect(() => {
     const loadCustomerData = async () => {
-      if (!prePopulatedData.customerId) return;
+      if (!prePopulatedData.customerId) {
+        console.log('No customer ID provided, using URL data directly');
+        return;
+      }
 
       setLoading(true);
       try {
@@ -41,7 +44,7 @@ export function useWorkOrderPrePopulation(prePopulatedData: PrePopulatedData) {
             vehicles (*)
           `)
           .eq('id', prePopulatedData.customerId)
-          .single();
+          .maybeSingle();
 
         if (customerError) {
           console.error('Error loading customer:', customerError);
@@ -55,7 +58,7 @@ export function useWorkOrderPrePopulation(prePopulatedData: PrePopulatedData) {
 
           // If vehicle information is provided in URL, try to match it with customer's vehicles
           if (prePopulatedData.vehicleId && customer.vehicles) {
-            const matchedVehicle = customer.vehicles.find(v => v.id === prePopulatedData.vehicleId);
+            const matchedVehicle = customer.vehicles.find((v: any) => v.id === prePopulatedData.vehicleId);
             if (matchedVehicle) {
               setSelectedVehicle(matchedVehicle);
               console.log('Vehicle matched:', matchedVehicle);
@@ -78,9 +81,14 @@ export function useWorkOrderPrePopulation(prePopulatedData: PrePopulatedData) {
   }, [prePopulatedData.customerId]);
 
   const getInitialFormData = () => {
-    const formData: any = {};
+    const formData: any = {
+      // Default values
+      status: 'pending',
+      priority: 'medium',
+      inventoryItems: [],
+    };
 
-    // Customer information
+    // Customer information from database or URL
     if (selectedCustomer) {
       formData.customer = `${selectedCustomer.first_name} ${selectedCustomer.last_name}`.trim();
       formData.customerEmail = selectedCustomer.email || '';
@@ -93,7 +101,7 @@ export function useWorkOrderPrePopulation(prePopulatedData: PrePopulatedData) {
       formData.customerAddress = prePopulatedData.customerAddress || '';
     }
 
-    // Vehicle information
+    // Vehicle information from database or URL
     if (selectedVehicle) {
       formData.vehicleMake = selectedVehicle.make || '';
       formData.vehicleModel = selectedVehicle.model || '';
@@ -108,6 +116,7 @@ export function useWorkOrderPrePopulation(prePopulatedData: PrePopulatedData) {
       formData.vin = prePopulatedData.vehicleVin || '';
     }
 
+    console.log('Generated form data:', formData);
     return formData;
   };
 
