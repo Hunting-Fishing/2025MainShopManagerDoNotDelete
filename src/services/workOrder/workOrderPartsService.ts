@@ -1,99 +1,69 @@
-import { supabase } from '@/integrations/supabase/client';
-import { WorkOrderPart } from '@/types/workOrderPart';
 
-export async function getWorkOrderParts(workOrderId: string): Promise<WorkOrderPart[]> {
+import { supabase } from "@/lib/supabase";
+import { WorkOrderPart } from "@/types/workOrderPart";
+
+export const getWorkOrderParts = async (workOrderId: string): Promise<WorkOrderPart[]> => {
   try {
     const { data, error } = await supabase
       .from('work_order_parts')
       .select('*')
-      .eq('work_order_id', workOrderId);
+      .eq('work_order_id', workOrderId)
+      .order('created_at', { ascending: true });
 
     if (error) {
       console.error('Error fetching work order parts:', error);
       throw error;
     }
 
-    // Map database fields to WorkOrderPart interface with proper price calculations
-    return (data || []).map((part: any) => {
-      const quantity = part.quantity || 1;
-      const unitPrice = part.unit_price || part.customer_price || 0;
-      const calculatedTotal = quantity * unitPrice;
-
-      return {
-        id: part.id,
-        work_order_id: part.work_order_id,
-        job_line_id: part.job_line_id,
-        part_number: part.part_number,
-        name: part.part_name || part.name || 'Unknown Part',
-        description: part.description || '',
-        quantity: quantity,
-        unit_price: unitPrice,
-        total_price: part.total_price || calculatedTotal,
-        status: part.status || 'pending',
-        notes: part.notes || '',
-        created_at: part.created_at,
-        updated_at: part.updated_at,
-        
-        // Additional fields that may exist
-        category: part.category,
-        supplierName: part.supplier_name,
-        supplierCost: part.supplier_cost,
-        supplierSuggestedRetailPrice: part.supplier_suggested_retail_price,
-        customerPrice: part.customer_price,
-        retailPrice: part.retail_price,
-        warrantyDuration: part.warranty_duration,
-        warrantyExpiryDate: part.warranty_expiry_date,
-        binLocation: part.bin_location,
-        installDate: part.install_date,
-        partType: part.part_type,
-        installedBy: part.installed_by,
-        markupPercentage: part.markup_percentage,
-        inventoryItemId: part.inventory_item_id,
-        coreChargeApplied: part.core_charge_applied,
-        coreChargeAmount: part.core_charge_amount,
-        isTaxable: part.is_taxable,
-        invoiceNumber: part.invoice_number,
-        poLine: part.po_line,
-        isStockItem: part.is_stock_item,
-        notesInternal: part.notes_internal,
-        attachments: part.attachments,
-        warehouseLocation: part.warehouse_location,
-        shelfLocation: part.shelf_location
-      };
-    });
+    return data || [];
   } catch (error) {
     console.error('Error in getWorkOrderParts:', error);
-    return [];
+    throw error;
   }
-}
+};
 
-export async function updateWorkOrderPart(partId: string, partData: Partial<WorkOrderPart>): Promise<WorkOrderPart> {
+export const createWorkOrderPart = async (part: Omit<WorkOrderPart, 'id' | 'created_at' | 'updated_at'>): Promise<WorkOrderPart> => {
   try {
-    // Calculate total price if quantity or unit_price is being updated
-    const updateData: any = { ...partData };
-    if (partData.quantity !== undefined || partData.unit_price !== undefined) {
-      const quantity = partData.quantity || 1;
-      const unitPrice = partData.unit_price || 0;
-      updateData.total_price = quantity * unitPrice;
+    const { data, error } = await supabase
+      .from('work_order_parts')
+      .insert([part])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating work order part:', error);
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in createWorkOrderPart:', error);
+    throw error;
+  }
+};
+
+export const updateWorkOrderPart = async (partId: string, updates: Partial<WorkOrderPart>): Promise<WorkOrderPart> => {
+  try {
+    // Calculate total_price if quantity or unit_price changed
+    const calculatedUpdates = { ...updates };
+    if (updates.quantity !== undefined || updates.unit_price !== undefined) {
+      // Fetch current part to get missing values
+      const { data: currentPart } = await supabase
+        .from('work_order_parts')
+        .select('quantity, unit_price')
+        .eq('id', partId)
+        .single();
+      
+      if (currentPart) {
+        const quantity = updates.quantity ?? currentPart.quantity ?? 1;
+        const unitPrice = updates.unit_price ?? currentPart.unit_price ?? 0;
+        calculatedUpdates.total_price = quantity * unitPrice;
+      }
     }
 
     const { data, error } = await supabase
       .from('work_order_parts')
-      .update({
-        part_number: updateData.part_number,
-        part_name: updateData.name,
-        description: updateData.description,
-        quantity: updateData.quantity,
-        unit_price: updateData.unit_price,
-        total_price: updateData.total_price,
-        status: updateData.status,
-        notes: updateData.notes,
-        customer_price: updateData.unit_price,
-        supplier_cost: updateData.supplierCost,
-        category: updateData.category,
-        part_type: updateData.partType,
-        updated_at: new Date().toISOString()
-      })
+      .update(calculatedUpdates)
       .eq('id', partId)
       .select()
       .single();
@@ -103,92 +73,14 @@ export async function updateWorkOrderPart(partId: string, partData: Partial<Work
       throw error;
     }
 
-    // Return the updated part with proper mapping
-    const quantity = data.quantity || 1;
-    const unitPrice = data.unit_price || data.customer_price || 0;
-    
-    return {
-      id: data.id,
-      work_order_id: data.work_order_id,
-      job_line_id: data.job_line_id,
-      part_number: data.part_number,
-      name: data.part_name || data.name || 'Unknown Part',
-      description: data.description || '',
-      quantity: quantity,
-      unit_price: unitPrice,
-      total_price: data.total_price || (quantity * unitPrice),
-      status: data.status || 'pending',
-      notes: data.notes || '',
-      created_at: data.created_at,
-      updated_at: data.updated_at
-    };
+    return data;
   } catch (error) {
     console.error('Error in updateWorkOrderPart:', error);
     throw error;
   }
-}
+};
 
-export async function getJobLineParts(jobLineId: string): Promise<WorkOrderPart[]> {
-  try {
-    const { data, error } = await supabase
-      .from('work_order_parts')
-      .select('*')
-      .eq('job_line_id', jobLineId);
-
-    if (error) {
-      console.error('Error fetching job line parts:', error);
-      throw error;
-    }
-
-    // Map database fields to WorkOrderPart interface - same mapping as above
-    return (data || []).map((part: any) => ({
-      id: part.id,
-      work_order_id: part.work_order_id,
-      job_line_id: part.job_line_id,
-      part_number: part.part_number,
-      name: part.part_name || part.name || 'Unknown Part',
-      description: part.description || '',
-      quantity: part.quantity || 1,
-      unit_price: part.unit_price || part.customer_price || 0,
-      total_price: part.total_price || (part.unit_price * part.quantity) || 0,
-      status: part.status || 'pending',
-      notes: part.notes || '',
-      created_at: part.created_at,
-      updated_at: part.updated_at,
-      
-      // Additional fields
-      category: part.category,
-      supplierName: part.supplier_name,
-      supplierCost: part.supplier_cost,
-      supplierSuggestedRetailPrice: part.supplier_suggested_retail_price,
-      customerPrice: part.customer_price,
-      retailPrice: part.retail_price,
-      warrantyDuration: part.warranty_duration,
-      warrantyExpiryDate: part.warranty_expiry_date,
-      binLocation: part.bin_location,
-      installDate: part.install_date,
-      partType: part.part_type,
-      installedBy: part.installed_by,
-      markupPercentage: part.markup_percentage,
-      inventoryItemId: part.inventory_item_id,
-      coreChargeApplied: part.core_charge_applied,
-      coreChargeAmount: part.core_charge_amount,
-      isTaxable: part.is_taxable,
-      invoiceNumber: part.invoice_number,
-      poLine: part.po_line,
-      isStockItem: part.is_stock_item,
-      notesInternal: part.notes_internal,
-      attachments: part.attachments,
-      warehouseLocation: part.warehouse_location,
-      shelfLocation: part.shelf_location
-    }));
-  } catch (error) {
-    console.error('Error in getJobLineParts:', error);
-    return [];
-  }
-}
-
-export async function deleteWorkOrderPart(partId: string): Promise<void> {
+export const deleteWorkOrderPart = async (partId: string): Promise<void> => {
   try {
     const { error } = await supabase
       .from('work_order_parts')
@@ -203,4 +95,57 @@ export async function deleteWorkOrderPart(partId: string): Promise<void> {
     console.error('Error in deleteWorkOrderPart:', error);
     throw error;
   }
-}
+};
+
+// Helper function to transform database row to WorkOrderPart interface
+export const transformPartData = (dbRow: any): WorkOrderPart => {
+  // Map database column names to interface properties
+  return {
+    id: dbRow.id,
+    work_order_id: dbRow.work_order_id,
+    job_line_id: dbRow.job_line_id,
+    part_number: dbRow.part_number || dbRow.partNumber,
+    name: dbRow.part_name || dbRow.name, // Try part_name first, fallback to name
+    description: dbRow.description,
+    quantity: Number(dbRow.quantity) || 1,
+    unit_price: Number(dbRow.customer_price) || Number(dbRow.unit_price) || 0, // Try customer_price first
+    total_price: Number(dbRow.total_price) || (Number(dbRow.quantity || 1) * Number(dbRow.customer_price || dbRow.unit_price || 0)),
+    status: dbRow.status || 'pending',
+    notes: dbRow.notes,
+    created_at: dbRow.created_at,
+    updated_at: dbRow.updated_at,
+    
+    // Additional properties that might exist in the database
+    partName: dbRow.part_name,
+    partNumber: dbRow.part_number,
+    supplierName: dbRow.supplier_name,
+    supplierCost: dbRow.supplier_cost,
+    supplierSuggestedRetailPrice: dbRow.supplier_suggested_retail_price,
+    customerPrice: dbRow.customer_price,
+    retailPrice: dbRow.retail_price,
+    category: dbRow.category,
+    warrantyDuration: dbRow.warranty_duration,
+    warrantyExpiryDate: dbRow.warranty_expiry_date,
+    binLocation: dbRow.bin_location,
+    installDate: dbRow.install_date,
+    dateAdded: dbRow.created_at,
+    partType: dbRow.part_type,
+    installedBy: dbRow.installed_by,
+    markupPercentage: dbRow.markup_percentage,
+    inventoryItemId: dbRow.inventory_item_id,
+    coreChargeApplied: dbRow.core_charge_applied,
+    coreChargeAmount: dbRow.core_charge_amount,
+    isTaxable: dbRow.is_taxable,
+    invoiceNumber: dbRow.invoice_number,
+    poLine: dbRow.po_line,
+    isStockItem: dbRow.is_stock_item,
+    notesInternal: dbRow.notes_internal,
+    attachments: dbRow.attachments,
+    warehouseLocation: dbRow.warehouse_location,
+    shelfLocation: dbRow.shelf_location,
+    
+    // CamelCase aliases
+    workOrderId: dbRow.work_order_id,
+    jobLineId: dbRow.job_line_id
+  };
+};
