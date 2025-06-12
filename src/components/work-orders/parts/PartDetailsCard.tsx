@@ -13,13 +13,15 @@ interface PartDetailsCardProps {
   onRemove: (partId: string) => void;
   onUpdate?: (updatedPart: WorkOrderPart) => void;
   isEditMode?: boolean;
+  compact?: boolean;
 }
 
 export function PartDetailsCard({ 
   part, 
   onRemove, 
   onUpdate,
-  isEditMode = false 
+  isEditMode = false,
+  compact = false
 }: PartDetailsCardProps) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const statusInfo = partStatusMap[part.status || 'pending'];
@@ -39,6 +41,58 @@ export function PartDetailsCard({
       onUpdate(updatedPart);
     }
   };
+
+  if (compact) {
+    return (
+      <>
+        <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border">
+          <div className="flex items-center gap-3">
+            <Package className="h-4 w-4 text-blue-500" />
+            <div>
+              <p className="font-medium text-sm">{part.name}</p>
+              <p className="text-xs text-muted-foreground">{part.part_number}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <p className="text-sm">Qty: {quantity}</p>
+              <p className="text-sm font-medium">${displayTotal.toFixed(2)}</p>
+            </div>
+            <Badge className={`${statusInfo.classes} text-xs`}>
+              {statusInfo.label}
+            </Badge>
+            {isEditMode && (
+              <div className="flex gap-1">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={handleEditClick}
+                  className="h-6 w-6 p-0"
+                >
+                  <Edit className="h-3 w-3" />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => onRemove(part.id)}
+                  className="h-6 w-6 p-0 text-red-600"
+                >
+                  <Trash className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <EditPartDialog
+          part={part}
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          onSave={handleSavePart}
+        />
+      </>
+    );
+  }
 
   return (
     <>
