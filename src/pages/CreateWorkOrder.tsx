@@ -32,6 +32,18 @@ const CreateWorkOrder = () => {
     try {
       console.log('Creating work order with values:', values);
       
+      // Ensure inventory items have proper IDs and all required properties
+      const inventoryItems = values.inventoryItems.map(item => ({
+        id: item.id || crypto.randomUUID(),
+        name: item.name || '',
+        sku: item.sku || '',
+        category: item.category || '',
+        quantity: item.quantity || 0,
+        unit_price: item.unit_price || 0,
+        total: item.total || (item.quantity || 0) * (item.unit_price || 0),
+        notes: item.notes
+      }));
+      
       const workOrderData = {
         customer_id: prePopulatedCustomer.customerId,
         description: values.description,
@@ -46,7 +58,7 @@ const CreateWorkOrder = () => {
         vehicle_year: values.vehicleYear,
         vehicle_license_plate: values.licensePlate,
         vehicle_vin: values.vin,
-        inventory_items: values.inventoryItems
+        inventory_items: inventoryItems
       };
 
       const newWorkOrder = await createWorkOrder(workOrderData);
