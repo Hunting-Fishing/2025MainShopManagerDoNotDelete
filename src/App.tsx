@@ -9,7 +9,6 @@ import { Layout } from '@/components/layout/Layout';
 import Dashboard from '@/pages/Dashboard';
 import WorkOrders from '@/pages/WorkOrders';
 import WorkOrderDetails from '@/pages/WorkOrderDetails';
-import CreateWorkOrder from '@/pages/CreateWorkOrder';
 import Customers from '@/pages/Customers';
 import CustomerDetails from '@/pages/CustomerDetails';
 import CreateCustomer from '@/pages/CreateCustomer';
@@ -35,7 +34,6 @@ function App() {
             <Routes>
               <Route path="/" element={<Layout><Dashboard /></Layout>} />
               <Route path="/work-orders" element={<Layout><WorkOrders /></Layout>} />
-              <Route path="/work-orders/create" element={<Layout><CreateWorkOrder /></Layout>} />
               <Route path="/work-orders/:id" element={<Layout><WorkOrderDetails /></Layout>} />
               <Route path="/customers" element={<Layout><Customers /></Layout>} />
               <Route path="/customers/:id" element={<Layout><CustomerDetails /></Layout>} />
