@@ -24,6 +24,11 @@ export function WorkOrderDetailsView({ workOrderId: propWorkOrderId }: WorkOrder
   const navigate = useNavigate();
   const workOrderId = propWorkOrderId || paramWorkOrderId;
 
+  // If this is the create route, don't try to fetch data
+  if (workOrderId === 'create') {
+    return null; // This will be handled by the CreateWorkOrder page
+  }
+
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
   const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
   const [inventoryItems, setInventoryItems] = useState<WorkOrderInventoryItem[]>([]);
@@ -35,7 +40,7 @@ export function WorkOrderDetailsView({ workOrderId: propWorkOrderId }: WorkOrder
   const [notes, setNotes] = useState('');
 
   useEffect(() => {
-    if (workOrderId) {
+    if (workOrderId && workOrderId !== 'create') {
       fetchWorkOrderData(workOrderId);
     }
   }, [workOrderId]);
@@ -95,7 +100,7 @@ export function WorkOrderDetailsView({ workOrderId: propWorkOrderId }: WorkOrder
     // navigate(`/invoices/${invoiceId}`);
   };
 
-  if (!workOrderId) {
+  if (!workOrderId || workOrderId === 'create') {
     return (
       <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />
