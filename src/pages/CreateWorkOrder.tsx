@@ -12,7 +12,7 @@ const CreateWorkOrder = () => {
   const navigate = useNavigate();
 
   // Extract pre-populated data from URL parameters
-  const prePopulatedCustomer = {
+  const prePopulatedData = {
     customerId: searchParams.get('customerId') || undefined,
     customerName: searchParams.get('customerName') || '',
     customerEmail: searchParams.get('customerEmail') || '',
@@ -36,7 +36,7 @@ const CreateWorkOrder = () => {
       
       // Map form values to work order data structure
       const workOrderData = {
-        customer_id: prePopulatedCustomer.customerId,
+        customer_id: prePopulatedData.customerId,
         description: values.description,
         status: values.status,
         priority: values.priority,
@@ -81,22 +81,21 @@ const CreateWorkOrder = () => {
 
       <WorkOrderForm
         onSubmit={handleSubmit}
-        prePopulatedCustomer={prePopulatedCustomer}
         initialValues={{
-          customer: prePopulatedCustomer.customerName,
-          description: prePopulatedCustomer.description,
+          customer: prePopulatedData.customerName,
+          description: prePopulatedData.description,
           status: "pending",
-          priority: prePopulatedCustomer.priority as any || "medium",
+          priority: prePopulatedData.priority as any || "medium",
           technician: "",
           location: "",
           dueDate: "",
           notes: "",
-          vehicleMake: prePopulatedCustomer.vehicleMake,
-          vehicleModel: prePopulatedCustomer.vehicleModel,
-          vehicleYear: prePopulatedCustomer.vehicleYear,
+          vehicleMake: prePopulatedData.vehicleMake,
+          vehicleModel: prePopulatedData.vehicleModel,
+          vehicleYear: prePopulatedData.vehicleYear,
           odometer: "",
-          licensePlate: prePopulatedCustomer.vehicleLicensePlate,
-          vin: prePopulatedCustomer.vehicleVin,
+          licensePlate: prePopulatedData.vehicleLicensePlate,
+          vin: prePopulatedData.vehicleVin,
           inventoryItems: []
         }}
       />
