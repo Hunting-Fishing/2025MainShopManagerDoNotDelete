@@ -1,9 +1,37 @@
 
-import { supabase } from "@/lib/supabase";
-import { WorkOrderPart } from "@/types/workOrderPart";
+import { supabase } from '@/lib/supabase';
+import { WorkOrderPart, WorkOrderPartFormValues } from '@/types/workOrderPart';
+
+// Transform raw part data to ensure proper mapping
+export const transformPartData = (rawPart: any): WorkOrderPart => {
+  return {
+    id: rawPart.id,
+    work_order_id: rawPart.work_order_id,
+    job_line_id: rawPart.job_line_id,
+    part_number: rawPart.part_number || '',
+    name: rawPart.name || rawPart.partName || '',
+    description: rawPart.description || '',
+    quantity: Number(rawPart.quantity) || 0,
+    unit_price: Number(rawPart.unit_price) || Number(rawPart.customerPrice) || 0,
+    total_price: Number(rawPart.total_price) || (Number(rawPart.unit_price || rawPart.customerPrice || 0) * Number(rawPart.quantity || 0)),
+    status: rawPart.status || 'pending',
+    notes: rawPart.notes || '',
+    created_at: rawPart.created_at,
+    updated_at: rawPart.updated_at,
+    
+    // Backward compatibility aliases
+    partName: rawPart.name || rawPart.partName || '',
+    partNumber: rawPart.part_number || '',
+    customerPrice: Number(rawPart.unit_price) || Number(rawPart.customerPrice) || 0,
+    workOrderId: rawPart.work_order_id,
+    jobLineId: rawPart.job_line_id
+  };
+};
 
 export const getWorkOrderParts = async (workOrderId: string): Promise<WorkOrderPart[]> => {
   try {
+    console.log('Fetching work order parts for:', workOrderId);
+    
     const { data, error } = await supabase
       .from('work_order_parts')
       .select('*')
@@ -15,39 +43,46 @@ export const getWorkOrderParts = async (workOrderId: string): Promise<WorkOrderP
       throw error;
     }
 
-    return data || [];
+    console.log('Raw parts data:', data);
+    
+    // Transform the data to ensure proper mapping
+    const transformedParts = (data || []).map(transformPartData);
+    
+    console.log('Transformed parts data:', transformedParts);
+    
+    return transformedParts;
   } catch (error) {
     console.error('Error in getWorkOrderParts:', error);
-    throw error;
+    return [];
   }
 };
 
-export const getJobLineParts = async (jobLineId: string): Promise<WorkOrderPart[]> => {
+export const createWorkOrderPart = async (
+  workOrderId: string,
+  partData: WorkOrderPartFormValues
+): Promise<WorkOrderPart | null> => {
   try {
+    console.log('Creating work order part:', { workOrderId, partData });
+
+    // Calculate total price
+    const totalPrice = (partData.unit_price || partData.customerPrice || 0) * (partData.quantity || 0);
+
+    const newPart = {
+      work_order_id: workOrderId,
+      job_line_id: partData.job_line_id || null,
+      part_number: partData.part_number || partData.partNumber || '',
+      name: partData.name || partData.partName || '',
+      description: partData.description || '',
+      quantity: partData.quantity || 0,
+      unit_price: partData.unit_price || partData.customerPrice || 0,
+      total_price: totalPrice,
+      status: partData.status || 'pending',
+      notes: partData.notes || ''
+    };
+
     const { data, error } = await supabase
       .from('work_order_parts')
-      .select('*')
-      .eq('job_line_id', jobLineId)
-      .order('created_at', { ascending: true });
-
-    if (error) {
-      console.error('Error fetching job line parts:', error);
-      throw error;
-    }
-
-    // Transform the data using our mapping function
-    return (data || []).map(transformPartData);
-  } catch (error) {
-    console.error('Error in getJobLineParts:', error);
-    throw error;
-  }
-};
-
-export const createWorkOrderPart = async (part: Omit<WorkOrderPart, 'id' | 'created_at' | 'updated_at'>): Promise<WorkOrderPart> => {
-  try {
-    const { data, error } = await supabase
-      .from('work_order_parts')
-      .insert([part])
+      .insert([newPart])
       .select()
       .single();
 
@@ -56,35 +91,69 @@ export const createWorkOrderPart = async (part: Omit<WorkOrderPart, 'id' | 'crea
       throw error;
     }
 
-    return data;
+    console.log('Created work order part:', data);
+    return transformPartData(data);
   } catch (error) {
     console.error('Error in createWorkOrderPart:', error);
-    throw error;
+    return null;
   }
 };
 
-export const updateWorkOrderPart = async (partId: string, updates: Partial<WorkOrderPart>): Promise<WorkOrderPart> => {
+export const updateWorkOrderPart = async (
+  partId: string,
+  partData: Partial<WorkOrderPartFormValues>
+): Promise<WorkOrderPart | null> => {
   try {
-    // Calculate total_price if quantity or unit_price changed
-    const calculatedUpdates = { ...updates };
-    if (updates.quantity !== undefined || updates.unit_price !== undefined) {
-      // Fetch current part to get missing values
+    console.log('Updating work order part:', { partId, partData });
+
+    const updateData: any = {};
+    
+    if (partData.name || partData.partName) {
+      updateData.name = partData.name || partData.partName;
+    }
+    if (partData.part_number || partData.partNumber) {
+      updateData.part_number = partData.part_number || partData.partNumber;
+    }
+    if (partData.description !== undefined) {
+      updateData.description = partData.description;
+    }
+    if (partData.quantity !== undefined) {
+      updateData.quantity = partData.quantity;
+    }
+    if (partData.unit_price !== undefined || partData.customerPrice !== undefined) {
+      updateData.unit_price = partData.unit_price || partData.customerPrice;
+    }
+    if (partData.status !== undefined) {
+      updateData.status = partData.status;
+    }
+    if (partData.notes !== undefined) {
+      updateData.notes = partData.notes;
+    }
+    if (partData.job_line_id !== undefined) {
+      updateData.job_line_id = partData.job_line_id;
+    }
+
+    // Recalculate total price if quantity or unit price changed
+    if (updateData.quantity !== undefined || updateData.unit_price !== undefined) {
+      // Get current part data to calculate total
       const { data: currentPart } = await supabase
         .from('work_order_parts')
         .select('quantity, unit_price')
         .eq('id', partId)
         .single();
-      
+
       if (currentPart) {
-        const quantity = updates.quantity ?? currentPart.quantity ?? 1;
-        const unitPrice = updates.unit_price ?? currentPart.unit_price ?? 0;
-        calculatedUpdates.total_price = quantity * unitPrice;
+        const newQuantity = updateData.quantity !== undefined ? updateData.quantity : currentPart.quantity;
+        const newUnitPrice = updateData.unit_price !== undefined ? updateData.unit_price : currentPart.unit_price;
+        updateData.total_price = newQuantity * newUnitPrice;
       }
     }
 
+    updateData.updated_at = new Date().toISOString();
+
     const { data, error } = await supabase
       .from('work_order_parts')
-      .update(calculatedUpdates)
+      .update(updateData)
       .eq('id', partId)
       .select()
       .single();
@@ -94,15 +163,18 @@ export const updateWorkOrderPart = async (partId: string, updates: Partial<WorkO
       throw error;
     }
 
-    return data;
+    console.log('Updated work order part:', data);
+    return transformPartData(data);
   } catch (error) {
     console.error('Error in updateWorkOrderPart:', error);
-    throw error;
+    return null;
   }
 };
 
-export const deleteWorkOrderPart = async (partId: string): Promise<void> => {
+export const deleteWorkOrderPart = async (partId: string): Promise<boolean> => {
   try {
+    console.log('Deleting work order part:', partId);
+
     const { error } = await supabase
       .from('work_order_parts')
       .delete()
@@ -112,61 +184,11 @@ export const deleteWorkOrderPart = async (partId: string): Promise<void> => {
       console.error('Error deleting work order part:', error);
       throw error;
     }
+
+    console.log('Deleted work order part:', partId);
+    return true;
   } catch (error) {
     console.error('Error in deleteWorkOrderPart:', error);
-    throw error;
+    return false;
   }
-};
-
-// Helper function to transform database row to WorkOrderPart interface
-export const transformPartData = (dbRow: any): WorkOrderPart => {
-  // Map database column names to interface properties
-  return {
-    id: dbRow.id,
-    work_order_id: dbRow.work_order_id,
-    job_line_id: dbRow.job_line_id,
-    part_number: dbRow.part_number || dbRow.partNumber,
-    name: dbRow.part_name || dbRow.name, // Try part_name first, fallback to name
-    description: dbRow.description,
-    quantity: Number(dbRow.quantity) || 1,
-    unit_price: Number(dbRow.customer_price) || Number(dbRow.unit_price) || 0, // Try customer_price first
-    total_price: Number(dbRow.total_price) || (Number(dbRow.quantity || 1) * Number(dbRow.customer_price || dbRow.unit_price || 0)),
-    status: dbRow.status || 'pending',
-    notes: dbRow.notes,
-    created_at: dbRow.created_at,
-    updated_at: dbRow.updated_at,
-    
-    // Additional properties that might exist in the database
-    partName: dbRow.part_name,
-    partNumber: dbRow.part_number,
-    supplierName: dbRow.supplier_name,
-    supplierCost: dbRow.supplier_cost,
-    supplierSuggestedRetailPrice: dbRow.supplier_suggested_retail_price,
-    customerPrice: dbRow.customer_price,
-    retailPrice: dbRow.retail_price,
-    category: dbRow.category,
-    warrantyDuration: dbRow.warranty_duration,
-    warrantyExpiryDate: dbRow.warranty_expiry_date,
-    binLocation: dbRow.bin_location,
-    installDate: dbRow.install_date,
-    dateAdded: dbRow.created_at,
-    partType: dbRow.part_type,
-    installedBy: dbRow.installed_by,
-    markupPercentage: dbRow.markup_percentage,
-    inventoryItemId: dbRow.inventory_item_id,
-    coreChargeApplied: dbRow.core_charge_applied,
-    coreChargeAmount: dbRow.core_charge_amount,
-    isTaxable: dbRow.is_taxable,
-    invoiceNumber: dbRow.invoice_number,
-    poLine: dbRow.po_line,
-    isStockItem: dbRow.is_stock_item,
-    notesInternal: dbRow.notes_internal,
-    attachments: dbRow.attachments,
-    warehouseLocation: dbRow.warehouse_location,
-    shelfLocation: dbRow.shelf_location,
-    
-    // CamelCase aliases
-    workOrderId: dbRow.work_order_id,
-    jobLineId: dbRow.job_line_id
-  };
 };
