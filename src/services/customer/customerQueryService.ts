@@ -1,113 +1,50 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { Customer, adaptCustomerForUI } from "@/types/customer";
-import { getCustomerLoyalty } from "@/services/loyalty/customerLoyaltyService";
+import { supabase } from '@/integrations/supabase/client';
+import { Customer } from '@/types/customer';
 
-export const getAllCustomers = async (): Promise<Customer[]> => {
+export async function getAllCustomers(): Promise<Customer[]> {
+  console.log('🔄 getAllCustomers: Starting fetch from database...');
+  
   try {
     const { data, error } = await supabase
-      .from("customers")
-      .select("*")
-      .order("last_name", { ascending: true });
-    
-    if (error) {
-      throw error;
-    }
-    
-    if (!data) {
-      return [];
-    }
-    
-    const customers = data.map(customer => adaptCustomerForUI(customer as Customer));
-    
-    // Fetch vehicles for each customer separately
-    for (const customer of customers) {
-      try {
-        const { data: vehiclesData, error: vehiclesError } = await supabase
-          .from("vehicles")
-          .select("*")
-          .eq("customer_id", customer.id);
-          
-        if (vehiclesError) {
-          console.error(`Error fetching vehicles for customer ${customer.id}:`, vehiclesError);
-        } else {
-          customer.vehicles = vehiclesData || [];
-        }
-      } catch (error) {
-        customer.vehicles = [];
-      }
-    }
-    
-    // Fetch loyalty data for each customer
-    try {
-      for (const customer of customers) {
-        try {
-          const loyalty = await getCustomerLoyalty(customer.id);
-          if (loyalty) {
-            customer.loyalty = loyalty;
-          }
-        } catch (error) {
-          // Continue without loyalty data
-        }
-      }
-    } catch (error) {
-      // Continue without loyalty data
-    }
-
-    return customers;
-  } catch (error) {
-    return [];
-  }
-};
-
-export const getCustomerById = async (id: string): Promise<Customer | null> => {
-  try {
-    const { data, error } = await supabase
-      .from("customers")
-      .select("*")
-      .eq("id", id)
-      .single();
+      .from('customers')
+      .select('*')
+      .order('created_at', { ascending: false });
 
     if (error) {
+      console.error('❌ getAllCustomers error:', error);
       throw error;
     }
 
-    if (!data) {
-      return null;
-    }
+    console.log('✅ getAllCustomers: Fetched', data?.length || 0, 'customers from database');
+    console.log('📊 getAllCustomers: Sample data:', data?.slice(0, 2));
     
-    const customer = adaptCustomerForUI(data as Customer);
-    
-    // Fetch vehicles for this customer
-    try {
-      const { data: vehiclesData, error: vehiclesError } = await supabase
-        .from("vehicles")
-        .select("*")
-        .eq("customer_id", customer.id);
-        
-      if (vehiclesError) {
-        console.error(`Error fetching vehicles for customer ${customer.id}:`, vehiclesError);
-      } else {
-        customer.vehicles = vehiclesData || [];
-      }
-    } catch (error) {
-      customer.vehicles = [];
-    }
-    
-    // Fetch loyalty data
-    try {
-      const loyalty = await getCustomerLoyalty(customer.id);
-      if (loyalty) {
-        customer.loyalty = loyalty;
-      }
-    } catch (error) {
-      // Continue without loyalty data
-    }
-
-    return customer;
+    return data || [];
   } catch (error) {
-    return null;
+    console.error('❌ getAllCustomers: Exception caught:', error);
+    throw error;
   }
-};
+}
 
-export const getCustomer = getCustomerById;
+export async function getCustomerById(id: string): Promise<Customer | null> {
+  console.log('🔍 getCustomerById: Fetching customer with id:', id);
+  
+  try {
+    const { data, error } = await supabase
+      .from('customers')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (error) {
+      console.error('❌ getCustomerById error:', error);
+      throw error;
+    }
+
+    console.log('✅ getCustomerById: Found customer:', data ? 'Yes' : 'No');
+    return data;
+  } catch (error) {
+    console.error('❌ getCustomerById: Exception caught:', error);
+    throw error;
+  }
+}

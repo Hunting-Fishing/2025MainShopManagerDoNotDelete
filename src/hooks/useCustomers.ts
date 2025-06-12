@@ -32,23 +32,23 @@ export function useCustomers() {
   }, [customers, filters]);
 
   const fetchCustomers = async () => {
+    console.log('🔄 useCustomers: Starting to fetch customers...');
     setIsLoading(true);
     setError(null);
     
     try {
-      console.log('🔄 Fetching customers from database...');
       const data = await getAllCustomers();
-      console.log('✅ Customers fetched successfully:', data?.length || 0, 'customers');
+      console.log('✅ useCustomers: Successfully fetched', data?.length || 0, 'customers');
       
-      if (data && Array.isArray(data)) {
+      if (Array.isArray(data)) {
         setCustomers(data);
-        console.log('📊 Customer data sample:', data.slice(0, 2));
+        console.log('📊 useCustomers: Customer data sample:', data.slice(0, 2));
       } else {
-        console.warn('⚠️ No customer data received or invalid format');
+        console.warn('⚠️ useCustomers: Invalid data format received');
         setCustomers([]);
       }
     } catch (err) {
-      console.error('❌ Error fetching customers:', err);
+      console.error('❌ useCustomers: Error fetching customers:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch customers';
       setError(errorMessage);
       setCustomers([]);
@@ -62,13 +62,13 @@ export function useCustomers() {
 
   const applyFilters = () => {
     if (!customers || !Array.isArray(customers)) {
-      console.log('🔍 No customers to filter');
+      console.log('🔍 useCustomers: No customers to filter');
       setFilteredCustomers([]);
       return;
     }
 
     let filtered = [...customers];
-    console.log('🔍 Applying filters to', filtered.length, 'customers');
+    console.log('🔍 useCustomers: Applying filters to', filtered.length, 'customers');
 
     // Apply search filter
     if (filters.search && filters.search.trim()) {
@@ -86,7 +86,7 @@ export function useCustomers() {
           field?.toLowerCase().includes(searchTerm)
         );
       });
-      console.log('🔍 After search filter:', filtered.length, 'customers');
+      console.log('🔍 useCustomers: After search filter:', filtered.length, 'customers');
     }
 
     // Apply sorting
@@ -98,12 +98,12 @@ export function useCustomers() {
       });
     }
 
-    console.log('✅ Final filtered customers:', filtered.length);
+    console.log('✅ useCustomers: Final filtered customers:', filtered.length);
     setFilteredCustomers(filtered);
   };
 
   const handleFilterChange = (newFilters: Partial<CustomerFilters>) => {
-    console.log('🔧 Filter change:', newFilters);
+    console.log('🔧 useCustomers: Filter change:', newFilters);
     setFilters(prevFilters => ({
       ...prevFilters,
       ...newFilters
