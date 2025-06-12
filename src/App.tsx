@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -8,6 +9,7 @@ import { Layout } from '@/components/layout/Layout';
 import Dashboard from '@/pages/Dashboard';
 import WorkOrders from '@/pages/WorkOrders';
 import WorkOrderDetails from '@/pages/WorkOrderDetails';
+import Customers from '@/pages/Customers';
 import CustomerDetails from '@/pages/CustomerDetails';
 import CreateCustomer from '@/pages/CreateCustomer';
 import Calendar from '@/pages/Calendar';
@@ -33,6 +35,7 @@ function App() {
               <Route path="/" element={<Layout><Dashboard /></Layout>} />
               <Route path="/work-orders" element={<Layout><WorkOrders /></Layout>} />
               <Route path="/work-orders/:id" element={<Layout><WorkOrderDetails /></Layout>} />
+              <Route path="/customers" element={<Layout><Customers /></Layout>} />
               <Route path="/customers/:id" element={<Layout><CustomerDetails /></Layout>} />
               <Route path="/customers/create" element={<Layout><CreateCustomer /></Layout>} />
               <Route path="/calendar" element={<Layout><Calendar /></Layout>} />

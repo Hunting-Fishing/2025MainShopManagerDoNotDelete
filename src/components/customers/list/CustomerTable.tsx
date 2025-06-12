@@ -64,7 +64,12 @@ export const CustomerTable = ({ customers, loading, error }: CustomerTableProps)
           <TableCell>
             <div className="space-y-1">
               <div className="font-medium">
-                {customer.first_name} {customer.last_name}
+                <Link 
+                  to={`/customers/${customer.id}`}
+                  className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
+                >
+                  {customer.first_name} {customer.last_name}
+                </Link>
               </div>
               {customer.company && (
                 <div className="text-sm text-muted-foreground">
