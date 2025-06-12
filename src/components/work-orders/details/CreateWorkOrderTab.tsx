@@ -1,33 +1,14 @@
 
 import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { WorkOrder } from '@/types/workOrder';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Save, Loader2 } from 'lucide-react';
-
-const createWorkOrderSchema = z.object({
-  description: z.string().min(1, "Description is required"),
-  status: z.enum(['pending', 'in-progress', 'on-hold', 'completed', 'cancelled']),
-  priority: z.enum(['low', 'medium', 'high', 'urgent']),
-  technician_id: z.string().optional(),
-  location: z.string().optional(),
-  due_date: z.string().optional(),
-  notes: z.string().optional(),
-  vehicle_make: z.string().optional(),
-  vehicle_model: z.string().optional(),
-  vehicle_year: z.string().optional(),
-  vehicle_license_plate: z.string().optional(),
-  vehicle_vin: z.string().optional(),
-});
-
-type CreateWorkOrderFormData = z.infer<typeof createWorkOrderSchema>;
+import { Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface CreateWorkOrderTabProps {
   workOrder: WorkOrder;
@@ -35,51 +16,52 @@ interface CreateWorkOrderTabProps {
 }
 
 export function CreateWorkOrderTab({ workOrder, onCreateWorkOrder }: CreateWorkOrderTabProps) {
+  const { toast } = useToast();
+  const [formData, setFormData] = useState({
+    description: workOrder.description || '',
+    customer_name: workOrder.customer_name || '',
+    customer_email: workOrder.customer_email || '',
+    customer_phone: workOrder.customer_phone || '',
+    customer_address: workOrder.customer_address || '',
+    vehicle_make: workOrder.vehicle_make || '',
+    vehicle_model: workOrder.vehicle_model || '',
+    vehicle_year: workOrder.vehicle_year || '',
+    vehicle_license_plate: workOrder.vehicle_license_plate || '',
+    vehicle_vin: workOrder.vehicle_vin || '',
+    priority: workOrder.priority || 'medium',
+    status: 'pending',
+    notes: workOrder.notes || ''
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<CreateWorkOrderFormData>({
-    resolver: zodResolver(createWorkOrderSchema),
-    defaultValues: {
-      description: workOrder.description || '',
-      status: workOrder.status as any || 'pending',
-      priority: (workOrder.priority as any) || 'medium',
-      technician_id: workOrder.technician_id || '',
-      location: workOrder.location || '',
-      due_date: workOrder.due_date || '',
-      notes: workOrder.notes || '',
-      vehicle_make: workOrder.vehicle_make || '',
-      vehicle_model: workOrder.vehicle_model || '',
-      vehicle_year: workOrder.vehicle_year || '',
-      vehicle_license_plate: workOrder.vehicle_license_plate || '',
-      vehicle_vin: workOrder.vehicle_vin || '',
-    }
-  });
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
 
-  const handleSubmit = async (data: CreateWorkOrderFormData) => {
-    if (!onCreateWorkOrder) return;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.description.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Description is required',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     setIsSubmitting(true);
     try {
-      const workOrderData = {
-        customer_id: workOrder.customer_id,
-        description: data.description,
-        status: data.status,
-        priority: data.priority,
-        technician_id: data.technician_id,
-        location: data.location,
-        due_date: data.due_date,
-        notes: data.notes,
-        vehicle_make: data.vehicle_make,
-        vehicle_model: data.vehicle_model,
-        vehicle_year: data.vehicle_year,
-        vehicle_license_plate: data.vehicle_license_plate,
-        vehicle_vin: data.vehicle_vin,
-        inventory_items: []
-      };
-
-      await onCreateWorkOrder(workOrderData);
+      if (onCreateWorkOrder) {
+        await onCreateWorkOrder(formData);
+      }
     } catch (error) {
       console.error('Error creating work order:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create work order. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -89,243 +71,171 @@ export function CreateWorkOrderTab({ workOrder, onCreateWorkOrder }: CreateWorkO
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Work Order Information</CardTitle>
+          <CardTitle>Create New Work Order</CardTitle>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Customer Information */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Customer Information</h3>
-                  {workOrder.customer_name && (
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">Customer</label>
-                      <p className="text-base">{workOrder.customer_name}</p>
-                    </div>
-                  )}
-                  {workOrder.customer_email && (
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">Email</label>
-                      <p className="text-base">{workOrder.customer_email}</p>
-                    </div>
-                  )}
-                  {workOrder.customer_phone && (
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">Phone</label>
-                      <p className="text-base">{workOrder.customer_phone}</p>
-                    </div>
-                  )}
-                </div>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Work Order Details */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="md:col-span-2">
+                <Label htmlFor="description">Description *</Label>
+                <Textarea
+                  id="description"
+                  placeholder="Describe the work to be done..."
+                  value={formData.description}
+                  onChange={(e) => handleInputChange('description', e.target.value)}
+                  className="min-h-[100px]"
+                  required
+                />
+              </div>
 
-                {/* Work Order Details */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Work Order Details</h3>
-                  
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Description *</FormLabel>
-                        <FormControl>
-                          <Textarea placeholder="Describe the work to be done..." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+              <div>
+                <Label htmlFor="priority">Priority</Label>
+                <Select value={formData.priority} onValueChange={(value) => handleInputChange('priority', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="status"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Status</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select status" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="in-progress">In Progress</SelectItem>
-                              <SelectItem value="on-hold">On Hold</SelectItem>
-                              <SelectItem value="completed">Completed</SelectItem>
-                              <SelectItem value="cancelled">Cancelled</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="priority"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Priority</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select priority" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="low">Low</SelectItem>
-                              <SelectItem value="medium">Medium</SelectItem>
-                              <SelectItem value="high">High</SelectItem>
-                              <SelectItem value="urgent">Urgent</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+            {/* Customer Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Customer Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="customer_name">Customer Name</Label>
+                    <Input
+                      id="customer_name"
+                      value={formData.customer_name}
+                      onChange={(e) => handleInputChange('customer_name', e.target.value)}
+                      placeholder="Customer name"
                     />
                   </div>
-
-                  <FormField
-                    control={form.control}
-                    name="location"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Location</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Work location..." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="due_date"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Due Date</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div>
+                    <Label htmlFor="customer_email">Email</Label>
+                    <Input
+                      id="customer_email"
+                      type="email"
+                      value={formData.customer_email}
+                      onChange={(e) => handleInputChange('customer_email', e.target.value)}
+                      placeholder="customer@email.com"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="customer_phone">Phone</Label>
+                    <Input
+                      id="customer_phone"
+                      value={formData.customer_phone}
+                      onChange={(e) => handleInputChange('customer_phone', e.target.value)}
+                      placeholder="Phone number"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="customer_address">Address</Label>
+                    <Input
+                      id="customer_address"
+                      value={formData.customer_address}
+                      onChange={(e) => handleInputChange('customer_address', e.target.value)}
+                      placeholder="Customer address"
+                    />
+                  </div>
                 </div>
-              </div>
+              </CardContent>
+            </Card>
 
-              {/* Vehicle Information */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Vehicle Information</h3>
+            {/* Vehicle Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Vehicle Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="vehicle_make"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Make</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Vehicle make..." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="vehicle_model"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Model</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Vehicle model..." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="vehicle_year"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Year</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Vehicle year..." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="vehicle_license_plate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>License Plate</FormLabel>
-                        <FormControl>
-                          <Input placeholder="License plate..." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="vehicle_vin"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>VIN</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Vehicle VIN..." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div>
+                    <Label htmlFor="vehicle_make">Make</Label>
+                    <Input
+                      id="vehicle_make"
+                      value={formData.vehicle_make}
+                      onChange={(e) => handleInputChange('vehicle_make', e.target.value)}
+                      placeholder="Vehicle make"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="vehicle_model">Model</Label>
+                    <Input
+                      id="vehicle_model"
+                      value={formData.vehicle_model}
+                      onChange={(e) => handleInputChange('vehicle_model', e.target.value)}
+                      placeholder="Vehicle model"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="vehicle_year">Year</Label>
+                    <Input
+                      id="vehicle_year"
+                      value={formData.vehicle_year}
+                      onChange={(e) => handleInputChange('vehicle_year', e.target.value)}
+                      placeholder="Vehicle year"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="vehicle_license_plate">License Plate</Label>
+                    <Input
+                      id="vehicle_license_plate"
+                      value={formData.vehicle_license_plate}
+                      onChange={(e) => handleInputChange('vehicle_license_plate', e.target.value)}
+                      placeholder="License plate"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="vehicle_vin">VIN</Label>
+                    <Input
+                      id="vehicle_vin"
+                      value={formData.vehicle_vin}
+                      onChange={(e) => handleInputChange('vehicle_vin', e.target.value)}
+                      placeholder="Vehicle VIN"
+                    />
+                  </div>
                 </div>
-              </div>
+              </CardContent>
+            </Card>
 
-              {/* Notes */}
-              <FormField
-                control={form.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Notes</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Additional notes..." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+            {/* Notes */}
+            <div>
+              <Label htmlFor="notes">Additional Notes</Label>
+              <Textarea
+                id="notes"
+                value={formData.notes}
+                onChange={(e) => handleInputChange('notes', e.target.value)}
+                placeholder="Additional notes..."
               />
+            </div>
 
-              {/* Submit Button */}
-              <div className="flex justify-end">
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Creating Work Order...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-2" />
-                      Create Work Order
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
-          </Form>
+            <div className="flex justify-end space-x-4 pt-6 border-t">
+              <Button type="button" variant="outline">
+                Save as Draft
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating Work Order...
+                  </>
+                ) : (
+                  "Create Work Order"
+                )}
+              </Button>
+            </div>
+          </form>
         </CardContent>
       </Card>
     </div>
