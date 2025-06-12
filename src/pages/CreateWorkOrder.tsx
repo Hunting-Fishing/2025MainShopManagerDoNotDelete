@@ -36,6 +36,8 @@ const CreateWorkOrder = () => {
     Object.entries(prePopulatedData).filter(([_, value]) => value && value.trim() !== '')
   );
 
+  console.log('Pre-populated data from URL:', cleanedData);
+
   const handleCreateWorkOrder = async (workOrderData: any) => {
     try {
       console.log('Creating work order with data:', workOrderData);
@@ -63,7 +65,7 @@ const CreateWorkOrder = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-white border-b border-gray-200 shadow-sm">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center gap-4">
             <Button
@@ -77,11 +79,11 @@ const CreateWorkOrder = () => {
             </Button>
             
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Create New Work Order</h1>
+              <h1 className="text-3xl font-bold text-gray-900">Create New Work Order</h1>
               <p className="text-sm text-gray-600 mt-1">
                 {cleanedData.customerName 
                   ? `Creating work order for ${cleanedData.customerName}` 
-                  : 'Use the comprehensive work order interface to create detailed work orders'
+                  : 'Create a comprehensive work order with customer and vehicle details'
                 }
               </p>
             </div>

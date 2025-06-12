@@ -1,169 +1,185 @@
 
 import React, { useState, useEffect } from 'react';
-import { WorkOrder, TimeEntry, WorkOrderInventoryItem } from '@/types/workOrder';
+import { useQuery } from '@tanstack/react-query';
+import { Card, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, Loader2 } from 'lucide-react';
+import { WorkOrder, WorkOrderInventoryItem, TimeEntry } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { WorkOrderDetailsHeader } from './details/WorkOrderDetailsHeader';
+import { getWorkOrderById } from '@/services/workOrder';
 import { WorkOrderDetailsTabs } from './details/WorkOrderDetailsTabs';
-import { useWorkOrder } from '@/hooks/useWorkOrder';
-import { useJobLines } from '@/hooks/useJobLines';
-import { getWorkOrderJobLines } from '@/services/workOrder/jobLinesService';
-import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
-import { getWorkOrderTimeEntries } from '@/services/workOrder';
+import { useToast } from '@/hooks/use-toast';
+
+interface PrePopulatedData {
+  customerId?: string;
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  customerAddress?: string;
+  customerCity?: string;
+  customerState?: string;
+  customerZip?: string;
+  vehicleId?: string;
+  vehicleMake?: string;
+  vehicleModel?: string;
+  vehicleYear?: string;
+  vehicleLicensePlate?: string;
+  vehicleVin?: string;
+}
 
 interface WorkOrderDetailsViewProps {
   workOrderId: string;
   isCreateMode?: boolean;
-  isEditMode?: boolean;
-  prePopulatedData?: any;
+  prePopulatedData?: PrePopulatedData;
   onCreateWorkOrder?: (data: any) => Promise<void>;
 }
 
-export function WorkOrderDetailsView({
-  workOrderId,
+export function WorkOrderDetailsView({ 
+  workOrderId, 
   isCreateMode = false,
-  isEditMode: initialEditMode = false,
-  prePopulatedData,
+  prePopulatedData = {},
   onCreateWorkOrder
 }: WorkOrderDetailsViewProps) {
-  const [isEditMode, setIsEditMode] = useState(initialEditMode);
+  const { toast } = useToast();
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [inventoryItems, setInventoryItems] = useState<WorkOrderInventoryItem[]>([]);
   const [notes, setNotes] = useState('');
   const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
   const [parts, setParts] = useState<WorkOrderPart[]>([]);
-  const [jobLinesLoading, setJobLinesLoading] = useState(false);
 
-  // Create a mock work order for create mode
+  // For create mode, use a mock work order structure
   const mockWorkOrder: WorkOrder = {
     id: 'new',
     status: 'pending',
+    description: '',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-    description: '',
-    customer_name: prePopulatedData?.customerName || '',
-    customer_email: prePopulatedData?.customerEmail || '',
-    customer_phone: prePopulatedData?.customerPhone || '',
-    customer_address: prePopulatedData?.customerAddress || '',
-    vehicle_make: prePopulatedData?.vehicleMake || '',
-    vehicle_model: prePopulatedData?.vehicleModel || '',
-    vehicle_year: prePopulatedData?.vehicleYear || '',
-    vehicle_license_plate: prePopulatedData?.vehicleLicensePlate || '',
-    vehicle_vin: prePopulatedData?.vehicleVin || '',
-    ...prePopulatedData
+    customer_name: prePopulatedData.customerName || '',
+    customer_email: prePopulatedData.customerEmail || '',
+    customer_phone: prePopulatedData.customerPhone || '',
+    customer_address: prePopulatedData.customerAddress || '',
+    vehicle_make: prePopulatedData.vehicleMake || '',
+    vehicle_model: prePopulatedData.vehicleModel || '',
+    vehicle_year: prePopulatedData.vehicleYear || '',
+    vehicle_vin: prePopulatedData.vehicleVin || '',
+    vehicle_license_plate: prePopulatedData.vehicleLicensePlate || '',
   };
 
-  // Use the hook only for existing work orders
-  const { workOrder: fetchedWorkOrder, isLoading, error } = useWorkOrder(
-    isCreateMode ? '' : workOrderId
-  );
+  // Query for existing work order (skip if in create mode)
+  const { 
+    data: workOrder, 
+    isLoading, 
+    error,
+    refetch 
+  } = useQuery({
+    queryKey: ['work-order', workOrderId],
+    queryFn: () => getWorkOrderById(workOrderId),
+    enabled: !isCreateMode && workOrderId !== 'new',
+    retry: 1,
+  });
 
-  const workOrder = isCreateMode ? mockWorkOrder : fetchedWorkOrder;
+  const currentWorkOrder = isCreateMode ? mockWorkOrder : workOrder;
 
   useEffect(() => {
-    if (workOrder && !isCreateMode) {
-      loadWorkOrderData();
-    }
-  }, [workOrder, isCreateMode]);
-
-  const loadWorkOrderData = async () => {
-    if (!workOrder?.id || isCreateMode) return;
-
-    try {
-      setJobLinesLoading(true);
-      
-      // Load job lines
-      const jobLinesData = await getWorkOrderJobLines(workOrder.id);
-      setJobLines(jobLinesData);
-
-      // Load parts
-      const partsData = await getWorkOrderParts(workOrder.id);
-      setParts(partsData);
-
-      // Load time entries
-      const timeEntriesData = await getWorkOrderTimeEntries(workOrder.id);
-      setTimeEntries(timeEntriesData);
-
-      // Set notes from work order
+    if (workOrder) {
+      // Initialize state with work order data
+      setTimeEntries(workOrder.timeEntries || []);
+      setInventoryItems(workOrder.inventoryItems || workOrder.inventory_items || []);
       setNotes(workOrder.notes || '');
-    } catch (error) {
-      console.error('Error loading work order data:', error);
-    } finally {
-      setJobLinesLoading(false);
+      setJobLines(workOrder.jobLines || []);
     }
-  };
+  }, [workOrder]);
 
   const handleUpdateTimeEntries = (entries: TimeEntry[]) => {
     setTimeEntries(entries);
+    toast({
+      title: "Time entries updated",
+      description: "Time tracking information has been saved.",
+    });
   };
 
   const handleUpdateNotes = (newNotes: string) => {
     setNotes(newNotes);
+    toast({
+      title: "Notes updated",
+      description: "Work order notes have been saved.",
+    });
   };
 
   const handleJobLinesChange = (newJobLines: WorkOrderJobLine[]) => {
     setJobLines(newJobLines);
+    console.log('Job lines updated:', newJobLines);
   };
 
   const handlePartsChange = (newParts: WorkOrderPart[]) => {
     setParts(newParts);
+    console.log('Parts updated:', newParts);
   };
 
-  const handleToggleEditMode = () => {
-    setIsEditMode(!isEditMode);
-  };
-
-  if (isLoading && !isCreateMode) {
+  // Loading state for existing work orders
+  if (!isCreateMode && isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="container mx-auto p-6">
+        <Card>
+          <CardContent className="p-8">
+            <div className="flex items-center justify-center">
+              <div className="text-center">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+                <p className="text-lg">Loading work order details...</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  if (error && !isCreateMode) {
+  // Error state for existing work orders
+  if (!isCreateMode && error) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center">
-            <p className="text-destructive">Error loading work order: {error.message}</p>
-            <Button 
-              onClick={() => window.location.reload()} 
-              className="mt-4"
-            >
-              Retry
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="container mx-auto p-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Error loading work order: {error instanceof Error ? error.message : 'Unknown error'}
+          </AlertDescription>
+        </Alert>
+      </div>
     );
   }
 
-  if (!workOrder) {
+  // Missing work order
+  if (!isCreateMode && !workOrder) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center">
-            <p className="text-muted-foreground">Work order not found</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="container mx-auto p-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Work order not found
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  if (!currentWorkOrder) {
+    return (
+      <div className="container mx-auto p-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Unable to load work order data
+          </AlertDescription>
+        </Alert>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {!isCreateMode && (
-        <WorkOrderDetailsHeader 
-          workOrder={workOrder}
-          isEditMode={isEditMode}
-        />
-      )}
-
+    <div className="container mx-auto p-6 space-y-6">
       <WorkOrderDetailsTabs
-        workOrder={workOrder}
+        workOrder={currentWorkOrder}
         timeEntries={timeEntries}
         onUpdateTimeEntries={handleUpdateTimeEntries}
         inventoryItems={inventoryItems}
@@ -173,10 +189,11 @@ export function WorkOrderDetailsView({
         parts={parts}
         onJobLinesChange={handleJobLinesChange}
         onPartsChange={handlePartsChange}
-        jobLinesLoading={jobLinesLoading}
-        isEditMode={isEditMode}
+        jobLinesLoading={false}
+        isEditMode={!isCreateMode}
         isCreateMode={isCreateMode}
         onCreateWorkOrder={onCreateWorkOrder}
+        prePopulatedData={prePopulatedData}
       />
     </div>
   );

@@ -12,6 +12,23 @@ import { WorkOrderPartsSection } from "../parts/WorkOrderPartsSection";
 import { WorkOrderLaborSection } from "../labor/WorkOrderLaborSection";
 import { CreateWorkOrderTab } from "./CreateWorkOrderTab";
 
+interface PrePopulatedData {
+  customerId?: string;
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  customerAddress?: string;
+  customerCity?: string;
+  customerState?: string;
+  customerZip?: string;
+  vehicleId?: string;
+  vehicleMake?: string;
+  vehicleModel?: string;
+  vehicleYear?: string;
+  vehicleLicensePlate?: string;
+  vehicleVin?: string;
+}
+
 interface WorkOrderDetailsTabsProps {
   workOrder: WorkOrder;
   timeEntries: TimeEntry[];
@@ -27,6 +44,7 @@ interface WorkOrderDetailsTabsProps {
   isEditMode?: boolean;
   isCreateMode?: boolean;
   onCreateWorkOrder?: (data: any) => Promise<void>;
+  prePopulatedData?: PrePopulatedData;
 }
 
 export function WorkOrderDetailsTabs({
@@ -43,7 +61,8 @@ export function WorkOrderDetailsTabs({
   jobLinesLoading,
   isEditMode = false,
   isCreateMode = false,
-  onCreateWorkOrder
+  onCreateWorkOrder,
+  prePopulatedData = {}
 }: WorkOrderDetailsTabsProps) {
   const handleUpdateTimeEntries = (entries: any) => {
     console.log('Time entries updated:', entries);
@@ -54,14 +73,17 @@ export function WorkOrderDetailsTabs({
   if (isCreateMode) {
     return (
       <Tabs defaultValue="create" className="w-full">
-        <TabsList className="grid w-full grid-cols-1 bg-emerald-400">
-          <TabsTrigger value="create">Create Work Order</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-1 bg-gradient-to-r from-blue-500 to-indigo-500">
+          <TabsTrigger value="create" className="text-white data-[state=active]:bg-white data-[state=active]:text-blue-600">
+            Create Work Order
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="create" className="mt-6">
           <CreateWorkOrderTab 
             workOrder={workOrder}
             onCreateWorkOrder={onCreateWorkOrder}
+            prePopulatedData={prePopulatedData}
           />
         </TabsContent>
       </Tabs>
@@ -70,13 +92,13 @@ export function WorkOrderDetailsTabs({
 
   return (
     <Tabs defaultValue="overview" className="w-full">
-      <TabsList className="grid w-full grid-cols-6 bg-emerald-400">
-        <TabsTrigger value="overview">Overview</TabsTrigger>
-        <TabsTrigger value="parts">Parts</TabsTrigger>
-        <TabsTrigger value="labor">Labor</TabsTrigger>
-        <TabsTrigger value="inventory">Inventory</TabsTrigger>
-        <TabsTrigger value="time">Time Tracking</TabsTrigger>
-        <TabsTrigger value="communications">Communications</TabsTrigger>
+      <TabsList className="grid w-full grid-cols-6 bg-gradient-to-r from-emerald-500 to-teal-500">
+        <TabsTrigger value="overview" className="text-white data-[state=active]:bg-white data-[state=active]:text-emerald-600">Overview</TabsTrigger>
+        <TabsTrigger value="parts" className="text-white data-[state=active]:bg-white data-[state=active]:text-emerald-600">Parts</TabsTrigger>
+        <TabsTrigger value="labor" className="text-white data-[state=active]:bg-white data-[state=active]:text-emerald-600">Labor</TabsTrigger>
+        <TabsTrigger value="inventory" className="text-white data-[state=active]:bg-white data-[state=active]:text-emerald-600">Inventory</TabsTrigger>
+        <TabsTrigger value="time" className="text-white data-[state=active]:bg-white data-[state=active]:text-emerald-600">Time Tracking</TabsTrigger>
+        <TabsTrigger value="communications" className="text-white data-[state=active]:bg-white data-[state=active]:text-emerald-600">Communications</TabsTrigger>
       </TabsList>
 
       <TabsContent value="overview" className="mt-6">
