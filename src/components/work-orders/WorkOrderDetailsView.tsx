@@ -137,19 +137,21 @@ export function WorkOrderDetailsView({ workOrderId: propWorkOrderId }: WorkOrder
         isEditMode={isEditMode}
       />
 
-      <WorkOrderDetailsTabs
-        workOrder={workOrder}
-        timeEntries={timeEntries}
-        onUpdateTimeEntries={setTimeEntries}
-        inventoryItems={inventoryItems}
-        notes={notes}
-        onUpdateNotes={setNotes}
-        jobLines={jobLines}
-        parts={parts}
-        onJobLinesChange={setJobLines}
-        jobLinesLoading={loading}
-        isEditMode={isEditMode}
-      />
+      <div className="container mx-auto px-6">
+        <WorkOrderDetailsTabs
+          workOrder={workOrder}
+          timeEntries={timeEntries}
+          onUpdateTimeEntries={setTimeEntries}
+          inventoryItems={inventoryItems}
+          notes={notes}
+          onUpdateNotes={setNotes}
+          jobLines={jobLines}
+          parts={parts}
+          onJobLinesChange={setJobLines}
+          jobLinesLoading={loading}
+          isEditMode={isEditMode}
+        />
+      </div>
     </div>
   );
 }
