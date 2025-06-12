@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { WorkOrder } from '@/types/workOrder';
 import { WorkOrderDetailsActions } from './WorkOrderDetailsActions';
 import { WorkOrderStatusUpdate } from './WorkOrderStatusUpdate';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 interface WorkOrderDetailsHeaderProps {
   workOrder: WorkOrder;
@@ -49,7 +49,16 @@ export function WorkOrderDetailsHeader({
                 Work Order #{workOrder.work_order_number || workOrder.id?.slice(0, 8)}
               </h1>
               <p className="text-sm text-gray-600 mt-1">
-                Customer: {workOrder.customer_name || 'Unknown Customer'}
+                Customer: {workOrder.customer_id ? (
+                  <Link 
+                    to={`/customers/${workOrder.customer_id}`}
+                    className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
+                  >
+                    {workOrder.customer_name || 'Unknown Customer'}
+                  </Link>
+                ) : (
+                  <span>{workOrder.customer_name || 'Unknown Customer'}</span>
+                )}
               </p>
             </div>
           </div>
