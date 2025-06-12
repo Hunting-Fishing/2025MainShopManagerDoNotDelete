@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { WorkOrderPart, WORK_ORDER_PART_STATUSES } from '@/types/workOrderPart';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface EditPartDialogProps {
   part: WorkOrderPart;
@@ -29,19 +31,43 @@ export function EditPartDialog({
     status: part.status || 'pending',
     notes: part.notes || ''
   });
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     
-    const updatedPart: WorkOrderPart = {
-      ...part,
-      ...formData,
-      total_price: formData.quantity * formData.unit_price,
-      updated_at: new Date().toISOString()
-    };
-    
-    onUpdate(updatedPart);
-    onOpenChange(false);
+    try {
+      const updatedPartData = {
+        ...formData,
+        total_price: formData.quantity * formData.unit_price,
+        updated_at: new Date().toISOString()
+      };
+
+      // Update in database
+      const { data, error } = await supabase
+        .from('work_order_parts')
+        .update(updatedPartData)
+        .eq('id', part.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const updatedPart: WorkOrderPart = {
+        ...part,
+        ...updatedPartData
+      };
+      
+      onUpdate(updatedPart);
+      toast.success('Part updated successfully');
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error updating part:', error);
+      toast.error('Failed to update part');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleChange = (field: string, value: any) => {
@@ -139,10 +165,17 @@ export function EditPartDialog({
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              disabled={isLoading}
+            >
               Cancel
             </Button>
-            <Button type="submit">Update Part</Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? 'Updating...' : 'Update Part'}
+            </Button>
           </div>
         </form>
       </DialogContent>

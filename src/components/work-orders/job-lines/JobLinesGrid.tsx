@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core';
 import { WorkOrderJobLine } from '@/types/jobLine';
@@ -46,10 +45,12 @@ export function JobLinesGrid({
   const handleDragStart = (event: any) => {
     const partId = event.active.id;
     const part = parts.find(p => p.id === partId);
+    console.log('Drag started for part:', part);
     setActivePart(part || null);
   };
 
   const handleDragEndInternal = (event: any) => {
+    console.log('Drag ended');
     setActivePart(null);
     handleDragEnd(event);
   };
@@ -116,10 +117,12 @@ export function JobLinesGrid({
 
       <DragOverlay>
         {activePart ? (
-          <DraggablePartCard
-            part={activePart}
-            isEditMode={false}
-          />
+          <div className="opacity-90 rotate-3 scale-105">
+            <DraggablePartCard
+              part={activePart}
+              isEditMode={false}
+            />
+          </div>
         ) : null}
       </DragOverlay>
     </DndContext>

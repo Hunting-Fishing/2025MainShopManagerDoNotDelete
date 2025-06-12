@@ -36,10 +36,12 @@ export function DraggablePartCard({
       jobLineId: part.job_line_id,
       part,
     },
+    disabled: !isEditMode,
   });
 
   const style = transform ? {
     transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+    zIndex: isDragging ? 1000 : 'auto',
   } : undefined;
 
   const handleEditPart = (updatedPart: WorkOrderPart) => {
@@ -54,14 +56,22 @@ export function DraggablePartCard({
       <Card 
         ref={setNodeRef}
         style={style}
-        className={`transition-all ${isDragging ? 'opacity-50 shadow-lg' : ''} ${isEditMode ? 'cursor-grab active:cursor-grabbing' : ''}`}
+        className={`transition-all duration-200 ${
+          isDragging 
+            ? 'opacity-50 shadow-lg scale-105 bg-blue-50 border-blue-300' 
+            : 'hover:shadow-md'
+        } ${isEditMode ? 'cursor-grab active:cursor-grabbing' : ''}`}
       >
         <CardContent className="p-4">
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
                 {isEditMode && (
-                  <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
+                  <div 
+                    {...attributes} 
+                    {...listeners} 
+                    className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-100 rounded"
+                  >
                     <GripVertical className="h-4 w-4 text-muted-foreground" />
                   </div>
                 )}
