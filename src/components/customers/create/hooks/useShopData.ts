@@ -16,11 +16,18 @@ export const useShopData = () => {
     async function fetchUserAndShopData() {
       try {
         setIsLoading(true);
+        console.log("🔄 useShopData: Starting to fetch user and shop data...");
         
         // Get the current authenticated user
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        
+        if (userError) {
+          console.error("❌ useShopData: User error:", userError);
+          throw userError;
+        }
         
         if (!user) {
+          console.warn("⚠️ useShopData: No authenticated user found");
           toast({
             title: "Authentication Required",
             description: "Please log in to continue.",
@@ -30,7 +37,7 @@ export const useShopData = () => {
           return;
         }
         
-        console.log("Fetching user profile for shop_id:", user.id);
+        console.log("👤 useShopData: Current user ID:", user.id);
         
         // Get the user's profile to find their shop_id
         const { data: profile, error: profileError } = await supabase
@@ -39,16 +46,16 @@ export const useShopData = () => {
           .eq('id', user.id)
           .single();
         
+        console.log("👤 useShopData: Profile query result:", { profile, profileError });
+        
         if (profileError) {
-          console.error("Error fetching user profile:", profileError);
-          console.log("Trying to get all shops instead");
+          console.error("❌ useShopData: Profile error:", profileError);
           
-          // Fall back to fetching all shops
+          // Try to get all shops as fallback
+          console.log("🔄 useShopData: Trying to get all shops as fallback...");
           const shops = await getAllShops();
-          console.log("Available shops from getAllShops:", shops);
-          setAvailableShops(shops.map(shop => ({ id: shop.id, name: shop.name })));
+          console.log("🏪 useShopData: Available shops from getAllShops:", shops);
           
-          // Get default shop if no shops are available, show helpful message
           if (shops.length === 0) {
             toast({
               title: "No Shops Found",
@@ -58,21 +65,27 @@ export const useShopData = () => {
             return;
           }
           
-          setCurrentUserShopId(shops[0].id);
+          setAvailableShops(shops.map(shop => ({ id: shop.id, name: shop.name })));
+          setCurrentUserShopId(shops[0].id); // Use first shop as default
+          console.log("✅ useShopData: Set first shop as default:", shops[0].id);
           return;
         }
         
-        console.log("User profile shop_id:", profile?.shop_id);
+        console.log("👤 useShopData: User profile shop_id:", profile?.shop_id);
         
         // Set the current user's shop ID
-        setCurrentUserShopId(profile.shop_id);
+        if (profile?.shop_id) {
+          setCurrentUserShopId(profile.shop_id);
+          console.log("✅ useShopData: Set current user shop_id:", profile.shop_id);
+        }
         
         // Get all shops for dropdown (may be limited by RLS)
-        console.log("Fetching all shops");
+        console.log("🔄 useShopData: Fetching all available shops...");
         const shops = await getAllShops();
-        console.log("All shops:", shops);
+        console.log("🏪 useShopData: All shops retrieved:", shops);
         
         if (shops.length === 0) {
+          console.warn("⚠️ useShopData: No shops available");
           toast({
             title: "No Shops Available",
             description: "Please contact your administrator to set up shops.",
@@ -81,9 +94,18 @@ export const useShopData = () => {
           return;
         }
         
-        setAvailableShops(shops.map(shop => ({ id: shop.id, name: shop.name })));
+        const mappedShops = shops.map(shop => ({ id: shop.id, name: shop.name }));
+        setAvailableShops(mappedShops);
+        console.log("✅ useShopData: Available shops set:", mappedShops);
+        
+        // If user doesn't have a shop_id set, use the first available shop
+        if (!profile?.shop_id && shops.length > 0) {
+          setCurrentUserShopId(shops[0].id);
+          console.log("🔧 useShopData: Auto-assigned first shop as default:", shops[0].id);
+        }
+        
       } catch (error) {
-        console.error("Error fetching shop data:", error);
+        console.error("❌ useShopData: Error fetching shop data:", error);
         toast({
           title: "Error",
           description: "Failed to load shop data. Please refresh the page and try again.",
@@ -91,11 +113,18 @@ export const useShopData = () => {
         });
       } finally {
         setIsLoading(false);
+        console.log("✅ useShopData: Loading complete");
       }
     }
     
     fetchUserAndShopData();
   }, [toast, navigate]);
+
+  console.log("📊 useShopData: Current state:", {
+    isLoading,
+    availableShops: availableShops.length,
+    currentUserShopId
+  });
 
   return {
     isLoading,

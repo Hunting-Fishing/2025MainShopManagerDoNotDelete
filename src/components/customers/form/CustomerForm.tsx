@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -49,27 +50,53 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
     }
   }, [initialTab, setCurrentTab]);
   
+  // Create form with proper default values including automatic shop selection
+  const formDefaultValues = defaultValues || {
+    first_name: "",
+    last_name: "",
+    email: "",
+    phone: "",
+    shop_id: "", // This will be set by useCustomerCreate hook
+    vehicles: [],
+    tags: [],
+    segments: [],
+    is_fleet: false,
+    auto_billing: false,
+    terms_agreed: false,
+    create_new_household: false
+  };
+
+  // If we're in single shop mode and have shops available, auto-select the first one
+  if (singleShopMode && availableShops.length === 1 && !formDefaultValues.shop_id) {
+    formDefaultValues.shop_id = availableShops[0].id;
+  }
+
   const form = useForm<CustomerFormValues>({
     resolver: zodResolver(customerSchema),
-    defaultValues: defaultValues || {
-      first_name: "",
-      last_name: "",
-      email: "",
-      phone: "",
-      shop_id: singleShopMode && availableShops.length === 1 
-        ? availableShops[0]?.id
-        : "",
-      vehicles: [],
-      tags: [],
-      segments: [],
-      is_fleet: false,
-      auto_billing: false,
-      terms_agreed: false,
-      create_new_household: false
-    },
+    defaultValues: formDefaultValues,
   });
 
+  // Watch for shop_id changes to ensure it's always set
+  const currentShopId = form.watch('shop_id');
+  
+  React.useEffect(() => {
+    // If shop_id is not set but we have available shops, set it automatically
+    if (!currentShopId && availableShops.length > 0) {
+      console.log("🔧 CustomerForm: Auto-setting shop_id to:", availableShops[0].id);
+      form.setValue('shop_id', availableShops[0].id);
+    }
+  }, [currentShopId, availableShops, form]);
+
   const handleFormSubmit = async (data: CustomerFormValues) => {
+    console.log("📝 CustomerForm: Form submission started");
+    console.log("📊 CustomerForm: Form data:", data);
+    
+    // Ensure shop_id is set before submission
+    if (!data.shop_id && availableShops.length > 0) {
+      data.shop_id = availableShops[0].id;
+      console.log("🔧 CustomerForm: Auto-assigned shop_id:", data.shop_id);
+    }
+    
     await onSubmit(data);
   };
   

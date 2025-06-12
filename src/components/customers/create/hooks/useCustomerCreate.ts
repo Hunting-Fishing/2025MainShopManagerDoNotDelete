@@ -11,7 +11,8 @@ export const useCustomerCreate = () => {
   const { isSubmitting, isSuccess, newCustomerId, handleSubmit } = useCustomerSubmit();
   const { toast } = useToast();
   
-  const [defaultValues, setDefaultValues] = useState<CustomerFormValues>({
+  // Set default values with the current user's shop_id automatically selected
+  const [defaultValues] = useState<CustomerFormValues>({
     first_name: "",
     last_name: "",
     email: "",
@@ -23,7 +24,7 @@ export const useCustomerCreate = () => {
     country: "",
     company: "",
     notes: "",
-    shop_id: currentUserShopId || "",
+    shop_id: currentUserShopId || "", // Automatically set to user's shop
     tags: [],
     preferred_technician_id: "",
     communication_preference: "",
@@ -40,17 +41,29 @@ export const useCustomerCreate = () => {
     household_relationship: "primary",
   });
 
-  // Update defaultValues when currentUserShopId changes
-  if (currentUserShopId && defaultValues.shop_id !== currentUserShopId) {
-    setDefaultValues(prev => ({
-      ...prev,
-      shop_id: currentUserShopId
-    }));
-  }
-
   const onSubmit = async (data: CustomerFormValues) => {
-    console.log("Submitting customer with vehicles:", data.vehicles);
-    await handleSubmit(data, currentUserShopId);
+    console.log("🔄 useCustomerCreate: Starting customer submission...");
+    
+    // Ensure shop_id is set to current user's shop if not already set
+    const customerData = {
+      ...data,
+      shop_id: data.shop_id || currentUserShopId || ""
+    };
+    
+    // Validate that shop_id is present
+    if (!customerData.shop_id) {
+      toast({
+        title: "Error",
+        description: "Unable to determine your shop. Please contact your administrator.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    console.log("📊 useCustomerCreate: Submitting customer with shop_id:", customerData.shop_id);
+    console.log("📊 useCustomerCreate: Customer data:", customerData);
+    
+    await handleSubmit(customerData, currentUserShopId);
   };
 
   const handleImportComplete = () => {
@@ -62,7 +75,10 @@ export const useCustomerCreate = () => {
     isSuccess,
     isLoading,
     newCustomerId,
-    defaultValues,
+    defaultValues: {
+      ...defaultValues,
+      shop_id: currentUserShopId || "" // Ensure shop_id is always set from current user
+    },
     availableShops,
     onSubmit,
     handleImportComplete,
