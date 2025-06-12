@@ -31,14 +31,20 @@ export function DroppableJobLinePartsSection({
     return (
       <div 
         ref={setNodeRef}
-        className={`text-center py-4 text-muted-foreground border-2 border-dashed rounded-lg transition-colors ${
-          isOver ? 'border-primary bg-primary/5' : 'border-slate-200'
-        } ${isEditMode ? 'min-h-[60px]' : ''}`}
+        className={`text-center py-6 text-muted-foreground border-2 border-dashed rounded-lg transition-all duration-200 ${
+          isOver 
+            ? 'border-primary bg-primary/10 text-primary' 
+            : 'border-muted-foreground/20 hover:border-muted-foreground/40'
+        } ${isEditMode ? 'min-h-[80px]' : 'min-h-[60px]'}`}
       >
         {isEditMode ? (
           <div className="flex flex-col items-center justify-center h-full">
-            <p className="text-sm">No parts added yet</p>
-            <p className="text-xs text-slate-400">Drag parts here or add new ones</p>
+            <p className="text-sm font-medium">
+              {isOver ? 'Drop part here' : 'No parts added yet'}
+            </p>
+            <p className="text-xs mt-1 opacity-70">
+              {isOver ? '' : 'Drag parts here or add new ones'}
+            </p>
           </div>
         ) : (
           'No parts added yet'
@@ -50,8 +56,10 @@ export function DroppableJobLinePartsSection({
   return (
     <div 
       ref={setNodeRef}
-      className={`space-y-3 min-h-[60px] p-2 rounded-lg transition-colors ${
-        isOver ? 'bg-primary/5 border-2 border-dashed border-primary' : ''
+      className={`space-y-3 min-h-[80px] p-3 rounded-lg transition-all duration-200 ${
+        isOver 
+          ? 'bg-primary/10 border-2 border-dashed border-primary' 
+          : 'bg-muted/20'
       }`}
     >
       {parts.map((part) => (
@@ -63,6 +71,12 @@ export function DroppableJobLinePartsSection({
           isEditMode={isEditMode}
         />
       ))}
+      
+      {isOver && (
+        <div className="border-2 border-dashed border-primary rounded-lg p-4 bg-primary/5">
+          <p className="text-center text-primary font-medium">Drop part here</p>
+        </div>
+      )}
     </div>
   );
 }
