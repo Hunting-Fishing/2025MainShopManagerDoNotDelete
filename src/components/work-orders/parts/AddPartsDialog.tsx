@@ -1,181 +1,105 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { WorkOrderPart } from '@/types/workOrderPart';
-import { createWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
-import { toast } from '@/hooks/use-toast';
+import { WorkOrderPart, WorkOrderPartFormValues } from '@/types/workOrderPart';
 
 interface AddPartsDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   workOrderId: string;
-  jobLineId: string;
-  onPartAdd: (newPart: WorkOrderPart) => void;
+  jobLineId?: string;
+  onPartAdd: (part: WorkOrderPartFormValues & { work_order_id: string }) => void;
 }
 
-export function AddPartsDialog({
-  open,
-  onOpenChange,
-  workOrderId,
-  jobLineId,
-  onPartAdd
-}: AddPartsDialogProps) {
+export function AddPartsDialog({ workOrderId, jobLineId, onPartAdd }: AddPartsDialogProps) {
+  const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
     part_number: '',
     name: '',
     description: '',
     quantity: 1,
     unit_price: 0,
+    status: 'pending',
     notes: ''
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const partData: WorkOrderPartFormValues & { work_order_id: string } = {
+      work_order_id: workOrderId,
+      job_line_id: jobLineId,
+      part_number: formData.part_number,
+      name: formData.name,
+      description: formData.description,
+      quantity: formData.quantity,
+      unit_price: formData.unit_price,
+      status: formData.status,
+      notes: formData.notes
+    };
     
-    if (!formData.name || !formData.part_number) {
-      toast({
-        title: "Error",
-        description: "Part name and part number are required",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-    
-    try {
-      const newPart = await createWorkOrderPart({
-        work_order_id: workOrderId,
-        job_line_id: jobLineId,
-        part_number: formData.part_number,
-        name: formData.name,
-        description: formData.description,
-        quantity: formData.quantity,
-        unit_price: formData.unit_price,
-        total_price: formData.unit_price * formData.quantity,
-        notes: formData.notes,
-        status: 'pending'
-      });
-
-      onPartAdd(newPart);
-      onOpenChange(false);
-      
-      // Reset form
-      setFormData({
-        part_number: '',
-        name: '',
-        description: '',
-        quantity: 1,
-        unit_price: 0,
-        notes: ''
-      });
-
-      toast({
-        title: "Success",
-        description: "Part added successfully"
-      });
-    } catch (error) {
-      console.error('Error adding part:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add part",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    onPartAdd(partData);
+    setIsOpen(false);
+    setFormData({
+      part_number: '',
+      name: '',
+      description: '',
+      quantity: 1,
+      unit_price: 0,
+      status: 'pending',
+      notes: ''
+    });
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline">Manual Entry</Button>
+      </DialogTrigger>
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add Part</DialogTitle>
+          <DialogTitle>Manual Part Entry</DialogTitle>
         </DialogHeader>
-        
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="part_number">Part Number *</Label>
+            <label className="block text-sm font-medium mb-1">Part Number</label>
             <Input
-              id="part_number"
               value={formData.part_number}
-              onChange={(e) => setFormData(prev => ({ ...prev, part_number: e.target.value }))}
+              onChange={(e) => setFormData({ ...formData, part_number: e.target.value })}
               required
             />
           </div>
-
           <div>
-            <Label htmlFor="name">Part Name *</Label>
+            <label className="block text-sm font-medium mb-1">Name</label>
             <Input
-              id="name"
               value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
             />
           </div>
-
           <div>
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              rows={2}
+            <label className="block text-sm font-medium mb-1">Unit Price</label>
+            <Input
+              type="number"
+              step="0.01"
+              value={formData.unit_price}
+              onChange={(e) => setFormData({ ...formData, unit_price: parseFloat(e.target.value) || 0 })}
+              required
             />
           </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="quantity">Quantity</Label>
-              <Input
-                id="quantity"
-                type="number"
-                min="1"
-                value={formData.quantity}
-                onChange={(e) => setFormData(prev => ({ ...prev, quantity: parseInt(e.target.value) || 1 }))}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="unit_price">Unit Price</Label>
-              <Input
-                id="unit_price"
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.unit_price}
-                onChange={(e) => setFormData(prev => ({ ...prev, unit_price: parseFloat(e.target.value) || 0 }))}
-              />
-            </div>
-          </div>
-
           <div>
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-              rows={2}
+            <label className="block text-sm font-medium mb-1">Quantity</label>
+            <Input
+              type="number"
+              value={formData.quantity}
+              onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })}
+              required
             />
           </div>
-
-          <div className="flex gap-2 justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
-            >
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Adding...' : 'Add Part'}
-            </Button>
+            <Button type="submit">Add Part</Button>
           </div>
         </form>
       </DialogContent>
