@@ -37,20 +37,6 @@ export function JobLinesGrid({
     setShowAddDialog(false);
   };
 
-  const handlePartUpdate = (updatedPart: WorkOrderPart) => {
-    if (onPartsChange) {
-      const updatedParts = parts.map(p => p.id === updatedPart.id ? updatedPart : p);
-      onPartsChange(updatedParts);
-    }
-  };
-
-  const handlePartRemove = (partId: string) => {
-    if (onPartsChange) {
-      const updatedParts = parts.filter(p => p.id !== partId);
-      onPartsChange(updatedParts);
-    }
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -90,8 +76,6 @@ export function JobLinesGrid({
                 onPartsChange={onPartsChange}
                 isEditMode={isEditMode}
                 parts={parts}
-                onPartUpdate={handlePartUpdate}
-                onPartRemove={handlePartRemove}
               />
             ))}
           </div>

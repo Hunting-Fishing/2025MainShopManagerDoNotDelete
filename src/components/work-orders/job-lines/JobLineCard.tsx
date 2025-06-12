@@ -53,14 +53,14 @@ export function JobLineCard({
       <CardHeader>
         <div className="flex justify-between items-start">
           <div className="flex-1">
-            <CardTitle className="text-lg">{jobLine.service_name}</CardTitle>
+            <CardTitle className="text-lg">{jobLine.name}</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
               {jobLine.description}
             </p>
             <div className="flex items-center gap-2 mt-2">
               <Badge variant="outline">{jobLine.status}</Badge>
-              {jobLine.technician_name && (
-                <Badge variant="secondary">{jobLine.technician_name}</Badge>
+              {jobLine.category && (
+                <Badge variant="secondary">{jobLine.category}</Badge>
               )}
             </div>
           </div>
@@ -90,11 +90,11 @@ export function JobLineCard({
           </div>
           <div>
             <span className="text-sm text-muted-foreground">Rate</span>
-            <p className="font-medium">${jobLine.hourly_rate || 0}</p>
+            <p className="font-medium">${jobLine.labor_rate || 0}</p>
           </div>
           <div>
             <span className="text-sm text-muted-foreground">Labor</span>
-            <p className="font-medium">${jobLine.labor_amount || 0}</p>
+            <p className="font-medium">${(jobLine.estimated_hours || 0) * (jobLine.labor_rate || 0)}</p>
           </div>
           <div>
             <span className="text-sm text-muted-foreground">Total</span>
