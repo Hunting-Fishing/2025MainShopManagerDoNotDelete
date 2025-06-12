@@ -42,6 +42,10 @@ export function WorkOrderPartsSection({
     setParts(prev => prev.filter(p => p.id !== partId));
   };
 
+  const handleUpdatePart = (updatedPart: WorkOrderPart) => {
+    setParts(prev => prev.map(p => p.id === updatedPart.id ? updatedPart : p));
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -95,6 +99,7 @@ export function WorkOrderPartsSection({
                   key={part.id}
                   part={part}
                   onRemove={handleRemovePart}
+                  onUpdate={handleUpdatePart}
                   isEditMode={isEditMode}
                 />
               ))}
