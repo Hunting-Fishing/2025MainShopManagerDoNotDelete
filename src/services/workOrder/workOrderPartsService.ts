@@ -1,36 +1,12 @@
+import { supabase } from '@/integrations/supabase/client';
+import { WorkOrderPart } from '@/types/workOrderPart';
 
-import { supabase } from '@/lib/supabase';
-import { WorkOrderPart, WorkOrderPartFormValues } from '@/types/workOrderPart';
-
-// Transform raw part data to ensure proper mapping
-export const transformPartData = (rawPart: any): WorkOrderPart => {
-  return {
-    id: rawPart.id,
-    work_order_id: rawPart.work_order_id,
-    job_line_id: rawPart.job_line_id,
-    part_number: rawPart.part_number || '',
-    name: rawPart.name || rawPart.partName || '',
-    description: rawPart.description || '',
-    quantity: Number(rawPart.quantity) || 0,
-    unit_price: Number(rawPart.unit_price) || Number(rawPart.customerPrice) || 0,
-    total_price: Number(rawPart.total_price) || (Number(rawPart.unit_price || rawPart.customerPrice || 0) * Number(rawPart.quantity || 0)),
-    status: rawPart.status || 'pending',
-    notes: rawPart.notes || '',
-    created_at: rawPart.created_at,
-    updated_at: rawPart.updated_at,
-    
-    // Backward compatibility aliases
-    partName: rawPart.name || rawPart.partName || '',
-    partNumber: rawPart.part_number || '',
-    customerPrice: Number(rawPart.unit_price) || Number(rawPart.customerPrice) || 0,
-    workOrderId: rawPart.work_order_id,
-    jobLineId: rawPart.job_line_id
-  };
-};
-
-export const getWorkOrderParts = async (workOrderId: string): Promise<WorkOrderPart[]> => {
+/**
+ * Get all parts for a specific work order
+ */
+export async function getWorkOrderParts(workOrderId: string): Promise<WorkOrderPart[]> {
   try {
-    console.log('Fetching work order parts for:', workOrderId);
+    console.log('getWorkOrderParts: Fetching parts for work order:', workOrderId);
     
     const { data, error } = await supabase
       .from('work_order_parts')
@@ -39,117 +15,122 @@ export const getWorkOrderParts = async (workOrderId: string): Promise<WorkOrderP
       .order('created_at', { ascending: true });
 
     if (error) {
-      console.error('Error fetching work order parts:', error);
+      console.error('getWorkOrderParts: Error:', error);
       throw error;
     }
 
-    console.log('Raw parts data:', data);
-    
-    // Transform the data to ensure proper mapping
-    const transformedParts = (data || []).map(transformPartData);
-    
-    console.log('Transformed parts data:', transformedParts);
-    
-    return transformedParts;
+    console.log('getWorkOrderParts: Successfully fetched parts:', data?.length || 0);
+    return data || [];
   } catch (error) {
-    console.error('Error in getWorkOrderParts:', error);
-    return [];
+    console.error('getWorkOrderParts: Failed to fetch parts:', error);
+    throw error;
   }
-};
+}
 
-export const createWorkOrderPart = async (
-  workOrderId: string,
-  partData: WorkOrderPartFormValues
-): Promise<WorkOrderPart | null> => {
+/**
+ * Get all parts for a specific job line
+ */
+export async function getJobLineParts(jobLineId: string): Promise<WorkOrderPart[]> {
   try {
-    console.log('Creating work order part:', { workOrderId, partData });
-
-    // Calculate total price
-    const totalPrice = (partData.unit_price || partData.customerPrice || 0) * (partData.quantity || 0);
-
-    const newPart = {
-      work_order_id: workOrderId,
-      job_line_id: partData.job_line_id || null,
-      part_number: partData.part_number || partData.partNumber || '',
-      name: partData.name || partData.partName || '',
-      description: partData.description || '',
-      quantity: partData.quantity || 0,
-      unit_price: partData.unit_price || partData.customerPrice || 0,
-      total_price: totalPrice,
-      status: partData.status || 'pending',
-      notes: partData.notes || ''
-    };
-
+    console.log('getJobLineParts: Fetching parts for job line:', jobLineId);
+    
     const { data, error } = await supabase
       .from('work_order_parts')
-      .insert([newPart])
+      .select('*')
+      .eq('job_line_id', jobLineId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('getJobLineParts: Error:', error);
+      throw error;
+    }
+
+    // Transform the data to ensure consistent property names
+    const transformedData = data?.map(part => ({
+      ...part,
+      // Ensure all required properties have proper fallbacks
+      part_number: part.part_number || '',
+      name: part.name || part.partName || 'Unknown Part',
+      unit_price: part.unit_price || part.customerPrice || 0,
+      quantity: part.quantity || 0,
+      total_price: part.total_price || (part.unit_price || 0) * (part.quantity || 0),
+      // Keep aliases for backward compatibility
+      partName: part.name || part.partName,
+      partNumber: part.part_number || part.partNumber,
+      customerPrice: part.unit_price || part.customerPrice
+    })) || [];
+
+    console.log('getJobLineParts: Successfully fetched and transformed parts:', transformedData.length);
+    return transformedData;
+  } catch (error) {
+    console.error('getJobLineParts: Failed to fetch parts:', error);
+    throw error;
+  }
+}
+
+/**
+ * Create a new work order part
+ */
+export async function createWorkOrderPart(partData: Partial<WorkOrderPart>): Promise<WorkOrderPart> {
+  try {
+    console.log('createWorkOrderPart: Creating part:', partData);
+    
+    const { data, error } = await supabase
+      .from('work_order_parts')
+      .insert({
+        work_order_id: partData.work_order_id,
+        job_line_id: partData.job_line_id,
+        part_number: partData.part_number || '',
+        name: partData.name || '',
+        description: partData.description,
+        quantity: partData.quantity || 0,
+        unit_price: partData.unit_price || 0,
+        total_price: partData.total_price || (partData.unit_price || 0) * (partData.quantity || 0),
+        status: partData.status || 'pending',
+        notes: partData.notes
+      })
       .select()
       .single();
 
     if (error) {
-      console.error('Error creating work order part:', error);
+      console.error('createWorkOrderPart: Error:', error);
       throw error;
     }
 
-    console.log('Created work order part:', data);
-    return transformPartData(data);
+    console.log('createWorkOrderPart: Successfully created part:', data);
+    return data;
   } catch (error) {
-    console.error('Error in createWorkOrderPart:', error);
-    return null;
+    console.error('createWorkOrderPart: Failed to create part:', error);
+    throw error;
   }
-};
+}
 
-export const updateWorkOrderPart = async (
-  partId: string,
-  partData: Partial<WorkOrderPartFormValues>
-): Promise<WorkOrderPart | null> => {
+/**
+ * Update an existing work order part
+ */
+export async function updateWorkOrderPart(partId: string, partData: Partial<WorkOrderPart>): Promise<WorkOrderPart> {
   try {
-    console.log('Updating work order part:', { partId, partData });
-
+    console.log('updateWorkOrderPart: Updating part:', partId, partData);
+    
     const updateData: any = {};
     
-    if (partData.name || partData.partName) {
-      updateData.name = partData.name || partData.partName;
-    }
-    if (partData.part_number || partData.partNumber) {
-      updateData.part_number = partData.part_number || partData.partNumber;
-    }
-    if (partData.description !== undefined) {
-      updateData.description = partData.description;
-    }
-    if (partData.quantity !== undefined) {
-      updateData.quantity = partData.quantity;
-    }
-    if (partData.unit_price !== undefined || partData.customerPrice !== undefined) {
-      updateData.unit_price = partData.unit_price || partData.customerPrice;
-    }
-    if (partData.status !== undefined) {
-      updateData.status = partData.status;
-    }
-    if (partData.notes !== undefined) {
-      updateData.notes = partData.notes;
-    }
-    if (partData.job_line_id !== undefined) {
-      updateData.job_line_id = partData.job_line_id;
-    }
+    // Only include defined fields in the update
+    if (partData.part_number !== undefined) updateData.part_number = partData.part_number;
+    if (partData.name !== undefined) updateData.name = partData.name;
+    if (partData.description !== undefined) updateData.description = partData.description;
+    if (partData.quantity !== undefined) updateData.quantity = partData.quantity;
+    if (partData.unit_price !== undefined) updateData.unit_price = partData.unit_price;
+    if (partData.total_price !== undefined) updateData.total_price = partData.total_price;
+    if (partData.status !== undefined) updateData.status = partData.status;
+    if (partData.notes !== undefined) updateData.notes = partData.notes;
+    if (partData.job_line_id !== undefined) updateData.job_line_id = partData.job_line_id;
 
-    // Recalculate total price if quantity or unit price changed
-    if (updateData.quantity !== undefined || updateData.unit_price !== undefined) {
-      // Get current part data to calculate total
-      const { data: currentPart } = await supabase
-        .from('work_order_parts')
-        .select('quantity, unit_price')
-        .eq('id', partId)
-        .single();
-
-      if (currentPart) {
-        const newQuantity = updateData.quantity !== undefined ? updateData.quantity : currentPart.quantity;
-        const newUnitPrice = updateData.unit_price !== undefined ? updateData.unit_price : currentPart.unit_price;
-        updateData.total_price = newQuantity * newUnitPrice;
-      }
+    // Calculate total_price if unit_price or quantity changed
+    if (updateData.unit_price !== undefined || updateData.quantity !== undefined) {
+      const currentPrice = updateData.unit_price ?? partData.unit_price ?? 0;
+      const currentQuantity = updateData.quantity ?? partData.quantity ?? 0;
+      updateData.total_price = currentPrice * currentQuantity;
     }
-
-    updateData.updated_at = new Date().toISOString();
 
     const { data, error } = await supabase
       .from('work_order_parts')
@@ -159,36 +140,38 @@ export const updateWorkOrderPart = async (
       .single();
 
     if (error) {
-      console.error('Error updating work order part:', error);
+      console.error('updateWorkOrderPart: Error:', error);
       throw error;
     }
 
-    console.log('Updated work order part:', data);
-    return transformPartData(data);
+    console.log('updateWorkOrderPart: Successfully updated part:', data);
+    return data;
   } catch (error) {
-    console.error('Error in updateWorkOrderPart:', error);
-    return null;
+    console.error('updateWorkOrderPart: Failed to update part:', error);
+    throw error;
   }
-};
+}
 
-export const deleteWorkOrderPart = async (partId: string): Promise<boolean> => {
+/**
+ * Delete a work order part
+ */
+export async function deleteWorkOrderPart(partId: string): Promise<void> {
   try {
-    console.log('Deleting work order part:', partId);
-
+    console.log('deleteWorkOrderPart: Deleting part:', partId);
+    
     const { error } = await supabase
       .from('work_order_parts')
       .delete()
       .eq('id', partId);
 
     if (error) {
-      console.error('Error deleting work order part:', error);
+      console.error('deleteWorkOrderPart: Error:', error);
       throw error;
     }
 
-    console.log('Deleted work order part:', partId);
-    return true;
+    console.log('deleteWorkOrderPart: Successfully deleted part');
   } catch (error) {
-    console.error('Error in deleteWorkOrderPart:', error);
-    return false;
+    console.error('deleteWorkOrderPart: Failed to delete part:', error);
+    throw error;
   }
-};
+}
