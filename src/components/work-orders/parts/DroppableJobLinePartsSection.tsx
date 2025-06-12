@@ -31,23 +31,29 @@ export function DroppableJobLinePartsSection({
     return (
       <div 
         ref={setNodeRef}
-        className={`text-center py-6 text-muted-foreground border-2 border-dashed rounded-lg transition-all duration-200 ${
+        className={`text-center py-8 px-4 text-muted-foreground border-2 border-dashed rounded-lg transition-all duration-300 ${
           isOver 
-            ? 'border-primary bg-primary/10 text-primary' 
-            : 'border-muted-foreground/20 hover:border-muted-foreground/40'
-        } ${isEditMode ? 'min-h-[80px]' : 'min-h-[60px]'}`}
+            ? 'border-primary bg-primary/20 text-primary scale-[1.02] shadow-lg' 
+            : 'border-muted-foreground/30 hover:border-muted-foreground/50 hover:bg-muted/10'
+        } ${isEditMode ? 'min-h-[100px] cursor-pointer' : 'min-h-[80px]'}`}
       >
         {isEditMode ? (
-          <div className="flex flex-col items-center justify-center h-full">
-            <p className="text-sm font-medium">
-              {isOver ? 'Drop part here' : 'No parts added yet'}
-            </p>
-            <p className="text-xs mt-1 opacity-70">
-              {isOver ? '' : 'Drag parts here or add new ones'}
+          <div className="flex flex-col items-center justify-center h-full space-y-2">
+            <div className={`text-lg font-medium transition-all duration-200 ${
+              isOver ? 'text-primary' : 'text-muted-foreground'
+            }`}>
+              {isOver ? '📦 Drop part here' : '📋 No parts added yet'}
+            </div>
+            <p className={`text-sm transition-all duration-200 ${
+              isOver ? 'text-primary/80' : 'text-muted-foreground/70'
+            }`}>
+              {isOver ? 'Release to add part to this job line' : 'Drag parts here or add new ones'}
             </p>
           </div>
         ) : (
-          'No parts added yet'
+          <div className="py-4">
+            <span className="text-muted-foreground">No parts added yet</span>
+          </div>
         )}
       </div>
     );
@@ -56,10 +62,10 @@ export function DroppableJobLinePartsSection({
   return (
     <div 
       ref={setNodeRef}
-      className={`space-y-3 min-h-[80px] p-3 rounded-lg transition-all duration-200 ${
+      className={`space-y-3 min-h-[100px] p-4 rounded-lg transition-all duration-300 ${
         isOver 
-          ? 'bg-primary/10 border-2 border-dashed border-primary' 
-          : 'bg-muted/20'
+          ? 'bg-primary/10 border-2 border-dashed border-primary shadow-lg' 
+          : 'bg-muted/10 border border-transparent hover:bg-muted/20'
       }`}
     >
       {parts.map((part) => (
@@ -73,8 +79,10 @@ export function DroppableJobLinePartsSection({
       ))}
       
       {isOver && (
-        <div className="border-2 border-dashed border-primary rounded-lg p-4 bg-primary/5">
-          <p className="text-center text-primary font-medium">Drop part here</p>
+        <div className="border-2 border-dashed border-primary rounded-lg p-6 bg-primary/10 animate-pulse">
+          <p className="text-center text-primary font-medium text-lg">
+            📦 Drop part here to add to this job line
+          </p>
         </div>
       )}
     </div>

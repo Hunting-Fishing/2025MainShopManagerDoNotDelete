@@ -95,7 +95,7 @@ export function JobLineCard({
         </CardHeader>
 
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div>
               <span className="text-sm text-muted-foreground">Hours</span>
               <p className="font-medium">{jobLine.estimated_hours || 0}</p>
@@ -114,9 +114,9 @@ export function JobLineCard({
             </div>
           </div>
 
-          {/* Parts Section */}
+          {/* Parts Section - Always show, even when empty */}
           <div className="border-t pt-4">
-            <div className="flex justify-between items-center mb-3">
+            <div className="flex justify-between items-center mb-4">
               <h4 className="font-medium flex items-center gap-2">
                 <Package className="h-4 w-4" />
                 Parts ({jobLineParts.length})
@@ -130,6 +130,7 @@ export function JobLineCard({
               )}
             </div>
 
+            {/* Always render the droppable section */}
             <DroppableJobLinePartsSection
               jobLineId={jobLine.id}
               parts={jobLineParts}
