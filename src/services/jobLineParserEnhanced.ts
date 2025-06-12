@@ -1,4 +1,3 @@
-
 import { WorkOrderJobLine } from '@/types/jobLine';
 
 export function parseEnhancedJobLineData(data: any[]): WorkOrderJobLine[] {
@@ -39,6 +38,7 @@ export function validateJobLineData(jobLine: Partial<WorkOrderJobLine>): WorkOrd
   };
 }
 
+// Utility function to generate temporary job line IDs
 export function generateTempJobLineId(): string {
   return `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
