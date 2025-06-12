@@ -9,6 +9,7 @@ import { Layout } from '@/components/layout/Layout';
 import Dashboard from '@/pages/Dashboard';
 import WorkOrders from '@/pages/WorkOrders';
 import WorkOrderDetails from '@/pages/WorkOrderDetails';
+import CreateWorkOrder from '@/pages/CreateWorkOrder';
 import Customers from '@/pages/Customers';
 import CustomerDetails from '@/pages/CustomerDetails';
 import CreateCustomer from '@/pages/CreateCustomer';
@@ -34,6 +35,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Layout><Dashboard /></Layout>} />
               <Route path="/work-orders" element={<Layout><WorkOrders /></Layout>} />
+              <Route path="/work-orders/create" element={<Layout><CreateWorkOrder /></Layout>} />
               <Route path="/work-orders/:id" element={<Layout><WorkOrderDetails /></Layout>} />
               <Route path="/customers" element={<Layout><Customers /></Layout>} />
               <Route path="/customers/:id" element={<Layout><CustomerDetails /></Layout>} />
@@ -45,8 +47,8 @@ function App() {
               <Route path="/invoices" element={<Layout><Invoices /></Layout>} />
               <Route path="/reports" element={<Layout><Reports /></Layout>} />
               <Route path="/feedback-analytics" element={<Layout><FeedbackAnalytics /></Layout>} />
-              <Route path="/quotes" element={<Quotes />} />
-              <Route path="/quotes/:id" element={<QuoteDetails />} />
+              <Route path="/quotes" element={<Layout><Quotes /></Layout>} />
+              <Route path="/quotes/:id" element={<Layout><QuoteDetails /></Layout>} />
             </Routes>
           </div>
         </BrowserRouter>
