@@ -1,289 +1,188 @@
 
 import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { WorkOrderJobLine, JOB_LINE_STATUSES } from '@/types/jobLine';
-import { Plus } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { WorkOrderJobLine } from '@/types/jobLine';
+import { validateJobLineData, generateTempJobLineId } from '@/services/jobLineParserEnhanced';
 import { toast } from '@/hooks/use-toast';
-
-const jobLineSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  category: z.string().optional(),
-  subcategory: z.string().optional(),
-  description: z.string().optional(),
-  estimated_hours: z.number().min(0).optional(),
-  labor_rate: z.number().min(0).optional(),
-  status: z.enum(JOB_LINE_STATUSES).default('pending'),
-  notes: z.string().optional(),
-});
-
-type JobLineFormValues = z.infer<typeof jobLineSchema>;
 
 interface AddJobLineDialogProps {
   workOrderId: string;
-  onJobLineAdd: (jobLines: Omit<WorkOrderJobLine, 'id' | 'created_at' | 'updated_at'>[]) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onAdd: (newJobLine: WorkOrderJobLine) => void;
 }
 
-export function AddJobLineDialog({ workOrderId, onJobLineAdd }: AddJobLineDialogProps) {
-  const [open, setOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const form = useForm<JobLineFormValues>({
-    resolver: zodResolver(jobLineSchema),
-    defaultValues: {
-      name: '',
-      category: '',
-      subcategory: '',
-      description: '',
-      estimated_hours: 0,
-      labor_rate: 0,
-      status: 'pending',
-      notes: '',
-    },
+export function AddJobLineDialog({ 
+  workOrderId, 
+  open, 
+  onOpenChange, 
+  onAdd 
+}: AddJobLineDialogProps) {
+  const [formData, setFormData] = useState({
+    name: '',
+    category: '',
+    subcategory: '',
+    description: '',
+    estimated_hours: 0,
+    labor_rate: 0,
+    notes: ''
   });
 
-  const onSubmit = async (values: JobLineFormValues) => {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
     try {
-      setIsSubmitting(true);
-      
-      const totalAmount = (values.estimated_hours || 0) * (values.labor_rate || 0);
-      
-      const newJobLine: Omit<WorkOrderJobLine, 'id' | 'created_at' | 'updated_at'> = {
+      const newJobLine = validateJobLineData({
+        id: generateTempJobLineId(),
         work_order_id: workOrderId,
-        name: values.name,
-        category: values.category,
-        subcategory: values.subcategory,
-        description: values.description,
-        estimated_hours: values.estimated_hours,
-        labor_rate: values.labor_rate,
-        total_amount: totalAmount,
-        status: values.status,
-        notes: values.notes,
+        ...formData,
+        total_amount: formData.estimated_hours * formData.labor_rate,
+        status: 'pending',
         display_order: 0,
-      };
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
 
-      onJobLineAdd([newJobLine]);
+      onAdd(newJobLine);
+      
+      // Reset form
+      setFormData({
+        name: '',
+        category: '',
+        subcategory: '',
+        description: '',
+        estimated_hours: 0,
+        labor_rate: 0,
+        notes: ''
+      });
       
       toast({
         title: "Success",
         description: "Job line added successfully",
       });
-      
-      form.reset();
-      setOpen(false);
+
+      onOpenChange(false);
     } catch (error) {
       console.error('Error adding job line:', error);
       toast({
         title: "Error",
         description: "Failed to add job line",
-        variant: "destructive",
+        variant: "destructive"
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
+  const handleInputChange = (field: string, value: string | number) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Add Job Line
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Add Job Line</DialogTitle>
-          <DialogDescription>
-            Add a new job line to this work order.
-          </DialogDescription>
         </DialogHeader>
         
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Job line name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {JOB_LINE_STATUSES.map((status) => (
-                          <SelectItem key={status} value={status}>
-                            {status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ')}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="name">Service Name</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                placeholder="Enter service name"
+                required
               />
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Category" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="subcategory"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Subcategory</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Subcategory" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Job line description" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="estimated_hours"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Estimated Hours</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.25"
-                        placeholder="0"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="labor_rate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Labor Rate</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        placeholder="0.00"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Notes</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Additional notes" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setOpen(false)}
-                disabled={isSubmitting}
+            
+            <div>
+              <Label htmlFor="category">Category</Label>
+              <Select 
+                value={formData.category} 
+                onValueChange={(value) => handleInputChange('category', value)}
               >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Adding...' : 'Add Job Line'}
-              </Button>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="maintenance">Maintenance</SelectItem>
+                  <SelectItem value="repair">Repair</SelectItem>
+                  <SelectItem value="inspection">Inspection</SelectItem>
+                  <SelectItem value="diagnostic">Diagnostic</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          </form>
-        </Form>
+          </div>
+
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => handleInputChange('description', e.target.value)}
+              placeholder="Enter detailed description"
+              rows={3}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="estimated_hours">Estimated Hours</Label>
+              <Input
+                id="estimated_hours"
+                type="number"
+                step="0.5"
+                min="0"
+                value={formData.estimated_hours}
+                onChange={(e) => handleInputChange('estimated_hours', parseFloat(e.target.value) || 0)}
+                placeholder="0.0"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="labor_rate">Labor Rate ($/hour)</Label>
+              <Input
+                id="labor_rate"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.labor_rate}
+                onChange={(e) => handleInputChange('labor_rate', parseFloat(e.target.value) || 0)}
+                placeholder="0.00"
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              value={formData.notes}
+              onChange={(e) => handleInputChange('notes', e.target.value)}
+              placeholder="Additional notes"
+              rows={2}
+            />
+          </div>
+
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit">
+              Add Job Line
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
