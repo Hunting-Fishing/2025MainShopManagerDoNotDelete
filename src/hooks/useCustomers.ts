@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Customer } from '@/types/customer';
 import { getAllCustomers } from '@/services/customer/customerQueryService';
+import { handleApiError } from '@/utils/errorHandling';
 
 export interface CustomerFilters {
   search?: string;
@@ -27,7 +28,6 @@ export function useCustomers() {
   }, []);
 
   useEffect(() => {
-    // Apply filters whenever customers or filters change
     applyFilters();
   }, [customers, filters]);
 
@@ -36,32 +36,57 @@ export function useCustomers() {
     setError(null);
     
     try {
-      console.log('Fetching customers...');
+      console.log('🔄 Fetching customers from database...');
       const data = await getAllCustomers();
-      console.log('Customers fetched successfully:', data);
-      setCustomers(data || []);
+      console.log('✅ Customers fetched successfully:', data?.length || 0, 'customers');
+      
+      if (data && Array.isArray(data)) {
+        setCustomers(data);
+        console.log('📊 Customer data sample:', data.slice(0, 2));
+      } else {
+        console.warn('⚠️ No customer data received or invalid format');
+        setCustomers([]);
+      }
     } catch (err) {
-      console.error('Error fetching customers:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error occurred');
+      console.error('❌ Error fetching customers:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch customers';
+      setError(errorMessage);
       setCustomers([]);
+      
+      // Use centralized error handling
+      handleApiError(err, 'Failed to load customers');
     } finally {
       setIsLoading(false);
     }
   };
 
   const applyFilters = () => {
+    if (!customers || !Array.isArray(customers)) {
+      console.log('🔍 No customers to filter');
+      setFilteredCustomers([]);
+      return;
+    }
+
     let filtered = [...customers];
+    console.log('🔍 Applying filters to', filtered.length, 'customers');
 
     // Apply search filter
     if (filters.search && filters.search.trim()) {
       const searchTerm = filters.search.toLowerCase().trim();
-      filtered = filtered.filter(customer => 
-        customer.first_name?.toLowerCase().includes(searchTerm) ||
-        customer.last_name?.toLowerCase().includes(searchTerm) ||
-        customer.email?.toLowerCase().includes(searchTerm) ||
-        customer.phone?.toLowerCase().includes(searchTerm) ||
-        customer.company?.toLowerCase().includes(searchTerm)
-      );
+      filtered = filtered.filter(customer => {
+        const searchableFields = [
+          customer.first_name,
+          customer.last_name,
+          customer.email,
+          customer.phone,
+          customer.company
+        ].filter(Boolean);
+        
+        return searchableFields.some(field => 
+          field?.toLowerCase().includes(searchTerm)
+        );
+      });
+      console.log('🔍 After search filter:', filtered.length, 'customers');
     }
 
     // Apply sorting
@@ -73,12 +98,12 @@ export function useCustomers() {
       });
     }
 
-    console.log('Filtered customers:', filtered);
+    console.log('✅ Final filtered customers:', filtered.length);
     setFilteredCustomers(filtered);
   };
 
-  const handleFilterChange = (newFilters: CustomerFilters) => {
-    console.log('Filter change:', newFilters);
+  const handleFilterChange = (newFilters: Partial<CustomerFilters>) => {
+    console.log('🔧 Filter change:', newFilters);
     setFilters(prevFilters => ({
       ...prevFilters,
       ...newFilters

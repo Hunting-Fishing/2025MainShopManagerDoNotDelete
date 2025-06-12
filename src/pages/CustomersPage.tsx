@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Users } from 'lucide-react';
+import { Plus, Search, Users, AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,13 +18,16 @@ export default function CustomersPage() {
     loading, 
     error, 
     filters, 
-    handleFilterChange 
+    handleFilterChange,
+    refetch
   } = useCustomers();
 
-  console.log('CustomersPage - loading:', loading);
-  console.log('CustomersPage - error:', error);
-  console.log('CustomersPage - customers:', customers);
-  console.log('CustomersPage - filteredCustomers:', filteredCustomers);
+  console.log('📄 CustomersPage render state:', {
+    loading,
+    error,
+    customersCount: customers?.length || 0,
+    filteredCount: filteredCustomers?.length || 0
+  });
 
   const handleSearchChange = (search: string) => {
     handleFilterChange({
@@ -33,6 +36,11 @@ export default function CustomersPage() {
       status: filters.status || 'all',
       sortBy: filters.sortBy || 'name'
     });
+  };
+
+  const handleRetry = () => {
+    console.log('🔄 Manual retry triggered');
+    refetch();
   };
 
   if (loading) {
@@ -52,7 +60,7 @@ export default function CustomersPage() {
             </Link>
           </Button>
         </div>
-        <LoadingSpinner size="lg" text="Loading customers..." className="mt-8" />
+        <LoadingSpinner size="lg" text="Loading customers from database..." className="mt-8" />
       </div>
     );
   }
@@ -74,16 +82,37 @@ export default function CustomersPage() {
             </Link>
           </Button>
         </div>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-600">Error loading customers: {error}</p>
-          <Button 
-            variant="outline" 
-            className="mt-2" 
-            onClick={() => window.location.reload()}
-          >
-            Retry
-          </Button>
-        </div>
+        
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-medium text-red-900">Unable to load customers</h3>
+                <p className="text-red-700 mt-1">{error}</p>
+                <div className="mt-4 flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleRetry}
+                    className="border-red-300 hover:bg-red-100"
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Retry
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => window.location.reload()}
+                    className="border-red-300 hover:bg-red-100"
+                  >
+                    Refresh Page
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -97,6 +126,18 @@ export default function CustomersPage() {
           <p className="text-muted-foreground">
             Manage your customers and view their service history
           </p>
+          {customers && (
+            <div className="flex items-center gap-2 mt-2">
+              <Badge variant="secondary">
+                {customers.length} total customers
+              </Badge>
+              {filteredCustomers && filteredCustomers.length !== customers.length && (
+                <Badge variant="outline">
+                  {filteredCustomers.length} filtered
+                </Badge>
+              )}
+            </div>
+          )}
         </div>
         <Button asChild>
           <Link to="/customers/create">
@@ -131,7 +172,7 @@ export default function CustomersPage() {
         <EmptyState
           icon={<Users className="h-8 w-8 text-gray-400" />}
           title="No customers found"
-          description="Get started by adding your first customer to the system."
+          description="Get started by adding your first customer to the system. All customer data is fetched live from your database."
           action={{
             label: "Add Customer",
             onClick: () => window.location.href = "/customers/create"
