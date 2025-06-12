@@ -22,6 +22,27 @@ export const getWorkOrderParts = async (workOrderId: string): Promise<WorkOrderP
   }
 };
 
+export const getJobLineParts = async (jobLineId: string): Promise<WorkOrderPart[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('work_order_parts')
+      .select('*')
+      .eq('job_line_id', jobLineId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching job line parts:', error);
+      throw error;
+    }
+
+    // Transform the data using our mapping function
+    return (data || []).map(transformPartData);
+  } catch (error) {
+    console.error('Error in getJobLineParts:', error);
+    throw error;
+  }
+};
+
 export const createWorkOrderPart = async (part: Omit<WorkOrderPart, 'id' | 'created_at' | 'updated_at'>): Promise<WorkOrderPart> => {
   try {
     const { data, error } = await supabase
