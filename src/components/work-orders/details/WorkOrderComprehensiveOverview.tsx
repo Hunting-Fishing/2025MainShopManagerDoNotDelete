@@ -28,12 +28,14 @@ export function WorkOrderComprehensiveOverview({
 }: WorkOrderComprehensiveOverviewProps) {
   return (
     <div className="space-y-6">
+      {/* Single Overview Header - removed duplicate */}
       <WorkOrderOverviewHeader
         workOrder={workOrder}
         jobLines={jobLines}
         allParts={allParts}
       />
       
+      {/* Work Order Details Content */}
       <WorkOrderDetailsTab
         workOrder={workOrder}
         jobLines={jobLines}

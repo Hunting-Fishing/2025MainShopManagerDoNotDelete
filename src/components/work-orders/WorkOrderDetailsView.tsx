@@ -1,182 +1,108 @@
+
 import React, { useState, useEffect } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Loader2, AlertCircle, Edit, X } from 'lucide-react';
-import { getWorkOrderById } from '@/services/workOrder';
-import { getWorkOrderJobLines } from '@/services/workOrder/jobLinesService';
-import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
-import { getWorkOrderTimeEntries } from '@/services/workOrder/workOrderTimeTrackingService';
+import { useWorkOrder } from '@/hooks/useWorkOrder';
+import { useWorkOrderJobLines } from '@/hooks/useWorkOrderJobLines';
+import { Card, CardContent } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { WorkOrderComprehensiveOverview } from './details/WorkOrderComprehensiveOverview';
-import { PartsAndLaborTab } from './details/PartsAndLaborTab';
-import { WorkOrderDocuments } from './details/WorkOrderDocuments';
 import { WorkOrderActivityTab } from './details/WorkOrderActivityTab';
-import { WorkOrderCommunications } from './communications/WorkOrderCommunications';
-import { WorkOrderPageLayout } from './WorkOrderPageLayout';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { WorkOrder } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { TimeEntry } from '@/types/workOrder';
+import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
+import { getWorkOrderTimeEntries } from '@/services/workOrder/workOrderTimeTrackingService';
 
 export interface WorkOrderDetailsViewProps {
   workOrderId: string;
   isCreateMode?: boolean;
-  prePopulatedData?: {
-    customerId?: string;
-    customerName?: string;
-    customerEmail?: string;
-    customerPhone?: string;
-    customerAddress?: string;
-    title?: string;
-    description?: string;
-    priority?: string;
-    equipmentName?: string;
-    equipmentType?: string;
-    vehicleMake?: string;
-    vehicleModel?: string;
-    vehicleYear?: string;
-    vehicleLicensePlate?: string;
-    vehicleVin?: string;
-  };
+  prePopulatedData?: any;
   onCreateWorkOrder?: (values: any) => Promise<void>;
 }
 
 export function WorkOrderDetailsView({ 
   workOrderId, 
-  isCreateMode = false, 
-  prePopulatedData, 
+  isCreateMode = false,
+  prePopulatedData,
   onCreateWorkOrder 
 }: WorkOrderDetailsViewProps) {
-  const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
-  const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
+  const { workOrder, isLoading: workOrderLoading, error: workOrderError } = useWorkOrder(workOrderId);
+  const { jobLines, isLoading: jobLinesLoading, updateJobLines } = useWorkOrderJobLines(workOrderId);
   const [allParts, setAllParts] = useState<WorkOrderPart[]>([]);
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isEditMode, setIsEditMode] = useState(false);
+  const [partsLoading, setPartsLoading] = useState(false);
+  const [timeEntriesLoading, setTimeEntriesLoading] = useState(false);
 
+  // Fetch parts and time entries
   useEffect(() => {
-    const fetchWorkOrderData = async () => {
-      if (!workOrderId || workOrderId === 'new') {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        setError(null);
-
-        // Fetch work order details
-        const workOrderData = await getWorkOrderById(workOrderId);
-        if (!workOrderData) {
-          throw new Error('Work order not found');
+    if (workOrderId && workOrderId !== 'new') {
+      const fetchData = async () => {
+        try {
+          setPartsLoading(true);
+          const parts = await getWorkOrderParts(workOrderId);
+          setAllParts(parts);
+        } catch (error) {
+          console.error('Error fetching parts:', error);
+          toast.error('Failed to load parts');
+        } finally {
+          setPartsLoading(false);
         }
-        setWorkOrder(workOrderData);
 
-        // Fetch job lines
-        const jobLinesData = await getWorkOrderJobLines(workOrderId);
-        setJobLines(jobLinesData || []);
+        try {
+          setTimeEntriesLoading(true);
+          const entries = await getWorkOrderTimeEntries(workOrderId);
+          setTimeEntries(entries);
+        } catch (error) {
+          console.error('Error fetching time entries:', error);
+          toast.error('Failed to load time entries');
+        } finally {
+          setTimeEntriesLoading(false);
+        }
+      };
 
-        // Fetch parts
-        const partsData = await getWorkOrderParts(workOrderId);
-        setAllParts(partsData || []);
-
-        // Fetch time entries
-        const timeEntriesData = await getWorkOrderTimeEntries(workOrderId);
-        setTimeEntries(timeEntriesData || []);
-
-      } catch (err) {
-        console.error('Error fetching work order data:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load work order');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchWorkOrderData();
+      fetchData();
+    }
   }, [workOrderId]);
 
-  const handleJobLinesChange = (updatedJobLines: WorkOrderJobLine[]) => {
-    setJobLines(updatedJobLines);
-  };
-
-  const toggleEditMode = () => {
-    setIsEditMode(!isEditMode);
-  };
-
-  if (loading) {
+  if (workOrderLoading || jobLinesLoading) {
     return (
-      <WorkOrderPageLayout
-        title="Loading Work Order..."
-        backLink="/work-orders"
-      >
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-            <p className="text-gray-500">Loading work order details...</p>
-          </div>
-        </div>
-      </WorkOrderPageLayout>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
     );
   }
 
-  if (error) {
+  if (workOrderError) {
     return (
-      <WorkOrderPageLayout
-        title="Error Loading Work Order"
-        backLink="/work-orders"
-      >
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      </WorkOrderPageLayout>
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center text-red-600">
+            Error loading work order: {workOrderError.message}
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   if (!workOrder) {
     return (
-      <WorkOrderPageLayout
-        title="Work Order Not Found"
-        backLink="/work-orders"
-      >
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>The requested work order could not be found.</AlertDescription>
-        </Alert>
-      </WorkOrderPageLayout>
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center text-muted-foreground">
+            Work order not found
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
-  const pageTitle = workOrder.work_order_number 
-    ? `Work Order #${workOrder.work_order_number}` 
-    : `Work Order ${workOrder.id.substring(0, 8)}`;
+  const isEditMode = false; // For now, always view mode
 
   return (
-    <WorkOrderPageLayout
-      title={pageTitle}
-      description={workOrder.description || 'Work Order Details'}
-      backLink="/work-orders"
-      actions={
-        <Button
-          variant={isEditMode ? "destructive" : "outline"}
-          onClick={toggleEditMode}
-        >
-          {isEditMode ? (
-            <>
-              <X className="h-4 w-4 mr-2" />
-              Cancel Edit
-            </>
-          ) : (
-            <>
-              <Edit className="h-4 w-4 mr-2" />
-              Edit
-            </>
-          )}
-        </Button>
-      }
-    >
-      <Tabs defaultValue="overview" className="space-y-6">
+    <div className="container mx-auto p-6 space-y-6">
+      <Tabs defaultValue="overview" className="w-full">
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="parts-labor">Parts & Labor</TabsTrigger>
@@ -185,39 +111,54 @@ export function WorkOrderDetailsView({
           <TabsTrigger value="communications">Communications</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview">
+        <TabsContent value="overview" className="space-y-6">
           <WorkOrderComprehensiveOverview
             workOrder={workOrder}
             jobLines={jobLines}
             allParts={allParts}
             timeEntries={timeEntries}
-            onJobLinesChange={handleJobLinesChange}
+            onJobLinesChange={updateJobLines}
             onTimeEntriesChange={setTimeEntries}
             isEditMode={isEditMode}
           />
         </TabsContent>
 
-        <TabsContent value="parts-labor">
-          <PartsAndLaborTab
+        <TabsContent value="parts-labor" className="space-y-6">
+          <WorkOrderComprehensiveOverview
             workOrder={workOrder}
             jobLines={jobLines}
-            onJobLinesChange={handleJobLinesChange}
+            allParts={allParts}
+            timeEntries={timeEntries}
+            onJobLinesChange={updateJobLines}
+            onTimeEntriesChange={setTimeEntries}
             isEditMode={isEditMode}
           />
         </TabsContent>
 
-        <TabsContent value="documents">
-          <WorkOrderDocuments workOrderId={workOrder.id} />
+        <TabsContent value="documents" className="space-y-6">
+          <Card>
+            <CardContent className="p-6">
+              <div className="text-center text-muted-foreground">
+                Documents functionality coming soon
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        <TabsContent value="activity">
-          <WorkOrderActivityTab workOrderId={workOrder.id} />
+        <TabsContent value="activity" className="space-y-6">
+          <WorkOrderActivityTab workOrderId={workOrderId} />
         </TabsContent>
 
-        <TabsContent value="communications">
-          <WorkOrderCommunications workOrder={workOrder} />
+        <TabsContent value="communications" className="space-y-6">
+          <Card>
+            <CardContent className="p-6">
+              <div className="text-center text-muted-foreground">
+                Communications functionality coming soon
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
-    </WorkOrderPageLayout>
+    </div>
   );
 }
