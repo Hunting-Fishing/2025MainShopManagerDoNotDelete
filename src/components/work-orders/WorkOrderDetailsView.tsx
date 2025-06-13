@@ -1,15 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Loader2, AlertCircle, Edit, Save, X } from 'lucide-react';
-import { WorkOrder } from '@/types/workOrder';
-import { WorkOrderJobLine } from '@/types/jobLine';
-import { WorkOrderPart } from '@/types/workOrderPart';
-import { getWorkOrderById } from '@/services/workOrder/workOrderService';
+import { Loader2, AlertCircle, Edit, X } from 'lucide-react';
+import { getWorkOrderById } from '@/services/workOrder';
 import { getWorkOrderJobLines } from '@/services/workOrder/jobLinesService';
 import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
 import { getWorkOrderTimeEntries } from '@/services/workOrder/workOrderTimeTrackingService';
@@ -24,18 +19,18 @@ interface WorkOrderDetailsViewProps {
   workOrderId: string;
   isCreateMode?: boolean;
   prePopulatedData?: any;
-  onCreateWorkOrder?: (values: any) => Promise<void>;
+  onCreateWorkOrder?: any;
 }
 
 export function WorkOrderDetailsView({ 
-  workOrderId,
-  isCreateMode = false,
-  prePopulatedData,
-  onCreateWorkOrder
+  workOrderId, 
+  isCreateMode = false, 
+  prePopulatedData, 
+  onCreateWorkOrder 
 }: WorkOrderDetailsViewProps) {
-  const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
-  const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
-  const [allParts, setAllParts] = useState<WorkOrderPart[]>([]);
+  const [workOrder, setWorkOrder] = useState<any>(null);
+  const [jobLines, setJobLines] = useState<any[]>([]);
+  const [allParts, setAllParts] = useState<any[]>([]);
   const [timeEntries, setTimeEntries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -82,7 +77,7 @@ export function WorkOrderDetailsView({
     fetchWorkOrderData();
   }, [workOrderId]);
 
-  const handleJobLinesChange = (updatedJobLines: WorkOrderJobLine[]) => {
+  const handleJobLinesChange = (updatedJobLines: any[]) => {
     setJobLines(updatedJobLines);
   };
 
@@ -135,7 +130,7 @@ export function WorkOrderDetailsView({
   }
 
   const pageTitle = workOrder.work_order_number 
-    ? `Work Order #${workOrder.work_order_number}`
+    ? `Work Order #${workOrder.work_order_number}` 
     : `Work Order ${workOrder.id.substring(0, 8)}`;
 
   return (
@@ -144,7 +139,7 @@ export function WorkOrderDetailsView({
       description={workOrder.description || 'Work Order Details'}
       backLink="/work-orders"
       actions={
-        <Button
+        <Button 
           variant={isEditMode ? "destructive" : "outline"}
           onClick={toggleEditMode}
         >
@@ -162,27 +157,26 @@ export function WorkOrderDetailsView({
         </Button>
       }
     >
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
+      {/* Comprehensive Overview */}
+      <WorkOrderComprehensiveOverview
+        workOrder={workOrder}
+        jobLines={jobLines}
+        allParts={allParts}
+        timeEntries={timeEntries}
+        onJobLinesChange={handleJobLinesChange}
+        isEditMode={isEditMode}
+      />
+
+      {/* Tabbed Content */}
+      <Tabs defaultValue="parts-labor" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="parts-labor">Parts & Labor</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
           <TabsTrigger value="communications">Communications</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview">
-          <WorkOrderComprehensiveOverview
-            workOrder={workOrder}
-            jobLines={jobLines}
-            allParts={allParts}
-            timeEntries={timeEntries}
-            onJobLinesChange={handleJobLinesChange}
-            isEditMode={isEditMode}
-          />
-        </TabsContent>
-
-        <TabsContent value="parts-labor">
+        <TabsContent value="parts-labor" className="mt-6">
           <PartsAndLaborTab
             workOrder={workOrder}
             jobLines={jobLines}
@@ -191,15 +185,15 @@ export function WorkOrderDetailsView({
           />
         </TabsContent>
 
-        <TabsContent value="documents">
+        <TabsContent value="documents" className="mt-6">
           <WorkOrderDocuments workOrderId={workOrder.id} />
         </TabsContent>
 
-        <TabsContent value="activity">
+        <TabsContent value="activity" className="mt-6">
           <WorkOrderActivityTab workOrderId={workOrder.id} />
         </TabsContent>
 
-        <TabsContent value="communications">
+        <TabsContent value="communications" className="mt-6">
           <WorkOrderCommunications workOrder={workOrder} />
         </TabsContent>
       </Tabs>
