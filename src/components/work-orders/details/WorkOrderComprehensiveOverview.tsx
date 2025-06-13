@@ -1,19 +1,19 @@
-
 import React from 'react';
-import { WorkOrder, TimeEntry } from '@/types/workOrder';
+import { WorkOrder } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
+import { TimeEntry } from '@/types/workOrder';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Users, Package, DollarSign, AlertTriangle } from 'lucide-react';
 import { WorkOrderFinancialSummary } from './WorkOrderFinancialSummary';
+import { JobLinesWithPartsDisplay } from './JobLinesWithPartsDisplay';
 
-export interface WorkOrderComprehensiveOverviewProps {
+interface WorkOrderComprehensiveOverviewProps {
   workOrder: WorkOrder;
   jobLines: WorkOrderJobLine[];
   allParts: WorkOrderPart[];
   timeEntries: TimeEntry[];
-  onJobLinesChange: (jobLines: WorkOrderJobLine[]) => void;
+  onJobLinesChange: (updatedJobLines: WorkOrderJobLine[]) => void;
   isEditMode: boolean;
 }
 
@@ -26,74 +26,37 @@ export function WorkOrderComprehensiveOverview({
   isEditMode
 }: WorkOrderComprehensiveOverviewProps) {
   const totalEstimatedHours = jobLines.reduce((sum, line) => sum + (line.estimated_hours || 0), 0);
-  const totalLaborAmount = jobLines.reduce((sum, line) => sum + (line.total_amount || 0), 0);
-  const totalPartsValue = allParts.reduce((sum, part) => sum + (part.total_price || 0), 0);
-  const totalTimeLogged = timeEntries.reduce((sum, entry) => sum + (entry.duration || 0), 0);
-
-  // Group parts by job line
-  const partsGroupedByJobLine = allParts.reduce((acc, part) => {
-    const jobLineId = part.job_line_id || 'unassigned';
-    if (!acc[jobLineId]) {
-      acc[jobLineId] = [];
-    }
-    acc[jobLineId].push(part);
-    return acc;
-  }, {} as Record<string, WorkOrderPart[]>);
+  const totalAmount = jobLines.reduce((sum, line) => sum + (line.total_amount || 0), 0);
+  const totalTimeLogged = timeEntries.reduce((sum, entry) => sum + (entry.duration || 0), 0) / 3600; // Convert seconds to hours
 
   return (
     <div className="space-y-6">
-      {/* Key Metrics Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Job Lines</p>
-                <p className="text-2xl font-bold">{jobLines.length}</p>
-              </div>
-              <Users className="h-8 w-8 text-blue-500" />
+      {/* Work Order Overview Header */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Work Order Overview</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <p className="text-sm text-muted-foreground">Job Lines</p>
+              <p className="text-2xl font-bold">{jobLines.length}</p>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Est. Hours</p>
-                <p className="text-2xl font-bold">{totalEstimatedHours.toFixed(1)}</p>
-              </div>
-              <Clock className="h-8 w-8 text-green-500" />
+            <div>
+              <p className="text-sm text-muted-foreground">Total Hours</p>
+              <p className="text-2xl font-bold">{totalEstimatedHours.toFixed(1)}</p>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Parts Count</p>
-                <p className="text-2xl font-bold">{allParts.length}</p>
-              </div>
-              <Package className="h-8 w-8 text-orange-500" />
+            <div>
+              <p className="text-sm text-muted-foreground">Parts Count</p>
+              <p className="text-2xl font-bold">{allParts.length}</p>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Time Logged</p>
-                <p className="text-2xl font-bold">
-                  {totalTimeLogged > 0 ? `${(totalTimeLogged / 60).toFixed(1)}h` : 'No time logged'}
-                </p>
-              </div>
-              <Clock className="h-8 w-8 text-purple-500" />
+            <div>
+              <p className="text-sm text-muted-foreground">Total Amount</p>
+              <p className="text-2xl font-bold">${totalAmount.toFixed(2)}</p>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Work Order Summary */}
       <Card>
@@ -151,89 +114,39 @@ export function WorkOrderComprehensiveOverview({
         </CardContent>
       </Card>
 
-      {/* Job Lines with Parts Breakdown */}
-      {jobLines.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Job Lines & Parts Breakdown</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {jobLines.map((jobLine) => {
-                const jobLineParts = partsGroupedByJobLine[jobLine.id] || [];
-                const jobLinePartsValue = jobLineParts.reduce((sum, part) => sum + (part.total_price || 0), 0);
-                
-                return (
-                  <div key={jobLine.id} className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <h4 className="font-semibold">{jobLine.name}</h4>
-                        {jobLine.description && (
-                          <p className="text-sm text-muted-foreground">{jobLine.description}</p>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-muted-foreground">
-                          {jobLine.estimated_hours}h @ ${jobLine.labor_rate}/hr
-                        </p>
-                        <p className="font-semibold">${(jobLine.total_amount || 0).toFixed(2)}</p>
-                      </div>
-                    </div>
-                    
-                    {jobLineParts.length > 0 && (
-                      <div className="mt-3 pl-4 border-l-2 border-gray-200">
-                        <p className="text-sm font-medium text-muted-foreground mb-2">
-                          Parts ({jobLineParts.length}):
-                        </p>
-                        <div className="space-y-1">
-                          {jobLineParts.map((part) => (
-                            <div key={part.id} className="flex justify-between text-sm">
-                              <span>{part.name} (Qty: {part.quantity})</span>
-                              <span className="font-medium">${(part.total_price || 0).toFixed(2)}</span>
-                            </div>
-                          ))}
-                        </div>
-                        <div className="flex justify-between text-sm font-semibold mt-2 pt-2 border-t">
-                          <span>Parts Subtotal:</span>
-                          <span>${jobLinePartsValue.toFixed(2)}</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Job Lines with Parts */}
+      <JobLinesWithPartsDisplay
+        workOrderId={workOrder.id}
+        jobLines={jobLines}
+        onJobLinesChange={onJobLinesChange}
+        isEditMode={isEditMode}
+      />
 
-      {/* Unassigned Parts */}
-      {partsGroupedByJobLine.unassigned?.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-amber-500" />
-              Unassigned Parts
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {partsGroupedByJobLine.unassigned.map((part) => (
-                <div key={part.id} className="flex justify-between items-center p-2 bg-amber-50 rounded">
-                  <span className="text-sm">{part.name} (Qty: {part.quantity})</span>
-                  <span className="font-medium">${(part.total_price || 0).toFixed(2)}</span>
-                </div>
-              ))}
+      {/* Time Tracking Summary */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Time Tracking Summary</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <span className="text-sm text-muted-foreground">Total Time Logged:</span>
+              <span className="font-medium">
+                {timeEntries.length > 0 ? `${totalTimeLogged.toFixed(1)} hours` : 'No time logged'}
+              </span>
             </div>
-          </CardContent>
-        </Card>
-      )}
+            <div className="flex justify-between">
+              <span className="text-sm text-muted-foreground">Time Entries:</span>
+              <span className="font-medium">{timeEntries.length}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Financial Summary */}
       <WorkOrderFinancialSummary
-        laborTotal={totalLaborAmount}
-        partsTotal={totalPartsValue}
-        estimatedHours={totalEstimatedHours}
+        jobLines={jobLines}
+        allParts={allParts}
         timeLogged={totalTimeLogged}
       />
     </div>
