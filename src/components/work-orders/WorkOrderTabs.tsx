@@ -15,6 +15,7 @@ interface WorkOrderTabsProps {
   isEditMode?: boolean;
 }
 
+// This component is now simplified since the main interface is in WorkOrderDetailsView
 export const WorkOrderTabs: React.FC<WorkOrderTabsProps> = ({
   workOrder,
   timeEntries = [],
@@ -22,7 +23,7 @@ export const WorkOrderTabs: React.FC<WorkOrderTabsProps> = ({
   isEditMode = false
 }) => {
   return (
-    <Tabs defaultValue="parts">
+    <Tabs defaultValue="parts" className="w-full">
       <TabsList className="mb-4">
         <TabsTrigger value="parts">Parts & Inventory</TabsTrigger>
         <TabsTrigger value="time">Time Tracking</TabsTrigger>
