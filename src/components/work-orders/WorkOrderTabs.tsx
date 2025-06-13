@@ -1,11 +1,26 @@
 
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
+import { WorkOrderPartsSection } from "./parts/WorkOrderPartsSection";
+import { TimeTrackingSection } from "./time-tracking/TimeTrackingSection";
+import { WorkOrderDocuments } from "./details/WorkOrderDocuments";
+import { WorkOrderCommunications } from "./communications/WorkOrderCommunications";
+import { WorkOrder } from "@/types/workOrder";
+import { TimeEntry } from "@/types/workOrder";
 
-interface WorkOrderTabsProps {}
+interface WorkOrderTabsProps {
+  workOrder: WorkOrder;
+  timeEntries?: TimeEntry[];
+  onUpdateTimeEntries?: (entries: TimeEntry[]) => void;
+  isEditMode?: boolean;
+}
 
-export const WorkOrderTabs: React.FC<WorkOrderTabsProps> = () => {
+export const WorkOrderTabs: React.FC<WorkOrderTabsProps> = ({
+  workOrder,
+  timeEntries = [],
+  onUpdateTimeEntries,
+  isEditMode = false
+}) => {
   return (
     <Tabs defaultValue="parts">
       <TabsList className="mb-4">
@@ -16,35 +31,27 @@ export const WorkOrderTabs: React.FC<WorkOrderTabsProps> = () => {
       </TabsList>
 
       <TabsContent value="parts">
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-muted-foreground">Inventory items feature will be implemented soon.</p>
-          </CardContent>
-        </Card>
+        <WorkOrderPartsSection
+          workOrderId={workOrder.id}
+          isEditMode={isEditMode}
+        />
       </TabsContent>
 
       <TabsContent value="time">
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-muted-foreground">Time tracking feature will be implemented soon.</p>
-          </CardContent>
-        </Card>
+        <TimeTrackingSection
+          workOrderId={workOrder.id}
+          timeEntries={timeEntries}
+          onUpdateTimeEntries={onUpdateTimeEntries || (() => {})}
+          isEditMode={isEditMode}
+        />
       </TabsContent>
       
       <TabsContent value="documents">
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-muted-foreground">Document management feature will be implemented soon.</p>
-          </CardContent>
-        </Card>
+        <WorkOrderDocuments workOrderId={workOrder.id} />
       </TabsContent>
       
       <TabsContent value="communications">
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-muted-foreground">Communications feature will be implemented soon.</p>
-          </CardContent>
-        </Card>
+        <WorkOrderCommunications workOrder={workOrder} />
       </TabsContent>
     </Tabs>
   );
