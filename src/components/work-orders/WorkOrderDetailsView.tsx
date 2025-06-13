@@ -47,17 +47,21 @@ export function WorkOrderDetailsView({
         setLoading(true);
         setError(null);
 
+        console.log('Fetching work order data for ID:', workOrderId);
+
         // Fetch work order
         const workOrderData = await getWorkOrderById(workOrderId);
         if (!workOrderData) {
           setError('Work order not found');
           return;
         }
+        console.log('Work order loaded:', workOrderData);
         setWorkOrder(workOrderData);
 
         // Fetch job lines
         try {
           const jobLinesData = await getWorkOrderJobLines(workOrderId);
+          console.log('Job lines loaded:', jobLinesData?.length || 0);
           setJobLines(jobLinesData || []);
         } catch (jobLinesError) {
           console.error('Error fetching job lines:', jobLinesError);
@@ -67,6 +71,7 @@ export function WorkOrderDetailsView({
         // Fetch parts
         try {
           const partsData = await getWorkOrderParts(workOrderId);
+          console.log('Parts loaded:', partsData?.length || 0);
           setAllParts(partsData || []);
         } catch (partsError) {
           console.error('Error fetching parts:', partsError);
@@ -76,6 +81,7 @@ export function WorkOrderDetailsView({
         // Fetch time entries
         try {
           const timeEntriesData = await getWorkOrderTimeEntries(workOrderId);
+          console.log('Time entries loaded:', timeEntriesData?.length || 0);
           setTimeEntries(timeEntriesData || []);
         } catch (timeError) {
           console.error('Error fetching time entries:', timeError);
@@ -84,7 +90,7 @@ export function WorkOrderDetailsView({
 
       } catch (err) {
         console.error('Error fetching work order data:', err);
-        setError(typeof err === 'string' ? err : 'Failed to load work order details');
+        setError('Failed to load work order details');
       } finally {
         setLoading(false);
       }
@@ -98,7 +104,6 @@ export function WorkOrderDetailsView({
   };
 
   if (isCreateMode) {
-    // Handle create mode - could return a create form component
     return (
       <div className="container mx-auto p-6">
         <div className="text-center">
@@ -136,22 +141,25 @@ export function WorkOrderDetailsView({
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Comprehensive Overview */}
-      <WorkOrderComprehensiveOverview
-        workOrder={workOrder}
-        jobLines={jobLines}
-        allParts={allParts}
-        timeEntries={timeEntries}
-      />
+    <div className="min-h-screen bg-gray-50">
+      {/* Main Content */}
+      <div className="container mx-auto p-6 space-y-6">
+        {/* Comprehensive Overview */}
+        <WorkOrderComprehensiveOverview
+          workOrder={workOrder}
+          jobLines={jobLines}
+          allParts={allParts}
+          timeEntries={timeEntries}
+        />
 
-      {/* Detailed Tabs */}
-      <WorkOrderTabs
-        workOrder={workOrder}
-        timeEntries={timeEntries}
-        onUpdateTimeEntries={handleUpdateTimeEntries}
-        isEditMode={false}
-      />
+        {/* Detailed Tabs */}
+        <WorkOrderTabs
+          workOrder={workOrder}
+          timeEntries={timeEntries}
+          onUpdateTimeEntries={handleUpdateTimeEntries}
+          isEditMode={false}
+        />
+      </div>
     </div>
   );
 }
