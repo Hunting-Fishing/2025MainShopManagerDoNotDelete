@@ -1,17 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { WorkOrder, TimeEntry } from '@/types/workOrder';
-import { WorkOrderJobLine } from '@/types/jobLine';
-import { WorkOrderPart } from '@/types/workOrderPart';
 import { getWorkOrderById } from '@/services/workOrder';
 import { getWorkOrderJobLines } from '@/services/workOrder/jobLinesService';
 import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
-import { getWorkOrderTimeEntries } from '@/services/workOrder/timeTrackingService';
+import { getWorkOrderTimeEntries } from '@/services/workOrder/workOrderTimeTrackingService';
+import { WorkOrder } from '@/types/workOrder';
+import { WorkOrderJobLine } from '@/types/jobLine';
+import { WorkOrderPart } from '@/types/workOrderPart';
+import { TimeEntry } from '@/types/workOrder';
 import { WorkOrderComprehensiveOverview } from './details/WorkOrderComprehensiveOverview';
 import { WorkOrderPartsSection } from './parts/WorkOrderPartsSection';
 import { TimeTrackingSection } from './time-tracking/TimeTrackingSection';
@@ -21,9 +21,17 @@ import { WorkOrderActivityTab } from './details/WorkOrderActivityTab';
 
 interface WorkOrderDetailsViewProps {
   workOrderId?: string;
+  isCreateMode?: boolean;
+  prePopulatedData?: any;
+  onCreateWorkOrder?: (data: any) => Promise<void>;
 }
 
-export function WorkOrderDetailsView({ workOrderId }: WorkOrderDetailsViewProps) {
+export function WorkOrderDetailsView({ 
+  workOrderId,
+  isCreateMode = false,
+  prePopulatedData,
+  onCreateWorkOrder
+}: WorkOrderDetailsViewProps) {
   const { id: routeId } = useParams<{ id: string }>();
   const finalWorkOrderId = workOrderId || routeId;
 
@@ -36,16 +44,17 @@ export function WorkOrderDetailsView({ workOrderId }: WorkOrderDetailsViewProps)
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
-    if (finalWorkOrderId) {
+    if (finalWorkOrderId && !isCreateMode) {
       fetchAllWorkOrderData(finalWorkOrderId);
+    } else if (isCreateMode) {
+      setLoading(false);
     }
-  }, [finalWorkOrderId]);
+  }, [finalWorkOrderId, isCreateMode]);
 
   const fetchAllWorkOrderData = async (id: string) => {
     try {
       setLoading(true);
       setError(null);
-
       console.log('Fetching all work order data for:', id);
 
       // Fetch all data in parallel
@@ -82,6 +91,18 @@ export function WorkOrderDetailsView({ workOrderId }: WorkOrderDetailsViewProps)
   const handleTimeEntriesUpdate = (updatedTimeEntries: TimeEntry[]) => {
     setTimeEntries(updatedTimeEntries);
   };
+
+  // Handle create mode
+  if (isCreateMode) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-center py-8">
+          <h2 className="text-2xl font-bold mb-4">Create New Work Order</h2>
+          <p className="text-muted-foreground">Work order creation form would go here</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!finalWorkOrderId) {
     return (
@@ -123,8 +144,8 @@ export function WorkOrderDetailsView({ workOrderId }: WorkOrderDetailsViewProps)
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="parts">Parts & Inventory</TabsTrigger>
-          <TabsTrigger value="time">Time Tracking</TabsTrigger>
+          <TabsTrigger value="parts">Parts</TabsTrigger>
+          <TabsTrigger value="time">Time</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
           <TabsTrigger value="communications">Communications</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
@@ -136,13 +157,15 @@ export function WorkOrderDetailsView({ workOrderId }: WorkOrderDetailsViewProps)
             jobLines={jobLines}
             allParts={allParts}
             timeEntries={timeEntries}
+            onJobLinesChange={handleJobLinesChange}
+            isEditMode={false}
           />
         </TabsContent>
 
         <TabsContent value="parts">
           <WorkOrderPartsSection
             workOrderId={workOrder.id}
-            isEditMode={true}
+            isEditMode={false}
           />
         </TabsContent>
 
@@ -151,7 +174,7 @@ export function WorkOrderDetailsView({ workOrderId }: WorkOrderDetailsViewProps)
             workOrderId={workOrder.id}
             timeEntries={timeEntries}
             onUpdateTimeEntries={handleTimeEntriesUpdate}
-            isEditMode={true}
+            isEditMode={false}
           />
         </TabsContent>
 
