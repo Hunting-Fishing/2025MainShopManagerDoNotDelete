@@ -57,8 +57,8 @@ export const useWorkOrderEditForm = (workOrderId: string) => {
         // Keep it as is, type system will handle it
       }
       
-      // Fixed: Pass the updated work order object with the id included
-      const result = await updateWorkOrder({ ...workOrderToSave, id: workOrderId });
+      // Fixed: Pass both workOrderId and the updated work order data
+      const result = await updateWorkOrder(workOrderId, workOrderToSave);
       toast.success("Work order updated successfully");
       return result;
     } catch (err) {
