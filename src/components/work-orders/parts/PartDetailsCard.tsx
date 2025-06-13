@@ -2,137 +2,131 @@
 import React from 'react';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2, Package } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Trash2, Edit, Package } from 'lucide-react';
 
 interface PartDetailsCardProps {
   part: WorkOrderPart;
-  onUpdate?: (updatedPart: WorkOrderPart) => void;
   onRemove?: (partId: string) => void;
+  onUpdate?: (part: WorkOrderPart) => void;
   isEditMode?: boolean;
-  compact?: boolean;
 }
 
 export function PartDetailsCard({ 
   part, 
-  onUpdate, 
   onRemove, 
-  isEditMode = false,
-  compact = false 
+  onUpdate, 
+  isEditMode = false 
 }: PartDetailsCardProps) {
-  // Use proper field names and provide fallbacks
-  const partName = part.name || part.partName || 'Unknown Part';
-  const partNumber = part.part_number || part.partNumber || 'N/A';
-  const unitPrice = part.unit_price || part.customerPrice || 0;
-  const quantity = part.quantity || 0;
-  const totalPrice = unitPrice * quantity;
+  const handleRemove = () => {
+    if (onRemove) {
+      onRemove(part.id);
+    }
+  };
 
-  if (compact) {
-    return (
-      <Card className="p-3 border-l-4 border-l-blue-500">
-        <div className="flex justify-between items-start">
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <Package className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium text-sm">{partName}</span>
-            </div>
-            <div className="text-xs text-muted-foreground mt-1">
-              Part #: {partNumber} | Qty: {quantity} | Unit: ${unitPrice.toFixed(2)}
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="text-sm font-medium">${totalPrice.toFixed(2)}</div>
-            {part.status && (
-              <Badge variant="outline" className="text-xs mt-1">
-                {part.status}
-              </Badge>
-            )}
-            {isEditMode && (
-              <div className="flex gap-1 mt-1">
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                  <Edit className="h-3 w-3" />
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-6 w-6 p-0"
-                  onClick={() => onRemove?.(part.id)}
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
-      </Card>
-    );
-  }
+  const handleEdit = () => {
+    if (onUpdate) {
+      onUpdate(part);
+    }
+  };
 
   return (
-    <Card>
+    <Card className="hover:shadow-md transition-shadow">
       <CardContent className="p-4">
-        <div className="flex justify-between items-start">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <Package className="h-5 w-5 text-muted-foreground" />
-              <h3 className="font-medium">{partName}</h3>
-              {part.status && (
-                <Badge variant="outline" className="text-xs">
-                  {part.status}
-                </Badge>
+        <div className="flex justify-between items-start mb-3">
+          <div className="flex items-start gap-3">
+            <Package className="h-5 w-5 text-blue-500 mt-0.5" />
+            <div>
+              <h4 className="font-semibold text-sm">{part.name || part.partName}</h4>
+              <p className="text-xs text-muted-foreground">
+                Part #: {part.part_number || part.partNumber}
+              </p>
+              {part.description && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {part.description}
+                </p>
               )}
             </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-              <div>
-                <span className="text-muted-foreground">Part Number:</span>
-                <p className="font-medium">{partNumber}</p>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Quantity:</span>
-                <p className="font-medium">{quantity}</p>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Unit Price:</span>
-                <p className="font-medium">${unitPrice.toFixed(2)}</p>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Total:</span>
-                <p className="font-medium">${totalPrice.toFixed(2)}</p>
-              </div>
-            </div>
+          </div>
+          
+          <div className="text-right">
+            <Badge variant="outline" className="text-xs">
+              {part.status}
+            </Badge>
+          </div>
+        </div>
 
-            {part.description && (
-              <div className="mt-2">
-                <span className="text-muted-foreground text-sm">Description:</span>
-                <p className="text-sm mt-1">{part.description}</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div>
+            <p className="text-muted-foreground">Quantity</p>
+            <p className="font-medium">{part.quantity}</p>
+          </div>
+          
+          <div>
+            <p className="text-muted-foreground">Unit Price</p>
+            <p className="font-medium">${(part.unit_price || part.customerPrice || 0).toFixed(2)}</p>
+          </div>
+          
+          <div>
+            <p className="text-muted-foreground">Total</p>
+            <p className="font-medium">${(part.total_price || 0).toFixed(2)}</p>
+          </div>
+          
+          <div>
+            <p className="text-muted-foreground">Type</p>
+            <p className="font-medium">{part.partType || 'Standard'}</p>
+          </div>
+        </div>
+
+        {(part.supplierName || part.category) && (
+          <div className="mt-3 pt-3 border-t grid grid-cols-2 gap-4 text-sm">
+            {part.supplierName && (
+              <div>
+                <p className="text-muted-foreground">Supplier</p>
+                <p className="font-medium">{part.supplierName}</p>
               </div>
             )}
-
-            {part.notes && (
-              <div className="mt-2">
-                <span className="text-muted-foreground text-sm">Notes:</span>
-                <p className="text-sm mt-1">{part.notes}</p>
+            
+            {part.category && (
+              <div>
+                <p className="text-muted-foreground">Category</p>
+                <p className="font-medium">{part.category}</p>
               </div>
             )}
           </div>
+        )}
 
-          {isEditMode && (
-            <div className="flex gap-2 ml-4">
-              <Button variant="outline" size="sm">
-                <Edit className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => onRemove?.(part.id)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
-        </div>
+        {part.notes && (
+          <div className="mt-3 pt-3 border-t">
+            <p className="text-muted-foreground text-sm">Notes</p>
+            <p className="text-sm">{part.notes}</p>
+          </div>
+        )}
+
+        {isEditMode && (
+          <div className="mt-3 pt-3 border-t flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleEdit}
+              className="text-xs"
+            >
+              <Edit className="h-3 w-3 mr-1" />
+              Edit
+            </Button>
+            
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleRemove}
+              className="text-xs text-red-600 hover:text-red-700"
+            >
+              <Trash2 className="h-3 w-3 mr-1" />
+              Remove
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
