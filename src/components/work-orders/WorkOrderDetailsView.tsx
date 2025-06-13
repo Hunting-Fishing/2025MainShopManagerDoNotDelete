@@ -7,7 +7,7 @@ import { Clock, FileText, MessageSquare, Activity, Wrench, DollarSign } from 'lu
 import { getWorkOrderById } from '@/services/workOrder';
 import { getWorkOrderJobLines } from '@/services/workOrder/jobLinesService';
 import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
-import { getWorkOrderTimeEntries } from '@/services/workOrder/workOrderTimeTrackingService';
+import { getTimeEntriesByWorkOrder } from '@/services/workOrder/workOrderTimeTrackingService';
 import { WorkOrderComprehensiveOverview } from './details/WorkOrderComprehensiveOverview';
 import { PartsAndLaborTab } from './details/PartsAndLaborTab';
 import { WorkOrderPartsSection } from './parts/WorkOrderPartsSection';
@@ -24,11 +24,11 @@ export interface WorkOrderDetailsViewProps {
   onCreateWorkOrder?: (workOrderData: any) => Promise<void>;
 }
 
-export function WorkOrderDetailsView({ 
-  workOrderId, 
-  isCreateMode = false, 
-  prePopulatedData, 
-  onCreateWorkOrder 
+export function WorkOrderDetailsView({
+  workOrderId,
+  isCreateMode = false,
+  prePopulatedData,
+  onCreateWorkOrder
 }: WorkOrderDetailsViewProps) {
   const [timeEntries, setTimeEntries] = useState([]);
   const [jobLines, setJobLines] = useState([]);
@@ -50,7 +50,7 @@ export function WorkOrderDetailsView({
           const [jobLinesData, partsData, timeEntriesData] = await Promise.all([
             getWorkOrderJobLines(workOrderId),
             getWorkOrderParts(workOrderId),
-            getWorkOrderTimeEntries(workOrderId)
+            getTimeEntriesByWorkOrder(workOrderId)
           ]);
           
           setJobLines(jobLinesData);
@@ -108,20 +108,25 @@ export function WorkOrderDetailsView({
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      {/* Customer & Vehicle Info */}
+      {/* Customer/Vehicle Info */}
       {!isCreateMode && (
         <WorkOrderCustomerVehicleInfo workOrder={displayWorkOrder} />
       )}
 
+      {/* Main Content Tabs */}
       <Tabs defaultValue="overview" className="w-full">
         <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
             Overview
           </TabsTrigger>
-          <TabsTrigger value="labour" className="flex items-center gap-2">
+          <TabsTrigger value="parts-labor" className="flex items-center gap-2">
             <Wrench className="h-4 w-4" />
-            Labour
+            Parts & Labor
+          </TabsTrigger>
+          <TabsTrigger value="parts" className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4" />
+            Parts
           </TabsTrigger>
           <TabsTrigger value="time" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
@@ -139,10 +144,6 @@ export function WorkOrderDetailsView({
             <Activity className="h-4 w-4" />
             Activity
           </TabsTrigger>
-          <TabsTrigger value="finance" className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4" />
-            Finance
-          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
@@ -151,23 +152,29 @@ export function WorkOrderDetailsView({
             jobLines={jobLines}
             allParts={allParts}
             timeEntries={timeEntries}
-            onJobLinesChange={handleJobLinesChange}
+            onJobLinesChange={setJobLines}
+          />
+        </TabsContent>
+
+        <TabsContent value="parts-labor">
+          <PartsAndLaborTab
+            workOrder={displayWorkOrder}
+            jobLines={jobLines}
+            onJobLinesChange={setJobLines}
             isEditMode={isEditMode}
           />
         </TabsContent>
 
-        <TabsContent value="labour">
-          <PartsAndLaborTab
-            workOrder={displayWorkOrder}
-            jobLines={jobLines}
-            onJobLinesChange={handleJobLinesChange}
+        <TabsContent value="parts">
+          <WorkOrderPartsSection
+            workOrderId={displayWorkOrder.id}
             isEditMode={isEditMode}
           />
         </TabsContent>
 
         <TabsContent value="time">
           <TimeTrackingSection
-            workOrderId={workOrderId}
+            workOrderId={displayWorkOrder.id}
             timeEntries={timeEntries}
             onUpdateTimeEntries={setTimeEntries}
             isEditMode={isEditMode}
@@ -175,7 +182,7 @@ export function WorkOrderDetailsView({
         </TabsContent>
 
         <TabsContent value="documents">
-          <WorkOrderDocuments workOrder={displayWorkOrder} />
+          <WorkOrderDocuments workOrderId={displayWorkOrder.id} />
         </TabsContent>
 
         <TabsContent value="communications">
@@ -183,18 +190,7 @@ export function WorkOrderDetailsView({
         </TabsContent>
 
         <TabsContent value="activity">
-          <WorkOrderActivityTab workOrder={displayWorkOrder} />
-        </TabsContent>
-
-        <TabsContent value="finance">
-          {/* Finance tab content would go here */}
-          <Card>
-            <CardContent className="p-6">
-              <div className="text-center text-muted-foreground">
-                Financial details and reporting will be displayed here
-              </div>
-            </CardContent>
-          </Card>
+          <WorkOrderActivityTab workOrderId={displayWorkOrder.id} />
         </TabsContent>
       </Tabs>
     </div>
