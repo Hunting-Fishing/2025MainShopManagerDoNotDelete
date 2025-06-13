@@ -4,10 +4,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Loader2, AlertCircle, Edit, X } from 'lucide-react';
-import { getWorkOrderById } from '@/services/workOrder';
-import { getWorkOrderJobLines } from '@/services/workOrder/jobLinesService';
-import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
-import { getWorkOrderTimeEntries } from '@/services/workOrder/workOrderTimeTrackingService';
+import { 
+  getWorkOrderById,
+  getWorkOrderJobLines,
+  getWorkOrderParts,
+  getWorkOrderTimeEntries
+} from '@/services/workOrder/workOrderService';
+import { WorkOrder } from '@/types/workOrder';
+import { WorkOrderJobLine } from '@/types/jobLine';
+import { WorkOrderPart } from '@/types/workOrderPart';
+import { TimeEntry } from '@/types/workOrder';
 import { WorkOrderComprehensiveOverview } from './details/WorkOrderComprehensiveOverview';
 import { PartsAndLaborTab } from './details/PartsAndLaborTab';
 import { WorkOrderDocuments } from './details/WorkOrderDocuments';
@@ -17,21 +23,13 @@ import { WorkOrderPageLayout } from './WorkOrderPageLayout';
 
 interface WorkOrderDetailsViewProps {
   workOrderId: string;
-  isCreateMode?: boolean;
-  prePopulatedData?: any;
-  onCreateWorkOrder?: any;
 }
 
-export function WorkOrderDetailsView({ 
-  workOrderId, 
-  isCreateMode = false, 
-  prePopulatedData, 
-  onCreateWorkOrder 
-}: WorkOrderDetailsViewProps) {
-  const [workOrder, setWorkOrder] = useState<any>(null);
-  const [jobLines, setJobLines] = useState<any[]>([]);
-  const [allParts, setAllParts] = useState<any[]>([]);
-  const [timeEntries, setTimeEntries] = useState<any[]>([]);
+export function WorkOrderDetailsView({ workOrderId }: WorkOrderDetailsViewProps) {
+  const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
+  const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
+  const [allParts, setAllParts] = useState<WorkOrderPart[]>([]);
+  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -77,8 +75,12 @@ export function WorkOrderDetailsView({
     fetchWorkOrderData();
   }, [workOrderId]);
 
-  const handleJobLinesChange = (updatedJobLines: any[]) => {
+  const handleJobLinesChange = (updatedJobLines: WorkOrderJobLine[]) => {
     setJobLines(updatedJobLines);
+  };
+
+  const handleTimeEntriesChange = (updatedTimeEntries: TimeEntry[]) => {
+    setTimeEntries(updatedTimeEntries);
   };
 
   const toggleEditMode = () => {
@@ -157,46 +159,50 @@ export function WorkOrderDetailsView({
         </Button>
       }
     >
-      {/* Comprehensive Overview */}
-      <WorkOrderComprehensiveOverview
-        workOrder={workOrder}
-        jobLines={jobLines}
-        allParts={allParts}
-        timeEntries={timeEntries}
-        onJobLinesChange={handleJobLinesChange}
-        isEditMode={isEditMode}
-      />
+      <div className="space-y-6">
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="parts-labor">Parts & Labor</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
+            <TabsTrigger value="activity">Activity</TabsTrigger>
+            <TabsTrigger value="communications">Communications</TabsTrigger>
+          </TabsList>
 
-      {/* Tabbed Content */}
-      <Tabs defaultValue="parts-labor" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="parts-labor">Parts & Labor</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
-          <TabsTrigger value="activity">Activity</TabsTrigger>
-          <TabsTrigger value="communications">Communications</TabsTrigger>
-        </TabsList>
+          <TabsContent value="overview" className="space-y-4">
+            <WorkOrderComprehensiveOverview
+              workOrder={workOrder}
+              jobLines={jobLines}
+              allParts={allParts}
+              timeEntries={timeEntries}
+              onJobLinesChange={handleJobLinesChange}
+              onTimeEntriesChange={handleTimeEntriesChange}
+              isEditMode={isEditMode}
+            />
+          </TabsContent>
 
-        <TabsContent value="parts-labor" className="mt-6">
-          <PartsAndLaborTab
-            workOrder={workOrder}
-            jobLines={jobLines}
-            onJobLinesChange={handleJobLinesChange}
-            isEditMode={isEditMode}
-          />
-        </TabsContent>
+          <TabsContent value="parts-labor" className="space-y-4">
+            <PartsAndLaborTab
+              workOrder={workOrder}
+              jobLines={jobLines}
+              onJobLinesChange={handleJobLinesChange}
+              isEditMode={isEditMode}
+            />
+          </TabsContent>
 
-        <TabsContent value="documents" className="mt-6">
-          <WorkOrderDocuments workOrderId={workOrder.id} />
-        </TabsContent>
+          <TabsContent value="documents" className="space-y-4">
+            <WorkOrderDocuments workOrderId={workOrder.id} />
+          </TabsContent>
 
-        <TabsContent value="activity" className="mt-6">
-          <WorkOrderActivityTab workOrderId={workOrder.id} />
-        </TabsContent>
+          <TabsContent value="activity" className="space-y-4">
+            <WorkOrderActivityTab workOrderId={workOrder.id} />
+          </TabsContent>
 
-        <TabsContent value="communications" className="mt-6">
-          <WorkOrderCommunications workOrder={workOrder} />
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="communications" className="space-y-4">
+            <WorkOrderCommunications workOrder={workOrder} />
+          </TabsContent>
+        </Tabs>
+      </div>
     </WorkOrderPageLayout>
   );
 }
