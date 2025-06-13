@@ -1,235 +1,240 @@
 
 import React from 'react';
-import { WorkOrder } from '@/types/workOrder';
+import { WorkOrder, TimeEntry } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
-import { TimeEntry } from '@/types/workOrder';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { WorkOrderCustomerVehicleInfo } from './WorkOrderCustomerVehicleInfo';
+import { Clock, Users, Package, DollarSign, AlertTriangle } from 'lucide-react';
 import { WorkOrderFinancialSummary } from './WorkOrderFinancialSummary';
-import { Wrench, Package, Clock, DollarSign } from 'lucide-react';
 
-interface WorkOrderComprehensiveOverviewProps {
+export interface WorkOrderComprehensiveOverviewProps {
   workOrder: WorkOrder;
   jobLines: WorkOrderJobLine[];
   allParts: WorkOrderPart[];
   timeEntries: TimeEntry[];
+  onJobLinesChange: (jobLines: WorkOrderJobLine[]) => void;
+  isEditMode: boolean;
 }
 
 export function WorkOrderComprehensiveOverview({
   workOrder,
   jobLines,
   allParts,
-  timeEntries
+  timeEntries,
+  onJobLinesChange,
+  isEditMode
 }: WorkOrderComprehensiveOverviewProps) {
+  const totalEstimatedHours = jobLines.reduce((sum, line) => sum + (line.estimated_hours || 0), 0);
+  const totalLaborAmount = jobLines.reduce((sum, line) => sum + (line.total_amount || 0), 0);
+  const totalPartsValue = allParts.reduce((sum, part) => sum + (part.total_price || 0), 0);
+  const totalTimeLogged = timeEntries.reduce((sum, entry) => sum + (entry.duration || 0), 0);
+
   // Group parts by job line
-  const partsByJobLine = allParts.reduce((acc, part) => {
-    const jobLineId = part.job_line_id || 'unlinked';
-    if (!acc[jobLineId]) acc[jobLineId] = [];
+  const partsGroupedByJobLine = allParts.reduce((acc, part) => {
+    const jobLineId = part.job_line_id || 'unassigned';
+    if (!acc[jobLineId]) {
+      acc[jobLineId] = [];
+    }
     acc[jobLineId].push(part);
     return acc;
   }, {} as Record<string, WorkOrderPart[]>);
 
-  // Calculate totals
-  const totalLaborHours = jobLines.reduce((sum, line) => sum + (line.estimated_hours || 0), 0);
-  const totalLaborAmount = jobLines.reduce((sum, line) => sum + (line.total_amount || 0), 0);
-  const totalPartsAmount = allParts.reduce((sum, part) => sum + (part.total_price || 0), 0);
-  const totalBillableTime = timeEntries.reduce((sum, entry) => {
-    return entry.billable ? sum + (entry.duration || 0) : sum;
-  }, 0);
-
-  const formatTime = (minutes: number) => {
-    if (minutes === 0) return "No time logged";
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours}h ${mins}m`;
-  };
-
   return (
     <div className="space-y-6">
-      {/* Work Order Header */}
+      {/* Key Metrics Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Job Lines</p>
+                <p className="text-2xl font-bold">{jobLines.length}</p>
+              </div>
+              <Users className="h-8 w-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Est. Hours</p>
+                <p className="text-2xl font-bold">{totalEstimatedHours.toFixed(1)}</p>
+              </div>
+              <Clock className="h-8 w-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Parts Count</p>
+                <p className="text-2xl font-bold">{allParts.length}</p>
+              </div>
+              <Package className="h-8 w-8 text-orange-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Time Logged</p>
+                <p className="text-2xl font-bold">
+                  {totalTimeLogged > 0 ? `${(totalTimeLogged / 60).toFixed(1)}h` : 'No time logged'}
+                </p>
+              </div>
+              <Clock className="h-8 w-8 text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Work Order Summary */}
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-start">
-            <div>
-              <CardTitle className="text-2xl">
-                Work Order #{workOrder.work_order_number || workOrder.id.slice(0, 8)}
-              </CardTitle>
-              <p className="text-muted-foreground mt-1">{workOrder.description}</p>
-            </div>
-            <Badge variant="outline" className="text-lg px-3 py-1">
-              {workOrder.status}
-            </Badge>
-          </div>
+          <CardTitle>Work Order Summary</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <Wrench className="h-5 w-5 text-blue-600" />
-                <span className="text-sm text-muted-foreground">Est. Labor</span>
-              </div>
-              <p className="text-2xl font-bold">{totalLaborHours.toFixed(1)}h</p>
-              <p className="text-xs text-muted-foreground">${totalLaborAmount.toFixed(2)}</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <p className="text-sm text-muted-foreground">Status</p>
+              <Badge variant="outline" className="mt-1">
+                {workOrder.status}
+              </Badge>
             </div>
-            
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <Package className="h-5 w-5 text-green-600" />
-                <span className="text-sm text-muted-foreground">Parts</span>
-              </div>
-              <p className="text-2xl font-bold">{allParts.length}</p>
-              <p className="text-xs text-muted-foreground">${totalPartsAmount.toFixed(2)}</p>
+            <div>
+              <p className="text-sm text-muted-foreground">Customer</p>
+              <p className="font-medium">{workOrder.customer_name || 'Unknown'}</p>
             </div>
-            
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <Clock className="h-5 w-5 text-purple-600" />
-                <span className="text-sm text-muted-foreground">Time Logged</span>
-              </div>
-              <p className="text-2xl font-bold">{formatTime(totalBillableTime)}</p>
-              <p className="text-xs text-muted-foreground">{timeEntries.length} entries</p>
-            </div>
-            
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <DollarSign className="h-5 w-5 text-orange-600" />
-                <span className="text-sm text-muted-foreground">Total</span>
-              </div>
-              <p className="text-2xl font-bold">${(totalLaborAmount + totalPartsAmount).toFixed(2)}</p>
-              <p className="text-xs text-muted-foreground">estimated</p>
+            <div>
+              <p className="text-sm text-muted-foreground">Created</p>
+              <p className="font-medium">
+                {new Date(workOrder.created_at).toLocaleDateString()}
+              </p>
             </div>
           </div>
+          
+          {/* Vehicle Information */}
+          {(workOrder.vehicle_make || workOrder.vehicle_model || workOrder.vehicle_year) && (
+            <div className="mt-4 pt-4 border-t">
+              <p className="text-sm text-muted-foreground">Vehicle</p>
+              <p className="font-medium">
+                {[workOrder.vehicle_year, workOrder.vehicle_make, workOrder.vehicle_model]
+                  .filter(Boolean)
+                  .join(' ')}
+              </p>
+              {workOrder.vehicle_license_plate && (
+                <p className="text-sm text-muted-foreground">
+                  License: {workOrder.vehicle_license_plate}
+                </p>
+              )}
+              {workOrder.vehicle_vin && (
+                <p className="text-sm text-muted-foreground">
+                  VIN: {workOrder.vehicle_vin}
+                </p>
+              )}
+            </div>
+          )}
+
+          {workOrder.description && (
+            <div className="mt-4 pt-4 border-t">
+              <p className="text-sm text-muted-foreground">Description</p>
+              <p className="font-medium">{workOrder.description}</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Customer and Vehicle Information */}
-      <WorkOrderCustomerVehicleInfo workOrder={workOrder} />
-
-      {/* Job Lines with Parts Hierarchy */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Job Lines & Associated Parts</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {jobLines.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>No job lines found</p>
-            </div>
-          ) : (
+      {/* Job Lines with Parts Breakdown */}
+      {jobLines.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Job Lines & Parts Breakdown</CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="space-y-4">
               {jobLines.map((jobLine) => {
-                const jobLineParts = partsByJobLine[jobLine.id] || [];
-                const jobLinePartsTotal = jobLineParts.reduce((sum, part) => sum + (part.total_price || 0), 0);
-                const jobLineGrandTotal = (jobLine.total_amount || 0) + jobLinePartsTotal;
-
+                const jobLineParts = partsGroupedByJobLine[jobLine.id] || [];
+                const jobLinePartsValue = jobLineParts.reduce((sum, part) => sum + (part.total_price || 0), 0);
+                
                 return (
-                  <div key={jobLine.id} className="border rounded-lg p-4 bg-gray-50">
-                    {/* Job Line Header */}
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-lg">{jobLine.name}</h4>
+                  <div key={jobLine.id} className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <h4 className="font-semibold">{jobLine.name}</h4>
                         {jobLine.description && (
-                          <p className="text-sm text-muted-foreground mt-1">{jobLine.description}</p>
+                          <p className="text-sm text-muted-foreground">{jobLine.description}</p>
                         )}
-                        <div className="flex items-center gap-4 mt-2">
-                          <Badge variant="outline">{jobLine.status}</Badge>
-                          {jobLine.category && (
-                            <Badge variant="secondary">{jobLine.category}</Badge>
-                          )}
-                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-muted-foreground">
+                          {jobLine.estimated_hours}h @ ${jobLine.labor_rate}/hr
+                        </p>
+                        <p className="font-semibold">${(jobLine.total_amount || 0).toFixed(2)}</p>
                       </div>
                     </div>
-
-                    {/* Job Line Details */}
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4 p-3 bg-white rounded border">
-                      <div>
-                        <span className="text-xs text-muted-foreground">Hours</span>
-                        <p className="font-medium">{jobLine.estimated_hours || 0}</p>
-                      </div>
-                      <div>
-                        <span className="text-xs text-muted-foreground">Rate</span>
-                        <p className="font-medium">${jobLine.labor_rate || 0}</p>
-                      </div>
-                      <div>
-                        <span className="text-xs text-muted-foreground">Labor</span>
-                        <p className="font-medium">${jobLine.total_amount || 0}</p>
-                      </div>
-                      <div>
-                        <span className="text-xs text-muted-foreground">Parts ({jobLineParts.length})</span>
-                        <p className="font-medium">${jobLinePartsTotal.toFixed(2)}</p>
-                      </div>
-                      <div className="border-l pl-4">
-                        <span className="text-xs text-muted-foreground">Line Total</span>
-                        <p className="font-bold text-lg">${jobLineGrandTotal.toFixed(2)}</p>
-                      </div>
-                    </div>
-
-                    {/* Associated Parts */}
+                    
                     {jobLineParts.length > 0 && (
-                      <div className="space-y-2">
-                        <h5 className="font-medium text-sm flex items-center gap-2">
-                          <Package className="h-4 w-4" />
-                          Associated Parts ({jobLineParts.length})
-                        </h5>
-                        <div className="grid gap-2">
+                      <div className="mt-3 pl-4 border-l-2 border-gray-200">
+                        <p className="text-sm font-medium text-muted-foreground mb-2">
+                          Parts ({jobLineParts.length}):
+                        </p>
+                        <div className="space-y-1">
                           {jobLineParts.map((part) => (
-                            <div key={part.id} className="flex justify-between items-center p-2 bg-white rounded border text-sm">
-                              <div className="flex-1">
-                                <span className="font-medium">{part.name}</span>
-                                {part.part_number && (
-                                  <span className="text-muted-foreground ml-2">({part.part_number})</span>
-                                )}
-                              </div>
-                              <div className="text-right">
-                                <span className="text-muted-foreground">Qty: {part.quantity} × ${part.unit_price}</span>
-                                <span className="font-medium ml-2">${part.total_price}</span>
-                              </div>
+                            <div key={part.id} className="flex justify-between text-sm">
+                              <span>{part.name} (Qty: {part.quantity})</span>
+                              <span className="font-medium">${(part.total_price || 0).toFixed(2)}</span>
                             </div>
                           ))}
+                        </div>
+                        <div className="flex justify-between text-sm font-semibold mt-2 pt-2 border-t">
+                          <span>Parts Subtotal:</span>
+                          <span>${jobLinePartsValue.toFixed(2)}</span>
                         </div>
                       </div>
                     )}
                   </div>
                 );
               })}
-
-              {/* Unlinked Parts */}
-              {partsByJobLine.unlinked && partsByJobLine.unlinked.length > 0 && (
-                <div className="border rounded-lg p-4 bg-yellow-50 border-yellow-200">
-                  <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                    <Package className="h-5 w-5 text-yellow-600" />
-                    Unlinked Parts ({partsByJobLine.unlinked.length})
-                  </h4>
-                  <div className="grid gap-2">
-                    {partsByJobLine.unlinked.map((part) => (
-                      <div key={part.id} className="flex justify-between items-center p-2 bg-white rounded border text-sm">
-                        <div className="flex-1">
-                          <span className="font-medium">{part.name}</span>
-                          {part.part_number && (
-                            <span className="text-muted-foreground ml-2">({part.part_number})</span>
-                          )}
-                        </div>
-                        <div className="text-right">
-                          <span className="text-muted-foreground">Qty: {part.quantity} × ${part.unit_price}</span>
-                          <span className="font-medium ml-2">${part.total_price}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Unassigned Parts */}
+      {partsGroupedByJobLine.unassigned?.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Unassigned Parts
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {partsGroupedByJobLine.unassigned.map((part) => (
+                <div key={part.id} className="flex justify-between items-center p-2 bg-amber-50 rounded">
+                  <span className="text-sm">{part.name} (Qty: {part.quantity})</span>
+                  <span className="font-medium">${(part.total_price || 0).toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Financial Summary */}
       <WorkOrderFinancialSummary
-        workOrder={workOrder}
-        jobLines={jobLines}
-        allParts={allParts}
+        laborTotal={totalLaborAmount}
+        partsTotal={totalPartsValue}
+        estimatedHours={totalEstimatedHours}
+        timeLogged={totalTimeLogged}
       />
     </div>
   );

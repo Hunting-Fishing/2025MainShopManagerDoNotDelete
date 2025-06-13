@@ -1,18 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Clock, User, FileText, MessageSquare, Activity, Wrench, DollarSign } from 'lucide-react';
-import { WorkOrder, TimeEntry } from '@/types/workOrder';
-import { WorkOrderJobLine } from '@/types/jobLine';
-import { WorkOrderPart } from '@/types/workOrderPart';
+import { Clock, FileText, MessageSquare, Activity, Wrench, DollarSign } from 'lucide-react';
 import { getWorkOrderById } from '@/services/workOrder';
 import { getWorkOrderJobLines } from '@/services/workOrder/jobLinesService';
 import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
-import { getTimeEntriesByWorkOrder } from '@/services/workOrder/timeTrackingService';
+import { getWorkOrderTimeEntries } from '@/services/workOrder/workOrderTimeTrackingService';
 import { WorkOrderComprehensiveOverview } from './details/WorkOrderComprehensiveOverview';
 import { PartsAndLaborTab } from './details/PartsAndLaborTab';
 import { WorkOrderPartsSection } from './parts/WorkOrderPartsSection';
@@ -21,19 +17,22 @@ import { WorkOrderDocuments } from './details/WorkOrderDocuments';
 import { WorkOrderCommunications } from './communications/WorkOrderCommunications';
 import { WorkOrderActivityTab } from './details/WorkOrderActivityTab';
 import { WorkOrderCustomerVehicleInfo } from './details/WorkOrderCustomerVehicleInfo';
+import { WorkOrder, TimeEntry } from '@/types/workOrder';
+import { WorkOrderJobLine } from '@/types/jobLine';
+import { WorkOrderPart } from '@/types/workOrderPart';
 
 export interface WorkOrderDetailsViewProps {
   workOrderId: string;
   isCreateMode?: boolean;
-  prePopulatedData?: any;
-  onCreateWorkOrder?: (workOrderData: any) => Promise<void>;
+  prePopulatedData?: Record<string, any>;
+  onCreateWorkOrder?: (data: any) => Promise<void>;
 }
 
-export function WorkOrderDetailsView({ 
-  workOrderId, 
+export function WorkOrderDetailsView({
+  workOrderId,
   isCreateMode = false,
   prePopulatedData,
-  onCreateWorkOrder 
+  onCreateWorkOrder
 }: WorkOrderDetailsViewProps) {
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
@@ -55,7 +54,7 @@ export function WorkOrderDetailsView({
           const [jobLinesData, partsData, timeEntriesData] = await Promise.all([
             getWorkOrderJobLines(workOrderId),
             getWorkOrderParts(workOrderId),
-            getTimeEntriesByWorkOrder(workOrderId)
+            getWorkOrderTimeEntries(workOrderId)
           ]);
           
           setJobLines(jobLinesData);
@@ -70,12 +69,20 @@ export function WorkOrderDetailsView({
     fetchData();
   }, [workOrderId, isCreateMode]);
 
+  const handleJobLinesChange = (updatedJobLines: WorkOrderJobLine[]) => {
+    setJobLines(updatedJobLines);
+  };
+
+  const handleTimeEntriesUpdate = (updatedEntries: TimeEntry[]) => {
+    setTimeEntries(updatedEntries);
+  };
+
   if (isLoading) {
     return (
       <div className="container mx-auto p-6">
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-          <div className="h-64 bg-gray-200 rounded"></div>
+          <div className="h-8 bg-gray-200 rounded w-1/4 mb-4" />
+          <div className="h-64 bg-gray-200 rounded" />
         </div>
       </div>
     );
@@ -99,7 +106,7 @@ export function WorkOrderDetailsView({
   }
 
   // For create mode, use a default work order structure
-  const displayWorkOrder = workOrder || {
+  const displayWorkOrder: WorkOrder = workOrder || {
     id: 'new',
     status: 'pending',
     created_at: new Date().toISOString(),
@@ -109,19 +116,17 @@ export function WorkOrderDetailsView({
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      {/* Customer and Vehicle Information */}
       {!isCreateMode && (
         <WorkOrderCustomerVehicleInfo workOrder={displayWorkOrder} />
       )}
 
-      {/* Main Content Tabs */}
       <Tabs defaultValue="overview" className="w-full">
         <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
             Overview
           </TabsTrigger>
-          <TabsTrigger value="labor" className="flex items-center gap-2">
+          <TabsTrigger value="labour" className="flex items-center gap-2">
             <Wrench className="h-4 w-4" />
             Labour
           </TabsTrigger>
@@ -148,22 +153,21 @@ export function WorkOrderDetailsView({
         </TabsList>
 
         <TabsContent value="overview">
-          <WorkOrderComprehensiveOverview 
+          <WorkOrderComprehensiveOverview
             workOrder={displayWorkOrder}
             jobLines={jobLines}
             allParts={allParts}
             timeEntries={timeEntries}
-            onJobLinesChange={setJobLines}
+            onJobLinesChange={handleJobLinesChange}
             isEditMode={isEditMode}
           />
         </TabsContent>
 
-        <TabsContent value="labor">
-          <PartsAndLaborTab 
-            workOrder={displayWorkOrder}
+        <TabsContent value="labour">
+          <PartsAndLaborTab
+            workOrderId={displayWorkOrder.id}
             jobLines={jobLines}
-            allParts={allParts}
-            onJobLinesChange={setJobLines}
+            onJobLinesChange={handleJobLinesChange}
             isEditMode={isEditMode}
           />
         </TabsContent>
@@ -179,7 +183,7 @@ export function WorkOrderDetailsView({
           <TimeTrackingSection
             workOrderId={displayWorkOrder.id}
             timeEntries={timeEntries}
-            onUpdateTimeEntries={setTimeEntries}
+            onUpdateTimeEntries={handleTimeEntriesUpdate}
             isEditMode={isEditMode}
           />
         </TabsContent>
@@ -196,18 +200,6 @@ export function WorkOrderDetailsView({
           <WorkOrderActivityTab workOrderId={displayWorkOrder.id} />
         </TabsContent>
       </Tabs>
-
-      {/* Edit Mode Toggle */}
-      {!isCreateMode && (
-        <div className="flex justify-end">
-          <Button
-            variant="outline"
-            onClick={() => setIsEditMode(!isEditMode)}
-          >
-            {isEditMode ? 'Exit Edit Mode' : 'Edit Work Order'}
-          </Button>
-        </div>
-      )}
     </div>
   );
 }
