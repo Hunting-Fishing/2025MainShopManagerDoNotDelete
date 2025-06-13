@@ -81,6 +81,24 @@ export async function updateWorkOrderJobLine(jobLine: WorkOrderJobLine): Promise
   }
 }
 
+export async function upsertWorkOrderJobLine(jobLine: WorkOrderJobLine): Promise<WorkOrderJobLine> {
+  if (jobLine.id) {
+    return updateWorkOrderJobLine(jobLine);
+  } else {
+    return createWorkOrderJobLine(jobLine.work_order_id, {
+      name: jobLine.name,
+      category: jobLine.category,
+      subcategory: jobLine.subcategory,
+      description: jobLine.description,
+      estimated_hours: jobLine.estimated_hours,
+      labor_rate: jobLine.labor_rate,
+      labor_rate_type: jobLine.labor_rate_type,
+      status: jobLine.status,
+      notes: jobLine.notes
+    });
+  }
+}
+
 export async function deleteWorkOrderJobLine(jobLineId: string): Promise<void> {
   try {
     const { error } = await supabase

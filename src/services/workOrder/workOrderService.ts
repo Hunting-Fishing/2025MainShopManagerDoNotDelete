@@ -21,6 +21,7 @@ export {
   getWorkOrderJobLines,
   createWorkOrderJobLine,
   updateWorkOrderJobLine,
+  upsertWorkOrderJobLine,
   deleteWorkOrderJobLine
 } from './jobLinesService';
 

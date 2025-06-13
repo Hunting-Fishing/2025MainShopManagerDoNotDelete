@@ -1,31 +1,52 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Loader2, AlertCircle, Edit, X } from 'lucide-react';
-import { 
-  getWorkOrderById,
-  getWorkOrderJobLines,
-  getWorkOrderParts,
-  getWorkOrderTimeEntries
-} from '@/services/workOrder/workOrderService';
-import { WorkOrder } from '@/types/workOrder';
-import { WorkOrderJobLine } from '@/types/jobLine';
-import { WorkOrderPart } from '@/types/workOrderPart';
-import { TimeEntry } from '@/types/workOrder';
+import { getWorkOrderById } from '@/services/workOrder';
+import { getWorkOrderJobLines } from '@/services/workOrder/jobLinesService';
+import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
+import { getWorkOrderTimeEntries } from '@/services/workOrder/workOrderTimeTrackingService';
 import { WorkOrderComprehensiveOverview } from './details/WorkOrderComprehensiveOverview';
 import { PartsAndLaborTab } from './details/PartsAndLaborTab';
 import { WorkOrderDocuments } from './details/WorkOrderDocuments';
 import { WorkOrderActivityTab } from './details/WorkOrderActivityTab';
 import { WorkOrderCommunications } from './communications/WorkOrderCommunications';
 import { WorkOrderPageLayout } from './WorkOrderPageLayout';
+import { WorkOrder } from '@/types/workOrder';
+import { WorkOrderJobLine } from '@/types/jobLine';
+import { WorkOrderPart } from '@/types/workOrderPart';
+import { TimeEntry } from '@/types/workOrder';
 
-interface WorkOrderDetailsViewProps {
+export interface WorkOrderDetailsViewProps {
   workOrderId: string;
+  isCreateMode?: boolean;
+  prePopulatedData?: {
+    customerId?: string;
+    customerName?: string;
+    customerEmail?: string;
+    customerPhone?: string;
+    customerAddress?: string;
+    title?: string;
+    description?: string;
+    priority?: string;
+    equipmentName?: string;
+    equipmentType?: string;
+    vehicleMake?: string;
+    vehicleModel?: string;
+    vehicleYear?: string;
+    vehicleLicensePlate?: string;
+    vehicleVin?: string;
+  };
+  onCreateWorkOrder?: (values: any) => Promise<void>;
 }
 
-export function WorkOrderDetailsView({ workOrderId }: WorkOrderDetailsViewProps) {
+export function WorkOrderDetailsView({ 
+  workOrderId, 
+  isCreateMode = false, 
+  prePopulatedData, 
+  onCreateWorkOrder 
+}: WorkOrderDetailsViewProps) {
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
   const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
   const [allParts, setAllParts] = useState<WorkOrderPart[]>([]);
@@ -77,10 +98,6 @@ export function WorkOrderDetailsView({ workOrderId }: WorkOrderDetailsViewProps)
 
   const handleJobLinesChange = (updatedJobLines: WorkOrderJobLine[]) => {
     setJobLines(updatedJobLines);
-  };
-
-  const handleTimeEntriesChange = (updatedTimeEntries: TimeEntry[]) => {
-    setTimeEntries(updatedTimeEntries);
   };
 
   const toggleEditMode = () => {
@@ -141,7 +158,7 @@ export function WorkOrderDetailsView({ workOrderId }: WorkOrderDetailsViewProps)
       description={workOrder.description || 'Work Order Details'}
       backLink="/work-orders"
       actions={
-        <Button 
+        <Button
           variant={isEditMode ? "destructive" : "outline"}
           onClick={toggleEditMode}
         >
@@ -159,50 +176,48 @@ export function WorkOrderDetailsView({ workOrderId }: WorkOrderDetailsViewProps)
         </Button>
       }
     >
-      <div className="space-y-6">
-        <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="parts-labor">Parts & Labor</TabsTrigger>
-            <TabsTrigger value="documents">Documents</TabsTrigger>
-            <TabsTrigger value="activity">Activity</TabsTrigger>
-            <TabsTrigger value="communications">Communications</TabsTrigger>
-          </TabsList>
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="parts-labor">Parts & Labor</TabsTrigger>
+          <TabsTrigger value="documents">Documents</TabsTrigger>
+          <TabsTrigger value="activity">Activity</TabsTrigger>
+          <TabsTrigger value="communications">Communications</TabsTrigger>
+        </TabsList>
 
-          <TabsContent value="overview" className="space-y-4">
-            <WorkOrderComprehensiveOverview
-              workOrder={workOrder}
-              jobLines={jobLines}
-              allParts={allParts}
-              timeEntries={timeEntries}
-              onJobLinesChange={handleJobLinesChange}
-              onTimeEntriesChange={handleTimeEntriesChange}
-              isEditMode={isEditMode}
-            />
-          </TabsContent>
+        <TabsContent value="overview">
+          <WorkOrderComprehensiveOverview
+            workOrder={workOrder}
+            jobLines={jobLines}
+            allParts={allParts}
+            timeEntries={timeEntries}
+            onJobLinesChange={handleJobLinesChange}
+            onTimeEntriesChange={setTimeEntries}
+            isEditMode={isEditMode}
+          />
+        </TabsContent>
 
-          <TabsContent value="parts-labor" className="space-y-4">
-            <PartsAndLaborTab
-              workOrder={workOrder}
-              jobLines={jobLines}
-              onJobLinesChange={handleJobLinesChange}
-              isEditMode={isEditMode}
-            />
-          </TabsContent>
+        <TabsContent value="parts-labor">
+          <PartsAndLaborTab
+            workOrder={workOrder}
+            jobLines={jobLines}
+            onJobLinesChange={handleJobLinesChange}
+            isEditMode={isEditMode}
+          />
+        </TabsContent>
 
-          <TabsContent value="documents" className="space-y-4">
-            <WorkOrderDocuments workOrderId={workOrder.id} />
-          </TabsContent>
+        <TabsContent value="documents">
+          <WorkOrderDocuments workOrderId={workOrder.id} />
+        </TabsContent>
 
-          <TabsContent value="activity" className="space-y-4">
-            <WorkOrderActivityTab workOrderId={workOrder.id} />
-          </TabsContent>
+        <TabsContent value="activity">
+          <WorkOrderActivityTab workOrderId={workOrder.id} />
+        </TabsContent>
 
-          <TabsContent value="communications" className="space-y-4">
-            <WorkOrderCommunications workOrder={workOrder} />
-          </TabsContent>
-        </Tabs>
-      </div>
+        <TabsContent value="communications">
+          <WorkOrderCommunications workOrder={workOrder} />
+        </TabsContent>
+      </Tabs>
     </WorkOrderPageLayout>
   );
 }
