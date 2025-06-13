@@ -1,78 +1,55 @@
 
 import React, { useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { WorkOrderDetailsTabs } from './details/WorkOrderDetailsTabs';
+import { useWorkOrder } from '@/hooks/useWorkOrder';
+import { useJobLines } from '@/hooks/useJobLines';
+import { useTechnicians } from '@/hooks/useTechnicians';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { workOrderFormSchema, WorkOrderFormSchemaValues } from '@/schemas/workOrderSchema';
-import { useTechnicians } from '@/hooks/useTechnicians';
-import { useWorkOrder } from '@/hooks/useWorkOrder';
-import { useJobLines } from '@/hooks/useJobLines';
-import { useWorkOrderEditForm } from '@/hooks/useWorkOrderEditForm';
-import { CreateWorkOrderTab } from './details/CreateWorkOrderTab';
-import { WorkOrderDetailsTab } from './details/WorkOrderDetailsTab';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { updateWorkOrder } from '@/services/workOrder/workOrderMutationService';
+import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, Loader2 } from 'lucide-react';
+import { WorkOrderStatus, WorkOrderPriority } from '@/types/workOrder';
 
 interface WorkOrderDetailsViewProps {
-  workOrderId: string;
-  isCreateMode?: boolean;
-  prePopulatedData?: Record<string, any>;
-  onCreateWorkOrder?: (data: WorkOrderFormSchemaValues) => void;
+  workOrderId?: string;
 }
 
-export function WorkOrderDetailsView({
-  workOrderId,
-  isCreateMode = false,
-  prePopulatedData = {},
-  onCreateWorkOrder
-}: WorkOrderDetailsViewProps) {
-  const [activeTab, setActiveTab] = useState(isCreateMode ? 'edit' : 'details');
-
-  // Fetch work order data
-  const { workOrder, isLoading: workOrderLoading, error: workOrderError } = useWorkOrder(workOrderId);
+export function WorkOrderDetailsView({ workOrderId }: WorkOrderDetailsViewProps) {
+  const { id } = useParams<{ id: string }>();
+  const finalWorkOrderId = workOrderId || id;
   
-  // Fetch job lines for this work order
-  const { jobLines, setJobLines, isLoading: jobLinesLoading } = useJobLines(workOrderId);
+  const { workOrder, isLoading: workOrderLoading, error: workOrderError } = useWorkOrder(finalWorkOrderId || '');
+  const { jobLines, isLoading: jobLinesLoading, setJobLines } = useJobLines(finalWorkOrderId || '');
+  const { technicians, isLoading: technicianLoading, error: technicianError } = useTechnicians();
+  
+  const [activeTab, setActiveTab] = useState('details');
+  const [isEditMode, setIsEditMode] = useState(false);
 
-  // Fetch technicians for the edit form
-  const { 
-    technicians, 
-    isLoading: technicianLoading, 
-    error: technicianError 
-  } = useTechnicians();
-
-  // Use the edit form hook for updating work order
-  const {
-    workOrder: editWorkOrder,
-    updateField,
-    handleSubmit,
-    loading: editLoading,
-    saving: editSaving,
-    error: editError
-  } = useWorkOrderEditForm(workOrderId);
-
-  // Form setup for editing
+  // Form setup with proper type casting
   const form = useForm<WorkOrderFormSchemaValues>({
     resolver: zodResolver(workOrderFormSchema),
     defaultValues: {
-      status: workOrder?.status || 'pending',
-      priority: workOrder?.priority || 'medium',
-      description: workOrder?.description || '',
       customer: workOrder?.customer_name || '',
-      customerEmail: workOrder?.customer_email || '',
-      customerPhone: workOrder?.customer_phone || '',
-      customerAddress: workOrder?.customer_address || '',
-      vehicleMake: workOrder?.vehicle_make || '',
-      vehicleModel: workOrder?.vehicle_model || '',
-      vehicleYear: workOrder?.vehicle_year || '',
-      licensePlate: workOrder?.vehicle_license_plate || '',
-      vin: workOrder?.vehicle_vin || '',
+      description: workOrder?.description || '',
+      status: (workOrder?.status as WorkOrderStatus) || 'pending',
+      priority: (workOrder?.priority as WorkOrderPriority) || 'medium',
       technician: workOrder?.technician || '',
       location: workOrder?.location || '',
       dueDate: workOrder?.due_date || '',
       notes: workOrder?.notes || '',
-      inventoryItems: [],
+      vehicleMake: workOrder?.vehicle_make || '',
+      vehicleModel: workOrder?.vehicle_model || '',
+      vehicleYear: workOrder?.vehicle_year || '',
+      odometer: workOrder?.vehicle_odometer || '',
+      licensePlate: workOrder?.vehicle_license_plate || '',
+      vin: workOrder?.vehicle_vin || '',
+      customerEmail: workOrder?.customer_email || '',
+      customerPhone: workOrder?.customer_phone || '',
+      customerAddress: workOrder?.customer_address || '',
     }
   });
 
@@ -80,142 +57,95 @@ export function WorkOrderDetailsView({
   React.useEffect(() => {
     if (workOrder) {
       form.reset({
-        status: workOrder.status || 'pending',
-        priority: workOrder.priority || 'medium',
-        description: workOrder.description || '',
         customer: workOrder.customer_name || '',
-        customerEmail: workOrder.customer_email || '',
-        customerPhone: workOrder.customer_phone || '',
-        customerAddress: workOrder.customer_address || '',
-        vehicleMake: workOrder.vehicle_make || '',
-        vehicleModel: workOrder.vehicle_model || '',
-        vehicleYear: workOrder.vehicle_year || '',
-        licensePlate: workOrder.vehicle_license_plate || '',
-        vin: workOrder.vehicle_vin || '',
+        description: workOrder.description || '',
+        status: (workOrder.status as WorkOrderStatus) || 'pending',
+        priority: (workOrder.priority as WorkOrderPriority) || 'medium',
         technician: workOrder.technician || '',
         location: workOrder.location || '',
         dueDate: workOrder.due_date || '',
         notes: workOrder.notes || '',
-        inventoryItems: workOrder.inventoryItems || [],
+        vehicleMake: workOrder.vehicle_make || '',
+        vehicleModel: workOrder.vehicle_model || '',
+        vehicleYear: workOrder.vehicle_year || '',
+        odometer: workOrder.vehicle_odometer || '',
+        licensePlate: workOrder.vehicle_license_plate || '',
+        vin: workOrder.vehicle_vin || '',
+        customerEmail: workOrder.customer_email || '',
+        customerPhone: workOrder.customer_phone || '',
+        customerAddress: workOrder.customer_address || '',
       });
     }
   }, [workOrder, form]);
 
-  const handleJobLinesChange = (newJobLines: any[]) => {
-    setJobLines(newJobLines);
-  };
-
-  const handleEditSubmit = async (data: WorkOrderFormSchemaValues) => {
+  const onCreateWorkOrder = async (data: WorkOrderFormSchemaValues) => {
+    if (!finalWorkOrderId) return;
+    
     try {
-      await handleSubmit();
-      // Optionally refresh data or show success message
+      await updateWorkOrder(finalWorkOrderId, data);
+      toast.success('Work order updated successfully');
+      setActiveTab('details');
+      setIsEditMode(false);
     } catch (error) {
       console.error('Error updating work order:', error);
+      toast.error('Failed to update work order');
     }
   };
 
-  // Loading state
   if (workOrderLoading || jobLinesLoading) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-              <p className="text-lg">Loading work order details...</p>
-            </div>
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p className="text-lg">Loading work order details...</p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
-  // Error state
   if (workOrderError || !workOrder) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              {workOrderError?.message || 'Work order not found'}
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Create mode - should not happen in this view
-  if (isCreateMode) {
-    return (
-      <CreateWorkOrderTab
-        form={form}
-        technicians={technicians}
-        technicianLoading={technicianLoading}
-        technicianError={technicianError || null}
-        jobLines={jobLines}
-        onJobLinesChange={handleJobLinesChange}
-        workOrderId={workOrderId}
-        prePopulatedCustomer={{
-          customerName: prePopulatedData.customerName,
-          customerEmail: prePopulatedData.customerEmail,
-          customerPhone: prePopulatedData.customerPhone,
-          customerAddress: prePopulatedData.customerAddress,
-          vehicleMake: prePopulatedData.vehicleMake,
-          vehicleModel: prePopulatedData.vehicleModel,
-          vehicleYear: prePopulatedData.vehicleYear,
-          vehicleLicensePlate: prePopulatedData.vehicleLicensePlate,
-          vehicleVin: prePopulatedData.vehicleVin,
-        }}
-        onCreateWorkOrder={onCreateWorkOrder}
-      />
+      <div className="container mx-auto p-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {workOrderError?.message || 'Work order not found'}
+          </AlertDescription>
+        </Alert>
+      </div>
     );
   }
 
   return (
-    <div className="w-full">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="details">Details</TabsTrigger>
-          <TabsTrigger value="edit">Edit</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="details">
-          <WorkOrderDetailsTab
-            workOrder={workOrder}
-            jobLines={jobLines}
-            allParts={[]} // Will be populated by the component internally
-            onJobLinesChange={handleJobLinesChange}
-            isEditMode={false}
-          />
-        </TabsContent>
-
-        <TabsContent value="edit">
-          <CreateWorkOrderTab
-            form={form}
-            technicians={technicians}
-            technicianLoading={technicianLoading}
-            technicianError={technicianError || null}
-            jobLines={jobLines}
-            onJobLinesChange={handleJobLinesChange}
-            workOrderId={workOrderId}
-            prePopulatedCustomer={{
-              customerName: workOrder.customer_name,
-              customerEmail: workOrder.customer_email,
-              customerPhone: workOrder.customer_phone,
-              customerAddress: workOrder.customer_address,
-              vehicleMake: workOrder.vehicle_make,
-              vehicleModel: workOrder.vehicle_model,
-              vehicleYear: workOrder.vehicle_year,
-              vehicleLicensePlate: workOrder.vehicle_license_plate,
-              vehicleVin: workOrder.vehicle_vin,
-            }}
-            onCreateWorkOrder={handleEditSubmit}
-            isEditMode={true}
-          />
-        </TabsContent>
-      </Tabs>
+    <div className="container mx-auto p-6">
+      <WorkOrderDetailsTabs
+        workOrder={workOrder}
+        form={form}
+        technicians={technicians}
+        technicianLoading={technicianLoading}
+        technicianError={technicianError?.message || null}
+        jobLines={jobLines}
+        onJobLinesChange={setJobLines}
+        onCreateWorkOrder={onCreateWorkOrder}
+        prePopulatedData={{
+          customerId: workOrder.customer_id,
+          customerName: workOrder.customer_name,
+          customerEmail: workOrder.customer_email,
+          customerPhone: workOrder.customer_phone,
+          customerAddress: workOrder.customer_address,
+          vehicleId: workOrder.vehicle_id,
+          vehicleMake: workOrder.vehicle_make,
+          vehicleModel: workOrder.vehicle_model,
+          vehicleYear: workOrder.vehicle_year,
+          vehicleLicensePlate: workOrder.vehicle_license_plate,
+          vehicleVin: workOrder.vehicle_vin,
+        }}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        isEditMode={isEditMode}
+      />
     </div>
   );
 }
