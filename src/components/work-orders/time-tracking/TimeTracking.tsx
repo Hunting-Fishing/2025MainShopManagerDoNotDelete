@@ -19,6 +19,7 @@ export const TimeTracking: React.FC<TimeTrackingProps> = ({
       workOrderId={workOrderId}
       timeEntries={timeEntries}
       onUpdateTimeEntries={onUpdateTimeEntries}
+      isEditMode={false}
     />
   );
 };

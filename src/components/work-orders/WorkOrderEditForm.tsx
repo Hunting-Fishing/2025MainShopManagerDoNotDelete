@@ -20,6 +20,7 @@ export const WorkOrderEditForm: React.FC<WorkOrderEditFormProps> = ({
         workOrderId={workOrderId}
         timeEntries={timeEntries}
         onUpdateTimeEntries={onUpdateTimeEntries}
+        isEditMode={true}
       />
     </div>
   );
