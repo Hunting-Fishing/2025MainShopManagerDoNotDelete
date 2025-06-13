@@ -1,8 +1,10 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { WorkOrder, WorkOrderStatusType } from "@/types/workOrder";
 import { toast } from "sonner";
 import { getWorkOrderById, updateWorkOrder } from "@/services/workOrder";
 import { useNavigate } from "react-router-dom";
+import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
 
 export const useWorkOrderEditForm = (workOrderId: string) => {
   const [workOrder, setWorkOrder] = useState<Partial<WorkOrder>>({});
@@ -52,13 +54,32 @@ export const useWorkOrderEditForm = (workOrderId: string) => {
         status: status || workOrder.status,
       };
       
-      // Handle vehicle_year field if it exists
-      if ('vehicle_year' in workOrderToSave) {
-        // Keep it as is, type system will handle it
-      }
+      // Convert WorkOrder data to the expected form schema format
+      const formData: Partial<WorkOrderFormSchemaValues> = {
+        customerId: workOrderToSave.customer_id,
+        customer: workOrderToSave.customer || workOrderToSave.customer_name || "",
+        customerEmail: workOrderToSave.customer_email,
+        customerPhone: workOrderToSave.customer_phone,
+        customerAddress: workOrderToSave.customer_address,
+        vehicleId: workOrderToSave.vehicle_id,
+        vehicleMake: workOrderToSave.vehicle_make,
+        vehicleModel: workOrderToSave.vehicle_model,
+        vehicleYear: workOrderToSave.vehicle_year,
+        licensePlate: workOrderToSave.vehicle_license_plate,
+        vin: workOrderToSave.vehicle_vin,
+        odometer: workOrderToSave.vehicle_odometer,
+        description: workOrderToSave.description || "",
+        status: workOrderToSave.status as WorkOrderStatusType,
+        priority: workOrderToSave.priority as "low" | "medium" | "high" | "urgent",
+        technician: workOrderToSave.technician,
+        technicianId: workOrderToSave.technician_id,
+        location: workOrderToSave.location,
+        dueDate: workOrderToSave.due_date || workOrderToSave.dueDate,
+        notes: workOrderToSave.notes,
+        inventoryItems: workOrderToSave.inventoryItems || workOrderToSave.inventory_items || [],
+      };
       
-      // Fixed: Pass both workOrderId and the updated work order data
-      const result = await updateWorkOrder(workOrderId, workOrderToSave);
+      const result = await updateWorkOrder(workOrderId, formData);
       toast.success("Work order updated successfully");
       return result;
     } catch (err) {
