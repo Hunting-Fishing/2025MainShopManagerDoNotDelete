@@ -1,7 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { WorkOrder, TimeEntry } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
@@ -9,25 +11,21 @@ import { WorkOrderPart } from '@/types/workOrderPart';
 import { getWorkOrderById } from '@/services/workOrder';
 import { getWorkOrderJobLines } from '@/services/workOrder/jobLinesService';
 import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
-import { getWorkOrderTimeEntries } from '@/services/workOrder/workOrderTimeTrackingService';
+import { getWorkOrderTimeEntries } from '@/services/workOrder/timeTrackingService';
 import { WorkOrderComprehensiveOverview } from './details/WorkOrderComprehensiveOverview';
-import { WorkOrderTabs } from './WorkOrderTabs';
+import { WorkOrderPartsSection } from './parts/WorkOrderPartsSection';
+import { TimeTrackingSection } from './time-tracking/TimeTrackingSection';
+import { WorkOrderDocuments } from './details/WorkOrderDocuments';
+import { WorkOrderCommunications } from './communications/WorkOrderCommunications';
+import { WorkOrderActivityTab } from './details/WorkOrderActivityTab';
 
-export interface WorkOrderDetailsViewProps {
+interface WorkOrderDetailsViewProps {
   workOrderId?: string;
-  isCreateMode?: boolean;
-  prePopulatedData?: any;
-  onCreateWorkOrder?: (workOrderData: any) => Promise<void>;
 }
 
-export function WorkOrderDetailsView({ 
-  workOrderId: propWorkOrderId,
-  isCreateMode = false,
-  prePopulatedData,
-  onCreateWorkOrder
-}: WorkOrderDetailsViewProps) {
-  const { id: paramWorkOrderId } = useParams<{ id: string }>();
-  const workOrderId = propWorkOrderId || paramWorkOrderId;
+export function WorkOrderDetailsView({ workOrderId }: WorkOrderDetailsViewProps) {
+  const { id: routeId } = useParams<{ id: string }>();
+  const finalWorkOrderId = workOrderId || routeId;
 
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
   const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
@@ -35,81 +33,63 @@ export function WorkOrderDetailsView({
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
-    if (!workOrderId || workOrderId === 'new' || isCreateMode) {
-      setLoading(false);
-      return;
+    if (finalWorkOrderId) {
+      fetchAllWorkOrderData(finalWorkOrderId);
     }
+  }, [finalWorkOrderId]);
 
-    const fetchAllData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  const fetchAllWorkOrderData = async (id: string) => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        console.log('Fetching work order data for ID:', workOrderId);
+      console.log('Fetching all work order data for:', id);
 
-        // Fetch work order
-        const workOrderData = await getWorkOrderById(workOrderId);
-        if (!workOrderData) {
-          setError('Work order not found');
-          return;
-        }
-        console.log('Work order loaded:', workOrderData);
-        setWorkOrder(workOrderData);
+      // Fetch all data in parallel
+      const [workOrderData, jobLinesData, partsData, timeEntriesData] = await Promise.all([
+        getWorkOrderById(id),
+        getWorkOrderJobLines(id),
+        getWorkOrderParts(id),
+        getWorkOrderTimeEntries(id)
+      ]);
 
-        // Fetch job lines
-        try {
-          const jobLinesData = await getWorkOrderJobLines(workOrderId);
-          console.log('Job lines loaded:', jobLinesData?.length || 0);
-          setJobLines(jobLinesData || []);
-        } catch (jobLinesError) {
-          console.error('Error fetching job lines:', jobLinesError);
-          setJobLines([]);
-        }
+      console.log('Fetched work order data:', {
+        workOrder: workOrderData,
+        jobLines: jobLinesData?.length || 0,
+        parts: partsData?.length || 0,
+        timeEntries: timeEntriesData?.length || 0
+      });
 
-        // Fetch parts
-        try {
-          const partsData = await getWorkOrderParts(workOrderId);
-          console.log('Parts loaded:', partsData?.length || 0);
-          setAllParts(partsData || []);
-        } catch (partsError) {
-          console.error('Error fetching parts:', partsError);
-          setAllParts([]);
-        }
-
-        // Fetch time entries
-        try {
-          const timeEntriesData = await getWorkOrderTimeEntries(workOrderId);
-          console.log('Time entries loaded:', timeEntriesData?.length || 0);
-          setTimeEntries(timeEntriesData || []);
-        } catch (timeError) {
-          console.error('Error fetching time entries:', timeError);
-          setTimeEntries([]);
-        }
-
-      } catch (err) {
-        console.error('Error fetching work order data:', err);
-        setError('Failed to load work order details');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAllData();
-  }, [workOrderId, isCreateMode]);
-
-  const handleUpdateTimeEntries = (updatedEntries: TimeEntry[]) => {
-    setTimeEntries(updatedEntries);
+      setWorkOrder(workOrderData);
+      setJobLines(jobLinesData || []);
+      setAllParts(partsData || []);
+      setTimeEntries(timeEntriesData || []);
+    } catch (err) {
+      console.error('Error fetching work order data:', err);
+      setError('Failed to load work order details');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  if (isCreateMode) {
+  const handleJobLinesChange = (updatedJobLines: WorkOrderJobLine[]) => {
+    setJobLines(updatedJobLines);
+  };
+
+  const handleTimeEntriesUpdate = (updatedTimeEntries: TimeEntry[]) => {
+    setTimeEntries(updatedTimeEntries);
+  };
+
+  if (!finalWorkOrderId) {
     return (
       <div className="container mx-auto p-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold">Create New Work Order</h1>
-          <p className="text-muted-foreground">Create mode functionality would go here</p>
-        </div>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>No work order ID provided</AlertDescription>
+        </Alert>
       </div>
     );
   }
@@ -132,34 +112,61 @@ export function WorkOrderDetailsView({
       <div className="container mx-auto p-6">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            {error || 'Work order not found'}
-          </AlertDescription>
+          <AlertDescription>{error || 'Work order not found'}</AlertDescription>
         </Alert>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Main Content */}
-      <div className="container mx-auto p-6 space-y-6">
-        {/* Comprehensive Overview */}
-        <WorkOrderComprehensiveOverview
-          workOrder={workOrder}
-          jobLines={jobLines}
-          allParts={allParts}
-          timeEntries={timeEntries}
-        />
+    <div className="container mx-auto p-6 space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="parts">Parts & Inventory</TabsTrigger>
+          <TabsTrigger value="time">Time Tracking</TabsTrigger>
+          <TabsTrigger value="documents">Documents</TabsTrigger>
+          <TabsTrigger value="communications">Communications</TabsTrigger>
+          <TabsTrigger value="activity">Activity</TabsTrigger>
+        </TabsList>
 
-        {/* Detailed Tabs */}
-        <WorkOrderTabs
-          workOrder={workOrder}
-          timeEntries={timeEntries}
-          onUpdateTimeEntries={handleUpdateTimeEntries}
-          isEditMode={false}
-        />
-      </div>
+        <TabsContent value="overview" className="space-y-6">
+          <WorkOrderComprehensiveOverview
+            workOrder={workOrder}
+            jobLines={jobLines}
+            allParts={allParts}
+            timeEntries={timeEntries}
+          />
+        </TabsContent>
+
+        <TabsContent value="parts">
+          <WorkOrderPartsSection
+            workOrderId={workOrder.id}
+            isEditMode={true}
+          />
+        </TabsContent>
+
+        <TabsContent value="time">
+          <TimeTrackingSection
+            workOrderId={workOrder.id}
+            timeEntries={timeEntries}
+            onUpdateTimeEntries={handleTimeEntriesUpdate}
+            isEditMode={true}
+          />
+        </TabsContent>
+
+        <TabsContent value="documents">
+          <WorkOrderDocuments workOrderId={workOrder.id} />
+        </TabsContent>
+
+        <TabsContent value="communications">
+          <WorkOrderCommunications workOrder={workOrder} />
+        </TabsContent>
+
+        <TabsContent value="activity">
+          <WorkOrderActivityTab workOrderId={workOrder.id} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
