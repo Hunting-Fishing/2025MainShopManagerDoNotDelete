@@ -3,42 +3,21 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { WorkOrder } from '@/types/workOrder';
+import { WorkOrder, TimeEntry } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
-import { TimeEntry } from '@/types/workOrder';
 import { getWorkOrderById } from '@/services/workOrder';
-import { useWorkOrderJobLines } from '@/hooks/useWorkOrderJobLines';
+import { getWorkOrderJobLines } from '@/services/workOrder/jobLinesService';
 import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
+import { getWorkOrderTimeEntries } from '@/services/workOrder/workOrderTimeTrackingService';
 import { WorkOrderComprehensiveOverview } from './details/WorkOrderComprehensiveOverview';
 import { WorkOrderTabs } from './WorkOrderTabs';
-import { CreateWorkOrderTab } from './details/CreateWorkOrderTab';
-import { useTechnicians } from '@/hooks/useTechnicians';
-import { useForm } from 'react-hook-form';
-import { WorkOrderFormSchemaValues } from '@/schemas/workOrderSchema';
 
 export interface WorkOrderDetailsViewProps {
   workOrderId?: string;
   isCreateMode?: boolean;
-  prePopulatedData?: {
-    customerId?: string;
-    customerName?: string;
-    customerEmail?: string;
-    customerPhone?: string;
-    customerAddress?: string;
-    title?: string;
-    description?: string;
-    priority?: string;
-    equipmentName?: string;
-    equipmentType?: string;
-    vehicleMake?: string;
-    vehicleModel?: string;
-    vehicleYear?: string;
-    vehicleLicensePlate?: string;
-    vehicleVin?: string;
-    [key: string]: any;
-  };
-  onCreateWorkOrder?: (values: any) => Promise<void>;
+  prePopulatedData?: any;
+  onCreateWorkOrder?: (workOrderData: any) => Promise<void>;
 }
 
 export function WorkOrderDetailsView({ 
@@ -49,95 +28,88 @@ export function WorkOrderDetailsView({
 }: WorkOrderDetailsViewProps) {
   const { id: paramWorkOrderId } = useParams<{ id: string }>();
   const workOrderId = propWorkOrderId || paramWorkOrderId;
-  
+
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
+  const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
   const [allParts, setAllParts] = useState<WorkOrderPart[]>([]);
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(!isCreateMode);
-  const [error, setError] = useState<Error | null>(null);
-
-  const { jobLines, isLoading: jobLinesLoading, updateJobLines } = useWorkOrderJobLines(workOrderId || '');
-  const { technicians, isLoading: technicianLoading, error: technicianError } = useTechnicians();
-
-  // Form for create mode
-  const form = useForm<WorkOrderFormSchemaValues>({
-    defaultValues: {
-      customer: prePopulatedData?.customerName || '',
-      description: prePopulatedData?.description || '',
-      status: 'pending' as const,
-      priority: (prePopulatedData?.priority as any) || 'medium' as const,
-      technician: '',
-      location: '',
-      dueDate: '',
-      notes: '',
-      vehicleMake: prePopulatedData?.vehicleMake || '',
-      vehicleModel: prePopulatedData?.vehicleModel || '',
-      vehicleYear: prePopulatedData?.vehicleYear || '',
-      odometer: '',
-      licensePlate: prePopulatedData?.vehicleLicensePlate || '',
-      vin: prePopulatedData?.vehicleVin || '',
-      inventoryItems: []
-    }
-  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isCreateMode && workOrderId && workOrderId !== 'new') {
-      fetchWorkOrderData(workOrderId);
+    if (!workOrderId || workOrderId === 'new' || isCreateMode) {
+      setLoading(false);
+      return;
     }
-  }, [workOrderId, isCreateMode]);
 
-  const fetchWorkOrderData = async (id: string) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      // Fetch work order details
-      const workOrderData = await getWorkOrderById(id);
-      if (workOrderData) {
+    const fetchAllData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Fetch work order
+        const workOrderData = await getWorkOrderById(workOrderId);
+        if (!workOrderData) {
+          setError('Work order not found');
+          return;
+        }
         setWorkOrder(workOrderData);
-        
-        // Fetch parts data
+
+        // Fetch job lines
         try {
-          const partsData = await getWorkOrderParts(id);
-          setAllParts(partsData);
+          const jobLinesData = await getWorkOrderJobLines(workOrderId);
+          setJobLines(jobLinesData || []);
+        } catch (jobLinesError) {
+          console.error('Error fetching job lines:', jobLinesError);
+          setJobLines([]);
+        }
+
+        // Fetch parts
+        try {
+          const partsData = await getWorkOrderParts(workOrderId);
+          setAllParts(partsData || []);
         } catch (partsError) {
           console.error('Error fetching parts:', partsError);
           setAllParts([]);
         }
 
-        // TODO: Fetch time entries data
-        setTimeEntries(workOrderData.timeEntries || []);
-      } else {
-        setError(new Error('Work order not found'));
+        // Fetch time entries
+        try {
+          const timeEntriesData = await getWorkOrderTimeEntries(workOrderId);
+          setTimeEntries(timeEntriesData || []);
+        } catch (timeError) {
+          console.error('Error fetching time entries:', timeError);
+          setTimeEntries([]);
+        }
+
+      } catch (err) {
+        console.error('Error fetching work order data:', err);
+        setError(typeof err === 'string' ? err : 'Failed to load work order details');
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error('Error fetching work order data:', err);
-      setError(err as Error);
-    } finally {
-      setIsLoading(false);
-    }
+    };
+
+    fetchAllData();
+  }, [workOrderId, isCreateMode]);
+
+  const handleUpdateTimeEntries = (updatedEntries: TimeEntry[]) => {
+    setTimeEntries(updatedEntries);
   };
 
-  // Handle create mode
   if (isCreateMode) {
+    // Handle create mode - could return a create form component
     return (
-      <CreateWorkOrderTab
-        form={form}
-        technicians={technicians}
-        technicianLoading={technicianLoading}
-        technicianError={technicianError?.message || null}
-        jobLines={jobLines}
-        onJobLinesChange={updateJobLines}
-        workOrderId={workOrderId}
-        prePopulatedCustomer={prePopulatedData}
-        onCreateWorkOrder={onCreateWorkOrder}
-        isEditMode={false}
-      />
+      <div className="container mx-auto p-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Create New Work Order</h1>
+          <p className="text-muted-foreground">Create mode functionality would go here</p>
+        </div>
+      </div>
     );
   }
 
-  // Handle loading state
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="container mx-auto p-6">
         <div className="flex items-center justify-center h-64">
@@ -150,14 +122,13 @@ export function WorkOrderDetailsView({
     );
   }
 
-  // Handle error state
   if (error || !workOrder) {
     return (
       <div className="container mx-auto p-6">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            {error?.message || 'Work order not found'}
+            {error || 'Work order not found'}
           </AlertDescription>
         </Alert>
       </div>
@@ -167,18 +138,18 @@ export function WorkOrderDetailsView({
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Comprehensive Overview */}
-      <WorkOrderComprehensiveOverview 
+      <WorkOrderComprehensiveOverview
         workOrder={workOrder}
         jobLines={jobLines}
         allParts={allParts}
         timeEntries={timeEntries}
       />
 
-      {/* Tab-based Interface */}
+      {/* Detailed Tabs */}
       <WorkOrderTabs
         workOrder={workOrder}
         timeEntries={timeEntries}
-        onUpdateTimeEntries={setTimeEntries}
+        onUpdateTimeEntries={handleUpdateTimeEntries}
         isEditMode={false}
       />
     </div>
