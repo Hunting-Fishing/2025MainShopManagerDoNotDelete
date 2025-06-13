@@ -1,39 +1,22 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { WorkOrderFormSchemaValues } from '@/schemas/workOrderSchema';
 
-export async function createWorkOrder(workOrderData: WorkOrderFormSchemaValues) {
-  console.log('Creating work order with data:', workOrderData);
+export async function createWorkOrder(formData: WorkOrderFormSchemaValues) {
+  console.log('Creating work order with data:', formData);
   
   try {
-    // Prepare the work order data for insertion
+    // Map form data to work_orders table structure (only include fields that exist in the table)
     const workOrderInsert = {
-      description: workOrderData.description,
-      status: workOrderData.status || 'pending',
-      customer_id: workOrderData.customerId || null,
-      vehicle_id: workOrderData.vehicleId || null,
-      technician_id: workOrderData.technicianId || null,
-      // Store customer information directly if no customer_id
-      customer_name: workOrderData.customer,
-      customer_email: workOrderData.customerEmail || null,
-      customer_phone: workOrderData.customerPhone || null,
-      customer_address: workOrderData.customerAddress || null,
-      // Store vehicle information directly
-      vehicle_make: workOrderData.vehicleMake || null,
-      vehicle_model: workOrderData.vehicleModel || null,
-      vehicle_year: workOrderData.vehicleYear || null,
-      vehicle_license_plate: workOrderData.licensePlate || null,
-      vehicle_vin: workOrderData.vin || null,
-      // Additional fields
-      notes: workOrderData.notes || null,
-      due_date: workOrderData.dueDate ? new Date(workOrderData.dueDate).toISOString() : null,
-      priority: workOrderData.priority || 'medium',
-      location: workOrderData.location || null,
+      customer_id: formData.customerId || null,
+      vehicle_id: formData.vehicleId || null,
+      technician_id: formData.technicianId || null,
+      description: formData.description,
+      status: formData.status,
+      service_type: formData.priority, // Using priority as service_type since that exists in the table
     };
 
     console.log('Prepared work order insert:', workOrderInsert);
 
-    // Insert the work order
     const { data: workOrder, error } = await supabase
       .from('work_orders')
       .insert(workOrderInsert)
