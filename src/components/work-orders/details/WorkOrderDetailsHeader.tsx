@@ -37,14 +37,18 @@ export function WorkOrderDetailsHeader({
       if (workOrder.customer_id) {
         setCustomerLoading(true);
         setCustomerError(null);
+        console.log("Attempting to load customer info for ID:", workOrder.customer_id);
         try {
           // Dynamically import the customer query service
           const { getCustomerById } = await import('@/services/customer/customerQueryService');
           const data = await getCustomerById(workOrder.customer_id!);
+          console.log("Fetched customer detail result:", data);
           if (!cancelled) {
             setCustomer(data);
+            if (!data) setCustomerError('No customer found for ID: ' + workOrder.customer_id);
           }
         } catch (err) {
+          console.error("Error in fetchCustomer for customer_id", workOrder.customer_id, err);
           if (!cancelled) {
             setCustomer(null);
             setCustomerError('Failed to load customer information');
@@ -54,6 +58,7 @@ export function WorkOrderDetailsHeader({
         }
       } else {
         setCustomer(null);
+        setCustomerError("No customer_id on work order");
       }
     }
     fetchCustomer();
@@ -62,7 +67,6 @@ export function WorkOrderDetailsHeader({
 
   const handleStatusUpdated = (newStatus: string) => {
     setCurrentStatus(newStatus);
-    // Force a page refresh to update all components with the new status
     window.location.reload();
   };
 
@@ -107,7 +111,15 @@ export function WorkOrderDetailsHeader({
                     )}
                   </>
                 ) : (
-                  <span className="text-gray-400">Unknown Customer</span>
+                  <span className="text-gray-400">
+                    Unknown Customer
+                    {workOrder.customer_id && (
+                      <>
+                        {" "}
+                        (customer_id: {workOrder.customer_id})
+                      </>
+                    )}
+                  </span>
                 )}
               </p>
             </div>
