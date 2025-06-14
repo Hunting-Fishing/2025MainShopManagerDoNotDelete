@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { WorkOrder } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
@@ -6,7 +5,6 @@ import { WorkOrderPart } from '@/types/workOrderPart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { JobLinesWithPartsDisplay } from './JobLinesWithPartsDisplay';
-import { WorkOrderOverviewHeader } from './WorkOrderOverviewHeader';
 import { WorkOrderCommunications } from '../communications/WorkOrderCommunications';
 import { WorkOrderPartsSection } from '../parts/WorkOrderPartsSection';
 import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
@@ -29,7 +27,6 @@ export function WorkOrderDetailsTab({
   const [allParts, setAllParts] = useState<WorkOrderPart[]>(initialParts);
   const [partsLoading, setPartsLoading] = useState(false);
 
-  // Fetch parts data when component mounts
   useEffect(() => {
     const fetchParts = async () => {
       if (workOrder.id) {
@@ -51,13 +48,6 @@ export function WorkOrderDetailsTab({
 
   return (
     <div className="space-y-6">
-      {/* Comprehensive Overview Header */}
-      <WorkOrderOverviewHeader 
-        workOrder={workOrder}
-        jobLines={jobLines}
-        allParts={allParts}
-      />
-
       {/* Work Order Summary */}
       <Card>
         <CardHeader>
@@ -82,8 +72,7 @@ export function WorkOrderDetailsTab({
               </p>
             </div>
           </div>
-          
-          {/* Vehicle Information */}
+
           {(workOrder.vehicle_make || workOrder.vehicle_model || workOrder.vehicle_year) && (
             <div className="mt-4 pt-4 border-t">
               <p className="text-sm text-muted-foreground">Vehicle</p>

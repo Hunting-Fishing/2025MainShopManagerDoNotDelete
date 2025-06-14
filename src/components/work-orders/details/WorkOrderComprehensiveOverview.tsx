@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { WorkOrder } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
@@ -28,14 +27,14 @@ export function WorkOrderComprehensiveOverview({
 }: WorkOrderComprehensiveOverviewProps) {
   return (
     <div className="space-y-6">
-      {/* Single Overview Header - removed duplicate */}
+      {/* Only the OverviewHeader here */}
       <WorkOrderOverviewHeader
         workOrder={workOrder}
         jobLines={jobLines}
         allParts={allParts}
       />
-      
-      {/* Work Order Details Content */}
+
+      {/* Content tab */}
       <WorkOrderDetailsTab
         workOrder={workOrder}
         jobLines={jobLines}
