@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { WorkOrder } from '@/types/workOrder';
@@ -10,25 +11,36 @@ import { WorkOrderDetailsHeader } from './details/WorkOrderDetailsHeader';
 import { WorkOrderComprehensiveOverview } from './details/WorkOrderComprehensiveOverview';
 import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
 
+// Updated props interface
 interface WorkOrderDetailsViewProps {
-  // No props needed, using router params
+  isCreateMode?: boolean;
+  prePopulatedData?: Record<string, any>; // For creation, pre-populate certain values
+  onCreateWorkOrder?: (values: any) => Promise<void>;
 }
 
-export function WorkOrderDetailsView({}: WorkOrderDetailsViewProps) {
+export function WorkOrderDetailsView({
+  isCreateMode = false,
+  prePopulatedData,
+  onCreateWorkOrder
+}: WorkOrderDetailsViewProps) {
   const { id: workOrderId } = useParams<{ id: string }>();
-  const { workOrder, isLoading: isWorkOrderLoading, error: workOrderError } = useWorkOrder(workOrderId || '');
-  const { jobLines, setJobLines, isLoading: isJobLinesLoading, error: jobLinesError } = useJobLines(workOrderId || '');
+
+  // If in create mode, do not load an existing work order
+  const shouldLoadData = !isCreateMode && !!workOrderId && workOrderId !== 'new';
+
+  const { workOrder, isLoading: isWorkOrderLoading, error: workOrderError } = useWorkOrder(shouldLoadData ? workOrderId! : '');
+  const { jobLines, setJobLines, isLoading: isJobLinesLoading, error: jobLinesError } = useJobLines(shouldLoadData ? workOrderId! : '');
   const [allParts, setAllParts] = useState<WorkOrderPart[]>([]);
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [isEditMode, setIsEditMode] = useState(false);
   const [partsLoading, setPartsLoading] = useState(false);
 
   useEffect(() => {
-    const fetchParts = async () => {
-      if (workOrderId) {
+    if (shouldLoadData) {
+      const fetchParts = async () => {
         try {
           setPartsLoading(true);
-          const parts = await getWorkOrderParts(workOrderId);
+          const parts = await getWorkOrderParts(workOrderId!);
           setAllParts(parts);
         } catch (error) {
           console.error('Error fetching work order parts:', error);
@@ -36,11 +48,11 @@ export function WorkOrderDetailsView({}: WorkOrderDetailsViewProps) {
         } finally {
           setPartsLoading(false);
         }
-      }
-    };
+      };
 
-    fetchParts();
-  }, [workOrderId]);
+      fetchParts();
+    }
+  }, [shouldLoadData, workOrderId]);
 
   const handleJobLinesChange = (newJobLines: WorkOrderJobLine[]) => {
     setJobLines(newJobLines);
@@ -49,6 +61,22 @@ export function WorkOrderDetailsView({}: WorkOrderDetailsViewProps) {
   const handleTimeEntriesChange = (newTimeEntries: TimeEntry[]) => {
     setTimeEntries(newTimeEntries);
   };
+
+  // Create Mode UI (render a creation form or workflow)
+  if (isCreateMode) {
+    // Assume a creation form should be rendered here.
+    // The full implementation is not shown, you'd inject/create a WorkOrderCreateForm or similar component.
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Create Work Order</h1>
+          {/* Replace below with actual form implementation as needed */}
+          {/* Example: <WorkOrderCreateForm prePopulatedData={prePopulatedData} onSubmit={onCreateWorkOrder} /> */}
+          <p className="text-muted-foreground">Work order creation coming soon.</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!workOrderId || isWorkOrderLoading || isJobLinesLoading || partsLoading) {
     return (
@@ -101,3 +129,4 @@ export function WorkOrderDetailsView({}: WorkOrderDetailsViewProps) {
     </div>
   );
 }
+

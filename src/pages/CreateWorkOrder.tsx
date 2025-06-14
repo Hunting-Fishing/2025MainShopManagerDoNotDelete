@@ -95,7 +95,6 @@ const CreateWorkOrder = () => {
 
       <ResponsiveContainer maxWidth="full" className="py-6">
         <WorkOrderDetailsView 
-          workOrderId="new"
           isCreateMode={true}
           prePopulatedData={cleanedData}
           onCreateWorkOrder={handleCreateWorkOrder}
@@ -106,3 +105,4 @@ const CreateWorkOrder = () => {
 };
 
 export default CreateWorkOrder;
+

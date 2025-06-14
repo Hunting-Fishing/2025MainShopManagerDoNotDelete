@@ -1,12 +1,7 @@
 
-import React from 'react';
-import { WorkOrderDetailsView } from '../WorkOrderDetailsView';
+// This file is obsolete and should be removed because all routing now uses WorkOrderDetailsView directly.
+// If routing needs a tabbed UI, add back relevant code! For now, make this a stub.
 
-interface WorkOrderDetailsTabsProps {
-  workOrderId: string;
-}
-
-// This component now redirects to the consolidated WorkOrderDetailsView
-export function WorkOrderDetailsTabs({ workOrderId }: WorkOrderDetailsTabsProps) {
-  return <WorkOrderDetailsView workOrderId={workOrderId} />;
+export function WorkOrderDetailsTabs() {
+  return null;
 }

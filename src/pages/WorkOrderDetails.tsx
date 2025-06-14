@@ -17,7 +17,7 @@ const WorkOrderDetails = () => {
     );
   }
 
-  return <WorkOrderDetailsView workOrderId={id} />;
+  return <WorkOrderDetailsView />;
 };
 
 export default WorkOrderDetails;

@@ -34,7 +34,6 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
   
   return (
     <WorkOrderDetailsView 
-      workOrderId="new"
       isCreateMode={true}
       prePopulatedData={prePopulatedCustomer}
       onCreateWorkOrder={onSubmit}
