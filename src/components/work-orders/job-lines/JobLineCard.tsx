@@ -1,18 +1,21 @@
 import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit, Plus, Check, X } from 'lucide-react';
-import { WorkOrderJobLine } from '@/types/jobLine';
-import { WorkOrderPart, WorkOrderPartFormValues } from '@/types/workOrderPart';
-import { PartDetailsCard } from '../parts/PartDetailsCard';
-import { formatCurrency } from '@/utils/formatters';
-import { createWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Pencil, Trash, GripVertical } from 'lucide-react';
+import { updateWorkOrderJobLine, deleteWorkOrderJobLine } from '@/services/workOrder/jobLinesService';
 import { toast } from 'sonner';
+import { Draggable } from '@dnd-kit/core';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { JobLineEditDialog } from './JobLineEditDialog';
+import { getWorkOrderTimeEntries, addTimeEntryToWorkOrder, updateTimeEntry } from '@/services/workOrder/workOrderTimeTrackingService';
+import { Loader2, Check, X, Clock } from "lucide-react";
+import { useEffect } from "react";
+import { TimeEntry } from '@/types/workOrder';
 
 interface JobLineCardProps {
-  jobLine: WorkOrderJobLine;
-  onUpdate?: (updatedJobLine: WorkOrderJobLine) => void;
+  jobLine: import("@/types/jobLine").WorkOrderJobLine;
+  onUpdate?: (jobLine: import("@/types/jobLine").WorkOrderJobLine) => void;
   onDelete?: (jobLineId: string) => void;
   isEditMode?: boolean;
 }
@@ -21,331 +24,170 @@ export function JobLineCard({
   jobLine,
   onUpdate,
   onDelete,
-  isEditMode = false
+  isEditMode,
 }: JobLineCardProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedJobLine, setEditedJobLine] = useState<WorkOrderJobLine>(jobLine);
-  const [isAddingPart, setIsAddingPart] = useState(false);
-  const [newPart, setNewPart] = useState<WorkOrderPartFormValues>({
-    part_number: '',
-    name: '',
-    quantity: 1,
-    unit_price: 0
-  });
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const handleEditToggle = () => {
-    if (isEditing) {
-      // Cancel edit
-      setEditedJobLine(jobLine);
-    } else {
-      // Start edit
-      setEditedJobLine({ ...jobLine });
-    }
-    setIsEditing(!isEditing);
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({id: jobLine.id});
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
   };
 
-  const handleSave = () => {
-    if (onUpdate) {
-      onUpdate(editedJobLine);
-    }
-    setIsEditing(false);
-  };
-
-  const handleDelete = () => {
-    if (onDelete && jobLine.id) {
-      onDelete(jobLine.id);
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setEditedJobLine({
-      ...editedJobLine,
-      [name]: value
-    });
-  };
-
-  const handleNewPartChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setNewPart({
-      ...newPart,
-      [name]: name === 'quantity' || name === 'unit_price' ? parseFloat(value) || 0 : value
-    });
-  };
-
-  const handleAddPart = async () => {
-    if (!newPart.name || !newPart.part_number) {
-      toast.error('Part name and part number are required');
-      return;
-    }
-
-    try {
-      const partToAdd: WorkOrderPartFormValues & { work_order_id: string; job_line_id: string } = {
-        ...newPart,
-        work_order_id: jobLine.work_order_id,
-        job_line_id: jobLine.id || ''
-      };
-
-      const addedPart = await createWorkOrderPart(partToAdd);
-
-      // Update the job line with the new part
-      const updatedJobLine = {
-        ...jobLine,
-        parts: [...(jobLine.parts || []), addedPart]
-      };
-
-      if (onUpdate) {
-        onUpdate(updatedJobLine);
-      }
-
-      // Reset form
-      setNewPart({
-        part_number: '',
-        name: '',
-        quantity: 1,
-        unit_price: 0
-      });
-      setIsAddingPart(false);
-      toast.success('Part added successfully');
-    } catch (error) {
-      console.error('Error adding part:', error);
-      toast.error('Failed to add part');
-    }
-  };
-
-  const handleRemovePart = (partId: string) => {
-    const updatedParts = jobLine.parts?.filter(p => p.id !== partId) || [];
-    const updatedJobLine = {
-      ...jobLine,
-      parts: updatedParts
-    };
-    
+  const handleUpdate = async (updatedJobLine: import("@/types/jobLine").WorkOrderJobLine) => {
     if (onUpdate) {
       onUpdate(updatedJobLine);
     }
   };
 
-  const calculateTotalAmount = () => {
-    let laborTotal = 0;
-    if (jobLine.estimated_hours && jobLine.labor_rate) {
-      laborTotal = jobLine.estimated_hours * jobLine.labor_rate;
-    }
+  const handleDelete = async () => {
+    if (!jobLine.id) return;
 
-    let partsTotal = 0;
-    if (jobLine.parts && jobLine.parts.length > 0) {
-      partsTotal = jobLine.parts.reduce((sum, part) => {
-        return sum + (part.total_price || 0);
-      }, 0);
+    try {
+      setIsDeleting(true);
+      await deleteWorkOrderJobLine(jobLine.id);
+      toast.success('Job line deleted successfully');
+      onDelete?.(jobLine.id);
+    } catch (error: any) {
+      console.error('Error deleting job line:', error);
+      toast.error('Failed to delete job line');
+    } finally {
+      setIsDeleting(false);
     }
+  };
 
-    return laborTotal + partsTotal;
+  // Add new state for time tracking
+  const [isTracking, setIsTracking] = useState(false);
+  const [jobLineTimeEntry, setJobLineTimeEntry] = useState<TimeEntry | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch current time entry for this job line
+  useEffect(() => {
+    fetchCurrentEntry();
+    // eslint-disable-next-line
+  }, [jobLine.id]);
+
+  const fetchCurrentEntry = async () => {
+    setIsLoading(true);
+    try {
+      const entries = await getWorkOrderTimeEntries(jobLine.work_order_id, jobLine.id);
+      const active = entries.find(e => !e.end_time);
+      setJobLineTimeEntry(active || null);
+    } catch (e) {
+      console.error(e);
+      setJobLineTimeEntry(null);
+    }
+    setIsLoading(false);
+  };
+
+  // Handler to clock ON this job line
+  const handleClockOn = async () => {
+    setIsLoading(true);
+    try {
+      const userName = "Technician";
+      const userId = "1";
+      const now = new Date().toISOString();
+      const newEntry = {
+        employee_id: userId,
+        employee_name: userName,
+        job_line_id: jobLine.id,
+        start_time: now,
+        duration: 0,
+        billable: true,
+        notes: "",
+        created_at: now
+      };
+      await addTimeEntryToWorkOrder(jobLine.work_order_id, newEntry);
+      toast({ title: "Clocked On", description: "Tech clocked on for this job line." });
+      fetchCurrentEntry();
+    } catch (e) {
+      toast({ title: "Clock On Failed", description: "Unable to clock on.", variant: "destructive" });
+    }
+    setIsLoading(false);
+  };
+
+  // Handler to clock OFF this job line
+  const handleClockOff = async () => {
+    if (!jobLineTimeEntry) return;
+    setIsLoading(true);
+    try {
+      const end = new Date().toISOString();
+      const updates = {
+        end_time: end,
+        duration: (new Date(end).getTime() - new Date(jobLineTimeEntry.start_time).getTime()) / (1000 * 60),
+        billable: true
+      };
+      await updateTimeEntry(jobLineTimeEntry.id, updates);
+      toast({ title: "Clocked Off", description: "Tech clocked off for this job line." });
+      fetchCurrentEntry();
+    } catch (e) {
+      toast({ title: "Clock Off Failed", description: "Unable to clock off.", variant: "destructive" });
+    }
+    setIsLoading(false);
   };
 
   return (
-    <Card className="mb-4">
-      <CardContent className="p-4">
-        {/* Header with name and actions */}
-        <div className="flex justify-between items-start mb-3">
-          <div>
-            {isEditing ? (
-              <input
-                type="text"
-                name="name"
-                value={editedJobLine.name}
-                onChange={handleInputChange}
-                className="border p-1 rounded w-full"
-              />
-            ) : (
-              <h3 className="font-medium text-lg">{jobLine.name}</h3>
-            )}
-            <div className="flex items-center gap-2 mt-1">
-              <Badge variant="outline">{jobLine.status || 'Pending'}</Badge>
-              {jobLine.category && (
-                <span className="text-xs text-muted-foreground">{jobLine.category}</span>
-              )}
-            </div>
+    <div className="bg-white rounded shadow p-4 flex flex-col gap-2">
+      <div className="flex justify-between items-start">
+        <div className="font-bold text-lg">{jobLine.name}</div>
+        {isEditMode && (
+          <div className="flex items-center">
+            <Button variant="ghost" size="icon" onClick={() => setIsEditDialogOpen(true)}>
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={handleDelete} disabled={isDeleting}>
+              <Trash className="h-4 w-4" />
+            </Button>
           </div>
-          <div className="flex gap-2">
-            {isEditMode && !isEditing && (
-              <>
-                <Button variant="ghost" size="sm" onClick={handleEditToggle}>
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="sm" onClick={handleDelete}>
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-              </>
-            )}
-            {isEditing && (
-              <>
-                <Button variant="ghost" size="sm" onClick={handleSave}>
-                  <Check className="h-4 w-4 text-green-600" />
-                </Button>
-                <Button variant="ghost" size="sm" onClick={handleEditToggle}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Description */}
-        {isEditing ? (
-          <textarea
-            name="description"
-            value={editedJobLine.description || ''}
-            onChange={handleInputChange}
-            className="border p-2 rounded w-full mb-3"
-            rows={2}
-          />
-        ) : (
-          jobLine.description && (
-            <p className="text-sm text-muted-foreground mb-3">{jobLine.description}</p>
-          )
         )}
+      </div>
 
-        {/* Labor details */}
-        <div className="grid grid-cols-3 gap-4 mb-4">
-          <div>
-            <p className="text-xs text-muted-foreground">Hours</p>
-            {isEditing ? (
-              <input
-                type="number"
-                name="estimated_hours"
-                value={editedJobLine.estimated_hours || ''}
-                onChange={handleInputChange}
-                className="border p-1 rounded w-full"
-              />
-            ) : (
-              <p>{jobLine.estimated_hours || 0}</p>
-            )}
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Rate</p>
-            {isEditing ? (
-              <input
-                type="number"
-                name="labor_rate"
-                value={editedJobLine.labor_rate || ''}
-                onChange={handleInputChange}
-                className="border p-1 rounded w-full"
-              />
-            ) : (
-              <p>{formatCurrency(jobLine.labor_rate || 0)}</p>
-            )}
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Total</p>
-            <p className="font-medium">{formatCurrency(calculateTotalAmount())}</p>
-          </div>
-        </div>
+      {/* Add Time Tracking for this job line */}
+      <div className="flex items-center gap-3 mt-2">
+        <Clock className="h-4 w-4 text-blue-500" />
+        <span className="text-sm font-medium">
+          Tech Time:
+        </span>
+        {isLoading ? (
+          <Loader2 className="h-4 w-4 animate-spin ml-2 text-gray-500" />
+        ) : jobLineTimeEntry ? (
+          <>
+            <span className="font-bold text-green-600">
+              Clocked ON at: {new Date(jobLineTimeEntry.start_time).toLocaleTimeString()}
+            </span>
+            <Button size="sm" variant="destructive" onClick={handleClockOff} disabled={isLoading}>
+              <X className="h-4 w-4 mr-1" />
+              Clock Off
+            </Button>
+          </>
+        ) : (
+          <Button size="sm" variant="default" onClick={handleClockOn} disabled={isLoading}>
+            <Check className="h-4 w-4 mr-1" />
+            Clock On
+          </Button>
+        )}
+      </div>
 
-        {/* Parts section */}
-        {(jobLine.parts && jobLine.parts.length > 0) || isEditMode ? (
-          <div className="mt-4 pt-4 border-t">
-            <div className="flex justify-between items-center mb-2">
-              <h4 className="font-medium">Parts</h4>
-              {isEditMode && !isAddingPart && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsAddingPart(true)}
-                  className="text-xs"
-                >
-                  <Plus className="h-3 w-3 mr-1" />
-                  Add Part
-                </Button>
-              )}
-            </div>
+      <div className="text-sm text-gray-500">
+        {jobLine.description}
+      </div>
 
-            {/* Add new part form */}
-            {isAddingPart && (
-              <div className="bg-muted p-3 rounded mb-3">
-                <div className="grid grid-cols-2 gap-2 mb-2">
-                  <div>
-                    <label className="text-xs">Part Name</label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={newPart.name}
-                      onChange={handleNewPartChange}
-                      className="border p-1 rounded w-full"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs">Part Number</label>
-                    <input
-                      type="text"
-                      name="part_number"
-                      value={newPart.part_number}
-                      onChange={handleNewPartChange}
-                      className="border p-1 rounded w-full"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-2 mb-2">
-                  <div>
-                    <label className="text-xs">Quantity</label>
-                    <input
-                      type="number"
-                      name="quantity"
-                      value={newPart.quantity}
-                      onChange={handleNewPartChange}
-                      className="border p-1 rounded w-full"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs">Unit Price</label>
-                    <input
-                      type="number"
-                      name="unit_price"
-                      value={newPart.unit_price}
-                      onChange={handleNewPartChange}
-                      className="border p-1 rounded w-full"
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end gap-2 mt-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsAddingPart(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={handleAddPart}
-                  >
-                    Add Part
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* Parts list */}
-            <div className="space-y-2">
-              {jobLine.parts
-                ?.filter((part): part is WorkOrderPart => 
-                  typeof part === 'object' &&
-                  'id' in part &&
-                  'created_at' in part &&
-                  'updated_at' in part &&
-                  'total_price' in part
-                )
-                .map((part) => (
-                  <PartDetailsCard
-                    key={part.id}
-                    part={part}
-                    onRemove={isEditMode ? handleRemovePart : undefined}
-                    isEditMode={isEditMode}
-                  />
-                ))}
-            </div>
-          </div>
-        ) : null}
-      </CardContent>
-    </Card>
+      {isEditDialogOpen && (
+        <JobLineEditDialog
+          jobLine={jobLine}
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          onSave={handleUpdate}
+        />
+      )}
+    </div>
   );
 }

@@ -1,20 +1,26 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { TimeEntry } from "@/types/workOrder";
 
 /**
- * Get time entries for a work order
+ * Get time entries for a work order and/or specific job line
  */
-export const getWorkOrderTimeEntries = async (workOrderId: string): Promise<TimeEntry[]> => {
+export const getWorkOrderTimeEntries = async (
+  workOrderId: string,
+  jobLineId?: string
+): Promise<TimeEntry[]> => {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('work_order_time_entries')
       .select('*')
       .eq('work_order_id', workOrderId)
       .order('created_at', { ascending: false });
-      
+
+    if (jobLineId) {
+      query = query.eq('job_line_id', jobLineId);
+    }
+
+    const { data, error } = await query;
     if (error) throw error;
-    
     return data || [];
   } catch (error) {
     console.error('Error fetching work order time entries:', error);
@@ -27,13 +33,14 @@ export const getWorkOrderTimeEntries = async (workOrderId: string): Promise<Time
  */
 export const addTimeEntryToWorkOrder = async (
   workOrderId: string,
-  timeEntry: Omit<TimeEntry, 'id' | 'work_order_id' | 'created_at'>
+  timeEntry: Omit<TimeEntry, 'id' | 'work_order_id' | 'created_at'> & { job_line_id?: string }
 ): Promise<TimeEntry | null> => {
   try {
     const { data, error } = await supabase
       .from('work_order_time_entries')
       .insert({
         work_order_id: workOrderId,
+        job_line_id: timeEntry.job_line_id,
         employee_id: timeEntry.employee_id,
         employee_name: timeEntry.employee_name,
         start_time: timeEntry.start_time,

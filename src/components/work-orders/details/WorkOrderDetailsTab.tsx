@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { WorkOrder } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
@@ -8,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { WorkOrderPartsSection } from '../parts/WorkOrderPartsSection';
 import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
 import { EditableJobLinesGrid } from '../job-lines/EditableJobLinesGrid';
-import { TimeTrackingQuickPanel } from '../time-tracking/TimeTrackingQuickPanel';
 import { WorkOrderStatusUpdate } from './WorkOrderStatusUpdate';
 import { WorkOrderCommunications } from '../communications/WorkOrderCommunications';
 
@@ -114,9 +112,6 @@ export function WorkOrderDetailsTab({
           )}
         </CardContent>
       </Card>
-
-      {/* Quick Time Tracking Panel */}
-      <TimeTrackingQuickPanel workOrderId={workOrder.id} />
 
       {/* Editable Job Lines Grid – allow job lines to be edited here */}
       <Card>
