@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WorkOrder } from "@/types/workOrder";
@@ -12,6 +11,7 @@ import { WorkOrderPartsSection } from "../parts/WorkOrderPartsSection";
 import { TimeTrackingSection } from "../time-tracking/TimeTrackingSection";
 import { WorkOrderDocuments } from "./WorkOrderDocuments";
 import { WorkOrderCommunications } from "../communications/WorkOrderCommunications";
+import { JobLinesSection } from "../form-fields/JobLinesSection";
 
 interface WorkOrderDetailsTabsProps {
   workOrder: WorkOrder;
@@ -38,6 +38,7 @@ export function WorkOrderDetailsTabs({
     <Tabs defaultValue="overview" className="w-full">
       <TabsList className="mb-4 max-w-full overflow-x-auto">
         <TabsTrigger value="overview">Overview</TabsTrigger>
+        <TabsTrigger value="jobs">Jobs</TabsTrigger>
         <TabsTrigger value="parts">Parts</TabsTrigger>
         <TabsTrigger value="time">Time Tracking</TabsTrigger>
         <TabsTrigger value="documents">Documents</TabsTrigger>
@@ -54,6 +55,14 @@ export function WorkOrderDetailsTabs({
           workOrder={workOrder}
           jobLines={jobLines}
           allParts={allParts}
+          onJobLinesChange={onJobLinesChange}
+          isEditMode={isEditMode}
+        />
+      </TabsContent>
+      <TabsContent value="jobs">
+        <JobLinesSection
+          workOrderId={workOrder.id}
+          jobLines={jobLines}
           onJobLinesChange={onJobLinesChange}
           isEditMode={isEditMode}
         />

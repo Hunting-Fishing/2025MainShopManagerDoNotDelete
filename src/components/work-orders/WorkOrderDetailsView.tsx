@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { WorkOrder } from "@/types/workOrder";
@@ -15,6 +14,7 @@ import { Customer } from "@/types/customer";
 // FIX: Corrected import for getCustomerById
 import { getCustomerById } from "@/services/customer";
 import { getWorkOrderJobLines } from "@/services/workOrder/jobLinesService";
+import { getWorkOrderParts } from "@/services/workOrder/workOrderPartsService";
 
 interface WorkOrderDetailsViewProps {
   isEditMode: boolean;
@@ -55,14 +55,17 @@ export function WorkOrderDetailsView({ isEditMode }: WorkOrderDetailsViewProps) 
         const lines = await getWorkOrderJobLines(id);
         setJobLines(lines);
 
+        // Fetch Parts
+        const parts = await getWorkOrderParts(id);
+        setAllParts(parts);
+
         // Fetch Customer
         if (wo.customer_id) {
           const cust = await getCustomerById(wo.customer_id);
           setCustomer(cust);
         }
 
-        // TODO: Fetch Parts and Time Entries - to be implemented later
-        setAllParts([]);
+        // TODO: Fetch Time Entries - to be implemented later
         setTimeEntries([]);
       } catch (err: any) {
         setError(err.message || "Failed to load Work Order details.");
