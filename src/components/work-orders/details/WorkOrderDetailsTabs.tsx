@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WorkOrder } from "@/types/workOrder";
@@ -24,6 +25,9 @@ interface WorkOrderDetailsTabsProps {
   onJobLinesChange: (jobLines: WorkOrderJobLine[]) => void;
   onTimeEntriesChange: (entries: TimeEntry[]) => void;
   isEditMode: boolean;
+  onStartEdit?: () => void;
+  onCancelEdit?: () => void;
+  onSaveEdit?: () => void;
 }
 
 export function WorkOrderDetailsTabs({
@@ -35,25 +39,19 @@ export function WorkOrderDetailsTabs({
   onJobLinesChange,
   onTimeEntriesChange,
   isEditMode,
+  onStartEdit,
+  onCancelEdit,
+  onSaveEdit
 }: WorkOrderDetailsTabsProps) {
   // Handler for status change (optional: refresh work order or propagate up if you wish)
   const handleStatusUpdated = (newStatus: string) => {
-    // Optionally, refetch workOrder or call onJobLinesChange/onTimeEntriesChange if needed
-    // This could also be a toast notification, etc.
-    // For now just log for debug.
     console.log("Work order status updated:", newStatus);
   };
 
   // Handler for invoice conversion and redirect, can be implemented as you like
   const handleInvoiceCreated = (invoiceId: string) => {
-    // Optionally, navigate or show a toast
     console.log("Invoice created (ID):", invoiceId);
     // Example: window.location.href = `/invoices/${invoiceId}`
-  };
-
-  // Handler for edit
-  const handleEdit = () => {
-    window.location.href = `/work-orders/${workOrder.id}/edit`;
   };
 
   return (
@@ -67,14 +65,15 @@ export function WorkOrderDetailsTabs({
         <TabsTrigger value="communications">Communications</TabsTrigger>
       </TabsList>
       <TabsContent value="overview">
-        {/* Add actions and status update bar */}
+        {/* Actions bar */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-          {/* Editable status */}
           <WorkOrderStatusUpdate workOrder={workOrder} onStatusUpdated={handleStatusUpdated} />
-          {/* Actions */}
           <WorkOrderDetailsActions
             workOrder={workOrder}
-            onEdit={handleEdit}
+            isEditMode={isEditMode}
+            onStartEdit={onStartEdit}
+            onCancelEdit={onCancelEdit}
+            onSaveEdit={onSaveEdit}
             onInvoiceCreated={handleInvoiceCreated}
           />
         </div>

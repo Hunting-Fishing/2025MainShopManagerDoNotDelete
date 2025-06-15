@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { WorkOrder } from "@/types/workOrder";
@@ -11,7 +12,6 @@ import { WorkOrderJobLine } from "@/types/jobLine";
 import { WorkOrderPart } from "@/types/workOrderPart";
 import { TimeEntry } from "@/types/workOrder";
 import { Customer } from "@/types/customer";
-// FIX: Corrected import for getCustomerById
 import { getCustomerById } from "@/services/customer";
 import { getWorkOrderJobLines } from "@/services/workOrder/jobLinesService";
 import { getWorkOrderParts } from "@/services/workOrder/workOrderPartsService";
@@ -20,7 +20,7 @@ interface WorkOrderDetailsViewProps {
   isEditMode: boolean;
 }
 
-export function WorkOrderDetailsView({ isEditMode }: WorkOrderDetailsViewProps) {
+export function WorkOrderDetailsView() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
@@ -30,6 +30,9 @@ export function WorkOrderDetailsView({ isEditMode }: WorkOrderDetailsViewProps) 
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // EDIT MODE logic lives here
+  const [isEditMode, setIsEditMode] = useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -43,7 +46,6 @@ export function WorkOrderDetailsView({ isEditMode }: WorkOrderDetailsViewProps) 
       setError(null);
 
       try {
-        // Fetch Work Order
         const wo = await getWorkOrderById(id);
         if (!wo) {
           setError("Work Order not found.");
@@ -51,21 +53,16 @@ export function WorkOrderDetailsView({ isEditMode }: WorkOrderDetailsViewProps) 
         }
         setWorkOrder(wo);
 
-        // Fetch Job Lines
         const lines = await getWorkOrderJobLines(id);
         setJobLines(lines);
 
-        // Fetch Parts
         const parts = await getWorkOrderParts(id);
         setAllParts(parts);
 
-        // Fetch Customer
         if (wo.customer_id) {
           const cust = await getCustomerById(wo.customer_id);
           setCustomer(cust);
         }
-
-        // TODO: Fetch Time Entries - to be implemented later
         setTimeEntries([]);
       } catch (err: any) {
         setError(err.message || "Failed to load Work Order details.");
@@ -84,6 +81,14 @@ export function WorkOrderDetailsView({ isEditMode }: WorkOrderDetailsViewProps) 
 
   const handleTimeEntriesChange = (updatedEntries: TimeEntry[]) => {
     setTimeEntries(updatedEntries);
+  };
+
+  // Inline save/cancel handlers
+  const handleStartEdit = () => setIsEditMode(true);
+  const handleCancelEdit = () => setIsEditMode(false);
+  const handleSaveEdit = () => {
+    // future: persist edits to backend
+    setIsEditMode(false);
   };
 
   if (isLoading) {
@@ -139,6 +144,9 @@ export function WorkOrderDetailsView({ isEditMode }: WorkOrderDetailsViewProps) 
       onJobLinesChange={handleJobLinesChange}
       onTimeEntriesChange={handleTimeEntriesChange}
       isEditMode={isEditMode}
+      onStartEdit={handleStartEdit}
+      onCancelEdit={handleCancelEdit}
+      onSaveEdit={handleSaveEdit}
     />
   );
 }
