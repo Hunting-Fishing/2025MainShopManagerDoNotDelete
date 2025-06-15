@@ -19,8 +19,8 @@ export const getWorkOrderTimeEntries = async (
       query = query.eq('job_line_id', jobLineId);
     }
 
-    // Await result without casting, let TypeScript infer types
-    const { data, error } = await query;
+    // Explicitly cast the result to prevent infinite type recursion (TS2589)
+    const { data, error } = await (query as any) as { data: any[], error: any };
     if (error) throw error;
     return data || [];
   } catch (error) {
