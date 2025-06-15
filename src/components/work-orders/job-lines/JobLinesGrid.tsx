@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core';
 import { WorkOrderJobLine } from '@/types/jobLine';
@@ -102,7 +101,6 @@ export function JobLinesGrid({
                   jobLine={jobLine}
                   onUpdate={onUpdate}
                   onDelete={onDelete}
-                  onPartsChange={handlePartsChange}
                   isEditMode={isEditMode}
                   parts={parts}
                 />

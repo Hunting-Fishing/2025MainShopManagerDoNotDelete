@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { JobLineCard } from './JobLineCard';
@@ -44,7 +43,6 @@ export function JobLinesTable({ jobLines, onUpdate, onDelete }: JobLinesTablePro
             jobLine={jobLine}
             onUpdate={onUpdate}
             onDelete={onDelete}
-            onPartsChange={handlePartsChange}
             isEditMode={true}
           />
         ))}

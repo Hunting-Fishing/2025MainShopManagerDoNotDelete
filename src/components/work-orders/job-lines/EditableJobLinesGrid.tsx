@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { AddJobLineDialog } from './AddJobLineDialog';
@@ -77,7 +76,6 @@ export function EditableJobLinesGrid({
             jobLine={jobLine}
             onUpdate={handleUpdateJobLine}
             onDelete={handleDeleteJobLine}
-            onPartsChange={(newParts) => handlePartsChange(jobLine.id, newParts)}
             isEditMode={true}
           />
         ))}
