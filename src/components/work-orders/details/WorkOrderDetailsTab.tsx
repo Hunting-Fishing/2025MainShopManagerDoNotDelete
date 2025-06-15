@@ -1,13 +1,16 @@
+
 import React, { useEffect, useState } from 'react';
 import { WorkOrder } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { JobLinesWithPartsDisplay } from './JobLinesWithPartsDisplay';
-import { WorkOrderCommunications } from '../communications/WorkOrderCommunications';
 import { WorkOrderPartsSection } from '../parts/WorkOrderPartsSection';
 import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
+import { EditableJobLinesGrid } from '../job-lines/EditableJobLinesGrid';
+import { TimeTrackingQuickPanel } from '../time-tracking/TimeTrackingQuickPanel';
+import { WorkOrderStatusUpdate } from './WorkOrderStatusUpdate';
+import { WorkOrderCommunications } from '../communications/WorkOrderCommunications';
 
 interface WorkOrderDetailsTabProps {
   workOrder: WorkOrder;
@@ -22,7 +25,7 @@ export function WorkOrderDetailsTab({
   jobLines,
   allParts: initialParts,
   onJobLinesChange,
-  isEditMode
+  isEditMode,
 }: WorkOrderDetailsTabProps) {
   const [allParts, setAllParts] = useState<WorkOrderPart[]>(initialParts);
   const [partsLoading, setPartsLoading] = useState(false);
@@ -48,6 +51,15 @@ export function WorkOrderDetailsTab({
 
   return (
     <div className="space-y-6">
+
+      {/* Always show status dropdown at top */}
+      <div className="flex items-center gap-4">
+        <WorkOrderStatusUpdate workOrder={workOrder} />
+        <Badge variant="outline" className="ml-2">
+          {workOrder.status}
+        </Badge>
+      </div>
+
       {/* Work Order Summary */}
       <Card>
         <CardHeader>
@@ -103,13 +115,22 @@ export function WorkOrderDetailsTab({
         </CardContent>
       </Card>
 
-      {/* Job Lines with Parts */}
-      <JobLinesWithPartsDisplay
-        workOrderId={workOrder.id}
-        jobLines={jobLines}
-        onJobLinesChange={onJobLinesChange}
-        isEditMode={isEditMode}
-      />
+      {/* Quick Time Tracking Panel */}
+      <TimeTrackingQuickPanel workOrderId={workOrder.id} />
+
+      {/* Editable Job Lines Grid – allow job lines to be edited here */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Labor & Services (Editable)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <EditableJobLinesGrid
+            workOrderId={workOrder.id}
+            jobLines={jobLines}
+            onJobLinesChange={onJobLinesChange}
+          />
+        </CardContent>
+      </Card>
 
       {/* Parts Section */}
       <WorkOrderPartsSection
