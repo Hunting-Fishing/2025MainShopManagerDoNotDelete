@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { WorkOrder } from "@/types/workOrder";
@@ -17,10 +16,11 @@ import { getWorkOrderJobLines } from "@/services/workOrder/jobLinesService";
 import { getWorkOrderParts } from "@/services/workOrder/workOrderPartsService";
 
 interface WorkOrderDetailsViewProps {
-  isEditMode: boolean;
+  isEditMode?: boolean; // Make prop optional, default to false below
 }
 
-export function WorkOrderDetailsView() {
+// Accept the prop and set its default value
+export function WorkOrderDetailsView({ isEditMode = false }: WorkOrderDetailsViewProps) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
@@ -32,7 +32,7 @@ export function WorkOrderDetailsView() {
   const [error, setError] = useState<string | null>(null);
 
   // EDIT MODE logic lives here
-  const [isEditMode, setIsEditMode] = useState(false);
+  const [editMode, setEditMode] = useState(isEditMode);
 
   useEffect(() => {
     if (!id) {
@@ -84,11 +84,11 @@ export function WorkOrderDetailsView() {
   };
 
   // Inline save/cancel handlers
-  const handleStartEdit = () => setIsEditMode(true);
-  const handleCancelEdit = () => setIsEditMode(false);
+  const handleStartEdit = () => setEditMode(true);
+  const handleCancelEdit = () => setEditMode(false);
   const handleSaveEdit = () => {
     // future: persist edits to backend
-    setIsEditMode(false);
+    setEditMode(false);
   };
 
   if (isLoading) {
@@ -143,7 +143,7 @@ export function WorkOrderDetailsView() {
       customer={customer}
       onJobLinesChange={handleJobLinesChange}
       onTimeEntriesChange={handleTimeEntriesChange}
-      isEditMode={isEditMode}
+      isEditMode={editMode}
       onStartEdit={handleStartEdit}
       onCancelEdit={handleCancelEdit}
       onSaveEdit={handleSaveEdit}
