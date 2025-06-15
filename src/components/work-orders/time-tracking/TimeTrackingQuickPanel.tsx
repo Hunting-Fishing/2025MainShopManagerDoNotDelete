@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { getWorkOrderTimeEntries, addTimeEntryToWorkOrder, updateTimeEntry } from "@/services/workOrder/workOrderTimeTrackingService";
 import { Loader2, Check, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -96,7 +97,7 @@ export function TimeTrackingQuickPanel({ workOrderId }: TimeTrackingQuickPanelPr
                 </Button>
               </>
             ) : (
-              <Button size="sm" variant="success" onClick={handleClockOn}>
+              <Button size="sm" variant="default" onClick={handleClockOn}>
                 <Check className="h-4 w-4 mr-1" />
                 Clock On
               </Button>
