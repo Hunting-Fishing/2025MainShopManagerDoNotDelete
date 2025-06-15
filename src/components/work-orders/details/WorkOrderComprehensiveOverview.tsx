@@ -28,12 +28,12 @@ export function WorkOrderComprehensiveOverview({
 }: WorkOrderComprehensiveOverviewProps) {
   return (
     <div className="space-y-6">
-      {/* Only the OverviewHeader here */}
+      {/* OverviewHeader */}
       <WorkOrderOverviewHeader
         workOrder={workOrder}
         jobLines={jobLines}
         allParts={allParts}
-        timeEntries={timeEntries} {/* <-- Fix: Pass required timeEntries prop */}
+        timeEntries={timeEntries}
       />
 
       {/* Content tab */}
