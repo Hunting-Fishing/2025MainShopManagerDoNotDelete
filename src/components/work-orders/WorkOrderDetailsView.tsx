@@ -94,11 +94,11 @@ export function WorkOrderDetailsView({
     };
   }, [shouldLoadData, workOrder?.customer_id]);
 
-  const handleJobLinesChange = (newJobLines: WorkOrderJobLine[]) => {
+  const onJobLinesChange = (newJobLines: WorkOrderJobLine[]) => {
     setJobLines(newJobLines);
   };
 
-  const handleTimeEntriesChange = (newTimeEntries: TimeEntry[]) => {
+  const onTimeEntriesChange = (newTimeEntries: TimeEntry[]) => {
     setTimeEntries(newTimeEntries);
   };
 
@@ -160,10 +160,9 @@ export function WorkOrderDetailsView({
         jobLines={jobLines}
         allParts={allParts}
         timeEntries={timeEntries}
-        onJobLinesChange={handleJobLinesChange}
-        onTimeEntriesChange={handleTimeEntriesChange}
+        onJobLinesChange={onJobLinesChange}
+        onTimeEntriesChange={onTimeEntriesChange}
         isEditMode={isEditMode}
-        customer={customer}
       />
     </div>
   );
