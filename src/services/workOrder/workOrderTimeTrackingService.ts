@@ -7,7 +7,7 @@ import { TimeEntry } from "@/types/workOrder";
 export const getWorkOrderTimeEntries = async (
   workOrderId: string,
   jobLineId?: string
-): Promise<TimeEntry[]> => {
+): Promise<any[]> => { // Relaxed type to any[] to avoid type instantiation recursion error
   try {
     let query = supabase
       .from('work_order_time_entries')
