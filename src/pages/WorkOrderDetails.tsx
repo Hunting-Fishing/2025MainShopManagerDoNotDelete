@@ -17,7 +17,8 @@ const WorkOrderDetails = () => {
     );
   }
 
-  return <WorkOrderDetailsView />;
+  // FIX: Required prop isEditMode added.
+  return <WorkOrderDetailsView isEditMode={false} />;
 };
 
 export default WorkOrderDetails;

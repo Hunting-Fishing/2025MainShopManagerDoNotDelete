@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { WorkOrder } from "@/types/workOrder";
@@ -11,7 +12,8 @@ import { WorkOrderJobLine } from "@/types/jobLine";
 import { WorkOrderPart } from "@/types/workOrderPart";
 import { TimeEntry } from "@/types/workOrder";
 import { Customer } from "@/types/customer";
-import { getCustomerById } from "@/services/customer/customerService";
+// FIX: Corrected import for getCustomerById
+import { getCustomerById } from "@/services/customer";
 import { getWorkOrderJobLines } from "@/services/workOrder/jobLinesService";
 
 interface WorkOrderDetailsViewProps {
