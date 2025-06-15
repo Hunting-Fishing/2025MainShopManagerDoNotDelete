@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { WorkOrder } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
@@ -32,6 +33,7 @@ export function WorkOrderComprehensiveOverview({
         workOrder={workOrder}
         jobLines={jobLines}
         allParts={allParts}
+        timeEntries={timeEntries} {/* <-- Fix: Pass required timeEntries prop */}
       />
 
       {/* Content tab */}
