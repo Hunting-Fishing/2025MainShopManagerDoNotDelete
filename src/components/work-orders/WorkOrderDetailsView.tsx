@@ -1,122 +1,149 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { WorkOrder } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { TimeEntry } from '@/types/workOrder';
-import { useWorkOrder } from '@/hooks/useWorkOrder';
-import { useJobLines } from '@/hooks/useJobLines';
-import { WorkOrderDetailsHeader } from './details/WorkOrderDetailsHeader';
-import { WorkOrderComprehensiveOverview } from './details/WorkOrderComprehensiveOverview';
-import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
 import { Customer } from '@/types/customer';
-import { getCustomerById } from '@/services/customer/customerQueryService';
+import { useToast } from '@/hooks/use-toast';
+import {
+  getWorkOrderById,
+  updateWorkOrder,
+  getWorkOrderJobLines,
+  getWorkOrderTimeEntries,
+  createWorkOrder,
+} from '@/services/workOrder';
+import { getCustomerById } from '@/services/customer';
+import { WorkOrderDetailsTabs } from './details/WorkOrderDetailsTabs';
 
-// Updated props interface
 interface WorkOrderDetailsViewProps {
   isCreateMode?: boolean;
-  prePopulatedData?: Record<string, any>; // For creation, pre-populate certain values
-  onCreateWorkOrder?: (values: any) => Promise<void>;
+  prePopulatedData?: any;
+  onCreateWorkOrder?: (workOrderData: any) => Promise<void>;
 }
 
-export function WorkOrderDetailsView({
+export const WorkOrderDetailsView: React.FC<WorkOrderDetailsViewProps> = ({
   isCreateMode = false,
   prePopulatedData,
-  onCreateWorkOrder
-}: WorkOrderDetailsViewProps) {
-  const { id: workOrderId } = useParams<{ id: string }>();
+  onCreateWorkOrder,
+}) => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  // If in create mode, do not load an existing work order
-  const shouldLoadData = !isCreateMode && !!workOrderId && workOrderId !== 'new';
-
-  const { workOrder, isLoading: isWorkOrderLoading, error: workOrderError } = useWorkOrder(shouldLoadData ? workOrderId! : '');
-  const { jobLines, setJobLines, isLoading: isJobLinesLoading, error: jobLinesError } = useJobLines(shouldLoadData ? workOrderId! : '');
+  const [workOrder, setWorkOrder] = useState<WorkOrder>({} as WorkOrder);
+  const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
   const [allParts, setAllParts] = useState<WorkOrderPart[]>([]);
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [partsLoading, setPartsLoading] = useState(false);
-
-  // --- ADDED: Customer state
   const [customer, setCustomer] = useState<Customer | null>(null);
-  const [customerLoading, setCustomerLoading] = useState(false);
-  const [customerError, setCustomerError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isEditMode, setIsEditMode] = useState(isCreateMode);
 
-  // --- Fetch parts logic unchanged
+  const workOrderId = id as string;
+  const shouldLoadData = !isCreateMode && workOrderId;
+
+  useEffect(() => {
+    if (isCreateMode && prePopulatedData) {
+      // Set initial values for create mode
+      setWorkOrder({
+        ...workOrder,
+        customer_name: prePopulatedData.customerName,
+        customer_email: prePopulatedData.customerEmail,
+        customer_phone: prePopulatedData.customerPhone,
+        vehicle_make: prePopulatedData.vehicleMake,
+        vehicle_model: prePopulatedData.vehicleModel,
+        vehicle_year: prePopulatedData.vehicleYear,
+        vehicle_license_plate: prePopulatedData.vehicleLicensePlate,
+        vehicle_vin: prePopulatedData.vehicleVin,
+      });
+    }
+  }, [isCreateMode, prePopulatedData]);
+
   useEffect(() => {
     if (shouldLoadData) {
-      const fetchParts = async () => {
+      const fetchData = async () => {
+        setIsLoading(true);
+        setError(null);
         try {
-          setPartsLoading(true);
-          const parts = await getWorkOrderParts(workOrderId!);
-          setAllParts(parts);
-        } catch (error) {
-          console.error('Error fetching work order parts:', error);
-          setAllParts([]);
+          // Fetch work order details
+          const workOrderData = await getWorkOrderById(workOrderId);
+          setWorkOrder(workOrderData);
+
+          // Fetch customer details
+          if (workOrderData.customer_id) {
+            const customerData = await getCustomerById(workOrderData.customer_id);
+            setCustomer(customerData);
+          }
+
+          // Fetch job lines
+          const jobLinesData = await getWorkOrderJobLines(workOrderId);
+          setJobLines(jobLinesData);
+
+          // Fetch time entries
+          const timeEntriesData = await getWorkOrderTimeEntries(workOrderId);
+          setTimeEntries(timeEntriesData);
+        } catch (err: any) {
+          setError(err.message || 'Failed to load work order details.');
+          console.error('Error fetching work order details:', err);
         } finally {
-          setPartsLoading(false);
+          setIsLoading(false);
         }
       };
 
-      fetchParts();
+      fetchData();
     }
   }, [shouldLoadData, workOrderId]);
 
-  // --- NEW: Fetch customer info when workOrder.customer_id is present
-  useEffect(() => {
-    if (!shouldLoadData || !workOrder?.customer_id) {
-      setCustomer(null);
-      setCustomerError(null);
-      setCustomerLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setCustomerLoading(true);
-    setCustomerError(null);
-    getCustomerById(workOrder.customer_id)
-      .then((data) => {
-        if (!cancelled) {
-          setCustomer(data || null);
-          if (!data) setCustomerError('No customer found for this work order.');
+  const handleSaveWorkOrder = async (workOrderData: any) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      if (isCreateMode) {
+        if (onCreateWorkOrder) {
+          await onCreateWorkOrder(workOrderData);
+        } else {
+          // Create work order logic
+          const newWorkOrder = await createWorkOrder(workOrderData);
+          toast({
+            title: 'Success',
+            description: 'Work order created successfully!',
+          });
+          navigate(`/work-orders/${newWorkOrder.id}`);
         }
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          setCustomer(null);
-          setCustomerError('Failed to load customer information.');
-          console.error('Error loading customer info:', err);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setCustomerLoading(false);
+      } else {
+        // Update work order logic
+        await updateWorkOrder(workOrderId, workOrderData);
+        toast({
+          title: 'Success',
+          description: 'Work order updated successfully!',
+        });
+        setWorkOrder(workOrderData);
+      }
+      setIsEditMode(false);
+    } catch (err: any) {
+      setError(err.message || 'Failed to save work order.');
+      toast({
+        title: 'Error',
+        description: 'Failed to save work order. Please try again.',
+        variant: 'destructive',
       });
-    return () => {
-      cancelled = true;
-    };
-  }, [shouldLoadData, workOrder?.customer_id]);
-
-  const onJobLinesChange = (newJobLines: WorkOrderJobLine[]) => {
-    setJobLines(newJobLines);
+      console.error('Error saving work order:', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const onTimeEntriesChange = (newTimeEntries: TimeEntry[]) => {
-    setTimeEntries(newTimeEntries);
-  };
+  const onJobLinesChange = useCallback((updatedJobLines: WorkOrderJobLine[]) => {
+    setJobLines(updatedJobLines);
+  }, []);
 
-  // Create Mode UI (render a creation form or workflow)
-  if (isCreateMode) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold">Create Work Order</h1>
-          {/* Replace below with actual form implementation as needed */}
-          {/* Example: <WorkOrderCreateForm prePopulatedData={prePopulatedData} onSubmit={onCreateWorkOrder} /> */}
-          <p className="text-muted-foreground">Work order creation coming soon.</p>
-        </div>
-      </div>
-    );
-  }
+  const onTimeEntriesChange = useCallback((updatedTimeEntries: TimeEntry[]) => {
+    setTimeEntries(updatedTimeEntries);
+  }, []);
 
-  if (!workOrderId || isWorkOrderLoading || isJobLinesLoading || partsLoading || customerLoading) {
+  if (shouldLoadData && isLoading) {
     return (
       <div className="container mx-auto p-6">
         <div className="text-center">
@@ -127,43 +154,45 @@ export function WorkOrderDetailsView({
     );
   }
 
-  if (workOrderError || jobLinesError || customerError) {
+  if (shouldLoadData && error) {
     return (
       <div className="container mx-auto p-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-destructive">Error</h1>
-          <p className="text-muted-foreground">
-            {workOrderError?.message || jobLinesError?.message || customerError || 'Failed to load work order details.'}
-          </p>
+          <p className="text-muted-foreground">{error}</p>
         </div>
       </div>
     );
   }
 
-  if (!workOrder) {
+  // Determine if we're in create mode or edit mode
+  if (isCreateMode || isEditMode) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-destructive">Work Order Not Found</h1>
-          <p className="text-muted-foreground">The requested work order does not exist.</p>
+      <div className="container mx-auto max-w-5xl p-0 md:p-6">
+        {/* Edit Mode UI - Render the form here */}
+        <div>
+          <h2>Work Order Form (Edit Mode)</h2>
+          {/* Implement your form here, passing in workOrder, jobLines, allParts, timeEntries, customer, etc. */}
+          {/* Include form fields and submit button */}
+          {/* Call handleSaveWorkOrder on form submission */}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      {/* Pass customer as prop */}
-      <WorkOrderDetailsHeader workOrder={workOrder} customer={customer} />
-      <WorkOrderComprehensiveOverview
+    <div className="container mx-auto max-w-5xl p-0 md:p-6">
+      {/* Details Tabs! */}
+      <WorkOrderDetailsTabs
         workOrder={workOrder}
         jobLines={jobLines}
         allParts={allParts}
         timeEntries={timeEntries}
+        customer={customer}
         onJobLinesChange={onJobLinesChange}
         onTimeEntriesChange={onTimeEntriesChange}
         isEditMode={isEditMode}
       />
     </div>
   );
-}
+};
