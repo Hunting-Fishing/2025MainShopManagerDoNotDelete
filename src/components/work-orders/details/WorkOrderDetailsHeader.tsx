@@ -1,141 +1,77 @@
-
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import React from 'react';
 import { WorkOrder } from '@/types/workOrder';
-import { WorkOrderDetailsActions } from './WorkOrderDetailsActions';
-import { WorkOrderStatusUpdate } from './WorkOrderStatusUpdate';
-import { useNavigate, Link } from 'react-router-dom';
 
-// Import types for customer (if not already)
-import { Customer } from '@/types/customer';
+// Accept and use a customer prop directly
 
 interface WorkOrderDetailsHeaderProps {
   workOrder: WorkOrder;
-  onEdit?: () => void;
-  onInvoiceCreated?: (invoiceId: string) => void;
-  isEditMode?: boolean;
+  customer?: import('@/types/customer').Customer | null;
 }
 
-export function WorkOrderDetailsHeader({ 
-  workOrder, 
-  onEdit, 
-  onInvoiceCreated,
-  isEditMode 
+export function WorkOrderDetailsHeader({
+  workOrder,
+  customer,
 }: WorkOrderDetailsHeaderProps) {
-  const navigate = useNavigate();
-  const [currentStatus, setCurrentStatus] = useState(workOrder.status);
-
-  // Customer state
-  const [customer, setCustomer] = useState<Customer | null>(null);
-  const [customerLoading, setCustomerLoading] = useState(false);
-  const [customerError, setCustomerError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function fetchCustomer() {
-      if (workOrder.customer_id) {
-        setCustomerLoading(true);
-        setCustomerError(null);
-        console.log("Attempting to load customer info for ID:", workOrder.customer_id);
-        try {
-          // Dynamically import the customer query service
-          const { getCustomerById } = await import('@/services/customer/customerQueryService');
-          const data = await getCustomerById(workOrder.customer_id!);
-          console.log("Fetched customer detail result:", data);
-          if (!cancelled) {
-            setCustomer(data);
-            if (!data) setCustomerError('No customer found for ID: ' + workOrder.customer_id);
-          }
-        } catch (err) {
-          console.error("Error in fetchCustomer for customer_id", workOrder.customer_id, err);
-          if (!cancelled) {
-            setCustomer(null);
-            setCustomerError('Failed to load customer information');
-          }
-        } finally {
-          if (!cancelled) setCustomerLoading(false);
-        }
-      } else {
-        setCustomer(null);
-        setCustomerError("No customer_id on work order");
-      }
-    }
-    fetchCustomer();
-    return () => { cancelled = true; };
-  }, [workOrder.customer_id]);
-
-  const handleStatusUpdated = (newStatus: string) => {
-    setCurrentStatus(newStatus);
-    window.location.reload();
-  };
-
+  // Show customer info if available; otherwise fall back to unknown.
   return (
-    <div className="bg-white border-b border-gray-200">
-      <div className="container mx-auto px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/work-orders')}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Work Orders
-            </Button>
-            
+    <div className="rounded-2xl border bg-card text-card-foreground shadow-lg px-0 md:px-5 py-6 mb-3">
+      <div className="flex flex-wrap gap-6 items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold flex gap-2 items-center mb-0.5">
+            Work Order
+            <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded ml-2">
+              {workOrder.id?.slice(0,8)}
+            </span>
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            Status: <span className="font-semibold">{workOrder.status}</span>
+          </p>
+        </div>
+        <div className="w-full md:w-auto">
+          <div className="bg-gray-50 rounded-lg px-5 py-3 shadow grid grid-cols-1 md:grid-cols-3 gap-y-2 gap-x-8 border max-w-3xl">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Work Order #{workOrder.work_order_number || workOrder.id?.slice(0, 8)}
-              </h1>
-              <p className="text-sm text-gray-600 mt-1 font-medium">
-                Customer:{" "}
-                {customerLoading ? (
-                  <span className="animate-pulse text-gray-400">Loading...</span>
-                ) : customerError ? (
-                  <span className="text-red-500">{customerError}</span>
-                ) : customer ? (
-                  <>
-                    <Link 
-                      to={`/customers/${customer.id}`}
-                      className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
-                    >
-                      {customer.first_name || ''} {customer.last_name || ''}
-                    </Link>
-                    {customer.email && (
-                      <span className="ml-2 text-gray-500">{customer.email}</span>
-                    )}
-                    {customer.phone && (
-                      <span className="ml-2 text-gray-500">{customer.phone}</span>
-                    )}
-                  </>
-                ) : (
-                  <span className="text-gray-400">
-                    Unknown Customer
-                    {workOrder.customer_id && (
-                      <>
-                        {" "}
-                        (customer_id: {workOrder.customer_id})
-                      </>
-                    )}
+              <p className="text-xs font-semibold text-muted-foreground mb-0.5">Customer</p>
+              {customer ? (
+                <>
+                  <span className="font-medium">
+                    {customer.first_name} {customer.last_name}
                   </span>
-                )}
-              </p>
+                  <div className="text-xs text-muted-foreground">
+                    {customer.email && <div>{customer.email}</div>}
+                    {customer.phone && <div>{customer.phone}</div>}
+                  </div>
+                </>
+              ) : (
+                <span className="text-gray-400">
+                  Unknown Customer
+                  {workOrder.customer_id && (
+                    <> (customer_id: {workOrder.customer_id})</>
+                  )}
+                </span>
+              )}
             </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <WorkOrderStatusUpdate 
-              workOrder={{ ...workOrder, status: currentStatus }}
-              onStatusUpdated={handleStatusUpdated}
-            />
-            
-            <WorkOrderDetailsActions
-              workOrder={{ ...workOrder, status: currentStatus }}
-              onEdit={onEdit}
-              onInvoiceCreated={onInvoiceCreated}
-            />
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground mb-0.5">Vehicle</p>
+              {workOrder.vehicle_year || workOrder.vehicle_make || workOrder.vehicle_model ? (
+                <span className="font-medium">
+                  {[workOrder.vehicle_year, workOrder.vehicle_make, workOrder.vehicle_model].filter(Boolean).join(' ')}
+                </span>
+              ) : (
+                <span className="text-gray-400">No Vehicle Info</span>
+              )}
+              {workOrder.vehicle_license_plate && (
+                <div className="text-xs text-muted-foreground">License: {workOrder.vehicle_license_plate}</div>
+              )}
+              {workOrder.vehicle_vin && (
+                <div className="text-xs text-muted-foreground">VIN: {workOrder.vehicle_vin}</div>
+              )}
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground mb-0.5">Created</p>
+              <span className="font-medium">
+                {workOrder.created_at ? new Date(workOrder.created_at).toLocaleDateString() : ''}
+              </span>
+            </div>
           </div>
         </div>
       </div>

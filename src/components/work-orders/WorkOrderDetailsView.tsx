@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { WorkOrder } from '@/types/workOrder';
@@ -10,6 +9,8 @@ import { useJobLines } from '@/hooks/useJobLines';
 import { WorkOrderDetailsHeader } from './details/WorkOrderDetailsHeader';
 import { WorkOrderComprehensiveOverview } from './details/WorkOrderComprehensiveOverview';
 import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
+import { Customer } from '@/types/customer';
+import { getCustomerById } from '@/services/customer/customerQueryService';
 
 // Updated props interface
 interface WorkOrderDetailsViewProps {
@@ -35,6 +36,12 @@ export function WorkOrderDetailsView({
   const [isEditMode, setIsEditMode] = useState(false);
   const [partsLoading, setPartsLoading] = useState(false);
 
+  // --- ADDED: Customer state
+  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [customerLoading, setCustomerLoading] = useState(false);
+  const [customerError, setCustomerError] = useState<string | null>(null);
+
+  // --- Fetch parts logic unchanged
   useEffect(() => {
     if (shouldLoadData) {
       const fetchParts = async () => {
@@ -54,6 +61,39 @@ export function WorkOrderDetailsView({
     }
   }, [shouldLoadData, workOrderId]);
 
+  // --- NEW: Fetch customer info when workOrder.customer_id is present
+  useEffect(() => {
+    if (!shouldLoadData || !workOrder?.customer_id) {
+      setCustomer(null);
+      setCustomerError(null);
+      setCustomerLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setCustomerLoading(true);
+    setCustomerError(null);
+    getCustomerById(workOrder.customer_id)
+      .then((data) => {
+        if (!cancelled) {
+          setCustomer(data || null);
+          if (!data) setCustomerError('No customer found for this work order.');
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setCustomer(null);
+          setCustomerError('Failed to load customer information.');
+          console.error('Error loading customer info:', err);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setCustomerLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [shouldLoadData, workOrder?.customer_id]);
+
   const handleJobLinesChange = (newJobLines: WorkOrderJobLine[]) => {
     setJobLines(newJobLines);
   };
@@ -64,8 +104,6 @@ export function WorkOrderDetailsView({
 
   // Create Mode UI (render a creation form or workflow)
   if (isCreateMode) {
-    // Assume a creation form should be rendered here.
-    // The full implementation is not shown, you'd inject/create a WorkOrderCreateForm or similar component.
     return (
       <div className="container mx-auto p-6">
         <div className="text-center">
@@ -78,7 +116,7 @@ export function WorkOrderDetailsView({
     );
   }
 
-  if (!workOrderId || isWorkOrderLoading || isJobLinesLoading || partsLoading) {
+  if (!workOrderId || isWorkOrderLoading || isJobLinesLoading || partsLoading || customerLoading) {
     return (
       <div className="container mx-auto p-6">
         <div className="text-center">
@@ -89,13 +127,13 @@ export function WorkOrderDetailsView({
     );
   }
 
-  if (workOrderError || jobLinesError) {
+  if (workOrderError || jobLinesError || customerError) {
     return (
       <div className="container mx-auto p-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-destructive">Error</h1>
           <p className="text-muted-foreground">
-            {workOrderError?.message || jobLinesError?.message || 'Failed to load work order details.'}
+            {workOrderError?.message || jobLinesError?.message || customerError || 'Failed to load work order details.'}
           </p>
         </div>
       </div>
@@ -115,8 +153,8 @@ export function WorkOrderDetailsView({
 
   return (
     <div className="space-y-8">
-      {/* Render only once, at the very top */}
-      <WorkOrderDetailsHeader workOrder={workOrder} />
+      {/* Pass customer as prop */}
+      <WorkOrderDetailsHeader workOrder={workOrder} customer={customer} />
       <WorkOrderComprehensiveOverview
         workOrder={workOrder}
         jobLines={jobLines}
@@ -125,8 +163,8 @@ export function WorkOrderDetailsView({
         onJobLinesChange={handleJobLinesChange}
         onTimeEntriesChange={handleTimeEntriesChange}
         isEditMode={isEditMode}
+        customer={customer}
       />
     </div>
   );
 }
-
