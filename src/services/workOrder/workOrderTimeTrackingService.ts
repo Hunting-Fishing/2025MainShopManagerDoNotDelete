@@ -7,7 +7,7 @@ import { TimeEntry } from "@/types/workOrder";
 export const getWorkOrderTimeEntries = async (
   workOrderId: string,
   jobLineId?: string
-): Promise<any[]> => { // Use any[] to avoid type recursion error
+): Promise<any[]> => { // Stay as any[] to avoid TS recursion problems
   try {
     let query = supabase
       .from('work_order_time_entries')
@@ -19,7 +19,8 @@ export const getWorkOrderTimeEntries = async (
       query = query.eq('job_line_id', jobLineId);
     }
 
-    const { data, error } = await query;
+    // Explicitly type `data` as any[] to avoid any recursion issues
+    const { data, error } = await query as { data: any[]; error: any; };
     if (error) throw error;
     return data || [];
   } catch (error) {
