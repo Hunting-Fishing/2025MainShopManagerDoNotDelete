@@ -6,8 +6,7 @@ import { WorkOrderJobLine } from "@/types/jobLine";
 import { WorkOrderPart } from "@/types/workOrderPart";
 import { TimeEntry } from "@/types/workOrder";
 import { WorkOrderDetailsHeader } from "./WorkOrderDetailsHeader";
--import { WorkOrderOverviewHeader } from "./WorkOrderOverviewHeader";
-+import { WorkOrderOverviewHeader } from "./WorkOrderOverviewHeader";
+import { WorkOrderOverviewHeader } from "./WorkOrderOverviewHeader";
 import { WorkOrderDetailsTab } from "./WorkOrderDetailsTab";
 import { WorkOrderPartsSection } from "../parts/WorkOrderPartsSection";
 import { TimeTrackingSection } from "../time-tracking/TimeTrackingSection";
@@ -19,8 +18,7 @@ interface WorkOrderDetailsTabsProps {
   workOrder: WorkOrder;
   jobLines: WorkOrderJobLine[];
   allParts: WorkOrderPart[];
--  timeEntries: TimeEntry[];
-+  timeEntries: TimeEntry[];
+  timeEntries: TimeEntry[];
   customer?: import('@/types/customer').Customer | null;
   onJobLinesChange: (jobLines: WorkOrderJobLine[]) => void;
   onTimeEntriesChange: (entries: TimeEntry[]) => void;
@@ -31,8 +29,7 @@ export function WorkOrderDetailsTabs({
   workOrder,
   jobLines,
   allParts,
--  timeEntries,
-+  timeEntries,
+  timeEntries,
   customer,
   onJobLinesChange,
   onTimeEntriesChange,
@@ -50,17 +47,12 @@ export function WorkOrderDetailsTabs({
       </TabsList>
       <TabsContent value="overview">
         <WorkOrderDetailsHeader workOrder={workOrder} customer={customer} />
--        <WorkOrderOverviewHeader
--          workOrder={workOrder}
--          jobLines={jobLines}
--          allParts={allParts}
--        />
-+        <WorkOrderOverviewHeader
-+          workOrder={workOrder}
-+          jobLines={jobLines}
-+          allParts={allParts}
-+          timeEntries={timeEntries || []}
-+        />
+        <WorkOrderOverviewHeader
+          workOrder={workOrder}
+          jobLines={jobLines}
+          allParts={allParts}
+          timeEntries={timeEntries || []}
+        />
         <WorkOrderDetailsTab
           workOrder={workOrder}
           jobLines={jobLines}
@@ -97,4 +89,3 @@ export function WorkOrderDetailsTabs({
     </Tabs>
   );
 }
-
