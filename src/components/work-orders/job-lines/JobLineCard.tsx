@@ -12,7 +12,17 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useParts } from '@/hooks/useParts';
 import { DraggablePartCard } from '../parts/DraggablePartCard';
-import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogAction, AlertDialogCancel, AlertDialogTitle, AlertDialogDescription } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 
 interface JobLineCardProps {
   jobLine: WorkOrderJobLine;
@@ -147,4 +157,3 @@ export function JobLineCard({
     </Card>
   );
 }
-
