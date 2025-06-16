@@ -20,7 +20,7 @@ export const getJobLineParts = async (jobLineId: string): Promise<WorkOrderPart[
       ...part,
       name: part.part_name || '',
       unit_price: part.customer_price || 0,
-      total_price: part.total_price || (part.customer_price || 0) * (part.quantity || 0)
+      total_price: (part.customer_price || 0) * (part.quantity || 0)
     }));
   } catch (error) {
     console.error('Error in getJobLineParts:', error);
@@ -46,7 +46,7 @@ export const getWorkOrderParts = async (workOrderId: string): Promise<WorkOrderP
       ...part,
       name: part.part_name || '',
       unit_price: part.customer_price || 0,
-      total_price: part.total_price || (part.customer_price || 0) * (part.quantity || 0)
+      total_price: (part.customer_price || 0) * (part.quantity || 0)
     }));
   } catch (error) {
     console.error('Error in getWorkOrderParts:', error);
@@ -69,7 +69,6 @@ export const createWorkOrderPart = async (
         part_name: values.name || values.partName,
         quantity: values.quantity,
         customer_price: values.unit_price,
-        total_price: values.unit_price * values.quantity,
         status: values.status,
         notes: values.notes,
       })
@@ -86,7 +85,7 @@ export const createWorkOrderPart = async (
       ...data,
       name: data.part_name || '',
       unit_price: data.customer_price || 0,
-      total_price: data.total_price || (data.customer_price || 0) * (data.quantity || 0)
+      total_price: (data.customer_price || 0) * (data.quantity || 0)
     } as WorkOrderPart;
   } catch (error) {
     console.error('Error in createWorkOrderPart:', error);
@@ -106,7 +105,6 @@ export const updateWorkOrderPart = async (
         part_name: values.name || values.partName,
         quantity: values.quantity,
         customer_price: values.unit_price,
-        total_price: values.unit_price * values.quantity,
         status: values.status,
         notes: values.notes,
       })
@@ -124,7 +122,7 @@ export const updateWorkOrderPart = async (
       ...data,
       name: data.part_name || '',
       unit_price: data.customer_price || 0,
-      total_price: data.total_price || (data.customer_price || 0) * (data.quantity || 0)
+      total_price: (data.customer_price || 0) * (data.quantity || 0)
     } as WorkOrderPart;
   } catch (error) {
     console.error('Error in updateWorkOrderPart:', error);
