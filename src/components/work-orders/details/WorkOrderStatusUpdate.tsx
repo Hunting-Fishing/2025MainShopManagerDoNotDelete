@@ -17,7 +17,7 @@ import { WORK_ORDER_STATUSES } from '@/data/workOrderConstants';
 
 interface WorkOrderStatusUpdateProps {
   workOrder: WorkOrder;
-  onStatusUpdated?: (newStatus: string) => void;
+  onStatusUpdated?: (newStatus: string, updatedWorkOrder?: WorkOrder) => void;
 }
 
 const getStatusColor = (status: string) => {
@@ -57,15 +57,27 @@ export function WorkOrderStatusUpdate({ workOrder, onStatusUpdated }: WorkOrderS
   const handleStatusChange = async (newStatus: string) => {
     if (newStatus === workOrder.status) return;
     
+    console.log('Status update initiated:', {
+      workOrderId: workOrder.id,
+      currentStatus: workOrder.status,
+      newStatus: newStatus,
+      selectedStatus: selectedStatus
+    });
+    
     setIsUpdating(true);
     setError(null);
     
     try {
-      console.log('Updating work order status:', workOrder.id, 'from:', workOrder.status, 'to:', newStatus);
-      
       const updatedWorkOrder = await updateWorkOrderStatus(workOrder.id, newStatus);
       
       if (updatedWorkOrder) {
+        console.log('Status update successful:', {
+          workOrderId: workOrder.id,
+          oldStatus: workOrder.status,
+          newStatus: updatedWorkOrder.status,
+          updatedWorkOrder: updatedWorkOrder
+        });
+        
         const statusLabel = WORK_ORDER_STATUSES.find(s => s.value === newStatus)?.label;
         toast({
           title: "Success",
@@ -73,12 +85,16 @@ export function WorkOrderStatusUpdate({ workOrder, onStatusUpdated }: WorkOrderS
         });
         
         setSelectedStatus(newStatus);
-        onStatusUpdated?.(newStatus);
-        
-        console.log('Status update successful, notifications should be created automatically');
+        onStatusUpdated?.(newStatus, updatedWorkOrder);
+      } else {
+        throw new Error('No updated work order returned from server');
       }
     } catch (error: any) {
-      console.error('Error updating work order status:', error);
+      console.error('Status update failed:', {
+        workOrderId: workOrder.id,
+        attemptedStatus: newStatus,
+        error: error
+      });
       
       const errorMessage = error?.message || 'Failed to update work order status';
       setError(errorMessage);
@@ -100,8 +116,8 @@ export function WorkOrderStatusUpdate({ workOrder, onStatusUpdated }: WorkOrderS
     <div className="flex items-center gap-3">
       <div className="flex items-center gap-2">
         <span className="text-sm font-medium text-muted-foreground">Status:</span>
-        <Badge className={getStatusColor(workOrder.status)}>
-          {currentStatusOption?.label || workOrder.status}
+        <Badge className={getStatusColor(selectedStatus)}>
+          {WORK_ORDER_STATUSES.find(s => s.value === selectedStatus)?.label || selectedStatus}
         </Badge>
         {error && (
           <div className="flex items-center gap-1 text-red-600">
@@ -124,7 +140,7 @@ export function WorkOrderStatusUpdate({ workOrder, onStatusUpdated }: WorkOrderS
           {WORK_ORDER_STATUSES.map((option) => (
             <SelectItem key={option.value} value={option.value}>
               <div className="flex items-center gap-2">
-                {option.value === workOrder.status && (
+                {option.value === selectedStatus && (
                   <Check className="h-4 w-4 text-green-600" />
                 )}
                 <span>{option.label}</span>
