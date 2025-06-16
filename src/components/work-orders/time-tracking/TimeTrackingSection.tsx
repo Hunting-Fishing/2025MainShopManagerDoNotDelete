@@ -34,6 +34,8 @@ export function TimeTrackingSection({
       </CardHeader>
       <CardContent className="pt-0">
         <UnifiedItemsTable
+          jobLines={[]}
+          allParts={[]}
           timeEntries={timeEntries}
           isEditMode={isEditMode}
           showType="detailed"
