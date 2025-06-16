@@ -44,11 +44,13 @@ export function ChangeHistoryDialog({
       const tableName = itemType === 'jobLine' ? 'work_order_job_line_history' : 'work_order_part_history';
       const idField = itemType === 'jobLine' ? 'job_line_id' : 'part_id';
       
+      // Use explicit typing to avoid deep type instantiation
       const { data, error } = await supabase
-        .from(tableName)
-        .select('*')
+        .from(tableName as any)
+        .select('id, field_name, old_value, new_value, changed_by_name, change_reason, changed_at')
         .eq(idField, itemId)
-        .order('changed_at', { ascending: false });
+        .order('changed_at', { ascending: false })
+        .returns<HistoryEntry[]>();
 
       if (error) {
         console.error('Error fetching history:', error);
