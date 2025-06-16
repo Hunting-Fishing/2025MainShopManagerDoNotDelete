@@ -1,3 +1,4 @@
+
 /**
  * Work order status mappings and constants
  */
@@ -44,6 +45,10 @@ export const priorityMap: Record<string, { label: string; classes: string }> = {
   'high': {
     label: 'High',
     classes: 'bg-red-100 text-red-800 border-red-200'
+  },
+  'urgent': {
+    label: 'Urgent',
+    classes: 'bg-red-200 text-red-900 border-red-300'
   }
 };
 

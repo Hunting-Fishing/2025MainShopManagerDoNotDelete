@@ -1,3 +1,4 @@
+
 export interface WorkOrder {
   id: string;
   shop_id: string;
@@ -6,6 +7,8 @@ export interface WorkOrder {
   customer_email: string;
   customer_phone: string;
   customer_address: string;
+  customer_city?: string; // Added missing property
+  customer_state?: string; // Added missing property
   vehicle_id: string;
   vehicle_make: string;
   vehicle_model: string;
@@ -24,6 +27,23 @@ export interface WorkOrder {
   created_at: string;
   updated_at: string;
   inventory_items?: WorkOrderInventoryItem[];
+
+  // Database fields that components are expecting
+  work_order_number?: string;
+  total_cost?: number;
+  service_type?: string;
+  estimated_hours?: number;
+  total_billable_time?: number;
+  date?: string; // For compatibility
+  customer?: string; // For compatibility - should map to customer_name
+  vehicle?: any; // For compatibility
+  advisor_id?: string;
+  created_by?: string;
+  end_time?: string;
+  start_time?: string;
+  invoice_id?: string;
+  invoiced_at?: string;
+  timeEntries?: TimeEntry[];
 
   // CamelCase aliases for backward compatibility
   shopId?: string; // Alias for shop_id
@@ -55,6 +75,34 @@ export interface WorkOrderInventoryItem {
   unit_price: number;
   total: number;
   notes?: string;
+  itemStatus?: string; // Added missing property
+}
+
+// Add missing TimeEntry interface
+export interface TimeEntry {
+  id: string;
+  work_order_id: string;
+  employee_id: string;
+  employee_name: string;
+  start_time: string;
+  end_time?: string;
+  duration: number;
+  billable: boolean;
+  notes?: string;
+  created_at: string;
+}
+
+// Add missing WorkOrderTemplate interface
+export interface WorkOrderTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  jobLines: any[];
+  parts: any[];
+  estimatedHours: number;
+  laborRate: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface WorkOrderFormValues {
@@ -131,4 +179,24 @@ export const statusMap: Record<WorkOrderStatusType, { label: string; classes: st
   'tech-support': { label: 'Tech Support', classes: 'bg-blue-100 text-blue-800' },
   'warranty': { label: 'Warranty', classes: 'bg-green-100 text-green-800' },
   'internal-ro': { label: 'Internal RO', classes: 'bg-gray-100 text-gray-800' }
+};
+
+// Add missing priorityMap export
+export const priorityMap: Record<string, { label: string; classes: string }> = {
+  'low': {
+    label: 'Low',
+    classes: 'bg-blue-100 text-blue-800 border-blue-200'
+  },
+  'medium': {
+    label: 'Medium',
+    classes: 'bg-yellow-100 text-yellow-800 border-yellow-200'
+  },
+  'high': {
+    label: 'High',
+    classes: 'bg-red-100 text-red-800 border-red-200'
+  },
+  'urgent': {
+    label: 'Urgent',
+    classes: 'bg-red-200 text-red-900 border-red-300'
+  }
 };
