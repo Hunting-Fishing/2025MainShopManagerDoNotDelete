@@ -54,7 +54,7 @@ export const workOrderFormSchema = z.object({
   // Additional information
   notes: z.string().optional(),
   
-  // Inventory items - Added missing field
+  // Inventory items - properly typed
   inventoryItems: z.array(z.object({
     id: z.string(),
     name: z.string(),
@@ -66,6 +66,8 @@ export const workOrderFormSchema = z.object({
     notes: z.string().optional(),
     itemStatus: z.string().optional(),
     estimatedArrivalDate: z.string().optional(),
+    supplierName: z.string().optional(),
+    supplierOrderRef: z.string().optional(),
   })).default([]),
 });
 
