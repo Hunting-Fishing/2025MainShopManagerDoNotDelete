@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Edit2, Trash2 } from 'lucide-react';
 import { JobLineEditDialog } from './JobLineEditDialog';
-import { CompactPartsTable } from '../parts/CompactPartsTable';
 
 interface JobLinesTableProps {
   jobLines: WorkOrderJobLine[];
@@ -44,6 +43,18 @@ export function JobLinesTable({
   const handleDeleteClick = (jobLineId: string) => {
     if (confirm('Are you sure you want to delete this job line?')) {
       onDelete(jobLineId);
+    }
+  };
+
+  const handlePartUpdate = (updatedPart: WorkOrderPart) => {
+    if (onPartUpdate) {
+      onPartUpdate(updatedPart);
+    }
+  };
+
+  const handlePartDelete = (partId: string) => {
+    if (onPartDelete && confirm('Are you sure you want to delete this part?')) {
+      onPartDelete(partId);
     }
   };
 
@@ -111,12 +122,40 @@ export function JobLinesTable({
               {jobLineParts.length > 0 && (
                 <div className="pt-3 border-t">
                   <h5 className="text-sm font-medium mb-2">Associated Parts:</h5>
-                  <CompactPartsTable
-                    parts={jobLineParts}
-                    onUpdate={onPartUpdate || (() => {})}
-                    onDelete={onPartDelete || (() => {})}
-                    isEditMode={true}
-                  />
+                  <div className="space-y-2">
+                    {jobLineParts.map((part) => (
+                      <div key={part.id} className="flex justify-between items-center p-2 bg-muted rounded">
+                        <div className="flex-1">
+                          <div className="font-medium">{part.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            Part #: {part.part_number} | Qty: {part.quantity}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-medium">${part.unit_price}</div>
+                          <div className="text-sm text-muted-foreground">
+                            Total: ${part.total_price}
+                          </div>
+                        </div>
+                        <div className="flex gap-1 ml-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handlePartUpdate(part)}
+                          >
+                            <Edit2 className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handlePartDelete(part.id)}
+                          >
+                            <Trash2 className="h-3 w-3 text-red-500" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
