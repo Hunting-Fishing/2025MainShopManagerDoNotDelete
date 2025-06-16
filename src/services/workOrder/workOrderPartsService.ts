@@ -2,33 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { WorkOrderPart, WorkOrderPartFormValues } from '@/types/workOrderPart';
 
-export const getJobLineParts = async (jobLineId: string): Promise<WorkOrderPart[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('work_order_parts')
-      .select('*')
-      .eq('job_line_id', jobLineId)
-      .order('created_at', { ascending: true });
-
-    if (error) {
-      console.error('Error fetching job line parts:', error);
-      throw error;
-    }
-
-    // Map database fields to TypeScript interface
-    return (data || []).map(part => ({
-      ...part,
-      name: part.part_name || '',
-      unit_price: part.customer_price || 0,
-      total_price: (part.customer_price || 0) * (part.quantity || 0)
-    }));
-  } catch (error) {
-    console.error('Error in getJobLineParts:', error);
-    throw error;
-  }
-};
-
-export const getWorkOrderParts = async (workOrderId: string): Promise<WorkOrderPart[]> => {
+export async function getWorkOrderParts(workOrderId: string): Promise<WorkOrderPart[]> {
   try {
     const { data, error } = await supabase
       .from('work_order_parts')
@@ -41,37 +15,33 @@ export const getWorkOrderParts = async (workOrderId: string): Promise<WorkOrderP
       throw error;
     }
 
-    // Map database fields to TypeScript interface
-    return (data || []).map(part => ({
-      ...part,
-      name: part.part_name || '',
-      unit_price: part.customer_price || 0,
-      total_price: (part.customer_price || 0) * (part.quantity || 0)
-    }));
+    return data || [];
   } catch (error) {
     console.error('Error in getWorkOrderParts:', error);
     throw error;
   }
-};
+}
 
-export const createWorkOrderPart = async (
+export async function createWorkOrderPart(
   workOrderId: string,
-  jobLineId: string | null,
-  values: WorkOrderPartFormValues
-): Promise<WorkOrderPart> => {
+  partData: WorkOrderPartFormValues
+): Promise<WorkOrderPart> {
   try {
+    const totalPrice = partData.quantity * partData.unit_price;
+    
     const { data, error } = await supabase
       .from('work_order_parts')
       .insert({
         work_order_id: workOrderId,
-        job_line_id: jobLineId,
-        part_number: values.part_number,
-        part_name: values.name || values.partName,
-        quantity: values.quantity,
-        customer_price: values.unit_price,
-        part_type: values.partType || 'OEM',
-        status: values.status,
-        notes: values.notes,
+        job_line_id: partData.job_line_id,
+        part_number: partData.part_number,
+        name: partData.name,
+        description: partData.description,
+        quantity: partData.quantity,
+        unit_price: partData.unit_price,
+        total_price: totalPrice,
+        status: partData.status || 'pending',
+        notes: partData.notes
       })
       .select()
       .single();
@@ -81,34 +51,32 @@ export const createWorkOrderPart = async (
       throw error;
     }
 
-    // Map database fields to TypeScript interface
-    return {
-      ...data,
-      name: data.part_name || '',
-      unit_price: data.customer_price || 0,
-      total_price: (data.customer_price || 0) * (data.quantity || 0)
-    } as WorkOrderPart;
+    return data;
   } catch (error) {
     console.error('Error in createWorkOrderPart:', error);
     throw error;
   }
-};
+}
 
-export const updateWorkOrderPart = async (
+export async function updateWorkOrderPart(
   partId: string,
-  values: WorkOrderPartFormValues
-): Promise<WorkOrderPart | null> => {
+  partData: WorkOrderPartFormValues
+): Promise<WorkOrderPart> {
   try {
+    const totalPrice = partData.quantity * partData.unit_price;
+    
     const { data, error } = await supabase
       .from('work_order_parts')
       .update({
-        part_number: values.part_number,
-        part_name: values.name || values.partName,
-        quantity: values.quantity,
-        customer_price: values.unit_price,
-        part_type: values.partType || 'OEM',
-        status: values.status,
-        notes: values.notes,
+        part_number: partData.part_number,
+        name: partData.name,
+        description: partData.description,
+        quantity: partData.quantity,
+        unit_price: partData.unit_price,
+        total_price: totalPrice,
+        status: partData.status,
+        notes: partData.notes,
+        updated_at: new Date().toISOString()
       })
       .eq('id', partId)
       .select()
@@ -119,31 +87,26 @@ export const updateWorkOrderPart = async (
       throw error;
     }
 
-    // Map database fields to TypeScript interface
-    return {
-      ...data,
-      name: data.part_name || '',
-      unit_price: data.customer_price || 0,
-      total_price: (data.customer_price || 0) * (data.quantity || 0)
-    } as WorkOrderPart;
+    return data;
   } catch (error) {
     console.error('Error in updateWorkOrderPart:', error);
-    return null;
+    throw error;
   }
-};
+}
 
-export const deleteWorkOrderPart = async (partId: string): Promise<boolean> => {
+export async function deleteWorkOrderPart(partId: string): Promise<void> {
   try {
-    const { error } = await supabase.from('work_order_parts').delete().eq('id', partId);
+    const { error } = await supabase
+      .from('work_order_parts')
+      .delete()
+      .eq('id', partId);
 
     if (error) {
       console.error('Error deleting work order part:', error);
-      return false;
+      throw error;
     }
-
-    return true;
   } catch (error) {
     console.error('Error in deleteWorkOrderPart:', error);
-    return false;
+    throw error;
   }
-};
+}

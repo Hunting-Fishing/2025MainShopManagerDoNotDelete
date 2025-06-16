@@ -4,7 +4,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { History, Clock, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { formatDate } from '@/utils/dateUtils';
 
 interface HistoryEntry {
   id: string;
@@ -67,6 +66,10 @@ export function ChangeHistoryDialog({
 
   const formatFieldName = (fieldName: string) => {
     return fieldName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString();
   };
 
   return (
