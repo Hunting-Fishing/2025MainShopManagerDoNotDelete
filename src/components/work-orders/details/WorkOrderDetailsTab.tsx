@@ -5,9 +5,7 @@ import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
-import { updateWorkOrderJobLine } from '@/services/workOrder/jobLinesService';
 import { CompactJobLinesTable } from '../job-lines/CompactJobLinesTable';
-import { EditJobLineDialog } from '../job-lines/EditJobLineDialog';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 
@@ -28,8 +26,6 @@ export function WorkOrderDetailsTab({
 }: WorkOrderDetailsTabProps) {
   const [allParts, setAllParts] = useState<WorkOrderPart[]>(initialParts);
   const [partsLoading, setPartsLoading] = useState(false);
-  const [editingJobLine, setEditingJobLine] = useState<WorkOrderJobLine | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   useEffect(() => {
     const fetchParts = async () => {
@@ -50,23 +46,11 @@ export function WorkOrderDetailsTab({
     fetchParts();
   }, [workOrder.id]);
 
-  const handleJobLineUpdate = (jobLineToEdit: WorkOrderJobLine) => {
-    setEditingJobLine(jobLineToEdit);
-    setIsEditDialogOpen(true);
-  };
-
-  const handleJobLineSave = async (updatedJobLine: WorkOrderJobLine) => {
-    try {
-      await updateWorkOrderJobLine(updatedJobLine);
-      const updatedJobLines = jobLines.map(line => 
-        line.id === updatedJobLine.id ? updatedJobLine : line
-      );
-      onJobLinesChange(updatedJobLines);
-      setIsEditDialogOpen(false);
-      setEditingJobLine(null);
-    } catch (error) {
-      console.error('Failed to update job line:', error);
-    }
+  const handleJobLineUpdate = (updatedJobLine: WorkOrderJobLine) => {
+    const updatedJobLines = jobLines.map(line => 
+      line.id === updatedJobLine.id ? updatedJobLine : line
+    );
+    onJobLinesChange(updatedJobLines);
   };
 
   const handleJobLineDelete = (jobLineId: string) => {
@@ -150,14 +134,6 @@ export function WorkOrderDetailsTab({
           )}
         </CardContent>
       </Card>
-
-      {/* Edit Job Line Dialog */}
-      <EditJobLineDialog
-        jobLine={editingJobLine}
-        open={isEditDialogOpen}
-        onOpenChange={setIsEditDialogOpen}
-        onUpdate={handleJobLineSave}
-      />
     </div>
   );
 }
