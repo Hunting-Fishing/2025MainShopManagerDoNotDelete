@@ -4,7 +4,8 @@ import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit2, Trash2, Plus } from 'lucide-react';
+import { Edit2, Trash2, ChevronDown, ChevronRight, ArrowDownRight } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface CompactJobLinesTableProps {
   jobLines: WorkOrderJobLine[];
@@ -25,6 +26,18 @@ export function CompactJobLinesTable({
   onPartDelete,
   isEditMode
 }: CompactJobLinesTableProps) {
+  const [expandedJobLines, setExpandedJobLines] = useState<Set<string>>(new Set());
+
+  const toggleJobLine = (jobLineId: string) => {
+    const newExpanded = new Set(expandedJobLines);
+    if (newExpanded.has(jobLineId)) {
+      newExpanded.delete(jobLineId);
+    } else {
+      newExpanded.add(jobLineId);
+    }
+    setExpandedJobLines(newExpanded);
+  };
+
   const handleEditJobLine = (jobLine: WorkOrderJobLine) => {
     console.log('Edit job line clicked:', jobLine.id, jobLine.name);
     // TODO: Implement job line edit dialog
@@ -47,161 +60,145 @@ export function CompactJobLinesTable({
     }
   };
 
-  // Combine job lines and parts into a unified display similar to your reference
-  const renderUnifiedTable = () => {
-    const allItems: Array<{
-      id: string;
-      type: 'Labor' | 'Parts';
-      description: string;
-      partNumber?: string;
-      quantity: number;
-      price: number;
-      rate?: number;
-      hours?: number;
-      lineTotal: number;
-      status?: string;
-      jobLineId?: string;
-    }> = [];
-
-    // Add labor items (job lines)
-    jobLines.forEach(jobLine => {
-      allItems.push({
-        id: jobLine.id,
-        type: 'Labor',
-        description: jobLine.name + (jobLine.description ? ` - ${jobLine.description}` : ''),
-        quantity: jobLine.estimated_hours || 0,
-        price: 0,
-        rate: jobLine.labor_rate || 0,
-        hours: jobLine.estimated_hours || 0,
-        lineTotal: jobLine.total_amount || 0,
-        status: jobLine.status
-      });
-    });
-
-    // Add parts
-    allParts.forEach(part => {
-      allItems.push({
-        id: part.id,
-        type: 'Parts',
-        description: part.name + (part.description ? ` - ${part.description}` : ''),
-        partNumber: part.part_number,
-        quantity: part.quantity,
-        price: part.unit_price,
-        lineTotal: part.total_price,
-        status: part.status,
-        jobLineId: part.job_line_id
-      });
-    });
-
-    if (allItems.length === 0) {
-      return (
-        <div className="text-center py-8 text-muted-foreground">
-          <p>No labor or parts found</p>
-          {isEditMode && (
-            <div className="mt-4 space-x-2">
-              <Button variant="outline" size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Labor
-              </Button>
-              <Button variant="outline" size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Part
-              </Button>
-            </div>
-          )}
-        </div>
-      );
-    }
-
+  if (jobLines.length === 0) {
     return (
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-gray-100 border-b">
-              <th className="text-left p-3 font-medium text-sm">TYPE</th>
-              <th className="text-left p-3 font-medium text-sm">DESCRIPTION</th>
-              <th className="text-left p-3 font-medium text-sm">PART #</th>
-              <th className="text-center p-3 font-medium text-sm">QTY</th>
-              <th className="text-right p-3 font-medium text-sm">PRICE</th>
-              <th className="text-right p-3 font-medium text-sm">RATE</th>
-              <th className="text-right p-3 font-medium text-sm">HOURS</th>
-              <th className="text-right p-3 font-medium text-sm">LINE TOTAL</th>
-              {isEditMode && <th className="text-center p-3 font-medium text-sm">ACTIONS</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {allItems.map((item, index) => (
-              <tr key={item.id} className={`border-b hover:bg-gray-50 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}>
-                <td className="p-3">
-                  <Badge variant={item.type === 'Labor' ? 'default' : 'secondary'} className="text-xs">
-                    {item.type}
-                  </Badge>
-                </td>
-                <td className="p-3 text-sm">{item.description}</td>
-                <td className="p-3 text-sm text-center">{item.partNumber || '-'}</td>
-                <td className="p-3 text-sm text-center">{item.quantity || '-'}</td>
-                <td className="p-3 text-sm text-right">
-                  {item.type === 'Parts' ? `$${item.price.toFixed(2)}` : '-'}
-                </td>
-                <td className="p-3 text-sm text-right">
-                  {item.type === 'Labor' ? `$${item.rate?.toFixed(2) || '0.00'}` : '-'}
-                </td>
-                <td className="p-3 text-sm text-right">
-                  {item.type === 'Labor' ? (item.hours?.toFixed(1) || '0.0') : '-'}
-                </td>
-                <td className="p-3 text-sm text-right font-medium">
-                  ${item.lineTotal.toFixed(2)}
-                </td>
-                {isEditMode && (
-                  <td className="p-3 text-center">
-                    <div className="flex justify-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => item.type === 'Labor' 
-                          ? handleEditJobLine(jobLines.find(jl => jl.id === item.id)!)
-                          : handleEditPart(allParts.find(p => p.id === item.id)!)
-                        }
-                      >
-                        <Edit2 className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => item.type === 'Labor' 
-                          ? handleDeleteJobLine(item.id)
-                          : handleDeletePart(item.id)
-                        }
-                      >
-                        <Trash2 className="h-3 w-3 text-red-500" />
-                      </Button>
-                    </div>
-                  </td>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="text-center py-8 text-muted-foreground">
+        <p>No job lines found</p>
       </div>
     );
-  };
+  }
 
   return (
-    <div className="space-y-4">
-      {renderUnifiedTable()}
-      
-      {isEditMode && (
-        <div className="flex gap-2 pt-4 border-t">
-          <Button variant="outline" size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Labor Item
-          </Button>
-          <Button variant="outline" size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Part
-          </Button>
-        </div>
-      )}
+    <div className="space-y-2">
+      {/* Header */}
+      <div className="grid grid-cols-12 gap-2 text-xs font-medium text-muted-foreground border-b pb-2">
+        <div className="col-span-1"></div>
+        <div className="col-span-4">Item</div>
+        <div className="col-span-2">Qty</div>
+        <div className="col-span-2">Rate/Price</div>
+        <div className="col-span-2">Amount</div>
+        {isEditMode && <div className="col-span-1">Actions</div>}
+      </div>
+
+      {jobLines.map((jobLine) => {
+        const jobLineParts = allParts.filter(part => part.job_line_id === jobLine.id);
+        const isExpanded = expandedJobLines.has(jobLine.id);
+        const hasPartsToShow = jobLineParts.length > 0;
+
+        return (
+          <Collapsible
+            key={jobLine.id}
+            open={isExpanded}
+            onOpenChange={() => toggleJobLine(jobLine.id)}
+          >
+            {/* Job Line Row */}
+            <div className="grid grid-cols-12 gap-2 py-2 border-b border-gray-100 hover:bg-gray-50">
+              <div className="col-span-1 flex items-center">
+                {hasPartsToShow && (
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                      {isExpanded ? (
+                        <ChevronDown className="h-3 w-3" />
+                      ) : (
+                        <ChevronRight className="h-3 w-3" />
+                      )}
+                    </Button>
+                  </CollapsibleTrigger>
+                )}
+              </div>
+              <div className="col-span-4">
+                <div className="font-medium text-sm">{jobLine.name}</div>
+                {jobLine.description && (
+                  <div className="text-xs text-muted-foreground">{jobLine.description}</div>
+                )}
+                <Badge variant="outline" className="text-xs mt-1">
+                  Labor
+                </Badge>
+              </div>
+              <div className="col-span-2 text-sm">
+                {jobLine.estimated_hours || 0} hrs
+              </div>
+              <div className="col-span-2 text-sm">
+                ${jobLine.labor_rate || 0}/hr
+              </div>
+              <div className="col-span-2 text-sm font-medium">
+                ${jobLine.total_amount || 0}
+              </div>
+              {isEditMode && (
+                <div className="col-span-1 flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0"
+                    onClick={() => handleEditJobLine(jobLine)}
+                  >
+                    <Edit2 className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0"
+                    onClick={() => handleDeleteJobLine(jobLine.id)}
+                  >
+                    <Trash2 className="h-3 w-3 text-red-500" />
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Connected Parts (Expandable) */}
+            {hasPartsToShow && (
+              <CollapsibleContent className="space-y-1">
+                {jobLineParts.map((part, index) => (
+                  <div key={part.id} className="grid grid-cols-12 gap-2 py-1 bg-blue-50/50">
+                    <div className="col-span-1 flex items-center justify-center">
+                      <ArrowDownRight className="h-3 w-3 text-blue-500" />
+                    </div>
+                    <div className="col-span-4">
+                      <div className="text-sm font-medium">{part.name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        Part #: {part.part_number}
+                      </div>
+                      <Badge variant="secondary" className="text-xs mt-1">
+                        Part
+                      </Badge>
+                    </div>
+                    <div className="col-span-2 text-sm">
+                      {part.quantity}
+                    </div>
+                    <div className="col-span-2 text-sm">
+                      ${part.unit_price}
+                    </div>
+                    <div className="col-span-2 text-sm font-medium">
+                      ${part.total_price}
+                    </div>
+                    {isEditMode && (
+                      <div className="col-span-1 flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={() => handleEditPart(part)}
+                        >
+                          <Edit2 className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={() => handleDeletePart(part.id)}
+                        >
+                          <Trash2 className="h-3 w-3 text-red-500" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </CollapsibleContent>
+            )}
+          </Collapsible>
+        );
+      })}
     </div>
   );
 }
