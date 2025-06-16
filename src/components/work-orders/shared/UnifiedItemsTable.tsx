@@ -1,12 +1,5 @@
 
 import React from 'react';
-import { WorkOrderJobLine } from '@/types/jobLine';
-import { WorkOrderPart } from '@/types/workOrderPart';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { GripVertical, Edit, Trash2 } from 'lucide-react';
-import { jobLineStatusMap } from '@/types/jobLine';
-import { partStatusMap } from '@/types/workOrderPart';
 import {
   DndContext,
   closestCenter,
@@ -21,9 +14,21 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { WorkOrderJobLine } from '@/types/jobLine';
+import { WorkOrderPart } from '@/types/workOrderPart';
+import { StatusSelector } from './StatusSelector';
+import { StatusBadge } from './StatusBadge';
+import { GripVertical, Trash2, Package } from 'lucide-react';
 
 interface UnifiedItemsTableProps {
   jobLines: WorkOrderJobLine[];
@@ -32,19 +37,19 @@ interface UnifiedItemsTableProps {
   onJobLineDelete?: (jobLineId: string) => void;
   onPartUpdate?: (part: WorkOrderPart) => void;
   onPartDelete?: (partId: string) => void;
-  onReorderJobLines?: (jobLines: WorkOrderJobLine[]) => void;
-  onReorderParts?: (parts: WorkOrderPart[]) => void;
-  isEditMode?: boolean;
-  showType?: 'overview' | 'labor' | 'parts';
+  onReorderJobLines?: (reorderedJobLines: WorkOrderJobLine[]) => void;
+  onReorderParts?: (reorderedParts: WorkOrderPart[]) => void;
+  isEditMode: boolean;
+  showType: 'overview' | 'labor' | 'parts';
 }
 
 interface SortableRowProps {
   id: string;
   children: React.ReactNode;
-  isEditMode?: boolean;
+  disabled?: boolean;
 }
 
-function SortableRow({ id, children, isEditMode }: SortableRowProps) {
+function SortableRow({ id, children, disabled }: SortableRowProps) {
   const {
     attributes,
     listeners,
@@ -52,7 +57,7 @@ function SortableRow({ id, children, isEditMode }: SortableRowProps) {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id });
+  } = useSortable({ id, disabled });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -61,24 +66,9 @@ function SortableRow({ id, children, isEditMode }: SortableRowProps) {
   };
 
   return (
-    <tr
-      ref={setNodeRef}
-      style={style}
-      className={`border-b hover:bg-muted/50 ${isDragging ? 'bg-muted' : ''}`}
-    >
-      {isEditMode && (
-        <td className="p-2 w-8">
-          <div
-            {...attributes}
-            {...listeners}
-            className="cursor-grab hover:cursor-grabbing flex items-center justify-center text-muted-foreground hover:text-foreground"
-          >
-            <GripVertical className="h-4 w-4" />
-          </div>
-        </td>
-      )}
+    <TableRow ref={setNodeRef} style={style} className={isDragging ? 'z-50' : ''}>
       {children}
-    </tr>
+    </TableRow>
   );
 }
 
@@ -91,11 +81,15 @@ export function UnifiedItemsTable({
   onPartDelete,
   onReorderJobLines,
   onReorderParts,
-  isEditMode = false,
-  showType = 'overview'
+  isEditMode,
+  showType
 }: UnifiedItemsTableProps) {
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -104,288 +98,313 @@ export function UnifiedItemsTable({
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
-    if (!over || active.id === over.id) return;
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const activeId = active.id as string;
+    const overId = over.id as string;
 
     // Handle job line reordering
-    if (showType === 'labor' && onReorderJobLines) {
-      const oldIndex = jobLines.findIndex(item => item.id === active.id);
-      const newIndex = jobLines.findIndex(item => item.id === over.id);
-      
-      if (oldIndex !== -1 && newIndex !== -1) {
-        const reorderedJobLines = arrayMove(jobLines, oldIndex, newIndex);
-        onReorderJobLines(reorderedJobLines);
-      }
+    const activeJobLineIndex = jobLines.findIndex(item => item.id === activeId);
+    const overJobLineIndex = jobLines.findIndex(item => item.id === overId);
+
+    if (activeJobLineIndex !== -1 && overJobLineIndex !== -1) {
+      const reorderedJobLines = arrayMove(jobLines, activeJobLineIndex, overJobLineIndex);
+      onReorderJobLines?.(reorderedJobLines);
+      return;
     }
 
     // Handle parts reordering
-    if (showType === 'parts' && onReorderParts) {
-      const oldIndex = allParts.findIndex(item => item.id === active.id);
-      const newIndex = allParts.findIndex(item => item.id === over.id);
-      
-      if (oldIndex !== -1 && newIndex !== -1) {
-        const reorderedParts = arrayMove(allParts, oldIndex, newIndex);
-        onReorderParts(reorderedParts);
-      }
+    const activePartIndex = allParts.findIndex(item => item.id === activeId);
+    const overPartIndex = allParts.findIndex(item => item.id === overId);
+
+    if (activePartIndex !== -1 && overPartIndex !== -1) {
+      const reorderedParts = arrayMove(allParts, activePartIndex, overPartIndex);
+      onReorderParts?.(reorderedParts);
+      return;
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
+  const handleJobLineStatusChange = (jobLineId: string, newStatus: string) => {
+    const jobLine = jobLines.find(jl => jl.id === jobLineId);
+    if (jobLine && onJobLineUpdate) {
+      onJobLineUpdate({ ...jobLine, status: newStatus });
+    }
   };
 
-  const renderJobLines = () => {
-    if (!jobLines.length) {
-      return (
-        <tr>
-          <td colSpan={isEditMode ? 7 : 6} className="p-4 text-center text-muted-foreground">
-            No job lines found
-          </td>
-        </tr>
-      );
+  const handlePartStatusChange = (partId: string, newStatus: string) => {
+    const part = allParts.find(p => p.id === partId);
+    if (part && onPartUpdate) {
+      onPartUpdate({ ...part, status: newStatus });
     }
+  };
 
-    return jobLines.map((jobLine) => (
-      <SortableRow key={jobLine.id} id={jobLine.id} isEditMode={isEditMode}>
-        <td className="p-3 font-medium">{jobLine.name}</td>
-        <td className="p-3 text-sm text-muted-foreground">
-          {jobLine.category && jobLine.subcategory 
-            ? `${jobLine.category} / ${jobLine.subcategory}`
-            : jobLine.category || 'Labor'
-          }
-        </td>
-        <td className="p-3 text-sm">{jobLine.estimated_hours || 0} hrs</td>
-        <td className="p-3 text-sm">{formatCurrency(jobLine.labor_rate || 0)}/hr</td>
-        <td className="p-3 font-medium">{formatCurrency(jobLine.total_amount || 0)}</td>
-        <td className="p-3">
-          <Badge 
-            variant="outline" 
-            className={jobLineStatusMap[jobLine.status || 'pending']?.classes}
+  const handleJobLineFieldChange = (jobLineId: string, field: string, value: any) => {
+    const jobLine = jobLines.find(jl => jl.id === jobLineId);
+    if (jobLine && onJobLineUpdate) {
+      onJobLineUpdate({ ...jobLine, [field]: value });
+    }
+  };
+
+  const handlePartFieldChange = (partId: string, field: string, value: any) => {
+    const part = allParts.find(p => p.id === partId);
+    if (part && onPartUpdate) {
+      onPartUpdate({ ...part, [field]: value });
+    }
+  };
+
+  const getPartsForJobLine = (jobLineId: string) => {
+    return allParts.filter(part => part.job_line_id === jobLineId);
+  };
+
+  const unassignedParts = allParts.filter(part => !part.job_line_id);
+
+  const renderJobLineRow = (jobLine: WorkOrderJobLine) => (
+    <SortableRow key={jobLine.id} id={jobLine.id} disabled={!isEditMode}>
+      {isEditMode && (
+        <TableCell className="w-8">
+          <GripVertical className="h-4 w-4 text-gray-400 cursor-grab" />
+        </TableCell>
+      )}
+      <TableCell>
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="text-xs">LABOR</Badge>
+          {isEditMode ? (
+            <Input
+              value={jobLine.name}
+              onChange={(e) => handleJobLineFieldChange(jobLine.id, 'name', e.target.value)}
+              className="h-8"
+            />
+          ) : (
+            <span className="font-medium">{jobLine.name}</span>
+          )}
+        </div>
+        {jobLine.description && (
+          <div className="text-sm text-muted-foreground mt-1">{jobLine.description}</div>
+        )}
+      </TableCell>
+      <TableCell>
+        {isEditMode ? (
+          <Input
+            type="number"
+            value={jobLine.estimated_hours || 0}
+            onChange={(e) => handleJobLineFieldChange(jobLine.id, 'estimated_hours', parseFloat(e.target.value) || 0)}
+            className="h-8 w-20"
+            step="0.5"
+          />
+        ) : (
+          `${jobLine.estimated_hours || 0} hrs`
+        )}
+      </TableCell>
+      <TableCell>
+        {isEditMode ? (
+          <Input
+            type="number"
+            value={jobLine.labor_rate || 0}
+            onChange={(e) => handleJobLineFieldChange(jobLine.id, 'labor_rate', parseFloat(e.target.value) || 0)}
+            className="h-8 w-24"
+            step="0.01"
+          />
+        ) : (
+          `$${(jobLine.labor_rate || 0).toFixed(2)}`
+        )}
+      </TableCell>
+      <TableCell>
+        <span className="font-medium">
+          ${((jobLine.estimated_hours || 0) * (jobLine.labor_rate || 0)).toFixed(2)}
+        </span>
+      </TableCell>
+      <TableCell>
+        {isEditMode ? (
+          <StatusSelector
+            currentStatus={jobLine.status || 'pending'}
+            type="jobLine"
+            onStatusChange={(status) => handleJobLineStatusChange(jobLine.id, status)}
+          />
+        ) : (
+          <StatusBadge status={jobLine.status || 'pending'} type="jobLine" />
+        )}
+      </TableCell>
+      {isEditMode && (
+        <TableCell className="w-8">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onJobLineDelete?.(jobLine.id)}
+            className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
           >
-            {jobLineStatusMap[jobLine.status || 'pending']?.label || 'Pending'}
-          </Badge>
-        </td>
-        {isEditMode && (
-          <td className="p-3">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onJobLineUpdate?.(jobLine)}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onJobLineDelete?.(jobLine.id)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </td>
-        )}
-      </SortableRow>
-    ));
-  };
-
-  const renderParts = () => {
-    if (!allParts.length) {
-      return (
-        <tr>
-          <td colSpan={isEditMode ? 7 : 6} className="p-4 text-center text-muted-foreground">
-            No parts found
-          </td>
-        </tr>
-      );
-    }
-
-    return allParts.map((part) => (
-      <SortableRow key={part.id} id={part.id} isEditMode={isEditMode}>
-        <td className="p-3 font-medium">{part.name}</td>
-        <td className="p-3 text-sm text-muted-foreground">{part.part_number}</td>
-        <td className="p-3 text-sm">{part.quantity}</td>
-        <td className="p-3 text-sm">{formatCurrency(part.unit_price)}</td>
-        <td className="p-3 font-medium">{formatCurrency(part.total_price)}</td>
-        <td className="p-3">
-          <Badge 
-            variant="outline" 
-            className={partStatusMap[part.status || 'pending']?.classes}
-          >
-            {partStatusMap[part.status || 'pending']?.label || 'Pending'}
-          </Badge>
-        </td>
-        {isEditMode && (
-          <td className="p-3">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onPartUpdate?.(part)}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onPartDelete?.(part.id)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </td>
-        )}
-      </SortableRow>
-    ));
-  };
-
-  const renderOverview = () => {
-    const allItems = [
-      ...jobLines.map(line => ({ ...line, type: 'jobLine' as const })),
-      ...allParts.map(part => ({ ...part, type: 'part' as const }))
-    ];
-
-    if (!allItems.length) {
-      return (
-        <tr>
-          <td colSpan={isEditMode ? 7 : 6} className="p-4 text-center text-muted-foreground">
-            No items found
-          </td>
-        </tr>
-      );
-    }
-
-    return allItems.map((item) => (
-      <tr key={`${item.type}-${item.id}`} className="border-b hover:bg-muted/50">
-        {isEditMode && (
-          <td className="p-2 w-8">
-            <GripVertical className="h-4 w-4 text-muted-foreground" />
-          </td>
-        )}
-        <td className="p-3 font-medium">
-          {item.type === 'jobLine' ? item.name : item.name}
-        </td>
-        <td className="p-3 text-sm text-muted-foreground">
-          {item.type === 'jobLine' 
-            ? (item.category && item.subcategory 
-                ? `${item.category} / ${item.subcategory}`
-                : item.category || 'Labor'
-              )
-            : item.part_number
-          }
-        </td>
-        <td className="p-3 text-sm">
-          {item.type === 'jobLine' 
-            ? `${item.estimated_hours || 0} hrs`
-            : `Qty: ${item.quantity}`
-          }
-        </td>
-        <td className="p-3 text-sm">
-          {item.type === 'jobLine' 
-            ? `${formatCurrency(item.labor_rate || 0)}/hr`
-            : formatCurrency(item.unit_price)
-          }
-        </td>
-        <td className="p-3 font-medium">
-          {formatCurrency(item.type === 'jobLine' ? item.total_amount || 0 : item.total_price)}
-        </td>
-        <td className="p-3">
-          <Badge 
-            variant="outline" 
-            className={
-              item.type === 'jobLine' 
-                ? jobLineStatusMap[item.status || 'pending']?.classes
-                : partStatusMap[item.status || 'pending']?.classes
-            }
-          >
-            {item.type === 'jobLine' 
-              ? jobLineStatusMap[item.status || 'pending']?.label || 'Pending'
-              : partStatusMap[item.status || 'pending']?.label || 'Pending'
-            }
-          </Badge>
-        </td>
-        {isEditMode && (
-          <td className="p-3">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  if (item.type === 'jobLine') {
-                    onJobLineUpdate?.(item);
-                  } else {
-                    onPartUpdate?.(item);
-                  }
-                }}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  if (item.type === 'jobLine') {
-                    onJobLineDelete?.(item.id);
-                  } else {
-                    onPartDelete?.(item.id);
-                  }
-                }}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </td>
-        )}
-      </tr>
-    ));
-  };
-
-  const getItemIds = () => {
-    if (showType === 'labor') return jobLines.map(line => line.id);
-    if (showType === 'parts') return allParts.map(part => part.id);
-    return [
-      ...jobLines.map(line => line.id),
-      ...allParts.map(part => part.id)
-    ];
-  };
-
-  const renderTableHeader = () => (
-    <thead className="bg-muted/50">
-      <tr>
-        {isEditMode && <th className="p-3 text-left w-8"></th>}
-        <th className="p-3 text-left font-medium">Item</th>
-        <th className="p-3 text-left font-medium">
-          {showType === 'parts' ? 'Part Number' : 'Category/Part #'}
-        </th>
-        <th className="p-3 text-left font-medium">
-          {showType === 'labor' ? 'Hours' : showType === 'parts' ? 'Quantity' : 'Qty/Hours'}
-        </th>
-        <th className="p-3 text-left font-medium">Unit Price</th>
-        <th className="p-3 text-left font-medium">Total</th>
-        <th className="p-3 text-left font-medium">Status</th>
-        {isEditMode && <th className="p-3 text-left font-medium">Actions</th>}
-      </tr>
-    </thead>
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </TableCell>
+      )}
+    </SortableRow>
   );
 
+  const renderPartRow = (part: WorkOrderPart, isNested = false) => (
+    <SortableRow key={part.id} id={part.id} disabled={!isEditMode}>
+      {isEditMode && (
+        <TableCell className="w-8">
+          <GripVertical className="h-4 w-4 text-gray-400 cursor-grab" />
+        </TableCell>
+      )}
+      <TableCell>
+        <div className={`flex items-center gap-2 ${isNested ? 'ml-6' : ''}`}>
+          <Package className="h-4 w-4 text-blue-500" />
+          <Badge variant="outline" className="text-xs">PART</Badge>
+          {isEditMode ? (
+            <Input
+              value={part.name}
+              onChange={(e) => handlePartFieldChange(part.id, 'name', e.target.value)}
+              className="h-8"
+            />
+          ) : (
+            <span className="font-medium">{part.name}</span>
+          )}
+        </div>
+        {part.part_number && (
+          <div className={`text-sm text-muted-foreground mt-1 ${isNested ? 'ml-6' : ''}`}>
+            Part #: {part.part_number}
+          </div>
+        )}
+      </TableCell>
+      <TableCell>
+        {isEditMode ? (
+          <Input
+            type="number"
+            value={part.quantity}
+            onChange={(e) => handlePartFieldChange(part.id, 'quantity', parseInt(e.target.value) || 1)}
+            className="h-8 w-20"
+            min="1"
+          />
+        ) : (
+          part.quantity
+        )}
+      </TableCell>
+      <TableCell>
+        {isEditMode ? (
+          <Input
+            type="number"
+            value={part.unit_price}
+            onChange={(e) => handlePartFieldChange(part.id, 'unit_price', parseFloat(e.target.value) || 0)}
+            className="h-8 w-24"
+            step="0.01"
+          />
+        ) : (
+          `$${part.unit_price.toFixed(2)}`
+        )}
+      </TableCell>
+      <TableCell>
+        <span className="font-medium">
+          ${(part.quantity * part.unit_price).toFixed(2)}
+        </span>
+      </TableCell>
+      <TableCell>
+        {isEditMode ? (
+          <StatusSelector
+            currentStatus={part.status || 'pending'}
+            type="part"
+            onStatusChange={(status) => handlePartStatusChange(part.id, status)}
+          />
+        ) : (
+          <StatusBadge status={part.status || 'pending'} type="part" />
+        )}
+      </TableCell>
+      {isEditMode && (
+        <TableCell className="w-8">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onPartDelete?.(part.id)}
+            className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </TableCell>
+      )}
+    </SortableRow>
+  );
+
+  const renderOverviewRows = () => {
+    const rows: React.ReactNode[] = [];
+    
+    // Render job lines with their associated parts
+    jobLines.forEach(jobLine => {
+      rows.push(renderJobLineRow(jobLine));
+      
+      // Add associated parts right after the job line
+      const associatedParts = getPartsForJobLine(jobLine.id);
+      associatedParts.forEach(part => {
+        rows.push(renderPartRow(part, true));
+      });
+    });
+
+    // Add unassigned parts at the end
+    if (unassignedParts.length > 0) {
+      rows.push(
+        <TableRow key="unassigned-header">
+          <TableCell colSpan={isEditMode ? 7 : 6} className="bg-gray-50 font-medium text-sm">
+            Unassigned Parts
+          </TableCell>
+        </TableRow>
+      );
+      unassignedParts.forEach(part => {
+        rows.push(renderPartRow(part));
+      });
+    }
+
+    return rows;
+  };
+
+  const renderItems = () => {
+    if (showType === 'overview') {
+      return renderOverviewRows();
+    } else if (showType === 'labor') {
+      return jobLines.map(renderJobLineRow);
+    } else if (showType === 'parts') {
+      return allParts.map(part => renderPartRow(part));
+    }
+    return [];
+  };
+
+  const items = showType === 'overview' 
+    ? [...jobLines.map(jl => jl.id), ...allParts.map(p => p.id)]
+    : showType === 'labor' 
+    ? jobLines.map(jl => jl.id)
+    : allParts.map(p => p.id);
+
+  if (jobLines.length === 0 && allParts.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        No {showType === 'labor' ? 'job lines' : showType === 'parts' ? 'parts' : 'items'} found
+      </div>
+    );
+  }
+
   return (
-    <div className="rounded-md border">
+    <div className="space-y-4">
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}
       >
-        <SortableContext items={getItemIds()} strategy={verticalListSortingStrategy}>
-          <table className="w-full">
-            {renderTableHeader()}
-            <tbody>
-              {showType === 'labor' && renderJobLines()}
-              {showType === 'parts' && renderParts()}
-              {showType === 'overview' && renderOverview()}
-            </tbody>
-          </table>
+        <SortableContext items={items} strategy={verticalListSortingStrategy}>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {isEditMode && <TableHead className="w-8"></TableHead>}
+                <TableHead>Description</TableHead>
+                <TableHead>Qty/Hours</TableHead>
+                <TableHead>Rate/Price</TableHead>
+                <TableHead>Total</TableHead>
+                <TableHead>Status</TableHead>
+                {isEditMode && <TableHead className="w-8"></TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {renderItems()}
+            </TableBody>
+          </Table>
         </SortableContext>
       </DndContext>
     </div>
