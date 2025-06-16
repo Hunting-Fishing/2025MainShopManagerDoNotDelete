@@ -51,6 +51,7 @@ export function JobLinesSection({
       <CardContent className="pt-0">
         <UnifiedItemsTable
           jobLines={jobLines}
+          allParts={[]}
           onJobLineUpdate={handleJobLineUpdate}
           onJobLineDelete={handleJobLineDelete}
           isEditMode={isEditMode}

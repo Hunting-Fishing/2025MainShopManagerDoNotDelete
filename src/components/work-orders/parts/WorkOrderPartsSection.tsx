@@ -70,7 +70,7 @@ export function WorkOrderPartsSection({
           </div>
         ) : (
           <UnifiedItemsTable
-            parts={parts}
+            allParts={parts}
             onPartUpdate={handlePartUpdate}
             onPartDelete={handlePartDelete}
             isEditMode={isEditMode}
