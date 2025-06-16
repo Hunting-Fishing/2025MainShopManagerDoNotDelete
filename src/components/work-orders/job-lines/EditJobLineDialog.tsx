@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -6,12 +7,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { JOB_LINE_STATUSES } from '@/types/jobLine';
+
 interface EditJobLineDialogProps {
-  jobLine: WorkOrderJobLine;
+  jobLine: WorkOrderJobLine | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdate: (updatedJobLine: WorkOrderJobLine) => void;
 }
+
 export function EditJobLineDialog({
   jobLine,
   open,
@@ -19,17 +22,36 @@ export function EditJobLineDialog({
   onUpdate
 }: EditJobLineDialogProps) {
   const [formData, setFormData] = useState({
-    name: jobLine.name,
-    category: jobLine.category || '',
-    subcategory: jobLine.subcategory || '',
-    description: jobLine.description || '',
-    estimated_hours: jobLine.estimated_hours || 0,
-    labor_rate: jobLine.labor_rate || 0,
-    status: jobLine.status || 'pending',
-    notes: jobLine.notes || ''
+    name: jobLine?.name || '',
+    category: jobLine?.category || '',
+    subcategory: jobLine?.subcategory || '',
+    description: jobLine?.description || '',
+    estimated_hours: jobLine?.estimated_hours || 0,
+    labor_rate: jobLine?.labor_rate || 0,
+    status: jobLine?.status || 'pending',
+    notes: jobLine?.notes || ''
   });
+
+  // Update form data when jobLine changes
+  React.useEffect(() => {
+    if (jobLine) {
+      setFormData({
+        name: jobLine.name,
+        category: jobLine.category || '',
+        subcategory: jobLine.subcategory || '',
+        description: jobLine.description || '',
+        estimated_hours: jobLine.estimated_hours || 0,
+        labor_rate: jobLine.labor_rate || 0,
+        status: jobLine.status || 'pending',
+        notes: jobLine.notes || ''
+      });
+    }
+  }, [jobLine]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!jobLine) return;
+
     const updatedJobLine: WorkOrderJobLine = {
       ...jobLine,
       ...formData,
@@ -39,7 +61,22 @@ export function EditJobLineDialog({
     onUpdate(updatedJobLine);
     onOpenChange(false);
   };
-  return <Dialog open={open} onOpenChange={onOpenChange}>
+
+  // Don't render dialog content if no jobLine is selected
+  if (!jobLine) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-md bg-sky-200">
+          <DialogHeader>
+            <DialogTitle>No Job Line Selected</DialogTitle>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md bg-sky-200">
         <DialogHeader>
           <DialogTitle>Edit Job Line</DialogTitle>
@@ -48,76 +85,111 @@ export function EditJobLineDialog({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">Name *</label>
-            <Input value={formData.name} onChange={e => setFormData({
-            ...formData,
-            name: e.target.value
-          })} required />
+            <Input 
+              value={formData.name} 
+              onChange={e => setFormData({
+                ...formData,
+                name: e.target.value
+              })} 
+              required 
+            />
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1">Category</label>
-            <Input value={formData.category} onChange={e => setFormData({
-            ...formData,
-            category: e.target.value
-          })} />
+            <Input 
+              value={formData.category} 
+              onChange={e => setFormData({
+                ...formData,
+                category: e.target.value
+              })} 
+            />
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1">Subcategory</label>
-            <Input value={formData.subcategory} onChange={e => setFormData({
-            ...formData,
-            subcategory: e.target.value
-          })} />
+            <Input 
+              value={formData.subcategory} 
+              onChange={e => setFormData({
+                ...formData,
+                subcategory: e.target.value
+              })} 
+            />
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1">Description</label>
-            <Textarea value={formData.description} onChange={e => setFormData({
-            ...formData,
-            description: e.target.value
-          })} rows={3} />
+            <Textarea 
+              value={formData.description} 
+              onChange={e => setFormData({
+                ...formData,
+                description: e.target.value
+              })} 
+              rows={3} 
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Estimated Hours</label>
-              <Input type="number" step="0.25" min="0" value={formData.estimated_hours} onChange={e => setFormData({
-              ...formData,
-              estimated_hours: parseFloat(e.target.value) || 0
-            })} />
+              <Input 
+                type="number" 
+                step="0.25" 
+                min="0" 
+                value={formData.estimated_hours} 
+                onChange={e => setFormData({
+                  ...formData,
+                  estimated_hours: parseFloat(e.target.value) || 0
+                })} 
+              />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Labor Rate</label>
-              <Input type="number" step="0.01" min="0" value={formData.labor_rate} onChange={e => setFormData({
-              ...formData,
-              labor_rate: parseFloat(e.target.value) || 0
-            })} />
+              <Input 
+                type="number" 
+                step="0.01" 
+                min="0" 
+                value={formData.labor_rate} 
+                onChange={e => setFormData({
+                  ...formData,
+                  labor_rate: parseFloat(e.target.value) || 0
+                })} 
+              />
             </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1">Status</label>
-            <Select value={formData.status} onValueChange={value => setFormData({
-            ...formData,
-            status: value
-          })}>
+            <Select 
+              value={formData.status} 
+              onValueChange={value => setFormData({
+                ...formData,
+                status: value
+              })}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {JOB_LINE_STATUSES.map(status => <SelectItem key={status} value={status}>
+                {JOB_LINE_STATUSES.map(status => (
+                  <SelectItem key={status} value={status}>
                     {status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ')}
-                  </SelectItem>)}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1">Notes</label>
-            <Textarea value={formData.notes} onChange={e => setFormData({
-            ...formData,
-            notes: e.target.value
-          })} rows={2} />
+            <Textarea 
+              value={formData.notes} 
+              onChange={e => setFormData({
+                ...formData,
+                notes: e.target.value
+              })} 
+              rows={2} 
+            />
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
@@ -128,5 +200,6 @@ export function EditJobLineDialog({
           </div>
         </form>
       </DialogContent>
-    </Dialog>;
+    </Dialog>
+  );
 }
