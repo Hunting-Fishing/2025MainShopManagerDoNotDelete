@@ -5,8 +5,7 @@ import { WorkOrder } from "@/types/workOrder";
 import { WorkOrderJobLine } from "@/types/jobLine";
 import { WorkOrderPart } from "@/types/workOrderPart";
 import { TimeEntry } from "@/types/workOrder";
-import { WorkOrderDetailsHeader } from "./WorkOrderDetailsHeader";
-import { WorkOrderOverviewHeader } from "./WorkOrderOverviewHeader";
+import { WorkOrderUnifiedHeader } from "./WorkOrderUnifiedHeader";
 import { WorkOrderDetailsTab } from "./WorkOrderDetailsTab";
 import { WorkOrderPartsSection } from "../parts/WorkOrderPartsSection";
 import { TimeTrackingSection } from "../time-tracking/TimeTrackingSection";
@@ -43,81 +42,83 @@ export function WorkOrderDetailsTabs({
   onCancelEdit,
   onSaveEdit
 }: WorkOrderDetailsTabsProps) {
-  // Handler for status change (optional: refresh work order or propagate up if you wish)
   const handleStatusUpdated = (newStatus: string) => {
     console.log("Work order status updated:", newStatus);
   };
 
-  // Handler for invoice conversion and redirect, can be implemented as you like
   const handleInvoiceCreated = (invoiceId: string) => {
     console.log("Invoice created (ID):", invoiceId);
-    // Example: window.location.href = `/invoices/${invoiceId}`
   };
 
   return (
-    <Tabs defaultValue="overview" className="w-full">
-      <TabsList className="mb-4 max-w-full overflow-x-auto">
-        <TabsTrigger value="overview">Overview</TabsTrigger>
-        <TabsTrigger value="jobs">Jobs</TabsTrigger>
-        <TabsTrigger value="parts">Parts</TabsTrigger>
-        <TabsTrigger value="time">Time Tracking</TabsTrigger>
-        <TabsTrigger value="documents">Documents</TabsTrigger>
-        <TabsTrigger value="communications">Communications</TabsTrigger>
-      </TabsList>
-      <TabsContent value="overview">
-        {/* Actions bar */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-          <WorkOrderStatusUpdate workOrder={workOrder} onStatusUpdated={handleStatusUpdated} />
-          <WorkOrderDetailsActions
-            workOrder={workOrder}
-            isEditMode={isEditMode}
-            onStartEdit={onStartEdit}
-            onCancelEdit={onCancelEdit}
-            onSaveEdit={onSaveEdit}
-            onInvoiceCreated={handleInvoiceCreated}
-          />
-        </div>
+    <div className="space-y-4">
+      {/* Unified Header */}
+      <WorkOrderUnifiedHeader
+        workOrder={workOrder}
+        customer={customer}
+        jobLines={jobLines}
+        allParts={allParts}
+        timeEntries={timeEntries || []}
+      />
 
-        <WorkOrderDetailsHeader workOrder={workOrder} customer={customer} />
-        <WorkOrderOverviewHeader
+      {/* Actions bar */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <WorkOrderStatusUpdate workOrder={workOrder} onStatusUpdated={handleStatusUpdated} />
+        <WorkOrderDetailsActions
           workOrder={workOrder}
-          jobLines={jobLines}
-          allParts={allParts}
-          timeEntries={timeEntries || []}
-        />
-        <WorkOrderDetailsTab
-          workOrder={workOrder}
-          jobLines={jobLines}
-          allParts={allParts}
-          onJobLinesChange={onJobLinesChange}
           isEditMode={isEditMode}
+          onStartEdit={onStartEdit}
+          onCancelEdit={onCancelEdit}
+          onSaveEdit={onSaveEdit}
+          onInvoiceCreated={handleInvoiceCreated}
         />
-      </TabsContent>
-      <TabsContent value="jobs">
-        <JobLinesSection
-          workOrderId={workOrder.id}
-          jobLines={jobLines}
-          onJobLinesChange={onJobLinesChange}
-          isEditMode={isEditMode}
-        />
-      </TabsContent>
-      <TabsContent value="parts">
-        <WorkOrderPartsSection workOrderId={workOrder.id} isEditMode={isEditMode} />
-      </TabsContent>
-      <TabsContent value="time">
-        <TimeTrackingSection
-          workOrderId={workOrder.id}
-          timeEntries={timeEntries}
-          onUpdateTimeEntries={onTimeEntriesChange}
-          isEditMode={isEditMode}
-        />
-      </TabsContent>
-      <TabsContent value="documents">
-        <WorkOrderDocuments workOrderId={workOrder.id} />
-      </TabsContent>
-      <TabsContent value="communications">
-        <WorkOrderCommunications workOrder={workOrder} />
-      </TabsContent>
-    </Tabs>
+      </div>
+
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="mb-4 max-w-full overflow-x-auto">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="jobs">Jobs</TabsTrigger>
+          <TabsTrigger value="parts">Parts</TabsTrigger>
+          <TabsTrigger value="time">Time Tracking</TabsTrigger>
+          <TabsTrigger value="documents">Documents</TabsTrigger>
+          <TabsTrigger value="communications">Communications</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview">
+          <WorkOrderDetailsTab
+            workOrder={workOrder}
+            jobLines={jobLines}
+            allParts={allParts}
+            onJobLinesChange={onJobLinesChange}
+            isEditMode={isEditMode}
+          />
+        </TabsContent>
+        <TabsContent value="jobs">
+          <JobLinesSection
+            workOrderId={workOrder.id}
+            jobLines={jobLines}
+            onJobLinesChange={onJobLinesChange}
+            isEditMode={isEditMode}
+          />
+        </TabsContent>
+        <TabsContent value="parts">
+          <WorkOrderPartsSection workOrderId={workOrder.id} isEditMode={isEditMode} />
+        </TabsContent>
+        <TabsContent value="time">
+          <TimeTrackingSection
+            workOrderId={workOrder.id}
+            timeEntries={timeEntries}
+            onUpdateTimeEntries={onTimeEntriesChange}
+            isEditMode={isEditMode}
+          />
+        </TabsContent>
+        <TabsContent value="documents">
+          <WorkOrderDocuments workOrderId={workOrder.id} />
+        </TabsContent>
+        <TabsContent value="communications">
+          <WorkOrderCommunications workOrder={workOrder} />
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }
