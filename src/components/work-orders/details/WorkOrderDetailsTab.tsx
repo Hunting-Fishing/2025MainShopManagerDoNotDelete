@@ -6,7 +6,6 @@ import { WorkOrderPart } from '@/types/workOrderPart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
 import { CompactJobLinesTable } from '../job-lines/CompactJobLinesTable';
-import { CompactPartsTable } from '../parts/CompactPartsTable';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 
@@ -98,52 +97,38 @@ export function WorkOrderDetailsTab({
         </Card>
       )}
 
-      {/* Compact Job Lines & Parts Combined */}
+      {/* Unified Job Lines & Parts */}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Labor & Services</CardTitle>
+            <CardTitle className="text-base">Labor & Parts</CardTitle>
             {isEditMode && (
-              <Button variant="outline" size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Job Line
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <CompactJobLinesTable
-            jobLines={jobLines}
-            onUpdate={handleJobLineUpdate}
-            onDelete={handleJobLineDelete}
-            isEditMode={isEditMode}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Compact Parts */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Parts Inventory</CardTitle>
-            {isEditMode && (
-              <Button variant="outline" size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Part
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Job Line
+                </Button>
+                <Button variant="outline" size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Part
+                </Button>
+              </div>
             )}
           </div>
         </CardHeader>
         <CardContent className="pt-0">
           {partsLoading ? (
             <div className="text-center py-4 text-muted-foreground text-sm">
-              Loading parts...
+              Loading job lines and parts...
             </div>
           ) : (
-            <CompactPartsTable
-              parts={allParts}
-              onUpdate={handlePartUpdate}
-              onDelete={handlePartDelete}
+            <CompactJobLinesTable
+              jobLines={jobLines}
+              allParts={allParts}
+              onUpdate={handleJobLineUpdate}
+              onDelete={handleJobLineDelete}
+              onPartUpdate={handlePartUpdate}
+              onPartDelete={handlePartDelete}
               isEditMode={isEditMode}
             />
           )}
