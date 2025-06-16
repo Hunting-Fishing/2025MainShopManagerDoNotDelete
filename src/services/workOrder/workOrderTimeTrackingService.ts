@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { TimeEntry } from "@/types/workOrder";
 
@@ -19,8 +20,9 @@ export const getWorkOrderTimeEntries = async (
       query = query.eq('job_line_id', jobLineId);
     }
 
-    // Explicitly cast the result to prevent infinite type recursion (TS2589)
-    const { data, error } = await (query as any) as { data: any[], error: any };
+    // Break type inference chain to prevent TS2589 error
+    const result: any = await query;
+    const { data, error } = result;
     if (error) throw error;
     return data || [];
   } catch (error) {
