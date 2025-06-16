@@ -1,67 +1,53 @@
 
 import React, { useState, useEffect } from 'react';
 import { WorkOrderPart } from '@/types/workOrderPart';
-import { WorkOrderJobLine } from '@/types/jobLine';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
-import { getWorkOrderJobLines } from '@/services/workOrder/jobLinesService';
+import { UnifiedItemsTable } from '../shared/UnifiedItemsTable';
 
 interface WorkOrderPartsSectionProps {
   workOrderId: string;
-  isEditMode: boolean;
+  isEditMode?: boolean;
 }
 
-export function WorkOrderPartsSection({
-  workOrderId,
-  isEditMode
+export function WorkOrderPartsSection({ 
+  workOrderId, 
+  isEditMode = false 
 }: WorkOrderPartsSectionProps) {
-  const [allParts, setAllParts] = useState<WorkOrderPart[]>([]);
-  const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
+  const [parts, setParts] = useState<WorkOrderPart[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchParts = async () => {
       if (!workOrderId) return;
       
       try {
         setIsLoading(true);
-        const [parts, lines] = await Promise.all([
-          getWorkOrderParts(workOrderId),
-          getWorkOrderJobLines(workOrderId)
-        ]);
-        setAllParts(parts);
-        setJobLines(lines);
+        const partsData = await getWorkOrderParts(workOrderId);
+        setParts(partsData);
       } catch (error) {
-        console.error('Error fetching parts and job lines:', error);
-        setAllParts([]);
-        setJobLines([]);
+        console.error('Error fetching work order parts:', error);
+        setParts([]);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchData();
+    fetchParts();
   }, [workOrderId]);
 
-  const handleEditPart = (part: WorkOrderPart) => {
-    console.log('Edit part clicked:', part.id, part.name);
-    // TODO: Implement part edit dialog
+  const handlePartUpdate = (updatedPart: WorkOrderPart) => {
+    const updatedParts = parts.map(part => 
+      part.id === updatedPart.id ? updatedPart : part
+    );
+    setParts(updatedParts);
   };
 
-  const handleDeletePart = (partId: string) => {
-    if (confirm('Are you sure you want to delete this part?')) {
-      const updatedParts = allParts.filter(part => part.id !== partId);
-      setAllParts(updatedParts);
-    }
-  };
-
-  const getJobLineName = (jobLineId?: string) => {
-    if (!jobLineId) return 'Unassigned';
-    const jobLine = jobLines.find(line => line.id === jobLineId);
-    return jobLine?.name || 'Unknown Job Line';
+  const handlePartDelete = (partId: string) => {
+    const updatedParts = parts.filter(part => part.id !== partId);
+    setParts(updatedParts);
   };
 
   return (
@@ -82,68 +68,14 @@ export function WorkOrderPartsSection({
           <div className="text-center py-4 text-muted-foreground text-sm">
             Loading parts...
           </div>
-        ) : allParts.length === 0 ? (
-          <div className="text-center py-4 text-muted-foreground text-sm">
-            No parts found
-          </div>
         ) : (
-          <div className="space-y-2">
-            {/* Header */}
-            <div className="grid grid-cols-12 gap-2 text-xs font-medium text-muted-foreground border-b pb-2">
-              <div className="col-span-4">Part</div>
-              <div className="col-span-2">Job Line</div>
-              <div className="col-span-1">Qty</div>
-              <div className="col-span-2">Price</div>
-              <div className="col-span-2">Total</div>
-              {isEditMode && <div className="col-span-1">Actions</div>}
-            </div>
-
-            {allParts.map((part) => (
-              <div key={part.id} className="grid grid-cols-12 gap-2 py-2 border-b border-gray-100 hover:bg-gray-50">
-                <div className="col-span-4">
-                  <div className="font-medium text-sm">{part.name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    Part #: {part.part_number}
-                  </div>
-                  <Badge variant="secondary" className="text-xs mt-1">
-                    Part
-                  </Badge>
-                </div>
-                <div className="col-span-2 text-sm">
-                  {getJobLineName(part.job_line_id)}
-                </div>
-                <div className="col-span-1 text-sm">
-                  {part.quantity}
-                </div>
-                <div className="col-span-2 text-sm">
-                  ${part.unit_price}
-                </div>
-                <div className="col-span-2 text-sm font-medium">
-                  ${part.total_price}
-                </div>
-                {isEditMode && (
-                  <div className="col-span-1 flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0"
-                      onClick={() => handleEditPart(part)}
-                    >
-                      <Edit2 className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0"
-                      onClick={() => handleDeletePart(part.id)}
-                    >
-                      <Trash2 className="h-3 w-3 text-red-500" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+          <UnifiedItemsTable
+            parts={parts}
+            onPartUpdate={handlePartUpdate}
+            onPartDelete={handlePartDelete}
+            isEditMode={isEditMode}
+            showType="parts"
+          />
         )}
       </CardContent>
     </Card>

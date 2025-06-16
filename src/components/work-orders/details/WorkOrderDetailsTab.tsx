@@ -5,9 +5,7 @@ import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
-import { CompactJobLinesTable } from '../job-lines/CompactJobLinesTable';
-import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { UnifiedItemsTable } from '../shared/UnifiedItemsTable';
 
 interface WorkOrderDetailsTabProps {
   workOrder: WorkOrder;
@@ -97,7 +95,7 @@ export function WorkOrderDetailsTab({
         </Card>
       )}
 
-      {/* Unified Labor & Parts Table - Matches Reference Image */}
+      {/* Unified Labor & Parts Table */}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -110,14 +108,15 @@ export function WorkOrderDetailsTab({
               Loading job lines and parts...
             </div>
           ) : (
-            <CompactJobLinesTable
+            <UnifiedItemsTable
               jobLines={jobLines}
               allParts={allParts}
-              onUpdate={isEditMode ? handleJobLineUpdate : undefined}
-              onDelete={isEditMode ? handleJobLineDelete : undefined}
+              onJobLineUpdate={isEditMode ? handleJobLineUpdate : undefined}
+              onJobLineDelete={isEditMode ? handleJobLineDelete : undefined}
               onPartUpdate={isEditMode ? handlePartUpdate : undefined}
               onPartDelete={isEditMode ? handlePartDelete : undefined}
               isEditMode={isEditMode}
+              showType="overview"
             />
           )}
         </CardContent>
