@@ -1,95 +1,50 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { WorkOrder } from "@/types/workOrder";
 import { WorkOrderDetailsTabs } from "./details/WorkOrderDetailsTabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  getWorkOrderById,
-} from "@/services/workOrder";
-import { WorkOrderJobLine } from "@/types/jobLine";
-import { WorkOrderPart } from "@/types/workOrderPart";
-import { TimeEntry } from "@/types/workOrder";
-import { Customer } from "@/types/customer";
-import { getCustomerById } from "@/services/customer";
-import { getWorkOrderJobLines } from "@/services/workOrder/jobLinesService";
-import { getWorkOrderParts } from "@/services/workOrder/workOrderPartsService";
+import { useWorkOrderData } from "@/hooks/useWorkOrderData";
 
 interface WorkOrderDetailsViewProps {
-  isEditMode?: boolean; // Make prop optional, default to false below
+  isEditMode?: boolean;
 }
 
-// Accept the prop and set its default value
 export function WorkOrderDetailsView({ isEditMode = false }: WorkOrderDetailsViewProps) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
-  const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
-  const [allParts, setAllParts] = useState<WorkOrderPart[]>([]);
-  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
-  const [customer, setCustomer] = useState<Customer | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // EDIT MODE logic lives here
   const [editMode, setEditMode] = useState(isEditMode);
 
-  useEffect(() => {
-    if (!id) {
-      setError("Work Order ID is required.");
-      setIsLoading(false);
-      return;
-    }
+  const {
+    workOrder,
+    jobLines,
+    allParts,
+    timeEntries,
+    customer,
+    isLoading,
+    error,
+    updateJobLines,
+    updateTimeEntries
+  } = useWorkOrderData(id || '');
 
-    const fetchData = async () => {
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const wo = await getWorkOrderById(id);
-        if (!wo) {
-          setError("Work Order not found.");
-          return;
-        }
-        setWorkOrder(wo);
-
-        const lines = await getWorkOrderJobLines(id);
-        setJobLines(lines);
-
-        const parts = await getWorkOrderParts(id);
-        setAllParts(parts);
-
-        if (wo.customer_id) {
-          const cust = await getCustomerById(wo.customer_id);
-          setCustomer(cust);
-        }
-        setTimeEntries([]);
-      } catch (err: any) {
-        setError(err.message || "Failed to load Work Order details.");
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [id]);
-
-  const handleJobLinesChange = (updatedJobLines: WorkOrderJobLine[]) => {
-    setJobLines(updatedJobLines);
-  };
-
-  const handleTimeEntriesChange = (updatedEntries: TimeEntry[]) => {
-    setTimeEntries(updatedEntries);
-  };
-
-  // Inline save/cancel handlers
   const handleStartEdit = () => setEditMode(true);
   const handleCancelEdit = () => setEditMode(false);
   const handleSaveEdit = () => {
-    // future: persist edits to backend
     setEditMode(false);
   };
+
+  if (!id) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-red-500">Error: Work Order ID is required.</div>
+          <button onClick={() => navigate(-1)} className="text-blue-500 mt-2">
+            Go Back
+          </button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -141,8 +96,8 @@ export function WorkOrderDetailsView({ isEditMode = false }: WorkOrderDetailsVie
       allParts={allParts}
       timeEntries={timeEntries}
       customer={customer}
-      onJobLinesChange={handleJobLinesChange}
-      onTimeEntriesChange={handleTimeEntriesChange}
+      onJobLinesChange={updateJobLines}
+      onTimeEntriesChange={updateTimeEntries}
       isEditMode={editMode}
       onStartEdit={handleStartEdit}
       onCancelEdit={handleCancelEdit}

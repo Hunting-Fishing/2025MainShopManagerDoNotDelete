@@ -21,8 +21,13 @@ export function useJobLines(workOrderId: string) {
         // Fetch parts for each job line
         const jobLinesWithParts = await Promise.all(
           jobLinesData.map(async (jobLine) => {
-            const parts = await getJobLineParts(jobLine.id);
-            return { ...jobLine, parts };
+            try {
+              const parts = await getJobLineParts(jobLine.id);
+              return { ...jobLine, parts };
+            } catch (partError) {
+              console.warn(`Failed to fetch parts for job line ${jobLine.id}:`, partError);
+              return { ...jobLine, parts: [] };
+            }
           })
         );
         

@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { supabase } from '@/integrations/supabase/client';
+import { getWorkOrderJobLines } from '@/services/workOrder/jobLinesService';
 
 export function useWorkOrderJobLines(workOrderId: string) {
   const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
@@ -20,17 +20,8 @@ export function useWorkOrderJobLines(workOrderId: string) {
         setIsLoading(true);
         setError(null);
         
-        const { data, error: supabaseError } = await supabase
-          .from('work_order_job_lines')
-          .select('*')
-          .eq('work_order_id', workOrderId)
-          .order('display_order', { ascending: true });
-
-        if (supabaseError) {
-          throw new Error(supabaseError.message);
-        }
-
-        // Map the data to WorkOrderJobLine interface
+        const data = await getWorkOrderJobLines(workOrderId);
+        
         const mappedJobLines: WorkOrderJobLine[] = (data || []).map(line => ({
           id: line.id,
           work_order_id: line.work_order_id,
