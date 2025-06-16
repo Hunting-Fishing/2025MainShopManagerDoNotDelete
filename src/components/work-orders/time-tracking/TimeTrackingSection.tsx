@@ -36,7 +36,6 @@ export function TimeTrackingSection({
         <UnifiedItemsTable
           jobLines={[]}
           allParts={[]}
-          timeEntries={timeEntries}
           isEditMode={isEditMode}
           showType="detailed"
         />
