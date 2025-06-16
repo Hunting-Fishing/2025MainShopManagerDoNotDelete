@@ -1,12 +1,25 @@
-import React, { useState } from 'react';
+
+import React from 'react';
+import { 
+  DndContext, 
+  DragEndEvent, 
+  PointerSensor, 
+  useSensor, 
+  useSensors,
+  closestCenter
+} from '@dnd-kit/core';
+import { 
+  SortableContext, 
+  verticalListSortingStrategy,
+  useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronDown, ChevronRight, Wrench, Package, GripVertical } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { StatusSelector } from './StatusSelector';
-import { jobLineStatusMap, partStatusMap } from '@/types/jobLine';
+import { Trash2, Package, Clock, User, GripVertical } from 'lucide-react';
 
 interface UnifiedItemsTableProps {
   jobLines: WorkOrderJobLine[];
@@ -15,262 +28,348 @@ interface UnifiedItemsTableProps {
   onJobLineDelete?: (jobLineId: string) => void;
   onPartUpdate?: (part: WorkOrderPart) => void;
   onPartDelete?: (partId: string) => void;
-  isEditMode?: boolean;
+  isEditMode: boolean;
   showType: 'overview' | 'parts' | 'labor';
+  onReorderJobLines?: (reorderedJobLines: WorkOrderJobLine[]) => void;
+  onReorderParts?: (reorderedParts: WorkOrderPart[]) => void;
+}
+
+interface DraggableRowProps {
+  id: string;
+  children: React.ReactNode;
+  disabled?: boolean;
+}
+
+function DraggableRow({ id, children, disabled = false }: DraggableRowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ 
+    id,
+    disabled 
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <tr 
+      ref={setNodeRef} 
+      style={style} 
+      className={isDragging ? 'bg-gray-50' : ''}
+    >
+      {React.Children.map(children, (child, index) => {
+        if (index === 0) {
+          // First cell contains the drag handle
+          return React.cloneElement(child as React.ReactElement, {
+            ...attributes,
+            ...listeners,
+          });
+        }
+        return child;
+      })}
+    </tr>
+  );
 }
 
 export function UnifiedItemsTable({
-  jobLines = [],
-  allParts = [],
+  jobLines,
+  allParts,
   onJobLineUpdate,
   onJobLineDelete,
   onPartUpdate,
   onPartDelete,
-  isEditMode = false,
-  showType
+  isEditMode,
+  showType,
+  onReorderJobLines,
+  onReorderParts
 }: UnifiedItemsTableProps) {
-  const [expandedJobLines, setExpandedJobLines] = useState<Set<string>>(new Set());
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
 
-  const toggleJobLine = (jobLineId: string) => {
-    const newExpanded = new Set(expandedJobLines);
-    if (newExpanded.has(jobLineId)) {
-      newExpanded.delete(jobLineId);
-    } else {
-      newExpanded.add(jobLineId);
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
     }
-    setExpandedJobLines(newExpanded);
+
+    const activeId = active.id as string;
+    const overId = over.id as string;
+
+    // Check if we're reordering job lines
+    const activeJobLine = jobLines.find(jl => jl.id === activeId);
+    const overJobLine = jobLines.find(jl => jl.id === overId);
+
+    if (activeJobLine && overJobLine && onReorderJobLines) {
+      const oldIndex = jobLines.indexOf(activeJobLine);
+      const newIndex = jobLines.indexOf(overJobLine);
+      
+      const reorderedJobLines = [...jobLines];
+      reorderedJobLines.splice(oldIndex, 1);
+      reorderedJobLines.splice(newIndex, 0, activeJobLine);
+      
+      onReorderJobLines(reorderedJobLines);
+      return;
+    }
+
+    // Check if we're reordering parts
+    const activePart = allParts.find(p => p.id === activeId);
+    const overPart = allParts.find(p => p.id === overId);
+
+    if (activePart && overPart && onReorderParts) {
+      const oldIndex = allParts.indexOf(activePart);
+      const newIndex = allParts.indexOf(overPart);
+      
+      const reorderedParts = [...allParts];
+      reorderedParts.splice(oldIndex, 1);
+      reorderedParts.splice(newIndex, 0, activePart);
+      
+      onReorderParts(reorderedParts);
+    }
   };
 
-  const handleStatusChange = (
-    id: string,
-    newStatus: string,
-    type: 'jobLine' | 'part'
-  ) => {
-    if (type === 'jobLine' && onJobLineUpdate) {
-      const jobLine = jobLines.find(jl => jl.id === id);
-      if (jobLine) {
-        onJobLineUpdate({ ...jobLine, status: newStatus });
-      }
-    } else if (type === 'part' && onPartUpdate) {
-      const part = allParts.find(p => p.id === id);
-      if (part) {
-        onPartUpdate({ ...part, status: newStatus });
-      }
+  const formatCurrency = (amount?: number) => {
+    if (amount === undefined || amount === null) return '$0.00';
+    return `$${amount.toFixed(2)}`;
+  };
+
+  const formatHours = (hours?: number) => {
+    if (hours === undefined || hours === null) return '0.0';
+    return hours.toFixed(1);
+  };
+
+  const getStatusColor = (status?: string) => {
+    switch (status) {
+      case 'completed': return 'bg-green-100 text-green-800';
+      case 'in-progress': return 'bg-blue-100 text-blue-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'on-hold': return 'bg-orange-100 text-orange-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const renderJobLineRow = (jobLine: WorkOrderJobLine, colorIndex: number) => {
-    const isExpanded = expandedJobLines.has(jobLine.id);
-    const jobLineParts = allParts.filter(part => part.job_line_id === jobLine.id);
-    const hasVisibleParts = jobLineParts.length > 0 && (showType === 'overview' || showType === 'parts');
-    
-    const statusInfo = jobLineStatusMap[jobLine.status || 'pending'];
-    
-    return (
-      <TableRow key={jobLine.id} colorIndex={colorIndex} className="border-b-2 border-gray-200">
-        {/* Drag Handle */}
-        <TableCell className="w-8 p-2">
+  const renderJobLines = () => {
+    if (showType === 'parts') return null;
+
+    return jobLines.map((jobLine) => (
+      <DraggableRow 
+        key={jobLine.id} 
+        id={jobLine.id}
+        disabled={!isEditMode}
+      >
+        <td className="px-4 py-3 w-8">
           {isEditMode && (
-            <div className="cursor-grab hover:cursor-grabbing p-1 hover:bg-gray-100 rounded">
-              <GripVertical className="h-4 w-4 text-gray-400" />
-            </div>
+            <GripVertical className="h-4 w-4 text-gray-400 cursor-grab hover:text-gray-600" />
           )}
-        </TableCell>
-        
-        {/* Expand/Collapse */}
-        <TableCell className="w-8 p-2">
-          {hasVisibleParts && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => toggleJobLine(jobLine.id)}
-              className="h-6 w-6 p-0"
-            >
-              {isExpanded ? (
-                <ChevronDown className="h-4 w-4" />
-              ) : (
-                <ChevronRight className="h-4 w-4" />
-              )}
-            </Button>
-          )}
-        </TableCell>
-
-        {/* Type Icon & Description */}
-        <TableCell className="font-medium">
+        </td>
+        <td className="px-4 py-3">
           <div className="flex items-center gap-2">
-            <div className="flex-shrink-0">
-              <Wrench className="h-4 w-4 text-blue-600" />
-            </div>
+            <User className="h-4 w-4 text-blue-500" />
             <div>
-              <div className="font-medium text-gray-900">{jobLine.name}</div>
+              <div className="font-medium text-sm">{jobLine.name}</div>
               {jobLine.description && (
-                <div className="text-sm text-gray-600 mt-1">{jobLine.description}</div>
+                <div className="text-xs text-gray-500 mt-1">{jobLine.description}</div>
               )}
             </div>
           </div>
-        </TableCell>
-
-        {/* Part Number - Empty for job lines */}
-        <TableCell className="text-gray-400 italic">
-          Labor Service
-        </TableCell>
-
-        {/* Hours */}
-        <TableCell className="text-right">
-          {jobLine.estimated_hours ? `${jobLine.estimated_hours}h` : '-'}
-        </TableCell>
-
-        {/* Rate */}
-        <TableCell className="text-right">
-          {jobLine.labor_rate ? `$${jobLine.labor_rate.toFixed(2)}` : '-'}
-        </TableCell>
-
-        {/* Total */}
-        <TableCell className="text-right font-medium">
-          {jobLine.total_amount ? `$${jobLine.total_amount.toFixed(2)}` : '-'}
-        </TableCell>
-
-        {/* Status */}
-        <TableCell>
-          {isEditMode ? (
+        </td>
+        <td className="px-4 py-3 text-sm">
+          {jobLine.category && (
+            <Badge variant="outline" className="text-xs">
+              {jobLine.category}
+            </Badge>
+          )}
+        </td>
+        <td className="px-4 py-3 text-sm text-center">
+          {formatHours(jobLine.estimated_hours)} hrs
+        </td>
+        <td className="px-4 py-3 text-sm text-right">
+          {formatCurrency(jobLine.labor_rate)}/hr
+        </td>
+        <td className="px-4 py-3 text-sm text-right font-medium">
+          {formatCurrency(jobLine.total_amount)}
+        </td>
+        <td className="px-4 py-3">
+          {isEditMode && onJobLineUpdate ? (
             <StatusSelector
               currentStatus={jobLine.status || 'pending'}
               type="jobLine"
-              onStatusChange={(newStatus) => handleStatusChange(jobLine.id, newStatus, 'jobLine')}
+              onStatusChange={(newStatus) => 
+                onJobLineUpdate({ ...jobLine, status: newStatus })
+              }
             />
           ) : (
-            <Badge className={statusInfo.classes}>
-              {statusInfo.label}
+            <Badge className={`text-xs ${getStatusColor(jobLine.status)}`}>
+              {jobLine.status || 'pending'}
             </Badge>
           )}
-        </TableCell>
-      </TableRow>
-    );
+        </td>
+        <td className="px-4 py-3">
+          {isEditMode && onJobLineDelete && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onJobLineDelete(jobLine.id)}
+              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+        </td>
+      </DraggableRow>
+    ));
   };
 
-  const renderPartRow = (part: WorkOrderPart) => {
-    const statusInfo = partStatusMap[part.status || 'pending'];
-    
-    return (
-      <TableRow key={part.id} className="bg-gray-50/50 border-b border-gray-100">
-        {/* Drag Handle */}
-        <TableCell className="w-8 p-2">
-          {isEditMode && (
-            <div className="cursor-grab hover:cursor-grabbing p-1 hover:bg-gray-100 rounded">
-              <GripVertical className="h-4 w-4 text-gray-400" />
-            </div>
-          )}
-        </TableCell>
-        
-        {/* Spacer for alignment */}
-        <TableCell className="w-8"></TableCell>
+  const renderParts = () => {
+    if (showType === 'labor') return null;
 
-        {/* Type Icon & Description */}
-        <TableCell>
-          <div className="flex items-center gap-2 pl-6">
-            <div className="flex-shrink-0">
-              <Package className="h-4 w-4 text-green-600" />
-            </div>
+    return allParts.map((part) => (
+      <DraggableRow 
+        key={part.id} 
+        id={part.id}
+        disabled={!isEditMode}
+      >
+        <td className="px-4 py-3 w-8">
+          {isEditMode && (
+            <GripVertical className="h-4 w-4 text-gray-400 cursor-grab hover:text-gray-600" />
+          )}
+        </td>
+        <td className="px-4 py-3">
+          <div className="flex items-center gap-2">
+            <Package className="h-4 w-4 text-green-500" />
             <div>
-              <div className="font-medium text-gray-900">{part.name}</div>
+              <div className="font-medium text-sm">{part.name}</div>
               {part.description && (
-                <div className="text-sm text-gray-600 mt-1">{part.description}</div>
+                <div className="text-xs text-gray-500 mt-1">{part.description}</div>
               )}
             </div>
           </div>
-        </TableCell>
-
-        {/* Part Number */}
-        <TableCell className="font-mono text-sm">
-          {part.part_number || '-'}
-        </TableCell>
-
-        {/* Quantity */}
-        <TableCell className="text-right">
+        </td>
+        <td className="px-4 py-3 text-sm">
+          <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+            {part.part_number || 'N/A'}
+          </span>
+        </td>
+        <td className="px-4 py-3 text-sm text-center">
           {part.quantity || 0}
-        </TableCell>
-
-        {/* Unit Price */}
-        <TableCell className="text-right">
-          {part.unit_price ? `$${part.unit_price.toFixed(2)}` : '-'}
-        </TableCell>
-
-        {/* Total */}
-        <TableCell className="text-right font-medium">
-          {part.total_price ? `$${part.total_price.toFixed(2)}` : '-'}
-        </TableCell>
-
-        {/* Status */}
-        <TableCell>
-          {isEditMode ? (
+        </td>
+        <td className="px-4 py-3 text-sm text-right">
+          {formatCurrency(part.unit_price)}
+        </td>
+        <td className="px-4 py-3 text-sm text-right font-medium">
+          {formatCurrency((part.quantity || 0) * (part.unit_price || 0))}
+        </td>
+        <td className="px-4 py-3">
+          {isEditMode && onPartUpdate ? (
             <StatusSelector
               currentStatus={part.status || 'pending'}
               type="part"
-              onStatusChange={(newStatus) => handleStatusChange(part.id, newStatus, 'part')}
+              onStatusChange={(newStatus) => 
+                onPartUpdate({ ...part, status: newStatus })
+              }
             />
           ) : (
-            <Badge className={statusInfo.classes}>
-              {statusInfo.label}
+            <Badge className={`text-xs ${getStatusColor(part.status)}`}>
+              {part.status || 'pending'}
             </Badge>
           )}
-        </TableCell>
-      </TableRow>
-    );
+        </td>
+        <td className="px-4 py-3">
+          {isEditMode && onPartDelete && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onPartDelete(part.id)}
+              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+        </td>
+      </DraggableRow>
+    ));
   };
 
-  const filteredJobLines = showType === 'parts' ? [] : jobLines;
-  const filteredParts = showType === 'labor' ? [] : allParts;
+  const items = showType === 'labor' ? jobLines : showType === 'parts' ? allParts : [...jobLines, ...allParts];
+  const itemIds = items.map(item => item.id);
 
-  if (filteredJobLines.length === 0 && filteredParts.length === 0) {
+  if (items.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        <p>No {showType === 'labor' ? 'job lines' : showType === 'parts' ? 'parts' : 'items'} found</p>
+      <div className="text-center py-8 text-gray-500">
+        <div className="flex items-center justify-center gap-2 mb-2">
+          {showType === 'labor' ? <User className="h-5 w-5" /> : <Package className="h-5 w-5" />}
+          <span className="font-medium">
+            No {showType === 'labor' ? 'job lines' : showType === 'parts' ? 'parts' : 'items'} found
+          </span>
+        </div>
+        <p className="text-sm">
+          {showType === 'labor' 
+            ? 'Add job lines to track labor work' 
+            : showType === 'parts' 
+            ? 'Add parts to track inventory usage'
+            : 'Add job lines or parts to get started'
+          }
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-lg border bg-card overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-8"></TableHead> {/* Drag Handle Column */}
-            <TableHead className="w-8"></TableHead> {/* Expand/Collapse Column */}
-            <TableHead>Description</TableHead>
-            <TableHead className="w-32">Part #</TableHead>
-            <TableHead className="w-20 text-right">
-              {showType === 'parts' ? 'Qty' : 'Hours'}
-            </TableHead>
-            <TableHead className="w-24 text-right">
-              {showType === 'parts' ? 'Unit Price' : 'Rate'}
-            </TableHead>
-            <TableHead className="w-24 text-right">Total</TableHead>
-            <TableHead className="w-32">Status</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {/* Render Job Lines */}
-          {filteredJobLines.map((jobLine, index) => {
-            const jobLineParts = allParts.filter(part => part.job_line_id === jobLine.id);
-            const isExpanded = expandedJobLines.has(jobLine.id);
-            const hasVisibleParts = jobLineParts.length > 0 && (showType === 'overview' || showType === 'parts');
-
-            return (
-              <React.Fragment key={jobLine.id}>
-                {renderJobLineRow(jobLine, index)}
-                
-                {/* Render associated parts when expanded */}
-                {isExpanded && hasVisibleParts && jobLineParts.map(part => renderPartRow(part))}
-              </React.Fragment>
-            );
-          })}
-
-          {/* Render standalone parts (for parts-only view) */}
-          {showType === 'parts' && filteredParts
-            .filter(part => !part.job_line_id)
-            .map(part => renderPartRow(part))}
-        </TableBody>
-      </Table>
-    </div>
+    <DndContext 
+      sensors={sensors} 
+      collisionDetection={closestCenter} 
+      onDragEnd={handleDragEnd}
+    >
+      <div className="border border-gray-200 rounded-lg overflow-hidden">
+        <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-3 w-8"></th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  {showType === 'labor' ? 'Job Line' : showType === 'parts' ? 'Part' : 'Item'}
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  {showType === 'parts' ? 'Part #' : 'Category'}
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  {showType === 'labor' ? 'Hours' : 'Qty'}
+                </th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  {showType === 'labor' ? 'Rate' : 'Unit Price'}
+                </th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Total
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {renderJobLines()}
+              {renderParts()}
+            </tbody>
+          </table>
+        </SortableContext>
+      </div>
+    </DndContext>
   );
 }
