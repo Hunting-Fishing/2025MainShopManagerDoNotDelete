@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { JobLineCard } from './JobLineCard';
+import { CompactJobLinesTable } from './CompactJobLinesTable';
 
 interface JobLinesTableProps {
   jobLines: WorkOrderJobLine[];
@@ -10,11 +10,6 @@ interface JobLinesTableProps {
 }
 
 export function JobLinesTable({ jobLines, onUpdate, onDelete }: JobLinesTableProps) {
-  const handlePartsChange = (newParts: any[]) => {
-    // Handle parts change if needed
-    console.log('Parts changed:', newParts);
-  };
-
   if (jobLines.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
@@ -24,16 +19,12 @@ export function JobLinesTable({ jobLines, onUpdate, onDelete }: JobLinesTablePro
   }
 
   return (
-    <div className="space-y-4">
-      {jobLines.map((jobLine) => (
-        <JobLineCard
-          key={jobLine.id}
-          jobLine={jobLine}
-          onUpdate={onUpdate}
-          onDelete={onDelete}
-          isEditMode={true}
-        />
-      ))}
-    </div>
+    <CompactJobLinesTable
+      jobLines={jobLines}
+      allParts={[]}
+      onUpdate={onUpdate}
+      onDelete={onDelete}
+      isEditMode={true}
+    />
   );
 }
