@@ -1,27 +1,15 @@
 
 import React, { useState } from 'react';
-import { WorkOrderJobLine } from '@/types/jobLine';
-import { WorkOrderPart } from '@/types/workOrderPart';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit2, Trash2, History, ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, Wrench, Package, History, Trash2, Edit } from 'lucide-react';
+import { WorkOrderJobLine } from '@/types/jobLine';
+import { WorkOrderPart } from '@/types/workOrderPart';
 import { StatusSelector } from './StatusSelector';
+import { StatusBadge } from './StatusBadge';
 import { ChangeHistoryDialog } from './ChangeHistoryDialog';
 import { jobLineStatusMap, partStatusMap } from '@/types/jobLine';
-
-interface UnifiedItem {
-  id: string;
-  type: 'labor' | 'part';
-  description: string;
-  rate?: number;
-  hours?: number;
-  quantity?: number;
-  unitPrice?: number;
-  lineTotal: number;
-  status: string;
-  originalItem: WorkOrderJobLine | WorkOrderPart;
-}
 
 interface UnifiedItemsTableProps {
   jobLines: WorkOrderJobLine[];
@@ -30,66 +18,27 @@ interface UnifiedItemsTableProps {
   onJobLineDelete?: (jobLineId: string) => void;
   onPartUpdate?: (part: WorkOrderPart) => void;
   onPartDelete?: (partId: string) => void;
-  isEditMode?: boolean;
-  showType?: 'overview' | 'detailed';
+  isEditMode: boolean;
+  showType?: 'overview' | 'parts' | 'labor';
 }
 
 export function UnifiedItemsTable({
-  jobLines = [],
-  allParts = [],
+  jobLines,
+  allParts,
   onJobLineUpdate,
   onJobLineDelete,
   onPartUpdate,
   onPartDelete,
-  isEditMode = false,
-  showType = 'detailed'
+  isEditMode,
+  showType = 'overview'
 }: UnifiedItemsTableProps) {
+  const [expandedJobLines, setExpandedJobLines] = useState<Set<string>>(new Set());
   const [historyDialog, setHistoryDialog] = useState<{
     isOpen: boolean;
     itemId: string;
     itemType: 'jobLine' | 'part';
     itemName: string;
-  }>({
-    isOpen: false,
-    itemId: '',
-    itemType: 'jobLine',
-    itemName: ''
-  });
-
-  const [expandedJobLines, setExpandedJobLines] = useState<Set<string>>(new Set());
-
-  const handleStatusChange = async (itemId: string, newStatus: string, itemType: 'labor' | 'part') => {
-    if (itemType === 'labor' && onJobLineUpdate) {
-      const jobLine = jobLines.find(jl => jl.id === itemId);
-      if (jobLine) {
-        const updatedJobLine = { ...jobLine, status: newStatus };
-        await onJobLineUpdate(updatedJobLine);
-      }
-    } else if (itemType === 'part' && onPartUpdate) {
-      const part = allParts.find(p => p.id === itemId);
-      if (part) {
-        const updatedPart = { ...part, status: newStatus };
-        await onPartUpdate(updatedPart);
-      }
-    }
-  };
-
-  const handleDelete = (itemId: string, itemType: 'labor' | 'part') => {
-    if (itemType === 'labor' && onJobLineDelete) {
-      onJobLineDelete(itemId);
-    } else if (itemType === 'part' && onPartDelete) {
-      onPartDelete(itemId);
-    }
-  };
-
-  const openHistoryDialog = (itemId: string, itemType: 'jobLine' | 'part', itemName: string) => {
-    setHistoryDialog({
-      isOpen: true,
-      itemId,
-      itemType,
-      itemName
-    });
-  };
+  }>({ isOpen: false, itemId: '', itemType: 'jobLine', itemName: '' });
 
   const toggleJobLineExpansion = (jobLineId: string) => {
     const newExpanded = new Set(expandedJobLines);
@@ -101,65 +50,94 @@ export function UnifiedItemsTable({
     setExpandedJobLines(newExpanded);
   };
 
-  const getJobLineParts = (jobLineId: string) => {
-    return allParts.filter(part => part.job_line_id === jobLineId);
+  const handleStatusChange = (id: string, newStatus: string, type: 'jobLine' | 'part') => {
+    if (type === 'jobLine' && onJobLineUpdate) {
+      const jobLine = jobLines.find(jl => jl.id === id);
+      if (jobLine) {
+        onJobLineUpdate({ ...jobLine, status: newStatus });
+      }
+    } else if (type === 'part' && onPartUpdate) {
+      const part = allParts.find(p => p.id === id);
+      if (part) {
+        onPartUpdate({ ...part, status: newStatus });
+      }
+    }
   };
 
-  const getUnassignedParts = () => {
-    return allParts.filter(part => !part.job_line_id);
+  const showHistory = (itemId: string, itemType: 'jobLine' | 'part', itemName: string) => {
+    setHistoryDialog({
+      isOpen: true,
+      itemId,
+      itemType,
+      itemName
+    });
   };
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | undefined) => {
+    if (amount === undefined || amount === null) return '$0.00';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD'
     }).format(amount);
   };
 
-  const getStatusBadge = (status: string, type: 'labor' | 'part') => {
-    const statusConfig = type === 'labor' 
-      ? jobLineStatusMap[status] || { label: status, classes: 'bg-gray-100 text-gray-800' }
-      : partStatusMap[status] || { label: status, classes: 'bg-gray-100 text-gray-800' };
-    
-    return (
-      <Badge variant="outline" className={statusConfig.classes}>
-        {statusConfig.label}
-      </Badge>
-    );
+  const formatHours = (hours: number | undefined) => {
+    if (hours === undefined || hours === null) return '0.0';
+    return hours.toFixed(1);
   };
 
-  if (showType === 'overview') {
-    // Overview display: Group parts under job lines
+  // Group parts by job line
+  const getPartsForJobLine = (jobLineId: string) => {
+    return allParts.filter(part => part.job_line_id === jobLineId);
+  };
+
+  const unassignedParts = allParts.filter(part => !part.job_line_id);
+
+  if (jobLines.length === 0 && allParts.length === 0) {
     return (
-      <div className="space-y-4">
+      <div className="text-center py-8 text-muted-foreground">
+        <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+        <p className="text-lg font-medium mb-2">No Items Added</p>
+        <p className="text-sm">Add job lines and parts to get started</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg border bg-card overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow className="bg-muted/30">
               <TableHead className="w-8"></TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead className="text-right w-24">Rate/Price</TableHead>
-              <TableHead className="text-right w-20">Qty/Hrs</TableHead>
-              <TableHead className="text-right w-24">Total</TableHead>
-              <TableHead className="w-32">Status</TableHead>
+              <TableHead className="w-12"></TableHead>
+              <TableHead className="font-semibold">Description</TableHead>
+              <TableHead className="font-semibold w-32">Part #</TableHead>
+              <TableHead className="font-semibold w-20 text-center">Qty</TableHead>
+              <TableHead className="font-semibold w-24 text-center">Hours</TableHead>
+              <TableHead className="font-semibold w-28 text-right">Rate</TableHead>
+              <TableHead className="font-semibold w-28 text-right">Total</TableHead>
+              <TableHead className="font-semibold w-32">Status</TableHead>
               {isEditMode && <TableHead className="w-24">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {jobLines.map((jobLine) => {
-              const jobLineParts = getJobLineParts(jobLine.id);
               const isExpanded = expandedJobLines.has(jobLine.id);
-              
+              const jobLineParts = getPartsForJobLine(jobLine.id);
+              const hasVisibleParts = jobLineParts.length > 0;
+
               return (
                 <React.Fragment key={jobLine.id}>
                   {/* Job Line Row */}
-                  <TableRow className="font-medium bg-blue-50">
+                  <TableRow className="hover:bg-muted/20 border-b-2 border-muted/30">
                     <TableCell>
-                      {jobLineParts.length > 0 && (
+                      {hasVisibleParts && (
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => toggleJobLineExpansion(jobLine.id)}
                           className="h-6 w-6 p-0"
+                          onClick={() => toggleJobLineExpansion(jobLine.id)}
                         >
                           {isExpanded ? (
                             <ChevronDown className="h-4 w-4" />
@@ -170,77 +148,115 @@ export function UnifiedItemsTable({
                       )}
                     </TableCell>
                     <TableCell>
-                      <div>
-                        <div className="font-medium text-blue-900">{jobLine.name}</div>
+                      <div className="flex items-center justify-center">
+                        <Wrench className="h-4 w-4 text-blue-600" />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <div className="font-medium text-base">{jobLine.name}</div>
                         {jobLine.description && (
-                          <div className="text-sm text-muted-foreground mt-1">
+                          <div className="text-sm text-muted-foreground line-clamp-2">
                             {jobLine.description}
                           </div>
                         )}
+                        {jobLine.category && (
+                          <Badge variant="outline" className="text-xs">
+                            {jobLine.category}
+                          </Badge>
+                        )}
                       </div>
                     </TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(jobLine.labor_rate || 0)}
+                    <TableCell className="text-muted-foreground text-sm">
+                      —
                     </TableCell>
-                    <TableCell className="text-right">
-                      {jobLine.estimated_hours || 0}
+                    <TableCell className="text-center text-muted-foreground">
+                      —
                     </TableCell>
-                    <TableCell className="text-right font-medium">
-                      {formatCurrency(jobLine.total_amount || 0)}
+                    <TableCell className="text-center font-mono text-sm">
+                      {formatHours(jobLine.estimated_hours)}
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-sm">
+                      {formatCurrency(jobLine.labor_rate)}
+                    </TableCell>
+                    <TableCell className="text-right font-mono font-medium">
+                      {formatCurrency(jobLine.total_amount)}
                     </TableCell>
                     <TableCell>
                       {isEditMode ? (
                         <StatusSelector
                           currentStatus={jobLine.status || 'pending'}
                           type="jobLine"
-                          onStatusChange={(newStatus) => handleStatusChange(jobLine.id, newStatus, 'labor')}
+                          onStatusChange={(newStatus) => handleStatusChange(jobLine.id, newStatus, 'jobLine')}
                         />
                       ) : (
-                        getStatusBadge(jobLine.status || 'pending', 'labor')
+                        <StatusBadge status={jobLine.status || 'pending'} type="jobLine" />
                       )}
                     </TableCell>
                     {isEditMode && (
                       <TableCell>
-                        <div className="flex gap-1">
+                        <div className="flex items-center gap-1">
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => openHistoryDialog(jobLine.id, 'jobLine', jobLine.name)}
+                            className="h-7 w-7 p-0"
+                            onClick={() => showHistory(jobLine.id, 'jobLine', jobLine.name)}
                           >
-                            <History className="h-4 w-4" />
+                            <History className="h-3 w-3" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(jobLine.id, 'labor')}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
+                          {onJobLineDelete && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                              onClick={() => onJobLineDelete(jobLine.id)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     )}
                   </TableRow>
-                  
-                  {/* Parts under this job line */}
-                  {isExpanded && jobLineParts.map((part) => (
-                    <TableRow key={part.id} className="bg-gray-50">
+
+                  {/* Parts for this Job Line */}
+                  {hasVisibleParts && isExpanded && jobLineParts.map((part) => (
+                    <TableRow
+                      key={`part-${part.id}`}
+                      className="hover:bg-blue-50/30 bg-blue-50/10 border-l-4 border-l-blue-200"
+                    >
                       <TableCell></TableCell>
                       <TableCell>
-                        <div className="pl-4">
-                          <div className="font-medium text-gray-700">{part.name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            Part #: {part.part_number}
-                          </div>
+                        <div className="flex items-center justify-center ml-4">
+                          <Package className="h-4 w-4 text-orange-600" />
                         </div>
                       </TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(part.unit_price || 0)}
+                      <TableCell>
+                        <div className="ml-4 space-y-1">
+                          <div className="font-medium">{part.name}</div>
+                          {part.description && (
+                            <div className="text-sm text-muted-foreground line-clamp-1">
+                              {part.description}
+                            </div>
+                          )}
+                        </div>
                       </TableCell>
-                      <TableCell className="text-right">
-                        {part.quantity || 0}
+                      <TableCell>
+                        <div className="font-mono text-sm font-medium">
+                          {part.part_number}
+                        </div>
                       </TableCell>
-                      <TableCell className="text-right font-medium">
-                        {formatCurrency(part.total_price || 0)}
+                      <TableCell className="text-center font-mono text-sm">
+                        {part.quantity}
+                      </TableCell>
+                      <TableCell className="text-center text-muted-foreground">
+                        —
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-sm">
+                        {formatCurrency(part.unit_price)}
+                      </TableCell>
+                      <TableCell className="text-right font-mono font-medium">
+                        {formatCurrency(part.total_price)}
                       </TableCell>
                       <TableCell>
                         {isEditMode ? (
@@ -250,26 +266,30 @@ export function UnifiedItemsTable({
                             onStatusChange={(newStatus) => handleStatusChange(part.id, newStatus, 'part')}
                           />
                         ) : (
-                          getStatusBadge(part.status || 'pending', 'part')
+                          <StatusBadge status={part.status || 'pending'} type="part" />
                         )}
                       </TableCell>
                       {isEditMode && (
                         <TableCell>
-                          <div className="flex gap-1">
+                          <div className="flex items-center gap-1">
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => openHistoryDialog(part.id, 'part', part.name)}
+                              className="h-7 w-7 p-0"
+                              onClick={() => showHistory(part.id, 'part', part.name)}
                             >
-                              <History className="h-4 w-4" />
+                              <History className="h-3 w-3" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDelete(part.id, 'part')}
-                            >
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
+                            {onPartDelete && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                                onClick={() => onPartDelete(part.id)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       )}
@@ -278,34 +298,55 @@ export function UnifiedItemsTable({
                 </React.Fragment>
               );
             })}
-            
-            {/* Unassigned Parts */}
-            {getUnassignedParts().length > 0 && (
+
+            {/* Unassigned Parts Section */}
+            {unassignedParts.length > 0 && (
               <>
-                <TableRow className="bg-yellow-50">
-                  <TableCell colSpan={isEditMode ? 7 : 6} className="font-medium text-yellow-800">
-                    Unassigned Parts
+                <TableRow className="bg-orange-50/30">
+                  <TableCell colSpan={isEditMode ? 10 : 9} className="py-2">
+                    <div className="flex items-center gap-2 text-sm font-medium text-orange-800">
+                      <Package className="h-4 w-4" />
+                      Unassigned Parts
+                    </div>
                   </TableCell>
                 </TableRow>
-                {getUnassignedParts().map((part) => (
-                  <TableRow key={part.id} className="bg-yellow-25">
+                {unassignedParts.map((part) => (
+                  <TableRow
+                    key={`unassigned-${part.id}`}
+                    className="hover:bg-orange-50/30 bg-orange-50/10 border-l-4 border-l-orange-200"
+                  >
                     <TableCell></TableCell>
                     <TableCell>
-                      <div className="pl-4">
-                        <div className="font-medium text-yellow-700">{part.name}</div>
-                        <div className="text-sm text-muted-foreground">
-                          Part #: {part.part_number}
-                        </div>
+                      <div className="flex items-center justify-center">
+                        <Package className="h-4 w-4 text-orange-600" />
                       </div>
                     </TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(part.unit_price || 0)}
+                    <TableCell>
+                      <div className="space-y-1">
+                        <div className="font-medium">{part.name}</div>
+                        {part.description && (
+                          <div className="text-sm text-muted-foreground line-clamp-1">
+                            {part.description}
+                          </div>
+                        )}
+                      </div>
                     </TableCell>
-                    <TableCell className="text-right">
-                      {part.quantity || 0}
+                    <TableCell>
+                      <div className="font-mono text-sm font-medium">
+                        {part.part_number}
+                      </div>
                     </TableCell>
-                    <TableCell className="text-right font-medium">
-                      {formatCurrency(part.total_price || 0)}
+                    <TableCell className="text-center font-mono text-sm">
+                      {part.quantity}
+                    </TableCell>
+                    <TableCell className="text-center text-muted-foreground">
+                      —
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-sm">
+                      {formatCurrency(part.unit_price)}
+                    </TableCell>
+                    <TableCell className="text-right font-mono font-medium">
+                      {formatCurrency(part.total_price)}
                     </TableCell>
                     <TableCell>
                       {isEditMode ? (
@@ -315,26 +356,30 @@ export function UnifiedItemsTable({
                           onStatusChange={(newStatus) => handleStatusChange(part.id, newStatus, 'part')}
                         />
                       ) : (
-                        getStatusBadge(part.status || 'pending', 'part')
+                        <StatusBadge status={part.status || 'pending'} type="part" />
                       )}
                     </TableCell>
                     {isEditMode && (
                       <TableCell>
-                        <div className="flex gap-1">
+                        <div className="flex items-center gap-1">
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => openHistoryDialog(part.id, 'part', part.name)}
+                            className="h-7 w-7 p-0"
+                            onClick={() => showHistory(part.id, 'part', part.name)}
                           >
-                            <History className="h-4 w-4" />
+                            <History className="h-3 w-3" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(part.id, 'part')}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
+                          {onPartDelete && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                              onClick={() => onPartDelete(part.id)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     )}
@@ -344,134 +389,11 @@ export function UnifiedItemsTable({
             )}
           </TableBody>
         </Table>
-
-        <ChangeHistoryDialog
-          isOpen={historyDialog.isOpen}
-          onClose={() => setHistoryDialog(prev => ({ ...prev, isOpen: false }))}
-          itemId={historyDialog.itemId}
-          itemType={historyDialog.itemType}
-          itemName={historyDialog.itemName}
-        />
       </div>
-    );
-  }
-
-  // Detailed display: Show all items as flat list
-  const unifiedItems: UnifiedItem[] = [
-    ...jobLines.map(jobLine => ({
-      id: jobLine.id,
-      type: 'labor' as const,
-      description: jobLine.name,
-      rate: jobLine.labor_rate || 0,
-      hours: jobLine.estimated_hours || 0,
-      lineTotal: jobLine.total_amount || 0,
-      status: jobLine.status || 'pending',
-      originalItem: jobLine
-    })),
-    ...allParts.map(part => ({
-      id: part.id,
-      type: 'part' as const,
-      description: part.name,
-      quantity: part.quantity || 0,
-      unitPrice: part.unit_price || 0,
-      lineTotal: part.total_price || 0,
-      status: part.status || 'pending',
-      originalItem: part
-    }))
-  ];
-
-  if (unifiedItems.length === 0) {
-    return (
-      <div className="text-center py-8 text-muted-foreground">
-        <p>No labor or parts have been added yet.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Type</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead className="text-right">Rate/Price</TableHead>
-            <TableHead className="text-right">Qty/Hrs</TableHead>
-            <TableHead className="text-right">Total</TableHead>
-            <TableHead>Status</TableHead>
-            {isEditMode && <TableHead>Actions</TableHead>}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {unifiedItems.map((item) => (
-            <TableRow key={item.id}>
-              <TableCell>
-                <Badge variant={item.type === 'labor' ? 'default' : 'secondary'}>
-                  {item.type === 'labor' ? 'Labor' : 'Part'}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <div>
-                  <div className="font-medium">{item.description}</div>
-                  {item.type === 'part' && 'part_number' in item.originalItem && (
-                    <div className="text-sm text-muted-foreground">
-                      Part #: {item.originalItem.part_number}
-                    </div>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell className="text-right">
-                {formatCurrency(item.rate || item.unitPrice || 0)}
-              </TableCell>
-              <TableCell className="text-right">
-                {item.hours || item.quantity || 0}
-              </TableCell>
-              <TableCell className="text-right font-medium">
-                {formatCurrency(item.lineTotal)}
-              </TableCell>
-              <TableCell>
-                {isEditMode ? (
-                  <StatusSelector
-                    currentStatus={item.status}
-                    type={item.type === 'labor' ? 'jobLine' : 'part'}
-                    onStatusChange={(newStatus) => handleStatusChange(item.id, newStatus, item.type)}
-                  />
-                ) : (
-                  getStatusBadge(item.status, item.type)
-                )}
-              </TableCell>
-              {isEditMode && (
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openHistoryDialog(
-                        item.id, 
-                        item.type === 'labor' ? 'jobLine' : 'part', 
-                        item.description
-                      )}
-                    >
-                      <History className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(item.id, item.type)}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
-                  </div>
-                </TableCell>
-              )}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
 
       <ChangeHistoryDialog
         isOpen={historyDialog.isOpen}
-        onClose={() => setHistoryDialog(prev => ({ ...prev, isOpen: false }))}
+        onClose={() => setHistoryDialog({ isOpen: false, itemId: '', itemType: 'jobLine', itemName: '' })}
         itemId={historyDialog.itemId}
         itemType={historyDialog.itemType}
         itemName={historyDialog.itemName}
