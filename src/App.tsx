@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -21,7 +22,6 @@ import FeedbackAnalytics from '@/pages/FeedbackAnalytics';
 import PartsTracking from '@/pages/PartsTracking';
 import QuoteDetails from './pages/QuoteDetails';
 import Quotes from './pages/Quotes';
-import WorkOrderEdit from '@/pages/WorkOrderEdit';
 
 const queryClient = new QueryClient();
 
@@ -37,7 +37,6 @@ function App() {
               <Route path="/work-orders" element={<Layout><WorkOrders /></Layout>} />
               <Route path="/work-orders/create" element={<Layout><CreateWorkOrder /></Layout>} />
               <Route path="/work-orders/:id" element={<Layout><WorkOrderDetails /></Layout>} />
-              <Route path="/work-orders/:id/edit" element={<Layout><WorkOrderEdit /></Layout>} />
               <Route path="/customers" element={<Layout><Customers /></Layout>} />
               <Route path="/customers/:id" element={<Layout><CustomerDetails /></Layout>} />
               <Route path="/customers/create" element={<Layout><CreateCustomer /></Layout>} />
