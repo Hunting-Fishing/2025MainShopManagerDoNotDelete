@@ -48,11 +48,15 @@ export function WorkOrderDetailsTab({
 }: WorkOrderDetailsTabProps) {
   const handleSaveWorkOrder = async (updates: Partial<WorkOrder>) => {
     try {
-      const updatedWorkOrder = await updateWorkOrder(workOrder.id, {
+      // Properly cast priority to the expected type
+      const updateData = {
         ...workOrder,
         ...updates,
-        status: updates.status as any // Cast to handle string vs enum type
-      });
+        status: updates.status as any,
+        priority: updates.priority as 'high' | 'low' | 'medium' | 'urgent' | undefined
+      };
+      
+      const updatedWorkOrder = await updateWorkOrder(workOrder.id, updateData);
       onWorkOrderUpdate(updatedWorkOrder);
       toast({
         title: "Success",
@@ -70,6 +74,18 @@ export function WorkOrderDetailsTab({
 
   const handleNotesUpdate = async (notes: string) => {
     await handleSaveWorkOrder({ notes });
+  };
+
+  const handleJobLineUpdate = async (updatedJobLine: WorkOrderJobLine) => {
+    const updatedJobLines = jobLines.map(line => 
+      line.id === updatedJobLine.id ? updatedJobLine : line
+    );
+    onJobLinesChange(updatedJobLines);
+  };
+
+  const handleJobLineDelete = async (jobLineId: string) => {
+    const updatedJobLines = jobLines.filter(line => line.id !== jobLineId);
+    onJobLinesChange(updatedJobLines);
   };
 
   return (
@@ -98,16 +114,11 @@ export function WorkOrderDetailsTab({
       {/* Work Order Information */}
       <WorkOrderInformation 
         workOrder={workOrder}
-        onUpdate={handleSaveWorkOrder}
-        isEditMode={isEditMode}
       />
 
       {/* Customer and Vehicle Information */}
       <WorkOrderCustomerVehicleInfo 
         workOrder={workOrder}
-        customer={customer}
-        onUpdate={handleSaveWorkOrder}
-        isEditMode={isEditMode}
       />
 
       {/* Job Lines */}
@@ -119,6 +130,8 @@ export function WorkOrderDetailsTab({
           <JobLinesGrid
             workOrderId={workOrder.id}
             jobLines={jobLines}
+            onUpdate={handleJobLineUpdate}
+            onDelete={handleJobLineDelete}
             onJobLinesChange={onJobLinesChange}
             isEditMode={isEditMode}
           />
@@ -140,6 +153,7 @@ export function WorkOrderDetailsTab({
           <TimeTrackingSection
             workOrderId={workOrder.id}
             timeEntries={timeEntries}
+            onUpdateTimeEntries={onTimeEntriesChange}
             isEditMode={isEditMode}
           />
         </CardContent>
