@@ -16,53 +16,50 @@ export async function getWorkOrderParts(workOrderId: string): Promise<WorkOrderP
     }
 
     // Transform database fields to match WorkOrderPart interface
-    return (data || []).map(dbPart => ({
-      id: dbPart.id,
-      work_order_id: dbPart.work_order_id,
-      job_line_id: dbPart.job_line_id,
-      part_number: dbPart.part_number,
-      name: dbPart.part_name || dbPart.part_number, // Use part_name from DB
-      description: dbPart.notes_internal || '', // Map to available field
-      quantity: dbPart.quantity,
-      unit_price: dbPart.customer_price || 0, // Use customer_price as unit_price
-      total_price: (dbPart.customer_price || 0) * (dbPart.quantity || 1), // Calculate total
-      status: dbPart.status,
-      notes: dbPart.notes_internal,
-      created_at: dbPart.created_at,
-      updated_at: dbPart.updated_at,
+    return (data || []).map(part => ({
+      id: part.id,
+      work_order_id: part.work_order_id,
+      job_line_id: part.job_line_id,
+      part_number: part.part_number,
+      name: part.part_name || '',
+      description: part.notes_internal || '',
+      quantity: part.quantity,
+      unit_price: part.customer_price,
+      total_price: (part.customer_price || 0) * (part.quantity || 0),
+      status: part.status,
+      notes: part.notes,
+      created_at: part.created_at,
+      updated_at: part.updated_at,
       
-      // Additional fields that exist in the database
-      partName: dbPart.part_name,
-      partNumber: dbPart.part_number,
-      supplierName: dbPart.supplier_name,
-      supplierCost: dbPart.supplier_cost,
-      supplierSuggestedRetailPrice: dbPart.supplier_suggested_retail_price,
-      customerPrice: dbPart.customer_price,
-      retailPrice: dbPart.retail_price,
-      category: dbPart.category,
-      warrantyDuration: dbPart.warranty_duration,
-      warrantyExpiryDate: dbPart.warranty_expiry_date,
-      binLocation: dbPart.bin_location,
-      installDate: dbPart.install_date,
-      dateAdded: dbPart.date_added,
-      partType: dbPart.part_type,
-      installedBy: dbPart.installed_by,
-      markupPercentage: dbPart.markup_percentage,
-      inventoryItemId: dbPart.inventory_item_id,
-      coreChargeApplied: dbPart.core_charge_applied,
-      coreChargeAmount: dbPart.core_charge_amount,
-      isTaxable: dbPart.is_taxable,
-      invoiceNumber: dbPart.invoice_number,
-      poLine: dbPart.po_line,
-      isStockItem: dbPart.is_stock_item,
-      notesInternal: dbPart.notes_internal,
-      attachments: dbPart.attachments,
-      warehouseLocation: dbPart.warehouse_location,
-      shelfLocation: dbPart.shelf_location,
+      // Additional properties for parts tracking
+      partName: part.part_name,
+      partNumber: part.part_number,
+      supplierName: part.supplier_name,
+      supplierCost: part.supplier_cost,
+      supplierSuggestedRetailPrice: part.supplier_suggested_retail_price,
+      customerPrice: part.customer_price,
+      retailPrice: part.retail_price,
+      category: part.category,
+      warrantyDuration: part.warranty_duration,
+      warrantyExpiryDate: part.warranty_expiry_date,
+      installDate: part.install_date,
+      dateAdded: part.date_added,
+      partType: part.part_type,
+      installedBy: part.installed_by,
+      markupPercentage: part.markup_percentage,
+      inventoryItemId: part.inventory_item_id,
+      coreChargeApplied: part.core_charge_applied,
+      coreChargeAmount: part.core_charge_amount,
+      isTaxable: part.is_taxable,
+      invoiceNumber: part.invoice_number,
+      poLine: part.po_line,
+      isStockItem: part.is_stock_item,
+      notesInternal: part.notes_internal,
+      attachments: part.attachments,
       
-      // Aliases
-      workOrderId: dbPart.work_order_id,
-      jobLineId: dbPart.job_line_id
+      // CamelCase aliases for backward compatibility
+      workOrderId: part.work_order_id,
+      jobLineId: part.job_line_id
     }));
   } catch (error) {
     console.error('Error in getWorkOrderParts:', error);
@@ -84,53 +81,50 @@ export async function getJobLineParts(jobLineId: string): Promise<WorkOrderPart[
     }
 
     // Transform database fields to match WorkOrderPart interface
-    return (data || []).map(dbPart => ({
-      id: dbPart.id,
-      work_order_id: dbPart.work_order_id,
-      job_line_id: dbPart.job_line_id,
-      part_number: dbPart.part_number,
-      name: dbPart.part_name || dbPart.part_number,
-      description: dbPart.notes_internal || '',
-      quantity: dbPart.quantity,
-      unit_price: dbPart.customer_price || 0,
-      total_price: (dbPart.customer_price || 0) * (dbPart.quantity || 1),
-      status: dbPart.status,
-      notes: dbPart.notes_internal,
-      created_at: dbPart.created_at,
-      updated_at: dbPart.updated_at,
+    return (data || []).map(part => ({
+      id: part.id,
+      work_order_id: part.work_order_id,
+      job_line_id: part.job_line_id,
+      part_number: part.part_number,
+      name: part.part_name || '',
+      description: part.notes_internal || '',
+      quantity: part.quantity,
+      unit_price: part.customer_price,
+      total_price: (part.customer_price || 0) * (part.quantity || 0),
+      status: part.status,
+      notes: part.notes,
+      created_at: part.created_at,
+      updated_at: part.updated_at,
       
-      // Additional fields
-      partName: dbPart.part_name,
-      partNumber: dbPart.part_number,
-      supplierName: dbPart.supplier_name,
-      supplierCost: dbPart.supplier_cost,
-      supplierSuggestedRetailPrice: dbPart.supplier_suggested_retail_price,
-      customerPrice: dbPart.customer_price,
-      retailPrice: dbPart.retail_price,
-      category: dbPart.category,
-      warrantyDuration: dbPart.warranty_duration,
-      warrantyExpiryDate: dbPart.warranty_expiry_date,
-      binLocation: dbPart.bin_location,
-      installDate: dbPart.install_date,
-      dateAdded: dbPart.date_added,
-      partType: dbPart.part_type,
-      installedBy: dbPart.installed_by,
-      markupPercentage: dbPart.markup_percentage,
-      inventoryItemId: dbPart.inventory_item_id,
-      coreChargeApplied: dbPart.core_charge_applied,
-      coreChargeAmount: dbPart.core_charge_amount,
-      isTaxable: dbPart.is_taxable,
-      invoiceNumber: dbPart.invoice_number,
-      poLine: dbPart.po_line,
-      isStockItem: dbPart.is_stock_item,
-      notesInternal: dbPart.notes_internal,
-      attachments: dbPart.attachments,
-      warehouseLocation: dbPart.warehouse_location,
-      shelfLocation: dbPart.shelf_location,
+      // Additional properties for parts tracking
+      partName: part.part_name,
+      partNumber: part.part_number,
+      supplierName: part.supplier_name,
+      supplierCost: part.supplier_cost,
+      supplierSuggestedRetailPrice: part.supplier_suggested_retail_price,
+      customerPrice: part.customer_price,
+      retailPrice: part.retail_price,
+      category: part.category,
+      warrantyDuration: part.warranty_duration,
+      warrantyExpiryDate: part.warranty_expiry_date,
+      installDate: part.install_date,
+      dateAdded: part.date_added,
+      partType: part.part_type,
+      installedBy: part.installed_by,
+      markupPercentage: part.markup_percentage,
+      inventoryItemId: part.inventory_item_id,
+      coreChargeApplied: part.core_charge_applied,
+      coreChargeAmount: part.core_charge_amount,
+      isTaxable: part.is_taxable,
+      invoiceNumber: part.invoice_number,
+      poLine: part.po_line,
+      isStockItem: part.is_stock_item,
+      notesInternal: part.notes_internal,
+      attachments: part.attachments,
       
-      // Aliases
-      workOrderId: dbPart.work_order_id,
-      jobLineId: dbPart.job_line_id
+      // CamelCase aliases for backward compatibility
+      workOrderId: part.work_order_id,
+      jobLineId: part.job_line_id
     }));
   } catch (error) {
     console.error('Error in getJobLineParts:', error);
@@ -138,43 +132,40 @@ export async function getJobLineParts(jobLineId: string): Promise<WorkOrderPart[
   }
 }
 
-export async function createWorkOrderPart(
-  workOrderId: string,
-  partData: WorkOrderPartFormValues
-): Promise<WorkOrderPart> {
+export async function createWorkOrderPart(formValues: WorkOrderPartFormValues & { work_order_id: string }): Promise<WorkOrderPart> {
   try {
+    const totalPrice = (formValues.unit_price || formValues.customerPrice || 0) * (formValues.quantity || 1);
+
     const { data, error } = await supabase
       .from('work_order_parts')
       .insert({
-        work_order_id: workOrderId,
-        job_line_id: partData.job_line_id,
-        part_number: partData.part_number,
-        part_name: partData.name || partData.partName,
-        quantity: partData.quantity || 1,
-        customer_price: partData.unit_price || partData.customerPrice || 0,
-        status: partData.status || 'pending',
-        notes_internal: partData.notes || partData.notesInternal,
-        supplier_name: partData.supplierName,
-        supplier_cost: partData.supplierCost,
-        supplier_suggested_retail_price: partData.supplierSuggestedRetailPrice,
-        retail_price: partData.retailPrice,
-        category: partData.category,
-        part_type: partData.partType,
-        markup_percentage: partData.markupPercentage,
-        is_taxable: partData.isTaxable,
-        core_charge_amount: partData.coreChargeAmount,
-        core_charge_applied: partData.coreChargeApplied,
-        warranty_duration: partData.warrantyDuration,
-        invoice_number: partData.invoiceNumber,
-        po_line: partData.poLine,
-        is_stock_item: partData.isStockItem,
-        bin_location: partData.binLocation,
-        install_date: partData.installDate,
-        installed_by: partData.installedBy,
-        inventory_item_id: partData.inventoryItemId,
-        attachments: partData.attachments,
-        warehouse_location: partData.warehouseLocation,
-        shelf_location: partData.shelfLocation
+        work_order_id: formValues.work_order_id,
+        job_line_id: formValues.job_line_id,
+        part_number: formValues.part_number,
+        part_name: formValues.name || formValues.partName || '',
+        customer_price: formValues.unit_price || formValues.customerPrice || 0,
+        quantity: formValues.quantity || 1,
+        notes: formValues.notes,
+        status: formValues.status || 'pending',
+        category: formValues.category,
+        part_type: formValues.partType,
+        supplier_name: formValues.supplierName,
+        supplier_cost: formValues.supplierCost,
+        supplier_suggested_retail_price: formValues.supplierSuggestedRetailPrice,
+        retail_price: formValues.retailPrice,
+        markup_percentage: formValues.markupPercentage,
+        is_taxable: formValues.isTaxable,
+        core_charge_amount: formValues.coreChargeAmount,
+        core_charge_applied: formValues.coreChargeApplied,
+        warranty_duration: formValues.warrantyDuration,
+        invoice_number: formValues.invoiceNumber,
+        po_line: formValues.poLine,
+        is_stock_item: formValues.isStockItem,
+        notes_internal: formValues.notesInternal,
+        install_date: formValues.installDate,
+        installed_by: formValues.installedBy,
+        inventory_item_id: formValues.inventoryItemId,
+        attachments: formValues.attachments
       })
       .select()
       .single();
@@ -184,55 +175,51 @@ export async function createWorkOrderPart(
       throw error;
     }
 
-    // Transform the response
-    const dbPart = data;
+    // Transform response to match WorkOrderPart interface
     return {
-      id: dbPart.id,
-      work_order_id: dbPart.work_order_id,
-      job_line_id: dbPart.job_line_id,
-      part_number: dbPart.part_number,
-      name: dbPart.part_name || dbPart.part_number,
-      description: dbPart.notes_internal || '',
-      quantity: dbPart.quantity,
-      unit_price: dbPart.customer_price || 0,
-      total_price: (dbPart.customer_price || 0) * (dbPart.quantity || 1),
-      status: dbPart.status,
-      notes: dbPart.notes_internal,
-      created_at: dbPart.created_at,
-      updated_at: dbPart.updated_at,
+      id: data.id,
+      work_order_id: data.work_order_id,
+      job_line_id: data.job_line_id,
+      part_number: data.part_number,
+      name: data.part_name || '',
+      description: data.notes_internal || '',
+      quantity: data.quantity,
+      unit_price: data.customer_price,
+      total_price: totalPrice,
+      status: data.status,
+      notes: data.notes,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
       
-      // Additional fields
-      partName: dbPart.part_name,
-      partNumber: dbPart.part_number,
-      supplierName: dbPart.supplier_name,
-      supplierCost: dbPart.supplier_cost,
-      supplierSuggestedRetailPrice: dbPart.supplier_suggested_retail_price,
-      customerPrice: dbPart.customer_price,
-      retailPrice: dbPart.retail_price,
-      category: dbPart.category,
-      warrantyDuration: dbPart.warranty_duration,
-      warrantyExpiryDate: dbPart.warranty_expiry_date,
-      binLocation: dbPart.bin_location,
-      installDate: dbPart.install_date,
-      dateAdded: dbPart.date_added,
-      partType: dbPart.part_type,
-      installedBy: dbPart.installed_by,
-      markupPercentage: dbPart.markup_percentage,
-      inventoryItemId: dbPart.inventory_item_id,
-      coreChargeApplied: dbPart.core_charge_applied,
-      coreChargeAmount: dbPart.core_charge_amount,
-      isTaxable: dbPart.is_taxable,
-      invoiceNumber: dbPart.invoice_number,
-      poLine: dbPart.po_line,
-      isStockItem: dbPart.is_stock_item,
-      notesInternal: dbPart.notes_internal,
-      attachments: dbPart.attachments,
-      warehouseLocation: dbPart.warehouse_location,
-      shelfLocation: dbPart.shelf_location,
+      // Additional properties
+      partName: data.part_name,
+      partNumber: data.part_number,
+      supplierName: data.supplier_name,
+      supplierCost: data.supplier_cost,
+      supplierSuggestedRetailPrice: data.supplier_suggested_retail_price,
+      customerPrice: data.customer_price,
+      retailPrice: data.retail_price,
+      category: data.category,
+      warrantyDuration: data.warranty_duration,
+      warrantyExpiryDate: data.warranty_expiry_date,
+      installDate: data.install_date,
+      dateAdded: data.date_added,
+      partType: data.part_type,
+      installedBy: data.installed_by,
+      markupPercentage: data.markup_percentage,
+      inventoryItemId: data.inventory_item_id,
+      coreChargeApplied: data.core_charge_applied,
+      coreChargeAmount: data.core_charge_amount,
+      isTaxable: data.is_taxable,
+      invoiceNumber: data.invoice_number,
+      poLine: data.po_line,
+      isStockItem: data.is_stock_item,
+      notesInternal: data.notes_internal,
+      attachments: data.attachments,
       
-      // Aliases
-      workOrderId: dbPart.work_order_id,
-      jobLineId: dbPart.job_line_id
+      // CamelCase aliases
+      workOrderId: data.work_order_id,
+      jobLineId: data.job_line_id
     };
   } catch (error) {
     console.error('Error in createWorkOrderPart:', error);
@@ -240,46 +227,37 @@ export async function createWorkOrderPart(
   }
 }
 
-export async function updateWorkOrderPart(
-  partId: string,
-  partData: Partial<WorkOrderPartFormValues>
-): Promise<WorkOrderPart> {
+export async function updateWorkOrderPart(partId: string, formValues: Partial<WorkOrderPartFormValues>): Promise<WorkOrderPart> {
   try {
-    const updateData: any = {
-      updated_at: new Date().toISOString()
-    };
-
-    // Map form fields to database fields
-    if (partData.part_number) updateData.part_number = partData.part_number;
-    if (partData.name || partData.partName) updateData.part_name = partData.name || partData.partName;
-    if (partData.quantity !== undefined) updateData.quantity = partData.quantity;
-    if (partData.unit_price !== undefined || partData.customerPrice !== undefined) {
-      updateData.customer_price = partData.unit_price || partData.customerPrice;
+    const updateData: any = {};
+    
+    if (formValues.part_number) updateData.part_number = formValues.part_number;
+    if (formValues.name || formValues.partName) updateData.part_name = formValues.name || formValues.partName;
+    if (formValues.unit_price !== undefined || formValues.customerPrice !== undefined) {
+      updateData.customer_price = formValues.unit_price || formValues.customerPrice;
     }
-    if (partData.status) updateData.status = partData.status;
-    if (partData.notes || partData.notesInternal) updateData.notes_internal = partData.notes || partData.notesInternal;
-    if (partData.job_line_id !== undefined) updateData.job_line_id = partData.job_line_id;
-    if (partData.supplierName) updateData.supplier_name = partData.supplierName;
-    if (partData.supplierCost !== undefined) updateData.supplier_cost = partData.supplierCost;
-    if (partData.supplierSuggestedRetailPrice !== undefined) updateData.supplier_suggested_retail_price = partData.supplierSuggestedRetailPrice;
-    if (partData.retailPrice !== undefined) updateData.retail_price = partData.retailPrice;
-    if (partData.category) updateData.category = partData.category;
-    if (partData.partType) updateData.part_type = partData.partType;
-    if (partData.markupPercentage !== undefined) updateData.markup_percentage = partData.markupPercentage;
-    if (partData.isTaxable !== undefined) updateData.is_taxable = partData.isTaxable;
-    if (partData.coreChargeAmount !== undefined) updateData.core_charge_amount = partData.coreChargeAmount;
-    if (partData.coreChargeApplied !== undefined) updateData.core_charge_applied = partData.coreChargeApplied;
-    if (partData.warrantyDuration) updateData.warranty_duration = partData.warrantyDuration;
-    if (partData.invoiceNumber) updateData.invoice_number = partData.invoiceNumber;
-    if (partData.poLine) updateData.po_line = partData.poLine;
-    if (partData.isStockItem !== undefined) updateData.is_stock_item = partData.isStockItem;
-    if (partData.binLocation) updateData.bin_location = partData.binLocation;
-    if (partData.installDate) updateData.install_date = partData.installDate;
-    if (partData.installedBy) updateData.installed_by = partData.installedBy;
-    if (partData.inventoryItemId) updateData.inventory_item_id = partData.inventoryItemId;
-    if (partData.attachments) updateData.attachments = partData.attachments;
-    if (partData.warehouseLocation) updateData.warehouse_location = partData.warehouseLocation;
-    if (partData.shelfLocation) updateData.shelf_location = partData.shelfLocation;
+    if (formValues.quantity !== undefined) updateData.quantity = formValues.quantity;
+    if (formValues.notes !== undefined) updateData.notes = formValues.notes;
+    if (formValues.status) updateData.status = formValues.status;
+    if (formValues.category) updateData.category = formValues.category;
+    if (formValues.partType) updateData.part_type = formValues.partType;
+    if (formValues.supplierName) updateData.supplier_name = formValues.supplierName;
+    if (formValues.supplierCost !== undefined) updateData.supplier_cost = formValues.supplierCost;
+    if (formValues.supplierSuggestedRetailPrice !== undefined) updateData.supplier_suggested_retail_price = formValues.supplierSuggestedRetailPrice;
+    if (formValues.retailPrice !== undefined) updateData.retail_price = formValues.retailPrice;
+    if (formValues.markupPercentage !== undefined) updateData.markup_percentage = formValues.markupPercentage;
+    if (formValues.isTaxable !== undefined) updateData.is_taxable = formValues.isTaxable;
+    if (formValues.coreChargeAmount !== undefined) updateData.core_charge_amount = formValues.coreChargeAmount;
+    if (formValues.coreChargeApplied !== undefined) updateData.core_charge_applied = formValues.coreChargeApplied;
+    if (formValues.warrantyDuration) updateData.warranty_duration = formValues.warrantyDuration;
+    if (formValues.invoiceNumber) updateData.invoice_number = formValues.invoiceNumber;
+    if (formValues.poLine) updateData.po_line = formValues.poLine;
+    if (formValues.isStockItem !== undefined) updateData.is_stock_item = formValues.isStockItem;
+    if (formValues.notesInternal) updateData.notes_internal = formValues.notesInternal;
+    if (formValues.installDate) updateData.install_date = formValues.installDate;
+    if (formValues.installedBy) updateData.installed_by = formValues.installedBy;
+    if (formValues.inventoryItemId) updateData.inventory_item_id = formValues.inventoryItemId;
+    if (formValues.attachments) updateData.attachments = formValues.attachments;
 
     const { data, error } = await supabase
       .from('work_order_parts')
@@ -293,55 +271,53 @@ export async function updateWorkOrderPart(
       throw error;
     }
 
-    // Transform the response
-    const dbPart = data;
+    // Transform response to match WorkOrderPart interface
+    const totalPrice = (data.customer_price || 0) * (data.quantity || 0);
+    
     return {
-      id: dbPart.id,
-      work_order_id: dbPart.work_order_id,
-      job_line_id: dbPart.job_line_id,
-      part_number: dbPart.part_number,
-      name: dbPart.part_name || dbPart.part_number,
-      description: dbPart.notes_internal || '',
-      quantity: dbPart.quantity,
-      unit_price: dbPart.customer_price || 0,
-      total_price: (dbPart.customer_price || 0) * (dbPart.quantity || 1),
-      status: dbPart.status,
-      notes: dbPart.notes_internal,
-      created_at: dbPart.created_at,
-      updated_at: dbPart.updated_at,
+      id: data.id,
+      work_order_id: data.work_order_id,
+      job_line_id: data.job_line_id,
+      part_number: data.part_number,
+      name: data.part_name || '',
+      description: data.notes_internal || '',
+      quantity: data.quantity,
+      unit_price: data.customer_price,
+      total_price: totalPrice,
+      status: data.status,
+      notes: data.notes,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
       
-      // Additional fields
-      partName: dbPart.part_name,
-      partNumber: dbPart.part_number,
-      supplierName: dbPart.supplier_name,
-      supplierCost: dbPart.supplier_cost,
-      supplierSuggestedRetailPrice: dbPart.supplier_suggested_retail_price,
-      customerPrice: dbPart.customer_price,
-      retailPrice: dbPart.retail_price,
-      category: dbPart.category,
-      warrantyDuration: dbPart.warranty_duration,
-      warrantyExpiryDate: dbPart.warranty_expiry_date,
-      binLocation: dbPart.bin_location,
-      installDate: dbPart.install_date,
-      dateAdded: dbPart.date_added,
-      partType: dbPart.part_type,
-      installedBy: dbPart.installed_by,
-      markupPercentage: dbPart.markup_percentage,
-      inventoryItemId: dbPart.inventory_item_id,
-      coreChargeApplied: dbPart.core_charge_applied,
-      coreChargeAmount: dbPart.core_charge_amount,
-      isTaxable: dbPart.is_taxable,
-      invoiceNumber: dbPart.invoice_number,
-      poLine: dbPart.po_line,
-      isStockItem: dbPart.is_stock_item,
-      notesInternal: dbPart.notes_internal,
-      attachments: dbPart.attachments,
-      warehouseLocation: dbPart.warehouse_location,
-      shelfLocation: dbPart.shelf_location,
+      // Additional properties
+      partName: data.part_name,
+      partNumber: data.part_number,
+      supplierName: data.supplier_name,
+      supplierCost: data.supplier_cost,
+      supplierSuggestedRetailPrice: data.supplier_suggested_retail_price,
+      customerPrice: data.customer_price,
+      retailPrice: data.retail_price,
+      category: data.category,
+      warrantyDuration: data.warranty_duration,
+      warrantyExpiryDate: data.warranty_expiry_date,
+      installDate: data.install_date,
+      dateAdded: data.date_added,
+      partType: data.part_type,
+      installedBy: data.installed_by,
+      markupPercentage: data.markup_percentage,
+      inventoryItemId: data.inventory_item_id,
+      coreChargeApplied: data.core_charge_applied,
+      coreChargeAmount: data.core_charge_amount,
+      isTaxable: data.is_taxable,
+      invoiceNumber: data.invoice_number,
+      poLine: data.po_line,
+      isStockItem: data.is_stock_item,
+      notesInternal: data.notes_internal,
+      attachments: data.attachments,
       
-      // Aliases
-      workOrderId: dbPart.work_order_id,
-      jobLineId: dbPart.job_line_id
+      // CamelCase aliases
+      workOrderId: data.work_order_id,
+      jobLineId: data.job_line_id
     };
   } catch (error) {
     console.error('Error in updateWorkOrderPart:', error);
