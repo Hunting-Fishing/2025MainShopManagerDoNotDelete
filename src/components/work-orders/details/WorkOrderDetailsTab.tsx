@@ -97,23 +97,11 @@ export function WorkOrderDetailsTab({
         </Card>
       )}
 
-      {/* Unified Job Lines & Parts - Use Compact View for Overview */}
+      {/* Unified Labor & Parts Table - Matches Reference Image */}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">Labor & Parts</CardTitle>
-            {isEditMode && (
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Job Line
-                </Button>
-                <Button variant="outline" size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Part
-                </Button>
-              </div>
-            )}
           </div>
         </CardHeader>
         <CardContent className="pt-0">
