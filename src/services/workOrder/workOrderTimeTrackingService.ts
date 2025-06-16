@@ -20,11 +20,14 @@ export const getWorkOrderTimeEntries = async (
       query = query.eq('job_line_id', jobLineId);
     }
 
-    // Break type inference chain to prevent TS2589 error
-    const result: any = await query;
-    const { data, error } = result;
+    // Aggressively break type inference to prevent TS2589 error
+    const queryResult = query as any;
+    const awaitedResult = await queryResult;
+    const data: any[] = awaitedResult.data || [];
+    const error: any = awaitedResult.error;
+    
     if (error) throw error;
-    return data || [];
+    return data;
   } catch (error) {
     console.error('Error fetching work order time entries:', error);
     return [];
