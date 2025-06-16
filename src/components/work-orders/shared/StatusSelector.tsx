@@ -13,6 +13,13 @@ interface StatusSelectorProps {
 export function StatusSelector({ currentStatus, type, onStatusChange, disabled = false }: StatusSelectorProps) {
   const statuses = type === 'jobLine' ? JOB_LINE_STATUSES : WORK_ORDER_PART_STATUSES;
   
+  const formatStatusLabel = (status: string) => {
+    return status
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+  
   return (
     <Select value={currentStatus} onValueChange={onStatusChange} disabled={disabled}>
       <SelectTrigger className="w-32">
@@ -21,7 +28,7 @@ export function StatusSelector({ currentStatus, type, onStatusChange, disabled =
       <SelectContent>
         {statuses.map((status) => (
           <SelectItem key={status} value={status}>
-            {status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ')}
+            {formatStatusLabel(status)}
           </SelectItem>
         ))}
       </SelectContent>
