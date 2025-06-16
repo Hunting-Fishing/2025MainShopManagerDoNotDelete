@@ -23,9 +23,8 @@ export function CompactJobLinesTable({
 }: CompactJobLinesTableProps) {
   const handleEditClick = (jobLine: WorkOrderJobLine) => {
     console.log('Edit job line clicked:', jobLine.id, jobLine.name);
-    // TODO: Implement job line edit dialog
+    // This should trigger the edit dialog in the parent component
     if (onUpdate) {
-      // For now, just call the update function with the same data
       onUpdate(jobLine);
     }
   };

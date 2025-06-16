@@ -5,7 +5,7 @@ import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
-import { JobLinesTable } from '../job-lines/JobLinesTable';
+import { CompactJobLinesTable } from '../job-lines/CompactJobLinesTable';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 
@@ -97,7 +97,7 @@ export function WorkOrderDetailsTab({
         </Card>
       )}
 
-      {/* Unified Job Lines & Parts */}
+      {/* Unified Job Lines & Parts - Use Compact View for Overview */}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -122,13 +122,12 @@ export function WorkOrderDetailsTab({
               Loading job lines and parts...
             </div>
           ) : (
-            <JobLinesTable
+            <CompactJobLinesTable
               jobLines={jobLines}
               allParts={allParts}
-              onUpdate={handleJobLineUpdate}
-              onDelete={handleJobLineDelete}
-              onPartUpdate={handlePartUpdate}
-              onPartDelete={handlePartDelete}
+              onUpdate={isEditMode ? handleJobLineUpdate : undefined}
+              onDelete={isEditMode ? handleJobLineDelete : undefined}
+              isEditMode={isEditMode}
             />
           )}
         </CardContent>
