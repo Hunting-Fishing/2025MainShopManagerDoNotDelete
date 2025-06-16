@@ -69,6 +69,7 @@ export const createWorkOrderPart = async (
         part_name: values.name || values.partName,
         quantity: values.quantity,
         customer_price: values.unit_price,
+        part_type: values.partType || 'OEM',
         status: values.status,
         notes: values.notes,
       })
@@ -105,6 +106,7 @@ export const updateWorkOrderPart = async (
         part_name: values.name || values.partName,
         quantity: values.quantity,
         customer_price: values.unit_price,
+        part_type: values.partType || 'OEM',
         status: values.status,
         notes: values.notes,
       })
