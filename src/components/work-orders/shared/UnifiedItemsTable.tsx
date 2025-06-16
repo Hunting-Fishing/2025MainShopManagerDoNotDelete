@@ -1,34 +1,33 @@
 
 import React, { useState } from 'react';
-import { DndContext, DragEndEvent, closestCenter } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
-  GripVertical, 
-  Edit3, 
-  Trash2, 
   ChevronDown, 
-  ChevronRight,
-  Plus,
-  Save,
+  ChevronRight, 
+  Edit, 
+  Trash2, 
+  Save, 
   X,
-  Clock,
-  DollarSign,
-  Package,
-  Wrench
+  Plus
 } from 'lucide-react';
-import { JOB_LINE_STATUSES, jobLineStatusMap } from '@/types/jobLine';
-import { WORK_ORDER_PART_STATUSES, partStatusMap } from '@/types/workOrderPart';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface UnifiedItemsTableProps {
   jobLines: WorkOrderJobLine[];
@@ -37,504 +36,486 @@ interface UnifiedItemsTableProps {
   onJobLineDelete?: (jobLineId: string) => void;
   onPartUpdate?: (part: WorkOrderPart) => void;
   onPartDelete?: (partId: string) => void;
-  onReorderJobLines?: (jobLines: WorkOrderJobLine[]) => void;
-  onReorderParts?: (parts: WorkOrderPart[]) => void;
   isEditMode: boolean;
-  showType?: 'overview' | 'labor' | 'parts';
+  showType: 'all' | 'labor' | 'parts';
 }
 
-interface SortableJobLineRowProps {
-  jobLine: WorkOrderJobLine;
-  parts: WorkOrderPart[];
-  onUpdate?: (jobLine: WorkOrderJobLine) => void;
-  onDelete?: (jobLineId: string) => void;
-  onPartUpdate?: (part: WorkOrderPart) => void;
-  onPartDelete?: (partId: string) => void;
-  isEditMode: boolean;
-}
+const statusOptions = [
+  { value: 'pending', label: 'Pending', color: 'bg-yellow-100 text-yellow-800' },
+  { value: 'in-progress', label: 'In Progress', color: 'bg-blue-100 text-blue-800' },
+  { value: 'completed', label: 'Completed', color: 'bg-green-100 text-green-800' },
+  { value: 'cancelled', label: 'Cancelled', color: 'bg-red-100 text-red-800' },
+];
 
-function SortableJobLineRow({ 
-  jobLine, 
-  parts, 
-  onUpdate, 
-  onDelete, 
-  onPartUpdate, 
-  onPartDelete, 
-  isEditMode 
-}: SortableJobLineRowProps) {
-  const [isOpen, setIsOpen] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState(jobLine);
-
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: jobLine.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
-  const handleSave = () => {
-    onUpdate?.(editData);
-    setIsEditing(false);
-  };
-
-  const handleCancel = () => {
-    setEditData(jobLine);
-    setIsEditing(false);
-  };
-
-  const getStatusBadge = (status: string) => {
-    const statusInfo = jobLineStatusMap[status] || { label: status, classes: 'bg-gray-100 text-gray-800' };
-    return (
-      <Badge variant="secondary" className={`${statusInfo.classes} text-xs`}>
-        {statusInfo.label}
-      </Badge>
-    );
-  };
-
-  const getPartStatusBadge = (status: string) => {
-    const statusInfo = partStatusMap[status] || { label: status, classes: 'bg-gray-100 text-gray-800' };
-    return (
-      <Badge variant="outline" className={`${statusInfo.classes} text-xs`}>
-        {statusInfo.label}
-      </Badge>
-    );
-  };
-
-  return (
-    <div ref={setNodeRef} style={style} className="border rounded-lg mb-3">
-      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <div className="bg-blue-50 border-b p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 flex-1">
-              {isEditMode && (
-                <div
-                  {...attributes}
-                  {...listeners}
-                  className="cursor-grab hover:cursor-grabbing p-1"
-                >
-                  <GripVertical className="h-4 w-4 text-gray-400" />
-                </div>
-              )}
-              
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="p-1">
-                  {isOpen ? (
-                    <ChevronDown className="h-4 w-4" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4" />
-                  )}
-                </Button>
-              </CollapsibleTrigger>
-
-              <Wrench className="h-4 w-4 text-blue-600" />
-
-              <div className="flex-1 grid grid-cols-6 gap-4 items-center">
-                {isEditing ? (
-                  <>
-                    <Input
-                      value={editData.name}
-                      onChange={(e) => setEditData({ ...editData, name: e.target.value })}
-                      className="text-sm"
-                      placeholder="Job line name"
-                    />
-                    <Input
-                      type="number"
-                      value={editData.estimated_hours || 0}
-                      onChange={(e) => setEditData({ ...editData, estimated_hours: parseFloat(e.target.value) || 0 })}
-                      className="text-sm"
-                      placeholder="Hours"
-                    />
-                    <Input
-                      type="number"
-                      value={editData.labor_rate || 0}
-                      onChange={(e) => setEditData({ ...editData, labor_rate: parseFloat(e.target.value) || 0 })}
-                      className="text-sm"
-                      placeholder="Rate"
-                    />
-                    <div className="text-sm font-medium">
-                      ${((editData.estimated_hours || 0) * (editData.labor_rate || 0)).toFixed(2)}
-                    </div>
-                    <Select
-                      value={editData.status || 'pending'}
-                      onValueChange={(value) => setEditData({ ...editData, status: value })}
-                    >
-                      <SelectTrigger className="text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {JOB_LINE_STATUSES.map((status) => (
-                          <SelectItem key={status} value={status}>
-                            {jobLineStatusMap[status]?.label || status}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <div className="flex gap-2">
-                      <Button size="sm" onClick={handleSave} className="h-8 px-2">
-                        <Save className="h-3 w-3" />
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={handleCancel} className="h-8 px-2">
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="font-medium text-sm">{jobLine.name}</div>
-                    <div className="flex items-center gap-1 text-sm text-gray-600">
-                      <Clock className="h-3 w-3" />
-                      {jobLine.estimated_hours || 0}h
-                    </div>
-                    <div className="flex items-center gap-1 text-sm text-gray-600">
-                      <DollarSign className="h-3 w-3" />
-                      ${jobLine.labor_rate || 0}/hr
-                    </div>
-                    <div className="font-medium text-sm">
-                      ${((jobLine.estimated_hours || 0) * (jobLine.labor_rate || 0)).toFixed(2)}
-                    </div>
-                    {getStatusBadge(jobLine.status || 'pending')}
-                    {isEditMode && (
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setIsEditing(true)}
-                          className="h-8 px-2"
-                        >
-                          <Edit3 className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => onDelete?.(jobLine.id)}
-                          className="h-8 px-2 text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {isEditing && editData.description && (
-            <div className="mt-3">
-              <Textarea
-                value={editData.description}
-                onChange={(e) => setEditData({ ...editData, description: e.target.value })}
-                placeholder="Job line description"
-                className="text-sm"
-                rows={2}
-              />
-            </div>
-          )}
-        </div>
-
-        <CollapsibleContent>
-          {parts.length > 0 ? (
-            <div className="p-4 bg-gray-50">
-              <div className="flex items-center gap-2 mb-3">
-                <Package className="h-4 w-4 text-gray-600" />
-                <span className="text-sm font-medium text-gray-700">
-                  Associated Parts ({parts.length})
-                </span>
-                {isEditMode && (
-                  <Button size="sm" variant="outline" className="h-7 px-2 ml-auto">
-                    <Plus className="h-3 w-3 mr-1" />
-                    Add Part
-                  </Button>
-                )}
-              </div>
-              
-              <div className="space-y-2">
-                {parts.map((part) => (
-                  <PartRow
-                    key={part.id}
-                    part={part}
-                    onUpdate={onPartUpdate}
-                    onDelete={onPartDelete}
-                    isEditMode={isEditMode}
-                  />
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="p-4 bg-gray-50">
-              <div className="text-center py-4">
-                <Package className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-500">No parts associated with this job line</p>
-                {isEditMode && (
-                  <Button size="sm" variant="outline" className="mt-2">
-                    <Plus className="h-3 w-3 mr-1" />
-                    Add Part
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
-        </CollapsibleContent>
-      </Collapsible>
-    </div>
-  );
-}
-
-function PartRow({ 
-  part, 
-  onUpdate, 
-  onDelete, 
-  isEditMode 
-}: { 
-  part: WorkOrderPart; 
-  onUpdate?: (part: WorkOrderPart) => void; 
-  onDelete?: (partId: string) => void; 
-  isEditMode: boolean; 
-}) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState(part);
-
-  const handleSave = () => {
-    onUpdate?.(editData);
-    setIsEditing(false);
-  };
-
-  const handleCancel = () => {
-    setEditData(part);
-    setIsEditing(false);
-  };
-
-  const getPartStatusBadge = (status: string) => {
-    const statusInfo = partStatusMap[status] || { label: status, classes: 'bg-gray-100 text-gray-800' };
-    return (
-      <Badge variant="outline" className={`${statusInfo.classes} text-xs`}>
-        {statusInfo.label}
-      </Badge>
-    );
-  };
-
-  return (
-    <div className="bg-white border rounded p-3">
-      <div className="grid grid-cols-7 gap-3 items-center">
-        {isEditing ? (
-          <>
-            <Input
-              value={editData.part_number}
-              onChange={(e) => setEditData({ ...editData, part_number: e.target.value })}
-              className="text-sm"
-              placeholder="Part number"
-            />
-            <Input
-              value={editData.name}
-              onChange={(e) => setEditData({ ...editData, name: e.target.value })}
-              className="text-sm"
-              placeholder="Part name"
-            />
-            <Input
-              type="number"
-              value={editData.quantity}
-              onChange={(e) => setEditData({ ...editData, quantity: parseInt(e.target.value) || 1 })}
-              className="text-sm"
-              placeholder="Qty"
-            />
-            <Input
-              type="number"
-              value={editData.unit_price}
-              onChange={(e) => setEditData({ ...editData, unit_price: parseFloat(e.target.value) || 0 })}
-              className="text-sm"
-              placeholder="Price"
-            />
-            <div className="text-sm font-medium">
-              ${(editData.quantity * editData.unit_price).toFixed(2)}
-            </div>
-            <Select
-              value={editData.status || 'pending'}
-              onValueChange={(value) => setEditData({ ...editData, status: value })}
-            >
-              <SelectTrigger className="text-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {WORK_ORDER_PART_STATUSES.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {partStatusMap[status]?.label || status}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="flex gap-1">
-              <Button size="sm" onClick={handleSave} className="h-7 px-2">
-                <Save className="h-3 w-3" />
-              </Button>
-              <Button size="sm" variant="outline" onClick={handleCancel} className="h-7 px-2">
-                <X className="h-3 w-3" />
-              </Button>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="text-sm font-mono text-gray-600">{part.part_number}</div>
-            <div className="text-sm font-medium">{part.name}</div>
-            <div className="text-sm text-center">{part.quantity}</div>
-            <div className="text-sm">${part.unit_price?.toFixed(2) || '0.00'}</div>
-            <div className="text-sm font-medium">${part.total_price?.toFixed(2) || '0.00'}</div>
-            {getPartStatusBadge(part.status || 'pending')}
-            {isEditMode && (
-              <div className="flex gap-1">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setIsEditing(true)}
-                  className="h-7 px-2"
-                >
-                  <Edit3 className="h-3 w-3" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => onDelete?.(part.id)}
-                  className="h-7 px-2 text-red-600 hover:text-red-700"
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
+const getStatusColor = (status: string) => {
+  const option = statusOptions.find(opt => opt.value === status);
+  return option?.color || 'bg-gray-100 text-gray-800';
+};
 
 export function UnifiedItemsTable({
-  jobLines = [],
-  allParts = [],
+  jobLines,
+  allParts,
   onJobLineUpdate,
   onJobLineDelete,
   onPartUpdate,
   onPartDelete,
-  onReorderJobLines,
   isEditMode,
-  showType = 'overview'
+  showType
 }: UnifiedItemsTableProps) {
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    
-    if (!over || !onReorderJobLines) return;
-    
-    if (active.id !== over.id) {
-      const oldIndex = jobLines.findIndex((item) => item.id === active.id);
-      const newIndex = jobLines.findIndex((item) => item.id === over.id);
-      
-      const newJobLines = [...jobLines];
-      const [removed] = newJobLines.splice(oldIndex, 1);
-      newJobLines.splice(newIndex, 0, removed);
-      
-      onReorderJobLines(newJobLines);
+  const [expandedJobLines, setExpandedJobLines] = useState<Set<string>>(new Set());
+  const [editingJobLine, setEditingJobLine] = useState<string | null>(null);
+  const [editingPart, setEditingPart] = useState<string | null>(null);
+  const [editData, setEditData] = useState<any>({});
+
+  const toggleJobLineExpansion = (jobLineId: string) => {
+    const newExpanded = new Set(expandedJobLines);
+    if (newExpanded.has(jobLineId)) {
+      newExpanded.delete(jobLineId);
+    } else {
+      newExpanded.add(jobLineId);
     }
+    setExpandedJobLines(newExpanded);
   };
 
-  // Group parts by job line
-  const getPartsForJobLine = (jobLineId: string) => {
+  const startEditingJobLine = (jobLine: WorkOrderJobLine) => {
+    setEditingJobLine(jobLine.id);
+    setEditData({
+      description: jobLine.description || '',
+      hours: jobLine.hours || 0,
+      hourly_rate: jobLine.hourly_rate || 0,
+      status: jobLine.status || 'pending',
+      notes: jobLine.notes || ''
+    });
+  };
+
+  const startEditingPart = (part: WorkOrderPart) => {
+    setEditingPart(part.id);
+    setEditData({
+      quantity: part.quantity || 0,
+      unit_cost: part.unit_cost || 0,
+      status: part.status || 'pending',
+      notes: part.notes || ''
+    });
+  };
+
+  const saveJobLineEdit = () => {
+    if (editingJobLine && onJobLineUpdate) {
+      const jobLine = jobLines.find(jl => jl.id === editingJobLine);
+      if (jobLine) {
+        onJobLineUpdate({
+          ...jobLine,
+          ...editData
+        });
+      }
+    }
+    setEditingJobLine(null);
+    setEditData({});
+  };
+
+  const savePartEdit = () => {
+    if (editingPart && onPartUpdate) {
+      const part = allParts.find(p => p.id === editingPart);
+      if (part) {
+        onPartUpdate({
+          ...part,
+          ...editData
+        });
+      }
+    }
+    setEditingPart(null);
+    setEditData({});
+  };
+
+  const cancelEdit = () => {
+    setEditingJobLine(null);
+    setEditingPart(null);
+    setEditData({});
+  };
+
+  const getJobLineParts = (jobLineId: string) => {
     return allParts.filter(part => part.job_line_id === jobLineId);
   };
 
-  if (jobLines.length === 0) {
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount);
+  };
+
+  if (jobLines.length === 0 && allParts.length === 0) {
     return (
-      <Card>
-        <CardContent className="py-8">
-          <div className="text-center">
-            <Wrench className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No job lines yet</h3>
-            <p className="text-gray-500 mb-4">Add job lines to track labor and associated parts</p>
-            {isEditMode && (
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Job Line
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      <div className="text-center py-8 text-muted-foreground">
+        No labor or parts items found for this work order.
+      </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="bg-gray-50 rounded-lg p-4">
-        <div className="grid grid-cols-6 gap-4 text-sm font-medium text-gray-700">
-          <div>Job Line</div>
-          <div>Hours</div>
-          <div>Rate</div>
-          <div>Total</div>
-          <div>Status</div>
-          <div>Actions</div>
-        </div>
-      </div>
+      {jobLines.map((jobLine) => {
+        const jobLineParts = getJobLineParts(jobLine.id);
+        const isExpanded = expandedJobLines.has(jobLine.id);
+        const isEditing = editingJobLine === jobLine.id;
+        const totalAmount = (jobLine.hours || 0) * (jobLine.hourly_rate || 0);
 
-      {/* Job Lines */}
-      <DndContext
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-      >
-        <SortableContext
-          items={jobLines.map(jl => jl.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          <div className="space-y-3">
-            {jobLines.map((jobLine) => {
-              const associatedParts = getPartsForJobLine(jobLine.id);
-              
-              return (
-                <SortableJobLineRow
-                  key={jobLine.id}
-                  jobLine={jobLine}
-                  parts={associatedParts}
-                  onUpdate={onJobLineUpdate}
-                  onDelete={onJobLineDelete}
-                  onPartUpdate={onPartUpdate}
-                  onPartDelete={onPartDelete}
-                  isEditMode={isEditMode}
-                />
-              );
-            })}
-          </div>
-        </SortableContext>
-      </DndContext>
+        return (
+          <Card key={jobLine.id} className="border border-gray-200 shadow-sm">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3 flex-1">
+                  {jobLineParts.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleJobLineExpansion(jobLine.id)}
+                      className="h-6 w-6 p-0"
+                    >
+                      {isExpanded ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </Button>
+                  )}
+                  
+                  <div className="flex-1">
+                    {isEditing ? (
+                      <div className="space-y-3">
+                        <Input
+                          value={editData.description || ''}
+                          onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+                          placeholder="Job description"
+                          className="font-medium"
+                        />
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-xs text-muted-foreground">Hours</label>
+                            <Input
+                              type="number"
+                              step="0.25"
+                              value={editData.hours || ''}
+                              onChange={(e) => setEditData({ ...editData, hours: parseFloat(e.target.value) || 0 })}
+                              className="text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs text-muted-foreground">Rate/Hr</label>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              value={editData.hourly_rate || ''}
+                              onChange={(e) => setEditData({ ...editData, hourly_rate: parseFloat(e.target.value) || 0 })}
+                              className="text-sm"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs text-muted-foreground">Status</label>
+                          <Select
+                            value={editData.status || 'pending'}
+                            onValueChange={(value) => setEditData({ ...editData, status: value })}
+                          >
+                            <SelectTrigger className="text-sm">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {statusOptions.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <Textarea
+                          value={editData.notes || ''}
+                          onChange={(e) => setEditData({ ...editData, notes: e.target.value })}
+                          placeholder="Notes (optional)"
+                          rows={2}
+                          className="text-sm"
+                        />
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="font-medium text-gray-900">{jobLine.description}</div>
+                        <div className="flex items-center space-x-4 mt-1 text-sm text-muted-foreground">
+                          <span>{jobLine.hours}h × {formatCurrency(jobLine.hourly_rate || 0)}</span>
+                          <span className="font-medium text-gray-900">{formatCurrency(totalAmount)}</span>
+                        </div>
+                        {jobLine.notes && (
+                          <div className="text-sm text-muted-foreground mt-1">{jobLine.notes}</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
 
-      {/* Summary */}
-      <div className="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-500">
-        <div className="grid grid-cols-3 gap-4 text-sm">
-          <div>
-            <span className="text-gray-600">Total Hours:</span>
-            <span className="ml-2 font-medium">
-              {jobLines.reduce((sum, jl) => sum + (jl.estimated_hours || 0), 0).toFixed(1)}h
-            </span>
-          </div>
-          <div>
-            <span className="text-gray-600">Labor Total:</span>
-            <span className="ml-2 font-medium">
-              ${jobLines.reduce((sum, jl) => sum + ((jl.estimated_hours || 0) * (jl.labor_rate || 0)), 0).toFixed(2)}
-            </span>
-          </div>
-          <div>
-            <span className="text-gray-600">Parts Total:</span>
-            <span className="ml-2 font-medium">
-              ${allParts.reduce((sum, part) => sum + (part.total_price || 0), 0).toFixed(2)}
-            </span>
-          </div>
-        </div>
-      </div>
+                  <div className="flex items-center space-x-3">
+                    {isEditing ? (
+                      <div className="flex items-center space-x-2">
+                        <Button size="sm" onClick={saveJobLineEdit} className="h-8">
+                          <Save className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={cancelEdit} className="h-8">
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        {isEditMode ? (
+                          <Select
+                            value={jobLine.status || 'pending'}
+                            onValueChange={(value) => onJobLineUpdate?.({ ...jobLine, status: value })}
+                          >
+                            <SelectTrigger className="w-32 h-8">
+                              <Badge className={getStatusColor(jobLine.status || 'pending')}>
+                                {statusOptions.find(opt => opt.value === (jobLine.status || 'pending'))?.label || 'Pending'}
+                              </Badge>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {statusOptions.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  <Badge className={option.color}>
+                                    {option.label}
+                                  </Badge>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Badge className={getStatusColor(jobLine.status || 'pending')}>
+                            {statusOptions.find(opt => opt.value === (jobLine.status || 'pending'))?.label || 'Pending'}
+                          </Badge>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Actions - moved to far right */}
+                <div className="flex items-center space-x-4 ml-6">
+                  {isEditMode && !isEditing && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => startEditingJobLine(jobLine)}
+                      className="h-8 px-2 text-blue-600 hover:text-blue-700"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  )}
+                  
+                  {isEditMode && onJobLineDelete && !isEditing && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 px-2 text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Job Line</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete this job line? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => onJobLineDelete(jobLine.id)}
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+
+            {/* Parts section - collapsible */}
+            {isExpanded && jobLineParts.length > 0 && (
+              <CardContent className="pt-0 border-t bg-gray-50/50">
+                <div className="space-y-3">
+                  <div className="text-sm font-medium text-muted-foreground flex items-center">
+                    <Plus className="h-4 w-4 mr-1" />
+                    Associated Parts ({jobLineParts.length})
+                  </div>
+                  
+                  {jobLineParts.map((part) => {
+                    const isEditingThisPart = editingPart === part.id;
+                    const partTotal = (part.quantity || 0) * (part.unit_cost || 0);
+
+                    return (
+                      <div key={part.id} className="bg-white rounded-lg border p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            {isEditingThisPart ? (
+                              <div className="space-y-3">
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <label className="text-xs text-muted-foreground">Quantity</label>
+                                    <Input
+                                      type="number"
+                                      step="1"
+                                      value={editData.quantity || ''}
+                                      onChange={(e) => setEditData({ ...editData, quantity: parseInt(e.target.value) || 0 })}
+                                      className="text-sm"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-xs text-muted-foreground">Unit Cost</label>
+                                    <Input
+                                      type="number"
+                                      step="0.01"
+                                      value={editData.unit_cost || ''}
+                                      onChange={(e) => setEditData({ ...editData, unit_cost: parseFloat(e.target.value) || 0 })}
+                                      className="text-sm"
+                                    />
+                                  </div>
+                                </div>
+                                <div>
+                                  <label className="text-xs text-muted-foreground">Status</label>
+                                  <Select
+                                    value={editData.status || 'pending'}
+                                    onValueChange={(value) => setEditData({ ...editData, status: value })}
+                                  >
+                                    <SelectTrigger className="text-sm">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {statusOptions.map((option) => (
+                                        <SelectItem key={option.value} value={option.value}>
+                                          {option.label}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <Textarea
+                                  value={editData.notes || ''}
+                                  onChange={(e) => setEditData({ ...editData, notes: e.target.value })}
+                                  placeholder="Notes (optional)"
+                                  rows={2}
+                                  className="text-sm"
+                                />
+                              </div>
+                            ) : (
+                              <div>
+                                <div className="font-medium text-gray-900">{part.part_name || part.part_number}</div>
+                                <div className="flex items-center space-x-4 mt-1 text-sm text-muted-foreground">
+                                  <span>Qty: {part.quantity}</span>
+                                  <span>@ {formatCurrency(part.unit_cost || 0)}</span>
+                                  <span className="font-medium text-gray-900">{formatCurrency(partTotal)}</span>
+                                </div>
+                                {part.notes && (
+                                  <div className="text-sm text-muted-foreground mt-1">{part.notes}</div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex items-center space-x-3">
+                            {isEditingThisPart ? (
+                              <div className="flex items-center space-x-2">
+                                <Button size="sm" onClick={savePartEdit} className="h-8">
+                                  <Save className="h-4 w-4" />
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={cancelEdit} className="h-8">
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <>
+                                {isEditMode ? (
+                                  <Select
+                                    value={part.status || 'pending'}
+                                    onValueChange={(value) => onPartUpdate?.({ ...part, status: value })}
+                                  >
+                                    <SelectTrigger className="w-32 h-8">
+                                      <Badge className={getStatusColor(part.status || 'pending')}>
+                                        {statusOptions.find(opt => opt.value === (part.status || 'pending'))?.label || 'Pending'}
+                                      </Badge>
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {statusOptions.map((option) => (
+                                        <SelectItem key={option.value} value={option.value}>
+                                          <Badge className={option.color}>
+                                            {option.label}
+                                          </Badge>
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                ) : (
+                                  <Badge className={getStatusColor(part.status || 'pending')}>
+                                    {statusOptions.find(opt => opt.value === (part.status || 'pending'))?.label || 'Pending'}
+                                  </Badge>
+                                )}
+                              </>
+                            )}
+                          </div>
+
+                          {/* Part Actions - moved to far right */}
+                          <div className="flex items-center space-x-4 ml-6">
+                            {isEditMode && !isEditingThisPart && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => startEditingPart(part)}
+                                className="h-8 px-2 text-blue-600 hover:text-blue-700"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            )}
+                            
+                            {isEditMode && onPartDelete && !isEditingThisPart && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 px-2 text-red-600 hover:text-red-700"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete Part</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to delete this part? This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => onPartDelete(part.id)}
+                                      className="bg-red-600 hover:bg-red-700"
+                                    >
+                                      Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            )}
+          </Card>
+        );
+      })}
     </div>
   );
 }
