@@ -7,16 +7,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface JobLinesSectionProps {
   workOrderId: string;
+  description?: string;
   jobLines: WorkOrderJobLine[];
   onJobLinesChange: (jobLines: WorkOrderJobLine[]) => void;
-  isEditMode: boolean;
+  isEditMode?: boolean;
+  shopId?: string;
 }
 
 export function JobLinesSection({
   workOrderId,
+  description,
   jobLines,
   onJobLinesChange,
-  isEditMode
+  isEditMode = true,
+  shopId
 }: JobLinesSectionProps) {
   if (isEditMode) {
     return (
