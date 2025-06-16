@@ -51,7 +51,7 @@ export function WorkOrderDetailsTabs({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Unified Header */}
       <WorkOrderUnifiedHeader
         workOrder={workOrder}
@@ -61,30 +61,32 @@ export function WorkOrderDetailsTabs({
         timeEntries={timeEntries || []}
       />
 
-      {/* Actions bar */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <WorkOrderStatusUpdate workOrder={workOrder} onStatusUpdated={handleStatusUpdated} />
-        <WorkOrderDetailsActions
-          workOrder={workOrder}
-          isEditMode={isEditMode}
-          onStartEdit={onStartEdit}
-          onCancelEdit={onCancelEdit}
-          onSaveEdit={onSaveEdit}
-          onInvoiceCreated={handleInvoiceCreated}
-        />
+      {/* Actions bar - Improved layout */}
+      <div className="bg-white border rounded-lg p-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <WorkOrderStatusUpdate workOrder={workOrder} onStatusUpdated={handleStatusUpdated} />
+          <WorkOrderDetailsActions
+            workOrder={workOrder}
+            isEditMode={isEditMode}
+            onStartEdit={onStartEdit}
+            onCancelEdit={onCancelEdit}
+            onSaveEdit={onSaveEdit}
+            onInvoiceCreated={handleInvoiceCreated}
+          />
+        </div>
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="mb-4 max-w-full overflow-x-auto">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="jobs">Jobs</TabsTrigger>
-          <TabsTrigger value="parts">Parts</TabsTrigger>
-          <TabsTrigger value="time">Time Tracking</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
-          <TabsTrigger value="communications">Communications</TabsTrigger>
+        <TabsList className="mb-6 bg-gray-100 p-1 rounded-lg">
+          <TabsTrigger value="overview" className="px-6 py-2">Overview</TabsTrigger>
+          <TabsTrigger value="jobs" className="px-6 py-2">Labor & Jobs</TabsTrigger>
+          <TabsTrigger value="parts" className="px-6 py-2">Parts</TabsTrigger>
+          <TabsTrigger value="time" className="px-6 py-2">Time Tracking</TabsTrigger>
+          <TabsTrigger value="documents" className="px-6 py-2">Documents</TabsTrigger>
+          <TabsTrigger value="communications" className="px-6 py-2">Communications</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview">
+        <TabsContent value="overview" className="space-y-6">
           <WorkOrderDetailsTab
             workOrder={workOrder}
             jobLines={jobLines}
@@ -93,7 +95,8 @@ export function WorkOrderDetailsTabs({
             isEditMode={isEditMode}
           />
         </TabsContent>
-        <TabsContent value="jobs">
+        
+        <TabsContent value="jobs" className="space-y-6">
           <JobLinesSection
             workOrderId={workOrder.id}
             jobLines={jobLines}
@@ -101,10 +104,12 @@ export function WorkOrderDetailsTabs({
             isEditMode={isEditMode}
           />
         </TabsContent>
-        <TabsContent value="parts">
+        
+        <TabsContent value="parts" className="space-y-6">
           <WorkOrderPartsSection workOrderId={workOrder.id} isEditMode={isEditMode} />
         </TabsContent>
-        <TabsContent value="time">
+        
+        <TabsContent value="time" className="space-y-6">
           <TimeTrackingSection
             workOrderId={workOrder.id}
             timeEntries={timeEntries}
@@ -112,10 +117,12 @@ export function WorkOrderDetailsTabs({
             isEditMode={isEditMode}
           />
         </TabsContent>
-        <TabsContent value="documents">
+        
+        <TabsContent value="documents" className="space-y-6">
           <WorkOrderDocuments workOrderId={workOrder.id} isEditMode={isEditMode} />
         </TabsContent>
-        <TabsContent value="communications">
+        
+        <TabsContent value="communications" className="space-y-6">
           <WorkOrderCommunications workOrder={workOrder} isEditMode={isEditMode} />
         </TabsContent>
       </Tabs>
