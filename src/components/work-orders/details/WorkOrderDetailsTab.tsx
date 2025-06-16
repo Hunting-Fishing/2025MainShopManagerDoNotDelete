@@ -5,7 +5,7 @@ import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
-import { CompactJobLinesTable } from '../job-lines/CompactJobLinesTable';
+import { JobLinesTable } from '../job-lines/JobLinesTable';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 
@@ -122,14 +122,13 @@ export function WorkOrderDetailsTab({
               Loading job lines and parts...
             </div>
           ) : (
-            <CompactJobLinesTable
+            <JobLinesTable
               jobLines={jobLines}
               allParts={allParts}
               onUpdate={handleJobLineUpdate}
               onDelete={handleJobLineDelete}
               onPartUpdate={handlePartUpdate}
               onPartDelete={handlePartDelete}
-              isEditMode={isEditMode}
             />
           )}
         </CardContent>
