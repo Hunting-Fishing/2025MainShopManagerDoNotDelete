@@ -1,18 +1,9 @@
 
 import React from 'react';
-
-interface Vehicle {
-  id: string;
-  year?: string | number;
-  make?: string;
-  model?: string;
-  vin?: string;
-  license_plate?: string;
-  trim?: string;
-}
+import { WorkOrderVehicle } from '@/types/workOrder';
 
 interface InvoiceVehicleInfoProps {
-  vehicle?: Vehicle;
+  vehicle?: WorkOrderVehicle | null;
 }
 
 export function InvoiceVehicleInfo({ vehicle }: InvoiceVehicleInfoProps) {

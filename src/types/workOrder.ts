@@ -44,11 +44,12 @@ export interface WorkOrderInventoryItem {
   supplierOrderRef?: string;
 }
 
-export interface Vehicle {
+// Use WorkOrderVehicle to avoid conflicts with the main Vehicle type
+export interface WorkOrderVehicle {
   id?: string;
   make?: string;
   model?: string;
-  year?: string;
+  year?: string | number;
   license_plate?: string;
   vin?: string;
   odometer?: string;
@@ -106,7 +107,7 @@ export interface WorkOrder {
   priority?: string;
   location?: string;
   notes?: string;
-  vehicle?: Vehicle | string;
+  vehicle?: WorkOrderVehicle | string;
   
   // Time tracking
   total_billable_time?: number;
@@ -156,5 +157,6 @@ export interface WorkOrderTemplate {
 // Type aliases for backward compatibility
 export type WorkOrderStatusType = WorkOrderStatus;
 
-// Re-export types from constants
-export { WorkOrderStatus, statusMap, priorityMap } from '@/utils/workOrders/constants';
+// Re-export types from constants using export type
+export type { WorkOrderStatus } from '@/utils/workOrders/constants';
+export { statusMap, priorityMap } from '@/utils/workOrders/constants';

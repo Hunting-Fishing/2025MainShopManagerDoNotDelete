@@ -1,5 +1,5 @@
 
-import { WorkOrder } from '@/types/workOrder';
+import { WorkOrder, WorkOrderVehicle } from '@/types/workOrder';
 
 /**
  * Utility functions for consistent work order data display
@@ -30,10 +30,17 @@ export const getCustomerName = (workOrder: WorkOrder): string => {
  * Get formatted vehicle info with fallback
  */
 export const getVehicleInfo = (workOrder: WorkOrder): string => {
-  // Try to build vehicle info from individual fields
-  const year = workOrder.vehicle_year || workOrder.vehicle?.year;
-  const make = workOrder.vehicle_make || workOrder.vehicle?.make;
-  const model = workOrder.vehicle_model || workOrder.vehicle?.model;
+  // Handle vehicle as object or string
+  let vehicleObj: WorkOrderVehicle | null = null;
+  
+  if (typeof workOrder.vehicle === 'object' && workOrder.vehicle !== null) {
+    vehicleObj = workOrder.vehicle;
+  }
+  
+  // Try to build vehicle info from individual fields or vehicle object
+  const year = workOrder.vehicle_year || vehicleObj?.year;
+  const make = workOrder.vehicle_make || vehicleObj?.make;
+  const model = workOrder.vehicle_model || vehicleObj?.model;
   
   if (year && make && model) {
     return `${year} ${make} ${model}`;
@@ -137,6 +144,29 @@ export const getPriorityBadgeVariant = (priority: string) => {
 };
 
 /**
+ * Convert vehicle field to proper Vehicle object for invoice components
+ */
+export const normalizeVehicleForInvoice = (workOrder: WorkOrder): WorkOrderVehicle | null => {
+  if (typeof workOrder.vehicle === 'object' && workOrder.vehicle !== null) {
+    return workOrder.vehicle;
+  }
+  
+  // Build vehicle object from individual fields
+  if (workOrder.vehicle_make || workOrder.vehicle_model || workOrder.vehicle_year) {
+    return {
+      make: workOrder.vehicle_make,
+      model: workOrder.vehicle_model,
+      year: workOrder.vehicle_year,
+      vin: workOrder.vehicle_vin,
+      license_plate: workOrder.vehicle_license_plate,
+      odometer: workOrder.vehicle_odometer,
+    };
+  }
+  
+  return null;
+};
+
+/**
  * Validate work order data completeness
  */
 export const validateWorkOrderData = (workOrder: WorkOrder): {
@@ -158,7 +188,8 @@ export const validateWorkOrderData = (workOrder: WorkOrder): {
   }
   
   // Check vehicle data
-  if (workOrder.vehicle_id && !workOrder.vehicle_make && !workOrder.vehicle?.make) {
+  const vehicleObj = normalizeVehicleForInvoice(workOrder);
+  if (workOrder.vehicle_id && !vehicleObj?.make) {
     warnings.push('vehicle data not enriched');
   }
   
