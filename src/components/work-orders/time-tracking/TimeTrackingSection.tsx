@@ -37,7 +37,7 @@ export function TimeTrackingSection({
           jobLines={[]}
           allParts={[]}
           isEditMode={isEditMode}
-          showType="detailed"
+          showType="labor"
         />
       </CardContent>
     </Card>

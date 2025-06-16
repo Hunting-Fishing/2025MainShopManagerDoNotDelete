@@ -75,7 +75,7 @@ export function WorkOrderPartsSection({
             onPartUpdate={handlePartUpdate}
             onPartDelete={handlePartDelete}
             isEditMode={isEditMode}
-            showType="detailed"
+            showType="parts"
           />
         )}
       </CardContent>
