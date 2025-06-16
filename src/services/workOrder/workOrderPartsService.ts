@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { WorkOrderPart, WorkOrderPartFormValues } from '@/types/workOrderPart';
 
@@ -14,7 +15,13 @@ export const getJobLineParts = async (jobLineId: string): Promise<WorkOrderPart[
       throw error;
     }
 
-    return data || [];
+    // Map database fields to TypeScript interface
+    return (data || []).map(part => ({
+      ...part,
+      name: part.part_name || part.name || '',
+      unit_price: part.customer_price || part.unit_price || 0,
+      total_price: part.total_price || (part.customer_price || 0) * (part.quantity || 0)
+    }));
   } catch (error) {
     console.error('Error in getJobLineParts:', error);
     throw error;
@@ -34,7 +41,13 @@ export const getWorkOrderParts = async (workOrderId: string): Promise<WorkOrderP
       throw error;
     }
 
-    return data || [];
+    // Map database fields to TypeScript interface
+    return (data || []).map(part => ({
+      ...part,
+      name: part.part_name || part.name || '',
+      unit_price: part.customer_price || part.unit_price || 0,
+      total_price: part.total_price || (part.customer_price || 0) * (part.quantity || 0)
+    }));
   } catch (error) {
     console.error('Error in getWorkOrderParts:', error);
     throw error;
@@ -54,10 +67,10 @@ export const createWorkOrderPart = async (
           work_order_id: workOrderId,
           job_line_id: jobLineId,
           part_number: values.part_number,
-          name: values.name,
+          part_name: values.name || values.partName,
           description: values.description,
           quantity: values.quantity,
-          unit_price: values.unit_price,
+          customer_price: values.unit_price,
           total_price: values.unit_price * values.quantity,
           status: values.status,
           notes: values.notes,
@@ -71,7 +84,13 @@ export const createWorkOrderPart = async (
       throw error;
     }
 
-    return data as WorkOrderPart;
+    // Map database fields to TypeScript interface
+    return {
+      ...data,
+      name: data.part_name || data.name || '',
+      unit_price: data.customer_price || data.unit_price || 0,
+      total_price: data.total_price || (data.customer_price || 0) * (data.quantity || 0)
+    } as WorkOrderPart;
   } catch (error) {
     console.error('Error in createWorkOrderPart:', error);
     throw error;
@@ -87,10 +106,10 @@ export const updateWorkOrderPart = async (
       .from('work_order_parts')
       .update({
         part_number: values.part_number,
-        name: values.name,
+        part_name: values.name || values.partName,
         description: values.description,
         quantity: values.quantity,
-        unit_price: values.unit_price,
+        customer_price: values.unit_price,
         total_price: values.unit_price * values.quantity,
         status: values.status,
         notes: values.notes,
@@ -104,7 +123,13 @@ export const updateWorkOrderPart = async (
       throw error;
     }
 
-    return data as WorkOrderPart;
+    // Map database fields to TypeScript interface
+    return {
+      ...data,
+      name: data.part_name || data.name || '',
+      unit_price: data.customer_price || data.unit_price || 0,
+      total_price: data.total_price || (data.customer_price || 0) * (data.quantity || 0)
+    } as WorkOrderPart;
   } catch (error) {
     console.error('Error in updateWorkOrderPart:', error);
     return null;
