@@ -4,7 +4,7 @@ import { WorkOrder } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { TimeEntry } from '@/types/workOrder';
-import { WorkOrderOverviewHeader } from './WorkOrderOverviewHeader';
+import { WorkOrderUnifiedHeader } from './WorkOrderUnifiedHeader';
 import { WorkOrderDetailsTab } from './WorkOrderDetailsTab';
 
 interface WorkOrderComprehensiveOverviewProps {
@@ -28,9 +28,10 @@ export function WorkOrderComprehensiveOverview({
 }: WorkOrderComprehensiveOverviewProps) {
   return (
     <div className="space-y-6">
-      {/* OverviewHeader */}
-      <WorkOrderOverviewHeader
+      {/* Unified Header */}
+      <WorkOrderUnifiedHeader
         workOrder={workOrder}
+        customer={null}
         jobLines={jobLines}
         allParts={allParts}
         timeEntries={timeEntries}
