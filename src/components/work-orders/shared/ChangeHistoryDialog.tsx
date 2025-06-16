@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { History, Clock, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
-interface HistoryEntry {
+interface SimpleHistoryEntry {
   id: string;
   field_name: string;
   old_value: string | null;
@@ -29,7 +29,7 @@ export function ChangeHistoryDialog({
   itemType, 
   itemName 
 }: ChangeHistoryDialogProps) {
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [history, setHistory] = useState<SimpleHistoryEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
