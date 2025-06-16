@@ -36,7 +36,7 @@ export function TimeTrackingSection({
         <UnifiedItemsTable
           timeEntries={timeEntries}
           isEditMode={isEditMode}
-          showType="time"
+          showType="detailed"
         />
       </CardContent>
     </Card>

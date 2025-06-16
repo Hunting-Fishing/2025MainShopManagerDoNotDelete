@@ -54,7 +54,7 @@ export function JobLinesSection({
           onJobLineUpdate={handleJobLineUpdate}
           onJobLineDelete={handleJobLineDelete}
           isEditMode={isEditMode}
-          showType="jobs"
+          showType="detailed"
         />
       </CardContent>
     </Card>
