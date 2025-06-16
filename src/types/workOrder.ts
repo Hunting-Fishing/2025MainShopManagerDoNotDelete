@@ -1,106 +1,53 @@
-// Work Order Types - Standardized to match database schema (snake_case)
-
-import { WorkOrderJobLine } from './jobLine';
-
 export interface WorkOrder {
   id: string;
-  work_order_number?: string; // NEW: Work order number field
-  customer_id?: string;
-  vehicle_id?: string;
-  advisor_id?: string;
-  technician_id?: string;
-  estimated_hours?: number;
-  total_cost?: number;
-  created_by?: string;
-  created_at: string;
-  updated_at: string;
-  start_time?: string;
-  end_time?: string;
-  service_category_id?: string;
-  invoiced_at?: string;
-  status: string;
-  description?: string;
-  service_type?: string;
-  invoice_id?: string;
-  // Additional UI properties for backward compatibility
-  customer?: string;
-  technician?: string;
-  date?: string;
-  dueDate?: string;
-  due_date?: string;
-  priority?: string;
-  location?: string;
-  notes?: string;
-  total_billable_time?: number;
-  vehicle_make?: string;
-  vehicle_model?: string;
-  vehicle_year?: string;
-  vehicle_vin?: string;
-  vehicle_license_plate?: string;
-  vehicle_odometer?: string;
-  // Customer information
-  customer_name?: string;
-  customer_email?: string;
-  customer_phone?: string;
-  customer_address?: string;
-  customer_city?: string;
-  customer_state?: string;
-  customer_zip?: string;
-  // Company information
-  company_name?: string;
-  company_address?: string;
-  company_city?: string;
-  company_state?: string;
-  company_zip?: string;
-  company_phone?: string;
-  company_email?: string;
-  company_logo?: string;
-  // Additional fields for UI
-  timeEntries?: TimeEntry[];
-  inventoryItems?: WorkOrderInventoryItem[];
-  inventory_items?: WorkOrderInventoryItem[];
-  // Job Lines - NEW
-  jobLines?: WorkOrderJobLine[];
-  // NEW: Vehicle object from vehicle table join
-  vehicle?: {
-    id: string;
-    year?: number | string;
-    make?: string;
-    model?: string;
-    vin?: string;
-    license_plate?: string;
-    trim?: string;
-  };
-  // Invoice calculations
-  subtotal?: number;
-  tax_rate?: number;
-  tax_amount?: number;
-  total_amount?: number;
-}
-
-// Work Order Form Values - Used by form components
-export interface WorkOrderFormValues {
-  customer: string;
+  shop_id: string;
+  customer_id: string;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  customer_address: string;
+  vehicle_id: string;
+  vehicle_make: string;
+  vehicle_model: string;
+  vehicle_year: string;
+  vehicle_license_plate: string;
+  vehicle_vin: string;
+  vehicle_odometer: number;
   description: string;
-  status: "pending" | "in-progress" | "on-hold" | "completed" | "cancelled";
-  priority: "low" | "medium" | "high" | "urgent";
+  status: string;
+  priority: string;
+  technician_id: string;
   technician: string;
   location: string;
-  dueDate: string;
+  due_date: string;
   notes: string;
-  vehicleMake?: string;
-  vehicleModel?: string;
-  vehicleYear?: string;
-  odometer?: string;
-  licensePlate?: string;
-  vin?: string;
-  inventoryItems: WorkOrderInventoryItem[];
+  created_at: string;
+  updated_at: string;
+  inventory_items?: WorkOrderInventoryItem[];
+
+  // CamelCase aliases for backward compatibility
+  shopId?: string; // Alias for shop_id
+  customerId?: string; // Alias for customer_id
+  customerName?: string; // Alias for customer_name
+  customerEmail?: string; // Alias for customer_email
+  customerPhone?: string; // Alias for customer_phone
+  customerAddress?: string; // Alias for customer_address
+  vehicleId?: string; // Alias for vehicle_id
+  vehicleMake?: string; // Alias for vehicle_make
+  vehicleModel?: string; // Alias for vehicle_model
+  vehicleYear?: string; // Alias for vehicle_year
+  vehicleLicensePlate?: string; // Alias for vehicle_license_plate
+  vehicleVin?: string; // Alias for vehicle_vin
+  vehicleOdometer?: number; // Alias for vehicle_odometer
+  technicianId?: string; // Alias for technician_id
+  dueDate?: string; // Alias for due_date
+  createdAt?: string; // Alias for created_at
+  updatedAt?: string; // Alias for updated_at
+  inventoryItems?: WorkOrderInventoryItem[]; // Alias for inventory_items
 }
 
-// Inventory item within a work order
 export interface WorkOrderInventoryItem {
   id: string;
-  workOrderId?: string;
   name: string;
   sku: string;
   category: string;
@@ -108,44 +55,26 @@ export interface WorkOrderInventoryItem {
   unit_price: number;
   total: number;
   notes?: string;
-  itemStatus?: "special-order" | "ordered" | "in-stock";
-  estimatedArrivalDate?: string;
-  supplierName?: string;
-  supplierOrderRef?: string;
 }
 
-// Time tracking entry
-export interface TimeEntry {
-  id: string;
-  work_order_id: string;
-  employee_id: string;
-  employee_name: string;
-  start_time: string;
-  end_time?: string;
-  duration: number;
-  billable: boolean;
-  notes?: string;
-  created_at: string;
-}
-
-// Work Order Template interface
-export interface WorkOrderTemplate {
-  id: string;
-  name: string;
-  description?: string;
+export interface WorkOrderFormValues {
+  customer: string;
+  description: string;
   status: string;
-  priority?: string;
-  technician?: string;
-  notes?: string;
-  location?: string;
-  inventory_items?: WorkOrderInventoryItem[];
-  usage_count: number;
-  last_used?: string;
-  created_at?: string;
-  updated_at?: string;
+  priority: string;
+  technician: string;
+  location: string;
+  dueDate: string;
+  notes: string;
+  vehicleMake: string;
+  vehicleModel: string;
+  vehicleYear: string;
+  odometer: string;
+  licensePlate: string;
+  vin: string;
 }
 
-// Work order status options
+// Work Order Status Types - Updated to include all new statuses
 export const WORK_ORDER_STATUSES = [
   'pending',
   'in-progress', 
@@ -170,60 +99,36 @@ export const WORK_ORDER_STATUSES = [
   'internal-ro'
 ] as const;
 
-export type WorkOrderStatus = typeof WORK_ORDER_STATUSES[number];
+export type WorkOrderStatusType = typeof WORK_ORDER_STATUSES[number];
 
-// Work order priority options
-export const WORK_ORDER_PRIORITIES = [
-  'low',
-  'medium',
-  'high',
-  'urgent'
-] as const;
+// Legacy alias for backward compatibility
+export type WorkOrderStatus = WorkOrderStatusType;
 
-export type WorkOrderPriority = typeof WORK_ORDER_PRIORITIES[number];
+// Priority Types
+export const WORK_ORDER_PRIORITIES = ['low', 'medium', 'high', 'urgent'] as const;
+export type WorkOrderPriorityType = typeof WORK_ORDER_PRIORITIES[number];
 
-// Status mapping for UI display
-export const statusMap: Record<string, string> = {
-  'pending': 'Pending',
-  'in-progress': 'In Progress',
-  'on-hold': 'On Hold',
-  'completed': 'Completed',
-  'cancelled': 'Cancelled',
-  'body-shop': 'Body Shop',
-  'mobile-service': 'Mobile Service',
-  'needs-road-test': 'Needs Road Test',
-  'parts-requested': 'Parts Requested',
-  'parts-ordered': 'Parts Ordered',
-  'parts-arrived': 'Parts Arrived',
-  'customer-to-return': 'Customer to Return',
-  'rebooked': 'Rebooked',
-  'foreman-signoff-waiting': 'Foreman Sign-off Waiting',
-  'foreman-signoff-complete': 'Foreman Sign-off Complete',
-  'sublet': 'Sublet',
-  'waiting-customer-auth': 'Waiting for Customer Auth',
-  'po-requested': 'PO Requested',
-  'tech-support': 'Tech Support',
-  'warranty': 'Warranty',
-  'internal-ro': 'Internal RO'
-};
-
-// Priority mapping for UI display
-export const priorityMap: Record<string, { label: string; classes: string }> = {
-  'low': { label: 'Low', classes: 'bg-gray-100 text-gray-800' },
-  'medium': { label: 'Medium', classes: 'bg-yellow-100 text-yellow-800' },
-  'high': { label: 'High', classes: 'bg-red-100 text-red-800' },
-  'urgent': { label: 'Urgent', classes: 'bg-red-200 text-red-900' }
-};
-
-// Legacy type aliases for backward compatibility
-export type WorkOrderPriorityType = WorkOrderPriority;
-export type WorkOrderStatusType = WorkOrderStatus;
-export type WorkOrderFormSchemaValues = WorkOrderFormValues;
-
-// Export for backward compatibility
-export const WorkOrderTypes = {
-  WORK_ORDER_STATUSES,
-  WORK_ORDER_PRIORITIES,
-  statusMap,
-  priorityMap
+// Status mapping for UI display with colors
+export const statusMap: Record<WorkOrderStatusType, { label: string; classes: string }> = {
+  'pending': { label: 'Pending', classes: 'bg-yellow-100 text-yellow-800' },
+  'in-progress': { label: 'In Progress', classes: 'bg-blue-100 text-blue-800' },
+  'on-hold': { label: 'On Hold', classes: 'bg-orange-100 text-orange-800' },
+  'completed': { label: 'Completed', classes: 'bg-green-100 text-green-800' },
+  'cancelled': { label: 'Cancelled', classes: 'bg-red-100 text-red-800' },
+  'body-shop': { label: 'Body Shop', classes: 'bg-purple-100 text-purple-800' },
+  'mobile-service': { label: 'Mobile Service', classes: 'bg-indigo-100 text-indigo-800' },
+  'needs-road-test': { label: 'Needs Road Test', classes: 'bg-cyan-100 text-cyan-800' },
+  'parts-requested': { label: 'Parts Requested', classes: 'bg-amber-100 text-amber-800' },
+  'parts-ordered': { label: 'Parts Ordered', classes: 'bg-orange-100 text-orange-800' },
+  'parts-arrived': { label: 'Parts Arrived', classes: 'bg-lime-100 text-lime-800' },
+  'customer-to-return': { label: 'Customer to Return', classes: 'bg-pink-100 text-pink-800' },
+  'rebooked': { label: 'Rebooked', classes: 'bg-violet-100 text-violet-800' },
+  'foreman-signoff-waiting': { label: 'Foreman Sign-off Waiting', classes: 'bg-yellow-100 text-yellow-800' },
+  'foreman-signoff-complete': { label: 'Foreman Sign-off Complete', classes: 'bg-emerald-100 text-emerald-800' },
+  'sublet': { label: 'Sublet', classes: 'bg-teal-100 text-teal-800' },
+  'waiting-customer-auth': { label: 'Waiting for Customer Auth', classes: 'bg-red-100 text-red-800' },
+  'po-requested': { label: 'PO Requested', classes: 'bg-slate-100 text-slate-800' },
+  'tech-support': { label: 'Tech Support', classes: 'bg-blue-100 text-blue-800' },
+  'warranty': { label: 'Warranty', classes: 'bg-green-100 text-green-800' },
+  'internal-ro': { label: 'Internal RO', classes: 'bg-gray-100 text-gray-800' }
 };

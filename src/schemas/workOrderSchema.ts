@@ -20,7 +20,29 @@ export const workOrderFormSchema = z.object({
   
   // Work order details
   description: z.string().min(1, "Description is required"),
-  status: z.enum(["pending", "in-progress", "on-hold", "completed", "cancelled"]).default("pending"),
+  status: z.enum([
+    "pending", 
+    "in-progress", 
+    "on-hold", 
+    "completed", 
+    "cancelled",
+    "body-shop",
+    "mobile-service",
+    "needs-road-test",
+    "parts-requested",
+    "parts-ordered",
+    "parts-arrived",
+    "customer-to-return",
+    "rebooked",
+    "foreman-signoff-waiting",
+    "foreman-signoff-complete",
+    "sublet",
+    "waiting-customer-auth",
+    "po-requested",
+    "tech-support",
+    "warranty",
+    "internal-ro"
+  ]).default("pending"),
   priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
   
   // Assignment
