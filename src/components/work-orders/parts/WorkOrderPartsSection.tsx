@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -112,17 +111,16 @@ export function WorkOrderPartsSection({
     }
   };
 
+  // Handle when a new part is added from the UnifiedItemsTable
+  const handlePartAdd = (newPart: WorkOrderPart) => {
+    setParts(prevParts => [...prevParts, newPart]);
+  };
+
   return (
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base">Parts & Inventory</CardTitle>
-          {isEditMode && (
-            <Button size="sm" className="h-8 px-3">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Part
-            </Button>
-          )}
         </div>
       </CardHeader>
       <CardContent className="pt-0">
@@ -139,6 +137,7 @@ export function WorkOrderPartsSection({
             onReorderParts={isEditMode ? handlePartsReorder : undefined}
             isEditMode={isEditMode}
             showType="parts"
+            workOrderId={workOrderId}
           />
         )}
       </CardContent>
