@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
+import { WORK_ORDER_STATUSES } from "@/data/workOrderConstants";
 
 interface StatusFieldsProps {
   form: UseFormReturn<WorkOrderFormSchemaValues>;
@@ -40,11 +41,11 @@ export const StatusFields: React.FC<StatusFieldsProps> = ({ form }) => {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="in-progress">In Progress</SelectItem>
-                  <SelectItem value="on-hold">On Hold</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                  {WORK_ORDER_STATUSES.map((status) => (
+                    <SelectItem key={status.value} value={status.value}>
+                      {status.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <FormMessage />

@@ -13,26 +13,46 @@ import { Check, Loader2, AlertCircle } from 'lucide-react';
 import { WorkOrder } from '@/types/workOrder';
 import { updateWorkOrderStatus } from '@/services/workOrder';
 import { toast } from '@/hooks/use-toast';
+import { WORK_ORDER_STATUSES } from '@/data/workOrderConstants';
 
 interface WorkOrderStatusUpdateProps {
   workOrder: WorkOrder;
   onStatusUpdated?: (newStatus: string) => void;
 }
 
-const statusOptions = [
-  { value: 'pending', label: 'Pending', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'in-progress', label: 'In Progress', color: 'bg-blue-100 text-blue-800' },
-  { value: 'on-hold', label: 'On Hold', color: 'bg-orange-100 text-orange-800' },
-  { value: 'completed', label: 'Completed', color: 'bg-green-100 text-green-800' },
-  { value: 'cancelled', label: 'Cancelled', color: 'bg-red-100 text-red-800' }
-];
+const getStatusColor = (status: string) => {
+  const statusColorMap: Record<string, string> = {
+    'pending': 'bg-yellow-100 text-yellow-800',
+    'in-progress': 'bg-blue-100 text-blue-800',
+    'on-hold': 'bg-orange-100 text-orange-800',
+    'completed': 'bg-green-100 text-green-800',
+    'cancelled': 'bg-red-100 text-red-800',
+    'body-shop': 'bg-purple-100 text-purple-800',
+    'mobile-service': 'bg-indigo-100 text-indigo-800',
+    'needs-road-test': 'bg-cyan-100 text-cyan-800',
+    'parts-requested': 'bg-amber-100 text-amber-800',
+    'parts-ordered': 'bg-orange-100 text-orange-800',
+    'parts-arrived': 'bg-lime-100 text-lime-800',
+    'customer-to-return': 'bg-pink-100 text-pink-800',
+    'rebooked': 'bg-violet-100 text-violet-800',
+    'foreman-signoff-waiting': 'bg-yellow-100 text-yellow-800',
+    'foreman-signoff-complete': 'bg-emerald-100 text-emerald-800',
+    'sublet': 'bg-teal-100 text-teal-800',
+    'waiting-customer-auth': 'bg-red-100 text-red-800',
+    'po-requested': 'bg-slate-100 text-slate-800',
+    'tech-support': 'bg-blue-100 text-blue-800',
+    'warranty': 'bg-green-100 text-green-800',
+    'internal-ro': 'bg-gray-100 text-gray-800'
+  };
+  return statusColorMap[status] || 'bg-gray-100 text-gray-800';
+};
 
 export function WorkOrderStatusUpdate({ workOrder, onStatusUpdated }: WorkOrderStatusUpdateProps) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState(workOrder.status);
   const [error, setError] = useState<string | null>(null);
 
-  const currentStatusOption = statusOptions.find(option => option.value === workOrder.status);
+  const currentStatusOption = WORK_ORDER_STATUSES.find(option => option.value === workOrder.status);
   
   const handleStatusChange = async (newStatus: string) => {
     if (newStatus === workOrder.status) return;
@@ -46,9 +66,10 @@ export function WorkOrderStatusUpdate({ workOrder, onStatusUpdated }: WorkOrderS
       const updatedWorkOrder = await updateWorkOrderStatus(workOrder.id, newStatus);
       
       if (updatedWorkOrder) {
+        const statusLabel = WORK_ORDER_STATUSES.find(s => s.value === newStatus)?.label;
         toast({
           title: "Success",
-          description: `Work order status updated to ${statusOptions.find(s => s.value === newStatus)?.label}`,
+          description: `Work order status updated to ${statusLabel}`,
         });
         
         setSelectedStatus(newStatus);
@@ -79,7 +100,7 @@ export function WorkOrderStatusUpdate({ workOrder, onStatusUpdated }: WorkOrderS
     <div className="flex items-center gap-3">
       <div className="flex items-center gap-2">
         <span className="text-sm font-medium text-muted-foreground">Status:</span>
-        <Badge className={currentStatusOption?.color}>
+        <Badge className={getStatusColor(workOrder.status)}>
           {currentStatusOption?.label || workOrder.status}
         </Badge>
         {error && (
@@ -95,12 +116,12 @@ export function WorkOrderStatusUpdate({ workOrder, onStatusUpdated }: WorkOrderS
         onValueChange={handleStatusChange}
         disabled={isUpdating}
       >
-        <SelectTrigger className="w-40">
+        <SelectTrigger className="w-48">
           <SelectValue placeholder="Change status" />
           {isUpdating && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
         </SelectTrigger>
         <SelectContent>
-          {statusOptions.map((option) => (
+          {WORK_ORDER_STATUSES.map((option) => (
             <SelectItem key={option.value} value={option.value}>
               <div className="flex items-center gap-2">
                 {option.value === workOrder.status && (

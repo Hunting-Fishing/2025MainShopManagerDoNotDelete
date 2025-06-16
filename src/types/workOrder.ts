@@ -1,4 +1,3 @@
-
 // Work Order Types - Standardized to match database schema (snake_case)
 
 import { WorkOrderJobLine } from './jobLine';
@@ -152,7 +151,23 @@ export const WORK_ORDER_STATUSES = [
   'in-progress', 
   'on-hold',
   'completed',
-  'cancelled'
+  'cancelled',
+  'body-shop',
+  'mobile-service',
+  'needs-road-test',
+  'parts-requested',
+  'parts-ordered',
+  'parts-arrived',
+  'customer-to-return',
+  'rebooked',
+  'foreman-signoff-waiting',
+  'foreman-signoff-complete',
+  'sublet',
+  'waiting-customer-auth',
+  'po-requested',
+  'tech-support',
+  'warranty',
+  'internal-ro'
 ] as const;
 
 export type WorkOrderStatus = typeof WORK_ORDER_STATUSES[number];
@@ -173,7 +188,23 @@ export const statusMap: Record<string, string> = {
   'in-progress': 'In Progress',
   'on-hold': 'On Hold',
   'completed': 'Completed',
-  'cancelled': 'Cancelled'
+  'cancelled': 'Cancelled',
+  'body-shop': 'Body Shop',
+  'mobile-service': 'Mobile Service',
+  'needs-road-test': 'Needs Road Test',
+  'parts-requested': 'Parts Requested',
+  'parts-ordered': 'Parts Ordered',
+  'parts-arrived': 'Parts Arrived',
+  'customer-to-return': 'Customer to Return',
+  'rebooked': 'Rebooked',
+  'foreman-signoff-waiting': 'Foreman Sign-off Waiting',
+  'foreman-signoff-complete': 'Foreman Sign-off Complete',
+  'sublet': 'Sublet',
+  'waiting-customer-auth': 'Waiting for Customer Auth',
+  'po-requested': 'PO Requested',
+  'tech-support': 'Tech Support',
+  'warranty': 'Warranty',
+  'internal-ro': 'Internal RO'
 };
 
 // Priority mapping for UI display

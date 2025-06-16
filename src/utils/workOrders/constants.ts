@@ -1,16 +1,35 @@
-
 /**
  * Work order status mappings and constants
  */
 
-export type WorkOrderStatus = 'pending' | 'in-progress' | 'completed' | 'cancelled' | 'on-hold';
+export type WorkOrderStatus = 'pending' | 'in-progress' | 'completed' | 'cancelled' | 'on-hold' | 
+  'body-shop' | 'mobile-service' | 'needs-road-test' | 'parts-requested' | 'parts-ordered' | 
+  'parts-arrived' | 'customer-to-return' | 'rebooked' | 'foreman-signoff-waiting' | 
+  'foreman-signoff-complete' | 'sublet' | 'waiting-customer-auth' | 'po-requested' | 
+  'tech-support' | 'warranty' | 'internal-ro';
 
 export const statusMap: Record<WorkOrderStatus, string> = {
   'pending': 'Pending',
   'in-progress': 'In Progress',
   'completed': 'Completed',
   'cancelled': 'Cancelled',
-  'on-hold': 'On Hold'
+  'on-hold': 'On Hold',
+  'body-shop': 'Body Shop',
+  'mobile-service': 'Mobile Service',
+  'needs-road-test': 'Needs Road Test',
+  'parts-requested': 'Parts Requested',
+  'parts-ordered': 'Parts Ordered',
+  'parts-arrived': 'Parts Arrived',
+  'customer-to-return': 'Customer to Return',
+  'rebooked': 'Rebooked',
+  'foreman-signoff-waiting': 'Foreman Sign-off Waiting',
+  'foreman-signoff-complete': 'Foreman Sign-off Complete',
+  'sublet': 'Sublet',
+  'waiting-customer-auth': 'Waiting for Customer Auth',
+  'po-requested': 'PO Requested',
+  'tech-support': 'Tech Support',
+  'warranty': 'Warranty',
+  'internal-ro': 'Internal RO'
 };
 
 export const priorityMap: Record<string, { label: string; classes: string }> = {
