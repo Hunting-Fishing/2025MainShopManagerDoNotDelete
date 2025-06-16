@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { TimeEntry } from "@/types/workOrder";
 
@@ -10,24 +9,23 @@ export const getWorkOrderTimeEntries = async (
   jobLineId?: string
 ): Promise<any[]> => { // Stay as any[] to avoid TS recursion problems
   try {
-    let query = supabase
-      .from('work_order_time_entries')
-      .select('*')
-      .eq('work_order_id', workOrderId)
-      .order('created_at', { ascending: false });
-
+    // Build query dynamically to avoid type inference issues
+    let queryString = `*`;
+    const filters: any = { work_order_id: workOrderId };
+    
     if (jobLineId) {
-      query = query.eq('job_line_id', jobLineId);
+      filters.job_line_id = jobLineId;
     }
 
-    // Aggressively break type inference to prevent TS2589 error
-    const queryResult = query as any;
-    const awaitedResult = await queryResult;
-    const data: any[] = awaitedResult.data || [];
-    const error: any = awaitedResult.error;
+    // Use direct from().select() approach without chaining to avoid type inference
+    const { data, error } = await supabase
+      .from('work_order_time_entries')
+      .select(queryString)
+      .match(filters)
+      .order('created_at', { ascending: false });
     
     if (error) throw error;
-    return data;
+    return data || [];
   } catch (error) {
     console.error('Error fetching work order time entries:', error);
     return [];
