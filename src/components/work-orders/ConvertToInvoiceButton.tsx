@@ -31,30 +31,13 @@ export function ConvertToInvoiceButton({
   const [notes, setNotes] = useState('');
   const [isConverting, setIsConverting] = useState(false);
 
-  // Enhanced status checking with debug logging
   const canConvert = workOrderStatus === 'completed';
-  
-  console.log('ConvertToInvoiceButton render:', {
-    workOrderId,
-    workOrderStatus,
-    canConvert,
-    statusType: typeof workOrderStatus
-  });
 
   const handleConvert = async () => {
-    console.log('Convert to invoice initiated:', {
-      workOrderId,
-      workOrderStatus,
-      canConvert
-    });
-
     if (!canConvert) {
-      const message = `Cannot convert work order with status "${workOrderStatus}". Work order must be completed before converting to invoice.`;
-      console.warn(message);
-      
       toast({
         title: "Cannot Convert",
-        description: message,
+        description: "Work order must be completed before converting to invoice",
         variant: "destructive"
       });
       return;
@@ -62,10 +45,7 @@ export function ConvertToInvoiceButton({
 
     setIsConverting(true);
     try {
-      console.log('Attempting to convert work order to invoice...');
       const invoiceId = await convertWorkOrderToInvoice(workOrderId, notes);
-      
-      console.log('Conversion successful:', { invoiceId });
       
       toast({
         title: "Success",
@@ -95,7 +75,6 @@ export function ConvertToInvoiceButton({
           size="sm"
           disabled={!canConvert}
           className="flex items-center gap-2"
-          title={canConvert ? "Convert to Invoice" : `Cannot convert: Status is "${workOrderStatus}", must be "completed"`}
         >
           <Receipt className="h-4 w-4" />
           Convert to Invoice
@@ -109,7 +88,6 @@ export function ConvertToInvoiceButton({
           </DialogTitle>
           <DialogDescription>
             This will create a new invoice from this work order including all job lines and parts.
-            Current status: <strong>{workOrderStatus}</strong>
           </DialogDescription>
         </DialogHeader>
 
@@ -129,8 +107,7 @@ export function ConvertToInvoiceButton({
           {!canConvert && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
               <p className="text-sm text-yellow-800">
-                Work order status is currently "<strong>{workOrderStatus}</strong>". 
-                It must be set to "completed" before it can be converted to an invoice.
+                Work order must be completed before it can be converted to an invoice.
               </p>
             </div>
           )}

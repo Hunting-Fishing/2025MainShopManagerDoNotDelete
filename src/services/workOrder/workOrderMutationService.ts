@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { WorkOrderFormSchemaValues } from '@/schemas/workOrderSchema';
 
@@ -86,34 +85,15 @@ export async function updateWorkOrder(workOrderId: string, workOrderData: Partia
 }
 
 export async function updateWorkOrderStatus(workOrderId: string, status: string) {
-  console.log('updateWorkOrderStatus called:', { workOrderId, status });
+  console.log('Updating work order status:', workOrderId, 'to:', status);
   
   try {
-    // First, validate that the work order exists
-    const { data: existingWorkOrder, error: fetchError } = await supabase
-      .from('work_orders')
-      .select('id, status')
-      .eq('id', workOrderId)
-      .single();
-
-    if (fetchError) {
-      console.error('Error fetching work order for status update:', fetchError);
-      throw new Error(`Work order not found: ${fetchError.message}`);
-    }
-
-    console.log('Current work order status:', existingWorkOrder);
-
-    // Update the status
-    const updateData = { 
-      status,
-      updated_at: new Date().toISOString()
-    };
-
-    console.log('Updating with data:', updateData);
-
     const { data: workOrder, error } = await supabase
       .from('work_orders')
-      .update(updateData)
+      .update({ 
+        status,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', workOrderId)
       .select('*')
       .single();
@@ -123,17 +103,7 @@ export async function updateWorkOrderStatus(workOrderId: string, status: string)
       throw new Error(`Failed to update work order status: ${error.message}`);
     }
 
-    if (!workOrder) {
-      throw new Error('No work order returned after status update');
-    }
-
-    console.log('Work order status updated successfully:', {
-      workOrderId,
-      oldStatus: existingWorkOrder.status,
-      newStatus: workOrder.status,
-      fullWorkOrder: workOrder
-    });
-
+    console.log('Work order status updated successfully:', workOrder);
     return workOrder;
 
   } catch (error) {

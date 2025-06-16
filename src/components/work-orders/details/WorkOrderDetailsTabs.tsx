@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WorkOrder } from "@/types/workOrder";
 import { WorkOrderJobLine } from "@/types/jobLine";
@@ -23,7 +23,6 @@ interface WorkOrderDetailsTabsProps {
   customer?: import('@/types/customer').Customer | null;
   onJobLinesChange: (jobLines: WorkOrderJobLine[]) => void;
   onTimeEntriesChange: (entries: TimeEntry[]) => void;
-  onWorkOrderUpdate?: (updatedWorkOrder: WorkOrder) => void;
   isEditMode: boolean;
   onStartEdit?: () => void;
   onCancelEdit?: () => void;
@@ -38,41 +37,24 @@ export function WorkOrderDetailsTabs({
   customer,
   onJobLinesChange,
   onTimeEntriesChange,
-  onWorkOrderUpdate,
   isEditMode,
   onStartEdit,
   onCancelEdit,
   onSaveEdit
 }: WorkOrderDetailsTabsProps) {
-  const [currentWorkOrder, setCurrentWorkOrder] = useState<WorkOrder>(workOrder);
-
-  const handleStatusUpdated = (newStatus: string, updatedWorkOrder?: WorkOrder) => {
-    console.log("Status updated in WorkOrderDetailsTabs:", {
-      newStatus,
-      updatedWorkOrder,
-      currentWorkOrder: currentWorkOrder.status
-    });
-    
-    // Update local state with new status
-    const updatedWO = updatedWorkOrder || { ...currentWorkOrder, status: newStatus };
-    setCurrentWorkOrder(updatedWO);
-    
-    // Notify parent component if callback provided
-    if (onWorkOrderUpdate) {
-      onWorkOrderUpdate(updatedWO);
-    }
+  const handleStatusUpdated = (newStatus: string) => {
+    console.log("Work order status updated:", newStatus);
   };
 
   const handleInvoiceCreated = (invoiceId: string) => {
     console.log("Invoice created (ID):", invoiceId);
-    // Could add additional logic here like updating work order status or showing success message
   };
 
   return (
     <div className="space-y-6">
       {/* Unified Header */}
       <WorkOrderUnifiedHeader
-        workOrder={currentWorkOrder}
+        workOrder={workOrder}
         customer={customer}
         jobLines={jobLines}
         allParts={allParts}
@@ -82,12 +64,9 @@ export function WorkOrderDetailsTabs({
       {/* Actions bar - Improved layout */}
       <div className="bg-white border rounded-lg p-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <WorkOrderStatusUpdate 
-            workOrder={currentWorkOrder} 
-            onStatusUpdated={handleStatusUpdated} 
-          />
+          <WorkOrderStatusUpdate workOrder={workOrder} onStatusUpdated={handleStatusUpdated} />
           <WorkOrderDetailsActions
-            workOrder={currentWorkOrder}
+            workOrder={workOrder}
             isEditMode={isEditMode}
             onStartEdit={onStartEdit}
             onCancelEdit={onCancelEdit}
@@ -109,7 +88,7 @@ export function WorkOrderDetailsTabs({
 
         <TabsContent value="overview" className="space-y-6">
           <WorkOrderDetailsTab
-            workOrder={currentWorkOrder}
+            workOrder={workOrder}
             jobLines={jobLines}
             allParts={allParts}
             onJobLinesChange={onJobLinesChange}
@@ -119,7 +98,7 @@ export function WorkOrderDetailsTabs({
         
         <TabsContent value="jobs" className="space-y-6">
           <JobLinesSection
-            workOrderId={currentWorkOrder.id}
+            workOrderId={workOrder.id}
             jobLines={jobLines}
             onJobLinesChange={onJobLinesChange}
             isEditMode={isEditMode}
@@ -127,12 +106,12 @@ export function WorkOrderDetailsTabs({
         </TabsContent>
         
         <TabsContent value="parts" className="space-y-6">
-          <WorkOrderPartsSection workOrderId={currentWorkOrder.id} isEditMode={isEditMode} />
+          <WorkOrderPartsSection workOrderId={workOrder.id} isEditMode={isEditMode} />
         </TabsContent>
         
         <TabsContent value="time" className="space-y-6">
           <TimeTrackingSection
-            workOrderId={currentWorkOrder.id}
+            workOrderId={workOrder.id}
             timeEntries={timeEntries}
             onUpdateTimeEntries={onTimeEntriesChange}
             isEditMode={isEditMode}
@@ -140,11 +119,11 @@ export function WorkOrderDetailsTabs({
         </TabsContent>
         
         <TabsContent value="documents" className="space-y-6">
-          <WorkOrderDocuments workOrderId={currentWorkOrder.id} isEditMode={isEditMode} />
+          <WorkOrderDocuments workOrderId={workOrder.id} isEditMode={isEditMode} />
         </TabsContent>
         
         <TabsContent value="communications" className="space-y-6">
-          <WorkOrderCommunications workOrder={currentWorkOrder} isEditMode={isEditMode} />
+          <WorkOrderCommunications workOrder={workOrder} isEditMode={isEditMode} />
         </TabsContent>
       </Tabs>
     </div>

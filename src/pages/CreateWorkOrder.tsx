@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { ResponsiveContainer } from '@/components/ui/responsive-container';
@@ -94,8 +93,10 @@ const CreateWorkOrder = () => {
       </div>
 
       <ResponsiveContainer maxWidth="full" className="py-6">
-        {/* FIX: Remove the invalid isEditMode prop */}
-        <WorkOrderDetailsView />
+        {/* FIX: Only pass expected prop */}
+        <WorkOrderDetailsView 
+          isEditMode={false}
+        />
       </ResponsiveContainer>
     </div>
   );
