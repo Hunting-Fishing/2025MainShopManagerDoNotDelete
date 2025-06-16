@@ -4,8 +4,9 @@ import { WorkOrderPart } from '@/types/workOrderPart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
+import { getWorkOrderParts, updateWorkOrderPart, deleteWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
 import { UnifiedItemsTable } from '../shared/UnifiedItemsTable';
+import { toast } from '@/hooks/use-toast';
 
 interface WorkOrderPartsSectionProps {
   workOrderId: string;
@@ -38,20 +39,77 @@ export function WorkOrderPartsSection({
     fetchParts();
   }, [workOrderId]);
 
-  const handlePartUpdate = (updatedPart: WorkOrderPart) => {
-    const updatedParts = parts.map(part => 
-      part.id === updatedPart.id ? updatedPart : part
-    );
-    setParts(updatedParts);
+  const handlePartUpdate = async (updatedPart: WorkOrderPart) => {
+    try {
+      console.log('Updating part:', updatedPart);
+      
+      // Update in database
+      await updateWorkOrderPart(updatedPart.id, updatedPart);
+      
+      // Update local state
+      const updatedParts = parts.map(part => 
+        part.id === updatedPart.id ? updatedPart : part
+      );
+      setParts(updatedParts);
+      
+      toast({
+        title: "Success",
+        description: "Part updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating part:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update part",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handlePartDelete = (partId: string) => {
-    const updatedParts = parts.filter(part => part.id !== partId);
-    setParts(updatedParts);
+  const handlePartDelete = async (partId: string) => {
+    try {
+      console.log('Deleting part:', partId);
+      
+      // Delete from database
+      await deleteWorkOrderPart(partId);
+      
+      // Update local state
+      const updatedParts = parts.filter(part => part.id !== partId);
+      setParts(updatedParts);
+      
+      toast({
+        title: "Success",
+        description: "Part deleted successfully", 
+      });
+    } catch (error) {
+      console.error('Error deleting part:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete part",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handlePartsReorder = (reorderedParts: WorkOrderPart[]) => {
-    setParts(reorderedParts);
+  const handlePartsReorder = async (reorderedParts: WorkOrderPart[]) => {
+    try {
+      console.log('Reordering parts');
+      
+      // For parts, we might not have a display_order field, so just update local state
+      setParts(reorderedParts);
+      
+      toast({
+        title: "Success",
+        description: "Parts reordered successfully",
+      });
+    } catch (error) {
+      console.error('Error reordering parts:', error);
+      toast({
+        title: "Error", 
+        description: "Failed to reorder parts",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -76,9 +134,9 @@ export function WorkOrderPartsSection({
           <UnifiedItemsTable
             jobLines={[]}
             allParts={parts}
-            onPartUpdate={handlePartUpdate}
-            onPartDelete={handlePartDelete}
-            onReorderParts={handlePartsReorder}
+            onPartUpdate={isEditMode ? handlePartUpdate : undefined}
+            onPartDelete={isEditMode ? handlePartDelete : undefined}
+            onReorderParts={isEditMode ? handlePartsReorder : undefined}
             isEditMode={isEditMode}
             showType="parts"
           />
