@@ -1,39 +1,45 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { JobLinesTable } from '../job-lines/JobLinesTable';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { WorkOrderPart } from '@/types/workOrderPart';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
+import { CompactJobLinesTable } from '../job-lines/CompactJobLinesTable';
 import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
 
 interface JobLinesSectionProps {
   workOrderId: string;
-  description?: string; // Add the description prop that's being passed
+  description?: string;
   jobLines: WorkOrderJobLine[];
   onJobLinesChange: (jobLines: WorkOrderJobLine[]) => void;
   isEditMode: boolean;
-  shopId?: string; // Add shopId prop that's being passed
+  shopId?: string;
 }
 
 export function JobLinesSection({
   workOrderId,
-  description, // Accept the description prop
+  description,
   jobLines,
   onJobLinesChange,
   isEditMode,
-  shopId // Accept the shopId prop
+  shopId
 }: JobLinesSectionProps) {
-  const [allParts, setAllParts] = React.useState<WorkOrderPart[]>([]);
+  const [allParts, setAllParts] = useState<WorkOrderPart[]>([]);
+  const [partsLoading, setPartsLoading] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchParts = async () => {
-      if (workOrderId) {
+      if (workOrderId && workOrderId !== `temp-${Date.now()}`) {
         try {
+          setPartsLoading(true);
           const parts = await getWorkOrderParts(workOrderId);
           setAllParts(parts);
         } catch (error) {
           console.error('Error fetching work order parts:', error);
           setAllParts([]);
+        } finally {
+          setPartsLoading(false);
         }
       }
     };
@@ -67,18 +73,33 @@ export function JobLinesSection({
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Job Lines Management</CardTitle>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base">Job Lines & Parts</CardTitle>
+          {isEditMode && (
+            <Button size="sm" className="h-8 px-3">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Job Line
+            </Button>
+          )}
+        </div>
       </CardHeader>
-      <CardContent>
-        <JobLinesTable
-          jobLines={jobLines}
-          allParts={allParts}
-          onUpdate={handleJobLineUpdate}
-          onDelete={handleJobLineDelete}
-          onPartUpdate={handlePartUpdate}
-          onPartDelete={handlePartDelete}
-        />
+      <CardContent className="pt-0">
+        {partsLoading ? (
+          <div className="text-center py-4 text-muted-foreground text-sm">
+            Loading job lines and parts...
+          </div>
+        ) : (
+          <CompactJobLinesTable
+            jobLines={jobLines}
+            allParts={allParts}
+            onUpdate={isEditMode ? handleJobLineUpdate : undefined}
+            onDelete={isEditMode ? handleJobLineDelete : undefined}
+            onPartUpdate={isEditMode ? handlePartUpdate : undefined}
+            onPartDelete={isEditMode ? handlePartDelete : undefined}
+            isEditMode={isEditMode}
+          />
+        )}
       </CardContent>
     </Card>
   );

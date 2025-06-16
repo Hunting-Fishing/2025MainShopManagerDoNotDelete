@@ -1,176 +1,173 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { WorkOrder } from '@/types/workOrder';
+import { WorkOrderJobLine } from '@/types/jobLine';
+import { WorkOrderPart } from '@/types/workOrderPart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Plus, Phone, Mail, MessageSquare, Calendar, User } from 'lucide-react';
+import { Plus, MessageSquare, Phone, Mail } from 'lucide-react';
+import { CompactJobLinesTable } from '../job-lines/CompactJobLinesTable';
+import { getWorkOrderJobLines } from '@/services/workOrder/jobLinesService';
+import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
 
 interface WorkOrderCommunicationsProps {
   workOrder: WorkOrder;
+  isEditMode?: boolean;
 }
 
-// Mock communications data
-const mockCommunications = [
-  {
-    id: '1',
-    type: 'phone',
-    direction: 'outbound',
-    contact: 'John Smith',
-    subject: 'Service appointment confirmation',
-    timestamp: '2024-01-15T10:30:00Z',
-    duration: '00:05:23',
-    status: 'completed',
-    notes: 'Confirmed appointment for brake service. Customer will drop off vehicle at 9 AM.'
-  },
-  {
-    id: '2',
-    type: 'email',
-    direction: 'inbound',
-    contact: 'john.smith@email.com',
-    subject: 'Question about estimate',
-    timestamp: '2024-01-14T16:45:00Z',
-    status: 'responded',
-    notes: 'Customer inquired about brake pad replacement cost. Estimate sent via email.'
-  },
-  {
-    id: '3',
-    type: 'sms',
-    direction: 'outbound',
-    contact: '+1 (555) 123-4567',
-    subject: 'Work order status update',
-    timestamp: '2024-01-14T14:20:00Z',
-    status: 'delivered',
-    notes: 'Sent SMS notification that vehicle inspection is complete and ready for pickup.'
-  }
-];
+export function WorkOrderCommunications({ 
+  workOrder, 
+  isEditMode = false 
+}: WorkOrderCommunicationsProps) {
+  const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
+  const [allParts, setAllParts] = useState<WorkOrderPart[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-export function WorkOrderCommunications({ workOrder }: WorkOrderCommunicationsProps) {
-  const [communications] = useState(mockCommunications);
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!workOrder.id) return;
+      
+      try {
+        setIsLoading(true);
+        const [lines, parts] = await Promise.all([
+          getWorkOrderJobLines(workOrder.id),
+          getWorkOrderParts(workOrder.id)
+        ]);
+        setJobLines(lines);
+        setAllParts(parts);
+      } catch (error) {
+        console.error('Error fetching job lines and parts:', error);
+        setJobLines([]);
+        setAllParts([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'phone': return <Phone className="h-4 w-4" />;
-      case 'email': return <Mail className="h-4 w-4" />;
-      case 'sms': return <MessageSquare className="h-4 w-4" />;
-      default: return <MessageSquare className="h-4 w-4" />;
-    }
+    fetchData();
+  }, [workOrder.id]);
+
+  const handleJobLineUpdate = (updatedJobLine: WorkOrderJobLine) => {
+    const updatedJobLines = jobLines.map(line => 
+      line.id === updatedJobLine.id ? updatedJobLine : line
+    );
+    setJobLines(updatedJobLines);
   };
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'phone': return 'bg-blue-100 text-blue-800';
-      case 'email': return 'bg-green-100 text-green-800';
-      case 'sms': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+  const handleJobLineDelete = (jobLineId: string) => {
+    const updatedJobLines = jobLines.filter(line => line.id !== jobLineId);
+    setJobLines(updatedJobLines);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': case 'delivered': case 'responded': return 'bg-green-100 text-green-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'failed': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+  const handlePartUpdate = (updatedPart: WorkOrderPart) => {
+    const updatedParts = allParts.map(part => 
+      part.id === updatedPart.id ? updatedPart : part
+    );
+    setAllParts(updatedParts);
   };
 
-  const formatTimestamp = (timestamp: string) => {
-    return new Date(timestamp).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit'
-    });
+  const handlePartDelete = (partId: string) => {
+    const updatedParts = allParts.filter(part => part.id !== partId);
+    setAllParts(updatedParts);
   };
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base">Communications</CardTitle>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm">
-              <Phone className="h-4 w-4 mr-2" />
-              Call
-            </Button>
-            <Button variant="outline" size="sm">
-              <Mail className="h-4 w-4 mr-2" />
-              Email
-            </Button>
-            <Button variant="outline" size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Note
-            </Button>
+    <div className="space-y-6">
+      {/* Communications Section */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Communications Log
+            </CardTitle>
+            {isEditMode && (
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" className="h-8 px-3">
+                  <Phone className="h-4 w-4 mr-2" />
+                  Call Customer
+                </Button>
+                <Button size="sm" variant="outline" className="h-8 px-3">
+                  <Mail className="h-4 w-4 mr-2" />
+                  Send Email
+                </Button>
+                <Button size="sm" className="h-8 px-3">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Note
+                </Button>
+              </div>
+            )}
           </div>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-0">
-        {communications.length === 0 ? (
-          <div className="text-center py-4 text-muted-foreground text-sm">
-            No communications recorded yet
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="text-center py-8 text-muted-foreground">
+            <MessageSquare className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+            <p className="text-sm">No communications logged yet</p>
+            {isEditMode && (
+              <p className="text-xs mt-2">Record calls, emails, and notes related to this work order</p>
+            )}
           </div>
-        ) : (
-          <div className="border rounded-lg overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-gray-50 border-b">
-                  <th className="text-left p-2 font-medium">TYPE</th>
-                  <th className="text-left p-2 font-medium">CONTACT</th>
-                  <th className="text-left p-2 font-medium">SUBJECT</th>
-                  <th className="text-left p-2 font-medium">TIMESTAMP</th>
-                  <th className="text-center p-2 font-medium">STATUS</th>
-                  <th className="text-left p-2 font-medium">NOTES</th>
-                </tr>
-              </thead>
-              <tbody>
-                {communications.map((comm, index) => (
-                  <tr key={comm.id} className={`border-b hover:bg-gray-50 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}>
-                    <td className="p-2">
-                      <div className="flex items-center gap-2">
-                        {getTypeIcon(comm.type)}
-                        <Badge className={`text-xs ${getTypeColor(comm.type)}`}>
-                          {comm.type}
-                        </Badge>
-                      </div>
-                    </td>
-                    <td className="p-2">
-                      <div className="flex items-center gap-2">
-                        <User className="h-3 w-3 text-gray-500" />
-                        <span className="font-medium text-gray-900">{comm.contact}</span>
-                      </div>
-                    </td>
-                    <td className="p-2">
-                      <span className="text-gray-900">{comm.subject}</span>
-                      {comm.duration && (
-                        <div className="text-xs text-gray-500 mt-1">Duration: {comm.duration}</div>
-                      )}
-                    </td>
-                    <td className="p-2">
-                      <div className="flex items-center gap-1 text-gray-600">
-                        <Calendar className="h-3 w-3" />
-                        {formatTimestamp(comm.timestamp)}
-                      </div>
-                    </td>
-                    <td className="p-2 text-center">
-                      <Badge 
-                        className={`text-xs ${getStatusColor(comm.status)}`}
-                      >
-                        {comm.status}
-                      </Badge>
-                    </td>
-                    <td className="p-2">
-                      <span className="text-xs text-gray-600 truncate max-w-xs block">
-                        {comm.notes}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      {/* Customer Information */}
+      {workOrder.customer_name && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Customer Information</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-muted-foreground">Name: </span>
+                <span className="font-medium">{workOrder.customer_name}</span>
+              </div>
+              {workOrder.customer_email && (
+                <div>
+                  <span className="text-muted-foreground">Email: </span>
+                  <span className="font-medium">{workOrder.customer_email}</span>
+                </div>
+              )}
+              {workOrder.customer_phone && (
+                <div>
+                  <span className="text-muted-foreground">Phone: </span>
+                  <span className="font-medium">{workOrder.customer_phone}</span>
+                </div>
+              )}
+              {workOrder.customer_address && (
+                <div>
+                  <span className="text-muted-foreground">Address: </span>
+                  <span className="font-medium">{workOrder.customer_address}</span>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Job Lines & Parts Context */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Work Details Reference</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
+          {isLoading ? (
+            <div className="text-center py-4 text-muted-foreground text-sm">
+              Loading job lines and parts...
+            </div>
+          ) : (
+            <CompactJobLinesTable
+              jobLines={jobLines}
+              allParts={allParts}
+              onUpdate={isEditMode ? handleJobLineUpdate : undefined}
+              onDelete={isEditMode ? handleJobLineDelete : undefined}
+              onPartUpdate={isEditMode ? handlePartUpdate : undefined}
+              onPartDelete={isEditMode ? handlePartDelete : undefined}
+              isEditMode={isEditMode}
+            />
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

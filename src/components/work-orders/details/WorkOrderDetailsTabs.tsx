@@ -113,10 +113,10 @@ export function WorkOrderDetailsTabs({
           />
         </TabsContent>
         <TabsContent value="documents">
-          <WorkOrderDocuments workOrderId={workOrder.id} />
+          <WorkOrderDocuments workOrderId={workOrder.id} isEditMode={isEditMode} />
         </TabsContent>
         <TabsContent value="communications">
-          <WorkOrderCommunications workOrder={workOrder} />
+          <WorkOrderCommunications workOrder={workOrder} isEditMode={isEditMode} />
         </TabsContent>
       </Tabs>
     </div>
