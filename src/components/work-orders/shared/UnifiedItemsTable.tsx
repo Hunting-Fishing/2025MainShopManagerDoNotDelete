@@ -1,390 +1,316 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { TimeEntry } from '@/types/workOrder';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Edit2, Trash2, ChevronDown, ChevronRight, ArrowDownRight } from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Pencil, Trash2, Clock, Package, Wrench } from 'lucide-react';
 
 interface UnifiedItemsTableProps {
+  // Job Lines
   jobLines?: WorkOrderJobLine[];
-  parts?: WorkOrderPart[];
-  timeEntries?: TimeEntry[];
-  allParts?: WorkOrderPart[];
-  onJobLineUpdate?: (updatedJobLine: WorkOrderJobLine) => void;
+  onJobLineUpdate?: (jobLine: WorkOrderJobLine) => void;
   onJobLineDelete?: (jobLineId: string) => void;
-  onPartUpdate?: (updatedPart: WorkOrderPart) => void;
+  
+  // Parts
+  parts?: WorkOrderPart[];
+  allParts?: WorkOrderPart[];
+  onPartUpdate?: (part: WorkOrderPart) => void;
   onPartDelete?: (partId: string) => void;
-  isEditMode: boolean;
-  showType: 'overview' | 'jobs' | 'parts' | 'time' | 'documents' | 'communications';
+  
+  // Time Entries
+  timeEntries?: TimeEntry[];
+  onTimeEntryUpdate?: (entry: TimeEntry) => void;
+  onTimeEntryDelete?: (entryId: string) => void;
+  
+  // Display control
+  showType: 'overview' | 'jobs' | 'parts' | 'time';
+  isEditMode?: boolean;
 }
 
 export function UnifiedItemsTable({
   jobLines = [],
   parts = [],
-  timeEntries = [],
   allParts = [],
+  timeEntries = [],
   onJobLineUpdate,
   onJobLineDelete,
   onPartUpdate,
   onPartDelete,
-  isEditMode,
-  showType
+  onTimeEntryUpdate,
+  onTimeEntryDelete,
+  showType,
+  isEditMode = false
 }: UnifiedItemsTableProps) {
-  const [expandedJobLines, setExpandedJobLines] = useState<Set<string>>(new Set());
-
-  const toggleJobLine = (jobLineId: string) => {
-    const newExpanded = new Set(expandedJobLines);
-    if (newExpanded.has(jobLineId)) {
-      newExpanded.delete(jobLineId);
-    } else {
-      newExpanded.add(jobLineId);
-    }
-    setExpandedJobLines(newExpanded);
-  };
-
-  const handleEditJobLine = (jobLine: WorkOrderJobLine) => {
-    console.log('Edit job line clicked:', jobLine.id, jobLine.name);
-  };
-
-  const handleDeleteJobLine = (jobLineId: string) => {
-    if (confirm('Are you sure you want to delete this job line?')) {
-      onJobLineDelete?.(jobLineId);
-    }
-  };
-
-  const handleEditPart = (part: WorkOrderPart) => {
-    console.log('Edit part clicked:', part.id, part.name);
-  };
-
-  const handleDeletePart = (partId: string) => {
-    if (confirm('Are you sure you want to delete this part?')) {
-      onPartDelete?.(partId);
-    }
-  };
-
-  const renderOverviewContent = () => {
-    if (jobLines.length === 0) {
+  const renderJobLinesTable = () => {
+    if (!jobLines.length) {
       return (
         <div className="text-center py-8 text-muted-foreground">
-          <p>No job lines found</p>
+          <Wrench className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+          <p className="text-sm">No job lines added yet</p>
         </div>
       );
     }
 
     return (
-      <div className="space-y-2">
-        {/* Header */}
-        <div className="grid grid-cols-12 gap-2 text-xs font-medium text-muted-foreground border-b pb-2">
-          <div className="col-span-1"></div>
-          <div className="col-span-4">Item</div>
-          <div className="col-span-2">Qty/Hours</div>
-          <div className="col-span-2">Rate/Price</div>
-          <div className="col-span-2">Amount</div>
-          {isEditMode && <div className="col-span-1">Actions</div>}
-        </div>
-
-        {jobLines.map((jobLine) => {
-          const jobLineParts = allParts.filter(part => part.job_line_id === jobLine.id);
-          const isExpanded = expandedJobLines.has(jobLine.id);
-          const hasPartsToShow = jobLineParts.length > 0;
-
-          return (
-            <Collapsible
-              key={jobLine.id}
-              open={isExpanded}
-              onOpenChange={() => toggleJobLine(jobLine.id)}
-            >
-              {/* Job Line Row */}
-              <div className="grid grid-cols-12 gap-2 py-2 border-b border-gray-100 hover:bg-gray-50">
-                <div className="col-span-1 flex items-center">
-                  {hasPartsToShow && (
-                    <CollapsibleTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                        {isExpanded ? (
-                          <ChevronDown className="h-3 w-3" />
-                        ) : (
-                          <ChevronRight className="h-3 w-3" />
-                        )}
-                      </Button>
-                    </CollapsibleTrigger>
-                  )}
-                </div>
-                <div className="col-span-4">
-                  <div className="font-medium text-sm">{jobLine.name}</div>
-                  {jobLine.description && (
-                    <div className="text-xs text-muted-foreground">{jobLine.description}</div>
-                  )}
-                  <Badge variant="outline" className="text-xs mt-1">
-                    Labor
-                  </Badge>
-                </div>
-                <div className="col-span-2 text-sm">
-                  {jobLine.estimated_hours || 0} hrs
-                </div>
-                <div className="col-span-2 text-sm">
-                  ${jobLine.labor_rate || 0}/hr
-                </div>
-                <div className="col-span-2 text-sm font-medium">
-                  ${jobLine.total_amount || 0}
-                </div>
-                {isEditMode && (
-                  <div className="col-span-1 flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0"
-                      onClick={() => handleEditJobLine(jobLine)}
-                    >
-                      <Edit2 className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0"
-                      onClick={() => handleDeleteJobLine(jobLine.id)}
-                    >
-                      <Trash2 className="h-3 w-3 text-red-500" />
-                    </Button>
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b bg-muted/50">
+              <th className="text-left p-3 font-medium">TYPE</th>
+              <th className="text-left p-3 font-medium">DESCRIPTION</th>
+              <th className="text-right p-3 font-medium">HOURS</th>
+              <th className="text-right p-3 font-medium">RATE</th>
+              <th className="text-right p-3 font-medium">LINE TOTAL</th>
+              {isEditMode && <th className="text-center p-3 font-medium">ACTIONS</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {jobLines.map((jobLine) => (
+              <tr key={jobLine.id} className="border-b hover:bg-muted/25">
+                <td className="p-3">
+                  <div className="flex items-center gap-2">
+                    <Wrench className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm font-medium">Labor</span>
                   </div>
-                )}
-              </div>
-
-              {/* Connected Parts (Expandable) */}
-              {hasPartsToShow && (
-                <CollapsibleContent className="space-y-1">
-                  {jobLineParts.map((part) => (
-                    <div key={part.id} className="grid grid-cols-12 gap-2 py-1 bg-blue-50/50">
-                      <div className="col-span-1 flex items-center justify-center">
-                        <ArrowDownRight className="h-3 w-3 text-blue-500" />
-                      </div>
-                      <div className="col-span-4">
-                        <div className="text-sm font-medium">{part.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          Part #: {part.part_number}
-                        </div>
-                        <Badge variant="secondary" className="text-xs mt-1">
-                          Part
-                        </Badge>
-                      </div>
-                      <div className="col-span-2 text-sm">
-                        {part.quantity}
-                      </div>
-                      <div className="col-span-2 text-sm">
-                        ${part.unit_price}
-                      </div>
-                      <div className="col-span-2 text-sm font-medium">
-                        ${part.total_price}
-                      </div>
-                      {isEditMode && (
-                        <div className="col-span-1 flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                            onClick={() => handleEditPart(part)}
-                          >
-                            <Edit2 className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                            onClick={() => handleDeletePart(part.id)}
-                          >
-                            <Trash2 className="h-3 w-3 text-red-500" />
-                          </Button>
-                        </div>
-                      )}
+                </td>
+                <td className="p-3">
+                  <div>
+                    <div className="font-medium">{jobLine.name}</div>
+                    {jobLine.description && (
+                      <div className="text-sm text-muted-foreground">{jobLine.description}</div>
+                    )}
+                  </div>
+                </td>
+                <td className="p-3 text-right">{jobLine.estimated_hours || 0}</td>
+                <td className="p-3 text-right">${jobLine.labor_rate || 0}</td>
+                <td className="p-3 text-right font-medium">${jobLine.total_amount || 0}</td>
+                {isEditMode && (
+                  <td className="p-3 text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => onJobLineUpdate?.(jobLine)}
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => onJobLineDelete?.(jobLine.id)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
                     </div>
-                  ))}
-                </CollapsibleContent>
-              )}
-            </Collapsible>
-          );
-        })}
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     );
   };
 
-  const renderJobsContent = () => {
-    if (jobLines.length === 0) {
+  const renderPartsTable = () => {
+    const partsToShow = showType === 'parts' ? parts : allParts;
+    
+    if (!partsToShow.length) {
       return (
         <div className="text-center py-8 text-muted-foreground">
-          <p>No job lines found</p>
+          <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+          <p className="text-sm">No parts added yet</p>
         </div>
       );
     }
 
     return (
-      <div className="space-y-2">
-        {/* Header */}
-        <div className="grid grid-cols-5 gap-4 text-xs font-medium text-muted-foreground border-b pb-2">
-          <div>Item</div>
-          <div>Hours</div>
-          <div>Rate</div>
-          <div>Amount</div>
-          {isEditMode && <div>Actions</div>}
-        </div>
-
-        {jobLines.map((jobLine) => (
-          <div key={jobLine.id} className="grid grid-cols-5 gap-4 py-3 border-b border-gray-100 hover:bg-gray-50">
-            <div>
-              <div className="font-medium text-sm">{jobLine.name}</div>
-              <div className="text-xs text-muted-foreground">{jobLine.description}</div>
-              <Badge variant="outline" className="text-xs mt-1">Labor</Badge>
-            </div>
-            <div className="text-sm">{jobLine.estimated_hours || 0} hrs</div>
-            <div className="text-sm">${jobLine.labor_rate || 0}/hr</div>
-            <div className="text-sm font-medium">${jobLine.total_amount || 0}</div>
-            {isEditMode && (
-              <div className="flex gap-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0"
-                  onClick={() => handleEditJobLine(jobLine)}
-                >
-                  <Edit2 className="h-3 w-3" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0"
-                  onClick={() => handleDeleteJobLine(jobLine.id)}
-                >
-                  <Trash2 className="h-3 w-3 text-red-500" />
-                </Button>
-              </div>
-            )}
-          </div>
-        ))}
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b bg-muted/50">
+              <th className="text-left p-3 font-medium">TYPE</th>
+              <th className="text-left p-3 font-medium">DESCRIPTION</th>
+              <th className="text-left p-3 font-medium">PART #</th>
+              <th className="text-right p-3 font-medium">QTY</th>
+              <th className="text-right p-3 font-medium">PRICE</th>
+              <th className="text-right p-3 font-medium">LINE TOTAL</th>
+              {isEditMode && <th className="text-center p-3 font-medium">ACTIONS</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {partsToShow.map((part) => (
+              <tr key={part.id} className="border-b hover:bg-muted/25">
+                <td className="p-3">
+                  <div className="flex items-center gap-2">
+                    <Package className="h-4 w-4 text-green-600" />
+                    <span className="text-sm font-medium">Part</span>
+                  </div>
+                </td>
+                <td className="p-3">
+                  <div>
+                    <div className="font-medium">{part.name}</div>
+                    {part.description && (
+                      <div className="text-sm text-muted-foreground">{part.description}</div>
+                    )}
+                  </div>
+                </td>
+                <td className="p-3 text-sm font-mono">{part.part_number}</td>
+                <td className="p-3 text-right">{part.quantity}</td>
+                <td className="p-3 text-right">${part.unit_price}</td>
+                <td className="p-3 text-right font-medium">${part.total_price}</td>
+                {isEditMode && (
+                  <td className="p-3 text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => onPartUpdate?.(part)}
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => onPartDelete?.(part.id)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     );
   };
 
-  const renderPartsContent = () => {
-    if (parts.length === 0) {
+  const renderTimeEntriesTable = () => {
+    if (!timeEntries.length) {
       return (
         <div className="text-center py-8 text-muted-foreground">
-          <p>No parts found</p>
+          <Clock className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+          <p className="text-sm">No time entries recorded yet</p>
         </div>
       );
     }
 
     return (
-      <div className="space-y-2">
-        {/* Header */}
-        <div className="grid grid-cols-6 gap-4 text-xs font-medium text-muted-foreground border-b pb-2">
-          <div>Part #</div>
-          <div>Description</div>
-          <div>Qty</div>
-          <div>Price</div>
-          <div>Total</div>
-          {isEditMode && <div>Actions</div>}
-        </div>
-
-        {parts.map((part) => (
-          <div key={part.id} className="grid grid-cols-6 gap-4 py-3 border-b border-gray-100 hover:bg-gray-50">
-            <div className="text-sm font-medium">{part.part_number}</div>
-            <div>
-              <div className="text-sm font-medium">{part.name}</div>
-              <Badge variant="secondary" className="text-xs mt-1">Part</Badge>
-            </div>
-            <div className="text-sm">{part.quantity}</div>
-            <div className="text-sm">${part.unit_price}</div>
-            <div className="text-sm font-medium">${part.total_price}</div>
-            {isEditMode && (
-              <div className="flex gap-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0"
-                  onClick={() => handleEditPart(part)}
-                >
-                  <Edit2 className="h-3 w-3" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0"
-                  onClick={() => handleDeletePart(part.id)}
-                >
-                  <Trash2 className="h-3 w-3 text-red-500" />
-                </Button>
-              </div>
-            )}
-          </div>
-        ))}
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b bg-muted/50">
+              <th className="text-left p-3 font-medium">EMPLOYEE</th>
+              <th className="text-left p-3 font-medium">START TIME</th>
+              <th className="text-left p-3 font-medium">END TIME</th>
+              <th className="text-right p-3 font-medium">DURATION</th>
+              <th className="text-center p-3 font-medium">BILLABLE</th>
+              {isEditMode && <th className="text-center p-3 font-medium">ACTIONS</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {timeEntries.map((entry) => (
+              <tr key={entry.id} className="border-b hover:bg-muted/25">
+                <td className="p-3">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-orange-600" />
+                    <span className="text-sm font-medium">{entry.employee_name}</span>
+                  </div>
+                </td>
+                <td className="p-3 text-sm">{entry.start_time}</td>
+                <td className="p-3 text-sm">{entry.end_time || 'In progress'}</td>
+                <td className="p-3 text-right">{entry.duration} min</td>
+                <td className="p-3 text-center">
+                  <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                    entry.billable 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {entry.billable ? 'Billable' : 'Non-billable'}
+                  </span>
+                </td>
+                {isEditMode && (
+                  <td className="p-3 text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => onTimeEntryUpdate?.(entry)}
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => onTimeEntryDelete?.(entry.id)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     );
   };
 
-  const renderTimeContent = () => {
-    if (timeEntries.length === 0) {
+  const renderOverviewTable = () => {
+    const hasJobLines = jobLines.length > 0;
+    const hasParts = allParts.length > 0;
+    
+    if (!hasJobLines && !hasParts) {
       return (
         <div className="text-center py-8 text-muted-foreground">
-          <p>No time entries found</p>
+          <div className="flex justify-center gap-2 mb-4">
+            <Wrench className="h-12 w-12 text-gray-300" />
+            <Package className="h-12 w-12 text-gray-300" />
+          </div>
+          <p className="text-sm">No labor or parts added yet</p>
         </div>
       );
     }
 
     return (
-      <div className="space-y-2">
-        {/* Header */}
-        <div className="grid grid-cols-5 gap-4 text-xs font-medium text-muted-foreground border-b pb-2">
-          <div>Employee</div>
-          <div>Start Time</div>
-          <div>Duration</div>
-          <div>Billable</div>
-          {isEditMode && <div>Actions</div>}
-        </div>
-
-        {timeEntries.map((entry) => (
-          <div key={entry.id} className="grid grid-cols-5 gap-4 py-3 border-b border-gray-100 hover:bg-gray-50">
-            <div className="text-sm font-medium">{entry.employee_name}</div>
-            <div className="text-sm">{new Date(entry.start_time).toLocaleString()}</div>
-            <div className="text-sm">{entry.duration} min</div>
-            <div>
-              <Badge variant={entry.billable ? "default" : "secondary"} className="text-xs">
-                {entry.billable ? "Billable" : "Non-billable"}
-              </Badge>
-            </div>
-            {isEditMode && (
-              <div className="flex gap-1">
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                  <Edit2 className="h-3 w-3" />
-                </Button>
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                  <Trash2 className="h-3 w-3 text-red-500" />
-                </Button>
-              </div>
-            )}
+      <div className="space-y-6">
+        {hasJobLines && (
+          <div>
+            <h4 className="font-medium mb-3 flex items-center gap-2">
+              <Wrench className="h-4 w-4" />
+              Labor
+            </h4>
+            {renderJobLinesTable()}
           </div>
-        ))}
+        )}
+        
+        {hasParts && (
+          <div>
+            <h4 className="font-medium mb-3 flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Parts
+            </h4>
+            {renderPartsTable()}
+          </div>
+        )}
       </div>
     );
   };
 
+  // Render based on showType
   switch (showType) {
-    case 'overview':
-      return renderOverviewContent();
     case 'jobs':
-      return renderJobsContent();
+      return renderJobLinesTable();
     case 'parts':
-      return renderPartsContent();
+      return renderPartsTable();
     case 'time':
-      return renderTimeContent();
-    case 'documents':
-    case 'communications':
-      return (
-        <div className="text-center py-8 text-muted-foreground">
-          <p>No {showType} available</p>
-        </div>
-      );
+      return renderTimeEntriesTable();
+    case 'overview':
     default:
-      return null;
+      return renderOverviewTable();
   }
 }
