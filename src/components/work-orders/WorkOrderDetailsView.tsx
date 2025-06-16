@@ -90,18 +90,20 @@ export function WorkOrderDetailsView({ isEditMode = false }: WorkOrderDetailsVie
   }
 
   return (
-    <WorkOrderDetailsTabs
-      workOrder={workOrder}
-      jobLines={jobLines}
-      allParts={allParts}
-      timeEntries={timeEntries}
-      customer={customer}
-      onJobLinesChange={updateJobLines}
-      onTimeEntriesChange={updateTimeEntries}
-      isEditMode={editMode}
-      onStartEdit={handleStartEdit}
-      onCancelEdit={handleCancelEdit}
-      onSaveEdit={handleSaveEdit}
-    />
+    <div className="container mx-auto p-6">
+      <WorkOrderDetailsTabs
+        workOrder={workOrder}
+        jobLines={jobLines}
+        allParts={allParts}
+        timeEntries={timeEntries}
+        customer={customer}
+        onJobLinesChange={updateJobLines}
+        onTimeEntriesChange={updateTimeEntries}
+        isEditMode={editMode}
+        onStartEdit={handleStartEdit}
+        onCancelEdit={handleCancelEdit}
+        onSaveEdit={handleSaveEdit}
+      />
+    </div>
   );
 }
