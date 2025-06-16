@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { WorkOrder } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
@@ -48,9 +49,8 @@ export function WorkOrderDetailsTab({
   }, [workOrder.id]);
 
   return (
-    <div className="space-y-6">
-
-      {/* Always show status dropdown at top */}
+    <div className="space-y-4">
+      {/* Status Update - Compact */}
       <div className="flex items-center gap-4">
         <WorkOrderStatusUpdate workOrder={workOrder} />
         <Badge variant="outline" className="ml-2">
@@ -58,25 +58,25 @@ export function WorkOrderDetailsTab({
         </Badge>
       </div>
 
-      {/* Work Order Summary */}
+      {/* Work Order Summary - More Compact */}
       <Card>
-        <CardHeader>
-          <CardTitle>Work Order Summary</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Work Order Summary</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <CardContent className="pt-0">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
             <div>
-              <p className="text-sm text-muted-foreground">Status</p>
-              <Badge variant="outline" className="mt-1">
+              <p className="text-muted-foreground">Status</p>
+              <Badge variant="outline" className="mt-1 text-xs">
                 {workOrder.status}
               </Badge>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Customer</p>
+              <p className="text-muted-foreground">Customer</p>
               <p className="font-medium">{workOrder.customer_name || 'Unknown'}</p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Created</p>
+              <p className="text-muted-foreground">Created</p>
               <p className="font-medium">
                 {new Date(workOrder.created_at).toLocaleDateString()}
               </p>
@@ -84,20 +84,20 @@ export function WorkOrderDetailsTab({
           </div>
 
           {(workOrder.vehicle_make || workOrder.vehicle_model || workOrder.vehicle_year) && (
-            <div className="mt-4 pt-4 border-t">
+            <div className="mt-3 pt-3 border-t">
               <p className="text-sm text-muted-foreground">Vehicle</p>
-              <p className="font-medium">
+              <p className="text-sm font-medium">
                 {[workOrder.vehicle_year, workOrder.vehicle_make, workOrder.vehicle_model]
                   .filter(Boolean)
                   .join(' ')}
               </p>
               {workOrder.vehicle_license_plate && (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   License: {workOrder.vehicle_license_plate}
                 </p>
               )}
               {workOrder.vehicle_vin && (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   VIN: {workOrder.vehicle_vin}
                 </p>
               )}
@@ -105,20 +105,20 @@ export function WorkOrderDetailsTab({
           )}
 
           {workOrder.description && (
-            <div className="mt-4 pt-4 border-t">
+            <div className="mt-3 pt-3 border-t">
               <p className="text-sm text-muted-foreground">Description</p>
-              <p className="font-medium">{workOrder.description}</p>
+              <p className="text-sm font-medium">{workOrder.description}</p>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Editable Job Lines Grid – allow job lines to be edited here */}
+      {/* Editable Job Lines Grid – Compact */}
       <Card>
-        <CardHeader>
-          <CardTitle>Labor & Services (Editable)</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Labor & Services (Editable)</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           <EditableJobLinesGrid
             workOrderId={workOrder.id}
             jobLines={jobLines}
@@ -127,13 +127,13 @@ export function WorkOrderDetailsTab({
         </CardContent>
       </Card>
 
-      {/* Parts Section */}
+      {/* Parts Section - Compact */}
       <WorkOrderPartsSection
         workOrderId={workOrder.id}
         isEditMode={isEditMode}
       />
 
-      {/* Customer Communications */}
+      {/* Customer Communications - Compact */}
       <WorkOrderCommunications workOrder={workOrder} />
     </div>
   );
