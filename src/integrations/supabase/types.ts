@@ -8878,6 +8878,53 @@ export type Database = {
           },
         ]
       }
+      work_order_job_line_history: {
+        Row: {
+          change_reason: string | null
+          changed_at: string
+          changed_by: string | null
+          changed_by_name: string
+          created_at: string
+          field_name: string
+          id: string
+          job_line_id: string
+          new_value: string | null
+          old_value: string | null
+        }
+        Insert: {
+          change_reason?: string | null
+          changed_at?: string
+          changed_by?: string | null
+          changed_by_name: string
+          created_at?: string
+          field_name: string
+          id?: string
+          job_line_id: string
+          new_value?: string | null
+          old_value?: string | null
+        }
+        Update: {
+          change_reason?: string | null
+          changed_at?: string
+          changed_by?: string | null
+          changed_by_name?: string
+          created_at?: string
+          field_name?: string
+          id?: string
+          job_line_id?: string
+          new_value?: string | null
+          old_value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_job_line_history_job_line_id_fkey"
+            columns: ["job_line_id"]
+            isOneToOne: false
+            referencedRelation: "work_order_job_lines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_order_job_lines: {
         Row: {
           category: string | null
@@ -8996,6 +9043,53 @@ export type Database = {
             columns: ["work_order_id"]
             isOneToOne: false
             referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_order_part_history: {
+        Row: {
+          change_reason: string | null
+          changed_at: string
+          changed_by: string | null
+          changed_by_name: string
+          created_at: string
+          field_name: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+          part_id: string
+        }
+        Insert: {
+          change_reason?: string | null
+          changed_at?: string
+          changed_by?: string | null
+          changed_by_name: string
+          created_at?: string
+          field_name: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          part_id: string
+        }
+        Update: {
+          change_reason?: string | null
+          changed_at?: string
+          changed_by?: string | null
+          changed_by_name?: string
+          created_at?: string
+          field_name?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          part_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_part_history_part_id_fkey"
+            columns: ["part_id"]
+            isOneToOne: false
+            referencedRelation: "work_order_parts"
             referencedColumns: ["id"]
           },
         ]
