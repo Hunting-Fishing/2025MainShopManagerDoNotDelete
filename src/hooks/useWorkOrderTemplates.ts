@@ -30,7 +30,9 @@ export const useWorkOrderTemplates = () => {
         technician: template.technician || "",
         notes: template.notes || "",
         usage_count: template.usage_count || 0,
-        last_used: template.last_used || ""
+        last_used: template.last_used || "",
+        created_at: template.created_at || new Date().toISOString(), // Added missing property
+        updated_at: template.updated_at || new Date().toISOString() // Added missing property
       }));
 
       setTemplates(formattedTemplates);
@@ -75,8 +77,9 @@ export const useWorkOrderTemplates = () => {
     }
   }, []);
   
-  const handleSaveTemplate = useCallback(async (newTemplate: Omit<WorkOrderTemplate, "id" | "usage_count">) => {
+  const handleSaveTemplate = useCallback(async (newTemplate: Omit<WorkOrderTemplate, "id" | "usage_count" | "created_at" | "updated_at">) => {
     try {
+      const now = new Date().toISOString();
       const { data, error } = await supabase
         .from('work_order_templates')
         .insert({
@@ -86,7 +89,9 @@ export const useWorkOrderTemplates = () => {
           priority: newTemplate.priority,
           technician: newTemplate.technician,
           notes: newTemplate.notes,
-          usage_count: 0
+          usage_count: 0,
+          created_at: now,
+          updated_at: now
         })
         .select()
         .single();
@@ -102,7 +107,9 @@ export const useWorkOrderTemplates = () => {
         technician: data.technician || "",
         notes: data.notes || "",
         usage_count: 0,
-        last_used: ""
+        last_used: "",
+        created_at: data.created_at || now, // Added missing property
+        updated_at: data.updated_at || now // Added missing property
       };
       
       setTemplates(prev => [...prev, savedTemplate]);
