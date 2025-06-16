@@ -35,10 +35,6 @@ export function JobLinesSection({
     onJobLinesChange(updatedJobLines);
   };
 
-  const handleJobLinesReorder = (reorderedJobLines: WorkOrderJobLine[]) => {
-    onJobLinesChange(reorderedJobLines);
-  };
-
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -58,7 +54,6 @@ export function JobLinesSection({
           allParts={[]}
           onJobLineUpdate={handleJobLineUpdate}
           onJobLineDelete={handleJobLineDelete}
-          onReorderJobLines={handleJobLinesReorder}
           isEditMode={isEditMode}
           showType="labor"
         />
