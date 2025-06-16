@@ -1,202 +1,193 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Edit2, Trash2, ArrowRight } from 'lucide-react';
+import { Edit, Trash2, ArrowRight } from 'lucide-react';
+import { jobLineStatusMap } from '@/types/jobLine';
+import { partStatusMap } from '@/types/workOrderPart';
+import { JobLineEditDialog } from './JobLineEditDialog';
 
 interface CompactJobLinesTableProps {
   jobLines: WorkOrderJobLine[];
   allParts?: WorkOrderPart[];
-  onUpdate?: (jobLine: WorkOrderJobLine) => void;
+  onUpdate?: (updatedJobLine: WorkOrderJobLine) => void;
   onDelete?: (jobLineId: string) => void;
-  onPartUpdate?: (part: WorkOrderPart) => void;
+  onPartUpdate?: (updatedPart: WorkOrderPart) => void;
   onPartDelete?: (partId: string) => void;
   isEditMode?: boolean;
 }
 
-export function CompactJobLinesTable({ 
-  jobLines, 
-  allParts = [], 
-  onUpdate, 
-  onDelete, 
-  onPartUpdate, 
-  onPartDelete, 
-  isEditMode = false 
+export function CompactJobLinesTable({
+  jobLines,
+  allParts = [],
+  onUpdate,
+  onDelete,
+  onPartUpdate,
+  onPartDelete,
+  isEditMode = false
 }: CompactJobLinesTableProps) {
-  // Group parts by job line ID
-  const partsByJobLine = allParts.reduce((acc, part) => {
-    const jobLineId = part.job_line_id;
-    if (jobLineId) {
-      if (!acc[jobLineId]) {
-        acc[jobLineId] = [];
-      }
-      acc[jobLineId].push(part);
-    }
-    return acc;
-  }, {} as Record<string, WorkOrderPart[]>);
+  const [editingJobLine, setEditingJobLine] = useState<WorkOrderJobLine | null>(null);
 
-  if (jobLines.length === 0 && allParts.length === 0) {
+  const handleEditJobLine = (jobLine: WorkOrderJobLine) => {
+    setEditingJobLine(jobLine);
+  };
+
+  const handleUpdateJobLine = async (updatedJobLine: WorkOrderJobLine) => {
+    if (onUpdate) {
+      onUpdate(updatedJobLine);
+    }
+    setEditingJobLine(null);
+  };
+
+  const handleDeleteJobLine = (jobLineId: string) => {
+    if (onDelete) {
+      onDelete(jobLineId);
+    }
+  };
+
+  const getJobLineParts = (jobLineId: string) => {
+    return allParts.filter(part => part.job_line_id === jobLineId);
+  };
+
+  if (jobLines.length === 0) {
     return (
-      <div className="text-center py-4 text-muted-foreground text-sm">
-        No job lines or parts added yet
+      <div className="text-center py-6 text-muted-foreground text-sm">
+        No job lines added yet
       </div>
     );
   }
 
   return (
-    <div className="border rounded-lg overflow-hidden">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="bg-gray-50 border-b">
-            <th className="text-left p-2 font-medium">TYPE</th>
-            <th className="text-left p-2 font-medium">DESCRIPTION</th>
-            <th className="text-left p-2 font-medium">PART #</th>
-            <th className="text-center p-2 font-medium">QTY</th>
-            <th className="text-right p-2 font-medium">PRICE</th>
-            <th className="text-right p-2 font-medium">RATE</th>
-            <th className="text-right p-2 font-medium">HOURS</th>
-            <th className="text-right p-2 font-medium">LINE TOTAL</th>
-            <th className="text-center p-2 font-medium">STATUS</th>
-            {isEditMode && <th className="text-center p-2 font-medium">ACTIONS</th>}
-          </tr>
-        </thead>
-        <tbody>
-          {jobLines.map((jobLine, jobIndex) => {
-            const jobLineParts = partsByJobLine[jobLine.id] || [];
-            
-            return (
-              <React.Fragment key={jobLine.id}>
-                {/* Job Line Row */}
-                <tr className={`border-b hover:bg-gray-50 ${jobIndex % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}>
-                  <td className="p-2">
-                    <span className="font-medium text-gray-700">Labor</span>
-                  </td>
-                  <td className="p-2">
-                    <div className="space-y-1">
-                      <div className="font-medium text-gray-900">{jobLine.name}</div>
-                      {jobLine.description && (
-                        <div className="text-xs text-gray-600 truncate max-w-xs">
-                          {jobLine.description}
-                        </div>
+    <>
+      <div className="space-y-2">
+        {jobLines.map((jobLine) => {
+          const jobLineParts = getJobLineParts(jobLine.id);
+          const totalAmount = (jobLine.estimated_hours || 0) * (jobLine.labor_rate || 0);
+
+          return (
+            <div key={jobLine.id} className="border rounded-lg bg-white">
+              {/* Job Line Row */}
+              <div className="p-3 border-b border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3">
+                      <h4 className="font-medium text-sm">{jobLine.name}</h4>
+                      {jobLine.status && (
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          jobLineStatusMap[jobLine.status]?.classes || 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {jobLineStatusMap[jobLine.status]?.label || jobLine.status}
+                        </span>
                       )}
                     </div>
-                  </td>
-                  <td className="p-2">-</td>
-                  <td className="p-2 text-center">-</td>
-                  <td className="p-2 text-center">-</td>
-                  <td className="p-2 text-right font-mono">
-                    ${jobLine.labor_rate?.toFixed(2) || '0.00'}
-                  </td>
-                  <td className="p-2 text-right">
-                    {jobLine.estimated_hours || 0}
-                  </td>
-                  <td className="p-2 text-right font-mono font-medium">
-                    ${jobLine.total_amount?.toFixed(2) || '0.00'}
-                  </td>
-                  <td className="p-2 text-center">
-                    <Badge 
-                      variant={jobLine.status === 'completed' ? 'default' : 'secondary'}
-                      className="text-xs"
-                    >
-                      {jobLine.status || 'pending'}
-                    </Badge>
-                  </td>
+                    
+                    {jobLine.description && (
+                      <p className="text-xs text-muted-foreground mt-1">{jobLine.description}</p>
+                    )}
+                    
+                    <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                      {jobLine.estimated_hours && (
+                        <span>{jobLine.estimated_hours}h</span>
+                      )}
+                      {jobLine.labor_rate && (
+                        <span>${jobLine.labor_rate}/hr</span>
+                      )}
+                      {totalAmount > 0 && (
+                        <span className="font-medium text-gray-900">${totalAmount.toFixed(2)}</span>
+                      )}
+                    </div>
+                  </div>
+                  
                   {isEditMode && (
-                    <td className="p-2 text-center">
-                      <div className="flex justify-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0"
-                          onClick={() => onUpdate?.(jobLine)}
-                        >
-                          <Edit2 className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
-                          onClick={() => onDelete?.(jobLine.id)}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </td>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditJobLine(jobLine)}
+                        className="h-7 w-7 p-0"
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteJobLine(jobLine.id)}
+                        className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
                   )}
-                </tr>
+                </div>
+              </div>
 
-                {/* Parts for this Job Line - Indented with arrows */}
-                {jobLineParts.map((part) => (
-                  <tr key={part.id} className={`border-b hover:bg-gray-50 ${jobIndex % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}>
-                    <td className="p-2">
-                      <div className="flex items-center">
-                        <ArrowRight className="h-3 w-3 text-gray-400 mr-2" />
-                        <span className="font-medium text-gray-700">Parts</span>
-                      </div>
-                    </td>
-                    <td className="p-2 pl-8">
-                      <div className="space-y-1">
-                        <div className="font-medium text-gray-900">{part.name}</div>
-                        {part.description && (
-                          <div className="text-xs text-gray-600 truncate max-w-xs">
-                            {part.description}
+              {/* Parts Rows */}
+              {jobLineParts.length > 0 && (
+                <div className="bg-gray-50">
+                  {jobLineParts.map((part) => (
+                    <div key={part.id} className="p-3 border-b border-gray-100 last:border-b-0">
+                      <div className="flex items-center gap-3">
+                        <ArrowRight className="h-3 w-3 text-gray-400 flex-shrink-0 ml-4" />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3">
+                            <span className="font-medium text-sm">{part.name}</span>
+                            {part.status && (
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                partStatusMap[part.status]?.classes || 'bg-gray-100 text-gray-800'
+                              }`}>
+                                {partStatusMap[part.status]?.label || part.status}
+                              </span>
+                            )}
+                          </div>
+                          
+                          <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                            <span>Part #: {part.part_number}</span>
+                            <span>Qty: {part.quantity}</span>
+                            <span>${part.unit_price}/ea</span>
+                            <span className="font-medium text-gray-900">
+                              ${part.total_price.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {isEditMode && (
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0"
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => onPartDelete?.(part.id)}
+                              className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
                           </div>
                         )}
                       </div>
-                    </td>
-                    <td className="p-2 font-mono text-xs">
-                      {part.part_number || '-'}
-                    </td>
-                    <td className="p-2 text-center">
-                      {part.quantity}
-                    </td>
-                    <td className="p-2 text-right font-mono">
-                      ${part.unit_price?.toFixed(2) || '0.00'}
-                    </td>
-                    <td className="p-2 text-center">-</td>
-                    <td className="p-2 text-center">-</td>
-                    <td className="p-2 text-right font-mono font-medium">
-                      ${part.total_price?.toFixed(2) || '0.00'}
-                    </td>
-                    <td className="p-2 text-center">
-                      <Badge 
-                        variant={part.status === 'installed' ? 'default' : 'secondary'}
-                        className="text-xs"
-                      >
-                        {part.status || 'pending'}
-                      </Badge>
-                    </td>
-                    {isEditMode && (
-                      <td className="p-2 text-center">
-                        <div className="flex justify-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                            onClick={() => onPartUpdate?.(part)}
-                          >
-                            <Edit2 className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
-                            onClick={() => onPartDelete?.(part.id)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </React.Fragment>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {editingJobLine && (
+        <JobLineEditDialog
+          jobLine={editingJobLine}
+          open={!!editingJobLine}
+          onOpenChange={(open) => !open && setEditingJobLine(null)}
+          onSave={handleUpdateJobLine}
+        />
+      )}
+    </>
   );
 }
