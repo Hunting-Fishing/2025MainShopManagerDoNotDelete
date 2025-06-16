@@ -1,112 +1,77 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { WorkOrderPart } from '@/types/workOrderPart';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Edit2, Trash2 } from 'lucide-react';
 
 interface CompactPartsTableProps {
   parts: WorkOrderPart[];
-  onUpdate?: (part: WorkOrderPart) => void;
-  onDelete?: (partId: string) => void;
-  isEditMode?: boolean;
+  onUpdate: (updatedPart: WorkOrderPart) => void;
+  onDelete: (partId: string) => void;
+  isEditMode: boolean;
 }
 
-export function CompactPartsTable({ 
-  parts, 
-  onUpdate, 
-  onDelete, 
-  isEditMode = false 
+export function CompactPartsTable({
+  parts,
+  onUpdate,
+  onDelete,
+  isEditMode
 }: CompactPartsTableProps) {
+  const handleEditClick = (part: WorkOrderPart) => {
+    console.log('Edit part clicked:', part.id, part.name);
+    // TODO: Implement part edit dialog
+  };
+
+  const handleDeleteClick = (partId: string) => {
+    if (confirm('Are you sure you want to delete this part?')) {
+      onDelete(partId);
+    }
+  };
+
   if (parts.length === 0) {
     return (
       <div className="text-center py-4 text-muted-foreground text-sm">
-        No parts added yet
+        No parts found
       </div>
     );
   }
 
   return (
-    <div className="border rounded-lg overflow-hidden">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="bg-gray-50 border-b">
-            <th className="text-left p-2 font-medium">TYPE</th>
-            <th className="text-left p-2 font-medium">DESCRIPTION</th>
-            <th className="text-left p-2 font-medium">PART #</th>
-            <th className="text-center p-2 font-medium">QTY</th>
-            <th className="text-right p-2 font-medium">PRICE</th>
-            <th className="text-right p-2 font-medium">RATE</th>
-            <th className="text-right p-2 font-medium">HOURS</th>
-            <th className="text-right p-2 font-medium">LINE TOTAL</th>
-            <th className="text-center p-2 font-medium">STATUS</th>
-            {isEditMode && <th className="text-center p-2 font-medium">ACTIONS</th>}
-          </tr>
-        </thead>
-        <tbody>
-          {parts.map((part, index) => (
-            <tr key={part.id} className={`border-b hover:bg-gray-50 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}>
-              <td className="p-2">
-                <span className="font-medium text-gray-700">Parts</span>
-              </td>
-              <td className="p-2">
-                <div className="space-y-1">
-                  <div className="font-medium text-gray-900">{part.name}</div>
-                  {part.description && (
-                    <div className="text-xs text-gray-600 truncate max-w-xs">
-                      {part.description}
-                    </div>
-                  )}
-                </div>
-              </td>
-              <td className="p-2 font-mono text-xs">
-                {part.part_number || '-'}
-              </td>
-              <td className="p-2 text-center">
-                {part.quantity}
-              </td>
-              <td className="p-2 text-right font-mono">
-                ${part.unit_price?.toFixed(2) || '0.00'}
-              </td>
-              <td className="p-2 text-center">-</td>
-              <td className="p-2 text-center">-</td>
-              <td className="p-2 text-right font-mono font-medium">
-                ${part.total_price?.toFixed(2) || '0.00'}
-              </td>
-              <td className="p-2 text-center">
-                <Badge 
-                  variant={part.status === 'installed' ? 'default' : 'secondary'}
-                  className="text-xs"
-                >
-                  {part.status || 'pending'}
-                </Badge>
-              </td>
-              {isEditMode && (
-                <td className="p-2 text-center">
-                  <div className="flex justify-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0"
-                      onClick={() => onUpdate?.(part)}
-                    >
-                      <Edit2 className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
-                      onClick={() => onDelete?.(part.id)}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </td>
-              )}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="space-y-2">
+      {parts.map((part) => (
+        <div key={part.id} className="flex items-center justify-between p-2 border rounded text-sm">
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <span className="font-medium">{part.name}</span>
+              <Badge variant="outline" className="text-xs">
+                Qty: {part.quantity}
+              </Badge>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              ${part.unit_price} × {part.quantity} = ${part.total_price}
+            </div>
+          </div>
+          {isEditMode && (
+            <div className="flex gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleEditClick(part)}
+              >
+                <Edit2 className="h-3 w-3" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleDeleteClick(part.id)}
+              >
+                <Trash2 className="h-3 w-3 text-red-500" />
+              </Button>
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
