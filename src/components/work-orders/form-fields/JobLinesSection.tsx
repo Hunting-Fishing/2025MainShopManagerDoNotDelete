@@ -8,16 +8,20 @@ import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
 
 interface JobLinesSectionProps {
   workOrderId: string;
+  description?: string; // Add the description prop that's being passed
   jobLines: WorkOrderJobLine[];
   onJobLinesChange: (jobLines: WorkOrderJobLine[]) => void;
   isEditMode: boolean;
+  shopId?: string; // Add shopId prop that's being passed
 }
 
 export function JobLinesSection({
   workOrderId,
+  description, // Accept the description prop
   jobLines,
   onJobLinesChange,
-  isEditMode
+  isEditMode,
+  shopId // Accept the shopId prop
 }: JobLinesSectionProps) {
   const [allParts, setAllParts] = React.useState<WorkOrderPart[]>([]);
 
