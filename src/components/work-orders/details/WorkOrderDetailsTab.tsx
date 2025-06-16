@@ -127,6 +127,8 @@ export function WorkOrderDetailsTab({
               allParts={allParts}
               onUpdate={isEditMode ? handleJobLineUpdate : undefined}
               onDelete={isEditMode ? handleJobLineDelete : undefined}
+              onPartUpdate={isEditMode ? handlePartUpdate : undefined}
+              onPartDelete={isEditMode ? handlePartDelete : undefined}
               isEditMode={isEditMode}
             />
           )}

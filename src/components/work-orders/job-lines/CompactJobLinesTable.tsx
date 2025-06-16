@@ -12,6 +12,8 @@ interface CompactJobLinesTableProps {
   isEditMode: boolean;
   onUpdate?: (updatedJobLine: WorkOrderJobLine) => void;
   onDelete?: (jobLineId: string) => void;
+  onPartUpdate?: (updatedPart: WorkOrderPart) => void;
+  onPartDelete?: (partId: string) => void;
 }
 
 export function CompactJobLinesTable({
@@ -19,11 +21,12 @@ export function CompactJobLinesTable({
   allParts,
   isEditMode,
   onUpdate,
-  onDelete
+  onDelete,
+  onPartUpdate,
+  onPartDelete
 }: CompactJobLinesTableProps) {
   const handleEditClick = (jobLine: WorkOrderJobLine) => {
     console.log('Edit job line clicked:', jobLine.id, jobLine.name);
-    // This should trigger the edit dialog in the parent component
     if (onUpdate) {
       onUpdate(jobLine);
     }
@@ -32,6 +35,19 @@ export function CompactJobLinesTable({
   const handleDeleteClick = (jobLineId: string) => {
     if (confirm('Are you sure you want to delete this job line?')) {
       onDelete?.(jobLineId);
+    }
+  };
+
+  const handlePartEditClick = (part: WorkOrderPart) => {
+    console.log('Edit part clicked:', part.id, part.name);
+    if (onPartUpdate) {
+      onPartUpdate(part);
+    }
+  };
+
+  const handlePartDeleteClick = (partId: string) => {
+    if (confirm('Are you sure you want to delete this part?')) {
+      onPartDelete?.(partId);
     }
   };
 
@@ -44,12 +60,12 @@ export function CompactJobLinesTable({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {jobLines.map((jobLine) => {
         const jobLineParts = allParts.filter(part => part.job_line_id === jobLine.id);
         
         return (
-          <div key={jobLine.id} className="border rounded p-3">
+          <div key={jobLine.id} className="border rounded-lg p-4">
             <div className="flex items-center justify-between mb-2">
               <h4 className="font-medium text-sm">{jobLine.name}</h4>
               <div className="flex items-center gap-2">
@@ -87,7 +103,7 @@ export function CompactJobLinesTable({
               </p>
             )}
             
-            <div className="grid grid-cols-3 gap-2 text-xs">
+            <div className="grid grid-cols-3 gap-2 text-xs mb-3">
               <div>
                 <span className="text-muted-foreground">Hours: </span>
                 {jobLine.estimated_hours || 0}
@@ -103,9 +119,48 @@ export function CompactJobLinesTable({
             </div>
 
             {jobLineParts.length > 0 && (
-              <div className="mt-2 pt-2 border-t">
-                <div className="text-xs text-muted-foreground">
-                  Parts: {jobLineParts.length} item(s)
+              <div className="mt-3 pt-3 border-t">
+                <div className="text-xs font-medium text-muted-foreground mb-2">
+                  Associated Parts:
+                </div>
+                <div className="space-y-2">
+                  {jobLineParts.map((part) => (
+                    <div key={part.id} className="flex items-center justify-between p-2 bg-muted/50 rounded text-xs">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{part.name}</span>
+                          <Badge variant="outline" className="text-xs">
+                            Qty: {part.quantity}
+                          </Badge>
+                        </div>
+                        <div className="text-muted-foreground">
+                          ${part.unit_price} × {part.quantity} = ${part.total_price}
+                        </div>
+                      </div>
+                      {isEditMode && (onPartUpdate || onPartDelete) && (
+                        <div className="flex gap-1">
+                          {onPartUpdate && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handlePartEditClick(part)}
+                            >
+                              <Edit2 className="h-3 w-3" />
+                            </Button>
+                          )}
+                          {onPartDelete && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handlePartDeleteClick(part.id)}
+                            >
+                              <Trash2 className="h-3 w-3 text-red-500" />
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
