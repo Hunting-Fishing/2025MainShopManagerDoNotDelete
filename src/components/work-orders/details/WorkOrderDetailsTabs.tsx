@@ -78,9 +78,7 @@ export function WorkOrderDetailsTabs({
         <TabsContent value="invoice" className="space-y-6">
           <WorkOrderInvoiceView 
             workOrder={workOrder}
-            customer={customer}
             jobLines={jobLines}
-            parts={allParts}
           />
         </TabsContent>
       </Tabs>

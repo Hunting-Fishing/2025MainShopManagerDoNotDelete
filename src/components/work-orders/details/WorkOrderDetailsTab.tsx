@@ -6,14 +6,18 @@ import { WorkOrderPart } from '@/types/workOrderPart';
 import { TimeEntry } from '@/types/workOrder';
 import { Customer } from '@/types/customer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { JobLinesSection } from '../form-fields/JobLinesSection';
+import { Button } from '@/components/ui/button';
+import { Edit, Save, X } from 'lucide-react';
+import { WorkOrderInformation } from './WorkOrderInformation';
+import { WorkOrderCustomerVehicleInfo } from './WorkOrderCustomerVehicleInfo';
+import { JobLinesGrid } from '../job-lines/JobLinesGrid';
 import { WorkOrderPartsSection } from '../parts/WorkOrderPartsSection';
-import { WorkOrderNotes } from '../details/WorkOrderNotes';
 import { TimeTrackingSection } from '../time-tracking/TimeTrackingSection';
-import { WorkOrderFormValues } from '@/types/workOrder';
+import { WorkOrderNotes } from './WorkOrderNotes';
+import { updateWorkOrder } from '@/services/workOrder';
+import { toast } from '@/hooks/use-toast';
 
-export interface WorkOrderDetailsTabProps {
+interface WorkOrderDetailsTabProps {
   workOrder: WorkOrder;
   jobLines: WorkOrderJobLine[];
   allParts: WorkOrderPart[];
@@ -42,139 +46,118 @@ export function WorkOrderDetailsTab({
   onCancelEdit,
   onSaveEdit
 }: WorkOrderDetailsTabProps) {
-  
-  const handleFormSubmit = async (values: Partial<WorkOrderFormValues>) => {
-    // Convert form values to WorkOrder format with proper type casting
-    const updatedWorkOrder: WorkOrder = {
-      ...workOrder,
-      status: values.status as WorkOrder['status'] || workOrder.status,
-      description: values.description || workOrder.description,
-      notes: values.notes || workOrder.notes,
-      // Handle other form fields as needed
-    };
-    
-    onWorkOrderUpdate(updatedWorkOrder);
+  const handleSaveWorkOrder = async (updates: Partial<WorkOrder>) => {
+    try {
+      const updatedWorkOrder = await updateWorkOrder(workOrder.id, {
+        ...workOrder,
+        ...updates,
+        status: updates.status as any // Cast to handle string vs enum type
+      });
+      onWorkOrderUpdate(updatedWorkOrder);
+      toast({
+        title: "Success",
+        description: "Work order updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating work order:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update work order",
+        variant: "destructive"
+      });
+    }
   };
 
-  const getStatusColor = (status: string) => {
-    const statusColors: Record<string, string> = {
-      'pending': 'bg-yellow-100 text-yellow-800',
-      'in-progress': 'bg-blue-100 text-blue-800', 
-      'completed': 'bg-green-100 text-green-800',
-      'cancelled': 'bg-red-100 text-red-800',
-      'on-hold': 'bg-gray-100 text-gray-800'
-    };
-    return statusColors[status] || 'bg-gray-100 text-gray-800';
+  const handleNotesUpdate = async (notes: string) => {
+    await handleSaveWorkOrder({ notes });
   };
 
   return (
     <div className="space-y-6">
-      {/* Work Order Overview */}
+      {/* Edit Mode Controls */}
+      <div className="flex justify-end space-x-2">
+        {!isEditMode ? (
+          <Button onClick={onStartEdit} variant="outline" size="sm">
+            <Edit className="h-4 w-4 mr-2" />
+            Edit
+          </Button>
+        ) : (
+          <>
+            <Button onClick={onCancelEdit} variant="outline" size="sm">
+              <X className="h-4 w-4 mr-2" />
+              Cancel
+            </Button>
+            <Button onClick={onSaveEdit} size="sm">
+              <Save className="h-4 w-4 mr-2" />
+              Save Changes
+            </Button>
+          </>
+        )}
+      </div>
+
+      {/* Work Order Information */}
+      <WorkOrderInformation 
+        workOrder={workOrder}
+        onUpdate={handleSaveWorkOrder}
+        isEditMode={isEditMode}
+      />
+
+      {/* Customer and Vehicle Information */}
+      <WorkOrderCustomerVehicleInfo 
+        workOrder={workOrder}
+        customer={customer}
+        onUpdate={handleSaveWorkOrder}
+        isEditMode={isEditMode}
+      />
+
+      {/* Job Lines */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Work Order Overview</span>
-            <Badge className={getStatusColor(workOrder.status)}>
-              {workOrder.status}
-            </Badge>
-          </CardTitle>
+          <CardTitle>Services & Labor</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <h4 className="font-medium text-sm text-muted-foreground">Created</h4>
-              <p className="text-sm">
-                {workOrder.created_at ? new Date(workOrder.created_at).toLocaleDateString() : 'N/A'}
-              </p>
-            </div>
-            
-            <div>
-              <h4 className="font-medium text-sm text-muted-foreground">Description</h4>
-              <p className="text-sm">{workOrder.description || 'No description'}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Customer Information */}
-      {customer && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Customer Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h4 className="font-medium text-sm text-muted-foreground">Name</h4>
-                <p className="text-sm">
-                  {customer.first_name} {customer.last_name}
-                </p>
-              </div>
-              
-              <div>
-                <h4 className="font-medium text-sm text-muted-foreground">Email</h4>
-                <p className="text-sm">{customer.email || 'N/A'}</p>
-              </div>
-              
-              <div>
-                <h4 className="font-medium text-sm text-muted-foreground">Phone</h4>
-                <p className="text-sm">{customer.phone || 'N/A'}</p>
-              </div>
-              
-              <div>
-                <h4 className="font-medium text-sm text-muted-foreground">Address</h4>
-                <p className="text-sm">{customer.address || 'N/A'}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Services & Parts Overview */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Services & Parts Overview</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Vehicle Information */}
-          {(workOrder.vehicle_make || workOrder.vehicle_model || workOrder.vehicle_year) && (
-            <div>
-              <h4 className="font-medium text-sm text-muted-foreground mb-2">Vehicle</h4>
-              <p className="text-sm">
-                {workOrder.vehicle_year} {workOrder.vehicle_make} {workOrder.vehicle_model}
-                {workOrder.vehicle_license_plate && ` - ${workOrder.vehicle_license_plate}`}
-              </p>
-            </div>
-          )}
-
-          {/* Job Lines Section */}
-          <JobLinesSection
+        <CardContent>
+          <JobLinesGrid
             workOrderId={workOrder.id}
-            description={workOrder.description}
             jobLines={jobLines}
             onJobLinesChange={onJobLinesChange}
             isEditMode={isEditMode}
-            shopId={workOrder.shop_id}
           />
+        </CardContent>
+      </Card>
 
-          {/* Parts Section */}
-          <WorkOrderPartsSection
+      {/* Parts */}
+      <WorkOrderPartsSection 
+        workOrderId={workOrder.id}
+        isEditMode={isEditMode}
+      />
+
+      {/* Time Tracking */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Time Tracking</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <TimeTrackingSection
             workOrderId={workOrder.id}
+            timeEntries={timeEntries}
             isEditMode={isEditMode}
           />
         </CardContent>
       </Card>
 
-      {/* Notes Section */}
-      <WorkOrderNotes workOrderId={workOrder.id} />
-
-      {/* Time Tracking Section */}
-      <TimeTrackingSection
-        workOrderId={workOrder.id}
-        timeEntries={timeEntries}
-        onUpdateTimeEntries={onTimeEntriesChange}
-        isEditMode={isEditMode}
-      />
+      {/* Notes */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Notes</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <WorkOrderNotes 
+            workOrderId={workOrder.id}
+            notes={workOrder.notes || ''}
+            onUpdateNotes={handleNotesUpdate}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }
