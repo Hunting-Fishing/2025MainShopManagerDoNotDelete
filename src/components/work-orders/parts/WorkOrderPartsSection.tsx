@@ -50,6 +50,10 @@ export function WorkOrderPartsSection({
     setParts(updatedParts);
   };
 
+  const handlePartsReorder = (reorderedParts: WorkOrderPart[]) => {
+    setParts(reorderedParts);
+  };
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -74,6 +78,7 @@ export function WorkOrderPartsSection({
             allParts={parts}
             onPartUpdate={handlePartUpdate}
             onPartDelete={handlePartDelete}
+            onReorderParts={handlePartsReorder}
             isEditMode={isEditMode}
             showType="parts"
           />
