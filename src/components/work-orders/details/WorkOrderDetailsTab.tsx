@@ -1,263 +1,207 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { WorkOrder } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
-import { TimeEntry } from '@/types/workOrder';
-import { Customer } from '@/types/customer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Clock, User, MapPin, FileText, Calendar, DollarSign } from 'lucide-react';
-import { WorkOrderNotes } from './WorkOrderNotes';
-import { TimeTrackingSection } from '../time-tracking/TimeTrackingSection';
-import { JobLinesSection } from '../form-fields/JobLinesSection';
-import { WorkOrderPartsSection } from '../parts/WorkOrderPartsSection';
+import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
+import { updateWorkOrderJobLine, deleteWorkOrderJobLine } from '@/services/workOrder/jobLinesService';
+import { updateWorkOrderPart, deleteWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
 import { UnifiedItemsTable } from '../shared/UnifiedItemsTable';
-import { updateWorkOrder } from '@/services/workOrder';
-import { WorkOrderStatus } from '@/utils/workOrders/constants';
 import { toast } from '@/hooks/use-toast';
 
-export interface WorkOrderDetailsTabProps {
+interface WorkOrderDetailsTabProps {
   workOrder: WorkOrder;
   jobLines: WorkOrderJobLine[];
   allParts: WorkOrderPart[];
-  timeEntries: TimeEntry[];
-  customer: Customer | null;
   onJobLinesChange: (jobLines: WorkOrderJobLine[]) => void;
-  onTimeEntriesChange: (timeEntries: TimeEntry[]) => void;
-  onWorkOrderUpdate: (workOrder: WorkOrder) => void;
   isEditMode: boolean;
-  onStartEdit: () => void;
-  onCancelEdit: () => void;
-  onSaveEdit: () => void;
 }
 
 export function WorkOrderDetailsTab({
   workOrder,
   jobLines,
-  allParts,
-  timeEntries,
-  customer,
+  allParts: initialParts,
   onJobLinesChange,
-  onTimeEntriesChange,
-  onWorkOrderUpdate,
   isEditMode,
-  onStartEdit,
-  onCancelEdit,
-  onSaveEdit
 }: WorkOrderDetailsTabProps) {
-  const handleStatusChange = async (newStatus: WorkOrderStatus) => {
-    try {
-      console.log('Updating work order status:', { workOrderId: workOrder.id, newStatus });
-      
-      // Cast the status to ensure type compatibility
-      const updatedWorkOrder = await updateWorkOrder(workOrder.id, { 
-        ...workOrder,
-        status: newStatus as string // Cast to string for database compatibility
-      });
-      
-      // Update local state with properly typed status
-      const typedWorkOrder = {
-        ...updatedWorkOrder,
-        status: newStatus
-      } as WorkOrder;
-      
-      onWorkOrderUpdate(typedWorkOrder);
-      
-      toast({
-        title: "Success",
-        description: "Work order status updated successfully",
-      });
-    } catch (error) {
-      console.error('Error updating work order status:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update work order status",
-        variant: "destructive"
-      });
-    }
-  };
+  const [allParts, setAllParts] = useState<WorkOrderPart[]>(initialParts);
+  const [partsLoading, setPartsLoading] = useState(false);
 
-  const handleNotesUpdate = async (notes: string) => {
-    try {
-      console.log('Updating work order notes:', { workOrderId: workOrder.id, notes });
-      
-      const updatedWorkOrder = await updateWorkOrder(workOrder.id, { 
-        ...workOrder,
-        notes 
-      });
-      
-      onWorkOrderUpdate(updatedWorkOrder);
-      
-      toast({
-        title: "Success",
-        description: "Work order notes updated successfully",
-      });
-    } catch (error) {
-      console.error('Error updating work order notes:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update work order notes",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const formatCurrency = (amount: number | undefined) => {
-    if (!amount) return '$0.00';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string | undefined) => {
-    if (!dateString) return 'Not set';
-    return new Date(dateString).toLocaleDateString();
-  };
-
-  const getStatusColor = (status: string) => {
-    const statusColors: Record<string, string> = {
-      'pending': 'bg-yellow-100 text-yellow-800',
-      'in-progress': 'bg-blue-100 text-blue-800',
-      'completed': 'bg-green-100 text-green-800',
-      'cancelled': 'bg-red-100 text-red-800',
-      'on-hold': 'bg-gray-100 text-gray-800'
+  useEffect(() => {
+    const fetchParts = async () => {
+      if (workOrder.id) {
+        try {
+          setPartsLoading(true);
+          const parts = await getWorkOrderParts(workOrder.id);
+          setAllParts(parts);
+        } catch (error) {
+          console.error('Error fetching work order parts:', error);
+          setAllParts([]);
+        } finally {
+          setPartsLoading(false);
+        }
+      }
     };
-    return statusColors[status] || 'bg-gray-100 text-gray-800';
+
+    fetchParts();
+  }, [workOrder.id]);
+
+  const handleJobLineUpdate = async (updatedJobLine: WorkOrderJobLine) => {
+    try {
+      console.log('Updating job line:', updatedJobLine);
+      
+      // Update in database
+      await updateWorkOrderJobLine(updatedJobLine.id, updatedJobLine);
+      
+      // Update local state
+      const updatedJobLines = jobLines.map(line => 
+        line.id === updatedJobLine.id ? updatedJobLine : line
+      );
+      onJobLinesChange(updatedJobLines);
+      
+      toast({
+        title: "Success",
+        description: "Job line updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating job line:', error);
+      toast({
+        title: "Error", 
+        description: "Failed to update job line",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleJobLineDelete = async (jobLineId: string) => {
+    try {
+      console.log('Deleting job line:', jobLineId);
+      
+      // Delete from database
+      await deleteWorkOrderJobLine(jobLineId);
+      
+      // Update local state
+      const updatedJobLines = jobLines.filter(line => line.id !== jobLineId);
+      onJobLinesChange(updatedJobLines);
+      
+      toast({
+        title: "Success",
+        description: "Job line deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting job line:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete job line", 
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handlePartUpdate = async (updatedPart: WorkOrderPart) => {
+    try {
+      console.log('Updating part:', updatedPart);
+      
+      // Update in database
+      await updateWorkOrderPart(updatedPart.id, updatedPart);
+      
+      // Update local state
+      const updatedParts = allParts.map(part => 
+        part.id === updatedPart.id ? updatedPart : part
+      );
+      setAllParts(updatedParts);
+      
+      toast({
+        title: "Success",
+        description: "Part updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating part:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update part",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handlePartDelete = async (partId: string) => {
+    try {
+      console.log('Deleting part:', partId);
+      
+      // Delete from database
+      await deleteWorkOrderPart(partId);
+      
+      // Update local state
+      const updatedParts = allParts.filter(part => part.id !== partId);
+      setAllParts(updatedParts);
+      
+      toast({
+        title: "Success", 
+        description: "Part deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting part:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete part",
+        variant: "destructive" 
+      });
+    }
   };
 
   return (
     <div className="space-y-6">
-      {/* Work Order Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Work Order Overview
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="flex items-center gap-2">
-              <Badge className={getStatusColor(workOrder.status)}>
-                {workOrder.status}
-              </Badge>
-            </div>
-            
-            {workOrder.created_at && (
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">Created: {formatDate(workOrder.created_at)}</span>
-              </div>
-            )}
-            
-            {workOrder.total_cost && (
-              <div className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">Total: {formatCurrency(workOrder.total_cost)}</span>
-              </div>
-            )}
-          </div>
-
-          {workOrder.description && (
-            <div className="mt-4">
-              <h4 className="font-medium mb-2">Description</h4>
-              <p className="text-sm text-muted-foreground">{workOrder.description}</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Customer Information */}
-      {customer && (
+      {/* Vehicle Details - Compact */}
+      {(workOrder.vehicle_license_plate || workOrder.vehicle_vin) && (
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Customer Information
-            </CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Vehicle Details</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h4 className="font-medium">{customer.first_name} {customer.last_name}</h4>
-                <p className="text-sm text-muted-foreground">{customer.email}</p>
-                <p className="text-sm text-muted-foreground">{customer.phone}</p>
-              </div>
-              <div className="flex items-start gap-2">
-                <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
-                <div className="text-sm text-muted-foreground">
-                  <p>{customer.address}</p>
-                  {customer.city && customer.state && (
-                    <p>{customer.city}, {customer.state} {customer.postal_code}</p>
-                  )}
+          <CardContent className="pt-0">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              {workOrder.vehicle_license_plate && (
+                <div>
+                  <span className="text-muted-foreground">License Plate: </span>
+                  <span className="font-medium">{workOrder.vehicle_license_plate}</span>
                 </div>
-              </div>
+              )}
+              {workOrder.vehicle_vin && (
+                <div>
+                  <span className="text-muted-foreground">VIN: </span>
+                  <span className="font-medium">{workOrder.vehicle_vin}</span>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Combined Items Overview */}
+      {/* Unified Labor & Parts Table */}
       <Card>
-        <CardHeader>
-          <CardTitle>Services & Parts Overview</CardTitle>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">Labor & Parts</CardTitle>
+          </div>
         </CardHeader>
-        <CardContent>
-          <UnifiedItemsTable
-            jobLines={jobLines}
-            allParts={allParts}
-            isEditMode={false}
-            showType="labor"
-          />
-        </CardContent>
-      </Card>
-
-      {/* Job Lines Section */}
-      <JobLinesSection
-        workOrderId={workOrder.id}
-        description={workOrder.description}
-        jobLines={jobLines}
-        onJobLinesChange={onJobLinesChange}
-        isEditMode={isEditMode}
-        shopId={workOrder.shop_id}
-      />
-
-      {/* Parts Section */}
-      <WorkOrderPartsSection
-        workOrderId={workOrder.id}
-        isEditMode={isEditMode}
-      />
-
-      {/* Time Tracking */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            Time Tracking
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <TimeTrackingSection
-            workOrderId={workOrder.id}
-            timeEntries={timeEntries}
-            isEditMode={isEditMode}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Notes Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Notes</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <WorkOrderNotes
-            workOrderId={workOrder.id}
-            notes={workOrder.notes || ''}
-            onUpdateNotes={handleNotesUpdate}
-          />
+        <CardContent className="pt-0">
+          {partsLoading ? (
+            <div className="text-center py-4 text-muted-foreground text-sm">
+              Loading job lines and parts...
+            </div>
+          ) : (
+            <UnifiedItemsTable
+              jobLines={jobLines}
+              allParts={allParts}
+              onJobLineUpdate={isEditMode ? handleJobLineUpdate : undefined}
+              onJobLineDelete={isEditMode ? handleJobLineDelete : undefined}
+              onPartUpdate={isEditMode ? handlePartUpdate : undefined}
+              onPartDelete={isEditMode ? handlePartDelete : undefined}
+              isEditMode={isEditMode}
+              showType="overview"
+            />
+          )}
         </CardContent>
       </Card>
     </div>
