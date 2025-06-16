@@ -1,209 +1,180 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { WorkOrder } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
+import { TimeEntry } from '@/types/workOrder';
+import { Customer } from '@/types/customer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
-import { updateWorkOrderJobLine, deleteWorkOrderJobLine } from '@/services/workOrder/jobLinesService';
-import { updateWorkOrderPart, deleteWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
-import { UnifiedItemsTable } from '../shared/UnifiedItemsTable';
-import { toast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
+import { JobLinesSection } from '../form-fields/JobLinesSection';
+import { WorkOrderPartsSection } from '../parts/WorkOrderPartsSection';
+import { WorkOrderNotes } from '../details/WorkOrderNotes';
+import { TimeTrackingSection } from '../time-tracking/TimeTrackingSection';
+import { WorkOrderFormValues } from '@/types/workOrder';
 
-interface WorkOrderDetailsTabProps {
+export interface WorkOrderDetailsTabProps {
   workOrder: WorkOrder;
   jobLines: WorkOrderJobLine[];
   allParts: WorkOrderPart[];
+  timeEntries: TimeEntry[];
+  customer: Customer | null;
   onJobLinesChange: (jobLines: WorkOrderJobLine[]) => void;
+  onTimeEntriesChange: (timeEntries: TimeEntry[]) => void;
+  onWorkOrderUpdate: (workOrder: WorkOrder) => void;
   isEditMode: boolean;
+  onStartEdit: () => void;
+  onCancelEdit: () => void;
+  onSaveEdit: () => void;
 }
 
 export function WorkOrderDetailsTab({
   workOrder,
   jobLines,
-  allParts: initialParts,
+  allParts,
+  timeEntries,
+  customer,
   onJobLinesChange,
+  onTimeEntriesChange,
+  onWorkOrderUpdate,
   isEditMode,
+  onStartEdit,
+  onCancelEdit,
+  onSaveEdit
 }: WorkOrderDetailsTabProps) {
-  const [allParts, setAllParts] = useState<WorkOrderPart[]>(initialParts);
-  const [partsLoading, setPartsLoading] = useState(false);
-
-  useEffect(() => {
-    const fetchParts = async () => {
-      if (workOrder.id) {
-        try {
-          setPartsLoading(true);
-          const parts = await getWorkOrderParts(workOrder.id);
-          setAllParts(parts);
-        } catch (error) {
-          console.error('Error fetching work order parts:', error);
-          setAllParts([]);
-        } finally {
-          setPartsLoading(false);
-        }
-      }
+  
+  const handleFormSubmit = async (values: Partial<WorkOrderFormValues>) => {
+    // Convert form values to WorkOrder format with proper type casting
+    const updatedWorkOrder: WorkOrder = {
+      ...workOrder,
+      status: values.status as WorkOrder['status'] || workOrder.status,
+      description: values.description || workOrder.description,
+      notes: values.notes || workOrder.notes,
+      // Handle other form fields as needed
     };
-
-    fetchParts();
-  }, [workOrder.id]);
-
-  const handleJobLineUpdate = async (updatedJobLine: WorkOrderJobLine) => {
-    try {
-      console.log('Updating job line:', updatedJobLine);
-      
-      // Update in database
-      await updateWorkOrderJobLine(updatedJobLine.id, updatedJobLine);
-      
-      // Update local state
-      const updatedJobLines = jobLines.map(line => 
-        line.id === updatedJobLine.id ? updatedJobLine : line
-      );
-      onJobLinesChange(updatedJobLines);
-      
-      toast({
-        title: "Success",
-        description: "Job line updated successfully",
-      });
-    } catch (error) {
-      console.error('Error updating job line:', error);
-      toast({
-        title: "Error", 
-        description: "Failed to update job line",
-        variant: "destructive"
-      });
-    }
+    
+    onWorkOrderUpdate(updatedWorkOrder);
   };
 
-  const handleJobLineDelete = async (jobLineId: string) => {
-    try {
-      console.log('Deleting job line:', jobLineId);
-      
-      // Delete from database
-      await deleteWorkOrderJobLine(jobLineId);
-      
-      // Update local state
-      const updatedJobLines = jobLines.filter(line => line.id !== jobLineId);
-      onJobLinesChange(updatedJobLines);
-      
-      toast({
-        title: "Success",
-        description: "Job line deleted successfully",
-      });
-    } catch (error) {
-      console.error('Error deleting job line:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete job line", 
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handlePartUpdate = async (updatedPart: WorkOrderPart) => {
-    try {
-      console.log('Updating part:', updatedPart);
-      
-      // Update in database
-      await updateWorkOrderPart(updatedPart.id, updatedPart);
-      
-      // Update local state
-      const updatedParts = allParts.map(part => 
-        part.id === updatedPart.id ? updatedPart : part
-      );
-      setAllParts(updatedParts);
-      
-      toast({
-        title: "Success",
-        description: "Part updated successfully",
-      });
-    } catch (error) {
-      console.error('Error updating part:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update part",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handlePartDelete = async (partId: string) => {
-    try {
-      console.log('Deleting part:', partId);
-      
-      // Delete from database
-      await deleteWorkOrderPart(partId);
-      
-      // Update local state
-      const updatedParts = allParts.filter(part => part.id !== partId);
-      setAllParts(updatedParts);
-      
-      toast({
-        title: "Success", 
-        description: "Part deleted successfully",
-      });
-    } catch (error) {
-      console.error('Error deleting part:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete part",
-        variant: "destructive" 
-      });
-    }
+  const getStatusColor = (status: string) => {
+    const statusColors: Record<string, string> = {
+      'pending': 'bg-yellow-100 text-yellow-800',
+      'in-progress': 'bg-blue-100 text-blue-800', 
+      'completed': 'bg-green-100 text-green-800',
+      'cancelled': 'bg-red-100 text-red-800',
+      'on-hold': 'bg-gray-100 text-gray-800'
+    };
+    return statusColors[status] || 'bg-gray-100 text-gray-800';
   };
 
   return (
     <div className="space-y-6">
-      {/* Vehicle Details - Compact */}
-      {(workOrder.vehicle_license_plate || workOrder.vehicle_vin) && (
+      {/* Work Order Overview */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Work Order Overview</span>
+            <Badge className={getStatusColor(workOrder.status)}>
+              {workOrder.status}
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h4 className="font-medium text-sm text-muted-foreground">Created</h4>
+              <p className="text-sm">
+                {workOrder.created_at ? new Date(workOrder.created_at).toLocaleDateString() : 'N/A'}
+              </p>
+            </div>
+            
+            <div>
+              <h4 className="font-medium text-sm text-muted-foreground">Description</h4>
+              <p className="text-sm">{workOrder.description || 'No description'}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Customer Information */}
+      {customer && (
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Vehicle Details</CardTitle>
+          <CardHeader>
+            <CardTitle>Customer Information</CardTitle>
           </CardHeader>
-          <CardContent className="pt-0">
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              {workOrder.vehicle_license_plate && (
-                <div>
-                  <span className="text-muted-foreground">License Plate: </span>
-                  <span className="font-medium">{workOrder.vehicle_license_plate}</span>
-                </div>
-              )}
-              {workOrder.vehicle_vin && (
-                <div>
-                  <span className="text-muted-foreground">VIN: </span>
-                  <span className="font-medium">{workOrder.vehicle_vin}</span>
-                </div>
-              )}
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <h4 className="font-medium text-sm text-muted-foreground">Name</h4>
+                <p className="text-sm">
+                  {customer.first_name} {customer.last_name}
+                </p>
+              </div>
+              
+              <div>
+                <h4 className="font-medium text-sm text-muted-foreground">Email</h4>
+                <p className="text-sm">{customer.email || 'N/A'}</p>
+              </div>
+              
+              <div>
+                <h4 className="font-medium text-sm text-muted-foreground">Phone</h4>
+                <p className="text-sm">{customer.phone || 'N/A'}</p>
+              </div>
+              
+              <div>
+                <h4 className="font-medium text-sm text-muted-foreground">Address</h4>
+                <p className="text-sm">{customer.address || 'N/A'}</p>
+              </div>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Unified Labor & Parts Table */}
+      {/* Services & Parts Overview */}
       <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Labor & Parts</CardTitle>
-          </div>
+        <CardHeader>
+          <CardTitle>Services & Parts Overview</CardTitle>
         </CardHeader>
-        <CardContent className="pt-0">
-          {partsLoading ? (
-            <div className="text-center py-4 text-muted-foreground text-sm">
-              Loading job lines and parts...
+        <CardContent className="space-y-6">
+          {/* Vehicle Information */}
+          {(workOrder.vehicle_make || workOrder.vehicle_model || workOrder.vehicle_year) && (
+            <div>
+              <h4 className="font-medium text-sm text-muted-foreground mb-2">Vehicle</h4>
+              <p className="text-sm">
+                {workOrder.vehicle_year} {workOrder.vehicle_make} {workOrder.vehicle_model}
+                {workOrder.vehicle_license_plate && ` - ${workOrder.vehicle_license_plate}`}
+              </p>
             </div>
-          ) : (
-            <UnifiedItemsTable
-              jobLines={jobLines}
-              allParts={allParts}
-              onJobLineUpdate={isEditMode ? handleJobLineUpdate : undefined}
-              onJobLineDelete={isEditMode ? handleJobLineDelete : undefined}
-              onPartUpdate={isEditMode ? handlePartUpdate : undefined}
-              onPartDelete={isEditMode ? handlePartDelete : undefined}
-              isEditMode={isEditMode}
-              showType="overview"
-            />
           )}
+
+          {/* Job Lines Section */}
+          <JobLinesSection
+            workOrderId={workOrder.id}
+            description={workOrder.description}
+            jobLines={jobLines}
+            onJobLinesChange={onJobLinesChange}
+            isEditMode={isEditMode}
+            shopId={workOrder.shop_id}
+          />
+
+          {/* Parts Section */}
+          <WorkOrderPartsSection
+            workOrderId={workOrder.id}
+            isEditMode={isEditMode}
+          />
         </CardContent>
       </Card>
+
+      {/* Notes Section */}
+      <WorkOrderNotes workOrderId={workOrder.id} />
+
+      {/* Time Tracking Section */}
+      <TimeTrackingSection
+        workOrderId={workOrder.id}
+        timeEntries={timeEntries}
+        onUpdateTimeEntries={onTimeEntriesChange}
+        isEditMode={isEditMode}
+      />
     </div>
   );
 }
