@@ -116,7 +116,7 @@ export function WorkOrderDetailsTab({
               onPartUpdate={isEditMode ? handlePartUpdate : undefined}
               onPartDelete={isEditMode ? handlePartDelete : undefined}
               isEditMode={isEditMode}
-              showType="overview"
+              showType="all"
             />
           )}
         </CardContent>
