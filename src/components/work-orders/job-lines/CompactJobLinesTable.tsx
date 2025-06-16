@@ -6,12 +6,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Edit2, Trash2 } from 'lucide-react';
 import { EditJobLineDialog } from './EditJobLineDialog';
+import { CompactPartsTable } from '../parts/CompactPartsTable';
 
 interface CompactJobLinesTableProps {
   jobLines: WorkOrderJobLine[];
-  allParts: WorkOrderPart[];
-  onUpdate: (jobLine: WorkOrderJobLine) => void;
-  onDelete: (jobLineId: string) => void;
+  allParts?: WorkOrderPart[];
+  onUpdate?: (jobLine: WorkOrderJobLine) => void;
+  onDelete?: (jobLineId: string) => void;
   onPartUpdate?: (part: WorkOrderPart) => void;
   onPartDelete?: (partId: string) => void;
   isEditMode?: boolean;
@@ -19,25 +20,34 @@ interface CompactJobLinesTableProps {
 
 export function CompactJobLinesTable({ 
   jobLines, 
-  allParts, 
+  allParts = [],
   onUpdate, 
   onDelete, 
-  onPartUpdate, 
-  onPartDelete, 
+  onPartUpdate,
+  onPartDelete,
   isEditMode = false 
 }: CompactJobLinesTableProps) {
   const [editingJobLine, setEditingJobLine] = useState<WorkOrderJobLine | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  const handleEditJobLine = (jobLine: WorkOrderJobLine) => {
+  const handleEdit = (jobLine: WorkOrderJobLine) => {
     setEditingJobLine(jobLine);
-    setIsEditDialogOpen(true);
   };
 
-  const handleJobLineSave = async (updatedJobLine: WorkOrderJobLine) => {
-    onUpdate(updatedJobLine);
+  const handleUpdate = (updatedJobLine: WorkOrderJobLine) => {
+    if (onUpdate) {
+      onUpdate(updatedJobLine);
+    }
     setEditingJobLine(null);
-    setIsEditDialogOpen(false);
+  };
+
+  const handleDelete = (jobLineId: string) => {
+    if (onDelete) {
+      onDelete(jobLineId);
+    }
+  };
+
+  const getJobLineParts = (jobLineId: string) => {
+    return allParts.filter(part => part.job_line_id === jobLineId);
   };
 
   if (jobLines.length === 0 && allParts.length === 0) {
@@ -47,12 +57,6 @@ export function CompactJobLinesTable({
       </div>
     );
   }
-
-  // Combine job lines and standalone parts for unified display
-  const allItems = [
-    ...jobLines.map(jobLine => ({ type: 'jobLine', item: jobLine })),
-    ...allParts.filter(part => !part.job_line_id).map(part => ({ type: 'part', item: part }))
-  ];
 
   return (
     <>
@@ -73,61 +77,42 @@ export function CompactJobLinesTable({
             </tr>
           </thead>
           <tbody>
-            {allItems.map((item, index) => {
-              const isJobLine = item.type === 'jobLine';
-              const jobLine = isJobLine ? item.item as WorkOrderJobLine : null;
-              const part = !isJobLine ? item.item as WorkOrderPart : null;
-              const relatedParts = isJobLine ? allParts.filter(p => p.job_line_id === jobLine?.id) : [];
-
+            {jobLines.map((jobLine, index) => {
+              const jobLineParts = getJobLineParts(jobLine.id);
               return (
-                <React.Fragment key={`${item.type}-${item.item.id}`}>
-                  {/* Main row - Job Line or Standalone Part */}
+                <React.Fragment key={jobLine.id}>
                   <tr className={`border-b hover:bg-gray-50 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}>
                     <td className="p-2">
-                      <span className="font-medium text-gray-700">
-                        {isJobLine ? 'Labor' : 'Parts'}
-                      </span>
+                      <span className="font-medium text-gray-700">Labor</span>
                     </td>
                     <td className="p-2">
                       <div className="space-y-1">
-                        <div className="font-medium text-gray-900">
-                          {isJobLine ? jobLine?.name : part?.name}
-                        </div>
-                        {(isJobLine ? jobLine?.description : part?.description) && (
+                        <div className="font-medium text-gray-900">{jobLine.name}</div>
+                        {jobLine.description && (
                           <div className="text-xs text-gray-600 truncate max-w-xs">
-                            {isJobLine ? jobLine?.description : part?.description}
+                            {jobLine.description}
                           </div>
                         )}
                       </div>
                     </td>
-                    <td className="p-2 font-mono text-xs">
-                      {isJobLine ? '-' : part?.part_number || '-'}
+                    <td className="p-2">-</td>
+                    <td className="p-2 text-center">-</td>
+                    <td className="p-2 text-center">-</td>
+                    <td className="p-2 text-right font-mono">
+                      ${jobLine.labor_rate?.toFixed(2) || '0.00'}
                     </td>
                     <td className="p-2 text-center">
-                      {isJobLine ? '-' : part?.quantity || 0}
-                    </td>
-                    <td className="p-2 text-right font-mono">
-                      {isJobLine ? '-' : `$${part?.unit_price?.toFixed(2) || '0.00'}`}
-                    </td>
-                    <td className="p-2 text-right font-mono">
-                      {isJobLine ? `$${jobLine?.labor_rate?.toFixed(2) || '0.00'}` : '-'}
-                    </td>
-                    <td className="p-2 text-center">
-                      {isJobLine ? jobLine?.estimated_hours || 0 : '-'}
+                      {jobLine.estimated_hours || 0}
                     </td>
                     <td className="p-2 text-right font-mono font-medium">
-                      ${isJobLine ? jobLine?.total_amount?.toFixed(2) || '0.00' : part?.total_price?.toFixed(2) || '0.00'}
+                      ${jobLine.total_amount?.toFixed(2) || '0.00'}
                     </td>
                     <td className="p-2 text-center">
                       <Badge 
-                        variant={
-                          (isJobLine ? jobLine?.status : part?.status) === 'completed' || 
-                          (isJobLine ? jobLine?.status : part?.status) === 'installed' 
-                            ? 'default' : 'secondary'
-                        }
+                        variant={jobLine.status === 'completed' ? 'default' : 'secondary'}
                         className="text-xs"
                       >
-                        {(isJobLine ? jobLine?.status : part?.status) || 'pending'}
+                        {jobLine.status || 'pending'}
                       </Badge>
                     </td>
                     {isEditMode && (
@@ -137,13 +122,7 @@ export function CompactJobLinesTable({
                             variant="ghost"
                             size="sm"
                             className="h-6 w-6 p-0"
-                            onClick={() => {
-                              if (isJobLine && jobLine) {
-                                handleEditJobLine(jobLine);
-                              } else if (part && onPartUpdate) {
-                                onPartUpdate(part);
-                              }
-                            }}
+                            onClick={() => handleEdit(jobLine)}
                           >
                             <Edit2 className="h-3 w-3" />
                           </Button>
@@ -151,13 +130,7 @@ export function CompactJobLinesTable({
                             variant="ghost"
                             size="sm"
                             className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
-                            onClick={() => {
-                              if (isJobLine && jobLine) {
-                                onDelete(jobLine.id);
-                              } else if (part && onPartDelete) {
-                                onPartDelete(part.id);
-                              }
-                            }}
+                            onClick={() => handleDelete(jobLine.id)}
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
@@ -165,36 +138,41 @@ export function CompactJobLinesTable({
                       </td>
                     )}
                   </tr>
-
-                  {/* Related parts for job lines */}
-                  {isJobLine && relatedParts.map((relatedPart, partIndex) => (
-                    <tr 
-                      key={`part-${relatedPart.id}`} 
-                      className="border-b bg-blue-50 hover:bg-blue-100"
-                    >
-                      <td className="p-2 pl-6">
-                        <span className="text-sm text-gray-600">→ Parts</span>
+                  {jobLineParts.map((part) => (
+                    <tr key={part.id} className={`border-b hover:bg-gray-50 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}>
+                      <td className="p-2">
+                        <span className="font-medium text-gray-700">Parts</span>
                       </td>
                       <td className="p-2">
-                        <div className="text-sm text-gray-900">{relatedPart.name}</div>
+                        <div className="space-y-1">
+                          <div className="font-medium text-gray-900">{part.name}</div>
+                          {part.description && (
+                            <div className="text-xs text-gray-600 truncate max-w-xs">
+                              {part.description}
+                            </div>
+                          )}
+                        </div>
                       </td>
                       <td className="p-2 font-mono text-xs">
-                        {relatedPart.part_number || '-'}
-                      </td>
-                      <td className="p-2 text-center text-sm">
-                        {relatedPart.quantity}
-                      </td>
-                      <td className="p-2 text-right font-mono text-sm">
-                        ${relatedPart.unit_price?.toFixed(2) || '0.00'}
-                      </td>
-                      <td className="p-2 text-center">-</td>
-                      <td className="p-2 text-center">-</td>
-                      <td className="p-2 text-right font-mono text-sm">
-                        ${relatedPart.total_price?.toFixed(2) || '0.00'}
+                        {part.part_number || '-'}
                       </td>
                       <td className="p-2 text-center">
-                        <Badge variant="secondary" className="text-xs">
-                          {relatedPart.status || 'pending'}
+                        {part.quantity}
+                      </td>
+                      <td className="p-2 text-right font-mono">
+                        ${part.unit_price?.toFixed(2) || '0.00'}
+                      </td>
+                      <td className="p-2 text-center">-</td>
+                      <td className="p-2 text-center">-</td>
+                      <td className="p-2 text-right font-mono font-medium">
+                        ${part.total_price?.toFixed(2) || '0.00'}
+                      </td>
+                      <td className="p-2 text-center">
+                        <Badge 
+                          variant={part.status === 'installed' ? 'default' : 'secondary'}
+                          className="text-xs"
+                        >
+                          {part.status || 'pending'}
                         </Badge>
                       </td>
                       {isEditMode && (
@@ -204,7 +182,7 @@ export function CompactJobLinesTable({
                               variant="ghost"
                               size="sm"
                               className="h-6 w-6 p-0"
-                              onClick={() => onPartUpdate?.(relatedPart)}
+                              onClick={() => onPartUpdate?.(part)}
                             >
                               <Edit2 className="h-3 w-3" />
                             </Button>
@@ -212,7 +190,7 @@ export function CompactJobLinesTable({
                               variant="ghost"
                               size="sm"
                               className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
-                              onClick={() => onPartDelete?.(relatedPart.id)}
+                              onClick={() => onPartDelete?.(part.id)}
                             >
                               <Trash2 className="h-3 w-3" />
                             </Button>
@@ -224,6 +202,68 @@ export function CompactJobLinesTable({
                 </React.Fragment>
               );
             })}
+            {/* Display standalone parts (not associated with job lines) */}
+            {allParts.filter(part => !part.job_line_id).map((part, index) => (
+              <tr key={part.id} className={`border-b hover:bg-gray-50 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}>
+                <td className="p-2">
+                  <span className="font-medium text-gray-700">Parts</span>
+                </td>
+                <td className="p-2">
+                  <div className="space-y-1">
+                    <div className="font-medium text-gray-900">{part.name}</div>
+                    {part.description && (
+                      <div className="text-xs text-gray-600 truncate max-w-xs">
+                        {part.description}
+                      </div>
+                    )}
+                  </div>
+                </td>
+                <td className="p-2 font-mono text-xs">
+                  {part.part_number || '-'}
+                </td>
+                <td className="p-2 text-center">
+                  {part.quantity}
+                </td>
+                <td className="p-2 text-right font-mono">
+                  ${part.unit_price?.toFixed(2) || '0.00'}
+                </td>
+                <td className="p-2 text-center">-</td>
+                <td className="p-2 text-center">-</td>
+                <td className="p-2 text-right font-mono font-medium">
+                  ${part.total_price?.toFixed(2) || '0.00'}
+                </td>
+                <td className="p-2 text-center">
+                  <Badge 
+                    variant={part.status === 'installed' ? 'default' : 'secondary'}
+                    className="text-xs"
+                  >
+                    {part.status || 'pending'}
+                  </Badge>
+                </td>
+                {isEditMode && (
+                  <td className="p-2 text-center">
+                    <div className="flex justify-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={() => onPartUpdate?.(part)}
+                      >
+                        <Edit2 className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                        onClick={() => onPartDelete?.(part.id)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </td>
+                )}
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
@@ -231,9 +271,9 @@ export function CompactJobLinesTable({
       {editingJobLine && (
         <EditJobLineDialog
           jobLine={editingJobLine}
-          open={isEditDialogOpen}
-          onOpenChange={setIsEditDialogOpen}
-          onUpdate={handleJobLineSave}
+          open={!!editingJobLine}
+          onOpenChange={(open) => !open && setEditingJobLine(null)}
+          onUpdate={handleUpdate}
         />
       )}
     </>

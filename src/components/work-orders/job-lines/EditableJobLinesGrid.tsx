@@ -71,6 +71,7 @@ export function EditableJobLinesGrid({
 
       <CompactJobLinesTable
         jobLines={localJobLines}
+        allParts={[]}
         onUpdate={handleUpdateJobLine}
         onDelete={handleDeleteJobLine}
         isEditMode={true}

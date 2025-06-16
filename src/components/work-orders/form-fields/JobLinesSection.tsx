@@ -47,6 +47,7 @@ export function JobLinesSection({
       <CardContent className="pt-0">
         <CompactJobLinesTable
           jobLines={jobLines}
+          allParts={[]}
           isEditMode={false}
         />
       </CardContent>
