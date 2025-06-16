@@ -1,40 +1,52 @@
 
-/**
- * Date formatting utilities for the application
- */
+import { format, parseISO, isValid } from 'date-fns';
 
-/**
- * Format date for display
- */
-export const formatDate = (dateString: string): string => {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return date.toLocaleDateString();
-};
+export function formatDate(dateString: string | Date): string {
+  try {
+    const date = typeof dateString === 'string' ? parseISO(dateString) : dateString;
+    if (!isValid(date)) {
+      return 'Invalid Date';
+    }
+    return format(date, 'MMM dd, yyyy');
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return 'Invalid Date';
+  }
+}
 
-/**
- * Format time for display
- */
-export const formatTime = (dateString: string): string => {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-};
+export function formatTime(dateString: string | Date): string {
+  try {
+    const date = typeof dateString === 'string' ? parseISO(dateString) : dateString;
+    if (!isValid(date)) {
+      return 'Invalid Time';
+    }
+    return format(date, 'h:mm a');
+  } catch (error) {
+    console.error('Error formatting time:', error);
+    return 'Invalid Time';
+  }
+}
 
-/**
- * Format duration in minutes to a human-readable string
- */
-export const formatTimeInHoursAndMinutes = (minutes: number): string => {
-  if (!minutes && minutes !== 0) return '';
+export function formatDateTime(dateString: string | Date): string {
+  try {
+    const date = typeof dateString === 'string' ? parseISO(dateString) : dateString;
+    if (!isValid(date)) {
+      return 'Invalid Date/Time';
+    }
+    return format(date, 'MMM dd, yyyy h:mm a');
+  } catch (error) {
+    console.error('Error formatting date/time:', error);
+    return 'Invalid Date/Time';
+  }
+}
+
+export function formatTimeInHoursAndMinutes(minutes: number): string {
+  if (typeof minutes !== 'number' || isNaN(minutes)) {
+    return '0h 0m';
+  }
   
   const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
+  const remainingMinutes = minutes % 60;
   
-  if (hours === 0) {
-    return `${mins} mins`;
-  } else if (mins === 0) {
-    return `${hours} ${hours === 1 ? 'hour' : 'hours'}`;
-  } else {
-    return `${hours} ${hours === 1 ? 'hour' : 'hours'} ${mins} mins`;
-  }
-};
+  return `${hours}h ${remainingMinutes}m`;
+}
