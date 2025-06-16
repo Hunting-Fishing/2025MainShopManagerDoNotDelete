@@ -32,10 +32,8 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
 }) => {
   console.warn('WorkOrderForm is deprecated. Use WorkOrderDetailsView instead.');
   
-  // FIX: Only pass the expected prop "isEditMode"
+  // FIX: Remove the invalid isEditMode prop
   return (
-    <WorkOrderDetailsView 
-      isEditMode={true}
-    />
+    <WorkOrderDetailsView />
   );
 };
