@@ -1,12 +1,11 @@
 
-import React, { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { WorkOrderDetailsTabs } from "./details/WorkOrderDetailsTabs";
-import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, Settings } from "lucide-react";
-import { useWorkOrderData } from "@/hooks/useWorkOrderData";
+import React, { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useWorkOrderData } from '@/hooks/useWorkOrderData';
+import { WorkOrderDetailsTabs } from './details/WorkOrderDetailsTabs';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface WorkOrderDetailsViewProps {
   isEditMode?: boolean;
@@ -29,55 +28,13 @@ export function WorkOrderDetailsView({ isEditMode = false }: WorkOrderDetailsVie
     updateTimeEntries
   } = useWorkOrderData(id || '');
 
-  const handleStartEdit = () => setEditMode(true);
-  const handleCancelEdit = () => setEditMode(false);
-  const handleSaveEdit = () => {
-    setEditMode(false);
-    // Add save logic here if needed
-  };
-
-  if (!id) {
-    return (
-      <div className="container mx-auto p-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="text-center">
-              <div className="text-red-500 text-lg font-medium mb-4">Error: Work Order ID is required</div>
-              <Button onClick={() => navigate(-1)} variant="outline">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Go Back
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="space-y-6">
-          {/* Header skeleton */}
-          <div className="flex items-center justify-between">
-            <Skeleton className="h-8 w-48" />
-            <Skeleton className="h-10 w-32" />
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-6 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <LoadingSpinner />
           </div>
-          
-          {/* Main content skeleton */}
-          <Card>
-            <CardContent className="p-6">
-              <div className="space-y-4">
-                <Skeleton className="h-12 w-full" />
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Skeleton className="h-24 w-full" />
-                  <Skeleton className="h-24 w-full" />
-                  <Skeleton className="h-24 w-full" />
-                </div>
-                <Skeleton className="h-64 w-full" />
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
     );
@@ -85,76 +42,75 @@ export function WorkOrderDetailsView({ isEditMode = false }: WorkOrderDetailsVie
 
   if (error) {
     return (
-      <div className="container mx-auto p-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="text-center">
-              <div className="text-red-500 text-lg font-medium mb-4">Error: {error}</div>
-              <Button onClick={() => navigate(-1)} variant="outline">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Go Back
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-6 py-8">
+          <div className="bg-white rounded-lg shadow-sm border p-8 text-center">
+            <h2 className="text-xl font-semibold text-red-600 mb-2">Error Loading Work Order</h2>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <Button onClick={() => navigate('/work-orders')} variant="outline">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Work Orders
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!workOrder) {
     return (
-      <div className="container mx-auto p-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="text-center">
-              <div className="text-gray-500 text-lg font-medium mb-4">Work Order not found</div>
-              <Button onClick={() => navigate(-1)} variant="outline">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Go Back
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-6 py-8">
+          <div className="bg-white rounded-lg shadow-sm border p-8 text-center">
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Work Order Not Found</h2>
+            <p className="text-gray-600 mb-4">The requested work order could not be found.</p>
+            <Button onClick={() => navigate('/work-orders')} variant="outline">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Work Orders
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
 
+  const handleStartEdit = () => setEditMode(true);
+  const handleCancelEdit = () => setEditMode(false);
+  const handleSaveEdit = () => {
+    setEditMode(false);
+    // Additional save logic can be added here
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto p-6 max-w-7xl">
-        {/* Page Header */}
-        <div className="flex items-center justify-between mb-6">
+      {/* Clean header without conflicting styles */}
+      <div className="bg-white border-b border-gray-200 shadow-sm">
+        <div className="container mx-auto px-6 py-4">
           <div className="flex items-center gap-4">
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               onClick={() => navigate('/work-orders')}
               className="flex items-center gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back to Work Orders
+              Work Orders
             </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Work Order #{workOrder.work_order_number || workOrder.id.slice(0, 8)}
+            
+            <div className="flex-1">
+              <h1 className="text-2xl font-semibold text-gray-900">
+                Work Order #{workOrder.id.slice(0, 8)}
               </h1>
-              <p className="text-gray-600">
-                {customer ? `${customer.first_name} ${customer.last_name}` : 'Customer details loading...'}
+              <p className="text-sm text-gray-600 mt-1">
+                {workOrder.description || 'No description provided'}
               </p>
             </div>
           </div>
-          
-          <div className="flex items-center gap-2">
-            {editMode && (
-              <div className="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full">
-                <Settings className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-medium text-blue-700">Edit Mode</span>
-              </div>
-            )}
-          </div>
         </div>
+      </div>
 
-        {/* Main Content */}
+      {/* Main content area with consistent spacing */}
+      <div className="container mx-auto px-6 py-6">
         <WorkOrderDetailsTabs
           workOrder={workOrder}
           jobLines={jobLines}
