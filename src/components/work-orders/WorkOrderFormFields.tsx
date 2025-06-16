@@ -65,6 +65,7 @@ export const WorkOrderFormFields: React.FC<WorkOrderFormFieldsProps> = ({
           description={description}
           jobLines={jobLines}
           onJobLinesChange={onJobLinesChange}
+          isEditMode={true}
           shopId={shopId}
         />
       )}
