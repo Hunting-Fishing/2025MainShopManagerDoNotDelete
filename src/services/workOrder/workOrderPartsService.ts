@@ -18,8 +18,8 @@ export const getJobLineParts = async (jobLineId: string): Promise<WorkOrderPart[
     // Map database fields to TypeScript interface
     return (data || []).map(part => ({
       ...part,
-      name: part.part_name || part.name || '',
-      unit_price: part.customer_price || part.unit_price || 0,
+      name: part.part_name || '',
+      unit_price: part.customer_price || 0,
       total_price: part.total_price || (part.customer_price || 0) * (part.quantity || 0)
     }));
   } catch (error) {
@@ -44,8 +44,8 @@ export const getWorkOrderParts = async (workOrderId: string): Promise<WorkOrderP
     // Map database fields to TypeScript interface
     return (data || []).map(part => ({
       ...part,
-      name: part.part_name || part.name || '',
-      unit_price: part.customer_price || part.unit_price || 0,
+      name: part.part_name || '',
+      unit_price: part.customer_price || 0,
       total_price: part.total_price || (part.customer_price || 0) * (part.quantity || 0)
     }));
   } catch (error) {
@@ -62,20 +62,17 @@ export const createWorkOrderPart = async (
   try {
     const { data, error } = await supabase
       .from('work_order_parts')
-      .insert([
-        {
-          work_order_id: workOrderId,
-          job_line_id: jobLineId,
-          part_number: values.part_number,
-          part_name: values.name || values.partName,
-          description: values.description,
-          quantity: values.quantity,
-          customer_price: values.unit_price,
-          total_price: values.unit_price * values.quantity,
-          status: values.status,
-          notes: values.notes,
-        },
-      ])
+      .insert({
+        work_order_id: workOrderId,
+        job_line_id: jobLineId,
+        part_number: values.part_number,
+        part_name: values.name || values.partName,
+        quantity: values.quantity,
+        customer_price: values.unit_price,
+        total_price: values.unit_price * values.quantity,
+        status: values.status,
+        notes: values.notes,
+      })
       .select()
       .single();
 
@@ -87,8 +84,8 @@ export const createWorkOrderPart = async (
     // Map database fields to TypeScript interface
     return {
       ...data,
-      name: data.part_name || data.name || '',
-      unit_price: data.customer_price || data.unit_price || 0,
+      name: data.part_name || '',
+      unit_price: data.customer_price || 0,
       total_price: data.total_price || (data.customer_price || 0) * (data.quantity || 0)
     } as WorkOrderPart;
   } catch (error) {
@@ -107,7 +104,6 @@ export const updateWorkOrderPart = async (
       .update({
         part_number: values.part_number,
         part_name: values.name || values.partName,
-        description: values.description,
         quantity: values.quantity,
         customer_price: values.unit_price,
         total_price: values.unit_price * values.quantity,
@@ -126,8 +122,8 @@ export const updateWorkOrderPart = async (
     // Map database fields to TypeScript interface
     return {
       ...data,
-      name: data.part_name || data.name || '',
-      unit_price: data.customer_price || data.unit_price || 0,
+      name: data.part_name || '',
+      unit_price: data.customer_price || 0,
       total_price: data.total_price || (data.customer_price || 0) * (data.quantity || 0)
     } as WorkOrderPart;
   } catch (error) {
