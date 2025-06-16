@@ -4,9 +4,11 @@ import { WorkOrder } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { WorkOrderPartsSection } from '../parts/WorkOrderPartsSection';
 import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
-import { EditableJobLinesGrid } from '../job-lines/EditableJobLinesGrid';
+import { CompactJobLinesTable } from '../job-lines/CompactJobLinesTable';
+import { CompactPartsTable } from '../parts/CompactPartsTable';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 
 interface WorkOrderDetailsTabProps {
   workOrder: WorkOrder;
@@ -45,26 +47,50 @@ export function WorkOrderDetailsTab({
     fetchParts();
   }, [workOrder.id]);
 
+  const handleJobLineUpdate = (updatedJobLine: WorkOrderJobLine) => {
+    const updatedJobLines = jobLines.map(line => 
+      line.id === updatedJobLine.id ? updatedJobLine : line
+    );
+    onJobLinesChange(updatedJobLines);
+  };
+
+  const handleJobLineDelete = (jobLineId: string) => {
+    const updatedJobLines = jobLines.filter(line => line.id !== jobLineId);
+    onJobLinesChange(updatedJobLines);
+  };
+
+  const handlePartUpdate = (updatedPart: WorkOrderPart) => {
+    const updatedParts = allParts.map(part => 
+      part.id === updatedPart.id ? updatedPart : part
+    );
+    setAllParts(updatedParts);
+  };
+
+  const handlePartDelete = (partId: string) => {
+    const updatedParts = allParts.filter(part => part.id !== partId);
+    setAllParts(updatedParts);
+  };
+
   return (
-    <div className="space-y-4">
-      {/* Vehicle and Additional Details */}
+    <div className="space-y-6">
+      {/* Vehicle Details - Compact */}
       {(workOrder.vehicle_license_plate || workOrder.vehicle_vin) && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Vehicle Details</CardTitle>
+            <CardTitle className="text-base">Vehicle Details</CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-2 gap-4 text-sm">
               {workOrder.vehicle_license_plate && (
                 <div>
-                  <p className="text-muted-foreground">License Plate</p>
-                  <p className="font-medium">{workOrder.vehicle_license_plate}</p>
+                  <span className="text-muted-foreground">License Plate: </span>
+                  <span className="font-medium">{workOrder.vehicle_license_plate}</span>
                 </div>
               )}
               {workOrder.vehicle_vin && (
                 <div>
-                  <p className="text-muted-foreground">VIN</p>
-                  <p className="font-medium">{workOrder.vehicle_vin}</p>
+                  <span className="text-muted-foreground">VIN: </span>
+                  <span className="font-medium">{workOrder.vehicle_vin}</span>
                 </div>
               )}
             </div>
@@ -72,25 +98,57 @@ export function WorkOrderDetailsTab({
         </Card>
       )}
 
-      {/* Editable Job Lines Grid */}
+      {/* Compact Job Lines & Parts Combined */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Labor & Services (Editable)</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">Labor & Services</CardTitle>
+            {isEditMode && (
+              <Button variant="outline" size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Job Line
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="pt-0">
-          <EditableJobLinesGrid
-            workOrderId={workOrder.id}
+          <CompactJobLinesTable
             jobLines={jobLines}
-            onJobLinesChange={onJobLinesChange}
+            onUpdate={handleJobLineUpdate}
+            onDelete={handleJobLineDelete}
+            isEditMode={isEditMode}
           />
         </CardContent>
       </Card>
 
-      {/* Parts Section */}
-      <WorkOrderPartsSection
-        workOrderId={workOrder.id}
-        isEditMode={isEditMode}
-      />
+      {/* Compact Parts */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">Parts Inventory</CardTitle>
+            {isEditMode && (
+              <Button variant="outline" size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Part
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0">
+          {partsLoading ? (
+            <div className="text-center py-4 text-muted-foreground text-sm">
+              Loading parts...
+            </div>
+          ) : (
+            <CompactPartsTable
+              parts={allParts}
+              onUpdate={handlePartUpdate}
+              onDelete={handlePartDelete}
+              isEditMode={isEditMode}
+            />
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

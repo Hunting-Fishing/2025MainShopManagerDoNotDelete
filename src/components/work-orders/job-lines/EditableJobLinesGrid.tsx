@@ -1,8 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { AddJobLineDialog } from './AddJobLineDialog';
-import { JobLineCard } from './JobLineCard';
+import { CompactJobLinesTable } from './CompactJobLinesTable';
 import { generateTempJobLineId } from '@/services/jobLineParserEnhanced';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 
 interface EditableJobLinesGridProps {
   workOrderId: string;
@@ -16,6 +19,7 @@ export function EditableJobLinesGrid({
   onJobLinesChange
 }: EditableJobLinesGridProps) {
   const [localJobLines, setLocalJobLines] = useState<WorkOrderJobLine[]>(jobLines);
+  const [showAddDialog, setShowAddDialog] = useState(false);
 
   useEffect(() => {
     setLocalJobLines(jobLines);
@@ -25,8 +29,8 @@ export function EditableJobLinesGrid({
     const newJobLines: WorkOrderJobLine[] = newJobLinesData.map(jobLineData => ({
       ...jobLineData,
       id: generateTempJobLineId(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     }));
 
     const updatedJobLines = [...localJobLines, ...newJobLines];
@@ -38,7 +42,7 @@ export function EditableJobLinesGrid({
     const updatedJobLines = localJobLines.map(jobLine =>
       jobLine.id === updatedJobLine.id ? {
         ...updatedJobLine,
-        updatedAt: new Date().toISOString()
+        updated_at: new Date().toISOString()
       } : jobLine
     );
     setLocalJobLines(updatedJobLines);
@@ -51,41 +55,41 @@ export function EditableJobLinesGrid({
     onJobLinesChange(updatedJobLines);
   };
 
-  const handlePartsChange = (jobLineId: string, newParts: any[]) => {
-    const updatedJobLines = localJobLines.map(jobLine =>
-      jobLine.id === jobLineId ? { ...jobLine, parts: newParts } : jobLine
-    );
-    setLocalJobLines(updatedJobLines);
-    onJobLinesChange(updatedJobLines);
-  };
-
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Job Lines</h3>
+        <h3 className="text-base font-semibold">Job Lines</h3>
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => setShowAddDialog(true)}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add Job Line
+        </Button>
+      </div>
+
+      <CompactJobLinesTable
+        jobLines={localJobLines}
+        onUpdate={handleUpdateJobLine}
+        onDelete={handleDeleteJobLine}
+        isEditMode={true}
+      />
+
+      {localJobLines.length === 0 && (
+        <div className="text-center py-8 border border-dashed border-slate-200 rounded-lg">
+          <p className="text-slate-500 text-sm">No job lines added yet</p>
+          <p className="text-xs text-slate-400">Click "Add Job Line" to get started</p>
+        </div>
+      )}
+
+      {showAddDialog && (
         <AddJobLineDialog 
           workOrderId={workOrderId}
           onJobLineAdd={handleAddJobLines}
+          open={showAddDialog}
+          onOpenChange={setShowAddDialog}
         />
-      </div>
-
-      <div className="grid gap-4">
-        {localJobLines.map((jobLine) => (
-          <JobLineCard
-            key={jobLine.id}
-            jobLine={jobLine}
-            onUpdate={handleUpdateJobLine}
-            onDelete={handleDeleteJobLine}
-            isEditMode={true}
-          />
-        ))}
-      </div>
-
-      {localJobLines.length === 0 && (
-        <div className="text-center py-8 border-2 border-dashed border-slate-200 rounded-lg">
-          <p className="text-slate-500">No job lines added yet</p>
-          <p className="text-sm text-slate-400">Click "Add Job Line" to get started</p>
-        </div>
       )}
     </div>
   );
