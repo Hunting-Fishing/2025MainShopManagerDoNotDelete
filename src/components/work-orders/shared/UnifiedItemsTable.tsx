@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2, GripVertical } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ChevronDown, ChevronRight, Edit2, Trash2 } from 'lucide-react';
+import { formatTimeInHoursAndMinutes } from '@/utils/dateUtils';
 
 interface UnifiedItemsTableProps {
   jobLines: WorkOrderJobLine[];
@@ -16,8 +17,8 @@ interface UnifiedItemsTableProps {
   onPartDelete?: (partId: string) => void;
   onReorderJobLines?: (jobLines: WorkOrderJobLine[]) => void;
   onReorderParts?: (parts: WorkOrderPart[]) => void;
-  isEditMode: boolean;
-  showType: 'labor' | 'parts' | 'overview';
+  isEditMode?: boolean;
+  showType?: 'overview' | 'labor' | 'parts';
 }
 
 export function UnifiedItemsTable({
@@ -27,176 +28,209 @@ export function UnifiedItemsTable({
   onJobLineDelete,
   onPartUpdate,
   onPartDelete,
-  isEditMode,
-  showType
+  isEditMode = false,
+  showType = 'overview'
 }: UnifiedItemsTableProps) {
-  const formatCurrency = (amount: number | undefined | null) => {
-    if (amount === undefined || amount === null) return '$0.00';
-    return `$${amount.toFixed(2)}`;
+  const [expandedJobLines, setExpandedJobLines] = useState<Set<string>>(new Set());
+
+  const toggleJobLineExpansion = (jobLineId: string) => {
+    const newExpanded = new Set(expandedJobLines);
+    if (newExpanded.has(jobLineId)) {
+      newExpanded.delete(jobLineId);
+    } else {
+      newExpanded.add(jobLineId);
+    }
+    setExpandedJobLines(newExpanded);
   };
 
-  const getStatusBadge = (status: string | undefined) => {
-    if (!status) return <Badge variant="outline">Unknown</Badge>;
-    
-    const statusColors: Record<string, string> = {
-      'pending': 'bg-yellow-100 text-yellow-800',
-      'in-progress': 'bg-blue-100 text-blue-800',
-      'completed': 'bg-green-100 text-green-800',
-      'on-hold': 'bg-orange-100 text-orange-800',
-      'cancelled': 'bg-red-100 text-red-800',
-      'installed': 'bg-green-100 text-green-800',
-      'ordered': 'bg-blue-100 text-blue-800',
-      'received': 'bg-purple-100 text-purple-800'
-    };
-
-    const colorClass = statusColors[status.toLowerCase()] || 'bg-gray-100 text-gray-800';
-    
-    return (
-      <Badge variant="outline" className={colorClass}>
-        {status}
-      </Badge>
-    );
+  const getJobLineParts = (jobLineId: string) => {
+    return allParts.filter(part => part.job_line_id === jobLineId);
   };
 
-  // Show job lines for labor or overview
-  const shouldShowJobLines = showType === 'labor' || showType === 'overview';
-  // Show parts for parts or overview
-  const shouldShowParts = showType === 'parts' || showType === 'overview';
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'completed':
+        return 'default';
+      case 'pending':
+        return 'secondary';
+      case 'installed':
+        return 'default';
+      default:
+        return 'outline';
+    }
+  };
 
-  const hasContent = (shouldShowJobLines && jobLines.length > 0) || (shouldShowParts && allParts.length > 0);
-
-  if (!hasContent) {
+  if (jobLines.length === 0 && allParts.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
-        <p>No items found.</p>
+      <div className="text-center py-8 text-muted-foreground">
+        <p>No labor or parts have been added yet.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-gray-50">
-            {isEditMode && <TableHead className="w-12"></TableHead>}
-            <TableHead className="font-semibold">Item</TableHead>
-            <TableHead className="font-semibold">Description</TableHead>
-            <TableHead className="font-semibold text-center">Hours/Qty</TableHead>
-            <TableHead className="font-semibold text-center">Rate</TableHead>
-            <TableHead className="font-semibold text-center">Total</TableHead>
-            <TableHead className="font-semibold text-center">Status</TableHead>
-            {isEditMode && <TableHead className="font-semibold text-center">Actions</TableHead>}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {/* Render Job Lines */}
-          {shouldShowJobLines && jobLines.map((jobLine) => (
-            <TableRow key={jobLine.id} className="hover:bg-gray-50">
-              {isEditMode && (
-                <TableCell>
-                  <GripVertical className="h-4 w-4 text-gray-400 cursor-move" />
-                </TableCell>
-              )}
-              <TableCell className="font-medium">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                  {jobLine.name}
-                </div>
-              </TableCell>
-              <TableCell className="text-gray-600">
-                {jobLine.description || 'No description'}
-              </TableCell>
-              <TableCell className="text-center">
-                {jobLine.estimated_hours ? `${jobLine.estimated_hours}h` : '-'}
-              </TableCell>
-              <TableCell className="text-center">
-                {formatCurrency(jobLine.labor_rate)}
-              </TableCell>
-              <TableCell className="text-center font-medium">
-                {formatCurrency(jobLine.total_amount)}
-              </TableCell>
-              <TableCell className="text-center">
-                {getStatusBadge(jobLine.status)}
-              </TableCell>
-              {isEditMode && (
-                <TableCell className="text-center">
-                  <div className="flex items-center justify-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onJobLineUpdate?.(jobLine)}
-                    >
-                      <Edit className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onJobLineDelete?.(jobLine.id)}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </TableCell>
-              )}
-            </TableRow>
-          ))}
+    <div className="space-y-4">
+      {jobLines.map((jobLine) => {
+        const jobLineParts = getJobLineParts(jobLine.id);
+        const isExpanded = expandedJobLines.has(jobLine.id);
+        const hasPartsToShow = jobLineParts.length > 0;
 
-          {/* Render Parts */}
-          {shouldShowParts && allParts.map((part) => (
-            <TableRow key={part.id} className="hover:bg-gray-50">
-              {isEditMode && (
-                <TableCell>
-                  <GripVertical className="h-4 w-4 text-gray-400 cursor-move" />
-                </TableCell>
-              )}
-              <TableCell className="font-medium">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                  {part.name}
-                </div>
-                <div className="text-xs text-gray-500 mt-1">
-                  Part #: {part.part_number}
-                </div>
-              </TableCell>
-              <TableCell className="text-gray-600">
-                {part.description || 'No description'}
-              </TableCell>
-              <TableCell className="text-center">
-                {part.quantity}
-              </TableCell>
-              <TableCell className="text-center">
-                {formatCurrency(part.unit_price)}
-              </TableCell>
-              <TableCell className="text-center font-medium">
-                {formatCurrency(part.total_price)}
-              </TableCell>
-              <TableCell className="text-center">
-                {getStatusBadge(part.status)}
-              </TableCell>
-              {isEditMode && (
-                <TableCell className="text-center">
-                  <div className="flex items-center justify-center gap-1">
+        return (
+          <Card key={jobLine.id} className="border border-gray-200">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 flex-1">
+                  {hasPartsToShow && (
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => onPartUpdate?.(part)}
+                      onClick={() => toggleJobLineExpansion(jobLine.id)}
+                      className="h-6 w-6 p-0"
                     >
-                      <Edit className="h-3 w-3" />
+                      {isExpanded ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onPartDelete?.(part.id)}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
+                  )}
+                  
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <CardTitle className="text-base font-medium">
+                        {jobLine.name}
+                      </CardTitle>
+                      <Badge variant={getStatusBadgeVariant(jobLine.status || 'pending')}>
+                        {jobLine.status || 'pending'}
+                      </Badge>
+                    </div>
+                    {jobLine.description && (
+                      <p className="text-sm text-muted-foreground">
+                        {jobLine.description}
+                      </p>
+                    )}
                   </div>
-                </TableCell>
+                </div>
+
+                <div className="flex items-center gap-4 text-sm">
+                  <div className="text-center">
+                    <div className="text-muted-foreground text-xs">Hours</div>
+                    <div className="font-medium">
+                      {jobLine.estimated_hours ? `${jobLine.estimated_hours}h` : '0h'}
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-muted-foreground text-xs">Rate</div>
+                    <div className="font-medium">
+                      ${jobLine.labor_rate || 0}/hr
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-muted-foreground text-xs">Total</div>
+                    <div className="font-semibold">
+                      ${jobLine.total_amount || 0}
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-muted-foreground text-xs">Status</div>
+                    <Badge variant={getStatusBadgeVariant(jobLine.status || 'pending')} className="text-xs">
+                      {jobLine.status || 'pending'}
+                    </Badge>
+                  </div>
+                  
+                  {isEditMode && (
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onJobLineUpdate?.(jobLine)}
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onJobLineDelete?.(jobLine.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {!hasPartsToShow && (
+                <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+                  <div className="w-6"></div>
+                  <span>No parts associated with this job line</span>
+                </div>
               )}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+            </CardHeader>
+
+            {hasPartsToShow && isExpanded && (
+              <CardContent className="pt-0">
+                <div className="ml-9 border-t pt-3">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-sm font-medium text-muted-foreground">
+                      Associated Parts ({jobLineParts.length})
+                    </span>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    {jobLineParts.map((part) => (
+                      <div key={part.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-sm">
+                              {part.name}
+                            </span>
+                            <Badge variant={getStatusBadgeVariant(part.status || 'pending')} className="text-xs">
+                              {part.status || 'pending'}
+                            </Badge>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {part.part_number} • Qty: {part.quantity}
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-4 text-sm">
+                          <div className="text-center">
+                            <div className="text-muted-foreground text-xs">Unit Price</div>
+                            <div className="font-medium">${part.unit_price}</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-muted-foreground text-xs">Total</div>
+                            <div className="font-semibold">${part.total_price}</div>
+                          </div>
+                          
+                          {isEditMode && (
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => onPartUpdate?.(part)}
+                              >
+                                <Edit2 className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => onPartDelete?.(part.id)}
+                              >
+                                <Trash2 className="h-3 w-3 text-red-500" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            )}
+          </Card>
+        );
+      })}
     </div>
   );
 }
