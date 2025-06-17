@@ -6,27 +6,27 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { updateWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
 import { toast } from '@/hooks/use-toast';
-import { Edit } from 'lucide-react';
 
 interface EditPartDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  part: WorkOrderPart | null;
-  jobLines: WorkOrderJobLine[];
-  onPartUpdated: () => void;
+  part: WorkOrderPart;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onUpdate: (updatedPart: WorkOrderPart) => void;
+  jobLines?: WorkOrderJobLine[];
 }
 
 export function EditPartDialog({
-  isOpen,
-  onClose,
   part,
-  jobLines,
-  onPartUpdated
+  open,
+  onOpenChange,
+  onUpdate,
+  jobLines = []
 }: EditPartDialogProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<WorkOrderPartFormValues>({
     part_number: '',
     name: '',
@@ -34,10 +34,9 @@ export function EditPartDialog({
     quantity: 1,
     unit_price: 0,
     job_line_id: '',
-    status: 'pending',
-    notes: ''
+    notes: '',
+    status: 'pending'
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (part) {
@@ -48,25 +47,18 @@ export function EditPartDialog({
         quantity: part.quantity,
         unit_price: part.unit_price,
         job_line_id: part.job_line_id || '',
-        status: part.status || 'pending',
-        notes: part.notes || ''
+        notes: part.notes || '',
+        status: part.status || 'pending'
       });
     }
   }, [part]);
 
-  const handleInputChange = (field: keyof WorkOrderPartFormValues, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!part || !formData.part_number || !formData.name) {
+    if (!formData.part_number || !formData.name) {
       toast({
-        title: "Validation Error",
+        title: "Error",
         description: "Part number and name are required",
         variant: "destructive"
       });
@@ -75,34 +67,26 @@ export function EditPartDialog({
 
     setIsSubmitting(true);
     try {
-      const updatedPart: WorkOrderPart = {
+      const updatedPartData = {
         ...part,
-        part_number: formData.part_number,
-        name: formData.name,
-        description: formData.description || '',
-        quantity: formData.quantity,
-        unit_price: formData.unit_price,
-        total_price: formData.quantity * formData.unit_price,
-        job_line_id: formData.job_line_id || undefined,
-        status: formData.status || 'pending',
-        notes: formData.notes || '',
-        updated_at: new Date().toISOString()
+        ...formData,
+        total_price: formData.quantity * formData.unit_price
       };
 
-      await updateWorkOrderPart(part.id, updatedPart);
+      await updateWorkOrderPart(part.id, updatedPartData);
       
       toast({
-        title: "Part Updated",
-        description: `${formData.name} has been updated successfully`,
+        title: "Success",
+        description: "Part updated successfully",
       });
-
-      onPartUpdated();
-      onClose();
+      
+      onUpdate(updatedPartData);
+      onOpenChange(false);
     } catch (error) {
       console.error('Error updating part:', error);
       toast({
         title: "Error",
-        description: "Failed to update part. Please try again.",
+        description: "Failed to update part",
         variant: "destructive"
       });
     } finally {
@@ -110,54 +94,44 @@ export function EditPartDialog({
     }
   };
 
-  if (!part) return null;
-
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Edit className="h-5 w-5" />
-            Edit Part
-          </DialogTitle>
+          <DialogTitle>Edit Part</DialogTitle>
         </DialogHeader>
-
+        
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="part_number">Part Number *</Label>
-              <Input
-                id="part_number"
-                value={formData.part_number}
-                onChange={(e) => handleInputChange('part_number', e.target.value)}
-                placeholder="Enter part number"
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="name">Part Name *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                placeholder="Enter part name"
-                required
-              />
-            </div>
+          <div>
+            <Label htmlFor="part_number">Part Number *</Label>
+            <Input
+              id="part_number"
+              value={formData.part_number}
+              onChange={(e) => setFormData({ ...formData, part_number: e.target.value })}
+              required
+            />
           </div>
-
+          
+          <div>
+            <Label htmlFor="name">Part Name *</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required
+            />
+          </div>
+          
           <div>
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
               value={formData.description || ''}
-              onChange={(e) => handleInputChange('description', e.target.value)}
-              placeholder="Enter part description"
-              rows={2}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             />
           </div>
-
-          <div className="grid grid-cols-3 gap-4">
+          
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="quantity">Quantity</Label>
               <Input
@@ -165,9 +139,10 @@ export function EditPartDialog({
                 type="number"
                 min="1"
                 value={formData.quantity}
-                onChange={(e) => handleInputChange('quantity', parseInt(e.target.value) || 1)}
+                onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })}
               />
             </div>
+            
             <div>
               <Label htmlFor="unit_price">Unit Price</Label>
               <Input
@@ -176,58 +151,65 @@ export function EditPartDialog({
                 min="0"
                 step="0.01"
                 value={formData.unit_price}
-                onChange={(e) => handleInputChange('unit_price', parseFloat(e.target.value) || 0)}
+                onChange={(e) => setFormData({ ...formData, unit_price: parseFloat(e.target.value) || 0 })}
               />
             </div>
+          </div>
+          
+          {jobLines.length > 0 && (
             <div>
-              <Label htmlFor="status">Status</Label>
-              <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
+              <Label htmlFor="job_line_id">Assign to Job Line</Label>
+              <Select
+                value={formData.job_line_id || ''}
+                onValueChange={(value) => setFormData({ ...formData, job_line_id: value || undefined })}
+              >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Select job line..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="ordered">Ordered</SelectItem>
-                  <SelectItem value="received">Received</SelectItem>
-                  <SelectItem value="installed">Installed</SelectItem>
-                  <SelectItem value="returned">Returned</SelectItem>
-                  <SelectItem value="backordered">Backordered</SelectItem>
-                  <SelectItem value="defective">Defective</SelectItem>
+                  <SelectItem value="">No assignment</SelectItem>
+                  {jobLines.map((jobLine) => (
+                    <SelectItem key={jobLine.id} value={jobLine.id}>
+                      {jobLine.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
+          )}
+          
           <div>
-            <Label htmlFor="job_line_id">Assign to Job Line</Label>
-            <Select value={formData.job_line_id || ''} onValueChange={(value) => handleInputChange('job_line_id', value || undefined)}>
+            <Label htmlFor="status">Status</Label>
+            <Select
+              value={formData.status || 'pending'}
+              onValueChange={(value) => setFormData({ ...formData, status: value })}
+            >
               <SelectTrigger>
-                <SelectValue placeholder="Select job line or leave unassigned" />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Unassigned</SelectItem>
-                {jobLines.map((jobLine) => (
-                  <SelectItem key={jobLine.id} value={jobLine.id}>
-                    {jobLine.name}
-                  </SelectItem>
-                ))}
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="ordered">Ordered</SelectItem>
+                <SelectItem value="received">Received</SelectItem>
+                <SelectItem value="installed">Installed</SelectItem>
+                <SelectItem value="returned">Returned</SelectItem>
+                <SelectItem value="backordered">Backordered</SelectItem>
+                <SelectItem value="defective">Defective</SelectItem>
               </SelectContent>
             </Select>
           </div>
-
+          
           <div>
             <Label htmlFor="notes">Notes</Label>
             <Textarea
               id="notes"
               value={formData.notes || ''}
-              onChange={(e) => handleInputChange('notes', e.target.value)}
-              placeholder="Add any additional notes"
-              rows={2}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
             />
           </div>
-
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
+          
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
