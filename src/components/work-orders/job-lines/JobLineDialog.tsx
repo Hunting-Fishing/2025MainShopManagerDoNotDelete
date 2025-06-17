@@ -5,246 +5,164 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
-import { Loader2, Save, X } from 'lucide-react';
 
 interface JobLineDialogProps {
+  jobLine: WorkOrderJobLine | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  jobLine: WorkOrderJobLine;
-  onUpdate: (jobLine: WorkOrderJobLine) => void;
+  onSave: (jobLine: Partial<WorkOrderJobLine>) => Promise<void>;
 }
 
-export function JobLineDialog({ open, onOpenChange, jobLine, onUpdate }: JobLineDialogProps) {
-  const [formData, setFormData] = useState<Partial<WorkOrderJobLine>>({});
+export function JobLineDialog({
+  jobLine,
+  open,
+  onOpenChange,
+  onSave
+}: JobLineDialogProps) {
+  const [formData, setFormData] = useState<Partial<WorkOrderJobLine>>({
+    name: '',
+    description: '',
+    estimated_hours: 0,
+    labor_rate: 0,
+    total_amount: 0,
+    status: 'pending',
+    notes: ''
+  });
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (jobLine) {
       setFormData({
-        id: jobLine.id,
         name: jobLine.name || '',
         description: jobLine.description || '',
-        category: jobLine.category || '',
-        subcategory: jobLine.subcategory || '',
-        estimatedHours: jobLine.estimatedHours || 0,
-        laborRate: jobLine.laborRate || 0,
+        estimated_hours: jobLine.estimated_hours || 0,
+        labor_rate: jobLine.labor_rate || 0,
+        total_amount: jobLine.total_amount || 0,
         status: jobLine.status || 'pending',
         notes: jobLine.notes || ''
       });
     }
   }, [jobLine]);
 
+  const calculateTotal = () => {
+    const hours = formData.estimated_hours || 0;
+    const rate = formData.labor_rate || 0;
+    return hours * rate;
+  };
+
   const handleSave = async () => {
-    if (!formData.name?.trim()) {
-      toast({
-        title: "Error",
-        description: "Job line name is required",
-        variant: "destructive"
-      });
+    if (!jobLine?.work_order_id) {
+      console.error('No work order ID available');
       return;
     }
 
+    const calculatedTotal = calculateTotal();
+    const updatedData = {
+      ...formData,
+      total_amount: calculatedTotal
+    };
+
     setIsLoading(true);
     try {
-      // Calculate total amount based on hours and rate
-      const totalAmount = (formData.estimatedHours || 0) * (formData.laborRate || 0);
-
-      const { error } = await supabase.rpc('upsert_work_order_job_line', {
-        p_id: jobLine.id,
-        p_work_order_id: jobLine.workOrderId || '',
-        p_name: formData.name,
-        p_category: formData.category || null,
-        p_subcategory: formData.subcategory || null,
-        p_description: formData.description || null,
-        p_estimated_hours: formData.estimatedHours || 0,
-        p_labor_rate: formData.laborRate || 0,
-        p_total_amount: totalAmount,
-        p_status: formData.status || 'pending',
-        p_notes: formData.notes || null,
-        p_display_order: 0
-      });
-
-      if (error) throw error;
-
-      const updatedJobLine: WorkOrderJobLine = {
-        ...jobLine,
-        ...formData,
-        totalAmount,
-        updatedAt: new Date().toISOString()
-      } as WorkOrderJobLine;
-
-      onUpdate(updatedJobLine);
+      await onSave(updatedData);
       onOpenChange(false);
-
-      toast({
-        title: "Success",
-        description: "Job line updated successfully"
-      });
     } catch (error) {
-      console.error('Error updating job line:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update job line",
-        variant: "destructive"
-      });
+      console.error('Error saving job line:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleFieldChange = (field: keyof WorkOrderJobLine, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            Edit Job Line
-            <span className="text-sm text-muted-foreground">#{jobLine.id?.slice(-8)}</span>
+          <DialogTitle>
+            {jobLine ? 'Edit Job Line' : 'Add Job Line'}
           </DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
-              <Label htmlFor="name">Job Line Name *</Label>
-              <Input
-                id="name"
-                value={formData.name || ''}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Enter job line name"
-                className="mt-1"
-              />
-            </div>
-
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="name">Name</Label>
+            <Input
+              id="name"
+              value={formData.name || ''}
+              onChange={(e) => handleFieldChange('name', e.target.value)}
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description || ''}
+              onChange={(e) => handleFieldChange('description', e.target.value)}
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="category">Category</Label>
+              <Label htmlFor="hours">Hours</Label>
               <Input
-                id="category"
-                value={formData.category || ''}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                placeholder="e.g., Engine, Brakes"
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="subcategory">Subcategory</Label>
-              <Input
-                id="subcategory"
-                value={formData.subcategory || ''}
-                onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
-                placeholder="e.g., Oil Change, Brake Pads"
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="estimatedHours">Estimated Hours</Label>
-              <Input
-                id="estimatedHours"
+                id="hours"
                 type="number"
                 step="0.25"
-                min="0"
-                value={formData.estimatedHours || ''}
-                onChange={(e) => setFormData({ ...formData, estimatedHours: parseFloat(e.target.value) || 0 })}
-                placeholder="0.00"
-                className="mt-1"
+                value={formData.estimated_hours || 0}
+                onChange={(e) => handleFieldChange('estimated_hours', parseFloat(e.target.value) || 0)}
               />
             </div>
-
             <div>
-              <Label htmlFor="laborRate">Labor Rate ($/hour)</Label>
+              <Label htmlFor="rate">Rate ($)</Label>
               <Input
-                id="laborRate"
+                id="rate"
                 type="number"
                 step="0.01"
-                min="0"
-                value={formData.laborRate || ''}
-                onChange={(e) => setFormData({ ...formData, laborRate: parseFloat(e.target.value) || 0 })}
-                placeholder="0.00"
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="status">Status</Label>
-              <Select 
-                value={formData.status || 'pending'} 
-                onValueChange={(value) => setFormData({ ...formData, status: value as any })}
-              >
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="in-progress">In Progress</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="on-hold">On Hold</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="totalAmount">Total Amount</Label>
-              <Input
-                id="totalAmount"
-                type="number"
-                value={((formData.estimatedHours || 0) * (formData.laborRate || 0)).toFixed(2)}
-                disabled
-                className="mt-1 bg-muted"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Calculated: {formData.estimatedHours || 0}h × ${formData.laborRate || 0}/h
-              </p>
-            </div>
-
-            <div className="md:col-span-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description || ''}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Detailed description of the work to be performed"
-                rows={3}
-                className="mt-1"
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <Label htmlFor="notes">Internal Notes</Label>
-              <Textarea
-                id="notes"
-                value={formData.notes || ''}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Internal notes, technician instructions, etc."
-                rows={2}
-                className="mt-1"
+                value={formData.labor_rate || 0}
+                onChange={(e) => handleFieldChange('labor_rate', parseFloat(e.target.value) || 0)}
               />
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-4 border-t">
-            <Button 
-              variant="outline" 
+          <div>
+            <Label htmlFor="total">Total Amount ($)</Label>
+            <Input
+              id="total"
+              type="number"
+              step="0.01"
+              value={calculateTotal()}
+              readOnly
+              className="bg-muted"
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              value={formData.notes || ''}
+              onChange={(e) => handleFieldChange('notes', e.target.value)}
+            />
+          </div>
+          
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
               onClick={() => onOpenChange(false)}
               disabled={isLoading}
             >
-              <X className="h-4 w-4 mr-2" />
               Cancel
             </Button>
-            <Button 
-              onClick={handleSave}
-              disabled={isLoading || !formData.name?.trim()}
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4 mr-2" />
-              )}
-              Save Changes
+            <Button onClick={handleSave} disabled={isLoading}>
+              {isLoading ? 'Saving...' : 'Save'}
             </Button>
           </div>
         </div>
