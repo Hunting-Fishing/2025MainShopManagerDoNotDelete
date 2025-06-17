@@ -9,6 +9,8 @@ interface UnifiedItemsTableProps {
   onJobLineUpdate?: (jobLine: WorkOrderJobLine) => void;
   onJobLineDelete?: (jobLineId: string) => void;
   onReorderJobLines?: (jobLines: WorkOrderJobLine[]) => void;
+  onPartUpdate?: (part: WorkOrderPart) => void;
+  onPartDelete?: (partId: string) => void;
   isEditMode: boolean;
   showType: "all" | "joblines" | "parts" | "overview";
 }
@@ -19,6 +21,8 @@ export function UnifiedItemsTable({
   onJobLineUpdate,
   onJobLineDelete,
   onReorderJobLines,
+  onPartUpdate,
+  onPartDelete,
   isEditMode,
   showType
 }: UnifiedItemsTableProps) {
@@ -93,6 +97,26 @@ export function UnifiedItemsTable({
                       Qty: {part.quantity} | Price: ${part.unit_price} | Total: ${part.total_price}
                     </p>
                   </div>
+                  {isEditMode && (
+                    <div className="flex gap-2">
+                      {onPartUpdate && (
+                        <button
+                          onClick={() => onPartUpdate(part)}
+                          className="text-blue-600 hover:text-blue-800 text-sm"
+                        >
+                          Edit
+                        </button>
+                      )}
+                      {onPartDelete && (
+                        <button
+                          onClick={() => onPartDelete(part.id)}
+                          className="text-red-600 hover:text-red-800 text-sm"
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
