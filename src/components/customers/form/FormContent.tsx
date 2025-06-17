@@ -2,7 +2,7 @@
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { CustomerFormValues } from "./schemas/customerSchema";
+import { CustomerFormValues } from "./CustomerFormSchema";
 import { PersonalInfoFields } from "./PersonalInfoFields";
 import { BusinessInfoFields } from "./business/BusinessInfoFields";
 import { PaymentBillingFields } from "./payment/PaymentBillingFields";

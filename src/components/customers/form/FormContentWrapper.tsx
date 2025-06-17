@@ -3,7 +3,7 @@ import React from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Form } from "@/components/ui/form";
 import { Tabs } from "@/components/ui/tabs";
-import { CustomerFormValues } from "./schemas/customerSchema";
+import { CustomerFormValues } from "./CustomerFormSchema";
 import { DuplicateCustomerAlert } from "./DuplicateCustomerAlert";
 import { FormTabs } from "./FormTabs";
 import { FormContent } from "./FormContent";
