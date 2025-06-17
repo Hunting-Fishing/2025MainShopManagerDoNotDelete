@@ -1,82 +1,47 @@
 
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
 import { WorkOrder } from '@/types/workOrder';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, Edit, Clock, User, Calendar } from 'lucide-react';
-import { formatDate } from '@/utils/dateUtils';
-import { toast } from 'sonner';
+import { Eye } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface WorkOrderTableProps {
   workOrders: WorkOrder[];
 }
 
 export function WorkOrderTable({ workOrders }: WorkOrderTableProps) {
-  const navigate = useNavigate();
-
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'in-progress':
-        return 'bg-blue-100 text-blue-800';
+    switch (status?.toLowerCase()) {
       case 'completed':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-500 text-white';
+      case 'in-progress':
+        return 'bg-blue-500 text-white';
+      case 'pending':
+        return 'bg-yellow-500 text-black';
       case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      case 'on-hold':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-red-500 text-white';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-500 text-white';
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'low':
-        return 'bg-gray-100 text-gray-800';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'high':
-        return 'bg-orange-100 text-orange-800';
-      case 'urgent':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const handleViewWorkOrder = (workOrderId: string) => {
-    try {
-      console.log('Navigating to work order details:', workOrderId);
-      navigate(`/work-orders/${workOrderId}`);
-    } catch (error) {
-      console.error('Error navigating to work order details:', error);
-      toast.error('Failed to open work order details');
-    }
-  };
-
-  const handleEditWorkOrder = (workOrderId: string) => {
-    try {
-      console.log('Navigating to work order edit:', workOrderId);
-      navigate(`/work-orders/${workOrderId}/edit`);
-    } catch (error) {
-      console.error('Error navigating to work order edit:', error);
-      toast.error('Failed to open work order editor');
-    }
-  };
-
-  if (!workOrders || workOrders.length === 0) {
+  if (workOrders.length === 0) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>No Work Orders Found</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <p className="text-muted-foreground">No work orders are currently available.</p>
+        <CardContent className="py-12">
+          <div className="text-center">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No work orders found</h3>
+            <p className="text-gray-500 mb-6">
+              Get started by creating your first work order.
+            </p>
+            <Button asChild>
+              <Link to="/work-orders/create">
+                Create Work Order
+              </Link>
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -84,80 +49,52 @@ export function WorkOrderTable({ workOrders }: WorkOrderTableProps) {
   }
 
   return (
-    <div className="space-y-4">
-      {workOrders.map((workOrder) => (
-        <Card key={workOrder.id} className="hover:shadow-md transition-shadow">
-          <CardHeader className="pb-4">
-            <div className="flex justify-between items-start">
-              <div className="space-y-2">
-                <CardTitle className="text-lg">
-                  {workOrder.description || `Work Order ${workOrder.id.slice(0, 8)}`}
-                </CardTitle>
-                <div className="flex items-center gap-4 text-sm text-gray-600">
-                  {workOrder.customer_name && (
-                    <div className="flex items-center gap-1">
-                      <User className="h-4 w-4" />
-                      <span>{workOrder.customer_name}</span>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    <span>{formatDate(workOrder.created_at)}</span>
-                  </div>
-                  {workOrder.estimated_hours && (
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
-                      <span>{workOrder.estimated_hours}h estimated</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge className={getStatusColor(workOrder.status)}>
-                  {workOrder.status.replace('-', ' ')}
-                </Badge>
-                {workOrder.priority && (
-                  <Badge variant="outline" className={getPriorityColor(workOrder.priority)}>
-                    {workOrder.priority}
+    <Card>
+      <CardContent className="p-0">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Work Order #</TableHead>
+              <TableHead>Customer</TableHead>
+              <TableHead>Description</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {workOrders.map((workOrder) => (
+              <TableRow key={workOrder.id}>
+                <TableCell className="font-medium">
+                  {workOrder.work_order_number || workOrder.id.slice(0, 8)}
+                </TableCell>
+                <TableCell>
+                  {workOrder.customer_name || 'Unknown Customer'}
+                </TableCell>
+                <TableCell>
+                  {workOrder.description || 'No description'}
+                </TableCell>
+                <TableCell>
+                  <Badge className={getStatusColor(workOrder.status)}>
+                    {workOrder.status}
                   </Badge>
-                )}
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-between items-center">
-              <div className="text-sm text-gray-600">
-                {workOrder.service_type && (
-                  <span className="font-medium">Service: {workOrder.service_type}</span>
-                )}
-                {workOrder.total_cost && (
-                  <span className="ml-4">Cost: ${workOrder.total_cost}</span>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleViewWorkOrder(workOrder.id)}
-                  className="flex items-center gap-1"
-                >
-                  <Eye className="h-4 w-4" />
-                  View
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleEditWorkOrder(workOrder.id)}
-                  className="flex items-center gap-1"
-                >
-                  <Edit className="h-4 w-4" />
-                  Edit
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
+                </TableCell>
+                <TableCell>
+                  {workOrder.created_at ? new Date(workOrder.created_at).toLocaleDateString() : 'N/A'}
+                </TableCell>
+                <TableCell>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link to={`/work-orders/${workOrder.id}`}>
+                      <Eye className="h-4 w-4 mr-2" />
+                      View
+                    </Link>
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   );
 }

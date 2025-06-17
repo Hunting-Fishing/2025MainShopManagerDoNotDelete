@@ -1,40 +1,29 @@
 
-import { Link } from "react-router-dom";
-import { Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { WorkOrdersExportMenu } from "./WorkOrdersExportMenu";
-import { WorkOrder } from "@/types/workOrder";
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { WorkOrder } from '@/types/workOrder';
 
 interface WorkOrdersHeaderProps {
-  workOrders?: WorkOrder[];
+  workOrders: WorkOrder[];
 }
 
-export default function WorkOrdersHeader({ workOrders = [] }: WorkOrdersHeaderProps) {
-  const isMobile = useIsMobile();
-
+export default function WorkOrdersHeader({ workOrders }: WorkOrdersHeaderProps) {
   return (
-    <div className={`flex ${isMobile ? 'flex-col space-y-4' : 'flex-row justify-between items-center'}`}>
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Work Orders</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Work Orders</h1>
         <p className="text-muted-foreground">
-          Manage and track all work orders in your system.
+          Manage and track all work orders ({workOrders.length} total)
         </p>
       </div>
-      <div className={`flex ${isMobile ? 'flex-col space-y-2 w-full' : 'flex-row space-x-2'}`}>
-        {workOrders.length > 0 && (
-          <WorkOrdersExportMenu workOrders={workOrders} />
-        )}
-        <Button 
-          asChild 
-          className={`flex items-center gap-2 bg-esm-blue-600 hover:bg-esm-blue-700 ${isMobile ? 'w-full justify-center' : ''}`}
-        >
-          <Link to="/work-orders/create">
-            <Plus className="h-4 w-4" />
-            New Work Order
-          </Link>
-        </Button>
-      </div>
+      <Button asChild>
+        <Link to="/work-orders/create">
+          <Plus className="h-4 w-4 mr-2" />
+          Create Work Order
+        </Link>
+      </Button>
     </div>
   );
 }
