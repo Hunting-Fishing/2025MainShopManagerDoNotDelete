@@ -35,6 +35,19 @@ export interface Customer {
   vehicles?: CustomerVehicle[];
   role?: string;
   
+  // Business customer fields
+  business_type?: string;
+  business_industry?: string;
+  other_business_industry?: string;
+  tax_id?: string;
+  business_email?: string;
+  business_phone?: string;
+  
+  // Billing fields
+  auto_billing?: boolean;
+  credit_terms?: string;
+  terms_agreed?: boolean;
+  
   // Computed fields
   full_name?: string;
   
@@ -60,6 +73,14 @@ export interface CustomerVehicle {
   notes?: string;
   created_at?: string;
   updated_at?: string;
+  
+  // Additional vehicle fields
+  transmission?: string;
+  drive_type?: string;
+  fuel_type?: string;
+  engine?: string;
+  body_style?: string;
+  country?: string;
 }
 
 // Communication interface

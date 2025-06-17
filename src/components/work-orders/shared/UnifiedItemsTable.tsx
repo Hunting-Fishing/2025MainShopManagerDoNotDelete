@@ -13,6 +13,7 @@ interface UnifiedItemsTableProps {
   onPartUpdate?: (part: WorkOrderPart) => Promise<void>;
   onPartDelete?: (partId: string) => Promise<void>;
   onReorderParts?: (parts: WorkOrderPart[]) => void;
+  onReorderJobLines?: (jobLines: WorkOrderJobLine[]) => void;
   isEditMode?: boolean;
   showType: 'overview' | 'labor' | 'parts';
 }
@@ -24,6 +25,7 @@ export function UnifiedItemsTable({
   onJobLineDelete,
   onPartUpdate,
   onPartDelete,
+  onReorderJobLines,
   isEditMode = false,
   showType
 }: UnifiedItemsTableProps) {
