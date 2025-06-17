@@ -2,10 +2,9 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { EnhancedServiceSelector } from '@/components/work-orders/fields/services/EnhancedServiceSelector';
+import { ServicesSection } from '@/components/work-orders/fields/ServicesSection';
 import { SelectedService } from '@/types/selectedService';
 import { ServiceJob } from '@/types/service';
-import { useServiceSectors } from '@/hooks/useServiceCategories';
 
 interface ServiceBasedJobLineFormProps {
   workOrderId: string;
@@ -19,7 +18,6 @@ export function ServiceBasedJobLineForm({
   onCancel
 }: ServiceBasedJobLineFormProps) {
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
-  const { sectors, loading, error } = useServiceSectors();
 
   const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
     const newService: SelectedService = {
@@ -40,10 +38,6 @@ export function ServiceBasedJobLineForm({
     };
 
     setSelectedServices(prev => [...prev, newService]);
-  };
-
-  const handleRemoveService = (serviceId: string) => {
-    setSelectedServices(prev => prev.filter(service => service.id !== serviceId));
   };
 
   const handleUpdateServices = (services: SelectedService[]) => {
@@ -74,56 +68,41 @@ export function ServiceBasedJobLineForm({
     onSubmit(jobLines);
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="border-b pb-4">
-          <h3 className="text-lg font-semibold">Select Services</h3>
-          <p className="text-sm text-muted-foreground">
-            Choose from our service catalog to add job lines to this work order
-          </p>
-        </div>
-        <div className="text-center py-8">
-          <p className="text-gray-500">Loading services...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="space-y-6">
-        <div className="border-b pb-4">
-          <h3 className="text-lg font-semibold">Select Services</h3>
-          <p className="text-sm text-muted-foreground">
-            Choose from our service catalog to add job lines to this work order
-          </p>
-        </div>
-        <div className="text-center py-8">
-          <p className="text-red-500">{error}</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <div className="border-b pb-4">
         <h3 className="text-lg font-semibold">Select Services</h3>
         <p className="text-sm text-muted-foreground">
-          Search and choose from our service catalog to add job lines to this work order
+          Choose from our service catalog to add job lines to this work order
         </p>
       </div>
 
       <div className="max-h-96 overflow-y-auto">
-        <EnhancedServiceSelector
-          sectors={sectors}
+        <ServicesSection
           onServiceSelect={handleServiceSelect}
           selectedServices={selectedServices}
-          onRemoveService={handleRemoveService}
           onUpdateServices={handleUpdateServices}
         />
       </div>
+
+      {selectedServices.length > 0 && (
+        <div className="border-t pt-4">
+          <h4 className="font-medium mb-2">Selected Services ({selectedServices.length})</h4>
+          <div className="space-y-2 max-h-32 overflow-y-auto">
+            {selectedServices.map((service) => (
+              <div key={service.id} className="flex justify-between items-center text-sm p-2 bg-muted rounded">
+                <div>
+                  <span className="font-medium">{service.name}</span>
+                  <span className="text-muted-foreground ml-2">
+                    {service.category} › {service.subcategory}
+                  </span>
+                </div>
+                <span className="font-medium">${service.total_amount}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex justify-end gap-2 pt-4 border-t">
         <Button type="button" variant="outline" onClick={onCancel}>
