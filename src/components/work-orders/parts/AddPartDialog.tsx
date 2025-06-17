@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { InventoryItemExtended } from '@/types/inventory';
 import { WorkOrderPart } from '@/types/workOrderPart';
+import { useInventoryItems } from '@/hooks/inventory/useInventoryItems';
 import { createWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
 import { toast } from '@/hooks/use-toast';
 
@@ -16,8 +17,8 @@ interface AddPartDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   workOrderId: string;
-  jobLineId: string;
-  onPartAdded: (part: WorkOrderPart) => void;
+  jobLineId?: string;
+  onPartAdded: () => void;
 }
 
 export function AddPartDialog({
@@ -27,30 +28,21 @@ export function AddPartDialog({
   jobLineId,
   onPartAdded
 }: AddPartDialogProps) {
-  const [activeTab, setActiveTab] = useState<'inventory' | 'non-inventory'>('inventory');
+  const [selectedTab, setSelectedTab] = useState<'inventory' | 'non-inventory'>('inventory');
+  const [selectedInventoryItem, setSelectedInventoryItem] = useState<InventoryItemExtended | null>(null);
+  const [quantity, setQuantity] = useState(1);
+  const [notes, setNotes] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
-  // Form state for non-inventory parts
-  const [partForm, setPartForm] = useState({
-    name: '',
-    part_number: '',
-    description: '',
-    quantity: 1,
-    unit_price: 0,
-    status: 'pending'
-  });
 
-  // Mock inventory items - in real app, fetch from inventory
-  const [inventoryItems] = useState([
-    { id: '1', name: 'Air Filter', part_number: 'AF-123', price: 25.99, stock: 10 },
-    { id: '2', name: 'Oil Filter', part_number: 'OF-456', price: 12.50, stock: 15 },
-    { id: '3', name: 'Brake Pads', part_number: 'BP-789', price: 89.99, stock: 5 },
-  ]);
+  // Non-inventory part form data
+  const [partName, setPartName] = useState('');
+  const [partNumber, setPartNumber] = useState('');
+  const [unitPrice, setUnitPrice] = useState(0);
+  const [description, setDescription] = useState('');
 
-  const [selectedInventoryItem, setSelectedInventoryItem] = useState<string>('');
-  const [inventoryQuantity, setInventoryQuantity] = useState(1);
+  const { items: inventoryItems, isLoading: loadingInventory } = useInventoryItems();
 
-  const handleAddInventoryPart = async () => {
+  const handleInventoryPartAdd = async () => {
     if (!selectedInventoryItem) {
       toast({
         title: "Error",
@@ -60,39 +52,41 @@ export function AddPartDialog({
       return;
     }
 
-    const item = inventoryItems.find(i => i.id === selectedInventoryItem);
-    if (!item) return;
-
     setIsLoading(true);
     try {
-      const newPart: Partial<WorkOrderPart> = {
+      const partData: Omit<WorkOrderPart, 'id' | 'created_at' | 'updated_at'> = {
         work_order_id: workOrderId,
         job_line_id: jobLineId,
-        name: item.name,
-        part_number: item.part_number,
-        quantity: inventoryQuantity,
-        unit_price: item.price,
-        total_price: item.price * inventoryQuantity,
-        status: 'pending'
+        part_number: selectedInventoryItem.sku,
+        name: selectedInventoryItem.name,
+        description: selectedInventoryItem.description || '',
+        quantity,
+        unit_price: selectedInventoryItem.unit_price || selectedInventoryItem.price,
+        total_price: (selectedInventoryItem.unit_price || selectedInventoryItem.price) * quantity,
+        status: 'pending',
+        notes,
+        category: selectedInventoryItem.category,
+        supplierName: selectedInventoryItem.supplier,
+        customerPrice: selectedInventoryItem.unit_price || selectedInventoryItem.price,
+        isStockItem: true,
+        inventoryItemId: selectedInventoryItem.id
       };
 
-      const createdPart = await createWorkOrderPart(newPart);
-      onPartAdded(createdPart);
-      onOpenChange(false);
-      
-      // Reset form
-      setSelectedInventoryItem('');
-      setInventoryQuantity(1);
+      await createWorkOrderPart(partData);
       
       toast({
         title: "Success",
-        description: "Part added successfully",
+        description: "Inventory part added successfully",
       });
+      
+      onPartAdded();
+      onOpenChange(false);
+      resetForm();
     } catch (error) {
       console.error('Error adding inventory part:', error);
       toast({
         title: "Error",
-        description: "Failed to add part",
+        description: "Failed to add inventory part",
         variant: "destructive"
       });
     } finally {
@@ -100,11 +94,11 @@ export function AddPartDialog({
     }
   };
 
-  const handleAddNonInventoryPart = async () => {
-    if (!partForm.name || !partForm.part_number) {
+  const handleNonInventoryPartAdd = async () => {
+    if (!partName || !partNumber || unitPrice <= 0) {
       toast({
         title: "Error",
-        description: "Please fill in required fields",
+        description: "Please fill in all required fields",
         variant: "destructive"
       });
       return;
@@ -112,41 +106,35 @@ export function AddPartDialog({
 
     setIsLoading(true);
     try {
-      const newPart: Partial<WorkOrderPart> = {
+      const partData: Omit<WorkOrderPart, 'id' | 'created_at' | 'updated_at'> = {
         work_order_id: workOrderId,
         job_line_id: jobLineId,
-        name: partForm.name,
-        part_number: partForm.part_number,
-        description: partForm.description,
-        quantity: partForm.quantity,
-        unit_price: partForm.unit_price,
-        total_price: partForm.unit_price * partForm.quantity,
-        status: partForm.status
+        part_number: partNumber,
+        name: partName,
+        description,
+        quantity,
+        unit_price: unitPrice,
+        total_price: unitPrice * quantity,
+        status: 'pending',
+        notes,
+        isStockItem: false
       };
 
-      const createdPart = await createWorkOrderPart(newPart);
-      onPartAdded(createdPart);
-      onOpenChange(false);
-      
-      // Reset form
-      setPartForm({
-        name: '',
-        part_number: '',
-        description: '',
-        quantity: 1,
-        unit_price: 0,
-        status: 'pending'
-      });
+      await createWorkOrderPart(partData);
       
       toast({
         title: "Success",
-        description: "Part added successfully",
+        description: "Non-inventory part added successfully",
       });
+      
+      onPartAdded();
+      onOpenChange(false);
+      resetForm();
     } catch (error) {
       console.error('Error adding non-inventory part:', error);
       toast({
         title: "Error",
-        description: "Failed to add part",
+        description: "Failed to add non-inventory part",
         variant: "destructive"
       });
     } finally {
@@ -154,14 +142,25 @@ export function AddPartDialog({
     }
   };
 
+  const resetForm = () => {
+    setSelectedInventoryItem(null);
+    setQuantity(1);
+    setNotes('');
+    setPartName('');
+    setPartNumber('');
+    setUnitPrice(0);
+    setDescription('');
+    setSelectedTab('inventory');
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Add Part to Job Line</DialogTitle>
+          <DialogTitle>Add Part to Work Order</DialogTitle>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'inventory' | 'non-inventory')}>
+        <Tabs value={selectedTab} onValueChange={(value) => setSelectedTab(value as 'inventory' | 'non-inventory')}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="inventory">From Inventory</TabsTrigger>
             <TabsTrigger value="non-inventory">Non-Inventory Part</TabsTrigger>
@@ -171,153 +170,145 @@ export function AddPartDialog({
             <div className="space-y-4">
               <div>
                 <Label htmlFor="inventory-item">Select Inventory Item</Label>
-                <Select value={selectedInventoryItem} onValueChange={setSelectedInventoryItem}>
+                <Select
+                  value={selectedInventoryItem?.id || ''}
+                  onValueChange={(value) => {
+                    const item = inventoryItems.find(item => item.id === value);
+                    setSelectedInventoryItem(item || null);
+                  }}
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder="Choose an inventory item" />
+                    <SelectValue placeholder="Choose an inventory item..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {inventoryItems.map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        <div className="flex justify-between items-center w-full">
-                          <span>{item.name} ({item.part_number})</span>
-                          <span className="text-muted-foreground ml-2">
-                            ${item.price} - Stock: {item.stock}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
+                    {loadingInventory ? (
+                      <SelectItem value="loading" disabled>Loading inventory...</SelectItem>
+                    ) : (
+                      inventoryItems.map((item) => (
+                        <SelectItem key={item.id} value={item.id}>
+                          {item.name} ({item.sku}) - ${item.unit_price || item.price}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
 
               {selectedInventoryItem && (
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base">Selected Item Details</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {(() => {
-                      const item = inventoryItems.find(i => i.id === selectedInventoryItem);
-                      return item ? (
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div><strong>Name:</strong> {item.name}</div>
-                          <div><strong>Part Number:</strong> {item.part_number}</div>
-                          <div><strong>Price:</strong> ${item.price}</div>
-                          <div><strong>Available:</strong> {item.stock}</div>
-                        </div>
-                      ) : null;
-                    })()}
-                  </CardContent>
-                </Card>
+                <div className="p-3 bg-muted rounded-lg">
+                  <h4 className="font-medium">{selectedInventoryItem.name}</h4>
+                  <p className="text-sm text-muted-foreground">SKU: {selectedInventoryItem.sku}</p>
+                  <p className="text-sm text-muted-foreground">Price: ${selectedInventoryItem.unit_price || selectedInventoryItem.price}</p>
+                  {selectedInventoryItem.description && (
+                    <p className="text-sm text-muted-foreground">{selectedInventoryItem.description}</p>
+                  )}
+                </div>
               )}
 
               <div>
-                <Label htmlFor="inventory-quantity">Quantity</Label>
+                <Label htmlFor="quantity">Quantity</Label>
                 <Input
-                  id="inventory-quantity"
+                  id="quantity"
                   type="number"
                   min="1"
-                  value={inventoryQuantity}
-                  onChange={(e) => setInventoryQuantity(parseInt(e.target.value) || 1)}
+                  value={quantity}
+                  onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
                 />
               </div>
 
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => onOpenChange(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleAddInventoryPart} disabled={isLoading || !selectedInventoryItem}>
-                  {isLoading ? 'Adding...' : 'Add Part'}
-                </Button>
+              <div>
+                <Label htmlFor="notes">Notes (Optional)</Label>
+                <Textarea
+                  id="notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Additional notes about this part..."
+                />
               </div>
+
+              <Button 
+                onClick={handleInventoryPartAdd} 
+                disabled={!selectedInventoryItem || isLoading}
+                className="w-full"
+              >
+                {isLoading ? 'Adding...' : 'Add Inventory Part'}
+              </Button>
             </div>
           </TabsContent>
 
           <TabsContent value="non-inventory" className="space-y-4">
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="part-name">Part Name *</Label>
-                  <Input
-                    id="part-name"
-                    value={partForm.name}
-                    onChange={(e) => setPartForm({ ...partForm, name: e.target.value })}
-                    placeholder="Enter part name"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="part-number">Part Number *</Label>
-                  <Input
-                    id="part-number"
-                    value={partForm.part_number}
-                    onChange={(e) => setPartForm({ ...partForm, part_number: e.target.value })}
-                    placeholder="Enter part number"
-                  />
-                </div>
-              </div>
-
               <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={partForm.description}
-                  onChange={(e) => setPartForm({ ...partForm, description: e.target.value })}
-                  placeholder="Enter part description"
+                <Label htmlFor="part-name">Part Name *</Label>
+                <Input
+                  id="part-name"
+                  value={partName}
+                  onChange={(e) => setPartName(e.target.value)}
+                  placeholder="Enter part name..."
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="quantity">Quantity</Label>
-                  <Input
-                    id="quantity"
-                    type="number"
-                    min="1"
-                    value={partForm.quantity}
-                    onChange={(e) => setPartForm({ ...partForm, quantity: parseInt(e.target.value) || 1 })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="unit-price">Unit Price</Label>
-                  <Input
-                    id="unit-price"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={partForm.unit_price}
-                    onChange={(e) => setPartForm({ ...partForm, unit_price: parseFloat(e.target.value) || 0 })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="status">Status</Label>
-                  <Select value={partForm.status} onValueChange={(value) => setPartForm({ ...partForm, status: value })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="ordered">Ordered</SelectItem>
-                      <SelectItem value="received">Received</SelectItem>
-                      <SelectItem value="installed">Installed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div>
+                <Label htmlFor="part-number">Part Number *</Label>
+                <Input
+                  id="part-number"
+                  value={partNumber}
+                  onChange={(e) => setPartNumber(e.target.value)}
+                  placeholder="Enter part number..."
+                />
               </div>
 
-              <div className="p-3 bg-muted/50 rounded">
-                <div className="text-sm">
-                  <strong>Total: ${(partForm.unit_price * partForm.quantity).toFixed(2)}</strong>
-                </div>
+              <div>
+                <Label htmlFor="unit-price">Unit Price *</Label>
+                <Input
+                  id="unit-price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={unitPrice}
+                  onChange={(e) => setUnitPrice(parseFloat(e.target.value) || 0)}
+                  placeholder="0.00"
+                />
               </div>
 
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => onOpenChange(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleAddNonInventoryPart} disabled={isLoading || !partForm.name || !partForm.part_number}>
-                  {isLoading ? 'Adding...' : 'Add Part'}
-                </Button>
+              <div>
+                <Label htmlFor="non-inv-quantity">Quantity</Label>
+                <Input
+                  id="non-inv-quantity"
+                  type="number"
+                  min="1"
+                  value={quantity}
+                  onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                />
               </div>
+
+              <div>
+                <Label htmlFor="description">Description (Optional)</Label>
+                <Textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Part description..."
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="non-inv-notes">Notes (Optional)</Label>
+                <Textarea
+                  id="non-inv-notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Additional notes about this part..."
+                />
+              </div>
+
+              <Button 
+                onClick={handleNonInventoryPartAdd} 
+                disabled={!partName || !partNumber || unitPrice <= 0 || isLoading}
+                className="w-full"
+              >
+                {isLoading ? 'Adding...' : 'Add Non-Inventory Part'}
+              </Button>
             </div>
           </TabsContent>
         </Tabs>
