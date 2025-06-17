@@ -1,177 +1,108 @@
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
-import {
-  Table,
-  TableBody,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { JobLineRow } from '../job-lines/JobLineRow';
-import { EnhancedPartRow } from '../parts/EnhancedPartRow';
-import { WorkOrderTotals } from './WorkOrderTotals';
 
 interface UnifiedItemsTableProps {
   jobLines: WorkOrderJobLine[];
   allParts: WorkOrderPart[];
-  onJobLineUpdate?: (updatedJobLine: WorkOrderJobLine) => void;
+  onJobLineUpdate?: (jobLine: WorkOrderJobLine) => void;
   onJobLineDelete?: (jobLineId: string) => void;
-  onPartUpdate?: (updatedPart: WorkOrderPart) => void;
-  onPartDelete?: (partId: string) => void;
-  onReorderJobLines?: (reorderedJobLines: WorkOrderJobLine[]) => void;
-  onReorderParts?: (reorderedParts: WorkOrderPart[]) => void;
-  isEditMode?: boolean;
-  showType?: 'all' | 'joblines' | 'parts';
+  onReorderJobLines?: (jobLines: WorkOrderJobLine[]) => void;
+  isEditMode: boolean;
+  showType: "all" | "joblines" | "parts" | "overview";
 }
 
 export function UnifiedItemsTable({
-  jobLines = [],
-  allParts = [],
+  jobLines,
+  allParts,
   onJobLineUpdate,
   onJobLineDelete,
-  onPartUpdate,
-  onPartDelete,
-  isEditMode = false,
-  showType = 'all'
+  onReorderJobLines,
+  isEditMode,
+  showType
 }: UnifiedItemsTableProps) {
-  
-  // Group parts by job line for better organization
-  const partsByJobLine = useMemo(() => {
-    const grouped: Record<string, WorkOrderPart[]> = {};
-    const unassigned: WorkOrderPart[] = [];
-    
-    allParts.forEach(part => {
-      if (part.job_line_id) {
-        if (!grouped[part.job_line_id]) {
-          grouped[part.job_line_id] = [];
-        }
-        grouped[part.job_line_id].push(part);
-      } else {
-        unassigned.push(part);
-      }
-    });
-    
-    return { grouped, unassigned };
-  }, [allParts]);
+  // Determine what to show based on showType
+  const shouldShowJobLines = showType === "all" || showType === "joblines" || showType === "overview";
+  const shouldShowParts = showType === "all" || showType === "parts" || showType === "overview";
 
-  const showJobLines = showType === 'all' || showType === 'joblines';
-  const showParts = showType === 'all' || showType === 'parts';
-
-  if (jobLines.length === 0 && allParts.length === 0) {
+  if (!shouldShowJobLines && !shouldShowParts) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        No job lines or parts found for this work order.
+        No items to display
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Job Lines Table */}
-      {showJobLines && jobLines.length > 0 && (
+    <div className="space-y-4">
+      {shouldShowJobLines && jobLines.length > 0 && (
         <div>
-          <h3 className="text-lg font-semibold mb-3">Labor & Jobs ({jobLines.length})</h3>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-8"></TableHead>
-                <TableHead>Job Line</TableHead>
-                <TableHead className="text-center">Hours</TableHead>
-                <TableHead className="text-center">Rate</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-                <TableHead>Status</TableHead>
-                {isEditMode && <TableHead>Actions</TableHead>}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {jobLines.map((jobLine, index) => (
-                <JobLineRow
-                  key={jobLine.id}
-                  jobLine={jobLine}
-                  associatedParts={partsByJobLine.grouped[jobLine.id] || []}
-                  isEditMode={isEditMode}
-                  onEdit={onJobLineUpdate}
-                  onDelete={onJobLineDelete}
-                  colorIndex={index}
-                />
-              ))}
-            </TableBody>
-          </Table>
+          <h4 className="font-medium mb-2">Job Lines</h4>
+          <div className="space-y-2">
+            {jobLines.map((jobLine) => (
+              <div key={jobLine.id} className="border rounded p-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-medium">{jobLine.name}</p>
+                    {jobLine.description && (
+                      <p className="text-sm text-muted-foreground">{jobLine.description}</p>
+                    )}
+                    <p className="text-sm">
+                      Rate: ${jobLine.labor_rate}/hr | Hours: {jobLine.estimated_hours} | Total: ${jobLine.total_amount}
+                    </p>
+                  </div>
+                  {isEditMode && (
+                    <div className="flex gap-2">
+                      {onJobLineUpdate && (
+                        <button
+                          onClick={() => onJobLineUpdate(jobLine)}
+                          className="text-blue-600 hover:text-blue-800 text-sm"
+                        >
+                          Edit
+                        </button>
+                      )}
+                      {onJobLineDelete && (
+                        <button
+                          onClick={() => onJobLineDelete(jobLine.id)}
+                          className="text-red-600 hover:text-red-800 text-sm"
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Unassigned Parts Table */}
-      {showParts && partsByJobLine.unassigned.length > 0 && (
+      {shouldShowParts && allParts.length > 0 && (
         <div>
-          <h3 className="text-lg font-semibold mb-3">
-            Parts & Inventory ({partsByJobLine.unassigned.length})
-          </h3>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-8"></TableHead>
-                <TableHead>Part</TableHead>
-                <TableHead className="text-center">Qty</TableHead>
-                <TableHead className="text-right">Unit Price</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-                <TableHead>Status</TableHead>
-                {isEditMode && <TableHead>Actions</TableHead>}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {partsByJobLine.unassigned.map((part, index) => (
-                <EnhancedPartRow
-                  key={part.id}
-                  part={part}
-                  isEditMode={isEditMode}
-                  onEdit={onPartUpdate}
-                  onDelete={onPartDelete}
-                  colorIndex={index}
-                />
-              ))}
-            </TableBody>
-          </Table>
+          <h4 className="font-medium mb-2">Parts</h4>
+          <div className="space-y-2">
+            {allParts.map((part) => (
+              <div key={part.id} className="border rounded p-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-medium">{part.name}</p>
+                    <p className="text-sm text-muted-foreground">Part #: {part.part_number}</p>
+                    <p className="text-sm">
+                      Qty: {part.quantity} | Price: ${part.unit_price} | Total: ${part.total_price}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* All Parts Table (when showing parts only) */}
-      {showType === 'parts' && partsByJobLine.unassigned.length === 0 && allParts.length > 0 && (
-        <div>
-          <h3 className="text-lg font-semibold mb-3">All Parts ({allParts.length})</h3>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-8"></TableHead>
-                <TableHead>Part</TableHead>
-                <TableHead className="text-center">Qty</TableHead>
-                <TableHead className="text-right">Unit Price</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-                <TableHead>Status</TableHead>
-                {isEditMode && <TableHead>Actions</TableHead>}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {allParts.map((part, index) => (
-                <EnhancedPartRow
-                  key={part.id}
-                  part={part}
-                  isEditMode={isEditMode}
-                  onEdit={onPartUpdate}
-                  onDelete={onPartDelete}
-                  colorIndex={index}
-                />
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
-
-      {/* Totals Summary */}
-      {(jobLines.length > 0 || allParts.length > 0) && (
-        <div className="flex justify-end">
-          <WorkOrderTotals jobLines={jobLines} allParts={allParts} />
+      {(!shouldShowJobLines || jobLines.length === 0) && (!shouldShowParts || allParts.length === 0) && (
+        <div className="text-center py-8 text-muted-foreground">
+          No items to display
         </div>
       )}
     </div>
