@@ -1,8 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Wrench } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Wrench, Plus } from 'lucide-react';
+import { EnhancedJobLineItem } from './EnhancedJobLineItem';
+import { AddJobLineDialog } from './AddJobLineDialog';
 
 interface WorkOrderJobLinesSectionProps {
   workOrderId: string;
@@ -17,49 +20,80 @@ export function WorkOrderJobLinesSection({
   onJobLinesChange,
   isEditMode
 }: WorkOrderJobLinesSectionProps) {
+  const [showAddDialog, setShowAddDialog] = useState(false);
+
+  const handleJobLineUpdate = (updatedJobLine: WorkOrderJobLine) => {
+    const updatedJobLines = jobLines.map(jl => 
+      jl.id === updatedJobLine.id ? updatedJobLine : jl
+    );
+    onJobLinesChange(updatedJobLines);
+  };
+
+  const handleAddJobLine = (newJobLine: WorkOrderJobLine) => {
+    const updatedJobLines = [...jobLines, newJobLine];
+    onJobLinesChange(updatedJobLines);
+    setShowAddDialog(false);
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Wrench className="h-5 w-5" />
-          Job Lines
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {jobLines.length === 0 ? (
-          <p className="text-muted-foreground text-center py-8">
-            No job lines added yet.
-          </p>
-        ) : (
-          <div className="space-y-4">
-            {jobLines.map((jobLine) => (
-              <div key={jobLine.id} className="border rounded-lg p-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="font-medium">{jobLine.name}</h4>
-                    {jobLine.description && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {jobLine.description}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-4 mt-2 text-sm">
-                      {jobLine.estimated_hours && (
-                        <span>Hours: {jobLine.estimated_hours}</span>
-                      )}
-                      {jobLine.labor_rate && (
-                        <span>Rate: ${jobLine.labor_rate}</span>
-                      )}
-                      {jobLine.total_amount && (
-                        <span className="font-medium">Total: ${jobLine.total_amount}</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Wrench className="h-5 w-5" />
+              Job Lines ({jobLines.length})
+            </CardTitle>
+            {isEditMode && (
+              <Button 
+                onClick={() => setShowAddDialog(true)} 
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add Job Line
+              </Button>
+            )}
           </div>
-        )}
-      </CardContent>
-    </Card>
+        </CardHeader>
+        <CardContent>
+          {jobLines.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground mb-4">No job lines added yet.</p>
+              {isEditMode && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowAddDialog(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add First Job Line
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {jobLines.map((jobLine) => (
+                <EnhancedJobLineItem
+                  key={jobLine.id}
+                  jobLine={jobLine}
+                  onUpdate={handleJobLineUpdate}
+                  isEditMode={isEditMode}
+                />
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {showAddDialog && (
+        <AddJobLineDialog
+          workOrderId={workOrderId}
+          open={showAddDialog}
+          onOpenChange={setShowAddDialog}
+          onAdd={handleAddJobLine}
+        />
+      )}
+    </>
   );
 }

@@ -3,30 +3,42 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { WorkOrderPart, WORK_ORDER_PART_STATUSES } from '@/types/workOrderPart';
+import { WorkOrderPart } from '@/types/workOrderPart';
 import { WorkOrderJobLine } from '@/types/jobLine';
+import { StatusSelector } from '../shared/StatusSelector';
 import { EditService } from '@/services/workOrder/editService';
+import { toast } from '@/hooks/use-toast';
 
 interface UnifiedPartEditDialogProps {
   part: WorkOrderPart | null;
-  jobLines: WorkOrderJobLine[];
+  jobLines?: WorkOrderJobLine[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (part: WorkOrderPart) => void;
+  onSave: (part: WorkOrderPart) => Promise<void>;
 }
 
 export function UnifiedPartEditDialog({
   part,
-  jobLines,
+  jobLines = [],
   open,
   onOpenChange,
   onSave
 }: UnifiedPartEditDialogProps) {
-  const [formData, setFormData] = useState<Partial<WorkOrderPart>>({});
-  const [isSaving, setIsSaving] = useState(false);
+  const [formData, setFormData] = useState<Partial<WorkOrderPart>>({
+    name: '',
+    part_number: '',
+    description: '',
+    quantity: 1,
+    unit_price: 0,
+    total_price: 0,
+    status: 'pending',
+    notes: '',
+    job_line_id: ''
+  });
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (part) {
@@ -36,43 +48,54 @@ export function UnifiedPartEditDialog({
         description: part.description || '',
         quantity: part.quantity || 1,
         unit_price: part.unit_price || 0,
-        job_line_id: part.job_line_id || '',
+        total_price: part.total_price || 0,
         status: part.status || 'pending',
-        notes: part.notes || ''
+        notes: part.notes || '',
+        job_line_id: part.job_line_id || ''
       });
     }
   }, [part]);
 
+  const calculateTotal = () => {
+    const quantity = formData.quantity || 1;
+    const unitPrice = formData.unit_price || 0;
+    return quantity * unitPrice;
+  };
+
   const handleSave = async () => {
     if (!part) return;
 
-    setIsSaving(true);
+    setIsLoading(true);
     try {
-      const updatedPart = await EditService.updatePart(part.id, formData);
-      onSave(updatedPart);
-      onOpenChange(false);
+      const calculatedTotal = calculateTotal();
+      const updatedPart = await EditService.updatePart(part.id, {
+        ...formData,
+        total_price: calculatedTotal
+      });
+      
+      await onSave(updatedPart);
+      toast({
+        title: "Success",
+        description: "Part updated successfully",
+      });
     } catch (error) {
       console.error('Error saving part:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update part",
+        variant: "destructive"
+      });
     } finally {
-      setIsSaving(false);
+      setIsLoading(false);
     }
   };
 
-  const handleInputChange = (field: keyof WorkOrderPart, value: any) => {
+  const handleFieldChange = (field: keyof WorkOrderPart, value: any) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
   };
-
-  const formatStatusLabel = (status: string) => {
-    return status
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  };
-
-  if (!part) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -87,8 +110,7 @@ export function UnifiedPartEditDialog({
             <Input
               id="name"
               value={formData.name || ''}
-              onChange={(e) => handleInputChange('name', e.target.value)}
-              placeholder="Part name"
+              onChange={(e) => handleFieldChange('name', e.target.value)}
             />
           </div>
 
@@ -97,22 +119,50 @@ export function UnifiedPartEditDialog({
             <Input
               id="part_number"
               value={formData.part_number || ''}
-              onChange={(e) => handleInputChange('part_number', e.target.value)}
-              placeholder="Part number"
+              onChange={(e) => handleFieldChange('part_number', e.target.value)}
             />
           </div>
-
+          
           <div>
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
               value={formData.description || ''}
-              onChange={(e) => handleInputChange('description', e.target.value)}
-              placeholder="Part description"
-              rows={2}
+              onChange={(e) => handleFieldChange('description', e.target.value)}
             />
           </div>
 
+          <div>
+            <Label htmlFor="status">Status</Label>
+            <StatusSelector
+              currentStatus={formData.status || 'pending'}
+              type="part"
+              onStatusChange={(status) => handleFieldChange('status', status)}
+            />
+          </div>
+
+          {jobLines.length > 0 && (
+            <div>
+              <Label htmlFor="job_line">Assign to Job Line</Label>
+              <Select 
+                value={formData.job_line_id || ''} 
+                onValueChange={(value) => handleFieldChange('job_line_id', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select job line" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">No assignment</SelectItem>
+                  {jobLines.map((jobLine) => (
+                    <SelectItem key={jobLine.id} value={jobLine.id}>
+                      {jobLine.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="quantity">Quantity</Label>
@@ -121,10 +171,9 @@ export function UnifiedPartEditDialog({
                 type="number"
                 min="1"
                 value={formData.quantity || 1}
-                onChange={(e) => handleInputChange('quantity', parseInt(e.target.value) || 1)}
+                onChange={(e) => handleFieldChange('quantity', parseInt(e.target.value) || 1)}
               />
             </div>
-
             <div>
               <Label htmlFor="unit_price">Unit Price ($)</Label>
               <Input
@@ -132,67 +181,42 @@ export function UnifiedPartEditDialog({
                 type="number"
                 step="0.01"
                 value={formData.unit_price || 0}
-                onChange={(e) => handleInputChange('unit_price', parseFloat(e.target.value) || 0)}
+                onChange={(e) => handleFieldChange('unit_price', parseFloat(e.target.value) || 0)}
               />
             </div>
           </div>
 
           <div>
-            <Label htmlFor="job_line">Job Line</Label>
-            <Select 
-              value={formData.job_line_id || ''} 
-              onValueChange={(value) => handleInputChange('job_line_id', value || null)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select job line (optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">No job line</SelectItem>
-                {jobLines.map((jobLine) => (
-                  <SelectItem key={jobLine.id} value={jobLine.id}>
-                    {jobLine.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="total_price">Total Price ($)</Label>
+            <Input
+              id="total_price"
+              type="number"
+              step="0.01"
+              value={calculateTotal()}
+              readOnly
+              className="bg-muted"
+            />
           </div>
-
-          <div>
-            <Label htmlFor="status">Status</Label>
-            <Select 
-              value={formData.status || 'pending'} 
-              onValueChange={(value) => handleInputChange('status', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                {WORK_ORDER_PART_STATUSES.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {formatStatusLabel(status)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
+          
           <div>
             <Label htmlFor="notes">Notes</Label>
             <Textarea
               id="notes"
               value={formData.notes || ''}
-              onChange={(e) => handleInputChange('notes', e.target.value)}
-              placeholder="Additional notes"
-              rows={2}
+              onChange={(e) => handleFieldChange('notes', e.target.value)}
             />
           </div>
-
-          <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+          
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isLoading}
+            >
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={isSaving}>
-              {isSaving ? 'Saving...' : 'Save'}
+            <Button onClick={handleSave} disabled={isLoading}>
+              {isLoading ? 'Saving...' : 'Save'}
             </Button>
           </div>
         </div>

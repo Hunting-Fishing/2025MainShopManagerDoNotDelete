@@ -1,235 +1,188 @@
 
 import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Plus } from 'lucide-react';
-import { WorkOrderJobLine } from '@/types/jobLine';
+import { WorkOrderJobLine, JobLineFormValues } from '@/types/jobLine';
+import { StatusSelector } from '../shared/StatusSelector';
+import { createWorkOrderJobLine } from '@/services/workOrder/jobLinesService';
+import { toast } from '@/hooks/use-toast';
 
-export interface AddJobLineDialogProps {
+interface AddJobLineDialogProps {
   workOrderId: string;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  onJobLineAdd?: (newJobLinesData: Omit<WorkOrderJobLine, 'id' | 'created_at' | 'updated_at'>[]) => void;
-  onAdd?: (newJobLine: WorkOrderJobLine) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onAdd: (jobLine: WorkOrderJobLine) => void;
 }
 
 export function AddJobLineDialog({
   workOrderId,
   open,
   onOpenChange,
-  onJobLineAdd,
   onAdd
 }: AddJobLineDialogProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<JobLineFormValues>({
     name: '',
-    category: '',
-    subcategory: '',
     description: '',
     estimated_hours: 0,
     labor_rate: 0,
     status: 'pending',
     notes: ''
   });
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleOpenChange = (newOpen: boolean) => {
-    if (onOpenChange) {
-      onOpenChange(newOpen);
-    } else {
-      setIsOpen(newOpen);
+  const calculateTotal = () => {
+    const hours = formData.estimated_hours || 0;
+    const rate = formData.labor_rate || 0;
+    return hours * rate;
+  };
+
+  const handleSave = async () => {
+    if (!formData.name.trim()) {
+      toast({
+        title: "Error",
+        description: "Job line name is required",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const newJobLine = await createWorkOrderJobLine(workOrderId, formData);
+      onAdd(newJobLine);
+      onOpenChange(false);
+      
+      // Reset form
+      setFormData({
+        name: '',
+        description: '',
+        estimated_hours: 0,
+        labor_rate: 0,
+        status: 'pending',
+        notes: ''
+      });
+
+      toast({
+        title: "Success",
+        description: "Job line created successfully",
+      });
+    } catch (error) {
+      console.error('Error creating job line:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create job line",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const isDialogOpen = open !== undefined ? open : isOpen;
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const newJobLine: Omit<WorkOrderJobLine, 'id' | 'created_at' | 'updated_at'> = {
-      work_order_id: workOrderId,
-      name: formData.name,
-      category: formData.category,
-      subcategory: formData.subcategory,
-      description: formData.description,
-      estimated_hours: formData.estimated_hours,
-      labor_rate: formData.labor_rate,
-      total_amount: formData.estimated_hours * formData.labor_rate,
-      status: formData.status,
-      notes: formData.notes,
-      display_order: 0
-    };
-
-    // Handle both callback patterns
-    if (onJobLineAdd) {
-      onJobLineAdd([newJobLine]);
-    } else if (onAdd) {
-      const jobLineWithId: WorkOrderJobLine = {
-        ...newJobLine,
-        id: crypto.randomUUID(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      onAdd(jobLineWithId);
-    }
-
-    // Reset form and close dialog
-    setFormData({
-      name: '',
-      category: '',
-      subcategory: '',
-      description: '',
-      estimated_hours: 0,
-      labor_rate: 0,
-      status: 'pending',
-      notes: ''
-    });
-    
-    handleOpenChange(false);
+  const handleFieldChange = (field: keyof JobLineFormValues, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   return (
-    <Dialog open={isDialogOpen} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Job Line
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Add Job Line</DialogTitle>
-          <DialogDescription>
-            Add a new job line to this work order.
-          </DialogDescription>
+          <DialogTitle>Add New Job Line</DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Job Name *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
-              <Input
-                id="category"
-                value={formData.category}
-                onChange={(e) => setFormData({...formData, category: e.target.value})}
-              />
-            </div>
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="name">Name *</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => handleFieldChange('name', e.target.value)}
+              placeholder="Enter job line name"
+            />
           </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="subcategory">Subcategory</Label>
-              <Input
-                id="subcategory"
-                value={formData.subcategory}
-                onChange={(e) => setFormData({...formData, subcategory: e.target.value})}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(value) => setFormData({...formData, status: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="in-progress">In Progress</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="on-hold">On Hold</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
+          
+          <div>
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({...formData, description: e.target.value})}
-              rows={3}
+              value={formData.description || ''}
+              onChange={(e) => handleFieldChange('description', e.target.value)}
+              placeholder="Enter job description"
             />
           </div>
 
+          <div>
+            <Label htmlFor="status">Status</Label>
+            <StatusSelector
+              currentStatus={formData.status || 'pending'}
+              type="jobLine"
+              onStatusChange={(status) => handleFieldChange('status', status)}
+            />
+          </div>
+          
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="hours">Estimated Hours</Label>
               <Input
                 id="hours"
                 type="number"
-                step="0.1"
-                min="0"
-                value={formData.estimated_hours}
-                onChange={(e) => setFormData({...formData, estimated_hours: parseFloat(e.target.value) || 0})}
+                step="0.25"
+                value={formData.estimated_hours || 0}
+                onChange={(e) => handleFieldChange('estimated_hours', parseFloat(e.target.value) || 0)}
               />
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="rate">Labor Rate ($/hour)</Label>
+            <div>
+              <Label htmlFor="rate">Labor Rate ($)</Label>
               <Input
                 id="rate"
                 type="number"
                 step="0.01"
-                min="0"
-                value={formData.labor_rate}
-                onChange={(e) => setFormData({...formData, labor_rate: parseFloat(e.target.value) || 0})}
+                value={formData.labor_rate || 0}
+                onChange={(e) => handleFieldChange('labor_rate', parseFloat(e.target.value) || 0)}
               />
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div>
+            <Label htmlFor="total">Total Amount ($)</Label>
+            <Input
+              id="total"
+              type="number"
+              step="0.01"
+              value={calculateTotal()}
+              readOnly
+              className="bg-muted"
+            />
+          </div>
+          
+          <div>
             <Label htmlFor="notes">Notes</Label>
             <Textarea
               id="notes"
-              value={formData.notes}
-              onChange={(e) => setFormData({...formData, notes: e.target.value})}
-              rows={2}
+              value={formData.notes || ''}
+              onChange={(e) => handleFieldChange('notes', e.target.value)}
+              placeholder="Additional notes"
             />
           </div>
-
-          <div className="text-sm text-muted-foreground">
-            Total Amount: ${(formData.estimated_hours * formData.labor_rate).toFixed(2)}
-          </div>
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+          
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isLoading}
+            >
               Cancel
             </Button>
-            <Button type="submit">Add Job Line</Button>
-          </DialogFooter>
-        </form>
+            <Button onClick={handleSave} disabled={isLoading}>
+              {isLoading ? 'Creating...' : 'Create Job Line'}
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
