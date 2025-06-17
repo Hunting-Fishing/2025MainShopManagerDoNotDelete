@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { ServicesSection } from '@/components/work-orders/fields/ServicesSection';
 import { SelectedService } from '@/types/selectedService';
-import { ServiceJob } from '@/types/service';
 
 interface ServiceBasedJobLineFormProps {
   workOrderId: string;
@@ -18,27 +17,6 @@ export function ServiceBasedJobLineForm({
   onCancel
 }: ServiceBasedJobLineFormProps) {
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
-
-  const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
-    const newService: SelectedService = {
-      id: service.id,
-      serviceId: service.id,
-      name: service.name,
-      description: service.description,
-      estimated_hours: service.estimatedTime ? service.estimatedTime / 60 : 0, // Convert minutes to hours
-      labor_rate: service.price || 0,
-      total_amount: service.price || 0,
-      category: categoryName,
-      subcategory: subcategoryName,
-      categoryName: categoryName,
-      subcategoryName: subcategoryName,
-      status: 'pending',
-      estimatedTime: service.estimatedTime,
-      price: service.price
-    };
-
-    setSelectedServices(prev => [...prev, newService]);
-  };
 
   const handleUpdateServices = (services: SelectedService[]) => {
     setSelectedServices(services);
@@ -79,7 +57,6 @@ export function ServiceBasedJobLineForm({
 
       <div className="max-h-96 overflow-y-auto">
         <ServicesSection
-          onServiceSelect={handleServiceSelect}
           selectedServices={selectedServices}
           onUpdateServices={handleUpdateServices}
         />
