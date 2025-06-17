@@ -1,22 +1,25 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
-import { getCustomerById, updateCustomer } from '@/services/customer';
+import { Customer } from '@/types/customer';
 import { CustomerFormValues } from '@/components/customers/form/CustomerFormSchema';
-import { shops } from '@/components/customers/form/CustomerFormSchema';
-import { convertFormVehicleToCustomerVehicle } from '@/types/customer/vehicle';
+import { getCustomerById, updateCustomer } from '@/services/customer/customerQueryService';
+import { getAllShops } from '@/services/shops';
+import { useToast } from '@/hooks/use-toast';
+import { formatVehicleYear } from '@/types/customer/vehicle';
 
-export function useCustomerEdit(customerId: string | undefined) {
+export const useCustomerEdit = (customerId?: string) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [formValues, setFormValues] = useState<CustomerFormValues | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [availableShops, setAvailableShops] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  // Load customer data
+  // Fetch customer data and shops
   useEffect(() => {
-    const loadCustomer = async () => {
+    const fetchData = async () => {
       if (!customerId || customerId === "undefined") {
         setError("Invalid customer ID");
         setIsLoading(false);
@@ -26,166 +29,154 @@ export function useCustomerEdit(customerId: string | undefined) {
       try {
         setIsLoading(true);
         setError(null);
-        
-        const customer = await getCustomerById(customerId);
-        if (!customer) {
+
+        const [customerData, shopsData] = await Promise.all([
+          getCustomerById(customerId),
+          getAllShops()
+        ]);
+
+        if (!customerData) {
           setError("Customer not found");
           return;
         }
 
+        setAvailableShops(shopsData || []);
+
         // Convert customer data to form values
         const formData: CustomerFormValues = {
-          first_name: customer.first_name || '',
-          last_name: customer.last_name || '',
-          email: customer.email || '',
-          phone: customer.phone || '',
-          address: customer.address || '',
-          city: customer.city || '',
-          state: customer.state || '',
-          postal_code: customer.postal_code || '',
-          country: customer.country || '',
-          shop_id: customer.shop_id || '',
-          
-          // Business info
-          company: customer.company || '',
-          business_type: customer.business_type || '',
-          business_industry: customer.business_industry || '',
-          other_business_industry: customer.other_business_industry || '',
-          tax_id: customer.tax_id || '',
-          business_email: customer.business_email || '',
-          business_phone: customer.business_phone || '',
-          
-          // Payment
-          preferred_payment_method: customer.preferred_payment_method || '',
-          auto_billing: customer.auto_billing || false,
-          credit_terms: customer.credit_terms || '',
-          terms_agreed: customer.terms_agreed || false,
-          
-          // Fleet
-          is_fleet: customer.is_fleet || false,
-          fleet_company: customer.fleet_company || '',
-          fleet_manager: customer.fleet_manager || '',
-          fleet_contact: customer.fleet_contact || '',
-          preferred_service_type: customer.preferred_service_type || '',
-          
-          // Preferences
-          preferred_technician_id: customer.preferred_technician_id || '',
-          communication_preference: customer.communication_preference || '',
-          
-          // Referral
-          referral_source: customer.referral_source || '',
-          referral_person_id: customer.referral_person_id || '',
-          other_referral_details: customer.other_referral_details || '',
-          
-          // Household
-          household_id: customer.household_id || '',
+          first_name: customerData.first_name || '',
+          last_name: customerData.last_name || '',
+          email: customerData.email || '',
+          phone: customerData.phone || '',
+          address: customerData.address || '',
+          city: customerData.city || '',
+          state: customerData.state || '',
+          postal_code: customerData.postal_code || '',
+          country: customerData.country || '',
+          shop_id: customerData.shop_id || '',
+          preferred_technician_id: customerData.preferred_technician_id || '',
+          communication_preference: customerData.communication_preference || '',
+          referral_source: customerData.referral_source || '',
+          referral_person_id: customerData.referral_person_id || '',
+          other_referral_details: customerData.other_referral_details || '',
+          household_id: customerData.household_id || '',
+          is_fleet: customerData.is_fleet || false,
+          fleet_company: customerData.fleet_company || '',
+          fleet_manager: customerData.fleet_manager || '',
+          fleet_contact: customerData.fleet_contact || '',
+          preferred_service_type: customerData.preferred_service_type || '',
+          notes: customerData.notes || '',
+          company: customerData.company || '',
+          business_type: customerData.business_type || '',
+          business_industry: customerData.business_industry || '',
+          other_business_industry: customerData.other_business_industry || '',
+          tax_id: customerData.tax_id || '',
+          business_email: customerData.business_email || '',
+          business_phone: customerData.business_phone || '',
+          preferred_payment_method: customerData.preferred_payment_method || '',
+          auto_billing: customerData.auto_billing || false,
+          credit_terms: customerData.credit_terms || '',
+          terms_agreed: customerData.terms_agreed || false,
           create_new_household: false,
           new_household_name: '',
-          household_relationship: customer.household_relationship || '',
-          
-          // Other
-          notes: customer.notes || '',
-          tags: customer.tags || [],
-          segments: customer.segments || [],
-          vehicles: customer.vehicles || []
+          household_relationship: '', // This is form-only, not from customer data
+          tags: Array.isArray(customerData.tags) ? customerData.tags : [],
+          segments: Array.isArray(customerData.segments) ? customerData.segments : [],
+          vehicles: (customerData.vehicles || []).map(vehicle => ({
+            id: vehicle.id,
+            make: vehicle.make || '',
+            model: vehicle.model || '',
+            year: formatVehicleYear(vehicle.year), // Convert to string
+            vin: vehicle.vin || '',
+            license_plate: vehicle.license_plate || '',
+            trim: vehicle.trim || '',
+            transmission: vehicle.transmission || '',
+            drive_type: vehicle.drive_type || '',
+            fuel_type: vehicle.fuel_type || '',
+            engine: vehicle.engine || '',
+            body_style: vehicle.body_style || '',
+            country: vehicle.country || '',
+            transmission_type: vehicle.transmission_type || '',
+            gvwr: vehicle.gvwr || '',
+            color: vehicle.color || ''
+          }))
         };
 
         setFormValues(formData);
-      } catch (err: any) {
-        console.error('Error loading customer:', err);
-        setError(err.message || 'Failed to load customer');
+
+      } catch (err) {
+        console.error('Error fetching customer data:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load customer data');
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadCustomer();
+    fetchData();
   }, [customerId]);
 
-  const handleSubmit = async (data: CustomerFormValues) => {
-    if (!customerId || customerId === "undefined") {
-      toast({
-        title: "Error",
-        description: "Invalid customer ID",
-        variant: "destructive"
-      });
-      return;
-    }
+  const handleSubmit = async (formData: CustomerFormValues) => {
+    if (!customerId) return;
 
     try {
       setIsSubmitting(true);
-      
-      // Convert form data to customer update format
-      const updateData = {
-        first_name: data.first_name,
-        last_name: data.last_name,
-        email: data.email,
-        phone: data.phone,
-        address: data.address,
-        city: data.city,
-        state: data.state,
-        postal_code: data.postal_code,
-        country: data.country,
-        shop_id: data.shop_id,
-        
-        // Business info
-        company: data.company,
-        business_type: data.business_type,
-        business_industry: data.business_industry,
-        other_business_industry: data.other_business_industry,
-        tax_id: data.tax_id,
-        business_email: data.business_email,
-        business_phone: data.business_phone,
-        
-        // Payment
-        preferred_payment_method: data.preferred_payment_method,
-        auto_billing: data.auto_billing,
-        credit_terms: data.credit_terms,
-        terms_agreed: data.terms_agreed,
-        
-        // Fleet
-        is_fleet: data.is_fleet,
-        fleet_company: data.fleet_company,
-        fleet_manager: data.fleet_manager,
-        fleet_contact: data.fleet_contact,
-        preferred_service_type: data.preferred_service_type,
-        
-        // Preferences
-        preferred_technician_id: data.preferred_technician_id,
-        communication_preference: data.communication_preference,
-        
-        // Referral
-        referral_source: data.referral_source,
-        referral_person_id: data.referral_person_id,
-        other_referral_details: data.other_referral_details,
-        
-        // Household
-        household_id: data.household_id,
-        household_relationship: data.household_relationship,
-        
-        // Other
-        notes: data.notes,
-        tags: data.tags,
-        segments: data.segments,
-        
-        // Convert vehicles properly using the conversion function
-        vehicles: data.vehicles?.map(vehicle => convertFormVehicleToCustomerVehicle(vehicle)) || []
+
+      // Convert form data to customer update format, excluding form-only fields
+      const updateData: Partial<Customer> = {
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        postal_code: formData.postal_code,
+        country: formData.country,
+        shop_id: formData.shop_id,
+        preferred_technician_id: formData.preferred_technician_id,
+        communication_preference: formData.communication_preference,
+        referral_source: formData.referral_source,
+        referral_person_id: formData.referral_person_id,
+        other_referral_details: formData.other_referral_details,
+        household_id: formData.household_id,
+        is_fleet: formData.is_fleet,
+        fleet_company: formData.fleet_company,
+        fleet_manager: formData.fleet_manager,
+        fleet_contact: formData.fleet_contact,
+        preferred_service_type: formData.preferred_service_type,
+        notes: formData.notes,
+        company: formData.company,
+        business_type: formData.business_type,
+        business_industry: formData.business_industry,
+        other_business_industry: formData.other_business_industry,
+        tax_id: formData.tax_id,
+        business_email: formData.business_email,
+        business_phone: formData.business_phone,
+        preferred_payment_method: formData.preferred_payment_method,
+        auto_billing: formData.auto_billing,
+        credit_terms: formData.credit_terms,
+        terms_agreed: formData.terms_agreed,
+        tags: formData.tags,
+        segments: formData.segments,
+        // Note: vehicles are excluded here as they should be handled separately
+        // through the vehicle service if needed
       };
 
       await updateCustomer(customerId, updateData);
-      
+
       toast({
-        title: "Success",
-        description: "Customer updated successfully"
+        title: "Customer Updated",
+        description: "Customer information has been successfully updated.",
       });
-      
+
       navigate(`/customers/${customerId}`);
-    } catch (err: any) {
+
+    } catch (err) {
       console.error('Error updating customer:', err);
       toast({
-        title: "Error",
-        description: err.message || "Failed to update customer",
-        variant: "destructive"
+        title: "Update Failed",
+        description: err instanceof Error ? err.message : "Failed to update customer information.",
+        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
@@ -196,8 +187,8 @@ export function useCustomerEdit(customerId: string | undefined) {
     formValues,
     isLoading,
     isSubmitting,
-    availableShops: shops,
+    availableShops,
     handleSubmit,
     error
   };
-}
+};
