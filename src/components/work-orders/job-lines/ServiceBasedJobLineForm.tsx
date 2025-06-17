@@ -27,7 +27,7 @@ export function ServiceBasedJobLineForm({
       serviceId: service.id,
       name: service.name,
       description: service.description,
-      estimated_hours: service.estimatedTime ? service.estimatedTime / 60 : 0, // Convert minutes to hours
+      estimated_hours: service.estimatedTime ? service.estimatedTime / 60 : 0,
       labor_rate: service.price || 0,
       total_amount: service.price || 0,
       category: categoryName,
