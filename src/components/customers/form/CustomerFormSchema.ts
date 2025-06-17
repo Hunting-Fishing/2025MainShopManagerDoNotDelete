@@ -78,6 +78,15 @@ export const customerFormSchema = z.object({
   household_size: z.number().optional(),
   household_income_range: z.string().optional().or(z.literal("")),
   household_relationship: z.string().optional().or(z.literal("")),
+  
+  // Missing fields that are used in forms
+  preferred_technician_id: z.string().optional().or(z.literal("")),
+  communication_preference: z.string().optional().or(z.literal("")),
+  referral_person_id: z.string().optional().or(z.literal("")),
+  other_referral_details: z.string().optional().or(z.literal("")),
+  household_id: z.string().optional().or(z.literal("")),
+  create_new_household: z.boolean().default(false),
+  new_household_name: z.string().optional().or(z.literal("")),
 });
 
 // Export the inferred type
@@ -128,4 +137,21 @@ export const defaultCustomerFormValues: Partial<CustomerFormValues> = {
   household_size: 1,
   household_income_range: "",
   household_relationship: "",
+  preferred_technician_id: "",
+  communication_preference: "",
+  referral_person_id: "",
+  other_referral_details: "",
+  household_id: "",
+  create_new_household: false,
+  new_household_name: "",
 };
+
+// Export predefined segments and relationship types for backwards compatibility
+export const predefinedSegments: string[] = [];
+export const relationshipTypes = [
+  { id: "spouse", label: "Spouse" },
+  { id: "parent", label: "Parent" },
+  { id: "child", label: "Child" },
+  { id: "sibling", label: "Sibling" },
+  { id: "other", label: "Other" }
+];

@@ -1,132 +1,115 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
+import { CustomerFormValues } from '@/components/customers/form/schemas/customerSchema';
+import { createCustomer } from '@/services/customer/customerCreateService';
+import { convertFormVehicleToCustomerVehicle } from '@/types/customer/vehicle';
+import { Customer } from '@/types/customer';
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
-import { CustomerFormValues } from "@/components/customers/form/CustomerFormSchema";
-import { createCustomer, clearDraftCustomer, addCustomerNote } from "@/services/customers";
-import { handleApiError } from "@/utils/errorHandling";
-import { 
-  processHouseholdData, 
-  processSegmentAssignments, 
-  processHouseholdMembership,
-  recordTechnicianPreference,
-  prepareCustomerData
-} from "../utils/customerFormProcessor";
-import {
-  showSuccessNotification,
-  showWarningNotification
-} from "../utils/customerNotificationHandler";
+interface ProcessedCustomerData {
+  customerData: Omit<CustomerFormValues, 'vehicles'>;
+  vehiclesToCreate: any[];
+}
 
-export const useCustomerSubmit = () => {
+export function useCustomerSubmit() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [newCustomerId, setNewCustomerId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = async (data: CustomerFormValues, currentUserShopId: string | null) => {
-    console.log("handleSubmit called with data:", data);
-    setIsSubmitting(true);
-    
-    try {
-      // Ensure the shop_id is set to the current user's shop
-      if (currentUserShopId && (!data.shop_id || data.shop_id === "")) {
-        data.shop_id = currentUserShopId;
-      }
+  const resetState = () => {
+    setIsSubmitting(false);
+    setIsSuccess(false);
+    setNewCustomerId(null);
+    setError(null);
+  };
 
-      // Validate required shop_id
-      if (!data.shop_id) {
-        throw new Error("Shop ID is required. Please ensure you have a valid shop setup.");
-      }
-      
-      // Process household logic
-      const householdId = await processHouseholdData(data);
-      
-      // Prepare customer data for creation
-      const customerData = prepareCustomerData(data);
-      customerData.household_id = householdId;
-      
-      // Log vehicles before sending
-      console.log("Vehicles data being sent to createCustomer:", customerData.vehicles);
-      
-      // Create the customer
-      const newCustomer = await createCustomer(customerData);
-      
-      // Handle post-creation tasks, treating each one independently to avoid cascading failures
-      try {
-        // Save customer notes if they exist
-        if (data.notes && data.notes.trim()) {
-          await addCustomerNote(
-            newCustomer.id,
-            data.notes,
-            'general',
-            'System'
-          );
-        }
-      } catch (noteError) {
-        console.error("Failed to save customer note:", noteError);
-        showWarningNotification(toast, "note");
-      }
-      
-      try {
-        // Add customer to household if relevant
-        if (householdId && data.household_relationship) {
-          await processHouseholdMembership(
-            newCustomer.id, 
-            householdId, 
-            data.household_relationship
-          );
-        }
-      } catch (householdError) {
-        console.error("Failed to add customer to household:", householdError);
-        showWarningNotification(toast, "household");
-      }
-      
-      try {
-        // Assign customer segments if any were selected
-        if (data.segments && data.segments.length > 0) {
-          await processSegmentAssignments(newCustomer.id, data.segments);
-        }
-      } catch (segmentError) {
-        console.error("Failed to assign segments to customer:", segmentError);
-        showWarningNotification(toast, "segment");
-      }
-      
-      try {
-        // Record technician preference if selected
-        if (data.preferred_technician_id && data.preferred_technician_id !== "_none") {
-          await recordTechnicianPreference(data.preferred_technician_id);
-        }
-      } catch (techError) {
-        console.error("Error recording technician preference:", techError);
-        // Non-critical, no need for user notification
-      }
-      
-      // Clear any draft data
-      await clearDraftCustomer();
-      
-      // Update state
-      setIsSuccess(true);
-      setNewCustomerId(newCustomer.id);
-      
-      // Show success notification
-      showSuccessNotification(toast, data.first_name, data.last_name);
-      
-      // Navigate to customer details page after a short delay
-      setTimeout(() => {
+  const onSubmit = async (data: CustomerFormValues): Promise<void> => {
+    setIsSubmitting(true);
+    setIsSuccess(false);
+    setNewCustomerId(null);
+    setError(null);
+
+    try {
+      const { customerData, vehiclesToCreate } = await processCustomerData(data);
+
+      const newCustomer: Customer | null = await createCustomer(customerData, vehiclesToCreate);
+
+      if (newCustomer) {
+        setNewCustomerId(newCustomer.id);
+        setIsSuccess(true);
+        toast({
+          title: "Customer Created",
+          description: "Customer has been successfully created.",
+        });
         navigate(`/customers/${newCustomer.id}`);
-      }, 2000);
-    } catch (error) {
-      handleApiError(error, "Failed to create customer");
+      } else {
+        setError("Failed to create customer");
+        toast({
+          title: "Error",
+          description: "Failed to create customer. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to create customer");
+      console.error("Create customer failed:", err);
+      toast({
+        title: "Error",
+        description: "Failed to create customer. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const processCustomerData = async (data: CustomerFormValues): Promise<ProcessedCustomerData> => {
+    console.log("Processing customer data:", data);
+
+    // Validation and transformation logic here
+    if (!data) {
+      throw new Error("No data provided");
+    }
+
+    // Extract form-specific fields that shouldn't be saved to the database
+    const {
+      vehicles,
+      create_new_household,
+      new_household_name,
+      household_relationship,
+      household_size,
+      household_income_range,
+      preferred_technician_id = "", // Provide default value
+      communication_preference,
+      referral_person_id,
+      other_referral_details,
+      household_id,
+      ...customerData
+    } = data;
+
+    // Process vehicles
+    const vehiclesToCreate = vehicles ? vehicles.map(convertFormVehicleToCustomerVehicle) : [];
+
+    // Handle technician preference if provided
+    if (preferred_technician_id && preferred_technician_id.trim() !== "") {
+      customerData.preferred_technician_id = preferred_technician_id;
+    }
+
+    return {
+      customerData: customerData,
+      vehiclesToCreate: vehiclesToCreate,
+    };
   };
 
   return {
     isSubmitting,
     isSuccess,
     newCustomerId,
-    handleSubmit
+    error,
+    onSubmit,
+    resetState,
   };
-};
+}
