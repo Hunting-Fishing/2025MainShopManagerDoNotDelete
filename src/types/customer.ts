@@ -1,13 +1,20 @@
 
-// Re-exporting all customer types from their modular files
-export * from './customer/base';
-export * from './customer/vehicle';
-export * from './customer/notes';
-export * from './customer/household';
-export * from './customer/segment';
-export * from './customer/technician';
-export * from './customer/utils';
-
-// Import the CustomerLoyalty type so that we can re-export it
-import { CustomerLoyalty } from './loyalty';
-export type { CustomerLoyalty };
+export interface Customer {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+  created_at: string;
+  updated_at: string;
+  
+  // Computed fields
+  full_name?: string;
+  
+  // Legacy compatibility
+  name?: string;
+}

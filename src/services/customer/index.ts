@@ -1,23 +1,41 @@
 
-// Main customer service exports - consolidated to avoid duplicates
-export * from './customerQueryService';
-export * from './customerUpdateService';
-export * from './customerNotesService';
-export * from './customerDeleteService';
-export * from './customerCreateService';
-export * from './customerSearchService';
-export * from './customerDraftService';
-export * from './interactions/interactionQueryService';
-export * from './interactions/interactionMutationService';
+import { supabase } from '@/integrations/supabase/client';
+import { Customer } from '@/types/customer';
 
-// Export the main functions with clear names
-export { 
-  getAllCustomers as getCustomers,
-  getCustomerById as getCustomer,
-  getCustomerById 
-} from './customerQueryService';
-export { updateCustomer } from './customerUpdateService';
-export { deleteCustomer } from './customerDeleteService';
-export { createCustomer } from './customerCreateService';
-export { searchCustomers, checkDuplicateCustomers } from './customerSearchService';
-export { saveDraftCustomer, getDraftCustomer, clearDraftCustomer } from './customerDraftService';
+export async function getCustomerById(customerId: string): Promise<Customer | null> {
+  try {
+    const { data, error } = await supabase
+      .from('customers')
+      .select('*')
+      .eq('id', customerId)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // No rows returned
+        return null;
+      }
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error fetching customer:', error);
+    throw error;
+  }
+}
+
+export async function getAllCustomers(): Promise<Customer[]> {
+  try {
+    const { data, error } = await supabase
+      .from('customers')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching customers:', error);
+    throw error;
+  }
+}

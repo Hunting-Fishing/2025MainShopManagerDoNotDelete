@@ -4,12 +4,19 @@ import { WorkOrder } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { TimeEntry } from '@/types/workOrder';
+import { Customer } from '@/types/customer';
 import { 
-  workOrderCoreService, 
-  workOrderJobLinesService, 
-  workOrderPartsService, 
-  workOrderTimeService 
+  getWorkOrderById, 
+  updateWorkOrder,
+  getWorkOrderJobLines,
+  updateWorkOrderJobLine,
+  deleteWorkOrderJobLine,
+  getWorkOrderParts,
+  updateWorkOrderPart,
+  deleteWorkOrderPart,
+  getWorkOrderTimeEntries
 } from '@/services/workOrder';
+import { getCustomerById } from '@/services/customer';
 import { toast } from '@/hooks/use-toast';
 
 export function useWorkOrderMaster(workOrderId?: string) {
@@ -17,79 +24,80 @@ export function useWorkOrderMaster(workOrderId?: string) {
   const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
   const [allParts, setAllParts] = useState<WorkOrderPart[]>([]);
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
-  const [customer, setCustomer] = useState<any>(null);
+  const [customer, setCustomer] = useState<Customer | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchWorkOrderData = useCallback(async () => {
-    if (!workOrderId) return;
-
-    setIsLoading(true);
-    setError(null);
+  const fetchData = useCallback(async () => {
+    if (!workOrderId || workOrderId === 'new') {
+      setIsLoading(false);
+      return;
+    }
 
     try {
-      console.log('useWorkOrderMaster: Fetching work order data for:', workOrderId);
+      setIsLoading(true);
+      setError(null);
 
-      // Fetch all data concurrently
-      const [woData, jobLinesData, partsData, timeData] = await Promise.all([
-        workOrderCoreService.getById(workOrderId),
-        workOrderJobLinesService.getByWorkOrderId(workOrderId),
-        workOrderPartsService.getByWorkOrderId(workOrderId),
-        workOrderTimeService.getByWorkOrderId(workOrderId)
+      // Fetch work order
+      const wo = await getWorkOrderById(workOrderId);
+      if (!wo) {
+        setError("Work Order not found.");
+        return;
+      }
+      setWorkOrder(wo);
+
+      // Fetch related data in parallel
+      const [jobLinesData, partsData, timeEntriesData] = await Promise.all([
+        getWorkOrderJobLines(workOrderId),
+        getWorkOrderParts(workOrderId),
+        getWorkOrderTimeEntries(workOrderId)
       ]);
 
-      if (!woData) {
-        throw new Error('Work order not found');
-      }
+      setJobLines(jobLinesData || []);
+      setAllParts(partsData || []);
+      setTimeEntries(timeEntriesData || []);
 
-      setWorkOrder(woData);
-      setJobLines(jobLinesData);
-      setAllParts(partsData);
-      setTimeEntries(timeData);
-      
-      // Extract customer data from work order
-      if (woData.customer) {
-        setCustomer(woData.customer);
+      // Fetch customer if available
+      if (wo.customer_id) {
+        try {
+          const customerData = await getCustomerById(wo.customer_id);
+          setCustomer(customerData);
+        } catch (customerError) {
+          console.warn('Failed to fetch customer:', customerError);
+        }
       }
-
-      console.log('useWorkOrderMaster: Data loaded successfully');
     } catch (err: any) {
-      console.error('useWorkOrderMaster: Error loading data:', err);
-      setError(err.message || 'Failed to load work order data');
-      
-      toast({
-        title: "Error",
-        description: "Failed to load work order data",
-        variant: "destructive"
-      });
+      console.error('Error fetching work order data:', err);
+      setError(err.message || "Failed to load work order data.");
     } finally {
       setIsLoading(false);
     }
   }, [workOrderId]);
 
   useEffect(() => {
-    fetchWorkOrderData();
-  }, [fetchWorkOrderData]);
+    fetchData();
+  }, [fetchData]);
 
-  const updateJobLines = useCallback((newJobLines: WorkOrderJobLine[]) => {
-    setJobLines(newJobLines);
+  const updateJobLines = useCallback((updatedJobLines: WorkOrderJobLine[]) => {
+    setJobLines(updatedJobLines);
   }, []);
 
-  const updateTimeEntries = useCallback((newTimeEntries: TimeEntry[]) => {
-    setTimeEntries(newTimeEntries);
+  const updateTimeEntries = useCallback((updatedEntries: TimeEntry[]) => {
+    setTimeEntries(updatedEntries);
   }, []);
 
-  const handleJobLineUpdate = useCallback(async (jobLine: WorkOrderJobLine) => {
+  const handleJobLineUpdate = useCallback(async (updatedJobLine: WorkOrderJobLine) => {
     try {
-      const updatedJobLine = await workOrderJobLinesService.update(jobLine.id, jobLine);
-      setJobLines(prev => prev.map(jl => jl.id === jobLine.id ? updatedJobLine : jl));
-      
+      await updateWorkOrderJobLine(updatedJobLine.id, updatedJobLine);
+      setJobLines(prev => prev.map(line => 
+        line.id === updatedJobLine.id ? updatedJobLine : line
+      ));
       toast({
         title: "Success",
         description: "Job line updated successfully"
       });
-    } catch (error) {
-      console.error('Error updating job line:', error);
+    } catch (err: any) {
+      console.error('Error updating job line:', err);
       toast({
         title: "Error",
         description: "Failed to update job line",
@@ -100,15 +108,14 @@ export function useWorkOrderMaster(workOrderId?: string) {
 
   const handleJobLineDelete = useCallback(async (jobLineId: string) => {
     try {
-      await workOrderJobLinesService.delete(jobLineId);
-      setJobLines(prev => prev.filter(jl => jl.id !== jobLineId));
-      
+      await deleteWorkOrderJobLine(jobLineId);
+      setJobLines(prev => prev.filter(line => line.id !== jobLineId));
       toast({
         title: "Success",
         description: "Job line deleted successfully"
       });
-    } catch (error) {
-      console.error('Error deleting job line:', error);
+    } catch (err: any) {
+      console.error('Error deleting job line:', err);
       toast({
         title: "Error",
         description: "Failed to delete job line",
@@ -117,17 +124,18 @@ export function useWorkOrderMaster(workOrderId?: string) {
     }
   }, []);
 
-  const handlePartUpdate = useCallback(async (part: WorkOrderPart) => {
+  const handlePartUpdate = useCallback(async (updatedPart: WorkOrderPart) => {
     try {
-      const updatedPart = await workOrderPartsService.update(part.id, part);
-      setAllParts(prev => prev.map(p => p.id === part.id ? updatedPart : p));
-      
+      await updateWorkOrderPart(updatedPart.id, updatedPart);
+      setAllParts(prev => prev.map(part => 
+        part.id === updatedPart.id ? updatedPart : part
+      ));
       toast({
         title: "Success",
         description: "Part updated successfully"
       });
-    } catch (error) {
-      console.error('Error updating part:', error);
+    } catch (err: any) {
+      console.error('Error updating part:', err);
       toast({
         title: "Error",
         description: "Failed to update part",
@@ -138,15 +146,14 @@ export function useWorkOrderMaster(workOrderId?: string) {
 
   const handlePartDelete = useCallback(async (partId: string) => {
     try {
-      await workOrderPartsService.delete(partId);
-      setAllParts(prev => prev.filter(p => p.id !== partId));
-      
+      await deleteWorkOrderPart(partId);
+      setAllParts(prev => prev.filter(part => part.id !== partId));
       toast({
         title: "Success",
         description: "Part deleted successfully"
       });
-    } catch (error) {
-      console.error('Error deleting part:', error);
+    } catch (err: any) {
+      console.error('Error deleting part:', err);
       toast({
         title: "Error",
         description: "Failed to delete part",
@@ -163,12 +170,12 @@ export function useWorkOrderMaster(workOrderId?: string) {
     customer,
     isLoading,
     error,
-    refetch: fetchWorkOrderData,
     updateJobLines,
     updateTimeEntries,
     handleJobLineUpdate,
     handleJobLineDelete,
     handlePartUpdate,
-    handlePartDelete
+    handlePartDelete,
+    refetch: fetchData
   };
 }
