@@ -94,7 +94,7 @@ export function WorkOrderDetailsTabs({
               
               <WorkOrderPartsSection
                 workOrderId={workOrder.id}
-                allParts={allParts}
+                parts={allParts}
                 jobLines={jobLines}
                 onPartsChange={() => {}}
                 isEditMode={isEditMode}
@@ -131,7 +131,7 @@ export function WorkOrderDetailsTabs({
         <TabsContent value="parts">
           <WorkOrderPartsSection
             workOrderId={workOrder.id}
-            allParts={allParts}
+            parts={allParts}
             jobLines={jobLines}
             onPartsChange={() => {}}
             isEditMode={isEditMode}
