@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { WorkOrderPart } from '@/types/workOrderPart';
 
@@ -47,11 +46,7 @@ const mapDatabasePartToWorkOrderPart = (dbPart: any): WorkOrderPart => {
     notesInternal: dbPart.notes_internal,
     attachments: dbPart.attachments,
     warehouseLocation: dbPart.warehouse_location,
-    shelfLocation: dbPart.shelf_location,
-    
-    // CamelCase aliases
-    workOrderId: dbPart.work_order_id,
-    jobLineId: dbPart.job_line_id
+    shelfLocation: dbPart.shelf_location
   };
 };
 
