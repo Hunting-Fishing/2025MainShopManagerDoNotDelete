@@ -72,16 +72,16 @@ export function WorkOrderDetailsTabs({
         />
       </div>
 
-      <Tabs defaultValue="overview" className="w-full">
+      <Tabs defaultValue="all" className="w-full">
         <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="all">Overview</TabsTrigger>
           <TabsTrigger value="labor">Labor</TabsTrigger>
           <TabsTrigger value="parts">Parts</TabsTrigger>
           <TabsTrigger value="time">Time Tracking</TabsTrigger>
           <TabsTrigger value="notes">Notes</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-6">
+        <TabsContent value="all" className="space-y-6">
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
             <div className="xl:col-span-2 space-y-6">
               <JobLinesSection
@@ -94,7 +94,7 @@ export function WorkOrderDetailsTabs({
               
               <WorkOrderPartsSection
                 workOrderId={workOrder.id}
-                parts={allParts}
+                allParts={allParts}
                 jobLines={jobLines}
                 onPartsChange={() => {}}
                 isEditMode={isEditMode}
@@ -131,7 +131,7 @@ export function WorkOrderDetailsTabs({
         <TabsContent value="parts">
           <WorkOrderPartsSection
             workOrderId={workOrder.id}
-            parts={allParts}
+            allParts={allParts}
             jobLines={jobLines}
             onPartsChange={() => {}}
             isEditMode={isEditMode}
