@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { ServiceBasedJobLineForm } from './ServiceBasedJobLineForm';
@@ -33,32 +32,34 @@ export function AddJobLineDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Add Job Line</DialogTitle>
         </DialogHeader>
         
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'service' | 'manual')}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="service">Service-Based</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'service' | 'manual')} className="flex-1 flex flex-col">
+          <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
+            <TabsTrigger value="service">Service Catalog</TabsTrigger>
             <TabsTrigger value="manual">Manual Entry</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="service" className="mt-4">
-            <ServiceBasedJobLineForm
-              workOrderId={workOrderId}
-              onSubmit={handleSubmit}
-              onCancel={handleCancel}
-            />
-          </TabsContent>
-          
-          <TabsContent value="manual" className="mt-4">
-            <ManualJobLineForm
-              workOrderId={workOrderId}
-              onSubmit={handleSubmit}
-              onCancel={handleCancel}
-            />
-          </TabsContent>
+          <div className="flex-1 overflow-hidden">
+            <TabsContent value="service" className="h-full mt-4">
+              <ServiceBasedJobLineForm
+                workOrderId={workOrderId}
+                onSubmit={handleSubmit}
+                onCancel={handleCancel}
+              />
+            </TabsContent>
+            
+            <TabsContent value="manual" className="h-full mt-4">
+              <ManualJobLineForm
+                workOrderId={workOrderId}
+                onSubmit={handleSubmit}
+                onCancel={handleCancel}
+              />
+            </TabsContent>
+          </div>
         </Tabs>
       </DialogContent>
     </Dialog>

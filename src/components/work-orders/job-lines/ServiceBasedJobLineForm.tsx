@@ -1,11 +1,10 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { WorkOrderJobLine, JobLineStatus, LaborRateType, isValidJobLineStatus, isValidLaborRateType } from '@/types/jobLine';
+import { WorkOrderJobLine } from '@/types/jobLine';
+import { ServicesSection } from '@/components/work-orders/fields/ServicesSection';
+import { SelectedService } from '@/types/selectedService';
+import { ServiceJob } from '@/types/service';
 
 interface ServiceBasedJobLineFormProps {
   workOrderId: string;
@@ -18,162 +17,99 @@ export function ServiceBasedJobLineForm({
   onSubmit,
   onCancel
 }: ServiceBasedJobLineFormProps) {
-  const [formData, setFormData] = useState({
-    name: '',
-    category: '',
-    subcategory: '',
-    description: '',
-    estimated_hours: 0,
-    labor_rate: 0,
-    labor_rate_type: 'standard' as LaborRateType,
-    status: 'pending' as JobLineStatus,
-    notes: ''
-  });
+  const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const jobLine: Omit<WorkOrderJobLine, 'id' | 'created_at' | 'updated_at'> = {
-      work_order_id: workOrderId,
-      name: formData.name,
-      category: formData.category,
-      subcategory: formData.subcategory,
-      description: formData.description,
-      estimated_hours: formData.estimated_hours,
-      labor_rate: formData.labor_rate,
-      labor_rate_type: formData.labor_rate_type,
-      total_amount: formData.estimated_hours * formData.labor_rate,
-      status: formData.status,
-      display_order: 0,
-      notes: formData.notes
+  const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
+    const newService: SelectedService = {
+      id: service.id,
+      name: service.name,
+      description: service.description,
+      estimated_hours: service.estimated_hours || 0,
+      labor_rate: service.labor_rate || 0,
+      total_amount: (service.estimated_hours || 0) * (service.labor_rate || 0),
+      category: categoryName,
+      subcategory: subcategoryName,
+      status: 'pending'
     };
 
-    onSubmit([jobLine]); // Wrap in array to match expected interface
+    setSelectedServices(prev => [...prev, newService]);
+  };
+
+  const handleUpdateServices = (services: SelectedService[]) => {
+    setSelectedServices(services);
+  };
+
+  const handleSubmit = () => {
+    if (selectedServices.length === 0) {
+      alert('Please select at least one service');
+      return;
+    }
+
+    const jobLines: Omit<WorkOrderJobLine, 'id' | 'created_at' | 'updated_at'>[] = selectedServices.map((service, index) => ({
+      work_order_id: workOrderId,
+      name: service.name,
+      category: service.category,
+      subcategory: service.subcategory,
+      description: service.description,
+      estimated_hours: service.estimated_hours,
+      labor_rate: service.labor_rate,
+      labor_rate_type: 'standard',
+      total_amount: service.total_amount,
+      status: 'pending',
+      display_order: index,
+      notes: ''
+    }));
+
+    onSubmit(jobLines);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <Label htmlFor="name">Service Name</Label>
-        <Input
-          id="name"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          required
+    <div className="space-y-6">
+      <div className="border-b pb-4">
+        <h3 className="text-lg font-semibold">Select Services</h3>
+        <p className="text-sm text-muted-foreground">
+          Choose from our service catalog to add job lines to this work order
+        </p>
+      </div>
+
+      <div className="max-h-96 overflow-y-auto">
+        <ServicesSection
+          onServiceSelect={handleServiceSelect}
+          selectedServices={selectedServices}
+          onUpdateServices={handleUpdateServices}
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="category">Category</Label>
-          <Input
-            id="category"
-            value={formData.category}
-            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-          />
+      {selectedServices.length > 0 && (
+        <div className="border-t pt-4">
+          <h4 className="font-medium mb-2">Selected Services ({selectedServices.length})</h4>
+          <div className="space-y-2 max-h-32 overflow-y-auto">
+            {selectedServices.map((service) => (
+              <div key={service.id} className="flex justify-between items-center text-sm p-2 bg-muted rounded">
+                <div>
+                  <span className="font-medium">{service.name}</span>
+                  <span className="text-muted-foreground ml-2">
+                    {service.category} › {service.subcategory}
+                  </span>
+                </div>
+                <span className="font-medium">${service.total_amount}</span>
+              </div>
+            ))}
+          </div>
         </div>
-        <div>
-          <Label htmlFor="subcategory">Subcategory</Label>
-          <Input
-            id="subcategory"
-            value={formData.subcategory}
-            onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
-          />
-        </div>
-      </div>
+      )}
 
-      <div>
-        <Label htmlFor="description">Description</Label>
-        <Textarea
-          id="description"
-          value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-        />
-      </div>
-
-      <div className="grid grid-cols-3 gap-4">
-        <div>
-          <Label htmlFor="hours">Estimated Hours</Label>
-          <Input
-            id="hours"
-            type="number"
-            step="0.25"
-            value={formData.estimated_hours}
-            onChange={(e) => setFormData({ ...formData, estimated_hours: parseFloat(e.target.value) || 0 })}
-          />
-        </div>
-        <div>
-          <Label htmlFor="rate">Labor Rate</Label>
-          <Input
-            id="rate"
-            type="number"
-            step="0.01"
-            value={formData.labor_rate}
-            onChange={(e) => setFormData({ ...formData, labor_rate: parseFloat(e.target.value) || 0 })}
-          />
-        </div>
-        <div>
-          <Label htmlFor="rate-type">Rate Type</Label>
-          <Select
-            value={formData.labor_rate_type}
-            onValueChange={(value) => {
-              if (isValidLaborRateType(value)) {
-                setFormData({ ...formData, labor_rate_type: value });
-              }
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="standard">Standard</SelectItem>
-              <SelectItem value="overtime">Overtime</SelectItem>
-              <SelectItem value="premium">Premium</SelectItem>
-              <SelectItem value="flat_rate">Flat Rate</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div>
-        <Label htmlFor="status">Status</Label>
-        <Select
-          value={formData.status}
-          onValueChange={(value) => {
-            if (isValidJobLineStatus(value)) {
-              setFormData({ ...formData, status: value });
-            }
-          }}
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="in-progress">In Progress</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="on-hold">On Hold</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div>
-        <Label htmlFor="notes">Notes</Label>
-        <Textarea
-          id="notes"
-          value={formData.notes}
-          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-        />
-      </div>
-
-      <div className="flex justify-end gap-2">
+      <div className="flex justify-end gap-2 pt-4 border-t">
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit">
-          Add Job Line
+        <Button 
+          onClick={handleSubmit}
+          disabled={selectedServices.length === 0}
+        >
+          Add {selectedServices.length} Job Line{selectedServices.length !== 1 ? 's' : ''}
         </Button>
       </div>
-    </form>
+    </div>
   );
 }

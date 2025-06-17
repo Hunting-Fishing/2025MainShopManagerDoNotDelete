@@ -3,18 +3,10 @@ export interface SelectedService {
   id: string;
   name: string;
   description?: string;
-  categoryName: string;
-  subcategoryName: string;
-  estimatedTime?: number; // in minutes
-  price?: number;
-  notes?: string;
-  serviceId: string; // reference to original service
-  estimatedHours?: number; // Added for job line compatibility
-  laborRate?: number; // Added for job line compatibility
-}
-
-export interface ServiceSelectionSummary {
-  totalServices: number;
-  totalEstimatedTime: number; // in minutes
-  totalEstimatedCost: number;
+  estimated_hours: number;
+  labor_rate: number;
+  total_amount: number;
+  category: string;
+  subcategory: string;
+  status: 'pending' | 'in-progress' | 'completed' | 'on-hold';
 }
