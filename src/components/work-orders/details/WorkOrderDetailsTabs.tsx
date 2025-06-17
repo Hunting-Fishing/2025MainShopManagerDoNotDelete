@@ -1,33 +1,32 @@
 
-import React, { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { WorkOrder } from "@/types/workOrder";
-import { WorkOrderJobLine } from "@/types/jobLine";
-import { WorkOrderPart } from "@/types/workOrderPart";
-import { TimeEntry } from "@/types/workOrder";
-import { WorkOrderUnifiedHeader } from "./WorkOrderUnifiedHeader";
-import { WorkOrderDetailsTab } from "./WorkOrderDetailsTab";
-import { WorkOrderPartsSection } from "../parts/WorkOrderPartsSection";
-import { TimeTrackingSection } from "../time-tracking/TimeTrackingSection";
-import { WorkOrderDocuments } from "./WorkOrderDocuments";
-import { WorkOrderCommunications } from "../communications/WorkOrderCommunications";
-import { JobLinesSection } from "../form-fields/JobLinesSection";
-import { WorkOrderDetailsActions } from "./WorkOrderDetailsActions";
-import { WorkOrderStatusUpdate } from "./WorkOrderStatusUpdate";
+import React, { useState } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Edit, Save, X, Plus } from 'lucide-react';
+import { WorkOrder } from '@/types/workOrder';
+import { WorkOrderJobLine } from '@/types/jobLine';
+import { WorkOrderPart } from '@/types/workOrderPart';
+import { TimeEntry } from '@/types/workOrder';
+import { Customer } from '@/types/customer';
+import { UnifiedItemsTable } from '../shared/UnifiedItemsTable';
+import { WorkOrderHeader } from './WorkOrderHeader';
+import { WorkOrderCustomerInfo } from './WorkOrderCustomerInfo';
+import { WorkOrderVehicleInfo } from './WorkOrderVehicleInfo';
 
 interface WorkOrderDetailsTabsProps {
   workOrder: WorkOrder;
   jobLines: WorkOrderJobLine[];
   allParts: WorkOrderPart[];
   timeEntries: TimeEntry[];
-  customer?: import('@/types/customer').Customer | null;
+  customer: Customer | null;
   onJobLinesChange: (jobLines: WorkOrderJobLine[]) => void;
   onTimeEntriesChange: (entries: TimeEntry[]) => void;
-  onWorkOrderUpdate?: (updatedWorkOrder: WorkOrder) => void;
+  onWorkOrderUpdate: (workOrder: WorkOrder) => void;
   isEditMode: boolean;
-  onStartEdit?: () => void;
-  onCancelEdit?: () => void;
-  onSaveEdit?: () => void;
+  onStartEdit: () => void;
+  onCancelEdit: () => void;
+  onSaveEdit: () => void;
 }
 
 export function WorkOrderDetailsTabs({
@@ -44,107 +43,149 @@ export function WorkOrderDetailsTabs({
   onCancelEdit,
   onSaveEdit
 }: WorkOrderDetailsTabsProps) {
-  const [currentWorkOrder, setCurrentWorkOrder] = useState<WorkOrder>(workOrder);
+  const [activeTab, setActiveTab] = useState('overview');
 
-  const handleStatusUpdated = (newStatus: string, updatedWorkOrder?: WorkOrder) => {
-    console.log("Status updated in WorkOrderDetailsTabs:", {
-      newStatus,
-      updatedWorkOrder,
-      currentWorkOrder: currentWorkOrder.status
-    });
-    
-    // Update local state with new status
-    const updatedWO = updatedWorkOrder || { ...currentWorkOrder, status: newStatus };
-    setCurrentWorkOrder(updatedWO);
-    
-    // Notify parent component if callback provided
-    if (onWorkOrderUpdate) {
-      onWorkOrderUpdate(updatedWO);
-    }
+  const handleJobLineUpdate = (updatedJobLine: WorkOrderJobLine) => {
+    const updatedJobLines = jobLines.map(line => 
+      line.id === updatedJobLine.id ? updatedJobLine : line
+    );
+    onJobLinesChange(updatedJobLines);
   };
 
-  const handleInvoiceCreated = (invoiceId: string) => {
-    console.log("Invoice created (ID):", invoiceId);
-    // Could add additional logic here like updating work order status or showing success message
+  const handleJobLineDelete = (jobLineId: string) => {
+    const updatedJobLines = jobLines.filter(line => line.id !== jobLineId);
+    onJobLinesChange(updatedJobLines);
+  };
+
+  const handlePartUpdate = (updatedPart: WorkOrderPart) => {
+    // This would typically update parts in the parent component
+    console.log('Part update requested:', updatedPart);
+  };
+
+  const handlePartDelete = (partId: string) => {
+    // This would typically delete the part in the parent component
+    console.log('Part delete requested:', partId);
   };
 
   return (
     <div className="space-y-6">
-      {/* Unified Header */}
-      <WorkOrderUnifiedHeader
-        workOrder={currentWorkOrder}
+      {/* Work Order Header */}
+      <WorkOrderHeader 
+        workOrder={workOrder}
         customer={customer}
-        jobLines={jobLines}
-        allParts={allParts}
-        timeEntries={timeEntries || []}
+        isEditMode={isEditMode}
+        onStartEdit={onStartEdit}
+        onCancelEdit={onCancelEdit}
+        onSaveEdit={onSaveEdit}
       />
 
-      {/* Actions bar - Improved layout */}
-      <div className="bg-white border rounded-lg p-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <WorkOrderStatusUpdate 
-            workOrder={currentWorkOrder} 
-            onStatusUpdated={handleStatusUpdated} 
-          />
-          <WorkOrderDetailsActions
-            workOrder={currentWorkOrder}
-            isEditMode={isEditMode}
-            onStartEdit={onStartEdit}
-            onCancelEdit={onCancelEdit}
-            onSaveEdit={onSaveEdit}
-            onInvoiceCreated={handleInvoiceCreated}
-          />
-        </div>
-      </div>
-
-      <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="mb-6 bg-gray-100 p-1 rounded-lg">
-          <TabsTrigger value="overview" className="px-6 py-2">Overview</TabsTrigger>
-          <TabsTrigger value="jobs" className="px-6 py-2">Labor & Jobs</TabsTrigger>
-          <TabsTrigger value="parts" className="px-6 py-2">Parts</TabsTrigger>
-          <TabsTrigger value="time" className="px-6 py-2">Time Tracking</TabsTrigger>
-          <TabsTrigger value="documents" className="px-6 py-2">Documents</TabsTrigger>
-          <TabsTrigger value="communications" className="px-6 py-2">Communications</TabsTrigger>
+      {/* Main Content Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="labor">Labor & Parts</TabsTrigger>
+          <TabsTrigger value="time">Time Tracking</TabsTrigger>
+          <TabsTrigger value="notes">Notes & Documents</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-6">
-          <WorkOrderDetailsTab
-            workOrder={currentWorkOrder}
-            jobLines={jobLines}
-            allParts={allParts}
-            onJobLinesChange={onJobLinesChange}
-            isEditMode={isEditMode}
-          />
+        <TabsContent value="overview" className="mt-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Customer Information */}
+            <WorkOrderCustomerInfo customer={customer} workOrder={workOrder} />
+            
+            {/* Vehicle Information */}
+            <WorkOrderVehicleInfo workOrder={workOrder} />
+            
+            {/* Quick Summary */}
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle>Summary</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                  <div>
+                    <div className="text-2xl font-bold text-blue-600">{jobLines.length}</div>
+                    <div className="text-sm text-muted-foreground">Job Lines</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-green-600">{allParts.length}</div>
+                    <div className="text-sm text-muted-foreground">Parts</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-purple-600">
+                      {jobLines.reduce((sum, line) => sum + (line.estimated_hours || 0), 0)}h
+                    </div>
+                    <div className="text-sm text-muted-foreground">Estimated Hours</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-orange-600">
+                      ${(jobLines.reduce((sum, line) => sum + (line.total_amount || 0), 0) + 
+                        allParts.reduce((sum, part) => sum + (part.quantity * part.unit_price), 0)).toFixed(2)}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Total Estimate</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
-        
-        <TabsContent value="jobs" className="space-y-6">
-          <JobLinesSection
-            workOrderId={currentWorkOrder.id}
-            jobLines={jobLines}
-            onJobLinesChange={onJobLinesChange}
-            isEditMode={isEditMode}
-          />
+
+        <TabsContent value="labor" className="mt-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Labor & Parts</CardTitle>
+              {isEditMode && (
+                <div className="flex gap-2">
+                  <Button size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Job Line
+                  </Button>
+                  <Button size="sm" variant="outline">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Part
+                  </Button>
+                </div>
+              )}
+            </CardHeader>
+            <CardContent>
+              <UnifiedItemsTable
+                jobLines={jobLines}
+                allParts={allParts}
+                onJobLineUpdate={handleJobLineUpdate}
+                onJobLineDelete={handleJobLineDelete}
+                onPartUpdate={handlePartUpdate}
+                onPartDelete={handlePartDelete}
+                isEditMode={isEditMode}
+                showType="all"
+              />
+            </CardContent>
+          </Card>
         </TabsContent>
-        
-        <TabsContent value="parts" className="space-y-6">
-          <WorkOrderPartsSection workOrderId={currentWorkOrder.id} isEditMode={isEditMode} />
+
+        <TabsContent value="time" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Time Tracking</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8 text-muted-foreground">
+                Time tracking functionality will be implemented here.
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
-        
-        <TabsContent value="time" className="space-y-6">
-          <TimeTrackingSection
-            workOrderId={currentWorkOrder.id}
-            timeEntries={timeEntries}
-            onUpdateTimeEntries={onTimeEntriesChange}
-            isEditMode={isEditMode}
-          />
-        </TabsContent>
-        
-        <TabsContent value="documents" className="space-y-6">
-          <WorkOrderDocuments workOrderId={currentWorkOrder.id} isEditMode={isEditMode} />
-        </TabsContent>
-        
-        <TabsContent value="communications" className="space-y-6">
-          <WorkOrderCommunications workOrder={currentWorkOrder} isEditMode={isEditMode} />
+
+        <TabsContent value="notes" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Notes & Documents</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8 text-muted-foreground">
+                Notes and documents functionality will be implemented here.
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
