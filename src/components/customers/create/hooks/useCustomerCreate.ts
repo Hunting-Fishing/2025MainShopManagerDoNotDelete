@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { CustomerFormValues } from "@/components/customers/form/schemas/customerSchema";
+import { CustomerFormValues } from "@/components/customers/form/CustomerFormSchema";
 import { useShopData } from "./useShopData";
 import { useCustomerSubmit } from "./useCustomerSubmit";
 import { showImportCompleteNotification } from "../utils/customerNotificationHandler";
@@ -63,7 +63,7 @@ export const useCustomerCreate = () => {
     console.log("📊 useCustomerCreate: Submitting customer with shop_id:", customerData.shop_id);
     console.log("📊 useCustomerCreate: Customer data:", customerData);
     
-    await handleSubmit(customerData, currentUserShopId);
+    await handleSubmit(customerData);
   };
 
   const handleImportComplete = () => {

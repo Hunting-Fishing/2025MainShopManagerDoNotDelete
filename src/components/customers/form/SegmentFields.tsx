@@ -21,9 +21,7 @@ export const SegmentFields: React.FC<SegmentFieldsProps> = ({ form }) => {
             <FormControl>
               <TagSelector
                 selectedTags={field.value || []}
-                onTagsChange={field.onChange}
-                placeholder="Add customer segments..."
-                type="segments"
+                onChange={field.onChange}
               />
             </FormControl>
             <FormMessage />
