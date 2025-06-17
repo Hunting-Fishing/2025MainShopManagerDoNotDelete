@@ -40,3 +40,30 @@ export const getVehicleDisplayName = (vehicle: CustomerVehicle): string => {
   
   return `${year} ${make} ${model}${trim}`.trim();
 };
+
+// Convert form vehicle data to CustomerVehicle
+export const convertFormVehicleToCustomerVehicle = (formVehicle: any): CustomerVehicle => {
+  return {
+    id: formVehicle.id,
+    customer_id: formVehicle.customer_id,
+    year: formVehicle.year || '', // Ensure year is always present
+    make: formVehicle.make || '',
+    model: formVehicle.model || '',
+    vin: formVehicle.vin || undefined,
+    license_plate: formVehicle.license_plate || undefined,
+    trim: formVehicle.trim || undefined,
+    transmission: formVehicle.transmission || undefined,
+    transmission_type: formVehicle.transmission_type || undefined,
+    drive_type: formVehicle.drive_type || undefined,
+    fuel_type: formVehicle.fuel_type || undefined,
+    engine: formVehicle.engine || undefined,
+    body_style: formVehicle.body_style || undefined,
+    country: formVehicle.country || undefined,
+    gvwr: formVehicle.gvwr || undefined,
+    color: formVehicle.color || undefined,
+    last_service_date: formVehicle.last_service_date || undefined,
+    notes: formVehicle.notes || undefined,
+    created_at: formVehicle.created_at,
+    updated_at: formVehicle.updated_at
+  };
+};

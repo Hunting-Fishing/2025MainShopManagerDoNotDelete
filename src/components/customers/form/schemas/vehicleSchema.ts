@@ -54,7 +54,7 @@ export const emptyVehicle: VehicleFormData = {
   color: ''
 };
 
-// Add the vehicleSchema export using Zod
+// Add the vehicleSchema export using Zod - make year required with min length
 export const vehicleSchema = z.object({
   id: z.string().optional(),
   make: z.string().min(1, "Make is required"),
