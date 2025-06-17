@@ -4,7 +4,7 @@ export interface CustomerVehicle {
   customer_id?: string;
   make?: string; // Optional for flexibility
   model?: string; // Optional for flexibility
-  year?: string;
+  year?: string; // Changed to string to match database
   vin?: string;
   license_plate?: string;
   color?: string;
@@ -14,6 +14,7 @@ export interface CustomerVehicle {
   engine?: string;
   fuel_type?: string;
   transmission?: string;
+  transmission_type?: string; // Added this field
   mileage?: string;
   gvwr?: string;
   country?: string;
@@ -22,6 +23,7 @@ export interface CustomerVehicle {
   status?: string;
   created_at?: string;
   updated_at?: string;
+  last_service_date?: string; // Added this field
   
   // Decoded VIN fields (all optional)
   decoded_make?: string;
@@ -50,12 +52,14 @@ export interface VehicleCreate {
   engine?: string;
   fuel_type?: string;
   transmission?: string;
+  transmission_type?: string;
   mileage?: string;
   gvwr?: string;
   country?: string;
   notes?: string;
   is_primary?: boolean;
   status?: string;
+  last_service_date?: string;
 }
 
 export interface VehicleUpdate {
@@ -72,10 +76,18 @@ export interface VehicleUpdate {
   engine?: string;
   fuel_type?: string;
   transmission?: string;
+  transmission_type?: string;
   mileage?: string;
   gvwr?: string;
   country?: string;
   notes?: string;
   is_primary?: boolean;
   status?: string;
+  last_service_date?: string;
 }
+
+// Utility function to format vehicle year
+export const formatVehicleYear = (year?: string | number): string => {
+  if (!year) return '';
+  return typeof year === 'number' ? year.toString() : year;
+};

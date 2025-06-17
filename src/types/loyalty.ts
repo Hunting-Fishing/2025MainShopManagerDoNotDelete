@@ -12,7 +12,7 @@ export interface LoyaltySettings {
 export interface CustomerLoyalty {
   id: string;
   customer_id: string;
-  points_balance: number;
+  points_balance: number; // Changed from current_points to match database
   lifetime_points: number;
   lifetime_value: number;
   tier: string;

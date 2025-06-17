@@ -46,6 +46,20 @@ export interface Customer {
   created_at?: string;
   updated_at?: string;
   
+  // Additional fields used in forms
+  other_business_industry?: string;
+  tax_id?: string;
+  preferred_payment_method?: string;
+  credit_terms?: string;
+  terms_agreed?: boolean;
+  referral_person_id?: string;
+  other_referral_details?: string;
+  is_fleet?: boolean;
+  fleet_company?: string;
+  fleet_manager?: string;
+  fleet_contact?: string;
+  preferred_service_type?: string;
+  
   // Related data
   vehicles?: CustomerVehicle[];
   notes_list?: CustomerNote[];
@@ -92,6 +106,20 @@ export interface CustomerCreate {
   household_relationship?: string;
   auth_user_id?: string;
   
+  // Additional fields used in forms
+  other_business_industry?: string;
+  tax_id?: string;
+  preferred_payment_method?: string;
+  credit_terms?: string;
+  terms_agreed?: boolean;
+  referral_person_id?: string;
+  other_referral_details?: string;
+  is_fleet?: boolean;
+  fleet_company?: string;
+  fleet_manager?: string;
+  fleet_contact?: string;
+  preferred_service_type?: string;
+  
   // Related data
   vehicles?: Partial<CustomerVehicle>[];
 }
@@ -134,4 +162,18 @@ export interface CustomerUpdate {
   household_id?: string;
   household_relationship?: string;
   auth_user_id?: string;
+  
+  // Additional fields used in forms
+  other_business_industry?: string;
+  tax_id?: string;
+  preferred_payment_method?: string;
+  credit_terms?: string;
+  terms_agreed?: boolean;
+  referral_person_id?: string;
+  other_referral_details?: string;
+  is_fleet?: boolean;
+  fleet_company?: string;
+  fleet_manager?: string;
+  fleet_contact?: string;
+  preferred_service_type?: string;
 }
