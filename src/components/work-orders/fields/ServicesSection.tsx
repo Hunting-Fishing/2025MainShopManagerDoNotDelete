@@ -9,14 +9,12 @@ interface ServicesSectionProps {
   onServiceSelect?: (service: ServiceJob, categoryName: string, subcategoryName: string) => void;
   selectedServices?: SelectedService[];
   onUpdateServices?: (services: SelectedService[]) => void;
-  searchQuery?: string;
 }
 
 export const ServicesSection: React.FC<ServicesSectionProps> = ({
   onServiceSelect,
   selectedServices = [],
-  onUpdateServices,
-  searchQuery = ""
+  onUpdateServices
 }) => {
   const { sectors, loading, error } = useServiceSectors();
 
@@ -71,7 +69,6 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
       selectedServices={selectedServices}
       onRemoveService={handleRemoveService}
       onUpdateServices={handleUpdateServices}
-      searchQuery={searchQuery}
     />
   );
 };
