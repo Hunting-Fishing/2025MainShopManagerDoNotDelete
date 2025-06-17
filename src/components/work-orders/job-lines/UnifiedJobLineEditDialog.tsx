@@ -5,10 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { WorkOrderJobLine } from '@/types/jobLine';
-import { StatusSelector } from '../shared/StatusSelector';
-import { EditService } from '@/services/workOrder/editService';
-import { toast } from '@/hooks/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { WorkOrderJobLine, JOB_LINE_STATUSES, isValidJobLineStatus } from '@/types/jobLine';
+import { updateWorkOrderJobLine } from '@/services/workOrder/jobLinesService';
 
 interface UnifiedJobLineEditDialogProps {
   jobLine: WorkOrderJobLine | null;
@@ -23,13 +22,12 @@ export function UnifiedJobLineEditDialog({
   onOpenChange,
   onSave
 }: UnifiedJobLineEditDialogProps) {
-  const [formData, setFormData] = useState<Partial<WorkOrderJobLine>>({
+  const [formData, setFormData] = useState({
     name: '',
     description: '',
     estimated_hours: 0,
     labor_rate: 0,
-    total_amount: 0,
-    status: 'pending',
+    status: 'pending' as const,
     notes: ''
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -41,52 +39,29 @@ export function UnifiedJobLineEditDialog({
         description: jobLine.description || '',
         estimated_hours: jobLine.estimated_hours || 0,
         labor_rate: jobLine.labor_rate || 0,
-        total_amount: jobLine.total_amount || 0,
-        status: jobLine.status || 'pending',
+        status: isValidJobLineStatus(jobLine.status || 'pending') ? jobLine.status! : 'pending',
         notes: jobLine.notes || ''
       });
     }
   }, [jobLine]);
-
-  const calculateTotal = () => {
-    const hours = formData.estimated_hours || 0;
-    const rate = formData.labor_rate || 0;
-    return hours * rate;
-  };
 
   const handleSave = async () => {
     if (!jobLine) return;
 
     setIsLoading(true);
     try {
-      const calculatedTotal = calculateTotal();
-      const updatedJobLine = await EditService.updateJobLine(jobLine.id, {
+      const totalAmount = formData.estimated_hours * formData.labor_rate;
+      const updatedJobLine = await updateWorkOrderJobLine(jobLine.id, {
         ...formData,
-        total_amount: calculatedTotal
+        total_amount: totalAmount
       });
-      
       await onSave(updatedJobLine);
-      toast({
-        title: "Success",
-        description: "Job line updated successfully",
-      });
+      onOpenChange(false);
     } catch (error) {
-      console.error('Error saving job line:', error);
-      toast({
-        title: "Error", 
-        description: "Failed to update job line",
-        variant: "destructive"
-      });
+      console.error('Error updating job line:', error);
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleFieldChange = (field: keyof WorkOrderJobLine, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
   };
 
   return (
@@ -101,8 +76,8 @@ export function UnifiedJobLineEditDialog({
             <Label htmlFor="name">Name</Label>
             <Input
               id="name"
-              value={formData.name || ''}
-              onChange={(e) => handleFieldChange('name', e.target.value)}
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             />
           </div>
           
@@ -110,17 +85,8 @@ export function UnifiedJobLineEditDialog({
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
-              value={formData.description || ''}
-              onChange={(e) => handleFieldChange('description', e.target.value)}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="status">Status</Label>
-            <StatusSelector
-              currentStatus={formData.status || 'pending'}
-              type="jobLine"
-              onStatusChange={(status) => handleFieldChange('status', status)}
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             />
           </div>
           
@@ -130,41 +96,46 @@ export function UnifiedJobLineEditDialog({
               <Input
                 id="hours"
                 type="number"
-                step="0.25"
-                value={formData.estimated_hours || 0}
-                onChange={(e) => handleFieldChange('estimated_hours', parseFloat(e.target.value) || 0)}
+                value={formData.estimated_hours}
+                onChange={(e) => setFormData({ ...formData, estimated_hours: parseFloat(e.target.value) || 0 })}
               />
             </div>
             <div>
-              <Label htmlFor="rate">Rate ($)</Label>
+              <Label htmlFor="rate">Rate</Label>
               <Input
                 id="rate"
                 type="number"
-                step="0.01"
-                value={formData.labor_rate || 0}
-                onChange={(e) => handleFieldChange('labor_rate', parseFloat(e.target.value) || 0)}
+                value={formData.labor_rate}
+                onChange={(e) => setFormData({ ...formData, labor_rate: parseFloat(e.target.value) || 0 })}
               />
             </div>
           </div>
 
           <div>
-            <Label htmlFor="total">Total Amount ($)</Label>
-            <Input
-              id="total"
-              type="number"
-              step="0.01"
-              value={calculateTotal()}
-              readOnly
-              className="bg-muted"
-            />
+            <Label htmlFor="status">Status</Label>
+            <Select
+              value={formData.status}
+              onValueChange={(value) => setFormData({ ...formData, status: isValidJobLineStatus(value) ? value : 'pending' })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {JOB_LINE_STATUSES.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ')}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           
           <div>
             <Label htmlFor="notes">Notes</Label>
             <Textarea
               id="notes"
-              value={formData.notes || ''}
-              onChange={(e) => handleFieldChange('notes', e.target.value)}
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
             />
           </div>
           

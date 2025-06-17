@@ -1,6 +1,5 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { WorkOrderJobLine, JobLineFormValues } from '@/types/jobLine';
+import { WorkOrderJobLine, JobLineFormValues, isValidJobLineStatus, isValidLaborRateType } from '@/types/jobLine';
 
 export async function getWorkOrderJobLines(workOrderId: string): Promise<WorkOrderJobLine[]> {
   try {
@@ -18,7 +17,13 @@ export async function getWorkOrderJobLines(workOrderId: string): Promise<WorkOrd
     }
 
     console.log('Retrieved job lines:', data);
-    return data || [];
+    
+    // Map and validate the data
+    return (data || []).map(item => ({
+      ...item,
+      status: isValidJobLineStatus(item.status) ? item.status : 'pending',
+      labor_rate_type: isValidLaborRateType(item.labor_rate_type) ? item.labor_rate_type : 'standard'
+    })) as WorkOrderJobLine[];
   } catch (error) {
     console.error('Error in getWorkOrderJobLines:', error);
     throw error;
@@ -40,9 +45,9 @@ export async function createWorkOrderJobLine(
       description: jobLineData.description || '',
       estimated_hours: jobLineData.estimated_hours || 0,
       labor_rate: jobLineData.labor_rate || 0,
-      labor_rate_type: jobLineData.labor_rate_type || 'standard',
+      labor_rate_type: isValidLaborRateType(jobLineData.labor_rate_type || 'standard') ? jobLineData.labor_rate_type : 'standard',
       total_amount: jobLineData.total_amount || (jobLineData.estimated_hours || 0) * (jobLineData.labor_rate || 0),
-      status: jobLineData.status || 'pending',
+      status: isValidJobLineStatus(jobLineData.status || 'pending') ? jobLineData.status : 'pending',
       notes: jobLineData.notes || '',
       display_order: jobLineData.display_order || 0
     };
@@ -61,7 +66,13 @@ export async function createWorkOrderJobLine(
     }
 
     console.log('Successfully created job line:', data);
-    return data;
+    
+    // Return with proper type casting
+    return {
+      ...data,
+      status: isValidJobLineStatus(data.status) ? data.status : 'pending',
+      labor_rate_type: isValidLaborRateType(data.labor_rate_type) ? data.labor_rate_type : 'standard'
+    } as WorkOrderJobLine;
   } catch (error) {
     console.error('Error in createWorkOrderJobLine:', error);
     throw error;
@@ -82,9 +93,9 @@ export async function updateWorkOrderJobLine(
       description: jobLineData.description,
       estimated_hours: jobLineData.estimated_hours,
       labor_rate: jobLineData.labor_rate,
-      labor_rate_type: jobLineData.labor_rate_type,
+      labor_rate_type: jobLineData.labor_rate_type && isValidLaborRateType(jobLineData.labor_rate_type) ? jobLineData.labor_rate_type : 'standard',
       total_amount: jobLineData.total_amount,
-      status: jobLineData.status,
+      status: jobLineData.status && isValidJobLineStatus(jobLineData.status) ? jobLineData.status : 'pending',
       notes: jobLineData.notes,
       display_order: jobLineData.display_order,
       updated_at: new Date().toISOString()
@@ -103,7 +114,13 @@ export async function updateWorkOrderJobLine(
     }
 
     console.log('Successfully updated job line:', data);
-    return data;
+    
+    // Return with proper type casting
+    return {
+      ...data,
+      status: isValidJobLineStatus(data.status) ? data.status : 'pending',
+      labor_rate_type: isValidLaborRateType(data.labor_rate_type) ? data.labor_rate_type : 'standard'
+    } as WorkOrderJobLine;
   } catch (error) {
     console.error('Error in updateWorkOrderJobLine:', error);
     throw error;

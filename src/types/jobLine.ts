@@ -32,6 +32,12 @@ export interface JobLineFormValues {
   notes?: string;
 }
 
+// Job Line Status constants
+export const JOB_LINE_STATUSES = ['pending', 'in-progress', 'completed', 'on-hold'] as const;
+
+// Work Order Part Status constants
+export const WORK_ORDER_PART_STATUSES = ['pending', 'ordered', 'received', 'installed', 'returned'] as const;
+
 // Job Line Status mapping for UI display
 export const jobLineStatusMap: Record<string, { label: string; classes: string }> = {
   'pending': { label: 'Pending', classes: 'bg-yellow-100 text-yellow-800' },
@@ -39,3 +45,25 @@ export const jobLineStatusMap: Record<string, { label: string; classes: string }
   'completed': { label: 'Completed', classes: 'bg-green-100 text-green-800' },
   'on-hold': { label: 'On Hold', classes: 'bg-red-100 text-red-800' }
 };
+
+// Part Status mapping for UI display
+export const partStatusMap: Record<string, { label: string; classes: string }> = {
+  'pending': { label: 'Pending', classes: 'bg-yellow-100 text-yellow-800' },
+  'ordered': { label: 'Ordered', classes: 'bg-blue-100 text-blue-800' },
+  'received': { label: 'Received', classes: 'bg-purple-100 text-purple-800' },
+  'installed': { label: 'Installed', classes: 'bg-green-100 text-green-800' },
+  'returned': { label: 'Returned', classes: 'bg-red-100 text-red-800' }
+};
+
+// Type guard functions
+export function isValidJobLineStatus(status: string): status is 'pending' | 'in-progress' | 'completed' | 'on-hold' {
+  return JOB_LINE_STATUSES.includes(status as any);
+}
+
+export function isValidLaborRateType(type: string): type is 'standard' | 'overtime' | 'premium' | 'flat_rate' {
+  return ['standard', 'overtime', 'premium', 'flat_rate'].includes(type);
+}
+
+export function isValidPartStatus(status: string): status is 'pending' | 'ordered' | 'received' | 'installed' | 'returned' {
+  return WORK_ORDER_PART_STATUSES.includes(status as any);
+}
