@@ -25,7 +25,8 @@ export function EditableJobLinesGrid({
     setLocalJobLines(jobLines);
   }, [jobLines]);
 
-  const handleAddJobLines = (newJobLinesData: Omit<WorkOrderJobLine, 'id' | 'createdAt' | 'updatedAt'>[]) => {
+  // Updated to handle array of job lines properly
+  const handleAddJobLines = (newJobLinesData: Omit<WorkOrderJobLine, 'id' | 'created_at' | 'updated_at'>[]) => {
     const newJobLines: WorkOrderJobLine[] = newJobLinesData.map(jobLineData => ({
       ...jobLineData,
       id: generateTempJobLineId(),
