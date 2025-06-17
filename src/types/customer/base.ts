@@ -1,81 +1,137 @@
 
-// Base customer types - no sample data
+import { CustomerVehicle } from './vehicle';
+import { CustomerNote } from './notes';
+import { CustomerHousehold } from './household';
+import { CustomerSegment } from './segment';
+import { CustomerLoyalty } from '../loyalty';
+
+// Base customer interface matching database schema
 export interface Customer {
   id: string;
+  shop_id: string; // Required
   first_name: string;
   last_name: string;
-  email: string;
-  phone: string;
-  address: string;
+  email?: string;
+  phone?: string;
+  address?: string;
   city?: string;
   state?: string;
   postal_code?: string;
   country?: string;
-  shop_id: string;
-  created_at: string;
-  updated_at: string;
-  
-  preferred_technician_id?: string;
-  communication_preference?: string;
-  referral_source?: string;
-  referral_person_id?: string;
-  other_referral_details?: string;
-  household_id?: string;
-  is_fleet?: boolean;
-  fleet_company?: string;
-  fleet_manager?: string;
-  fleet_contact?: string;
-  preferred_service_type?: string;
-  notes?: string;
-  tags?: string[] | any; // Will be normalized in adaptCustomerForUI
-  
-  segments?: string[] | any; // Will be normalized in adaptCustomerForUI
-  
-  loyalty?: CustomerLoyalty;
-  
   company?: string;
-  status?: string;
-  lastServiceDate?: string;
-  name?: string;
-  dateAdded?: string;
-  
-  preferred_technician_history?: PreferredTechnicianChange[];
-  
-  vehicles?: CustomerVehicle[];
-  
-  // Business info fields
+  preferred_technician_id?: string;
+  preferred_contact_method?: string;
+  marketing_opt_in?: boolean;
+  tags?: string[];
+  notes?: string;
+  emergency_contact?: string;
+  emergency_phone?: string;
+  referral_source?: string;
+  business_name?: string;
   business_type?: string;
-  business_industry?: string;
-  other_business_industry?: string;
-  tax_id?: string;
-  business_email?: string;
   business_phone?: string;
-  
-  // Payment & Billing fields
-  preferred_payment_method?: string;
+  business_email?: string;
+  business_industry?: string;
+  fleet_size?: number;
   auto_billing?: boolean;
-  credit_terms?: string;
-  terms_agreed?: boolean;
+  is_commercial?: boolean;
+  tax_exempt?: boolean;
+  communication_preference?: string;
+  language_preference?: string;
+  referrer_id?: string;
+  loyalty_tier?: string;
+  household_id?: string;
+  household_relationship?: string;
+  auth_user_id?: string;
+  created_at?: string;
+  updated_at?: string;
   
-  // Role field for distinguishing customers from employees/staff
-  role?: string;
+  // Related data
+  vehicles?: CustomerVehicle[];
+  notes_list?: CustomerNote[];
+  household?: CustomerHousehold;
+  segments?: CustomerSegment[];
+  loyalty?: CustomerLoyalty;
 }
 
-export interface PreferredTechnicianChange {
+// Customer creation interface - shop_id is required but some other fields are optional
+export interface CustomerCreate {
+  shop_id: string; // Required
+  first_name: string;
+  last_name: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+  country?: string;
+  company?: string;
+  preferred_technician_id?: string;
+  preferred_contact_method?: string;
+  marketing_opt_in?: boolean;
+  tags?: string[];
+  notes?: string;
+  emergency_contact?: string;
+  emergency_phone?: string;
+  referral_source?: string;
+  business_name?: string;
+  business_type?: string;
+  business_phone?: string;
+  business_email?: string;
+  business_industry?: string;
+  fleet_size?: number;
+  auto_billing?: boolean;
+  is_commercial?: boolean;
+  tax_exempt?: boolean;
+  communication_preference?: string;
+  language_preference?: string;
+  referrer_id?: string;
+  loyalty_tier?: string;
+  household_id?: string;
+  household_relationship?: string;
+  auth_user_id?: string;
+  
+  // Related data
+  vehicles?: Partial<CustomerVehicle>[];
+}
+
+// Customer update interface - all fields optional except id
+export interface CustomerUpdate {
   id: string;
-  customer_id: string;
-  previous_technician_id?: string;
-  previous_technician_name?: string;
-  new_technician_id?: string;
-  new_technician_name?: string;
-  change_date: string;
-  change_reason?: string;
-  changed_by_id: string;
-  changed_by_name: string;
+  shop_id?: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+  country?: string;
+  company?: string;
+  preferred_technician_id?: string;
+  preferred_contact_method?: string;
+  marketing_opt_in?: boolean;
+  tags?: string[];
+  notes?: string;
+  emergency_contact?: string;
+  emergency_phone?: string;
+  referral_source?: string;
+  business_name?: string;
+  business_type?: string;
+  business_phone?: string;
+  business_email?: string;
+  business_industry?: string;
+  fleet_size?: number;
+  auto_billing?: boolean;
+  is_commercial?: boolean;
+  tax_exempt?: boolean;
+  communication_preference?: string;
+  language_preference?: string;
+  referrer_id?: string;
+  loyalty_tier?: string;
+  household_id?: string;
+  household_relationship?: string;
+  auth_user_id?: string;
 }
-
-export type CustomerCreate = Omit<Customer, 'id' | 'created_at' | 'updated_at'>;
-
-// Import from other module types to avoid circular dependencies
-import { CustomerLoyalty } from '@/types/loyalty';
-import { CustomerVehicle } from './vehicle';
