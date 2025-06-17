@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useWorkOrderUnified } from '@/hooks/useWorkOrderUnified';
+import { useWorkOrderMaster } from '@/hooks/useWorkOrderMaster';
 import { WorkOrderDetailsTabs } from './details/WorkOrderDetailsTabs';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
@@ -30,7 +29,7 @@ export function WorkOrderDetailsView({ isEditMode = false }: WorkOrderDetailsVie
     handleJobLineDelete,
     handlePartUpdate,
     handlePartDelete
-  } = useWorkOrderUnified(id || '');
+  } = useWorkOrderMaster(id);
 
   if (isLoading) {
     return (
