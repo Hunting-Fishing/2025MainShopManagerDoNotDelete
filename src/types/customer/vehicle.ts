@@ -1,11 +1,11 @@
 
 // Vehicle-related type definitions
 export interface CustomerVehicle {
-  id?: string; // Making id optional for creation
+  id?: string;
   customer_id?: string;
-  year: string | number;  // Changed to required to match the type in customer.ts
-  make: string;  // This is required to match the type in customer.ts
-  model: string; // This is required to match the type in customer.ts
+  year: string | number; // Make year flexible to handle both string and number
+  make: string;
+  model: string;
   vin?: string;
   license_plate?: string;
   trim?: string;

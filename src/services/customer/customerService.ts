@@ -149,8 +149,9 @@ export async function getCustomerVehicles(customerId: string) {
   console.log('Fetching vehicles for customer:', customerId);
   
   try {
+    // Use the correct table name 'vehicles' instead of 'customer_vehicles'
     const { data: vehicles, error } = await supabase
-      .from('customer_vehicles')
+      .from('vehicles')
       .select('*')
       .eq('customer_id', customerId)
       .order('created_at', { ascending: false });
