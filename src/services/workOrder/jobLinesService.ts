@@ -1,35 +1,7 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/config/supabase';
 import { WorkOrderJobLine } from '@/types/jobLine';
-
-export interface JobLineInsertData {
-  work_order_id: string;
-  name: string;
-  category?: string;
-  subcategory?: string;
-  description?: string;
-  estimated_hours?: number;
-  labor_rate?: number;
-  labor_rate_type?: 'standard' | 'overtime' | 'premium' | 'flat_rate';
-  total_amount?: number;
-  status?: 'pending' | 'in-progress' | 'completed' | 'on-hold';
-  display_order?: number;
-  notes?: string;
-}
-
-export interface JobLineUpdateData {
-  name?: string;
-  category?: string;
-  subcategory?: string;
-  description?: string;
-  estimated_hours?: number;
-  labor_rate?: number;
-  labor_rate_type?: 'standard' | 'overtime' | 'premium' | 'flat_rate';
-  total_amount?: number;
-  status?: 'pending' | 'in-progress' | 'completed' | 'on-hold';
-  display_order?: number;
-  notes?: string;
-}
+import { isValidLaborRateType } from '@/types/jobLine';
 
 export async function getWorkOrderJobLines(workOrderId: string): Promise<WorkOrderJobLine[]> {
   console.log('Fetching job lines for work order:', workOrderId);
@@ -46,33 +18,48 @@ export async function getWorkOrderJobLines(workOrderId: string): Promise<WorkOrd
       throw new Error(`Failed to fetch job lines: ${error.message}`);
     }
 
-    console.log('Job lines fetched successfully:', data?.length || 0);
-    return data || [];
+    console.log('Raw job lines data:', data);
+
+    if (!data) {
+      console.log('No job lines found');
+      return [];
+    }
+
+    // Map the data and ensure proper type casting for labor_rate_type
+    const mappedJobLines: WorkOrderJobLine[] = data.map(line => ({
+      id: line.id,
+      work_order_id: line.work_order_id,
+      name: line.name || '',
+      category: line.category || '',
+      subcategory: line.subcategory || '',
+      description: line.description || '',
+      estimated_hours: line.estimated_hours || 0,
+      labor_rate: line.labor_rate || 0,
+      labor_rate_type: isValidLaborRateType(line.labor_rate_type) ? line.labor_rate_type : 'standard',
+      total_amount: line.total_amount || 0,
+      status: line.status || 'pending',
+      display_order: line.display_order || 0,
+      notes: line.notes || '',
+      created_at: line.created_at,
+      updated_at: line.updated_at
+    }));
+
+    console.log('Mapped job lines:', mappedJobLines);
+    return mappedJobLines;
+
   } catch (error) {
-    console.error('Service error fetching job lines:', error);
+    console.error('Error in getWorkOrderJobLines:', error);
     throw error;
   }
 }
 
-export async function createWorkOrderJobLine(jobLineData: JobLineInsertData): Promise<WorkOrderJobLine> {
-  console.log('Creating job line:', jobLineData);
+export async function createWorkOrderJobLine(jobLine: Omit<WorkOrderJobLine, 'id' | 'created_at' | 'updated_at'>): Promise<WorkOrderJobLine> {
+  console.log('Creating job line:', jobLine);
   
   try {
-    // Calculate total_amount if not provided
-    const totalAmount = jobLineData.total_amount ?? 
-      ((jobLineData.estimated_hours || 0) * (jobLineData.labor_rate || 0));
-
-    const dataToInsert = {
-      ...jobLineData,
-      total_amount: totalAmount,
-      status: jobLineData.status || 'pending',
-      labor_rate_type: jobLineData.labor_rate_type || 'standard',
-      display_order: jobLineData.display_order ?? 0
-    };
-
     const { data, error } = await supabase
       .from('work_order_job_lines')
-      .insert([dataToInsert])
+      .insert([jobLine])
       .select()
       .single();
 
@@ -81,37 +68,45 @@ export async function createWorkOrderJobLine(jobLineData: JobLineInsertData): Pr
       throw new Error(`Failed to create job line: ${error.message}`);
     }
 
-    console.log('Job line created successfully:', data);
-    return data;
+    // Ensure proper type casting for the returned data
+    const mappedJobLine: WorkOrderJobLine = {
+      id: data.id,
+      work_order_id: data.work_order_id,
+      name: data.name || '',
+      category: data.category || '',
+      subcategory: data.subcategory || '',
+      description: data.description || '',
+      estimated_hours: data.estimated_hours || 0,
+      labor_rate: data.labor_rate || 0,
+      labor_rate_type: isValidLaborRateType(data.labor_rate_type) ? data.labor_rate_type : 'standard',
+      total_amount: data.total_amount || 0,
+      status: data.status || 'pending',
+      display_order: data.display_order || 0,
+      notes: data.notes || '',
+      created_at: data.created_at,
+      updated_at: data.updated_at
+    };
+
+    console.log('Created job line:', mappedJobLine);
+    return mappedJobLine;
+
   } catch (error) {
-    console.error('Service error creating job line:', error);
+    console.error('Error in createWorkOrderJobLine:', error);
     throw error;
   }
 }
 
-export async function updateWorkOrderJobLine(jobLineId: string, updateData: JobLineUpdateData): Promise<WorkOrderJobLine> {
-  console.log('Updating job line:', jobLineId, updateData);
+export async function updateWorkOrderJobLine(id: string, updates: Partial<WorkOrderJobLine>): Promise<WorkOrderJobLine> {
+  console.log('Updating job line:', id, updates);
   
   try {
-    // Calculate total_amount if hours or rate are being updated
-    let dataToUpdate = { ...updateData };
-    if (updateData.estimated_hours !== undefined || updateData.labor_rate !== undefined) {
-      // Get current job line to calculate total
-      const { data: currentJobLine } = await supabase
-        .from('work_order_job_lines')
-        .select('estimated_hours, labor_rate')
-        .eq('id', jobLineId)
-        .single();
-
-      const hours = updateData.estimated_hours ?? currentJobLine?.estimated_hours ?? 0;
-      const rate = updateData.labor_rate ?? currentJobLine?.labor_rate ?? 0;
-      dataToUpdate.total_amount = hours * rate;
-    }
-
     const { data, error } = await supabase
       .from('work_order_job_lines')
-      .update(dataToUpdate)
-      .eq('id', jobLineId)
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
       .select()
       .single();
 
@@ -120,68 +115,106 @@ export async function updateWorkOrderJobLine(jobLineId: string, updateData: JobL
       throw new Error(`Failed to update job line: ${error.message}`);
     }
 
-    console.log('Job line updated successfully:', data);
-    return data;
+    // Ensure proper type casting for the returned data
+    const mappedJobLine: WorkOrderJobLine = {
+      id: data.id,
+      work_order_id: data.work_order_id,
+      name: data.name || '',
+      category: data.category || '',
+      subcategory: data.subcategory || '',
+      description: data.description || '',
+      estimated_hours: data.estimated_hours || 0,
+      labor_rate: data.labor_rate || 0,
+      labor_rate_type: isValidLaborRateType(data.labor_rate_type) ? data.labor_rate_type : 'standard',
+      total_amount: data.total_amount || 0,
+      status: data.status || 'pending',
+      display_order: data.display_order || 0,
+      notes: data.notes || '',
+      created_at: data.created_at,
+      updated_at: data.updated_at
+    };
+
+    console.log('Updated job line:', mappedJobLine);
+    return mappedJobLine;
+
   } catch (error) {
-    console.error('Service error updating job line:', error);
+    console.error('Error in updateWorkOrderJobLine:', error);
     throw error;
   }
 }
 
-export async function deleteWorkOrderJobLine(jobLineId: string): Promise<void> {
-  console.log('Deleting job line:', jobLineId);
+export async function upsertWorkOrderJobLine(jobLine: Partial<WorkOrderJobLine> & { work_order_id: string }): Promise<WorkOrderJobLine> {
+  if (jobLine.id) {
+    return updateWorkOrderJobLine(jobLine.id, jobLine);
+  } else {
+    return createWorkOrderJobLine(jobLine as Omit<WorkOrderJobLine, 'id' | 'created_at' | 'updated_at'>);
+  }
+}
+
+export async function deleteWorkOrderJobLine(id: string): Promise<void> {
+  console.log('Deleting job line:', id);
   
   try {
     const { error } = await supabase
       .from('work_order_job_lines')
       .delete()
-      .eq('id', jobLineId);
+      .eq('id', id);
 
     if (error) {
       console.error('Error deleting job line:', error);
       throw new Error(`Failed to delete job line: ${error.message}`);
     }
 
-    console.log('Job line deleted successfully');
+    console.log('Successfully deleted job line:', id);
+
   } catch (error) {
-    console.error('Service error deleting job line:', error);
+    console.error('Error in deleteWorkOrderJobLine:', error);
     throw error;
   }
 }
 
-export async function upsertWorkOrderJobLine(jobLineData: JobLineInsertData & { id?: string }): Promise<WorkOrderJobLine> {
-  if (jobLineData.id) {
-    const { id, ...updateData } = jobLineData;
-    return updateWorkOrderJobLine(id, updateData);
-  } else {
-    return createWorkOrderJobLine(jobLineData);
-  }
-}
-
-export async function reorderJobLines(workOrderId: string, jobLineIds: string[]): Promise<void> {
-  console.log('Reordering job lines for work order:', workOrderId);
+export async function createMultipleJobLines(jobLines: Omit<WorkOrderJobLine, 'id' | 'created_at' | 'updated_at'>[]): Promise<WorkOrderJobLine[]> {
+  console.log('Creating multiple job lines:', jobLines);
   
   try {
-    const updates = jobLineIds.map((id, index) => 
-      supabase
-        .from('work_order_job_lines')
-        .update({ display_order: index })
-        .eq('id', id)
-        .eq('work_order_id', workOrderId)
-    );
+    const { data, error } = await supabase
+      .from('work_order_job_lines')
+      .insert(jobLines)
+      .select();
 
-    const results = await Promise.all(updates);
-    
-    for (const result of results) {
-      if (result.error) {
-        console.error('Error reordering job line:', result.error);
-        throw new Error(`Failed to reorder job lines: ${result.error.message}`);
-      }
+    if (error) {
+      console.error('Error creating multiple job lines:', error);
+      throw new Error(`Failed to create job lines: ${error.message}`);
     }
 
-    console.log('Job lines reordered successfully');
+    if (!data) {
+      throw new Error('No data returned from job lines creation');
+    }
+
+    // Map the data and ensure proper type casting for labor_rate_type
+    const mappedJobLines: WorkOrderJobLine[] = data.map(line => ({
+      id: line.id,
+      work_order_id: line.work_order_id,
+      name: line.name || '',
+      category: line.category || '',
+      subcategory: line.subcategory || '',
+      description: line.description || '',
+      estimated_hours: line.estimated_hours || 0,
+      labor_rate: line.labor_rate || 0,
+      labor_rate_type: isValidLaborRateType(line.labor_rate_type) ? line.labor_rate_type : 'standard',
+      total_amount: line.total_amount || 0,
+      status: line.status || 'pending',
+      display_order: line.display_order || 0,
+      notes: line.notes || '',
+      created_at: line.created_at,
+      updated_at: line.updated_at
+    }));
+
+    console.log('Created multiple job lines:', mappedJobLines);
+    return mappedJobLines;
+
   } catch (error) {
-    console.error('Service error reordering job lines:', error);
+    console.error('Error in createMultipleJobLines:', error);
     throw error;
   }
 }
