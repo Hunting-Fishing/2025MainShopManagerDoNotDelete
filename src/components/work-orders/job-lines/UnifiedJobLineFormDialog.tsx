@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -6,15 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Loader2 } from 'lucide-react';
-import { WorkOrderJobLine } from '@/types/jobLine';
-import { createJobLine, updateJobLine } from '@/services/workOrder/jobLinesService';
-import { toast } from '@/hooks/use-toast';
+import { WorkOrderJobLine, LaborRateType, JobLineStatus } from '@/types/jobLine';
+import { createWorkOrderJobLine, updateWorkOrderJobLine } from '@/services/workOrder/jobLinesService';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 
 interface UnifiedJobLineFormDialogProps {
   workOrderId: string;
-  jobLine?: WorkOrderJobLine;
+  jobLine?: WorkOrderJobLine | null;
   mode: 'add-service' | 'add-manual' | 'edit';
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -29,6 +27,8 @@ export function UnifiedJobLineFormDialog({
   onOpenChange,
   onSave
 }: UnifiedJobLineFormDialogProps) {
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -36,18 +36,13 @@ export function UnifiedJobLineFormDialog({
     description: '',
     estimated_hours: 0,
     labor_rate: 0,
-    labor_rate_type: 'standard' as const,
-    status: 'pending' as const,
-    notes: ''
+    labor_rate_type: 'standard' as LaborRateType,
+    status: 'pending' as JobLineStatus,
+    notes: '',
+    display_order: 0
   });
-  
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  // Initialize form data when dialog opens or job line changes
   useEffect(() => {
-    console.log('🔄 UnifiedJobLineFormDialog - Initializing form data:', { jobLine, mode });
-    
     if (jobLine && mode === 'edit') {
       setFormData({
         name: jobLine.name || '',
@@ -56,9 +51,10 @@ export function UnifiedJobLineFormDialog({
         description: jobLine.description || '',
         estimated_hours: jobLine.estimated_hours || 0,
         labor_rate: jobLine.labor_rate || 0,
-        labor_rate_type: jobLine.labor_rate_type || 'standard',
-        status: jobLine.status || 'pending',
-        notes: jobLine.notes || ''
+        labor_rate_type: (jobLine.labor_rate_type as LaborRateType) || 'standard',
+        status: (jobLine.status as JobLineStatus) || 'pending',
+        notes: jobLine.notes || '',
+        display_order: jobLine.display_order || 0
       });
     } else {
       // Reset form for new job lines
@@ -71,126 +67,118 @@ export function UnifiedJobLineFormDialog({
         labor_rate: 0,
         labor_rate_type: 'standard',
         status: 'pending',
-        notes: ''
+        notes: '',
+        display_order: 0
       });
     }
-    
-    // Clear any previous errors
-    setError(null);
   }, [jobLine, mode, open]);
 
-  const calculateTotalAmount = () => {
-    return formData.estimated_hours * formData.labor_rate;
-  };
-
-  const validateForm = (): string | null => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validation
     if (!formData.name.trim()) {
-      return 'Job line name is required';
+      toast({
+        title: "Validation Error",
+        description: "Job line name is required",
+        variant: "destructive"
+      });
+      return;
     }
-    if (formData.estimated_hours < 0) {
-      return 'Estimated hours cannot be negative';
-    }
-    if (formData.labor_rate < 0) {
-      return 'Labor rate cannot be negative';
-    }
-    return null;
-  };
 
-  const handleSave = async () => {
-    console.log('💾 UnifiedJobLineFormDialog - Starting save process');
-    console.log('📊 Form data:', formData);
-    console.log('🎯 Mode:', mode);
-    console.log('🔗 Work Order ID:', workOrderId);
-    
-    setError(null);
-    
-    // Validate form
-    const validationError = validateForm();
-    if (validationError) {
-      console.error('❌ Form validation failed:', validationError);
-      setError(validationError);
+    if (formData.estimated_hours <= 0) {
+      toast({
+        title: "Validation Error", 
+        description: "Estimated hours must be greater than 0",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (formData.labor_rate < 0) {
+      toast({
+        title: "Validation Error",
+        description: "Labor rate cannot be negative", 
+        variant: "destructive"
+      });
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const jobLineData = {
+      console.log('🔧 UnifiedJobLineFormDialog: Starting save operation', {
+        mode,
+        workOrderId,
+        formData,
+        jobLineId: jobLine?.id
+      });
+
+      const totalAmount = formData.estimated_hours * formData.labor_rate;
+
+      const jobLineData: Partial<WorkOrderJobLine> = {
         work_order_id: workOrderId,
-        name: formData.name.trim(),
-        category: formData.category.trim(),
-        subcategory: formData.subcategory.trim(),
-        description: formData.description.trim(),
+        name: formData.name,
+        category: formData.category,
+        subcategory: formData.subcategory,
+        description: formData.description,
         estimated_hours: formData.estimated_hours,
         labor_rate: formData.labor_rate,
         labor_rate_type: formData.labor_rate_type,
-        total_amount: calculateTotalAmount(),
+        total_amount: totalAmount,
         status: formData.status,
-        display_order: 0,
-        notes: formData.notes.trim()
+        notes: formData.notes,
+        display_order: formData.display_order
       };
-
-      console.log('📝 Prepared job line data:', jobLineData);
 
       let savedJobLine: WorkOrderJobLine;
 
       if (mode === 'edit' && jobLine?.id) {
-        console.log('🔧 Updating existing job line:', jobLine.id);
-        savedJobLine = await updateJobLine(jobLine.id, jobLineData);
-        console.log('✅ Job line updated successfully:', savedJobLine);
-        
+        console.log('🔧 UnifiedJobLineFormDialog: Updating existing job line', jobLine.id);
+        savedJobLine = await updateWorkOrderJobLine(jobLine.id, jobLineData);
         toast({
-          title: 'Success',
-          description: 'Job line updated successfully',
+          title: "Success",
+          description: "Job line updated successfully"
         });
       } else {
-        console.log('🔨 Creating new job line');
-        savedJobLine = await createJobLine(jobLineData);
-        console.log('✅ Job line created successfully:', savedJobLine);
-        
+        console.log('🔧 UnifiedJobLineFormDialog: Creating new job line');
+        savedJobLine = await createWorkOrderJobLine(jobLineData);
         toast({
-          title: 'Success',
-          description: 'Job line created successfully',
+          title: "Success", 
+          description: "Job line created successfully"
         });
       }
 
-      // Call the onSave callback with the saved job line
-      console.log('📤 Calling onSave callback with job line:', savedJobLine);
+      console.log('🔧 UnifiedJobLineFormDialog: Save operation completed', savedJobLine);
+
+      // Call onSave with the saved job line
       onSave([savedJobLine]);
-      
-      // Close the dialog
       onOpenChange(false);
 
-    } catch (error: any) {
-      console.error('❌ Error saving job line:', error);
-      
-      const errorMessage = error?.message || 'Failed to save job line. Please try again.';
-      setError(errorMessage);
-      
+    } catch (error) {
+      console.error('🔧 UnifiedJobLineFormDialog: Save operation failed', error);
       toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to save job line. Please try again.",
+        variant: "destructive"
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleCancel = () => {
-    console.log('❌ UnifiedJobLineFormDialog - Cancel clicked');
-    setError(null);
-    onOpenChange(false);
+  const handleInputChange = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const getDialogTitle = () => {
     switch (mode) {
-      case 'add-service':
-        return 'Add Service Job Line';
-      case 'add-manual':
-        return 'Add Manual Job Line';
       case 'edit':
         return 'Edit Job Line';
+      case 'add-service':
+        return 'Add Job Line from Service';
+      case 'add-manual':
+        return 'Add Manual Job Line';
       default:
         return 'Job Line';
     }
@@ -198,38 +186,31 @@ export function UnifiedJobLineFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{getDialogTitle()}</DialogTitle>
         </DialogHeader>
 
-        {error && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
-        <div className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="name">Name *</Label>
               <Input
                 id="name"
                 value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                onChange={(e) => handleInputChange('name', e.target.value)}
                 placeholder="Enter job line name"
-                disabled={isLoading}
+                required
               />
             </div>
+
             <div>
               <Label htmlFor="category">Category</Label>
               <Input
                 id="category"
                 value={formData.category}
-                onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                onChange={(e) => handleInputChange('category', e.target.value)}
                 placeholder="Enter category"
-                disabled={isLoading}
               />
             </div>
           </div>
@@ -240,17 +221,61 @@ export function UnifiedJobLineFormDialog({
               <Input
                 id="subcategory"
                 value={formData.subcategory}
-                onChange={(e) => setFormData(prev => ({ ...prev, subcategory: e.target.value }))}
+                onChange={(e) => handleInputChange('subcategory', e.target.value)}
                 placeholder="Enter subcategory"
-                disabled={isLoading}
               />
             </div>
+
+            <div>
+              <Label htmlFor="estimated_hours">Estimated Hours *</Label>
+              <Input
+                id="estimated_hours"
+                type="number"
+                step="0.25"
+                min="0"
+                value={formData.estimated_hours}
+                onChange={(e) => handleInputChange('estimated_hours', parseFloat(e.target.value) || 0)}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="labor_rate">Labor Rate</Label>
+              <Input
+                id="labor_rate"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.labor_rate}
+                onChange={(e) => handleInputChange('labor_rate', parseFloat(e.target.value) || 0)}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="labor_rate_type">Rate Type</Label>
+              <Select 
+                value={formData.labor_rate_type} 
+                onValueChange={(value) => handleInputChange('labor_rate_type', value as LaborRateType)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="standard">Standard</SelectItem>
+                  <SelectItem value="overtime">Overtime</SelectItem>
+                  <SelectItem value="premium">Premium</SelectItem>
+                  <SelectItem value="flat_rate">Flat Rate</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div>
               <Label htmlFor="status">Status</Label>
               <Select 
                 value={formData.status} 
-                onValueChange={(value: any) => setFormData(prev => ({ ...prev, status: value }))}
-                disabled={isLoading}
+                onValueChange={(value) => handleInputChange('status', value as JobLineStatus)}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -270,65 +295,9 @@ export function UnifiedJobLineFormDialog({
             <Textarea
               id="description"
               value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="Enter description"
-              disabled={isLoading}
-            />
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="estimated_hours">Estimated Hours</Label>
-              <Input
-                id="estimated_hours"
-                type="number"
-                min="0"
-                step="0.1"
-                value={formData.estimated_hours}
-                onChange={(e) => setFormData(prev => ({ ...prev, estimated_hours: parseFloat(e.target.value) || 0 }))}
-                disabled={isLoading}
-              />
-            </div>
-            <div>
-              <Label htmlFor="labor_rate">Labor Rate ($)</Label>
-              <Input
-                id="labor_rate"
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.labor_rate}
-                onChange={(e) => setFormData(prev => ({ ...prev, labor_rate: parseFloat(e.target.value) || 0 }))}
-                disabled={isLoading}
-              />
-            </div>
-            <div>
-              <Label htmlFor="labor_rate_type">Rate Type</Label>
-              <Select 
-                value={formData.labor_rate_type} 
-                onValueChange={(value: any) => setFormData(prev => ({ ...prev, labor_rate_type: value }))}
-                disabled={isLoading}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="standard">Standard</SelectItem>
-                  <SelectItem value="overtime">Overtime</SelectItem>
-                  <SelectItem value="premium">Premium</SelectItem>
-                  <SelectItem value="flat_rate">Flat Rate</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="total_amount">Total Amount</Label>
-            <Input
-              id="total_amount"
-              type="number"
-              value={calculateTotalAmount().toFixed(2)}
-              disabled
-              className="bg-gray-100"
+              onChange={(e) => handleInputChange('description', e.target.value)}
+              placeholder="Enter job line description"
+              rows={3}
             />
           </div>
 
@@ -337,29 +306,34 @@ export function UnifiedJobLineFormDialog({
             <Textarea
               id="notes"
               value={formData.notes}
-              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+              onChange={(e) => handleInputChange('notes', e.target.value)}
               placeholder="Enter any additional notes"
-              disabled={isLoading}
+              rows={2}
             />
           </div>
-        </div>
 
-        <div className="flex justify-end gap-2 pt-4">
-          <Button 
-            variant="outline" 
-            onClick={handleCancel}
-            disabled={isLoading}
-          >
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleSave}
-            disabled={isLoading}
-          >
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {mode === 'edit' ? 'Update' : 'Save'} Job Line
-          </Button>
-        </div>
+          <div className="bg-gray-50 p-3 rounded">
+            <div className="text-sm text-gray-600">
+              <strong>Total Amount: </strong>
+              ${(formData.estimated_hours * formData.labor_rate).toFixed(2)}
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {mode === 'edit' ? 'Update' : 'Create'} Job Line
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
