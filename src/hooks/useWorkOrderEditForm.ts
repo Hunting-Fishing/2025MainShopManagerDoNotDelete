@@ -76,7 +76,35 @@ export const useWorkOrderEditForm = (workOrderId: string) => {
         location: workOrderToSave.location,
         dueDate: workOrderToSave.due_date || workOrderToSave.dueDate,
         notes: workOrderToSave.notes,
-        inventoryItems: workOrderToSave.inventoryItems || workOrderToSave.inventory_items || [],
+        // Ensure inventoryItems have required id field
+        inventoryItems: (workOrderToSave.inventoryItems || workOrderToSave.inventory_items || []).map(item => ({
+          id: item.id || `temp-${Date.now()}-${Math.random()}`,
+          name: item.name || '',
+          sku: item.sku || '',
+          category: item.category || '',
+          quantity: item.quantity || 0,
+          unit_price: item.unit_price || 0,
+          total: item.total || 0,
+          notes: item.notes,
+          itemStatus: item.itemStatus,
+          estimatedArrivalDate: item.estimatedArrivalDate,
+          supplierName: item.supplierName,
+          supplierCost: item.supplierCost,
+          customerPrice: item.customerPrice,
+          retailPrice: item.retailPrice,
+          partType: item.partType,
+          markupPercentage: item.markupPercentage,
+          isTaxable: item.isTaxable,
+          coreChargeAmount: item.coreChargeAmount,
+          coreChargeApplied: item.coreChargeApplied,
+          warrantyDuration: item.warrantyDuration,
+          invoiceNumber: item.invoiceNumber,
+          poLine: item.poLine,
+          isStockItem: item.isStockItem,
+          notesInternal: item.notesInternal,
+          inventoryItemId: item.inventoryItemId,
+          supplierOrderRef: item.supplierOrderRef
+        })),
       };
       
       const result = await updateWorkOrder(workOrderId, formData);
