@@ -5,7 +5,10 @@ import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
+import { updateWorkOrderJobLine, deleteWorkOrderJobLine } from '@/services/workOrder/jobLinesService';
+import { updateWorkOrderPart, deleteWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
 import { UnifiedItemsTable } from '../shared/UnifiedItemsTable';
+import { toast } from '@/hooks/use-toast';
 
 interface WorkOrderDetailsTabProps {
   workOrder: WorkOrder;
@@ -44,28 +47,108 @@ export function WorkOrderDetailsTab({
     fetchParts();
   }, [workOrder.id]);
 
-  const handleJobLineUpdate = (updatedJobLine: WorkOrderJobLine) => {
-    const updatedJobLines = jobLines.map(line => 
-      line.id === updatedJobLine.id ? updatedJobLine : line
-    );
-    onJobLinesChange(updatedJobLines);
+  const handleJobLineUpdate = async (updatedJobLine: WorkOrderJobLine) => {
+    try {
+      console.log('Updating job line:', updatedJobLine);
+      
+      // Update in database
+      await updateWorkOrderJobLine(updatedJobLine.id, updatedJobLine);
+      
+      // Update local state
+      const updatedJobLines = jobLines.map(line => 
+        line.id === updatedJobLine.id ? updatedJobLine : line
+      );
+      onJobLinesChange(updatedJobLines);
+      
+      toast({
+        title: "Success",
+        description: "Job line updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating job line:', error);
+      toast({
+        title: "Error", 
+        description: "Failed to update job line",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleJobLineDelete = (jobLineId: string) => {
-    const updatedJobLines = jobLines.filter(line => line.id !== jobLineId);
-    onJobLinesChange(updatedJobLines);
+  const handleJobLineDelete = async (jobLineId: string) => {
+    try {
+      console.log('Deleting job line:', jobLineId);
+      
+      // Delete from database
+      await deleteWorkOrderJobLine(jobLineId);
+      
+      // Update local state
+      const updatedJobLines = jobLines.filter(line => line.id !== jobLineId);
+      onJobLinesChange(updatedJobLines);
+      
+      toast({
+        title: "Success",
+        description: "Job line deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting job line:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete job line", 
+        variant: "destructive"
+      });
+    }
   };
 
-  const handlePartUpdate = (updatedPart: WorkOrderPart) => {
-    const updatedParts = allParts.map(part => 
-      part.id === updatedPart.id ? updatedPart : part
-    );
-    setAllParts(updatedParts);
+  const handlePartUpdate = async (updatedPart: WorkOrderPart) => {
+    try {
+      console.log('Updating part:', updatedPart);
+      
+      // Update in database
+      await updateWorkOrderPart(updatedPart.id, updatedPart);
+      
+      // Update local state
+      const updatedParts = allParts.map(part => 
+        part.id === updatedPart.id ? updatedPart : part
+      );
+      setAllParts(updatedParts);
+      
+      toast({
+        title: "Success",
+        description: "Part updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating part:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update part",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handlePartDelete = (partId: string) => {
-    const updatedParts = allParts.filter(part => part.id !== partId);
-    setAllParts(updatedParts);
+  const handlePartDelete = async (partId: string) => {
+    try {
+      console.log('Deleting part:', partId);
+      
+      // Delete from database
+      await deleteWorkOrderPart(partId);
+      
+      // Update local state
+      const updatedParts = allParts.filter(part => part.id !== partId);
+      setAllParts(updatedParts);
+      
+      toast({
+        title: "Success", 
+        description: "Part deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting part:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete part",
+        variant: "destructive" 
+      });
+    }
   };
 
   return (
@@ -116,7 +199,7 @@ export function WorkOrderDetailsTab({
               onPartUpdate={isEditMode ? handlePartUpdate : undefined}
               onPartDelete={isEditMode ? handlePartDelete : undefined}
               isEditMode={isEditMode}
-              showType="all"
+              showType="overview"
             />
           )}
         </CardContent>

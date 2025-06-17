@@ -1,93 +1,42 @@
 
+// Vehicle-related type definitions
 export interface CustomerVehicle {
-  id?: string;
+  id?: string; // Making id optional for creation
   customer_id?: string;
-  make?: string; // Optional for flexibility
-  model?: string; // Optional for flexibility
-  year?: string; // Changed to string to match database
+  year: string | number;  // Changed to required to match the type in customer.ts
+  make: string;  // This is required to match the type in customer.ts
+  model: string; // This is required to match the type in customer.ts
   vin?: string;
   license_plate?: string;
-  color?: string;
   trim?: string;
-  body_style?: string;
-  drive_type?: string;
-  engine?: string;
-  fuel_type?: string;
-  transmission?: string;
-  transmission_type?: string; // Added this field
-  mileage?: string;
-  gvwr?: string;
-  country?: string;
+  last_service_date?: string;
   notes?: string;
-  is_primary?: boolean;
-  status?: string;
   created_at?: string;
   updated_at?: string;
-  last_service_date?: string; // Added this field
+  // Additional vehicle details
+  transmission?: string;
+  transmission_type?: string;
+  drive_type?: string;
+  fuel_type?: string;
+  engine?: string;
+  body_style?: string;
+  country?: string;
+  gvwr?: string;
+  color?: string;
+}
+
+// Consistent conversion function to handle both string and number year values
+export const formatVehicleYear = (year: number | string | undefined): string => {
+  if (year === undefined || year === null) return '';
+  return year.toString();
+};
+
+// Format vehicle display name consistently
+export const getVehicleDisplayName = (vehicle: CustomerVehicle): string => {
+  const year = formatVehicleYear(vehicle.year);
+  const make = vehicle.make || '';
+  const model = vehicle.model || '';
+  const trim = vehicle.trim ? ` ${vehicle.trim}` : '';
   
-  // Decoded VIN fields (all optional)
-  decoded_make?: string;
-  decoded_model?: string;
-  decoded_year?: string;
-  decoded_trim?: string;
-  decoded_body_style?: string;
-  decoded_drive_type?: string;
-  decoded_engine?: string;
-  decoded_fuel_type?: string;
-  decoded_transmission?: string;
-  decoded_gvwr?: string;
-}
-
-export interface VehicleCreate {
-  customer_id: string;
-  make?: string;
-  model?: string;
-  year?: string;
-  vin?: string;
-  license_plate?: string;
-  color?: string;
-  trim?: string;
-  body_style?: string;
-  drive_type?: string;
-  engine?: string;
-  fuel_type?: string;
-  transmission?: string;
-  transmission_type?: string;
-  mileage?: string;
-  gvwr?: string;
-  country?: string;
-  notes?: string;
-  is_primary?: boolean;
-  status?: string;
-  last_service_date?: string;
-}
-
-export interface VehicleUpdate {
-  id: string;
-  make?: string;
-  model?: string;
-  year?: string;
-  vin?: string;
-  license_plate?: string;
-  color?: string;
-  trim?: string;
-  body_style?: string;
-  drive_type?: string;
-  engine?: string;
-  fuel_type?: string;
-  transmission?: string;
-  transmission_type?: string;
-  mileage?: string;
-  gvwr?: string;
-  country?: string;
-  notes?: string;
-  is_primary?: boolean;
-  status?: string;
-  last_service_date?: string;
-}
-
-// Utility function to format vehicle year
-export const formatVehicleYear = (year?: string | number): string => {
-  if (!year) return '';
-  return typeof year === 'number' ? year.toString() : year;
+  return `${year} ${make} ${model}${trim}`.trim();
 };

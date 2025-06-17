@@ -1,204 +1,218 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { CustomerLoyalty } from "@/types/loyalty";
 
-/**
- * Get customer loyalty data
- */
 export const getCustomerLoyalty = async (customerId: string): Promise<CustomerLoyalty | null> => {
   try {
     const { data, error } = await supabase
-      .from('customer_loyalty')
-      .select('*')
-      .eq('customer_id', customerId)
+      .from("customer_loyalty")
+      .select("*")
+      .eq("customer_id", customerId)
       .single();
-      
-    if (error) throw error;
-    
-    return data;
-  } catch (error) {
-    console.error('Error fetching customer loyalty:', error);
-    return null;
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // No loyalty record found - create default one
+        console.log(`No loyalty record found for customer ${customerId}, creating default record`);
+        return await createCustomerLoyalty(customerId, '');
+      }
+      console.error("Error fetching customer loyalty:", error);
+      throw error;
+    }
+
+    return {
+      id: data.id,
+      customer_id: data.customer_id,
+      current_points: data.current_points,
+      lifetime_points: data.lifetime_points,
+      lifetime_value: data.lifetime_value,
+      tier: data.tier,
+      created_at: data.created_at,
+      updated_at: data.updated_at
+    };
+  } catch (err) {
+    console.error("Error in getCustomerLoyalty:", err);
+    // Try to create a default record as fallback
+    try {
+      return await createCustomerLoyalty(customerId, '');
+    } catch (createError) {
+      console.error("Failed to create default loyalty record:", createError);
+      return null;
+    }
   }
 };
 
-/**
- * Create customer loyalty record
- */
-export const createCustomerLoyalty = async (customerId: string): Promise<CustomerLoyalty | null> => {
-  try {
-    const { data, error } = await supabase
-      .from('customer_loyalty')
-      .insert({
-        customer_id: customerId,
-        points_balance: 0,
-        lifetime_points: 0,
-        lifetime_value: 0,
-        tier: 'Standard',
-        tier_start_date: new Date().toISOString()
-      })
-      .select()
-      .single();
-      
-    if (error) throw error;
-    
-    return data;
-  } catch (error) {
-    console.error('Error creating customer loyalty:', error);
-    return null;
+export const createCustomerLoyalty = async (customerId: string, shopId: string): Promise<CustomerLoyalty> => {
+  const { data, error } = await supabase
+    .from("customer_loyalty")
+    .insert({
+      customer_id: customerId,
+      current_points: 0,
+      lifetime_points: 0,
+      lifetime_value: 0,
+      tier: 'bronze'
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating customer loyalty:", error);
+    throw error;
   }
+
+  return {
+    id: data.id,
+    customer_id: data.customer_id,
+    current_points: data.current_points,
+    lifetime_points: data.lifetime_points,
+    lifetime_value: data.lifetime_value,
+    tier: data.tier,
+    created_at: data.created_at,
+    updated_at: data.updated_at
+  };
 };
 
-/**
- * Ensure customer loyalty record exists, create if it doesn't
- */
-export const ensureCustomerLoyalty = async (customerId: string): Promise<CustomerLoyalty | null> => {
+export const ensureCustomerLoyalty = async (customerId: string): Promise<CustomerLoyalty> => {
   try {
-    // First try to get existing loyalty record
-    let loyaltyData = await getCustomerLoyalty(customerId);
+    // First, try to get existing loyalty record
+    const existingLoyalty = await getCustomerLoyalty(customerId);
+    if (existingLoyalty) {
+      return existingLoyalty;
+    }
     
     // If no record exists, create one
-    if (!loyaltyData) {
-      loyaltyData = await createCustomerLoyalty(customerId);
-    }
-    
-    return loyaltyData;
+    return await createCustomerLoyalty(customerId, '');
   } catch (error) {
-    console.error('Error ensuring customer loyalty:', error);
-    return null;
+    console.error("Error ensuring customer loyalty:", error);
+    throw error;
   }
 };
 
-/**
- * Update customer loyalty points
- */
-export const updateCustomerLoyalty = async (
-  customerId: string, 
-  updates: Partial<CustomerLoyalty>
-): Promise<CustomerLoyalty | null> => {
-  try {
-    const { data, error } = await supabase
-      .from('customer_loyalty')
-      .update(updates)
-      .eq('customer_id', customerId)
-      .select()
-      .single();
-      
-    if (error) throw error;
-    
-    return data;
-  } catch (error) {
-    console.error('Error updating customer loyalty:', error);
-    return null;
+export const updateCustomerLoyalty = async (loyaltyId: string, updates: Partial<CustomerLoyalty>): Promise<CustomerLoyalty> => {
+  const { data, error } = await supabase
+    .from("customer_loyalty")
+    .update({
+      current_points: updates.current_points,
+      lifetime_points: updates.lifetime_points,
+      lifetime_value: updates.lifetime_value,
+      tier: updates.tier
+    })
+    .eq("id", loyaltyId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error updating customer loyalty:", error);
+    throw error;
   }
+
+  return {
+    id: data.id,
+    customer_id: data.customer_id,
+    current_points: data.current_points,
+    lifetime_points: data.lifetime_points,
+    lifetime_value: data.lifetime_value,
+    tier: data.tier,
+    created_at: data.created_at,
+    updated_at: data.updated_at
+  };
 };
 
-/**
- * Add points to customer account
- */
-export const addPointsToCustomer = async (
-  customerId: string, 
-  points: number
-): Promise<CustomerLoyalty | null> => {
-  try {
-    // Ensure loyalty record exists
-    const loyaltyData = await ensureCustomerLoyalty(customerId);
-    if (!loyaltyData) return null;
-    
-    const updatedBalance = loyaltyData.points_balance + points;
-    const updatedLifetimePoints = loyaltyData.lifetime_points + points;
-    
-    return await updateCustomerLoyalty(customerId, {
-      points_balance: updatedBalance,
-      lifetime_points: updatedLifetimePoints
-    });
-  } catch (error) {
-    console.error('Error adding points to customer:', error);
-    return null;
-  }
-};
-
-/**
- * Deduct points from customer account
- */
-export const deductPointsFromCustomer = async (
-  customerId: string, 
-  points: number
-): Promise<CustomerLoyalty | null> => {
-  try {
-    const loyaltyData = await getCustomerLoyalty(customerId);
-    if (!loyaltyData) return null;
-    
-    if (loyaltyData.points_balance < points) {
-      throw new Error('Insufficient points balance');
-    }
-    
-    const updatedBalance = loyaltyData.points_balance - points;
-    
-    return await updateCustomerLoyalty(customerId, {
-      points_balance: updatedBalance
-    });
-  } catch (error) {
-    console.error('Error deducting points from customer:', error);
-    return null;
-  }
-};
-
-/**
- * Get all customer loyalty records
- */
 export const getAllCustomerLoyalty = async (): Promise<CustomerLoyalty[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('customer_loyalty')
-      .select('*')
-      .order('lifetime_points', { ascending: false });
-      
-    if (error) throw error;
-    
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching all customer loyalty:', error);
-    return [];
+  const { data, error } = await supabase
+    .from("customer_loyalty")
+    .select("*")
+    .order("lifetime_points", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching all customer loyalty:", error);
+    throw error;
   }
+
+  return (data || []).map(item => ({
+    id: item.id,
+    customer_id: item.customer_id,
+    current_points: item.current_points,
+    lifetime_points: item.lifetime_points,
+    lifetime_value: item.lifetime_value,
+    tier: item.tier,
+    created_at: item.created_at,
+    updated_at: item.updated_at
+  }));
 };
 
-/**
- * Get customers by loyalty tier
- */
 export const getCustomersByTier = async (tier: string): Promise<CustomerLoyalty[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('customer_loyalty')
-      .select('*')
-      .eq('tier', tier)
-      .order('lifetime_points', { ascending: false });
-      
-    if (error) throw error;
-    
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching customers by tier:', error);
-    return [];
+  const { data, error } = await supabase
+    .from("customer_loyalty")
+    .select("*")
+    .eq("tier", tier)
+    .order("current_points", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching customers by tier:", error);
+    throw error;
   }
+
+  return (data || []).map(item => ({
+    id: item.id,
+    customer_id: item.customer_id,
+    current_points: item.current_points,
+    lifetime_points: item.lifetime_points,
+    lifetime_value: item.lifetime_value,
+    tier: item.tier,
+    created_at: item.created_at,
+    updated_at: item.updated_at
+  }));
 };
 
-/**
- * Get top customers by points
- */
-export const getTopCustomersByPoints = async (limit: number = 10): Promise<CustomerLoyalty[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('customer_loyalty')
-      .select('*')
-      .order('lifetime_points', { ascending: false })
-      .limit(limit);
-      
-    if (error) throw error;
-    
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching top customers by points:', error);
-    return [];
+export const getTopCustomers = async (limit: number = 10): Promise<CustomerLoyalty[]> => {
+  const { data, error } = await supabase
+    .from("customer_loyalty")
+    .select("*")
+    .order("lifetime_points", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error("Error fetching top customers:", error);
+    throw error;
   }
+
+  return (data || []).map(item => ({
+    id: item.id,
+    customer_id: item.customer_id,
+    current_points: item.current_points,
+    lifetime_points: item.lifetime_points,
+    lifetime_value: item.lifetime_value,
+    tier: item.tier,
+    created_at: item.created_at,
+    updated_at: item.updated_at
+  }));
+};
+
+export const getExpiredPoints = async (customerId: string): Promise<number> => {
+  // Since we don't have an expiration system in the current schema,
+  // return 0 for now
+  return 0;
+};
+
+export const getLoyaltyAnalytics = async () => {
+  const { data, error } = await supabase
+    .from("customer_loyalty")
+    .select("current_points, lifetime_points, tier");
+
+  if (error) {
+    console.error("Error fetching loyalty analytics:", error);
+    throw error;
+  }
+
+  const analytics = {
+    totalMembers: data?.length || 0,
+    totalPointsIssued: data?.reduce((sum, customer) => sum + (customer.lifetime_points || 0), 0) || 0,
+    activePoints: data?.reduce((sum, customer) => sum + (customer.current_points || 0), 0) || 0,
+    tierDistribution: data?.reduce((acc: Record<string, number>, customer) => {
+      acc[customer.tier || 'bronze'] = (acc[customer.tier || 'bronze'] || 0) + 1;
+      return acc;
+    }, {}) || {}
+  };
+
+  return analytics;
 };

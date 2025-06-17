@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { TimeEntry } from "@/types/workOrder";
 
@@ -38,13 +37,14 @@ export const getWorkOrderTimeEntries = async (
  */
 export const addTimeEntryToWorkOrder = async (
   workOrderId: string,
-  timeEntry: Omit<TimeEntry, 'id' | 'work_order_id' | 'created_at'>
+  timeEntry: Omit<TimeEntry, 'id' | 'work_order_id' | 'created_at'> & { job_line_id?: string }
 ): Promise<TimeEntry | null> => {
   try {
     const { data, error } = await supabase
       .from('work_order_time_entries')
       .insert({
         work_order_id: workOrderId,
+        job_line_id: timeEntry.job_line_id,
         employee_id: timeEntry.employee_id,
         employee_name: timeEntry.employee_name,
         start_time: timeEntry.start_time,

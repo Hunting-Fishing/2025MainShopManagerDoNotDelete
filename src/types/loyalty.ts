@@ -12,11 +12,10 @@ export interface LoyaltySettings {
 export interface CustomerLoyalty {
   id: string;
   customer_id: string;
-  points_balance: number; // Changed from current_points to match database
+  current_points: number;
   lifetime_points: number;
   lifetime_value: number;
   tier: string;
-  tier_start_date: string;
   created_at: string;
   updated_at: string;
 }
@@ -59,13 +58,13 @@ export interface LoyaltyRedemption {
 }
 
 export interface LoyaltyTier {
-  id?: string;
+  id?: string; // Added the id property
   name: string;
   threshold: number;
   benefits: string;
   multiplier?: number;
   color?: string;
-  shop_id?: string;
+  shop_id?: string; // Added shop_id property
 }
 
 export const DEFAULT_LOYALTY_TIERS: LoyaltyTier[] = [
