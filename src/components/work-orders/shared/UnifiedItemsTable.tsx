@@ -3,6 +3,7 @@ import React from 'react';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { JobLineWithParts } from './JobLineWithParts';
+import { UnassignedPartsSection } from '../parts/UnassignedPartsSection';
 
 interface UnifiedItemsTableProps {
   jobLines: WorkOrderJobLine[];
@@ -39,6 +40,9 @@ export function UnifiedItemsTable({
     return acc;
   }, {} as Record<string, WorkOrderPart[]>);
 
+  // Get unassigned parts
+  const unassignedParts = partsByJobLine['unassigned'] || [];
+
   const handlePartUpdate = async (updatedPart: WorkOrderPart) => {
     if (onPartUpdate) {
       await onPartUpdate(updatedPart);
@@ -58,47 +62,17 @@ export function UnifiedItemsTable({
   };
 
   if (showType === "parts") {
-    // Show only parts
-    const unassignedParts = partsByJobLine['unassigned'] || [];
+    // Show only unassigned parts
     return (
-      <div className="space-y-4">
-        {unassignedParts.map((part) => (
-          <div key={part.id} className="border rounded p-4">
-            <div className="flex justify-between items-start">
-              <div>
-                <h4 className="font-medium">{part.name}</h4>
-                <p className="text-sm text-muted-foreground">
-                  Part #{part.part_number} • Qty: {part.quantity} • ${part.unit_price}
-                </p>
-                {part.description && (
-                  <p className="text-sm text-muted-foreground mt-1">{part.description}</p>
-                )}
-              </div>
-              {isEditMode && (
-                <div className="flex gap-2">
-                  <button 
-                    className="text-blue-600 hover:text-blue-800 text-sm"
-                    onClick={() => {/* Edit part logic */}}
-                  >
-                    Edit
-                  </button>
-                  <button 
-                    className="text-red-600 hover:text-red-800 text-sm"
-                    onClick={() => handlePartDelete(part.id)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-        {unassignedParts.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            <p>No parts added yet</p>
-          </div>
-        )}
-      </div>
+      <UnassignedPartsSection
+        workOrderId={jobLines[0]?.work_order_id || ''}
+        unassignedParts={unassignedParts}
+        jobLines={jobLines}
+        onPartUpdate={handlePartUpdate}
+        onPartDelete={handlePartDelete}
+        onPartAssigned={onPartsChange}
+        isEditMode={isEditMode}
+      />
     );
   }
 
@@ -106,6 +80,20 @@ export function UnifiedItemsTable({
     // Show job lines with their parts
     return (
       <div className="space-y-4">
+        {/* Unassigned Parts Section - only show if there are unassigned parts or in "all" view */}
+        {(showType === "all" || (unassignedParts.length > 0 && showType !== "overview")) && (
+          <UnassignedPartsSection
+            workOrderId={jobLines[0]?.work_order_id || ''}
+            unassignedParts={unassignedParts}
+            jobLines={jobLines}
+            onPartUpdate={handlePartUpdate}
+            onPartDelete={handlePartDelete}
+            onPartAssigned={onPartsChange}
+            isEditMode={isEditMode}
+          />
+        )}
+
+        {/* Job Lines with Parts */}
         {jobLines.map((jobLine) => {
           const jobLineParts = partsByJobLine[jobLine.id] || [];
           return (
@@ -120,29 +108,10 @@ export function UnifiedItemsTable({
             />
           );
         })}
-        
-        {/* Show unassigned parts if showType is "all" */}
-        {showType === "all" && partsByJobLine['unassigned']?.length > 0 && (
-          <JobLineWithParts
-            key="unassigned"
-            jobLine={{
-              id: 'unassigned',
-              work_order_id: '',
-              name: 'Unassigned Parts',
-              created_at: '',
-              updated_at: ''
-            }}
-            jobLineParts={partsByJobLine['unassigned']}
-            onPartUpdate={handlePartUpdate}
-            onPartDelete={handlePartDelete}
-            onPartsChange={onPartsChange || (() => {})}
-            isEditMode={isEditMode}
-          />
-        )}
 
-        {jobLines.length === 0 && (
+        {jobLines.length === 0 && unassignedParts.length === 0 && (
           <div className="text-center py-8 text-muted-foreground">
-            <p>No job lines added yet</p>
+            <p>No job lines or parts added yet</p>
           </div>
         )}
       </div>

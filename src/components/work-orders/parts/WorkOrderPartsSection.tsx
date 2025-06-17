@@ -82,6 +82,7 @@ export function WorkOrderPartsSection({
         allParts={allParts}
         onPartUpdate={isEditMode ? handlePartUpdate : undefined}
         onPartDelete={isEditMode ? handlePartDelete : undefined}
+        onPartsChange={onPartsChange}
         isEditMode={isEditMode}
         showType={showType}
       />
@@ -92,7 +93,9 @@ export function WorkOrderPartsSection({
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base">Parts</CardTitle>
+          <CardTitle className="text-base">
+            {showType === "parts" ? "Parts" : "Parts & Job Lines"}
+          </CardTitle>
           {isEditMode && (
             <Button size="sm" className="h-8 px-3">
               <Plus className="h-4 w-4 mr-2" />
@@ -107,6 +110,7 @@ export function WorkOrderPartsSection({
           allParts={allParts}
           onPartUpdate={isEditMode ? handlePartUpdate : undefined}
           onPartDelete={isEditMode ? handlePartDelete : undefined}
+          onPartsChange={onPartsChange}
           isEditMode={isEditMode}
           showType={showType}
         />
