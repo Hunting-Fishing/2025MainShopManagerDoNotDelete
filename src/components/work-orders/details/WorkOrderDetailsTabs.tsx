@@ -8,7 +8,7 @@ import { WorkOrderJobLine } from "@/types/jobLine";
 import { WorkOrderPart } from "@/types/workOrderPart";
 import { TimeEntry } from "@/types/workOrder";
 import { Customer } from "@/types/customer";
-import { WorkOrderHeader } from "../shared/WorkOrderHeader";
+import { WorkOrderHeader } from "./WorkOrderHeader";
 import { WorkOrderOverviewTab } from "./WorkOrderOverviewTab";
 import { WorkOrderPartsSection } from "../parts/WorkOrderPartsSection";
 import { WorkOrderJobLinesSection } from "../job-lines/WorkOrderJobLinesSection";
@@ -56,27 +56,14 @@ export function WorkOrderDetailsTabs({
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <WorkOrderHeader workOrder={workOrder} customer={customer} />
-        
-        <div className="flex gap-2">
-          {!isEditMode ? (
-            <Button onClick={onStartEdit} size="sm" className="h-9">
-              <Edit3 className="h-4 w-4 mr-2" />
-              Edit
-            </Button>
-          ) : (
-            <div className="flex gap-2">
-              <Button onClick={onSaveEdit} size="sm" className="h-9">
-                <Save className="h-4 w-4 mr-2" />
-                Save
-              </Button>
-              <Button onClick={onCancelEdit} variant="outline" size="sm" className="h-9">
-                <X className="h-4 w-4 mr-2" />
-                Cancel
-              </Button>
-            </div>
-          )}
-        </div>
+        <WorkOrderHeader 
+          workOrder={workOrder} 
+          customer={customer}
+          isEditMode={isEditMode}
+          onStartEdit={onStartEdit}
+          onCancelEdit={onCancelEdit}
+          onSaveEdit={onSaveEdit}
+        />
       </div>
 
       {/* Tabs */}
