@@ -1,12 +1,10 @@
 
-import { WorkOrderJobLine } from '@/types/jobLine';
 import { supabase } from '@/integrations/supabase/client';
+import { WorkOrderJobLine } from '@/types/jobLine';
 
 export async function getWorkOrderJobLines(workOrderId: string): Promise<WorkOrderJobLine[]> {
-  if (!workOrderId || workOrderId === 'new') {
-    return [];
-  }
-
+  console.log('🔍 Fetching job lines for work order:', workOrderId);
+  
   try {
     const { data, error } = await supabase
       .from('work_order_job_lines')
@@ -15,11 +13,13 @@ export async function getWorkOrderJobLines(workOrderId: string): Promise<WorkOrd
       .order('display_order', { ascending: true });
 
     if (error) {
-      console.error('Error fetching job lines:', error);
+      console.error('❌ Error fetching job lines:', error);
       throw error;
     }
 
-    return (data || []).map(line => ({
+    console.log('✅ Fetched job lines:', data?.length || 0, 'items');
+
+    const mappedJobLines: WorkOrderJobLine[] = (data || []).map(line => ({
       id: line.id,
       work_order_id: line.work_order_id,
       name: line.name,
@@ -36,39 +36,60 @@ export async function getWorkOrderJobLines(workOrderId: string): Promise<WorkOrd
       created_at: line.created_at,
       updated_at: line.updated_at
     }));
+
+    return mappedJobLines;
   } catch (error) {
-    console.error('Error in getWorkOrderJobLines:', error);
+    console.error('❌ Error in getWorkOrderJobLines:', error);
     throw error;
   }
 }
 
 export async function createJobLine(jobLine: Omit<WorkOrderJobLine, 'id' | 'created_at' | 'updated_at'>): Promise<WorkOrderJobLine> {
+  console.log('🔨 Creating job line:', jobLine);
+  
   try {
+    // Validate required fields
+    if (!jobLine.work_order_id) {
+      throw new Error('Work order ID is required');
+    }
+    if (!jobLine.name) {
+      throw new Error('Job line name is required');
+    }
+
+    console.log('📝 Inserting job line into database...');
+    
     const { data, error } = await supabase
       .from('work_order_job_lines')
       .insert([{
         work_order_id: jobLine.work_order_id,
         name: jobLine.name,
-        category: jobLine.category,
-        subcategory: jobLine.subcategory,
-        description: jobLine.description,
-        estimated_hours: jobLine.estimated_hours,
-        labor_rate: jobLine.labor_rate,
-        labor_rate_type: jobLine.labor_rate_type,
-        total_amount: jobLine.total_amount,
-        status: jobLine.status,
-        display_order: jobLine.display_order,
-        notes: jobLine.notes
+        category: jobLine.category || '',
+        subcategory: jobLine.subcategory || '',
+        description: jobLine.description || '',
+        estimated_hours: jobLine.estimated_hours || 0,
+        labor_rate: jobLine.labor_rate || 0,
+        labor_rate_type: jobLine.labor_rate_type || 'standard',
+        total_amount: jobLine.total_amount || 0,
+        status: jobLine.status || 'pending',
+        display_order: jobLine.display_order || 0,
+        notes: jobLine.notes || ''
       }])
-      .select('*')
+      .select()
       .single();
 
     if (error) {
-      console.error('Error creating job line:', error);
-      throw error;
+      console.error('❌ Database error creating job line:', error);
+      throw new Error(`Failed to create job line: ${error.message}`);
     }
 
-    return {
+    if (!data) {
+      console.error('❌ No data returned from job line creation');
+      throw new Error('No data returned from job line creation');
+    }
+
+    console.log('✅ Job line created successfully:', data);
+
+    const createdJobLine: WorkOrderJobLine = {
       id: data.id,
       work_order_id: data.work_order_id,
       name: data.name,
@@ -85,14 +106,24 @@ export async function createJobLine(jobLine: Omit<WorkOrderJobLine, 'id' | 'crea
       created_at: data.created_at,
       updated_at: data.updated_at
     };
+
+    return createdJobLine;
   } catch (error) {
-    console.error('Error in createJobLine:', error);
+    console.error('❌ Error in createJobLine:', error);
     throw error;
   }
 }
 
-export async function updateJobLine(id: string, updates: Partial<WorkOrderJobLine>): Promise<WorkOrderJobLine> {
+export async function updateJobLine(jobLineId: string, updates: Partial<WorkOrderJobLine>): Promise<WorkOrderJobLine> {
+  console.log('🔧 Updating job line:', jobLineId, updates);
+  
   try {
+    if (!jobLineId) {
+      throw new Error('Job line ID is required for update');
+    }
+
+    console.log('📝 Updating job line in database...');
+
     const { data, error } = await supabase
       .from('work_order_job_lines')
       .update({
@@ -108,16 +139,23 @@ export async function updateJobLine(id: string, updates: Partial<WorkOrderJobLin
         display_order: updates.display_order,
         notes: updates.notes
       })
-      .eq('id', id)
-      .select('*')
+      .eq('id', jobLineId)
+      .select()
       .single();
 
     if (error) {
-      console.error('Error updating job line:', error);
-      throw error;
+      console.error('❌ Database error updating job line:', error);
+      throw new Error(`Failed to update job line: ${error.message}`);
     }
 
-    return {
+    if (!data) {
+      console.error('❌ No data returned from job line update');
+      throw new Error('Job line not found or could not be updated');
+    }
+
+    console.log('✅ Job line updated successfully:', data);
+
+    const updatedJobLine: WorkOrderJobLine = {
       id: data.id,
       work_order_id: data.work_order_id,
       name: data.name,
@@ -134,25 +172,35 @@ export async function updateJobLine(id: string, updates: Partial<WorkOrderJobLin
       created_at: data.created_at,
       updated_at: data.updated_at
     };
+
+    return updatedJobLine;
   } catch (error) {
-    console.error('Error in updateJobLine:', error);
+    console.error('❌ Error in updateJobLine:', error);
     throw error;
   }
 }
 
-export async function deleteJobLine(id: string): Promise<void> {
+export async function deleteJobLine(jobLineId: string): Promise<void> {
+  console.log('🗑️ Deleting job line:', jobLineId);
+  
   try {
+    if (!jobLineId) {
+      throw new Error('Job line ID is required for deletion');
+    }
+
     const { error } = await supabase
       .from('work_order_job_lines')
       .delete()
-      .eq('id', id);
+      .eq('id', jobLineId);
 
     if (error) {
-      console.error('Error deleting job line:', error);
-      throw error;
+      console.error('❌ Database error deleting job line:', error);
+      throw new Error(`Failed to delete job line: ${error.message}`);
     }
+
+    console.log('✅ Job line deleted successfully');
   } catch (error) {
-    console.error('Error in deleteJobLine:', error);
+    console.error('❌ Error in deleteJobLine:', error);
     throw error;
   }
 }
@@ -164,6 +212,8 @@ export const deleteWorkOrderJobLine = deleteJobLine;
 
 // Additional alias for upsert functionality
 export async function upsertWorkOrderJobLine(jobLine: Partial<WorkOrderJobLine> & { work_order_id: string }): Promise<WorkOrderJobLine> {
+  console.log('🔄 Upserting job line:', jobLine);
+  
   if (jobLine.id) {
     return updateJobLine(jobLine.id, jobLine);
   } else {
