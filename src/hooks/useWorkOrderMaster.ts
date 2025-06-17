@@ -4,150 +4,158 @@ import { WorkOrder } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { TimeEntry } from '@/types/workOrder';
-import { Customer } from '@/types/customer';
-import { workOrderCoreService } from '@/services/workOrder/core/workOrderCoreService';
-import { workOrderJobLinesService } from '@/services/workOrder/core/workOrderJobLinesService';
-import { workOrderPartsService } from '@/services/workOrder/core/workOrderPartsService';
-import { workOrderTimeService } from '@/services/workOrder/core/workOrderTimeService';
-import { getCustomerById } from '@/services/customer';
+import { 
+  workOrderCoreService, 
+  workOrderJobLinesService, 
+  workOrderPartsService, 
+  workOrderTimeService 
+} from '@/services/workOrder';
+import { toast } from '@/hooks/use-toast';
 
-/**
- * Master hook that consolidates all work order related functionality
- */
 export function useWorkOrderMaster(workOrderId?: string) {
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
   const [jobLines, setJobLines] = useState<WorkOrderJobLine[]>([]);
   const [allParts, setAllParts] = useState<WorkOrderPart[]>([]);
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
-  const [customer, setCustomer] = useState<Customer | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [customer, setCustomer] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch all data for a work order
-  const fetchWorkOrderData = useCallback(async (id: string) => {
-    if (!id || id === 'new') return;
+  const fetchWorkOrderData = useCallback(async () => {
+    if (!workOrderId) return;
 
     setIsLoading(true);
     setError(null);
 
     try {
-      // Fetch core work order data
-      const workOrderData = await workOrderCoreService.getById(id);
-      if (!workOrderData) {
-        setError('Work order not found');
-        return;
-      }
-      setWorkOrder(workOrderData);
+      console.log('useWorkOrderMaster: Fetching work order data for:', workOrderId);
 
-      // Fetch related data in parallel
-      const [jobLinesData, partsData, timeEntriesData] = await Promise.all([
-        workOrderJobLinesService.getByWorkOrderId(id),
-        workOrderPartsService.getByWorkOrderId(id),
-        workOrderTimeService.getByWorkOrderId(id)
+      // Fetch all data concurrently
+      const [woData, jobLinesData, partsData, timeData] = await Promise.all([
+        workOrderCoreService.getById(workOrderId),
+        workOrderJobLinesService.getByWorkOrderId(workOrderId),
+        workOrderPartsService.getByWorkOrderId(workOrderId),
+        workOrderTimeService.getByWorkOrderId(workOrderId)
       ]);
 
+      if (!woData) {
+        throw new Error('Work order not found');
+      }
+
+      setWorkOrder(woData);
       setJobLines(jobLinesData);
       setAllParts(partsData);
-      setTimeEntries(timeEntriesData);
-
-      // Fetch customer data if available
-      if (workOrderData.customer_id) {
-        try {
-          const customerData = await getCustomerById(workOrderData.customer_id);
-          setCustomer(customerData);
-        } catch (customerError) {
-          console.warn('Could not fetch customer data:', customerError);
-        }
+      setTimeEntries(timeData);
+      
+      // Extract customer data from work order
+      if (woData.customer) {
+        setCustomer(woData.customer);
       }
+
+      console.log('useWorkOrderMaster: Data loaded successfully');
     } catch (err: any) {
+      console.error('useWorkOrderMaster: Error loading data:', err);
       setError(err.message || 'Failed to load work order data');
-      console.error('Error fetching work order data:', err);
+      
+      toast({
+        title: "Error",
+        description: "Failed to load work order data",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [workOrderId]);
 
-  // Load work order data when ID changes
   useEffect(() => {
-    if (workOrderId) {
-      fetchWorkOrderData(workOrderId);
-    }
-  }, [workOrderId, fetchWorkOrderData]);
+    fetchWorkOrderData();
+  }, [fetchWorkOrderData]);
 
-  // Update handlers with optimistic updates
-  const updateWorkOrder = useCallback(async (updates: Partial<WorkOrder>) => {
-    if (!workOrder) return;
+  const updateJobLines = useCallback((newJobLines: WorkOrderJobLine[]) => {
+    setJobLines(newJobLines);
+  }, []);
 
-    const originalWorkOrder = workOrder;
-    setWorkOrder({ ...workOrder, ...updates });
+  const updateTimeEntries = useCallback((newTimeEntries: TimeEntry[]) => {
+    setTimeEntries(newTimeEntries);
+  }, []);
 
+  const handleJobLineUpdate = useCallback(async (jobLine: WorkOrderJobLine) => {
     try {
-      const updatedWorkOrder = await workOrderCoreService.update(workOrder.id, updates);
-      setWorkOrder(updatedWorkOrder);
-    } catch (error) {
-      setWorkOrder(originalWorkOrder);
-      throw error;
-    }
-  }, [workOrder]);
-
-  const updateJobLines = useCallback((updatedJobLines: WorkOrderJobLine[]) => {
-    setJobLines(updatedJobLines);
-  }, []);
-
-  const updateParts = useCallback((updatedParts: WorkOrderPart[]) => {
-    setAllParts(updatedParts);
-  }, []);
-
-  const updateTimeEntries = useCallback((updatedEntries: TimeEntry[]) => {
-    setTimeEntries(updatedEntries);
-  }, []);
-
-  // CRUD operations for job lines
-  const handleJobLineUpdate = useCallback(async (updatedJobLine: WorkOrderJobLine) => {
-    try {
-      const result = await workOrderJobLinesService.update(updatedJobLine.id, updatedJobLine);
-      setJobLines(prev => prev.map(line => line.id === result.id ? result : line));
+      const updatedJobLine = await workOrderJobLinesService.update(jobLine.id, jobLine);
+      setJobLines(prev => prev.map(jl => jl.id === jobLine.id ? updatedJobLine : jl));
+      
+      toast({
+        title: "Success",
+        description: "Job line updated successfully"
+      });
     } catch (error) {
       console.error('Error updating job line:', error);
-      throw error;
+      toast({
+        title: "Error",
+        description: "Failed to update job line",
+        variant: "destructive"
+      });
     }
   }, []);
 
   const handleJobLineDelete = useCallback(async (jobLineId: string) => {
     try {
       await workOrderJobLinesService.delete(jobLineId);
-      setJobLines(prev => prev.filter(line => line.id !== jobLineId));
-      // Also remove associated parts
-      setAllParts(prev => prev.filter(part => part.job_line_id !== jobLineId));
+      setJobLines(prev => prev.filter(jl => jl.id !== jobLineId));
+      
+      toast({
+        title: "Success",
+        description: "Job line deleted successfully"
+      });
     } catch (error) {
       console.error('Error deleting job line:', error);
-      throw error;
+      toast({
+        title: "Error",
+        description: "Failed to delete job line",
+        variant: "destructive"
+      });
     }
   }, []);
 
-  // CRUD operations for parts
-  const handlePartUpdate = useCallback(async (updatedPart: WorkOrderPart) => {
+  const handlePartUpdate = useCallback(async (part: WorkOrderPart) => {
     try {
-      const result = await workOrderPartsService.update(updatedPart.id, updatedPart);
-      setAllParts(prev => prev.map(part => part.id === result.id ? result : part));
+      const updatedPart = await workOrderPartsService.update(part.id, part);
+      setAllParts(prev => prev.map(p => p.id === part.id ? updatedPart : p));
+      
+      toast({
+        title: "Success",
+        description: "Part updated successfully"
+      });
     } catch (error) {
       console.error('Error updating part:', error);
-      throw error;
+      toast({
+        title: "Error",
+        description: "Failed to update part",
+        variant: "destructive"
+      });
     }
   }, []);
 
   const handlePartDelete = useCallback(async (partId: string) => {
     try {
       await workOrderPartsService.delete(partId);
-      setAllParts(prev => prev.filter(part => part.id !== partId));
+      setAllParts(prev => prev.filter(p => p.id !== partId));
+      
+      toast({
+        title: "Success",
+        description: "Part deleted successfully"
+      });
     } catch (error) {
       console.error('Error deleting part:', error);
-      throw error;
+      toast({
+        title: "Error",
+        description: "Failed to delete part",
+        variant: "destructive"
+      });
     }
   }, []);
 
   return {
-    // Data
     workOrder,
     jobLines,
     allParts,
@@ -155,20 +163,12 @@ export function useWorkOrderMaster(workOrderId?: string) {
     customer,
     isLoading,
     error,
-    
-    // Update functions
-    updateWorkOrder,
+    refetch: fetchWorkOrderData,
     updateJobLines,
-    updateParts,
     updateTimeEntries,
-    
-    // CRUD handlers
     handleJobLineUpdate,
     handleJobLineDelete,
     handlePartUpdate,
-    handlePartDelete,
-    
-    // Utilities
-    refetch: () => workOrderId ? fetchWorkOrderData(workOrderId) : Promise.resolve()
+    handlePartDelete
   };
 }

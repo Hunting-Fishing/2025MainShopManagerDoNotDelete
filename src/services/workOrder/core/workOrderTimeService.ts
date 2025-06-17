@@ -30,9 +30,21 @@ export const workOrderTimeService = {
    */
   async create(timeEntryData: Partial<TimeEntry>): Promise<TimeEntry> {
     try {
+      // Ensure required fields are present
+      const dbData = {
+        work_order_id: timeEntryData.work_order_id!,
+        employee_id: timeEntryData.employee_id || '',
+        employee_name: timeEntryData.employee_name || 'Unknown Employee',
+        start_time: timeEntryData.start_time || new Date().toISOString(),
+        end_time: timeEntryData.end_time,
+        duration: timeEntryData.duration || 0,
+        billable: timeEntryData.billable ?? true,
+        notes: timeEntryData.notes
+      };
+
       const { data, error } = await supabase
         .from('work_order_time_entries')
-        .insert(timeEntryData)
+        .insert(dbData)
         .select()
         .single();
 
@@ -49,9 +61,20 @@ export const workOrderTimeService = {
    */
   async update(id: string, updates: Partial<TimeEntry>): Promise<TimeEntry> {
     try {
+      // Remove undefined values
+      const dbUpdates: any = {};
+      
+      if (updates.employee_id !== undefined) dbUpdates.employee_id = updates.employee_id;
+      if (updates.employee_name !== undefined) dbUpdates.employee_name = updates.employee_name;
+      if (updates.start_time !== undefined) dbUpdates.start_time = updates.start_time;
+      if (updates.end_time !== undefined) dbUpdates.end_time = updates.end_time;
+      if (updates.duration !== undefined) dbUpdates.duration = updates.duration;
+      if (updates.billable !== undefined) dbUpdates.billable = updates.billable;
+      if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
+
       const { data, error } = await supabase
         .from('work_order_time_entries')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', id)
         .select()
         .single();

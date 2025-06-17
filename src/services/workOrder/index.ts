@@ -18,6 +18,23 @@ export const createWorkOrder = (data: any) => workOrderCoreService.create(data);
 export const updateWorkOrder = (id: string, data: any) => workOrderCoreService.update(id, data);
 export const deleteWorkOrder = (id: string) => workOrderCoreService.delete(id);
 
+// Add missing status update function
+export const updateWorkOrderStatus = (id: string, status: string) => workOrderCoreService.update(id, { status });
+
+// Add missing query functions
+export const getWorkOrdersByCustomerId = async (customerId: string) => {
+  const allWorkOrders = await workOrderCoreService.getAll();
+  return allWorkOrders.filter(wo => wo.customer_id === customerId);
+};
+
+export const getUniqueTechnicians = async () => {
+  const allWorkOrders = await workOrderCoreService.getAll();
+  const technicians = allWorkOrders
+    .map(wo => wo.technician || 'Unassigned')
+    .filter((tech, index, array) => array.indexOf(tech) === index);
+  return technicians;
+};
+
 export const getWorkOrderJobLines = (workOrderId: string) => workOrderJobLinesService.getByWorkOrderId(workOrderId);
 export const createWorkOrderJobLine = (data: any) => workOrderJobLinesService.create(data);
 export const updateWorkOrderJobLine = (id: string, data: any) => workOrderJobLinesService.update(id, data);
