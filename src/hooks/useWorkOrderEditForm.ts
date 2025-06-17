@@ -1,132 +1,203 @@
 
-import { useState, useEffect, useCallback } from "react";
-import { WorkOrder, WorkOrderStatusType } from "@/types/workOrder";
-import { toast } from "sonner";
-import { getWorkOrderById, updateWorkOrder } from "@/services/workOrder";
-import { useNavigate } from "react-router-dom";
-import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { workOrderFormSchema, type WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
+import { 
+  getWorkOrderById, 
+  updateWorkOrder,
+  getWorkOrderJobLines,
+  getWorkOrderParts,
+  getWorkOrderTimeEntries
+} from "@/services/workOrder";
+import { getAllTeamMembers } from "@/services/team";
+import { WorkOrder, WorkOrderInventoryItem, TimeEntry } from "@/types/workOrder";
+import { WorkOrderJobLine } from "@/types/jobLine";
+import { WorkOrderPart } from "@/types/workOrderPart";
 
 export const useWorkOrderEditForm = (workOrderId: string) => {
-  const [workOrder, setWorkOrder] = useState<Partial<WorkOrder>>({});
-  const [originalWorkOrder, setOriginalWorkOrder] = useState<Partial<WorkOrder>>({});
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
-  
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // Fetch work order data
+  const { data: workOrder, isLoading: workOrderLoading, error: workOrderError } = useQuery({
+    queryKey: ['workOrder', workOrderId],
+    queryFn: () => getWorkOrderById(workOrderId),
+    enabled: !!workOrderId,
+  });
+
+  // Fetch technicians
+  const { data: technicians = [], isLoading: technicianLoading, error: technicianError } = useQuery({
+    queryKey: ['technicians'],
+    queryFn: getAllTeamMembers,
+  });
+
+  // Fetch job lines
+  const { data: jobLines = [] } = useQuery({
+    queryKey: ['workOrderJobLines', workOrderId],
+    queryFn: () => getWorkOrderJobLines(workOrderId),
+    enabled: !!workOrderId,
+  });
+
+  // Fetch parts
+  const { data: parts = [] } = useQuery({
+    queryKey: ['workOrderParts', workOrderId],
+    queryFn: () => getWorkOrderParts(workOrderId),
+    enabled: !!workOrderId,
+  });
+
+  // Fetch time entries
+  const { data: timeEntries = [] } = useQuery({
+    queryKey: ['workOrderTimeEntries', workOrderId],
+    queryFn: () => getWorkOrderTimeEntries(workOrderId),
+    enabled: !!workOrderId,
+  });
+
+  const form = useForm<WorkOrderFormSchemaValues>({
+    resolver: zodResolver(workOrderFormSchema),
+    defaultValues: {
+      description: "",
+      status: "pending",
+      priority: "medium",
+      technicianId: "",
+      notes: "",
+      inventoryItems: [],
+    },
+  });
+
+  // Initialize form with work order data
   useEffect(() => {
-    const fetchWorkOrder = async () => {
-      try {
-        const data = await getWorkOrderById(workOrderId);
-        setWorkOrder(data);
-        setOriginalWorkOrder(data);
-        setLoading(false);
-      } catch (err) {
-        console.error("Error fetching work order:", err);
-        const errorMessage = err instanceof Error ? err.message : "Failed to fetch work order";
-        setError(errorMessage);
-        setLoading(false);
-        toast.error(errorMessage);
-      }
-    };
-    
-    fetchWorkOrder();
-  }, [workOrderId]);
-  
-  // Function to update a single field
-  const updateField = useCallback((field: keyof WorkOrder, value: any) => {
-    setWorkOrder((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  }, []);
-  
-  // Function to handle form submission
-  const handleSubmit = useCallback(async (status?: WorkOrderStatusType) => {
-    setSaving(true);
-    setError(null);
-    
-    try {
-      // If status is provided in the call, use it
-      const workOrderToSave = {
-        ...workOrder,
-        status: status || workOrder.status,
-      };
-      
-      // Convert WorkOrder data to the expected form schema format
-      const formData: Partial<WorkOrderFormSchemaValues> = {
-        customerId: workOrderToSave.customer_id,
-        customer: workOrderToSave.customer || workOrderToSave.customer_name || "",
-        customerEmail: workOrderToSave.customer_email,
-        customerPhone: workOrderToSave.customer_phone,
-        customerAddress: workOrderToSave.customer_address,
-        vehicleId: workOrderToSave.vehicle_id,
-        vehicleMake: workOrderToSave.vehicle_make,
-        vehicleModel: workOrderToSave.vehicle_model,
-        vehicleYear: workOrderToSave.vehicle_year,
-        licensePlate: workOrderToSave.vehicle_license_plate,
-        vin: workOrderToSave.vehicle_vin,
-        odometer: workOrderToSave.vehicle_odometer,
-        description: workOrderToSave.description || "",
-        status: workOrderToSave.status as WorkOrderStatusType,
-        priority: workOrderToSave.priority as "low" | "medium" | "high" | "urgent",
-        technician: workOrderToSave.technician,
-        technicianId: workOrderToSave.technician_id,
-        location: workOrderToSave.location,
-        dueDate: workOrderToSave.due_date || workOrderToSave.dueDate,
-        notes: workOrderToSave.notes,
-        // Ensure inventoryItems have required id field and proper typing
-        inventoryItems: (workOrderToSave.inventoryItems || workOrderToSave.inventory_items || []).map(item => ({
-          id: item.id || `temp-${Date.now()}-${Math.random()}`,
-          name: item.name || '',
-          sku: item.sku || '',
-          category: item.category || '',
-          quantity: item.quantity || 0,
-          unit_price: item.unit_price || 0,
-          total: item.total || 0,
-          notes: item.notes || '',
-          itemStatus: item.itemStatus || '',
-          estimatedArrivalDate: item.estimatedArrivalDate || '',
-          supplierName: item.supplierName || '',
-          supplierCost: item.supplierCost || 0,
-          customerPrice: item.customerPrice || 0,
-          retailPrice: item.retailPrice || 0,
-          partType: item.partType || '',
-          markupPercentage: item.markupPercentage || 0,
-          isTaxable: item.isTaxable !== undefined ? item.isTaxable : true,
-          coreChargeAmount: item.coreChargeAmount || 0,
-          coreChargeApplied: item.coreChargeApplied !== undefined ? item.coreChargeApplied : false,
-          warrantyDuration: item.warrantyDuration || '',
-          invoiceNumber: item.invoiceNumber || '',
-          poLine: item.poLine || '',
-          isStockItem: item.isStockItem !== undefined ? item.isStockItem : true,
-          notesInternal: item.notesInternal || '',
-          inventoryItemId: item.inventoryItemId || '',
-          supplierOrderRef: item.supplierOrderRef || ''
-        })),
-      };
-      
-      const result = await updateWorkOrder(workOrderId, formData);
-      toast.success("Work order updated successfully");
-      return result;
-    } catch (err) {
-      console.error("Error updating work order:", err);
-      const errorMessage = err instanceof Error ? err.message : "Failed to update work order";
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return null;
-    } finally {
-      setSaving(false);
+    if (workOrder) {
+      // Ensure inventory items have required fields with proper typing
+      const inventoryItems: WorkOrderInventoryItem[] = (workOrder.inventoryItems || []).map(item => ({
+        id: item.id || crypto.randomUUID(), // Ensure id is always present
+        name: item.name || "",
+        sku: item.sku || "",
+        category: item.category || "",
+        quantity: item.quantity || 0,
+        unit_price: item.unit_price || 0,
+        total: item.total || (item.quantity || 0) * (item.unit_price || 0),
+        // Include all optional fields that might be present
+        notes: item.notes,
+        itemStatus: item.itemStatus,
+        estimatedArrivalDate: item.estimatedArrivalDate,
+        supplierName: item.supplierName,
+        supplierCost: item.supplierCost,
+        customerPrice: item.customerPrice,
+        retailPrice: item.retailPrice,
+        partType: item.partType,
+        markupPercentage: item.markupPercentage,
+        isTaxable: item.isTaxable,
+        coreChargeAmount: item.coreChargeAmount,
+        coreChargeApplied: item.coreChargeApplied,
+        warrantyDuration: item.warrantyDuration,
+        invoiceNumber: item.invoiceNumber,
+        poLine: item.poLine,
+        isStockItem: item.isStockItem,
+        notesInternal: item.notesInternal,
+        inventoryItemId: item.inventoryItemId,
+        supplierOrderRef: item.supplierOrderRef,
+      }));
+
+      form.reset({
+        description: workOrder.description || "",
+        status: workOrder.status || "pending",
+        priority: workOrder.priority || "medium", 
+        technicianId: workOrder.technician_id || "",
+        notes: workOrder.notes || "",
+        inventoryItems,
+      });
     }
-  }, [workOrder, workOrderId]);
-  
+  }, [workOrder, form]);
+
+  // Update work order mutation
+  const updateMutation = useMutation({
+    mutationFn: async (values: WorkOrderFormSchemaValues) => {
+      // Ensure all inventory items have required fields before updating
+      const validatedInventoryItems: WorkOrderInventoryItem[] = values.inventoryItems.map(item => ({
+        id: item.id || crypto.randomUUID(), // Ensure id is always present
+        name: item.name || "",
+        sku: item.sku || "",
+        category: item.category || "",
+        quantity: item.quantity || 0,
+        unit_price: item.unit_price || 0,
+        total: item.total || (item.quantity || 0) * (item.unit_price || 0),
+        // Include all optional fields
+        notes: item.notes,
+        itemStatus: item.itemStatus,
+        estimatedArrivalDate: item.estimatedArrivalDate,
+        supplierName: item.supplierName,
+        supplierCost: item.supplierCost,
+        customerPrice: item.customerPrice,
+        retailPrice: item.retailPrice,
+        partType: item.partType,
+        markupPercentage: item.markupPercentage,
+        isTaxable: item.isTaxable,
+        coreChargeAmount: item.coreChargeAmount,
+        coreChargeApplied: item.coreChargeApplied,
+        warrantyDuration: item.warrantyDuration,
+        invoiceNumber: item.invoiceNumber,
+        poLine: item.poLine,
+        isStockItem: item.isStockItem,
+        notesInternal: item.notesInternal,
+        inventoryItemId: item.inventoryItemId,
+        supplierOrderRef: item.supplierOrderRef,
+      }));
+
+      const updateData: Partial<WorkOrder> = {
+        notes: values.notes,
+        status: values.status,
+        priority: values.priority,
+        description: values.description,
+        technician_id: values.technicianId,
+        inventoryItems: validatedInventoryItems,
+      };
+      
+      return updateWorkOrder(workOrderId, updateData);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Work order updated successfully",
+      });
+      // Invalidate related queries
+      queryClient.invalidateQueries({ queryKey: ['workOrder', workOrderId] });
+      queryClient.invalidateQueries({ queryKey: ['workOrders'] });
+    },
+    onError: (error: any) => {
+      console.error('Update work order error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update work order",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = async (values: WorkOrderFormSchemaValues) => {
+    setIsSubmitting(true);
+    try {
+      await updateMutation.mutateAsync(values);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return {
+    form,
+    onSubmit,
+    isSubmitting,
     workOrder,
-    updateField,
-    handleSubmit,
-    loading,
-    saving,
-    error,
+    workOrderLoading,
+    workOrderError: workOrderError as Error | null,
+    technicians,
+    technicianLoading,
+    technicianError: technicianError as string | null,
+    jobLines: jobLines as WorkOrderJobLine[],
+    parts: parts as WorkOrderPart[],
+    timeEntries: timeEntries as TimeEntry[],
   };
 };
