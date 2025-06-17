@@ -15,6 +15,7 @@ interface JobLinesSectionProps {
   onJobLinesChange: (jobLines: WorkOrderJobLine[]) => void;
   isEditMode: boolean;
   shopId?: string;
+  showType?: "all" | "joblines" | "parts";
 }
 
 export function JobLinesSection({
@@ -23,7 +24,8 @@ export function JobLinesSection({
   jobLines,
   onJobLinesChange,
   isEditMode,
-  shopId
+  shopId,
+  showType = "joblines"
 }: JobLinesSectionProps) {
   const handleJobLineDelete = async (jobLineId: string) => {
     try {
@@ -124,7 +126,7 @@ export function JobLinesSection({
           onJobLineDelete={isEditMode ? handleJobLineDelete : undefined}
           onReorderJobLines={isEditMode ? handleJobLinesReorder : undefined}
           isEditMode={isEditMode}
-          showType="labor"
+          showType={showType}
         />
       </CardContent>
     </Card>
