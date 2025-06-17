@@ -51,6 +51,10 @@ export function DraggablePartCard({
     setIsEditDialogOpen(false);
   };
 
+  const handleCloseDialog = () => {
+    setIsEditDialogOpen(false);
+  };
+
   return (
     <>
       <Card 
@@ -121,6 +125,7 @@ export function DraggablePartCard({
       <EditPartDialog
         part={part}
         open={isEditDialogOpen}
+        onClose={handleCloseDialog}
         onOpenChange={setIsEditDialogOpen}
         onUpdate={handleEditPart}
       />
