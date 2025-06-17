@@ -27,7 +27,7 @@ export function SelectedServiceCard({ service, onRemove, isNew = false }: Select
       <div className="pr-6">
         <h4 className="font-medium text-sm text-gray-900">{service.name}</h4>
         <p className="text-xs text-gray-600 mt-1">
-          {service.categoryName} • {service.subcategoryName}
+          {service.category} • {service.subcategory}
         </p>
         
         {service.description && (

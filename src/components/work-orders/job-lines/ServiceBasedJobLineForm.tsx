@@ -22,14 +22,19 @@ export function ServiceBasedJobLineForm({
   const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
     const newService: SelectedService = {
       id: service.id,
+      serviceId: service.id,
       name: service.name,
       description: service.description,
-      estimated_hours: service.estimated_hours || 0,
-      labor_rate: service.labor_rate || 0,
-      total_amount: (service.estimated_hours || 0) * (service.labor_rate || 0),
+      estimated_hours: service.estimatedTime ? service.estimatedTime / 60 : 0, // Convert minutes to hours
+      labor_rate: service.price || 0,
+      total_amount: service.price || 0,
       category: categoryName,
       subcategory: subcategoryName,
-      status: 'pending'
+      categoryName: categoryName,
+      subcategoryName: subcategoryName,
+      status: 'pending',
+      estimatedTime: service.estimatedTime,
+      price: service.price
     };
 
     setSelectedServices(prev => [...prev, newService]);

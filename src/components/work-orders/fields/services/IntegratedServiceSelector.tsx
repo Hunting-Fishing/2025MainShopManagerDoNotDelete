@@ -27,7 +27,7 @@ export const IntegratedServiceSelector: React.FC<IntegratedServiceSelectorProps>
 
   const handleServiceSelect = (service: ServiceJob, categoryName: string, subcategoryName: string) => {
     // Check if service is already selected
-    const isAlreadySelected = selectedServices.some(s => s.serviceId === service.id);
+    const isAlreadySelected = selectedServices.some(s => s.serviceId === service.id || s.id === service.id);
     if (isAlreadySelected) return;
 
     // Create new selected service
@@ -36,12 +36,16 @@ export const IntegratedServiceSelector: React.FC<IntegratedServiceSelectorProps>
       serviceId: service.id,
       name: service.name,
       description: service.description,
-      categoryName,
-      subcategoryName,
+      category: categoryName,
+      subcategory: subcategoryName,
+      categoryName: categoryName,
+      subcategoryName: subcategoryName,
       estimatedTime: service.estimatedTime,
       price: service.price,
-      estimatedHours: service.estimatedTime ? service.estimatedTime / 60 : undefined,
-      laborRate: service.price
+      estimated_hours: service.estimatedTime ? service.estimatedTime / 60 : 0,
+      labor_rate: service.price || 0,
+      total_amount: service.price || 0,
+      status: 'pending'
     };
 
     // Update services list
@@ -86,7 +90,7 @@ export const IntegratedServiceSelector: React.FC<IntegratedServiceSelectorProps>
                   <div className="flex-1">
                     <div className="font-medium text-sm">{service.name}</div>
                     <div className="text-xs text-muted-foreground">
-                      {service.categoryName} › {service.subcategoryName}
+                      {service.category} › {service.subcategory}
                     </div>
                     <div className="flex items-center gap-4 mt-1">
                       {service.estimatedTime && (
