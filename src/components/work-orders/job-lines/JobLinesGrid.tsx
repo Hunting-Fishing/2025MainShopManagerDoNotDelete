@@ -42,8 +42,15 @@ export function JobLinesGrid({
 
   const { handleDragEnd } = usePartsDragDrop(parts, handlePartsChange);
 
-  const handleAddJobLine = (newJobLine: WorkOrderJobLine) => {
-    const updatedJobLines = [...jobLines, newJobLine];
+  const handleAddJobLines = (newJobLinesData: Omit<WorkOrderJobLine, 'id' | 'created_at' | 'updated_at'>[]) => {
+    const newJobLines: WorkOrderJobLine[] = newJobLinesData.map(jobLineData => ({
+      ...jobLineData,
+      id: `temp-${Date.now()}-${Math.random()}`,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }));
+
+    const updatedJobLines = [...jobLines, ...newJobLines];
     onJobLinesChange(updatedJobLines);
     setShowAddDialog(false);
   };
@@ -119,7 +126,7 @@ export function JobLinesGrid({
             workOrderId={workOrderId}
             open={showAddDialog}
             onOpenChange={setShowAddDialog}
-            onAdd={handleAddJobLine}
+            onJobLineAdd={handleAddJobLines}
           />
         )}
       </Card>

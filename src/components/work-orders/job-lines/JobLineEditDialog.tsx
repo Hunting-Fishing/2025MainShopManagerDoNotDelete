@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { WorkOrderJobLine, isValidJobLineStatus } from '@/types/jobLine';
+import { WorkOrderJobLine, isValidJobLineStatus, JobLineStatus } from '@/types/jobLine';
 import { updateWorkOrderJobLine } from '@/services/workOrder/jobLinesService';
 
 interface JobLineEditDialogProps {
@@ -26,7 +26,7 @@ export function JobLineEditDialog({
     description: '',
     estimated_hours: 0,
     labor_rate: 0,
-    status: 'pending' as const,
+    status: 'pending' as JobLineStatus,
     notes: ''
   });
   const [isLoading, setIsLoading] = useState(false);
