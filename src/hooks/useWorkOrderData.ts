@@ -19,46 +19,51 @@ export function useWorkOrderData(workOrderId: string) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchData = async () => {
     if (!workOrderId || workOrderId === 'new') {
       setIsLoading(false);
       return;
     }
 
-    const fetchData = async () => {
-      setIsLoading(true);
-      setError(null);
+    setIsLoading(true);
+    setError(null);
 
-      try {
-        const wo = await getWorkOrderById(workOrderId);
-        if (!wo) {
-          setError("Work Order not found.");
-          return;
-        }
-        setWorkOrder(wo);
-
-        const lines = await getWorkOrderJobLines(workOrderId);
-        setJobLines(lines);
-
-        const parts = await getWorkOrderParts(workOrderId);
-        setAllParts(parts);
-
-        if (wo.customer_id) {
-          const cust = await getCustomerById(wo.customer_id);
-          setCustomer(cust);
-        }
-        
-        setTimeEntries([]);
-      } catch (err: any) {
-        setError(err.message || "Failed to load Work Order details.");
-        console.error(err);
-      } finally {
-        setIsLoading(false);
+    try {
+      const wo = await getWorkOrderById(workOrderId);
+      if (!wo) {
+        setError("Work Order not found.");
+        return;
       }
-    };
+      setWorkOrder(wo);
 
+      const lines = await getWorkOrderJobLines(workOrderId);
+      setJobLines(lines);
+
+      const parts = await getWorkOrderParts(workOrderId);
+      setAllParts(parts);
+
+      if (wo.customer_id) {
+        const cust = await getCustomerById(wo.customer_id);
+        setCustomer(cust);
+      }
+      
+      setTimeEntries([]);
+    } catch (err: any) {
+      setError(err.message || "Failed to load Work Order details.");
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
   }, [workOrderId]);
+
+  const refreshData = async () => {
+    console.log('Refreshing work order data...');
+    await fetchData();
+  };
 
   const updateJobLines = (updatedJobLines: WorkOrderJobLine[]) => {
     setJobLines(updatedJobLines);
@@ -82,6 +87,7 @@ export function useWorkOrderData(workOrderId: string) {
     error,
     updateJobLines,
     updateParts,
-    updateTimeEntries
+    updateTimeEntries,
+    refreshData
   };
 }

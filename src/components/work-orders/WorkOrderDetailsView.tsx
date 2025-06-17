@@ -30,7 +30,8 @@ export function WorkOrderDetailsView() {
     error,
     updateJobLines,
     updateParts,
-    updateTimeEntries
+    updateTimeEntries,
+    refreshData
   } = useWorkOrderData(id);
 
   const [currentWorkOrder, setCurrentWorkOrder] = useState<WorkOrder | null>(workOrder);
@@ -106,6 +107,7 @@ export function WorkOrderDetailsView() {
         onJobLinesChange={updateJobLines}
         onTimeEntriesChange={updateTimeEntries}
         onWorkOrderUpdate={handleWorkOrderUpdate}
+        onRefreshData={refreshData}
         isEditMode={isEditMode}
         onStartEdit={handleStartEdit}
         onCancelEdit={handleCancelEdit}

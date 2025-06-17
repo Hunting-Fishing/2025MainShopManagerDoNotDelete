@@ -1,18 +1,18 @@
-import React from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { WorkOrder } from '@/types/workOrder';
-import { WorkOrderJobLine } from '@/types/jobLine';
-import { WorkOrderPart } from '@/types/workOrderPart';
-import { TimeEntry } from '@/types/workOrder';
-import { Customer } from '@/types/customer';
-import { WorkOrderHeader } from './WorkOrderHeader';
-import { WorkOrderCustomerInfo } from './WorkOrderCustomerInfo';
-import { WorkOrderVehicleInfo } from './WorkOrderVehicleInfo';
-import { JobLinesSection } from '../form-fields/JobLinesSection';
-import { WorkOrderPartsSection } from '../parts/WorkOrderPartsSection';
-import { TimeTrackingSection } from '../time-tracking/TimeTrackingSection';
-import { WorkOrderNotes } from './WorkOrderNotes';
-import { WorkOrderTotals } from '../shared/WorkOrderTotals';
+
+import React, { useState } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Edit3, Save, X } from "lucide-react";
+import { WorkOrder } from "@/types/workOrder";
+import { WorkOrderJobLine } from "@/types/jobLine";
+import { WorkOrderPart } from "@/types/workOrderPart";
+import { TimeEntry } from "@/types/workOrder";
+import { Customer } from "@/types/customer";
+import { WorkOrderHeader } from "../shared/WorkOrderHeader";
+import { WorkOrderOverviewTab } from "./WorkOrderOverviewTab";
+import { WorkOrderPartsSection } from "../parts/WorkOrderPartsSection";
+import { WorkOrderJobLinesSection } from "../job-lines/WorkOrderJobLinesSection";
+import { WorkOrderTimeTrackingSection } from "../time-tracking/WorkOrderTimeTrackingSection";
 
 interface WorkOrderDetailsTabsProps {
   workOrder: WorkOrder;
@@ -21,8 +21,9 @@ interface WorkOrderDetailsTabsProps {
   timeEntries: TimeEntry[];
   customer: Customer | null;
   onJobLinesChange: (jobLines: WorkOrderJobLine[]) => void;
-  onTimeEntriesChange: (entries: TimeEntry[]) => void;
+  onTimeEntriesChange: (timeEntries: TimeEntry[]) => void;
   onWorkOrderUpdate: (workOrder: WorkOrder) => void;
+  onRefreshData: () => Promise<void>;
   isEditMode: boolean;
   onStartEdit: () => void;
   onCancelEdit: () => void;
@@ -38,106 +39,79 @@ export function WorkOrderDetailsTabs({
   onJobLinesChange,
   onTimeEntriesChange,
   onWorkOrderUpdate,
+  onRefreshData,
   isEditMode,
   onStartEdit,
   onCancelEdit,
   onSaveEdit
 }: WorkOrderDetailsTabsProps) {
-  const handleNotesUpdate = (notes: string) => {
-    onWorkOrderUpdate({
-      ...workOrder,
-      notes
-    });
-  };
+  const [activeTab, setActiveTab] = useState("overview");
 
-  // Create a refresh function that refetches both job lines and parts
   const handlePartsRefresh = async () => {
-    // This should trigger a refresh of the work order data
-    // The parent component should handle this by refetching the data
-    console.log('Parts refresh requested');
-    
-    // For now, we'll rely on the parent component's data fetching
-    // In a real implementation, you might want to pass a refresh callback
+    console.log('Parts refresh triggered, refreshing all data...');
+    await onRefreshData();
   };
 
   return (
     <div className="space-y-6">
-      <WorkOrderHeader
-        workOrder={workOrder}
-        customer={customer}
-        isEditMode={isEditMode}
-        onStartEdit={onStartEdit}
-        onCancelEdit={onCancelEdit}
-        onSaveEdit={onSaveEdit}
-      />
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <WorkOrderCustomerInfo
-          customer={customer}
-          workOrder={workOrder}
-        />
-        <WorkOrderVehicleInfo
-          workOrder={workOrder}
-        />
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <WorkOrderHeader workOrder={workOrder} customer={customer} />
+        
+        <div className="flex gap-2">
+          {!isEditMode ? (
+            <Button onClick={onStartEdit} size="sm" className="h-9">
+              <Edit3 className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+          ) : (
+            <div className="flex gap-2">
+              <Button onClick={onSaveEdit} size="sm" className="h-9">
+                <Save className="h-4 w-4 mr-2" />
+                Save
+              </Button>
+              <Button onClick={onCancelEdit} variant="outline" size="sm" className="h-9">
+                <X className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
 
-      <Tabs defaultValue="all" className="w-full">
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="all">Overview</TabsTrigger>
-          <TabsTrigger value="labor">Labor</TabsTrigger>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="joblines">Job Lines</TabsTrigger>
           <TabsTrigger value="parts">Parts</TabsTrigger>
-          <TabsTrigger value="time">Time Tracking</TabsTrigger>
-          <TabsTrigger value="notes">Notes</TabsTrigger>
+          <TabsTrigger value="timetracking">Time Tracking</TabsTrigger>
+          <TabsTrigger value="documents">Documents</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="all" className="space-y-6">
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            <div className="xl:col-span-2 space-y-6">
-              <JobLinesSection
-                workOrderId={workOrder.id}
-                jobLines={jobLines}
-                onJobLinesChange={onJobLinesChange}
-                isEditMode={isEditMode}
-                showType="all"
-              />
-              
-              <WorkOrderPartsSection
-                workOrderId={workOrder.id}
-                allParts={allParts}
-                jobLines={jobLines}
-                onPartsChange={handlePartsRefresh}
-                isEditMode={isEditMode}
-                showType="overview"
-              />
-              
-              <TimeTrackingSection
-                workOrderId={workOrder.id}
-                timeEntries={timeEntries}
-                onUpdateTimeEntries={onTimeEntriesChange}
-                isEditMode={isEditMode}
-              />
-            </div>
-            
-            <div>
-              <WorkOrderTotals
-                jobLines={jobLines}
-                allParts={allParts}
-              />
-            </div>
-          </div>
+        <TabsContent value="overview" className="mt-6">
+          <WorkOrderOverviewTab
+            workOrder={workOrder}
+            jobLines={jobLines}
+            allParts={allParts}
+            timeEntries={timeEntries}
+            customer={customer}
+            onWorkOrderUpdate={onWorkOrderUpdate}
+            onPartsChange={handlePartsRefresh}
+            isEditMode={isEditMode}
+          />
         </TabsContent>
 
-        <TabsContent value="labor">
-          <JobLinesSection
+        <TabsContent value="joblines" className="mt-6">
+          <WorkOrderJobLinesSection
             workOrderId={workOrder.id}
             jobLines={jobLines}
             onJobLinesChange={onJobLinesChange}
             isEditMode={isEditMode}
-            showType="joblines"
           />
         </TabsContent>
 
-        <TabsContent value="parts">
+        <TabsContent value="parts" className="mt-6">
           <WorkOrderPartsSection
             workOrderId={workOrder.id}
             allParts={allParts}
@@ -148,21 +122,19 @@ export function WorkOrderDetailsTabs({
           />
         </TabsContent>
 
-        <TabsContent value="time">
-          <TimeTrackingSection
+        <TabsContent value="timetracking" className="mt-6">
+          <WorkOrderTimeTrackingSection
             workOrderId={workOrder.id}
             timeEntries={timeEntries}
-            onUpdateTimeEntries={onTimeEntriesChange}
+            onTimeEntriesChange={onTimeEntriesChange}
             isEditMode={isEditMode}
           />
         </TabsContent>
 
-        <TabsContent value="notes">
-          <WorkOrderNotes
-            workOrderId={workOrder.id}
-            notes={workOrder.notes || ''}
-            onUpdateNotes={handleNotesUpdate}
-          />
+        <TabsContent value="documents" className="mt-6">
+          <div className="text-center py-8 text-muted-foreground">
+            <p>Documents functionality coming soon...</p>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
