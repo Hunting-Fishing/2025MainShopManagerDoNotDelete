@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { ResponsiveContainer } from '@/components/ui/responsive-container';
 import { useToast } from '@/hooks/use-toast';
-import { createWorkOrder } from '@/services/workOrder/workOrderUnifiedService';
+import { createWorkOrder } from '@/services/workOrder';
 import { WorkOrderDetailsView } from '@/components/work-orders/WorkOrderDetailsView';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,6 +12,7 @@ const CreateWorkOrder = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Extract and clean up pre-populated data from URL parameters
   const prePopulatedData = {
     customerId: searchParams.get('customerId') || undefined,
     customerName: searchParams.get('customerName') || undefined,
@@ -30,14 +30,19 @@ const CreateWorkOrder = () => {
     vehicleVin: searchParams.get('vehicleVin') || undefined,
   };
 
+  // Filter out empty strings and convert to undefined
   const cleanedData = Object.fromEntries(
     Object.entries(prePopulatedData)
       .filter(([_, value]) => value && value.trim() !== '')
       .map(([key, value]) => [key, decodeURIComponent(value as string)])
   );
 
+  console.log('Pre-populated data from URL:', cleanedData);
+
   const handleCreateWorkOrder = async (workOrderData: any) => {
     try {
+      console.log('Creating work order with data:', workOrderData);
+      
       const newWorkOrder = await createWorkOrder(workOrderData);
       
       toast({
@@ -45,6 +50,7 @@ const CreateWorkOrder = () => {
         description: 'Work order created successfully!',
       });
 
+      // Navigate to the created work order details page
       navigate(`/work-orders/${newWorkOrder.id}`);
       
     } catch (error) {
@@ -59,6 +65,7 @@ const CreateWorkOrder = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Header */}
       <div className="bg-white border-b border-gray-200 shadow-sm">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center gap-4">
@@ -86,7 +93,10 @@ const CreateWorkOrder = () => {
       </div>
 
       <ResponsiveContainer maxWidth="full" className="py-6">
-        <WorkOrderDetailsView isEditMode={true} />
+        {/* FIX: Only pass expected prop */}
+        <WorkOrderDetailsView 
+          isEditMode={false}
+        />
       </ResponsiveContainer>
     </div>
   );

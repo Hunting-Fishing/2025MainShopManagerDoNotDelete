@@ -1,54 +1,136 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { WorkOrder } from '@/types/workOrder';
+import { WorkOrderFormSchemaValues } from '@/schemas/workOrderSchema';
 
-export async function createWorkOrder(workOrderData: Partial<WorkOrder>): Promise<WorkOrder> {
+export async function createWorkOrder(formData: WorkOrderFormSchemaValues) {
+  console.log('Creating work order with data:', formData);
+  
   try {
-    const { data, error } = await supabase
+    // Map form data to work_orders table structure (only include fields that exist in the table)
+    const workOrderInsert = {
+      customer_id: formData.customerId || null,
+      vehicle_id: formData.vehicleId || null,
+      technician_id: formData.technicianId || null,
+      description: formData.description,
+      status: formData.status,
+      service_type: formData.priority, // Using priority as service_type since that exists in the table
+    };
+
+    console.log('Prepared work order insert:', workOrderInsert);
+
+    const { data: workOrder, error } = await supabase
       .from('work_orders')
-      .insert(workOrderData)
-      .select()
+      .insert(workOrderInsert)
+      .select('*')
       .single();
 
-    if (error) throw error;
-    return data;
+    if (error) {
+      console.error('Error creating work order:', error);
+      throw new Error(`Failed to create work order: ${error.message}`);
+    }
+
+    console.log('Work order created successfully:', workOrder);
+    return workOrder;
+
   } catch (error) {
-    console.error('Error creating work order:', error);
+    console.error('Exception in createWorkOrder:', error);
     throw error;
   }
 }
 
-export async function updateWorkOrder(id: string, updates: Partial<WorkOrder>): Promise<WorkOrder> {
+export async function updateWorkOrder(workOrderId: string, workOrderData: Partial<WorkOrderFormSchemaValues>) {
+  console.log('Updating work order:', workOrderId, 'with data:', workOrderData);
+  
   try {
-    const { data, error } = await supabase
+    const workOrderUpdate = {
+      description: workOrderData.description,
+      status: workOrderData.status,
+      customer_id: workOrderData.customerId || null,
+      vehicle_id: workOrderData.vehicleId || null,
+      technician_id: workOrderData.technicianId || null,
+      customer_name: workOrderData.customer,
+      customer_email: workOrderData.customerEmail || null,
+      customer_phone: workOrderData.customerPhone || null,
+      customer_address: workOrderData.customerAddress || null,
+      vehicle_make: workOrderData.vehicleMake || null,
+      vehicle_model: workOrderData.vehicleModel || null,
+      vehicle_year: workOrderData.vehicleYear || null,
+      vehicle_license_plate: workOrderData.licensePlate || null,
+      vehicle_vin: workOrderData.vin || null,
+      notes: workOrderData.notes || null,
+      due_date: workOrderData.dueDate ? new Date(workOrderData.dueDate).toISOString() : null,
+      priority: workOrderData.priority,
+      location: workOrderData.location || null,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data: workOrder, error } = await supabase
       .from('work_orders')
-      .update(updates)
-      .eq('id', id)
-      .select()
+      .update(workOrderUpdate)
+      .eq('id', workOrderId)
+      .select('*')
       .single();
 
-    if (error) throw error;
-    return data;
+    if (error) {
+      console.error('Error updating work order:', error);
+      throw new Error(`Failed to update work order: ${error.message}`);
+    }
+
+    console.log('Work order updated successfully:', workOrder);
+    return workOrder;
+
   } catch (error) {
-    console.error('Error updating work order:', error);
+    console.error('Exception in updateWorkOrder:', error);
     throw error;
   }
 }
 
-export async function updateWorkOrderStatus(id: string, status: string): Promise<WorkOrder> {
-  return updateWorkOrder(id, { status });
+export async function updateWorkOrderStatus(workOrderId: string, status: string) {
+  console.log('Updating work order status:', workOrderId, 'to:', status);
+  
+  try {
+    const { data: workOrder, error } = await supabase
+      .from('work_orders')
+      .update({ 
+        status,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', workOrderId)
+      .select('*')
+      .single();
+
+    if (error) {
+      console.error('Error updating work order status:', error);
+      throw new Error(`Failed to update work order status: ${error.message}`);
+    }
+
+    console.log('Work order status updated successfully:', workOrder);
+    return workOrder;
+
+  } catch (error) {
+    console.error('Exception in updateWorkOrderStatus:', error);
+    throw error;
+  }
 }
 
-export async function deleteWorkOrder(id: string): Promise<void> {
+export async function deleteWorkOrder(workOrderId: string) {
+  console.log('Deleting work order:', workOrderId);
+  
   try {
     const { error } = await supabase
       .from('work_orders')
       .delete()
-      .eq('id', id);
+      .eq('id', workOrderId);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error deleting work order:', error);
+      throw new Error(`Failed to delete work order: ${error.message}`);
+    }
+
+    console.log('Work order deleted successfully');
+    return true;
+
   } catch (error) {
-    console.error('Error deleting work order:', error);
+    console.error('Exception in deleteWorkOrder:', error);
     throw error;
   }
 }

@@ -1,132 +1,163 @@
 
-import React from "react";
-import { Link } from "react-router-dom";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Eye, Edit } from "lucide-react";
-import { WorkOrder } from "@/types/workOrder";
-import { formatDate } from "@/utils/dateUtils";
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { WorkOrder } from '@/types/workOrder';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Eye, Edit, Clock, User, Calendar } from 'lucide-react';
+import { formatDate } from '@/utils/dateUtils';
+import { toast } from 'sonner';
 
 interface WorkOrderTableProps {
   workOrders: WorkOrder[];
 }
 
 export function WorkOrderTable({ workOrders }: WorkOrderTableProps) {
-  console.log('WorkOrderTable rendering with:', workOrders?.length || 0, 'work orders');
+  const navigate = useNavigate();
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'in-progress':
+        return 'bg-blue-100 text-blue-800';
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      case 'on-hold':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'low':
+        return 'bg-gray-100 text-gray-800';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'high':
+        return 'bg-orange-100 text-orange-800';
+      case 'urgent':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const handleViewWorkOrder = (workOrderId: string) => {
+    try {
+      console.log('Navigating to work order details:', workOrderId);
+      navigate(`/work-orders/${workOrderId}`);
+    } catch (error) {
+      console.error('Error navigating to work order details:', error);
+      toast.error('Failed to open work order details');
+    }
+  };
+
+  const handleEditWorkOrder = (workOrderId: string) => {
+    try {
+      console.log('Navigating to work order edit:', workOrderId);
+      navigate(`/work-orders/${workOrderId}/edit`);
+    } catch (error) {
+      console.error('Error navigating to work order edit:', error);
+      toast.error('Failed to open work order editor');
+    }
+  };
 
   if (!workOrders || workOrders.length === 0) {
     return (
-      <div className="text-center py-8">
-        <p className="text-muted-foreground">No work orders found.</p>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>No Work Orders Found</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">No work orders are currently available.</p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
-  const getStatusVariant = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'default';
-      case 'in-progress':
-        return 'secondary';
-      case 'pending':
-        return 'outline';
-      case 'cancelled':
-        return 'destructive';
-      default:
-        return 'outline';
-    }
-  };
-
-  const getCustomerName = (workOrder: WorkOrder) => {
-    if (workOrder.customer_name) return workOrder.customer_name;
-    if (workOrder.customer) return workOrder.customer;
-    return 'Unknown Customer';
-  };
-
-  const getVehicleInfo = (workOrder: WorkOrder) => {
-    const parts = [];
-    if (workOrder.vehicle_year) parts.push(workOrder.vehicle_year);
-    if (workOrder.vehicle_make) parts.push(workOrder.vehicle_make);
-    if (workOrder.vehicle_model) parts.push(workOrder.vehicle_model);
-    
-    if (parts.length > 0) {
-      return parts.join(' ');
-    }
-    
-    return 'No vehicle info';
-  };
-
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>ID</TableHead>
-            <TableHead>Customer</TableHead>
-            <TableHead>Vehicle</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Date</TableHead>
-            <TableHead>Total</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {workOrders.map((workOrder) => (
-            <TableRow key={workOrder.id}>
-              <TableCell className="font-mono text-sm">
-                #{workOrder.id.slice(0, 8)}
-              </TableCell>
-              
-              <TableCell>
-                <div className="font-medium">
-                  {getCustomerName(workOrder)}
+    <div className="space-y-4">
+      {workOrders.map((workOrder) => (
+        <Card key={workOrder.id} className="hover:shadow-md transition-shadow">
+          <CardHeader className="pb-4">
+            <div className="flex justify-between items-start">
+              <div className="space-y-2">
+                <CardTitle className="text-lg">
+                  {workOrder.description || `Work Order ${workOrder.id.slice(0, 8)}`}
+                </CardTitle>
+                <div className="flex items-center gap-4 text-sm text-gray-600">
+                  {workOrder.customer_name && (
+                    <div className="flex items-center gap-1">
+                      <User className="h-4 w-4" />
+                      <span>{workOrder.customer_name}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-4 w-4" />
+                    <span>{formatDate(workOrder.created_at)}</span>
+                  </div>
+                  {workOrder.estimated_hours && (
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-4 w-4" />
+                      <span>{workOrder.estimated_hours}h estimated</span>
+                    </div>
+                  )}
                 </div>
-              </TableCell>
-              
-              <TableCell>
-                {getVehicleInfo(workOrder)}
-              </TableCell>
-              
-              <TableCell>
-                <div className="max-w-xs truncate" title={workOrder.description}>
-                  {workOrder.description || 'No description'}
-                </div>
-              </TableCell>
-              
-              <TableCell>
-                <Badge variant={getStatusVariant(workOrder.status)}>
-                  {workOrder.status || 'Unknown'}
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge className={getStatusColor(workOrder.status)}>
+                  {workOrder.status.replace('-', ' ')}
                 </Badge>
-              </TableCell>
-              
-              <TableCell>
-                {workOrder.created_at ? formatDate(workOrder.created_at) : 'Unknown'}
-              </TableCell>
-              
-              <TableCell>
-                {workOrder.total_cost ? `$${workOrder.total_cost.toFixed(2)}` : 'N/A'}
-              </TableCell>
-              
-              <TableCell>
-                <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="sm" asChild>
-                    <Link to={`/work-orders/${workOrder.id}`}>
-                      <Eye className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                  <Button variant="ghost" size="sm" asChild>
-                    <Link to={`/work-orders/${workOrder.id}/edit`}>
-                      <Edit className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+                {workOrder.priority && (
+                  <Badge variant="outline" className={getPriorityColor(workOrder.priority)}>
+                    {workOrder.priority}
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex justify-between items-center">
+              <div className="text-sm text-gray-600">
+                {workOrder.service_type && (
+                  <span className="font-medium">Service: {workOrder.service_type}</span>
+                )}
+                {workOrder.total_cost && (
+                  <span className="ml-4">Cost: ${workOrder.total_cost}</span>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleViewWorkOrder(workOrder.id)}
+                  className="flex items-center gap-1"
+                >
+                  <Eye className="h-4 w-4" />
+                  View
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleEditWorkOrder(workOrder.id)}
+                  className="flex items-center gap-1"
+                >
+                  <Edit className="h-4 w-4" />
+                  Edit
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }

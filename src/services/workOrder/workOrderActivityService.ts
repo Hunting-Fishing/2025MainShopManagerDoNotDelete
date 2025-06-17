@@ -1,53 +1,67 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from "@/integrations/supabase/client";
 
-export async function recordWorkOrderActivity(activityData: {
-  work_order_id: string;
-  action: string;
-  user_id: string;
-  user_name: string;
-}): Promise<void> {
+/**
+ * Records an activity for a work order
+ */
+export const recordWorkOrderActivity = async (
+  action: string, 
+  workOrderId: string, 
+  userId: string,
+  userName: string
+): Promise<void> => {
   try {
-    const { error } = await supabase
+    await supabase
       .from('work_order_activities')
-      .insert(activityData);
-
-    if (error) throw error;
+      .insert({
+        work_order_id: workOrderId,
+        action: action,
+        user_id: userId,
+        user_name: userName
+      });
   } catch (error) {
-    console.error('Error recording work order activity:', error);
-    throw error;
+    console.error(`Error recording ${action} activity for work order:`, error);
   }
-}
+};
 
-export async function getWorkOrderActivities(workOrderId: string): Promise<any[]> {
+/**
+ * Gets all activities for a specific work order
+ */
+export const getWorkOrderActivities = async (workOrderId: string) => {
   try {
     const { data, error } = await supabase
       .from('work_order_activities')
       .select('*')
       .eq('work_order_id', workOrderId)
       .order('timestamp', { ascending: false });
-
+      
     if (error) throw error;
+    
     return data || [];
   } catch (error) {
     console.error('Error fetching work order activities:', error);
-    throw error;
+    return [];
   }
-}
+};
 
-export async function flagWorkOrderActivity(activityId: string, flagReason: string): Promise<void> {
+/**
+ * Flag a work order activity for review
+ */
+export const flagWorkOrderActivity = async (activityId: string, reason: string) => {
   try {
     const { error } = await supabase
       .from('work_order_activities')
-      .update({ 
-        flagged: true, 
-        flag_reason: flagReason 
+      .update({
+        flagged: true,
+        flag_reason: reason
       })
       .eq('id', activityId);
-
+      
     if (error) throw error;
+    
+    return true;
   } catch (error) {
     console.error('Error flagging work order activity:', error);
-    throw error;
+    return false;
   }
-}
+};

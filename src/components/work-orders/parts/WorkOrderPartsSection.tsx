@@ -4,21 +4,17 @@ import { WorkOrderPart } from '@/types/workOrderPart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { getWorkOrderParts } from '@/services/workOrder/workOrderUnifiedService';
+import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
 import { UnifiedItemsTable } from '../shared/UnifiedItemsTable';
 
 interface WorkOrderPartsSectionProps {
   workOrderId: string;
   isEditMode?: boolean;
-  onPartUpdate?: (updatedPart: WorkOrderPart) => Promise<void>;
-  onPartDelete?: (partId: string) => Promise<void>;
 }
 
 export function WorkOrderPartsSection({ 
   workOrderId, 
-  isEditMode = false,
-  onPartUpdate,
-  onPartDelete
+  isEditMode = false 
 }: WorkOrderPartsSectionProps) {
   const [parts, setParts] = useState<WorkOrderPart[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -42,28 +38,16 @@ export function WorkOrderPartsSection({
     fetchParts();
   }, [workOrderId]);
 
-  const handlePartUpdate = async (updatedPart: WorkOrderPart) => {
-    if (onPartUpdate) {
-      await onPartUpdate(updatedPart);
-    } else {
-      const updatedParts = parts.map(part => 
-        part.id === updatedPart.id ? updatedPart : part
-      );
-      setParts(updatedParts);
-    }
+  const handlePartUpdate = (updatedPart: WorkOrderPart) => {
+    const updatedParts = parts.map(part => 
+      part.id === updatedPart.id ? updatedPart : part
+    );
+    setParts(updatedParts);
   };
 
-  const handlePartDelete = async (partId: string) => {
-    if (onPartDelete) {
-      await onPartDelete(partId);
-    } else {
-      const updatedParts = parts.filter(part => part.id !== partId);
-      setParts(updatedParts);
-    }
-  };
-
-  const handlePartsReorder = (reorderedParts: WorkOrderPart[]) => {
-    setParts(reorderedParts);
+  const handlePartDelete = (partId: string) => {
+    const updatedParts = parts.filter(part => part.id !== partId);
+    setParts(updatedParts);
   };
 
   return (
@@ -90,7 +74,6 @@ export function WorkOrderPartsSection({
             allParts={parts}
             onPartUpdate={handlePartUpdate}
             onPartDelete={handlePartDelete}
-            onReorderParts={handlePartsReorder}
             isEditMode={isEditMode}
             showType="parts"
           />

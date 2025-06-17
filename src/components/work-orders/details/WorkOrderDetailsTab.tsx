@@ -4,6 +4,7 @@ import { WorkOrder } from '@/types/workOrder';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { getWorkOrderParts } from '@/services/workOrder/workOrderPartsService';
 import { UnifiedItemsTable } from '../shared/UnifiedItemsTable';
 
 interface WorkOrderDetailsTabProps {
@@ -11,61 +12,65 @@ interface WorkOrderDetailsTabProps {
   jobLines: WorkOrderJobLine[];
   allParts: WorkOrderPart[];
   onJobLinesChange: (jobLines: WorkOrderJobLine[]) => void;
-  onJobLineUpdate?: (jobLine: WorkOrderJobLine) => Promise<void>;
-  onJobLineDelete?: (jobLineId: string) => Promise<void>;
-  onPartUpdate?: (part: WorkOrderPart) => Promise<void>;
-  onPartDelete?: (partId: string) => Promise<void>;
   isEditMode: boolean;
 }
 
 export function WorkOrderDetailsTab({
   workOrder,
   jobLines,
-  allParts,
+  allParts: initialParts,
   onJobLinesChange,
-  onJobLineUpdate,
-  onJobLineDelete,
-  onPartUpdate,
-  onPartDelete,
   isEditMode,
 }: WorkOrderDetailsTabProps) {
-  const handleJobLineUpdate = async (updatedJobLine: WorkOrderJobLine) => {
-    if (onJobLineUpdate) {
-      await onJobLineUpdate(updatedJobLine);
-    } else {
-      // Fallback to local update
-      const updatedJobLines = jobLines.map(line => 
-        line.id === updatedJobLine.id ? updatedJobLine : line
-      );
-      onJobLinesChange(updatedJobLines);
-    }
+  const [allParts, setAllParts] = useState<WorkOrderPart[]>(initialParts);
+  const [partsLoading, setPartsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchParts = async () => {
+      if (workOrder.id) {
+        try {
+          setPartsLoading(true);
+          const parts = await getWorkOrderParts(workOrder.id);
+          setAllParts(parts);
+        } catch (error) {
+          console.error('Error fetching work order parts:', error);
+          setAllParts([]);
+        } finally {
+          setPartsLoading(false);
+        }
+      }
+    };
+
+    fetchParts();
+  }, [workOrder.id]);
+
+  const handleJobLineUpdate = (updatedJobLine: WorkOrderJobLine) => {
+    const updatedJobLines = jobLines.map(line => 
+      line.id === updatedJobLine.id ? updatedJobLine : line
+    );
+    onJobLinesChange(updatedJobLines);
   };
 
-  const handleJobLineDelete = async (jobLineId: string) => {
-    if (onJobLineDelete) {
-      await onJobLineDelete(jobLineId);
-    } else {
-      // Fallback to local update
-      const updatedJobLines = jobLines.filter(line => line.id !== jobLineId);
-      onJobLinesChange(updatedJobLines);
-    }
+  const handleJobLineDelete = (jobLineId: string) => {
+    const updatedJobLines = jobLines.filter(line => line.id !== jobLineId);
+    onJobLinesChange(updatedJobLines);
   };
 
-  const handlePartUpdate = async (updatedPart: WorkOrderPart) => {
-    if (onPartUpdate) {
-      await onPartUpdate(updatedPart);
-    }
+  const handlePartUpdate = (updatedPart: WorkOrderPart) => {
+    const updatedParts = allParts.map(part => 
+      part.id === updatedPart.id ? updatedPart : part
+    );
+    setAllParts(updatedParts);
   };
 
-  const handlePartDelete = async (partId: string) => {
-    if (onPartDelete) {
-      await onPartDelete(partId);
-    }
+  const handlePartDelete = (partId: string) => {
+    const updatedParts = allParts.filter(part => part.id !== partId);
+    setAllParts(updatedParts);
   };
 
   return (
     <div className="space-y-6">
-      {/* Vehicle Details */}
+      {/* Vehicle Details - Compact */}
       {(workOrder.vehicle_license_plate || workOrder.vehicle_vin) && (
         <Card>
           <CardHeader className="pb-3">
@@ -98,16 +103,22 @@ export function WorkOrderDetailsTab({
           </div>
         </CardHeader>
         <CardContent className="pt-0">
-          <UnifiedItemsTable
-            jobLines={jobLines}
-            allParts={allParts}
-            onJobLineUpdate={isEditMode ? handleJobLineUpdate : undefined}
-            onJobLineDelete={isEditMode ? handleJobLineDelete : undefined}
-            onPartUpdate={isEditMode ? handlePartUpdate : undefined}
-            onPartDelete={isEditMode ? handlePartDelete : undefined}
-            isEditMode={isEditMode}
-            showType="overview"
-          />
+          {partsLoading ? (
+            <div className="text-center py-4 text-muted-foreground text-sm">
+              Loading job lines and parts...
+            </div>
+          ) : (
+            <UnifiedItemsTable
+              jobLines={jobLines}
+              allParts={allParts}
+              onJobLineUpdate={isEditMode ? handleJobLineUpdate : undefined}
+              onJobLineDelete={isEditMode ? handleJobLineDelete : undefined}
+              onPartUpdate={isEditMode ? handlePartUpdate : undefined}
+              onPartDelete={isEditMode ? handlePartDelete : undefined}
+              isEditMode={isEditMode}
+              showType="all"
+            />
+          )}
         </CardContent>
       </Card>
     </div>

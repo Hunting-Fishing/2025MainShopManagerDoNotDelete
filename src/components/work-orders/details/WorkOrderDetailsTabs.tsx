@@ -23,10 +23,6 @@ interface WorkOrderDetailsTabsProps {
   customer?: import('@/types/customer').Customer | null;
   onJobLinesChange: (jobLines: WorkOrderJobLine[]) => void;
   onTimeEntriesChange: (entries: TimeEntry[]) => void;
-  onJobLineUpdate?: (jobLine: WorkOrderJobLine) => Promise<void>;
-  onJobLineDelete?: (jobLineId: string) => Promise<void>;
-  onPartUpdate?: (part: WorkOrderPart) => Promise<void>;
-  onPartDelete?: (partId: string) => Promise<void>;
   isEditMode: boolean;
   onStartEdit?: () => void;
   onCancelEdit?: () => void;
@@ -41,10 +37,6 @@ export function WorkOrderDetailsTabs({
   customer,
   onJobLinesChange,
   onTimeEntriesChange,
-  onJobLineUpdate,
-  onJobLineDelete,
-  onPartUpdate,
-  onPartDelete,
   isEditMode,
   onStartEdit,
   onCancelEdit,
@@ -60,6 +52,7 @@ export function WorkOrderDetailsTabs({
 
   return (
     <div className="space-y-6">
+      {/* Unified Header */}
       <WorkOrderUnifiedHeader
         workOrder={workOrder}
         customer={customer}
@@ -68,6 +61,7 @@ export function WorkOrderDetailsTabs({
         timeEntries={timeEntries || []}
       />
 
+      {/* Actions bar - Improved layout */}
       <div className="bg-white border rounded-lg p-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <WorkOrderStatusUpdate workOrder={workOrder} onStatusUpdated={handleStatusUpdated} />
@@ -98,10 +92,6 @@ export function WorkOrderDetailsTabs({
             jobLines={jobLines}
             allParts={allParts}
             onJobLinesChange={onJobLinesChange}
-            onJobLineUpdate={onJobLineUpdate}
-            onJobLineDelete={onJobLineDelete}
-            onPartUpdate={onPartUpdate}
-            onPartDelete={onPartDelete}
             isEditMode={isEditMode}
           />
         </TabsContent>
@@ -111,19 +101,12 @@ export function WorkOrderDetailsTabs({
             workOrderId={workOrder.id}
             jobLines={jobLines}
             onJobLinesChange={onJobLinesChange}
-            onJobLineUpdate={onJobLineUpdate}
-            onJobLineDelete={onJobLineDelete}
             isEditMode={isEditMode}
           />
         </TabsContent>
         
         <TabsContent value="parts" className="space-y-6">
-          <WorkOrderPartsSection 
-            workOrderId={workOrder.id} 
-            isEditMode={isEditMode}
-            onPartUpdate={onPartUpdate}
-            onPartDelete={onPartDelete}
-          />
+          <WorkOrderPartsSection workOrderId={workOrder.id} isEditMode={isEditMode} />
         </TabsContent>
         
         <TabsContent value="time" className="space-y-6">

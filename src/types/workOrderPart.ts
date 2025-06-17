@@ -14,40 +14,30 @@ export interface WorkOrderPart {
   created_at: string;
   updated_at: string;
   
-  // Database schema fields that need to be mapped
-  part_name?: string; // Maps to name
-  customer_price?: number; // Maps to unit_price
-  customerPrice?: number; // Alias for customer_price
-  
   // Additional properties for parts tracking components
   partName?: string; // Alias for name
   partNumber?: string; // Alias for part_number
   supplierName?: string;
   supplierCost?: number;
   supplierSuggestedRetailPrice?: number;
+  customerPrice?: number; // Alias for unit_price
   retailPrice?: number;
   category?: string;
   warrantyDuration?: string;
   warrantyExpiryDate?: string;
   binLocation?: string;
-  bin_location?: string; // Database field
   installDate?: string;
   dateAdded?: string; // Alias for created_at
   partType?: string;
-  part_type?: string; // Database field
   installedBy?: string;
   markupPercentage?: number;
   inventoryItemId?: string;
   coreChargeApplied?: boolean;
-  core_charge_applied?: boolean; // Database field
   coreChargeAmount?: number;
-  core_charge_amount?: number; // Database field
   isTaxable?: boolean;
-  is_taxable?: boolean; // Database field
   invoiceNumber?: string;
   poLine?: string;
   isStockItem?: boolean;
-  is_stock_item?: boolean; // Database field
   notesInternal?: string;
   attachments?: any;
   warehouseLocation?: string;
@@ -78,7 +68,6 @@ export interface WorkOrderPartFormValues {
   supplierCost?: number;
   supplierSuggestedRetailPrice?: number;
   customerPrice?: number;
-  customer_price?: number;
   retailPrice?: number;
   category?: string;
   partType?: string;
