@@ -1,4 +1,3 @@
-
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
 import { 
@@ -20,7 +19,7 @@ import {
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { CustomerFormValues } from "../CustomerFormSchema";
+import { CustomerFormValues } from '../schemas/customerSchema';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { paymentMethods } from "./businessConstants";
 
