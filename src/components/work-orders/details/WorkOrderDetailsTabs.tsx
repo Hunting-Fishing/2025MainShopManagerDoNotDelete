@@ -12,10 +12,8 @@ import { WorkOrderVehicleInfo } from './WorkOrderVehicleInfo';
 import { JobLinesSection } from '../form-fields/JobLinesSection';
 import { WorkOrderPartsSection } from '../parts/WorkOrderPartsSection';
 import { TimeTrackingSection } from '../time-tracking/TimeTrackingSection';
-import { WorkOrderTotals } from '../shared/WorkOrderTotals';
-import { WorkOrderDocuments } from './WorkOrderDocuments';
 import { WorkOrderNotes } from './WorkOrderNotes';
-import { WorkOrderActivityHistory } from './WorkOrderActivityHistory';
+import { WorkOrderTotals } from '../shared/WorkOrderTotals';
 
 interface WorkOrderDetailsTabsProps {
   workOrder: WorkOrder;
@@ -46,9 +44,15 @@ export function WorkOrderDetailsTabs({
   onCancelEdit,
   onSaveEdit
 }: WorkOrderDetailsTabsProps) {
+  const handleNotesUpdate = (notes: string) => {
+    onWorkOrderUpdate({
+      ...workOrder,
+      notes
+    });
+  };
+
   return (
     <div className="space-y-6">
-      {/* Header Section */}
       <WorkOrderHeader
         workOrder={workOrder}
         customer={customer}
@@ -58,74 +62,84 @@ export function WorkOrderDetailsTabs({
         onSaveEdit={onSaveEdit}
       />
 
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <WorkOrderCustomerInfo
+          customer={customer}
+          workOrder={workOrder}
+        />
+        <WorkOrderVehicleInfo
+          workOrder={workOrder}
+        />
+      </div>
+
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="services">Services</TabsTrigger>
+          <TabsTrigger value="labor">Labor</TabsTrigger>
           <TabsTrigger value="parts">Parts</TabsTrigger>
-          <TabsTrigger value="time">Time</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
-          <TabsTrigger value="activity">Activity</TabsTrigger>
+          <TabsTrigger value="time">Time Tracking</TabsTrigger>
+          <TabsTrigger value="notes">Notes</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              {/* Customer and Vehicle Info */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <WorkOrderCustomerInfo customer={customer} workOrder={workOrder} />
-                <WorkOrderVehicleInfo workOrder={workOrder} />
-              </div>
-
-              {/* Job Lines Preview */}
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <div className="xl:col-span-2 space-y-6">
               <JobLinesSection
                 workOrderId={workOrder.id}
                 jobLines={jobLines}
                 onJobLinesChange={onJobLinesChange}
                 isEditMode={isEditMode}
-                showType="joblines"
+                showType="all"
               />
-
-              {/* Parts Preview */}
+              
               <WorkOrderPartsSection
                 workOrderId={workOrder.id}
                 allParts={allParts}
                 jobLines={jobLines}
                 onPartsChange={() => {}}
                 isEditMode={isEditMode}
-                showType="parts"
+                showType="all"
+              />
+              
+              <TimeTrackingSection
+                workOrderId={workOrder.id}
+                timeEntries={timeEntries}
+                onUpdateTimeEntries={onTimeEntriesChange}
+                isEditMode={isEditMode}
               />
             </div>
-
-            {/* Totals Sidebar */}
+            
             <div>
-              <WorkOrderTotals jobLines={jobLines} allParts={allParts} />
+              <WorkOrderTotals
+                jobLines={jobLines}
+                allParts={allParts}
+              />
             </div>
           </div>
         </TabsContent>
 
-        <TabsContent value="services" className="space-y-6">
+        <TabsContent value="labor">
           <JobLinesSection
             workOrderId={workOrder.id}
             jobLines={jobLines}
             onJobLinesChange={onJobLinesChange}
             isEditMode={isEditMode}
-            showType="all"
+            showType="joblines"
           />
         </TabsContent>
 
-        <TabsContent value="parts" className="space-y-6">
+        <TabsContent value="parts">
           <WorkOrderPartsSection
             workOrderId={workOrder.id}
             allParts={allParts}
             jobLines={jobLines}
             onPartsChange={() => {}}
             isEditMode={isEditMode}
-            showType="all"
+            showType="parts"
           />
         </TabsContent>
 
-        <TabsContent value="time" className="space-y-6">
+        <TabsContent value="time">
           <TimeTrackingSection
             workOrderId={workOrder.id}
             timeEntries={timeEntries}
@@ -134,13 +148,12 @@ export function WorkOrderDetailsTabs({
           />
         </TabsContent>
 
-        <TabsContent value="documents" className="space-y-6">
-          <WorkOrderDocuments workOrderId={workOrder.id} />
-        </TabsContent>
-
-        <TabsContent value="activity" className="space-y-6">
-          <WorkOrderActivityHistory workOrderId={workOrder.id} />
-          <WorkOrderNotes workOrderId={workOrder.id} />
+        <TabsContent value="notes">
+          <WorkOrderNotes
+            workOrderId={workOrder.id}
+            notes={workOrder.notes || ''}
+            onUpdateNotes={handleNotesUpdate}
+          />
         </TabsContent>
       </Tabs>
     </div>
