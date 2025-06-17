@@ -1,20 +1,26 @@
+// Export everything from the unified service
+export * from './workOrderUnifiedService';
 
-export * from './workOrderQueryService';
-export * from './workOrderMutationService';
-
-// Re-export commonly used functions for backward compatibility
+// Keep backward compatibility with existing imports
 export { 
   getAllWorkOrders, 
   getWorkOrderById,
   getWorkOrdersByCustomerId,
-  getWorkOrdersByStatus,
-  getUniqueTechnicians,
-  getWorkOrderTimeEntries
-} from './workOrderQueryService';
-
-export { 
   createWorkOrder, 
   updateWorkOrder, 
   updateWorkOrderStatus,
-  deleteWorkOrder 
-} from './workOrderMutationService';
+  deleteWorkOrder,
+  getWorkOrderJobLines,
+  createWorkOrderJobLine,
+  updateWorkOrderJobLine,
+  deleteWorkOrderJobLine,
+  getWorkOrderParts,
+  getJobLineParts,
+  createWorkOrderPart,
+  updateWorkOrderPart,
+  deleteWorkOrderPart,
+  getWorkOrderTimeEntries,
+  addTimeEntryToWorkOrder,
+  updateTimeEntry,
+  deleteTimeEntry
+} from './workOrderUnifiedService';

@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useWorkOrderData } from '@/hooks/useWorkOrderData';
+import { useWorkOrderUnified } from '@/hooks/useWorkOrderUnified';
 import { WorkOrderDetailsTabs } from './details/WorkOrderDetailsTabs';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
@@ -25,8 +25,12 @@ export function WorkOrderDetailsView({ isEditMode = false }: WorkOrderDetailsVie
     isLoading,
     error,
     updateJobLines,
-    updateTimeEntries
-  } = useWorkOrderData(id || '');
+    updateTimeEntries,
+    handleJobLineUpdate,
+    handleJobLineDelete,
+    handlePartUpdate,
+    handlePartDelete
+  } = useWorkOrderUnified(id || '');
 
   if (isLoading) {
     return (
@@ -78,12 +82,10 @@ export function WorkOrderDetailsView({ isEditMode = false }: WorkOrderDetailsVie
   const handleCancelEdit = () => setEditMode(false);
   const handleSaveEdit = () => {
     setEditMode(false);
-    // Additional save logic can be added here
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Clean header without conflicting styles */}
       <div className="bg-white border-b border-gray-200 shadow-sm">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center gap-4">
@@ -109,16 +111,19 @@ export function WorkOrderDetailsView({ isEditMode = false }: WorkOrderDetailsVie
         </div>
       </div>
 
-      {/* Main content area with consistent spacing */}
       <div className="container mx-auto px-6 py-6">
         <WorkOrderDetailsTabs
           workOrder={workOrder}
           jobLines={jobLines}
           allParts={allParts}
-          timeEntries={timeEntries}
+          timeEntries={timeEntries || []}
           customer={customer}
           onJobLinesChange={updateJobLines}
           onTimeEntriesChange={updateTimeEntries}
+          onJobLineUpdate={handleJobLineUpdate}
+          onJobLineDelete={handleJobLineDelete}
+          onPartUpdate={handlePartUpdate}
+          onPartDelete={handlePartDelete}
           isEditMode={editMode}
           onStartEdit={handleStartEdit}
           onCancelEdit={handleCancelEdit}
