@@ -1,184 +1,203 @@
-
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CustomerFormValues } from '@/components/customers/form/schemas/customerSchema';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { getCustomerById, updateCustomer } from '@/services/customer';
-import { getAllShops } from '@/services/shops/shopService';
-import { Customer } from '@/types/customer';
-import { handleApiError } from '@/utils/errorHandling';
+import { CustomerFormValues } from '@/components/customers/form/CustomerFormSchema';
+import { shops } from '@/components/customers/form/CustomerFormSchema';
+import { convertFormVehicleToCustomerVehicle } from '@/types/customer/vehicle';
 
-// Helper function to convert Customer to CustomerFormValues
-const customerToFormValues = (customer: Customer): CustomerFormValues => {
-  return {
-    first_name: customer.first_name,
-    last_name: customer.last_name,
-    email: customer.email || '',
-    phone: customer.phone || '',
-    address: customer.address || '',
-    city: customer.city || '',
-    state: customer.state || '',
-    postal_code: customer.postal_code || '',
-    country: customer.country || '',
-    company: customer.company || '',
-    
-    // Business details
-    business_type: customer.business_type || '',
-    business_industry: customer.business_industry || '',
-    other_business_industry: customer.other_business_industry || '',
-    tax_id: customer.tax_id || '',
-    business_email: customer.business_email || '',
-    business_phone: customer.business_phone || '',
-    
-    // Payment & Billing
-    preferred_payment_method: customer.preferred_payment_method || '',
-    auto_billing: customer.auto_billing || false,
-    credit_terms: customer.credit_terms || '',
-    terms_agreed: customer.terms_agreed || false,
-    
-    // Notes
-    notes: customer.notes || '',
-    
-    // Shop
-    shop_id: customer.shop_id,
-    
-    // Tags and segments
-    tags: customer.tags || [],
-    
-    // Preferences
-    preferred_technician_id: customer.preferred_technician_id || '',
-    communication_preference: customer.communication_preference || '',
-    
-    // Referral
-    referral_source: customer.referral_source || '',
-    referral_person_id: customer.referral_person_id || '',
-    other_referral_details: customer.other_referral_details || '',
-    
-    // Household
-    household_id: customer.household_id || '',
-    
-    // Fleet
-    is_fleet: customer.is_fleet || false,
-    fleet_company: customer.fleet_company || '',
-    fleet_manager: customer.fleet_manager || '',
-    fleet_contact: customer.fleet_contact || '',
-    preferred_service_type: customer.preferred_service_type || '',
-    
-    // Form-specific fields
-    create_new_household: false,
-    new_household_name: '',
-    household_relationship: '',
-    
-    // Convert customer vehicles to the expected form schema format
-    // Include vehicle ID for proper updates and ensure conversion from number to string for year
-    vehicles: (customer.vehicles || []).map(vehicle => ({
-      id: vehicle.id || '',
-      make: vehicle.make || '',
-      model: vehicle.model || '',
-      year: vehicle.year ? String(vehicle.year) : '',
-      vin: vehicle.vin || '',
-      license_plate: vehicle.license_plate || '',
-      color: vehicle.color || '',
-      
-      // Support for additional vehicle details
-      transmission: vehicle.transmission || '',
-      drive_type: vehicle.drive_type || '',
-      fuel_type: vehicle.fuel_type || '',
-      engine: vehicle.engine || '',
-      body_style: vehicle.body_style || '',
-      country: vehicle.country || ''
-    })),
-    segments: customer.segments || [],
-  };
-};
-
-export const useCustomerEdit = (customerId?: string) => {
-  const [customer, setCustomer] = useState<Customer | null>(null);
+export function useCustomerEdit(customerId: string | undefined) {
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [formValues, setFormValues] = useState<CustomerFormValues | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [availableShops, setAvailableShops] = useState<Array<{id: string, name: string}>>([]);
   const [error, setError] = useState<string | null>(null);
-  const [searchParams] = useSearchParams();
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  
-  // Fetch customer and shops data on load
+
+  // Load customer data
   useEffect(() => {
-    const fetchData = async () => {
-      if (!customerId) {
-        setError("No customer ID provided");
+    const loadCustomer = async () => {
+      if (!customerId || customerId === "undefined") {
+        setError("Invalid customer ID");
         setIsLoading(false);
         return;
       }
-      
+
       try {
         setIsLoading(true);
+        setError(null);
         
-        // Load customer data with vehicles included
-        const customerData = await getCustomerById(customerId);
-        if (!customerData) {
+        const customer = await getCustomerById(customerId);
+        if (!customer) {
           setError("Customer not found");
           return;
         }
-        
-        console.log("Loaded customer data:", customerData);
-        
-        setCustomer(customerData);
-        // Convert to form values
-        const formData = customerToFormValues(customerData);
+
+        // Convert customer data to form values
+        const formData: CustomerFormValues = {
+          first_name: customer.first_name || '',
+          last_name: customer.last_name || '',
+          email: customer.email || '',
+          phone: customer.phone || '',
+          address: customer.address || '',
+          city: customer.city || '',
+          state: customer.state || '',
+          postal_code: customer.postal_code || '',
+          country: customer.country || '',
+          shop_id: customer.shop_id || '',
+          
+          // Business info
+          company: customer.company || '',
+          business_type: customer.business_type || '',
+          business_industry: customer.business_industry || '',
+          other_business_industry: customer.other_business_industry || '',
+          tax_id: customer.tax_id || '',
+          business_email: customer.business_email || '',
+          business_phone: customer.business_phone || '',
+          
+          // Payment
+          preferred_payment_method: customer.preferred_payment_method || '',
+          auto_billing: customer.auto_billing || false,
+          credit_terms: customer.credit_terms || '',
+          terms_agreed: customer.terms_agreed || false,
+          
+          // Fleet
+          is_fleet: customer.is_fleet || false,
+          fleet_company: customer.fleet_company || '',
+          fleet_manager: customer.fleet_manager || '',
+          fleet_contact: customer.fleet_contact || '',
+          preferred_service_type: customer.preferred_service_type || '',
+          
+          // Preferences
+          preferred_technician_id: customer.preferred_technician_id || '',
+          communication_preference: customer.communication_preference || '',
+          
+          // Referral
+          referral_source: customer.referral_source || '',
+          referral_person_id: customer.referral_person_id || '',
+          other_referral_details: customer.other_referral_details || '',
+          
+          // Household
+          household_id: customer.household_id || '',
+          create_new_household: false,
+          new_household_name: '',
+          household_relationship: customer.household_relationship || '',
+          
+          // Other
+          notes: customer.notes || '',
+          tags: customer.tags || [],
+          segments: customer.segments || [],
+          vehicles: customer.vehicles || []
+        };
+
         setFormValues(formData);
-        console.log("Converted to form values:", formData);
-        
-        // Load available shops
-        const shops = await getAllShops();
-        setAvailableShops(shops.map(shop => ({ id: shop.id, name: shop.name })));
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error loading customer:', err);
-        setError("Failed to load customer information");
+        setError(err.message || 'Failed to load customer');
       } finally {
         setIsLoading(false);
       }
     };
-    
-    fetchData();
+
+    loadCustomer();
   }, [customerId]);
-  
-  // Handle form submission
-  const handleSubmit = async (formData: CustomerFormValues) => {
-    if (!customerId) return;
-    
+
+  const handleSubmit = async (data: CustomerFormValues) => {
+    if (!customerId || customerId === "undefined") {
+      toast({
+        title: "Error",
+        description: "Invalid customer ID",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       setIsSubmitting(true);
-      console.log("Submitting form data with vehicles:", formData.vehicles);
       
-      // Update customer
-      const updatedCustomer = await updateCustomer(customerId, formData);
+      // Convert form data to customer update format
+      const updateData = {
+        first_name: data.first_name,
+        last_name: data.last_name,
+        email: data.email,
+        phone: data.phone,
+        address: data.address,
+        city: data.city,
+        state: data.state,
+        postal_code: data.postal_code,
+        country: data.country,
+        shop_id: data.shop_id,
+        
+        // Business info
+        company: data.company,
+        business_type: data.business_type,
+        business_industry: data.business_industry,
+        other_business_industry: data.other_business_industry,
+        tax_id: data.tax_id,
+        business_email: data.business_email,
+        business_phone: data.business_phone,
+        
+        // Payment
+        preferred_payment_method: data.preferred_payment_method,
+        auto_billing: data.auto_billing,
+        credit_terms: data.credit_terms,
+        terms_agreed: data.terms_agreed,
+        
+        // Fleet
+        is_fleet: data.is_fleet,
+        fleet_company: data.fleet_company,
+        fleet_manager: data.fleet_manager,
+        fleet_contact: data.fleet_contact,
+        preferred_service_type: data.preferred_service_type,
+        
+        // Preferences
+        preferred_technician_id: data.preferred_technician_id,
+        communication_preference: data.communication_preference,
+        
+        // Referral
+        referral_source: data.referral_source,
+        referral_person_id: data.referral_person_id,
+        other_referral_details: data.other_referral_details,
+        
+        // Household
+        household_id: data.household_id,
+        household_relationship: data.household_relationship,
+        
+        // Other
+        notes: data.notes,
+        tags: data.tags,
+        segments: data.segments,
+        
+        // Convert vehicles properly using the conversion function
+        vehicles: data.vehicles?.map(vehicle => convertFormVehicleToCustomerVehicle(vehicle)) || []
+      };
+
+      await updateCustomer(customerId, updateData);
       
       toast({
         title: "Success",
-        description: "Customer information updated successfully.",
+        description: "Customer updated successfully"
       });
       
-      // Check if we should return to a specific tab
-      const tab = searchParams.get('tab');
-      
-      // Navigate back to customer details page
-      navigate(`/customers/${customerId}${tab ? `?tab=${tab}` : ''}`);
-    } catch (err) {
-      handleApiError(err, "Failed to update customer");
+      navigate(`/customers/${customerId}`);
+    } catch (err: any) {
+      console.error('Error updating customer:', err);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to update customer",
+        variant: "destructive"
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
-  
+
   return {
-    customer,
     formValues,
     isLoading,
     isSubmitting,
-    availableShops,
+    availableShops: shops,
     handleSubmit,
     error
   };
-};
+}
