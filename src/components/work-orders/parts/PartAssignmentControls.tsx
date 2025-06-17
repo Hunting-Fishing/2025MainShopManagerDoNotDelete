@@ -5,6 +5,7 @@ import { WorkOrderJobLine } from '@/types/jobLine';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PartsAssignmentDialog } from './PartsAssignmentDialog';
+import { EditPartDialog } from './EditPartDialog';
 import { ArrowRight, Edit, Trash2, User } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
@@ -24,6 +25,7 @@ export function PartAssignmentControls({
   onPartAssigned
 }: PartAssignmentControlsProps) {
   const [showAssignmentDialog, setShowAssignmentDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
 
   const handleQuickAssign = async (jobLineId: string) => {
@@ -77,55 +79,57 @@ export function PartAssignmentControls({
   };
 
   return (
-    <div className="flex flex-col gap-2">
-      {/* Quick Assignment Dropdown */}
-      <div className="flex items-center gap-2">
-        <Select onValueChange={handleQuickAssign} disabled={isAssigning}>
-          <SelectTrigger className="w-48 h-8">
-            <SelectValue placeholder="Assign to job line..." />
-          </SelectTrigger>
-          <SelectContent>
-            {jobLines.map((jobLine) => (
-              <SelectItem key={jobLine.id} value={jobLine.id}>
-                <div className="flex items-center gap-2">
-                  <ArrowRight className="h-3 w-3" />
-                  {jobLine.name}
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      
-      {/* Action Buttons */}
-      <div className="flex gap-1">
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-7 px-2"
-          onClick={() => setShowAssignmentDialog(true)}
-        >
-          <User className="h-3 w-3 mr-1" />
-          Assign
-        </Button>
+    <>
+      <div className="flex flex-col gap-2">
+        {/* Quick Assignment Dropdown */}
+        <div className="flex items-center gap-2">
+          <Select onValueChange={handleQuickAssign} disabled={isAssigning}>
+            <SelectTrigger className="w-48 h-8">
+              <SelectValue placeholder="Assign to job line..." />
+            </SelectTrigger>
+            <SelectContent>
+              {jobLines.map((jobLine) => (
+                <SelectItem key={jobLine.id} value={jobLine.id}>
+                  <div className="flex items-center gap-2">
+                    <ArrowRight className="h-3 w-3" />
+                    {jobLine.name}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-7 px-2"
-          onClick={() => {/* TODO: Implement edit */}}
-        >
-          <Edit className="h-3 w-3" />
-        </Button>
-        
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-7 px-2 text-red-600 hover:text-red-700"
-          onClick={handleDelete}
-        >
-          <Trash2 className="h-3 w-3" />
-        </Button>
+        {/* Action Buttons */}
+        <div className="flex gap-1">
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 px-2"
+            onClick={() => setShowAssignmentDialog(true)}
+          >
+            <User className="h-3 w-3 mr-1" />
+            Assign
+          </Button>
+          
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 px-2"
+            onClick={() => setShowEditDialog(true)}
+          >
+            <Edit className="h-3 w-3" />
+          </Button>
+          
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 px-2 text-red-600 hover:text-red-700"
+            onClick={handleDelete}
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        </div>
       </div>
 
       {/* Assignment Dialog */}
@@ -141,6 +145,20 @@ export function PartAssignmentControls({
           setShowAssignmentDialog(false);
         }}
       />
-    </div>
+
+      {/* Edit Dialog */}
+      <EditPartDialog
+        isOpen={showEditDialog}
+        onClose={() => setShowEditDialog(false)}
+        part={part}
+        jobLines={jobLines}
+        onPartUpdated={() => {
+          if (onPartAssigned) {
+            onPartAssigned();
+          }
+          setShowEditDialog(false);
+        }}
+      />
+    </>
   );
 }

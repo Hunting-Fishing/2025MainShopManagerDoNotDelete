@@ -2,13 +2,13 @@
 import React, { useState } from 'react';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { updateWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
+import { Checkbox } from '@/components/ui/checkbox';
+import { assignPartToJobLine, bulkAssignParts } from '@/services/workOrder/partsAssignmentService';
 import { toast } from '@/hooks/use-toast';
-import { Package, ArrowRight } from 'lucide-react';
+import { ArrowRight, Users } from 'lucide-react';
 
 interface PartsAssignmentDialogProps {
   isOpen: boolean;
@@ -26,32 +26,50 @@ export function PartsAssignmentDialog({
   onPartsAssigned
 }: PartsAssignmentDialogProps) {
   const [selectedJobLineId, setSelectedJobLineId] = useState<string>('');
+  const [selectedPartIds, setSelectedPartIds] = useState<string[]>([]);
   const [isAssigning, setIsAssigning] = useState(false);
 
+  const handlePartSelection = (partId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedPartIds([...selectedPartIds, partId]);
+    } else {
+      setSelectedPartIds(selectedPartIds.filter(id => id !== partId));
+    }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedPartIds(parts.map(part => part.id));
+    } else {
+      setSelectedPartIds([]);
+    }
+  };
+
   const handleAssign = async () => {
-    if (!selectedJobLineId) {
+    if (!selectedJobLineId || selectedPartIds.length === 0) {
       toast({
-        title: "Error",
-        description: "Please select a job line",
+        title: "Selection Required",
+        description: "Please select a job line and at least one part",
         variant: "destructive"
       });
       return;
     }
 
     setIsAssigning(true);
-    const assignedParts: WorkOrderPart[] = [];
-
     try {
-      for (const part of parts) {
-        const updatedPart = { ...part, job_line_id: selectedJobLineId };
-        await updateWorkOrderPart(part.id, updatedPart);
-        assignedParts.push(updatedPart);
+      let assignedParts: WorkOrderPart[];
+      
+      if (selectedPartIds.length === 1) {
+        const assignedPart = await assignPartToJobLine(selectedPartIds[0], selectedJobLineId);
+        assignedParts = [assignedPart];
+      } else {
+        assignedParts = await bulkAssignParts(selectedPartIds, selectedJobLineId);
       }
 
       const jobLine = jobLines.find(jl => jl.id === selectedJobLineId);
       toast({
         title: "Parts Assigned",
-        description: `${parts.length} part(s) assigned to ${jobLine?.name}`,
+        description: `${selectedPartIds.length} part(s) assigned to ${jobLine?.name || 'job line'}`,
       });
 
       onPartsAssigned(assignedParts);
@@ -59,8 +77,8 @@ export function PartsAssignmentDialog({
     } catch (error) {
       console.error('Error assigning parts:', error);
       toast({
-        title: "Error",
-        description: "Failed to assign parts",
+        title: "Assignment Failed",
+        description: "Failed to assign parts. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -68,44 +86,23 @@ export function PartsAssignmentDialog({
     }
   };
 
-  const selectedJobLine = jobLines.find(jl => jl.id === selectedJobLineId);
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
+            <Users className="h-5 w-5" />
             Assign Parts to Job Line
           </DialogTitle>
         </DialogHeader>
-        
-        <div className="space-y-4">
-          {/* Parts to Assign */}
-          <div>
-            <label className="text-sm font-medium mb-2 block">
-              Parts to assign ({parts.length}):
-            </label>
-            <div className="space-y-2 max-h-32 overflow-y-auto">
-              {parts.map((part) => (
-                <div key={part.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <span className="text-sm font-medium">{part.name}</span>
-                  <Badge variant="outline" className="text-xs">
-                    Qty: {part.quantity}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </div>
 
+        <div className="space-y-6">
           {/* Job Line Selection */}
           <div>
-            <label className="text-sm font-medium mb-2 block">
-              Assign to job line:
-            </label>
+            <label className="text-sm font-medium mb-2 block">Select Job Line</label>
             <Select value={selectedJobLineId} onValueChange={setSelectedJobLineId}>
               <SelectTrigger>
-                <SelectValue placeholder="Select a job line..." />
+                <SelectValue placeholder="Choose a job line..." />
               </SelectTrigger>
               <SelectContent>
                 {jobLines.map((jobLine) => (
@@ -113,11 +110,6 @@ export function PartsAssignmentDialog({
                     <div className="flex items-center gap-2">
                       <ArrowRight className="h-3 w-3" />
                       {jobLine.name}
-                      {jobLine.category && (
-                        <Badge variant="secondary" className="text-xs">
-                          {jobLine.category}
-                        </Badge>
-                      )}
                     </div>
                   </SelectItem>
                 ))}
@@ -125,27 +117,51 @@ export function PartsAssignmentDialog({
             </Select>
           </div>
 
-          {/* Assignment Preview */}
-          {selectedJobLine && (
-            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <div className="text-sm font-medium text-blue-900 mb-1">
-                Assignment Preview:
-              </div>
-              <div className="text-sm text-blue-700">
-                {parts.length} part(s) will be assigned to "{selectedJobLine.name}"
+          {/* Parts Selection */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <label className="text-sm font-medium">Select Parts ({selectedPartIds.length} selected)</label>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="select-all"
+                  checked={selectedPartIds.length === parts.length}
+                  onCheckedChange={handleSelectAll}
+                />
+                <label htmlFor="select-all" className="text-sm">Select All</label>
               </div>
             </div>
-          )}
-        </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isAssigning}>
-            Cancel
-          </Button>
-          <Button onClick={handleAssign} disabled={!selectedJobLineId || isAssigning}>
-            {isAssigning ? 'Assigning...' : 'Assign Parts'}
-          </Button>
-        </DialogFooter>
+            <div className="border rounded-lg max-h-64 overflow-y-auto">
+              {parts.map((part) => (
+                <div key={part.id} className="flex items-center space-x-3 p-3 border-b last:border-b-0 hover:bg-gray-50">
+                  <Checkbox
+                    checked={selectedPartIds.includes(part.id)}
+                    onCheckedChange={(checked) => handlePartSelection(part.id, checked as boolean)}
+                  />
+                  <div className="flex-1">
+                    <div className="font-medium">{part.name}</div>
+                    <div className="text-sm text-muted-foreground">
+                      Part #: {part.part_number} | Qty: {part.quantity} | ${part.unit_price}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex justify-end space-x-3">
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleAssign}
+              disabled={!selectedJobLineId || selectedPartIds.length === 0 || isAssigning}
+            >
+              {isAssigning ? 'Assigning...' : `Assign ${selectedPartIds.length} Part(s)`}
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

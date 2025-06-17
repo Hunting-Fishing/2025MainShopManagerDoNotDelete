@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { WorkOrderPart } from '@/types/workOrderPart';
 import { WorkOrderJobLine } from '@/types/jobLine';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { UnifiedItemsTable } from '../shared/UnifiedItemsTable';
+import { AddPartDialog } from './AddPartDialog';
 import { updateWorkOrderPart, deleteWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
 import { toast } from '@/hooks/use-toast';
 
@@ -26,6 +27,8 @@ export function WorkOrderPartsSection({
   isEditMode,
   showType
 }: WorkOrderPartsSectionProps) {
+  const [showAddPartDialog, setShowAddPartDialog] = useState(false);
+
   const handlePartUpdate = async (updatedPart: WorkOrderPart) => {
     try {
       console.log('Updating part:', updatedPart);
@@ -90,31 +93,41 @@ export function WorkOrderPartsSection({
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base">
-            {showType === "parts" ? "Parts" : "Parts & Job Lines"}
-          </CardTitle>
-          {isEditMode && (
-            <Button size="sm" className="h-8 px-3">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Part
-            </Button>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <UnifiedItemsTable
-          jobLines={jobLines}
-          allParts={allParts}
-          onPartUpdate={isEditMode ? handlePartUpdate : undefined}
-          onPartDelete={isEditMode ? handlePartDelete : undefined}
-          onPartsChange={onPartsChange}
-          isEditMode={isEditMode}
-          showType={showType}
-        />
-      </CardContent>
-    </Card>
+    <>
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">
+              {showType === "parts" ? "Parts" : "Parts & Job Lines"}
+            </CardTitle>
+            {isEditMode && (
+              <Button size="sm" className="h-8 px-3" onClick={() => setShowAddPartDialog(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Part
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <UnifiedItemsTable
+            jobLines={jobLines}
+            allParts={allParts}
+            onPartUpdate={isEditMode ? handlePartUpdate : undefined}
+            onPartDelete={isEditMode ? handlePartDelete : undefined}
+            onPartsChange={onPartsChange}
+            isEditMode={isEditMode}
+            showType={showType}
+          />
+        </CardContent>
+      </Card>
+
+      <AddPartDialog
+        isOpen={showAddPartDialog}
+        onClose={() => setShowAddPartDialog(false)}
+        workOrderId={workOrderId}
+        jobLines={jobLines}
+        onPartAdded={onPartsChange}
+      />
+    </>
   );
 }

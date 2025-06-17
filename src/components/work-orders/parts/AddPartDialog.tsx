@@ -1,317 +1,218 @@
 
 import React, { useState } from 'react';
+import { WorkOrderJobLine } from '@/types/jobLine';
+import { WorkOrderPartFormValues } from '@/types/workOrderPart';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { InventoryItemExtended } from '@/types/inventory';
-import { WorkOrderPart } from '@/types/workOrderPart';
-import { useInventoryItems } from '@/hooks/inventory/useInventoryItems';
+import { Textarea } from '@/components/ui/textarea';
 import { createWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
 import { toast } from '@/hooks/use-toast';
+import { Plus } from 'lucide-react';
 
 interface AddPartDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  isOpen: boolean;
+  onClose: () => void;
   workOrderId: string;
-  jobLineId?: string;
+  jobLines: WorkOrderJobLine[];
   onPartAdded: () => void;
 }
 
 export function AddPartDialog({
-  open,
-  onOpenChange,
+  isOpen,
+  onClose,
   workOrderId,
-  jobLineId,
+  jobLines,
   onPartAdded
 }: AddPartDialogProps) {
-  const [selectedTab, setSelectedTab] = useState<'inventory' | 'non-inventory'>('inventory');
-  const [selectedInventoryItem, setSelectedInventoryItem] = useState<InventoryItemExtended | null>(null);
-  const [quantity, setQuantity] = useState(1);
-  const [notes, setNotes] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState<WorkOrderPartFormValues>({
+    part_number: '',
+    name: '',
+    description: '',
+    quantity: 1,
+    unit_price: 0,
+    job_line_id: '',
+    status: 'pending',
+    notes: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Non-inventory part form data
-  const [partName, setPartName] = useState('');
-  const [partNumber, setPartNumber] = useState('');
-  const [unitPrice, setUnitPrice] = useState(0);
-  const [description, setDescription] = useState('');
+  const handleInputChange = (field: keyof WorkOrderPartFormValues, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
-  const { items: inventoryItems, isLoading: loadingInventory } = useInventoryItems();
-
-  const handleInventoryPartAdd = async () => {
-    if (!selectedInventoryItem) {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.part_number || !formData.name) {
       toast({
-        title: "Error",
-        description: "Please select an inventory item",
+        title: "Validation Error",
+        description: "Part number and name are required",
         variant: "destructive"
       });
       return;
     }
 
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
-      const partData: Omit<WorkOrderPart, 'id' | 'created_at' | 'updated_at'> = {
-        work_order_id: workOrderId,
-        job_line_id: jobLineId,
-        part_number: selectedInventoryItem.sku,
-        name: selectedInventoryItem.name,
-        description: selectedInventoryItem.description || '',
-        quantity,
-        unit_price: selectedInventoryItem.unit_price || selectedInventoryItem.price,
-        total_price: (selectedInventoryItem.unit_price || selectedInventoryItem.price) * quantity,
-        status: 'pending',
-        notes,
-        category: selectedInventoryItem.category,
-        supplierName: selectedInventoryItem.supplier,
-        customerPrice: selectedInventoryItem.unit_price || selectedInventoryItem.price,
-        isStockItem: true,
-        inventoryItemId: selectedInventoryItem.id
-      };
-
-      await createWorkOrderPart(partData);
+      await createWorkOrderPart(workOrderId, formData);
       
       toast({
-        title: "Success",
-        description: "Inventory part added successfully",
+        title: "Part Added",
+        description: `${formData.name} has been added successfully`,
       });
-      
+
       onPartAdded();
-      onOpenChange(false);
-      resetForm();
+      onClose();
+      
+      // Reset form
+      setFormData({
+        part_number: '',
+        name: '',
+        description: '',
+        quantity: 1,
+        unit_price: 0,
+        job_line_id: '',
+        status: 'pending',
+        notes: ''
+      });
     } catch (error) {
-      console.error('Error adding inventory part:', error);
+      console.error('Error adding part:', error);
       toast({
         title: "Error",
-        description: "Failed to add inventory part",
+        description: "Failed to add part. Please try again.",
         variant: "destructive"
       });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
-  };
-
-  const handleNonInventoryPartAdd = async () => {
-    if (!partName || !partNumber || unitPrice <= 0) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const partData: Omit<WorkOrderPart, 'id' | 'created_at' | 'updated_at'> = {
-        work_order_id: workOrderId,
-        job_line_id: jobLineId,
-        part_number: partNumber,
-        name: partName,
-        description,
-        quantity,
-        unit_price: unitPrice,
-        total_price: unitPrice * quantity,
-        status: 'pending',
-        notes,
-        isStockItem: false
-      };
-
-      await createWorkOrderPart(partData);
-      
-      toast({
-        title: "Success",
-        description: "Non-inventory part added successfully",
-      });
-      
-      onPartAdded();
-      onOpenChange(false);
-      resetForm();
-    } catch (error) {
-      console.error('Error adding non-inventory part:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add non-inventory part",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const resetForm = () => {
-    setSelectedInventoryItem(null);
-    setQuantity(1);
-    setNotes('');
-    setPartName('');
-    setPartNumber('');
-    setUnitPrice(0);
-    setDescription('');
-    setSelectedTab('inventory');
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Add Part to Work Order</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Plus className="h-5 w-5" />
+            Add New Part
+          </DialogTitle>
         </DialogHeader>
 
-        <Tabs value={selectedTab} onValueChange={(value) => setSelectedTab(value as 'inventory' | 'non-inventory')}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="inventory">From Inventory</TabsTrigger>
-            <TabsTrigger value="non-inventory">Non-Inventory Part</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="inventory" className="space-y-4">
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="inventory-item">Select Inventory Item</Label>
-                <Select
-                  value={selectedInventoryItem?.id || ''}
-                  onValueChange={(value) => {
-                    const item = inventoryItems.find(item => item.id === value);
-                    setSelectedInventoryItem(item || null);
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose an inventory item..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {loadingInventory ? (
-                      <SelectItem value="loading" disabled>Loading inventory...</SelectItem>
-                    ) : (
-                      inventoryItems.map((item) => (
-                        <SelectItem key={item.id} value={item.id}>
-                          {item.name} ({item.sku}) - ${item.unit_price || item.price}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {selectedInventoryItem && (
-                <div className="p-3 bg-muted rounded-lg">
-                  <h4 className="font-medium">{selectedInventoryItem.name}</h4>
-                  <p className="text-sm text-muted-foreground">SKU: {selectedInventoryItem.sku}</p>
-                  <p className="text-sm text-muted-foreground">Price: ${selectedInventoryItem.unit_price || selectedInventoryItem.price}</p>
-                  {selectedInventoryItem.description && (
-                    <p className="text-sm text-muted-foreground">{selectedInventoryItem.description}</p>
-                  )}
-                </div>
-              )}
-
-              <div>
-                <Label htmlFor="quantity">Quantity</Label>
-                <Input
-                  id="quantity"
-                  type="number"
-                  min="1"
-                  value={quantity}
-                  onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="notes">Notes (Optional)</Label>
-                <Textarea
-                  id="notes"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Additional notes about this part..."
-                />
-              </div>
-
-              <Button 
-                onClick={handleInventoryPartAdd} 
-                disabled={!selectedInventoryItem || isLoading}
-                className="w-full"
-              >
-                {isLoading ? 'Adding...' : 'Add Inventory Part'}
-              </Button>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="part_number">Part Number *</Label>
+              <Input
+                id="part_number"
+                value={formData.part_number}
+                onChange={(e) => handleInputChange('part_number', e.target.value)}
+                placeholder="Enter part number"
+                required
+              />
             </div>
-          </TabsContent>
-
-          <TabsContent value="non-inventory" className="space-y-4">
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="part-name">Part Name *</Label>
-                <Input
-                  id="part-name"
-                  value={partName}
-                  onChange={(e) => setPartName(e.target.value)}
-                  placeholder="Enter part name..."
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="part-number">Part Number *</Label>
-                <Input
-                  id="part-number"
-                  value={partNumber}
-                  onChange={(e) => setPartNumber(e.target.value)}
-                  placeholder="Enter part number..."
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="unit-price">Unit Price *</Label>
-                <Input
-                  id="unit-price"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={unitPrice}
-                  onChange={(e) => setUnitPrice(parseFloat(e.target.value) || 0)}
-                  placeholder="0.00"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="non-inv-quantity">Quantity</Label>
-                <Input
-                  id="non-inv-quantity"
-                  type="number"
-                  min="1"
-                  value={quantity}
-                  onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="description">Description (Optional)</Label>
-                <Textarea
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Part description..."
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="non-inv-notes">Notes (Optional)</Label>
-                <Textarea
-                  id="non-inv-notes"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Additional notes about this part..."
-                />
-              </div>
-
-              <Button 
-                onClick={handleNonInventoryPartAdd} 
-                disabled={!partName || !partNumber || unitPrice <= 0 || isLoading}
-                className="w-full"
-              >
-                {isLoading ? 'Adding...' : 'Add Non-Inventory Part'}
-              </Button>
+            <div>
+              <Label htmlFor="name">Part Name *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                placeholder="Enter part name"
+                required
+              />
             </div>
-          </TabsContent>
-        </Tabs>
+          </div>
+
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description || ''}
+              onChange={(e) => handleInputChange('description', e.target.value)}
+              placeholder="Enter part description"
+              rows={2}
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="quantity">Quantity</Label>
+              <Input
+                id="quantity"
+                type="number"
+                min="1"
+                value={formData.quantity}
+                onChange={(e) => handleInputChange('quantity', parseInt(e.target.value) || 1)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="unit_price">Unit Price</Label>
+              <Input
+                id="unit_price"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.unit_price}
+                onChange={(e) => handleInputChange('unit_price', parseFloat(e.target.value) || 0)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="status">Status</Label>
+              <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="ordered">Ordered</SelectItem>
+                  <SelectItem value="received">Received</SelectItem>
+                  <SelectItem value="installed">Installed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="job_line_id">Assign to Job Line (Optional)</Label>
+            <Select value={formData.job_line_id || ''} onValueChange={(value) => handleInputChange('job_line_id', value || undefined)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select job line or leave unassigned" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Unassigned</SelectItem>
+                {jobLines.map((jobLine) => (
+                  <SelectItem key={jobLine.id} value={jobLine.id}>
+                    {jobLine.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              value={formData.notes || ''}
+              onChange={(e) => handleInputChange('notes', e.target.value)}
+              placeholder="Add any additional notes"
+              rows={2}
+            />
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-4">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Adding...' : 'Add Part'}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
