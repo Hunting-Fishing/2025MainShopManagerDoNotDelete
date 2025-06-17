@@ -1,4 +1,3 @@
-
 export interface WorkOrderPart {
   id: string;
   work_order_id: string;
@@ -39,6 +38,14 @@ export interface WorkOrderPart {
   partType?: string;
   estimatedArrivalDate?: string;
   itemStatus?: string;
+  
+  // Missing properties that were causing errors
+  supplierSuggestedRetailPrice?: number;
+  dateAdded?: string;
+  binLocation?: string;
+  warehouseLocation?: string;
+  shelfLocation?: string;
+  attachments?: any;
 }
 
 export interface WorkOrderPartFormValues {

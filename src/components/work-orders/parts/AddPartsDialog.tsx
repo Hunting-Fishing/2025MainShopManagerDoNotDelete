@@ -4,14 +4,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { WorkOrderPart, WorkOrderPartFormValues } from '@/types/workOrderPart';
+import { createWorkOrderPart } from '@/services/workOrder/workOrderPartsService';
+import { useToast } from '@/hooks/use-toast';
 
 interface AddPartsDialogProps {
   workOrderId: string;
   jobLineId?: string;
-  onPartAdd: (part: WorkOrderPartFormValues & { work_order_id: string }) => void;
+  onPartAdd: (part: WorkOrderPart) => void;
 }
 
 export function AddPartsDialog({ workOrderId, jobLineId, onPartAdd }: AddPartsDialogProps) {
+  const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
     part_number: '',
@@ -22,32 +25,52 @@ export function AddPartsDialog({ workOrderId, jobLineId, onPartAdd }: AddPartsDi
     status: 'pending',
     notes: ''
   });
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const partData: WorkOrderPartFormValues & { work_order_id: string } = {
-      work_order_id: workOrderId,
-      job_line_id: jobLineId,
-      part_number: formData.part_number,
-      name: formData.name,
-      description: formData.description,
-      quantity: formData.quantity,
-      unit_price: formData.unit_price,
-      status: formData.status,
-      notes: formData.notes
-    };
-    
-    onPartAdd(partData);
-    setIsOpen(false);
-    setFormData({
-      part_number: '',
-      name: '',
-      description: '',
-      quantity: 1,
-      unit_price: 0,
-      status: 'pending',
-      notes: ''
-    });
+    setIsLoading(true);
+
+    try {
+      const partData: WorkOrderPartFormValues = {
+        job_line_id: jobLineId,
+        part_number: formData.part_number,
+        name: formData.name,
+        description: formData.description,
+        quantity: formData.quantity,
+        unit_price: formData.unit_price,
+        status: formData.status,
+        notes: formData.notes
+      };
+      
+      const newPart = await createWorkOrderPart(workOrderId, partData);
+      onPartAdd(newPart);
+      
+      toast({
+        title: "Success",
+        description: "Part added successfully",
+      });
+
+      setIsOpen(false);
+      setFormData({
+        part_number: '',
+        name: '',
+        description: '',
+        quantity: 1,
+        unit_price: 0,
+        status: 'pending',
+        notes: ''
+      });
+    } catch (error) {
+      console.error('Error adding part:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add part",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -96,10 +119,12 @@ export function AddPartsDialog({ workOrderId, jobLineId, onPartAdd }: AddPartsDi
             />
           </div>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => setIsOpen(false)} disabled={isLoading}>
               Cancel
             </Button>
-            <Button type="submit">Add Part</Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? 'Adding...' : 'Add Part'}
+            </Button>
           </div>
         </form>
       </DialogContent>

@@ -43,6 +43,7 @@ const mapDatabasePartToWorkOrderPart = (dbPart: any): WorkOrderPart => {
     invoiceNumber: dbPart.invoice_number,
     poLine: dbPart.po_line,
     isStockItem: dbPart.is_stock_item,
+    supplierOrderRef: dbPart.supplier_order_ref,
     notesInternal: dbPart.notes_internal,
     attachments: dbPart.attachments,
     warehouseLocation: dbPart.warehouse_location,
