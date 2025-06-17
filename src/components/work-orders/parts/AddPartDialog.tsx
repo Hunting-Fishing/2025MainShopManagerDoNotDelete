@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 interface AddPartDialogProps {
   workOrderId: string;
   jobLineId?: string;
-  onPartAdd: (part: WorkOrderPart) => void;
+  onPartAdd?: (part: WorkOrderPart) => void;
   isOpen?: boolean;
   onClose?: () => void;
   jobLines?: any[];
@@ -65,7 +65,10 @@ export function AddPartDialog({
         updated_at: new Date().toISOString()
       };
       
-      onPartAdd(newPart);
+      // Call onPartAdd if provided
+      if (onPartAdd) {
+        onPartAdd(newPart);
+      }
       
       // Call onPartAdded if provided
       if (onPartAdded) {
