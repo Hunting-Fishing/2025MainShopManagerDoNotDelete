@@ -20,6 +20,33 @@ export interface WorkOrder {
   service_type?: string;
   invoice_id?: string;
   work_order_number?: string;
+  
+  // Extended properties for UI components
+  customer?: string;
+  customer_name?: string;
+  customer_email?: string;
+  customer_phone?: string;
+  customer_address?: string;
+  customer_city?: string;
+  customer_state?: string;
+  priority?: string;
+  due_date?: string;
+  location?: string;
+  notes?: string;
+  total_billable_time?: string | number;
+  date?: string;
+  
+  // Vehicle information
+  vehicle_year?: string | number;
+  vehicle_make?: string;
+  vehicle_model?: string;
+  vehicle_vin?: string;
+  vehicle_license_plate?: string;
+  vehicle_odometer?: string | number;
+  
+  // Related data
+  timeEntries?: TimeEntry[];
+  inventory_items?: any[];
 }
 
 export interface TimeEntry {
@@ -44,3 +71,20 @@ export const WORK_ORDER_STATUSES: WorkOrderStatus[] = [
   'cancelled',
   'on_hold'
 ];
+
+// Status mapping for UI display
+export const statusMap: Record<string, string> = {
+  'pending': 'Pending',
+  'in_progress': 'In Progress',
+  'completed': 'Completed',
+  'cancelled': 'Cancelled',
+  'on_hold': 'On Hold'
+};
+
+// Priority mapping for UI display
+export const priorityMap: Record<string, string> = {
+  'low': 'Low',
+  'medium': 'Medium',
+  'high': 'High',
+  'urgent': 'Urgent'
+};

@@ -17,6 +17,7 @@ export interface WorkOrderPart {
   // Database schema fields that need to be mapped
   part_name?: string; // Maps to name
   customer_price?: number; // Maps to unit_price
+  customerPrice?: number; // Alias for customer_price
   
   // Additional properties for parts tracking components
   partName?: string; // Alias for name
@@ -77,6 +78,7 @@ export interface WorkOrderPartFormValues {
   supplierCost?: number;
   supplierSuggestedRetailPrice?: number;
   customerPrice?: number;
+  customer_price?: number;
   retailPrice?: number;
   category?: string;
   partType?: string;

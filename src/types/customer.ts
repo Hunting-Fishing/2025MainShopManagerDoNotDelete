@@ -33,6 +33,7 @@ export interface Customer {
   tags?: string[] | any;
   segments?: string[] | any;
   vehicles?: CustomerVehicle[];
+  role?: string;
   
   // Computed fields
   full_name?: string;
@@ -54,6 +55,7 @@ export interface CustomerVehicle {
   vin?: string;
   license_plate?: string;
   trim?: string;
+  color?: string;
   last_service_date?: string;
   notes?: string;
   created_at?: string;
