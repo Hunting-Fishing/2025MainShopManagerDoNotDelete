@@ -4,6 +4,8 @@ import { WorkOrderJobLine, JobLineFormValues } from '@/types/jobLine';
 
 export async function getWorkOrderJobLines(workOrderId: string): Promise<WorkOrderJobLine[]> {
   try {
+    console.log('Fetching job lines for work order:', workOrderId);
+    
     const { data, error } = await supabase
       .from('work_order_job_lines')
       .select('*')
@@ -15,6 +17,7 @@ export async function getWorkOrderJobLines(workOrderId: string): Promise<WorkOrd
       throw error;
     }
 
+    console.log('Retrieved job lines:', data);
     return data || [];
   } catch (error) {
     console.error('Error in getWorkOrderJobLines:', error);
@@ -27,22 +30,28 @@ export async function createWorkOrderJobLine(
   jobLineData: JobLineFormValues
 ): Promise<WorkOrderJobLine> {
   try {
+    console.log('Creating job line for work order:', workOrderId, 'with data:', jobLineData);
+    
+    const insertData = {
+      work_order_id: workOrderId,
+      name: jobLineData.name,
+      category: jobLineData.category || '',
+      subcategory: jobLineData.subcategory || '',
+      description: jobLineData.description || '',
+      estimated_hours: jobLineData.estimated_hours || 0,
+      labor_rate: jobLineData.labor_rate || 0,
+      labor_rate_type: jobLineData.labor_rate_type || 'standard',
+      total_amount: jobLineData.total_amount || (jobLineData.estimated_hours || 0) * (jobLineData.labor_rate || 0),
+      status: jobLineData.status || 'pending',
+      notes: jobLineData.notes || '',
+      display_order: jobLineData.display_order || 0
+    };
+
+    console.log('Inserting job line data:', insertData);
+
     const { data, error } = await supabase
       .from('work_order_job_lines')
-      .insert({
-        work_order_id: workOrderId,
-        name: jobLineData.name,
-        category: jobLineData.category,
-        subcategory: jobLineData.subcategory,
-        description: jobLineData.description,
-        estimated_hours: jobLineData.estimated_hours || 0,
-        labor_rate: jobLineData.labor_rate || 0,
-        labor_rate_type: jobLineData.labor_rate_type || 'standard',
-        total_amount: (jobLineData.estimated_hours || 0) * (jobLineData.labor_rate || 0),
-        status: jobLineData.status || 'pending',
-        notes: jobLineData.notes,
-        display_order: 0
-      })
+      .insert(insertData)
       .select()
       .single();
 
@@ -51,6 +60,7 @@ export async function createWorkOrderJobLine(
       throw error;
     }
 
+    console.log('Successfully created job line:', data);
     return data;
   } catch (error) {
     console.error('Error in createWorkOrderJobLine:', error);
@@ -63,22 +73,26 @@ export async function updateWorkOrderJobLine(
   jobLineData: Partial<WorkOrderJobLine>
 ): Promise<WorkOrderJobLine> {
   try {
+    console.log('Updating job line:', jobLineId, 'with data:', jobLineData);
+    
+    const updateData = {
+      name: jobLineData.name,
+      category: jobLineData.category,
+      subcategory: jobLineData.subcategory,
+      description: jobLineData.description,
+      estimated_hours: jobLineData.estimated_hours,
+      labor_rate: jobLineData.labor_rate,
+      labor_rate_type: jobLineData.labor_rate_type,
+      total_amount: jobLineData.total_amount,
+      status: jobLineData.status,
+      notes: jobLineData.notes,
+      display_order: jobLineData.display_order,
+      updated_at: new Date().toISOString()
+    };
+
     const { data, error } = await supabase
       .from('work_order_job_lines')
-      .update({
-        name: jobLineData.name,
-        category: jobLineData.category,
-        subcategory: jobLineData.subcategory,
-        description: jobLineData.description,
-        estimated_hours: jobLineData.estimated_hours,
-        labor_rate: jobLineData.labor_rate,
-        labor_rate_type: jobLineData.labor_rate_type,
-        total_amount: jobLineData.total_amount,
-        status: jobLineData.status,
-        notes: jobLineData.notes,
-        display_order: jobLineData.display_order,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', jobLineId)
       .select()
       .single();
@@ -88,6 +102,7 @@ export async function updateWorkOrderJobLine(
       throw error;
     }
 
+    console.log('Successfully updated job line:', data);
     return data;
   } catch (error) {
     console.error('Error in updateWorkOrderJobLine:', error);
@@ -100,7 +115,7 @@ export async function upsertWorkOrderJobLine(
   jobLineData: Partial<WorkOrderJobLine>
 ): Promise<WorkOrderJobLine> {
   try {
-    if (jobLineData.id) {
+    if (jobLineData.id && !jobLineData.id.startsWith('temp-')) {
       return await updateWorkOrderJobLine(jobLineData.id, jobLineData);
     } else {
       return await createWorkOrderJobLine(workOrderId, jobLineData as JobLineFormValues);
@@ -113,6 +128,8 @@ export async function upsertWorkOrderJobLine(
 
 export async function deleteWorkOrderJobLine(jobLineId: string): Promise<void> {
   try {
+    console.log('Deleting job line:', jobLineId);
+    
     const { error } = await supabase
       .from('work_order_job_lines')
       .delete()
@@ -122,6 +139,8 @@ export async function deleteWorkOrderJobLine(jobLineId: string): Promise<void> {
       console.error('Error deleting job line:', error);
       throw error;
     }
+
+    console.log('Successfully deleted job line:', jobLineId);
   } catch (error) {
     console.error('Error in deleteWorkOrderJobLine:', error);
     throw error;
