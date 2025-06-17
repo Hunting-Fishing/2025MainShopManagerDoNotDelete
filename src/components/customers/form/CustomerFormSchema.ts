@@ -1,8 +1,12 @@
 
 import { z } from "zod";
 
-// Import the Customer type from the existing type definition
-export type { Customer, CustomerCreate } from '@/types/customer';
+// Import the Customer types from the proper paths
+import type { Customer, CustomerCreate } from '@/types/customer/base';
+import type { VehicleFormData } from './schemas/vehicleSchema';
+
+// Re-export for convenience
+export type { Customer, CustomerCreate } from '@/types/customer/base';
 export type { VehicleFormData } from './schemas/vehicleSchema';
 
 // Use the existing Customer interface as our form values

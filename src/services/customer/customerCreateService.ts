@@ -16,8 +16,8 @@ export async function createCustomer(
       throw new Error('First name and last name are required');
     }
 
-    // Prepare customer data for database insertion
-    const dbCustomerData: Record<string, any> = {
+    // Prepare customer data for database insertion - explicitly type it
+    const dbCustomerData = {
       first_name: customerData.first_name,
       last_name: customerData.last_name,
       email: customerData.email || '',
@@ -44,7 +44,7 @@ export async function createCustomer(
       fleet_contact: customerData.fleet_contact || '',
       preferred_service_type: customerData.preferred_service_type || '',
       notes: customerData.notes || '',
-      shop_id: customerData.shop_id,
+      shop_id: customerData.shop_id || '',
       preferred_technician_id: customerData.preferred_technician_id || '',
       communication_preference: customerData.communication_preference || '',
       referral_source: customerData.referral_source || '',
@@ -53,7 +53,7 @@ export async function createCustomer(
       household_id: customerData.household_id || '',
       tags: customerData.tags || [],
       segments: customerData.segments || []
-    };
+    } as const;
 
     // Create the customer first
     const { data: customer, error: customerError } = await supabase
