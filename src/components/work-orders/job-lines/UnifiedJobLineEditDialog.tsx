@@ -3,18 +3,18 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { WorkOrderJobLine, JOB_LINE_STATUSES } from '@/types/jobLine';
-import { updateWorkOrderJobLine } from '@/services/workOrder/jobLinesService';
-import { toast } from '@/hooks/use-toast';
+import { WorkOrderJobLine } from '@/types/jobLine';
+import { JOB_LINE_STATUSES } from '@/types/jobLine';
+import { EditService } from '@/services/workOrder/editService';
 
 interface UnifiedJobLineEditDialogProps {
   jobLine: WorkOrderJobLine | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (jobLine: WorkOrderJobLine) => Promise<void>;
+  onSave: (jobLine: WorkOrderJobLine) => void;
 }
 
 export function UnifiedJobLineEditDialog({
@@ -23,15 +23,8 @@ export function UnifiedJobLineEditDialog({
   onOpenChange,
   onSave
 }: UnifiedJobLineEditDialogProps) {
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    estimated_hours: 0,
-    labor_rate: 0,
-    status: 'pending',
-    notes: ''
-  });
-  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState<Partial<WorkOrderJobLine>>({});
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (jobLine) {
@@ -49,46 +42,33 @@ export function UnifiedJobLineEditDialog({
   const handleSave = async () => {
     if (!jobLine) return;
 
-    setIsLoading(true);
+    setIsSaving(true);
     try {
-      const totalAmount = formData.estimated_hours * formData.labor_rate;
-      const updatedJobLine = await updateWorkOrderJobLine(jobLine.id, {
-        ...formData,
-        total_amount: totalAmount
-      });
-      
-      await onSave(updatedJobLine);
+      const updatedJobLine = await EditService.updateJobLine(jobLine.id, formData);
+      onSave(updatedJobLine);
       onOpenChange(false);
-      
-      toast({
-        title: "Job Line Updated",
-        description: "Job line has been successfully updated.",
-      });
     } catch (error) {
-      console.error('Error updating job line:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update job line. Please try again.",
-        variant: "destructive"
-      });
+      console.error('Error saving job line:', error);
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
-  const handleCancel = () => {
-    onOpenChange(false);
-    if (jobLine) {
-      setFormData({
-        name: jobLine.name || '',
-        description: jobLine.description || '',
-        estimated_hours: jobLine.estimated_hours || 0,
-        labor_rate: jobLine.labor_rate || 0,
-        status: jobLine.status || 'pending',
-        notes: jobLine.notes || ''
-      });
-    }
+  const handleInputChange = (field: keyof WorkOrderJobLine, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
+
+  const formatStatusLabel = (status: string) => {
+    return status
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
+  if (!jobLine) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -99,95 +79,86 @@ export function UnifiedJobLineEditDialog({
         
         <div className="space-y-4">
           <div>
-            <Label htmlFor="name">Name *</Label>
+            <Label htmlFor="name">Name</Label>
             <Input
               id="name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="Enter job line name"
+              value={formData.name || ''}
+              onChange={(e) => handleInputChange('name', e.target.value)}
+              placeholder="Job line name"
             />
           </div>
-          
+
           <div>
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Enter description"
+              value={formData.description || ''}
+              onChange={(e) => handleInputChange('description', e.target.value)}
+              placeholder="Job line description"
               rows={3}
             />
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="hours">Estimated Hours</Label>
               <Input
                 id="hours"
                 type="number"
-                step="0.25"
-                value={formData.estimated_hours}
-                onChange={(e) => setFormData({ ...formData, estimated_hours: parseFloat(e.target.value) || 0 })}
-                placeholder="0.0"
+                step="0.1"
+                value={formData.estimated_hours || 0}
+                onChange={(e) => handleInputChange('estimated_hours', parseFloat(e.target.value) || 0)}
               />
             </div>
+
             <div>
               <Label htmlFor="rate">Labor Rate ($)</Label>
               <Input
                 id="rate"
                 type="number"
                 step="0.01"
-                value={formData.labor_rate}
-                onChange={(e) => setFormData({ ...formData, labor_rate: parseFloat(e.target.value) || 0 })}
-                placeholder="0.00"
+                value={formData.labor_rate || 0}
+                onChange={(e) => handleInputChange('labor_rate', parseFloat(e.target.value) || 0)}
               />
             </div>
           </div>
 
           <div>
             <Label htmlFor="status">Status</Label>
-            <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+            <Select 
+              value={formData.status || 'pending'} 
+              onValueChange={(value) => handleInputChange('status', value)}
+            >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent>
                 {JOB_LINE_STATUSES.map((status) => (
                   <SelectItem key={status} value={status}>
-                    {status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ')}
+                    {formatStatusLabel(status)}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-          
+
           <div>
             <Label htmlFor="notes">Notes</Label>
             <Textarea
               id="notes"
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              value={formData.notes || ''}
+              onChange={(e) => handleInputChange('notes', e.target.value)}
               placeholder="Additional notes"
               rows={2}
             />
           </div>
 
-          <div className="text-sm text-muted-foreground">
-            Total Amount: ${(formData.estimated_hours * formData.labor_rate).toFixed(2)}
-          </div>
-          
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={handleCancel}
-              disabled={isLoading}
-            >
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button 
-              onClick={handleSave} 
-              disabled={isLoading || !formData.name.trim()}
-            >
-              {isLoading ? 'Saving...' : 'Save Changes'}
+            <Button onClick={handleSave} disabled={isSaving}>
+              {isSaving ? 'Saving...' : 'Save'}
             </Button>
           </div>
         </div>

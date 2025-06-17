@@ -1,10 +1,13 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { WorkOrder } from '@/types/workOrder';
 import { Customer } from '@/types/customer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Edit3, Save, X } from 'lucide-react';
+import { WORK_ORDER_STATUSES } from '@/data/workOrderConstants';
+import { useWorkOrderStatus } from '@/hooks/useWorkOrderStatus';
 
 interface WorkOrderHeaderProps {
   workOrder: WorkOrder;
@@ -23,8 +26,11 @@ export function WorkOrderHeader({
   onCancelEdit,
   onSaveEdit
 }: WorkOrderHeaderProps) {
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
+  const { status, updateStatus, isUpdating } = useWorkOrderStatus(workOrder.id, workOrder.status);
+  const [localStatus, setLocalStatus] = useState(status);
+
+  const getStatusColor = (statusValue: string) => {
+    switch (statusValue?.toLowerCase()) {
       case 'completed':
         return 'bg-green-100 text-green-800';
       case 'in-progress':
@@ -33,9 +39,31 @@ export function WorkOrderHeader({
         return 'bg-yellow-100 text-yellow-800';
       case 'cancelled':
         return 'bg-red-100 text-red-800';
+      case 'on-hold':
+        return 'bg-orange-100 text-orange-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const handleStatusChange = async (newStatus: string) => {
+    setLocalStatus(newStatus);
+    if (!isEditMode) {
+      // Update immediately if not in edit mode
+      await updateStatus(newStatus);
+    }
+  };
+
+  const handleSave = async () => {
+    if (localStatus !== status) {
+      await updateStatus(localStatus);
+    }
+    onSaveEdit();
+  };
+
+  const handleCancel = () => {
+    setLocalStatus(status); // Reset to original status
+    onCancelEdit();
   };
 
   return (
@@ -45,10 +73,27 @@ export function WorkOrderHeader({
           <h1 className="text-2xl font-bold">
             Work Order #{workOrder.work_order_number || workOrder.id.slice(0, 8)}
           </h1>
-          <Badge className={getStatusColor(workOrder.status)}>
-            {workOrder.status}
-          </Badge>
+          
+          {isEditMode ? (
+            <Select value={localStatus} onValueChange={handleStatusChange}>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {WORK_ORDER_STATUSES.map((statusOption) => (
+                  <SelectItem key={statusOption.value} value={statusOption.value}>
+                    {statusOption.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Badge className={getStatusColor(status)}>
+              {WORK_ORDER_STATUSES.find(s => s.value === status)?.label || status}
+            </Badge>
+          )}
         </div>
+        
         <div className="space-y-1 text-sm text-muted-foreground">
           {customer && (
             <p>Customer: {customer.first_name} {customer.last_name}</p>
@@ -63,11 +108,15 @@ export function WorkOrderHeader({
       <div className="flex items-center gap-2">
         {isEditMode ? (
           <>
-            <Button size="sm" onClick={onSaveEdit}>
+            <Button 
+              size="sm" 
+              onClick={handleSave}
+              disabled={isUpdating}
+            >
               <Save className="h-4 w-4 mr-2" />
               Save
             </Button>
-            <Button size="sm" variant="outline" onClick={onCancelEdit}>
+            <Button size="sm" variant="outline" onClick={handleCancel}>
               <X className="h-4 w-4 mr-2" />
               Cancel
             </Button>

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Edit2, Trash2 } from 'lucide-react';
 import { UnifiedJobLineEditDialog } from './UnifiedJobLineEditDialog';
+import { jobLineStatusMap } from '@/types/jobLine';
 
 interface JobLineCardProps {
   jobLine: WorkOrderJobLine;
@@ -40,6 +41,15 @@ export function JobLineCard({
     }
   };
 
+  const getStatusInfo = (status: string) => {
+    return jobLineStatusMap[status] || { 
+      label: status || 'Pending', 
+      classes: 'bg-gray-100 text-gray-800' 
+    };
+  };
+
+  const statusInfo = getStatusInfo(jobLine.status || 'pending');
+
   return (
     <>
       <Card>
@@ -48,7 +58,9 @@ export function JobLineCard({
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <CardTitle className="text-base">{jobLine.name}</CardTitle>
-                <Badge variant="outline">{jobLine.status || 'pending'}</Badge>
+                <Badge className={`${statusInfo.classes} text-xs font-medium`}>
+                  {statusInfo.label}
+                </Badge>
               </div>
               {jobLine.description && (
                 <p className="text-sm text-muted-foreground">
