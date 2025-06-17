@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { WorkOrderJobLine, JobLineFormValues } from '@/types/jobLine';
-import { StatusSelector } from '../shared/StatusSelector';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { WorkOrderJobLine, JOB_LINE_STATUSES } from '@/types/jobLine';
 import { createWorkOrderJobLine } from '@/services/workOrder/jobLinesService';
 import { toast } from '@/hooks/use-toast';
 
@@ -23,11 +23,14 @@ export function AddJobLineDialog({
   onOpenChange,
   onAdd
 }: AddJobLineDialogProps) {
-  const [formData, setFormData] = useState<JobLineFormValues>({
+  const [formData, setFormData] = useState({
     name: '',
+    category: '',
+    subcategory: '',
     description: '',
     estimated_hours: 0,
     labor_rate: 0,
+    labor_rate_type: 'standard',
     status: 'pending',
     notes: ''
   });
@@ -51,29 +54,37 @@ export function AddJobLineDialog({
 
     setIsLoading(true);
     try {
-      const newJobLine = await createWorkOrderJobLine(workOrderId, formData);
+      const jobLineData = {
+        ...formData,
+        total_amount: calculateTotal()
+      };
+
+      const newJobLine = await createWorkOrderJobLine(workOrderId, jobLineData);
       onAdd(newJobLine);
       onOpenChange(false);
       
       // Reset form
       setFormData({
         name: '',
+        category: '',
+        subcategory: '',
         description: '',
         estimated_hours: 0,
         labor_rate: 0,
+        labor_rate_type: 'standard',
         status: 'pending',
         notes: ''
       });
 
       toast({
         title: "Success",
-        description: "Job line created successfully",
+        description: "Job line added successfully",
       });
     } catch (error) {
-      console.error('Error creating job line:', error);
+      console.error('Error adding job line:', error);
       toast({
         title: "Error",
-        description: "Failed to create job line",
+        description: "Failed to add job line",
         variant: "destructive"
       });
     } finally {
@@ -81,7 +92,7 @@ export function AddJobLineDialog({
     }
   };
 
-  const handleFieldChange = (field: keyof JobLineFormValues, value: any) => {
+  const handleFieldChange = (field: string, value: any) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -92,7 +103,7 @@ export function AddJobLineDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Add New Job Line</DialogTitle>
+          <DialogTitle>Add Job Line</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4">
@@ -110,39 +121,46 @@ export function AddJobLineDialog({
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
-              value={formData.description || ''}
+              value={formData.description}
               onChange={(e) => handleFieldChange('description', e.target.value)}
-              placeholder="Enter job description"
+              placeholder="Enter description"
             />
           </div>
 
           <div>
             <Label htmlFor="status">Status</Label>
-            <StatusSelector
-              currentStatus={formData.status || 'pending'}
-              type="jobLine"
-              onStatusChange={(status) => handleFieldChange('status', status)}
-            />
+            <Select value={formData.status} onValueChange={(value) => handleFieldChange('status', value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                {JOB_LINE_STATUSES.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {status.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="hours">Estimated Hours</Label>
+              <Label htmlFor="hours">Hours</Label>
               <Input
                 id="hours"
                 type="number"
                 step="0.25"
-                value={formData.estimated_hours || 0}
+                value={formData.estimated_hours}
                 onChange={(e) => handleFieldChange('estimated_hours', parseFloat(e.target.value) || 0)}
               />
             </div>
             <div>
-              <Label htmlFor="rate">Labor Rate ($)</Label>
+              <Label htmlFor="rate">Rate ($)</Label>
               <Input
                 id="rate"
                 type="number"
                 step="0.01"
-                value={formData.labor_rate || 0}
+                value={formData.labor_rate}
                 onChange={(e) => handleFieldChange('labor_rate', parseFloat(e.target.value) || 0)}
               />
             </div>
@@ -164,9 +182,9 @@ export function AddJobLineDialog({
             <Label htmlFor="notes">Notes</Label>
             <Textarea
               id="notes"
-              value={formData.notes || ''}
+              value={formData.notes}
               onChange={(e) => handleFieldChange('notes', e.target.value)}
-              placeholder="Additional notes"
+              placeholder="Enter any notes"
             />
           </div>
           
@@ -179,7 +197,7 @@ export function AddJobLineDialog({
               Cancel
             </Button>
             <Button onClick={handleSave} disabled={isLoading}>
-              {isLoading ? 'Creating...' : 'Create Job Line'}
+              {isLoading ? 'Adding...' : 'Add Job Line'}
             </Button>
           </div>
         </div>
