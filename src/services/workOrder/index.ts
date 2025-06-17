@@ -5,6 +5,12 @@ export * from './core/workOrderJobLinesService';
 export * from './core/workOrderPartsService';
 export * from './core/workOrderTimeService';
 
+// Import the services for use in legacy functions
+import { workOrderCoreService } from './core/workOrderCoreService';
+import { workOrderJobLinesService } from './core/workOrderJobLinesService';
+import { workOrderPartsService } from './core/workOrderPartsService';
+import { workOrderTimeService } from './core/workOrderTimeService';
+
 // Backward compatibility exports
 export { workOrderCoreService as workOrderService } from './core/workOrderCoreService';
 export { workOrderJobLinesService as jobLinesService } from './core/workOrderJobLinesService';
